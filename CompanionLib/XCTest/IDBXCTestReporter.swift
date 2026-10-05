@@ -51,7 +51,6 @@ extension IDBXCTestReporter {
 
 enum IDBXCTestReporterError: Error {
   case coverageExportFailed(exitCode: Int32, stderr: String)
-  case exportStreamMissing
 }
 
 extension IDBXCTestReporterError: LocalizedError {
@@ -59,8 +58,6 @@ extension IDBXCTestReporterError: LocalizedError {
     switch self {
     case let .coverageExportFailed(exitCode, stderr):
       return "xcrun failed to export code coverage data \(exitCode) \(stderr)"
-    case .exportStreamMissing:
-      return "xcrun llvm-cov export misconfigured. stdOut stream is nil"
     }
   }
 }
@@ -444,16 +441,9 @@ final class IDBXCTestReporter: NSObject, XCTestReporter, DataConsumer, @unchecke
       ["llvm-profdata", "merge", "-o", profdataPath.path, "--num-threads", "2"]
       + profraws.map(\.path)
 
-    let mergeProcess = try await awaitRunUntilCompletion(
-      of: FBProcessBuilder<NSNull, NSData, NSString>
-        .withLaunchPath("/usr/bin/xcrun", arguments: mergeArgs)
-        .withStdOutInMemoryAsData()
-        .withStdErrInMemoryAsString(),
-      withAcceptableExitCodes: nil)
-    let exitCode = try await awaitExitCode(of: mergeProcess)
-    if exitCode != 0 {
-      throw IDBXCTestReporterError.coverageExportFailed(exitCode: exitCode, stderr: (mergeProcess.stdErr as String?) ?? "")
-    }
+    let merge = try await Subprocess(executable: "/usr/bin/xcrun", arguments: mergeArgs)
+      .run(output: .nullDevice, error: .string, exitPolicy: .any, logger: logger)
+    try merge.checkExitedCleanly { IDBXCTestReporterError.coverageExportFailed(exitCode: $0, stderr: merge.standardError) }
   }
 
   func exportCoverage(profdataPath: URL, binariesPath: [String]) async throws -> Data {
@@ -462,46 +452,14 @@ final class IDBXCTestReporter: NSObject, XCTestReporter, DataConsumer, @unchecke
       + binariesPath.reduce(into: []) {
         $0 += ["-object", $1]
       }
-    let exportProcess = try await awaitStart(
-      of: FBProcessBuilder<NSNull, NSData, NSString>
-        .withLaunchPath("/usr/bin/xcrun", arguments: exportArgs)
-        .withStdOutToInputStream()
-        .withStdErrInMemoryAsString())
+    let exportPath = profdataPath.deletingLastPathComponent().appendingPathComponent("coverage.json")
+    // `.file` does not truncate, so a stale export would leave a tail behind a shorter one.
+    try? FileManager.default.removeItem(at: exportPath)
+    let export = try await Subprocess(executable: "/usr/bin/xcrun", arguments: exportArgs)
+      .run(output: .file(exportPath), error: .string, exitPolicy: .any, logger: logger)
+    try export.checkExitedCleanly { IDBXCTestReporterError.coverageExportFailed(exitCode: $0, stderr: export.standardError) }
 
-    let gzipProcessInput = FBProcessInput<OutputStream>.fromStream()
-    let gzipInput = gzipProcessInput.retyped(FBProcessInput<AnyObject>.self)
-    let archiveTask = Task {
-      try await FBArchiveOperations.createGzipDataAsync(from: gzipInput, logger: self.logger)
-    }
-
-    let oneMega = 1024 * 1024
-    let buffer = UnsafeMutablePointer<UInt8>.allocate(capacity: oneMega)
-    defer {
-      buffer.deallocate()
-    }
-
-    guard let exportOutputStream = exportProcess.stdOut
-    else {
-      throw IDBXCTestReporterError.exportStreamMissing
-    }
-    exportOutputStream.open()
-
-    let gzipInputStream = gzipProcessInput.contents
-    gzipInputStream.open()
-    while case let bytesRead = exportOutputStream.read(buffer, maxLength: oneMega), bytesRead > 0 {
-      gzipInputStream.write(buffer, maxLength: bytesRead)
-    }
-    exportOutputStream.close()
-    gzipInputStream.close()
-
-    let exitCode = try await awaitExitCode(of: exportProcess)
-    if exitCode != 0 {
-      throw IDBXCTestReporterError.coverageExportFailed(exitCode: exitCode, stderr: (exportProcess.stdErr as String?) ?? "")
-    }
-
-    let archiveProcess = try await archiveTask.value
-    let stdOut = archiveProcess.stdOut ?? NSData()
-    return stdOut as Data
+    return try await FBArchiveOperations.createGzipData(forPath: exportPath.path, logger: logger)
   }
 
   private func createFailureInfo(exceptionInfo: TestExceptionInfo) -> Idb_XctestRunResponse.TestRunInfo.TestRunFailureInfo {

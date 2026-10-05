@@ -157,19 +157,14 @@ public enum FBArchiveOperations {
       .retyped()
   }
 
-  /// Creates a gzipped archive compressing the data provided.
+  /// Gzips the file at `path`, returning the compressed data.
   public static func createGzipData(
-    from input: FBProcessInput<AnyObject>,
+    forPath path: String,
     logger: any ControlCoreLogger
-  ) -> FBFuture<FBSubprocess<AnyObject, NSData, AnyObject>> {
-    FBProcessBuilder<NSNull, NSData, NSData>
-      .withLaunchPath("/usr/bin/gzip", arguments: ["-", "--to-stdout"])
-      .withStdIn(input)
-      .withStdErr(toLoggerAndErrorMessage: logger)
-      .withStdOutInMemoryAsData()
-      .withTaskLifecycleLogging(to: logger)
-      .runUntilCompletion(withAcceptableExitCodes: [0])
-      .retyped()
+  ) async throws -> Data {
+    try await Subprocess(executable: "/usr/bin/gzip", arguments: ["--to-stdout", path])
+      .run(output: .data, error: .logger(logger), logger: logger)
+      .standardOutput
   }
 
   /// Creates a gzip archive, returning a task that has an input stream attached to stdout. Read the

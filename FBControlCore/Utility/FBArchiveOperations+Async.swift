@@ -9,14 +9,6 @@ import Foundation
 
 extension FBArchiveOperations {
 
-  /// Async wrapper for `createGzipDataFromProcessInput:logger:`.
-  public static func createGzipDataAsync(
-    from input: FBProcessInput<AnyObject>,
-    logger: any ControlCoreLogger
-  ) async throws -> FBSubprocess<AnyObject, NSData, AnyObject> {
-    return try await bridgeFBFuture(createGzipData(from: input, logger: logger))
-  }
-
   /// Async wrapper for `createGzipForPath:logger:`.
   public static func createGzipAsync(
     forPath path: String,
