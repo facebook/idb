@@ -36,14 +36,16 @@ final class SimulatorDapServerCommandTests: XCTestCase {
   func testServesTheAdapterOverItsStandardStreamsAndLogsToTheSimulatorLogs() async throws {
     let simulator = SimulatorTestSupport.testableSimulator(withDevice: device)
     let output = FBDataBuffer.accumulatingBuffer()
-    let input = FBProcessInput<DataConsumer>.fromConsumer()
+    let input = InputSource()
 
-    let process = try await simulator.dapServer.launch(Self.adapterPath, stdIn: input.retyped(FBProcessInput<AnyObject>.self), stdOut: output)
-    input.contents.consumeData(Data("ping\n".utf8))
-    input.contents.consumeEndOfFile()
-    _ = try await bridgeFBFuture(process.statLoc)
+    let status = try await simulator.dapServer.withServer(Self.adapterPath, input: input, output: output) { process in
+      input.write(Data("ping\n".utf8))
+      input.finish()
+      return try await process.terminationStatus
+    }
     _ = try await bridgeFBFuture(output.finishedConsuming)
 
+    XCTAssertEqual(status, .exited(0))
     let lines = output.lines().filter { !$0.isEmpty }
     XCTAssertEqual(lines.count, 2, "\(lines)")
     let logPath = try XCTUnwrap(lines.first)
@@ -52,12 +54,21 @@ final class SimulatorDapServerCommandTests: XCTestCase {
     XCTAssertEqual(lines.last, "ping")
   }
 
+  func testTerminatesTheAdapterWhenTheScopeExits() async throws {
+    let simulator = SimulatorTestSupport.testableSimulator(withDevice: device)
+
+    let process = try await simulator.dapServer.withServer(Self.adapterPath, input: InputSource(), output: FBDataBuffer.accumulatingBuffer()) { $0 }
+
+    let status = try await process.terminationStatus
+    XCTAssertEqual(status, .signalled(SIGTERM), "An adapter still reading its input is terminated rather than left running")
+  }
+
   func testFailsWithoutADataDirectory() async throws {
     let simulator = SimulatorTestSupport.testableSimulator(withDevice: DataDirectoryDevice(dataPath: nil))
     defer { try? FileManager.default.removeItem(atPath: simulator.coreSimulatorLogsDirectory) }
 
     do {
-      _ = try await simulator.dapServer.launch(Self.adapterPath, stdIn: FBProcessInput<DataConsumer>.fromConsumer().retyped(FBProcessInput<AnyObject>.self), stdOut: FBDataBuffer.accumulatingBuffer())
+      try await simulator.dapServer.withServer(Self.adapterPath, input: InputSource(), output: FBDataBuffer.accumulatingBuffer()) { _ in }
       XCTFail("Expected launching without a data directory to fail")
     } catch SimulatorDapServerError.noDataDirectory {
       // Expected.

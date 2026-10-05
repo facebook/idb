@@ -679,8 +679,8 @@ public final class IDBCommandExecutor {
     }
   }
 
-  public func dapServer(withPath dapPath: String, stdIn: FBProcessInput<AnyObject>, stdOut: any DataConsumer) async throws -> FBSubprocess<AnyObject, DataConsumer, NSString> {
-    return try await simulatorTarget().dapServer.launch(dapPath, stdIn: stdIn, stdOut: stdOut)
+  public func withDapServer<Result: Sendable>(path dapPath: String, input: InputSource, output: any DataConsumer, _ body: (RunningSubprocess) async throws -> Result) async throws -> Result {
+    try await simulatorTarget().dapServer.withServer(dapPath, input: input, output: output, body)
   }
 
   public func clean() async throws {

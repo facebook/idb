@@ -39,7 +39,14 @@ public final class SimulatorDapServerCommand {
     self.simulator = simulator
   }
 
-  public func launch(_ dapPath: String, stdIn: FBProcessInput<AnyObject>, stdOut: any DataConsumer) async throws -> FBSubprocess<AnyObject, any DataConsumer, NSString> {
+  /// Runs the adapter at `dapPath` inside the simulator's data directory for the duration of `body`,
+  /// speaking the protocol over `input` and `output`, and terminates it when `body` exits.
+  public func withServer<Result: Sendable>(
+    _ dapPath: String,
+    input: InputSource,
+    output: any DataConsumer,
+    _ body: (RunningSubprocess) async throws -> Result
+  ) async throws -> Result {
     let dapLogDir = (simulator.coreSimulatorLogsDirectory as NSString).appendingPathComponent("dap")
 
     do {
@@ -62,13 +69,11 @@ public final class SimulatorDapServerCommand {
       throw SimulatorDapServerError.noDataDirectory
     }
     let fullPath = (dataDirectory as NSString).appendingPathComponent(dapPath)
-    let startedFuture = FBProcessBuilder<AnyObject, AnyObject, NSString>
-      .withLaunchPath(fullPath)
-      .withEnvironment(envs)
-      .withStdIn(stdIn)
-      .withStdOutConsumer(stdOut)
-      .withStdErrInMemoryAsString()
-      .start()
-    return try await bridgeFBFuture(startedFuture)
+    return try await Subprocess(executable: fullPath, environment: .exact(envs)).withRunning(
+      output: .consumer(output),
+      error: .logger(simulator.logger.debug()),
+      input: .source(input),
+      gracePeriod: 1,
+      body)
   }
 }

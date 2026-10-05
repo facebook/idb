@@ -21,26 +21,17 @@ struct DapMethodHandler: @unchecked Sendable {
     guard case let .start(start) = try await requestStream.requiredNext().control
     else { throw RPCError(code: .failedPrecondition, message: "Dap command expected a Start messaged in the beginning of the Stream") }
 
-    let writer = FBProcessInput<DataConsumer>.fromConsumer().retyped(FBProcessInput<AnyObject>.self)
-    let dapProcess = try await startDapServer(startRequest: start, processInput: writer, responseStream: responseStream)
+    let lldbVSCode = "dap/\(start.debuggerPkgID)/usr/bin/lldb-vscode"
+    let input = InputSource()
+    targetLogger.debug().log("Starting dap server with path \(lldbVSCode)")
+    try await commandExecutor.withDapServer(path: lldbVSCode, input: input, output: createDataConsumer(to: responseStream)) { process in
+      targetLogger.debug().log("Dap server spawn with PID: \(process.processIdentifier)")
+      try await responseStream.send(.with { $0.event = .started(.init()) })
 
-    let tenHours: UInt64 = 36000 * 1000000000
-    do {
+      let tenHours: UInt64 = 36000 * 1000000000
       try await Task.timeout(nanoseconds: tenHours) {
-        try await consumeElements(from: requestStream, to: writer)
+        try await consumeElements(from: requestStream, to: input)
       }
-    } catch {
-      do {
-        try await stopDapServer(dapProcess)
-      } catch let stopError {
-        targetLogger.error().log("Failed to stop dap server after request failure: \(stopError)")
-      }
-      throw error
-    }
-    do {
-      try await stopDapServer(dapProcess)
-    } catch {
-      targetLogger.error().log("Failed to stop dap server after request completion: \(error)")
     }
 
     let stoppedResponse = Idb_DapResponse.with {
@@ -51,40 +42,7 @@ struct DapMethodHandler: @unchecked Sendable {
     try await responseStream.send(stoppedResponse)
   }
 
-  private func startDapServer(startRequest: Idb_DapRequest.Start, processInput: FBProcessInput<AnyObject>, responseStream: RPCWriter<Idb_DapResponse>) async throws -> FBSubprocess<AnyObject, DataConsumer, NSString> {
-
-    let lldbVSCode = "dap/\(startRequest.debuggerPkgID)/usr/bin/lldb-vscode"
-
-    let stdOutConsumer = createDataConsumer(to: responseStream)
-    targetLogger.debug().log("Starting dap server with path \(lldbVSCode)")
-
-    let tenMinutes: UInt64 = 600 * 1000000000
-    let process = try await Task.timeout(nanoseconds: tenMinutes) {
-      try await commandExecutor.dapServer(withPath: lldbVSCode, stdIn: processInput, stdOut: stdOutConsumer)
-    }
-
-    targetLogger.debug().log("Dap server spawn with PID: \(process.processIdentifier)")
-    let serverStartedResponse = Idb_DapResponse.with {
-      $0.event = .started(.init())
-    }
-    try await responseStream.send(serverStartedResponse)
-
-    return process
-  }
-
-  private func stopDapServer(_ dapProcess: FBSubprocess<AnyObject, DataConsumer, NSString>) async throws {
-    guard !dapProcess.statLoc.hasCompleted else { return }
-    targetLogger.debug().log("Stopping dap server with pid \(dapProcess.processIdentifier). Stderr: \(dapProcess.stdErr ?? "Empty")")
-    _ = try await bridgeFBFuture(
-      dapProcess.sendSignal(
-        SIGTERM,
-        backingOffToKillWithTimeout: 1,
-        logger: targetLogger
-      )
-    )
-  }
-
-  private func consumeElements(from requestStream: RequestStreamReader<Idb_DapRequest>, to writer: FBProcessInput<AnyObject>) async throws {
+  private func consumeElements(from requestStream: RequestStreamReader<Idb_DapRequest>, to input: InputSource) async throws {
     for try await request in requestStream {
       switch request.control {
       case .start:
@@ -99,7 +57,7 @@ struct DapMethodHandler: @unchecked Sendable {
           return
         }
         targetLogger.debug().log("Dap Request. Received \(pipe.data.count) bytes from client")
-        writer.contents.consumeData(pipe.data)
+        input.write(pipe.data)
 
       case .stop:
         targetLogger.debug().log("Received stop from Dap Request")
