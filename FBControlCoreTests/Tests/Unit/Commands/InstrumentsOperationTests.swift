@@ -67,6 +67,55 @@ final class InstrumentsOperationTests: XCTestCase {
     XCTAssertEqual(result, traceFile, "Empty post-processing arguments should pass the trace file straight through")
   }
 
+  /// Runs `script` as the post-processing tool: `bash <script> <trace> -o <output> <extra...>`.
+  private func postProcess(
+    script: String, extraArguments: [String] = [], logger: (any ControlCoreLogger)? = nil
+  ) async throws -> (traceFile: URL, result: URL) {
+    let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+    try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+    addTeardownBlock { try? FileManager.default.removeItem(at: directory) }
+    let scriptFile = directory.appendingPathComponent("tool.sh")
+    try script.write(to: scriptFile, atomically: true, encoding: .utf8)
+    let traceFile = directory.appendingPathComponent("recording.trace")
+
+    let result = try await InstrumentsOperation.postProcess(
+      arguments: ["/bin/bash", scriptFile.path, "processed.trace"] + extraArguments,
+      traceFile: traceFile, queue: .main, logger: logger)
+    return (traceFile, result)
+  }
+
+  func testPostProcess_WhenToolSucceeds_ReturnsTheOutputBesideTheTrace() async throws {
+    let (traceFile, result) = try await postProcess(
+      script: #"printf '%s\n' "$@" > "$3""#, extraArguments: ["--extra", "value"])
+
+    XCTAssertEqual(result, traceFile.deletingLastPathComponent().appendingPathComponent("processed.trace"))
+    XCTAssertEqual(
+      try String(contentsOf: result, encoding: .utf8),
+      [traceFile.path, "-o", result.path, "--extra", "value"].joined(separator: "\n") + "\n",
+      "The tool should receive the trace, the output path and the extra arguments in that order")
+  }
+
+  func testPostProcess_WhenToolExitsNonZero_Fails() async throws {
+    do {
+      _ = try await postProcess(script: "exit 7", logger: ControlCoreLoggerDouble())
+      XCTFail("A non-zero exit from the post-processing tool should fail")
+    } catch {
+      XCTAssertTrue(
+        error.localizedDescription.contains("is not acceptable"),
+        "The failure should be the tool's unacceptable exit, got: \(error.localizedDescription)")
+    }
+  }
+
+  func testPostProcess_HandsTheToolAnOpenStandardInputThatIsNeverWritten() async throws {
+    // A pipe rules out /dev/null and a closed descriptor; a `read` that waits out its timeout rather
+    // than returning at once rules out end-of-file. bash 3.2 exits 1 for both, hence the clock.
+    // perl fstats descriptor 0 itself; `[ -p /dev/stdin ]` goes through devfs and fails on CI hosts.
+    let (_, result) = try await postProcess(
+      script: #"perl -e 'exit 3 unless -p STDIN' || exit 3; start=$SECONDS; read -t 2 _ && exit 4; [ $((SECONDS - start)) -ge 1 ] || exit 5; : > "$3""#)
+
+    XCTAssertTrue(FileManager.default.fileExists(atPath: result.path))
+  }
+
   /// The consumer parses lines asynchronously on the block consumer's own queue, so the
   /// markers resolve some time after the data is fed in.
   private func waitForCompletion(of future: FBMutableFuture<NSNull>, timeout: TimeInterval = 5) async -> Bool {
