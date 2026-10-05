@@ -9,22 +9,28 @@
 import Foundation
 
 /// Test double for the display reads, so routing built on them runs the real logic. Each display read
-/// takes the next scripted result; the last one repeats.
+/// takes the next scripted result; the last one repeats. Pushes are unavailable unless scripted.
 // SAFETY: The script and read count are guarded by the lock.
 // patternlint-disable-next-line unchecked-sendable
 final class DisplayCommandsDouble: DisplayCommands, @unchecked Sendable {
   let identities = DisplayIdentityCache()
+  let configurationTracker = DisplayConfigurationTracker()
   let transitionSettling = DisplayTransitionSettling(timeout: .milliseconds(50), interval: .milliseconds(5))
   private let lock = NSLock()
   private var results: [Result<SimulatorDisplayReport, any Error>]
   private var readCount = 0
   private var touchscreenReadCount = 0
   private let touchscreenResult: [SimulatorTouchscreen]
+  private let pushes: AsyncThrowingStream<SimulatorDisplayReport, any Error>?
 
-  init(_ results: [Result<SimulatorDisplayReport, any Error>], touchscreens: [SimulatorTouchscreen] = []) {
+  init(
+    _ results: [Result<SimulatorDisplayReport, any Error>], touchscreens: [SimulatorTouchscreen] = [],
+    pushes: AsyncThrowingStream<SimulatorDisplayReport, any Error>? = nil
+  ) {
     precondition(!results.isEmpty)
     self.results = results
     self.touchscreenResult = touchscreens
+    self.pushes = pushes
   }
 
   convenience init(_ targets: SimulatorDisplayTarget..., touchscreens: [SimulatorTouchscreen] = []) {
@@ -55,6 +61,11 @@ final class DisplayCommandsDouble: DisplayCommands, @unchecked Sendable {
     defer { lock.unlock() }
     readCount += 1
     return try (results.count > 1 ? results.removeFirst() : results[0]).get()
+  }
+
+  func reportPushes() throws -> AsyncThrowingStream<SimulatorDisplayReport, any Error> {
+    guard let pushes else { throw SimulatorCoreDeviceError.unsupported("display pushes") }
+    return pushes
   }
 }
 

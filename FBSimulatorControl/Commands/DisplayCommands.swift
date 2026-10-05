@@ -21,18 +21,27 @@ protocol DisplayCommands: AnyObject, Sendable {
 
   var transitionSettling: DisplayTransitionSettling { get }
 
+  /// Numbers every report read through the routing below.
+  var configurationTracker: DisplayConfigurationTracker { get }
+
+  /// Each display report the runtime pushes, until the stream is cancelled. Throws when the runtime does not push.
+  func reportPushes() throws -> AsyncThrowingStream<SimulatorDisplayReport, Error>
+
+  var logger: (any ControlCoreLogger)? { get }
+
   /// The active display each time it may have changed while several integrated displays are attached,
   /// until the stream is cancelled. Nothing is yielded for a sole display or mid-transition.
   func activeDisplayUpdates() -> AsyncStream<SimulatorDisplay>
 }
 
 /// How long one-shot resolution keeps reading while a display transition settles, and how often.
+@usableFromInline
 struct DisplayTransitionSettling: Sendable {
-  let timeout: Duration
+  @usableFromInline let timeout: Duration
   let interval: Duration
 
   /// Live hinge changes have been seen to settle within about 4 seconds on a heavily loaded host.
-  static let standard = DisplayTransitionSettling(timeout: .seconds(5), interval: .milliseconds(100))
+  @usableFromInline static let standard = DisplayTransitionSettling(timeout: .seconds(5), interval: .milliseconds(100))
 }
 
 /// The display an interaction targets, and whether routing has to name it.
@@ -179,6 +188,12 @@ extension DisplayCommands {
 
   var transitionSettling: DisplayTransitionSettling { .standard }
 
+  func reportPushes() throws -> AsyncThrowingStream<SimulatorDisplayReport, Error> {
+    throw SimulatorCoreDeviceError.unsupported("display pushes")
+  }
+
+  var logger: (any ControlCoreLogger)? { nil }
+
   /// The display interactions target once any display transition has settled. A hinge change moves layout to
   /// the new display before its backlight follows, and one-shot resolution waits that out. `.transitioning` only
   /// when the transition outlasts `transitionSettling`.
@@ -210,7 +225,7 @@ extension DisplayCommands {
     let settling = transitionSettling
     let deadline = ContinuousClock.now + settling.timeout
     while true {
-      let current = try await report()
+      let current = try await observedReport()
       guard current == .transitioning, ContinuousClock.now < deadline else { return current }
       try await Task.sleep(for: settling.interval)
     }
@@ -218,7 +233,24 @@ extension DisplayCommands {
 
   /// One read of the display interactions target, without waiting for a transition to settle.
   func currentDisplay() async throws -> SimulatorDisplayResolution {
-    SimulatorDisplayResolution(try await report())
+    SimulatorDisplayResolution(try await observedReport())
+  }
+
+  private func observedReport() async throws -> SimulatorDisplayReport {
+    let report = try await report()
+    _ = try? configurationTracker.observe(report)
+    return report
+  }
+
+  /// The configuration once any display transition has settled. `.transitioning` only when the transition
+  /// outlasts `timeout`.
+  func settledConfiguration(within timeout: Duration) async throws -> SimulatorDisplayConfiguration {
+    let deadline = ContinuousClock.now + timeout
+    while true {
+      let configuration = try configurationTracker.observe(await report())
+      guard configuration.phase == .transitioning, ContinuousClock.now < deadline else { return configuration }
+      try await Task.sleep(for: transitionSettling.interval)
+    }
   }
 
   /// The accessibility identity of a display that has to be named. The guest is asked only for a display it
@@ -272,6 +304,44 @@ extension DisplayCommands {
 
   func activeDisplayUpdates() -> AsyncStream<SimulatorDisplay> {
     polledActiveDisplayUpdates()
+  }
+
+  /// The current configuration, then each change to it, until the stream is cancelled. Follows `reportPushes()`,
+  /// and polls every `interval` when the runtime does not push or its pushes stop. A failed read yields nothing.
+  func followConfigurations(polling interval: Duration = .milliseconds(250)) -> AsyncStream<SimulatorDisplayConfiguration> {
+    AsyncStream { continuation in
+      let follow = Task {
+        var last: SimulatorDisplayConfiguration?
+        func observe(_ report: SimulatorDisplayReport) {
+          guard let configuration = try? configurationTracker.observe(report), configuration != last else { return }
+          last = configuration
+          continuation.yield(configuration)
+        }
+        // Subscribing before the first read means a change between the two is pushed rather than missed.
+        let subscription = Result { try reportPushes() }
+        if let current = try? await report() {
+          observe(current)
+        }
+        do {
+          for try await pushed in try subscription.get() {
+            observe(pushed)
+          }
+          if !Task.isCancelled {
+            logger?.log("Display pushes ended, polling the display configuration")
+          }
+        } catch {
+          logger?.log("Polling the display configuration, as display pushes are unavailable: \(error)")
+        }
+        while !Task.isCancelled {
+          if let polled = try? await report() {
+            observe(polled)
+          }
+          try? await Task.sleep(for: interval)
+        }
+        continuation.finish()
+      }
+      continuation.onTermination = { _ in follow.cancel() }
+    }
   }
 
   /// Every read of the active display while several integrated displays are attached, until the stream

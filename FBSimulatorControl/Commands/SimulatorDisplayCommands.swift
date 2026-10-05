@@ -152,11 +152,12 @@ public enum SimulatorDisplayError: Error, LocalizedError {
 
 /// Memoized per `Simulator` through its command cache, so display identities learned by one
 /// interaction route the next.
-// SAFETY: `identities` is lock-guarded and the weak simulator reference is only ever read.
+// SAFETY: `identities` and `configurationTracker` are lock-guarded and the weak simulator reference is only ever read.
 // patternlint-disable-next-line unchecked-sendable
 public final class SimulatorDisplayCommands: DisplayCommands, @unchecked Sendable {
   private weak var simulator: Simulator?
   let identities = DisplayIdentityCache()
+  let configurationTracker = DisplayConfigurationTracker()
 
   public class func commands(with simulator: Simulator) -> SimulatorDisplayCommands {
     SimulatorDisplayCommands(simulator: simulator)
@@ -176,6 +177,24 @@ public final class SimulatorDisplayCommands: DisplayCommands, @unchecked Sendabl
       return .failed(error)
     }
   }
+
+  /// The display configuration once any transition settles. `.transitioning` only when the transition outlasts
+  /// `timeout`; a hinge change has been seen to take about 4 seconds on a heavily loaded host.
+  public func configuration(
+    settledWithin timeout: Duration = DisplayTransitionSettling.standard.timeout
+  ) async throws
+    -> SimulatorDisplayConfiguration
+  {
+    try await settledConfiguration(within: timeout)
+  }
+
+  /// The current display configuration, then each change to it, until the stream is cancelled. Follows
+  /// CoreDevice's display pushes, and polls when the runtime does not push or its pushes stop.
+  public func configurations() -> AsyncStream<SimulatorDisplayConfiguration> {
+    followConfigurations()
+  }
+
+  var logger: (any ControlCoreLogger)? { simulator?.logger }
 
   /// The identified integrated display interactions currently target, after any transition settles.
   public func activeIntegratedDisplay() async throws -> SimulatorDisplay {
@@ -247,7 +266,7 @@ public final class SimulatorDisplayCommands: DisplayCommands, @unchecked Sendabl
   /// Follows CoreDevice's display pushes, which arrive as the guest's layout changes rather than on
   /// the next poll, and polls when the runtime does not push or its pushes stop.
   func activeDisplayUpdates() -> AsyncStream<SimulatorDisplay> {
-    Self.activeDisplayUpdates(pushes: { try self.displayPushes() }, polling: { self.polledActiveDisplayUpdates() }, logger: simulator?.logger)
+    Self.activeDisplayUpdates(pushes: { try self.displayPushes() }, polling: { self.polledActiveDisplayUpdates() }, logger: logger)
   }
 
   static func activeDisplayUpdates(
@@ -286,6 +305,16 @@ public final class SimulatorDisplayCommands: DisplayCommands, @unchecked Sendabl
       input: SimulatorDisplayUpdatesProtocol.StreamInput(channel: channel)
     ) { event in
       try SimulatorDisplayUpdatesProtocol.target(event, channel: channel)
+    }
+  }
+
+  func reportPushes() throws -> AsyncThrowingStream<SimulatorDisplayReport, Error> {
+    let channel = UUID()
+    return try target().coreDevice.subscribe(
+      action: SimulatorDisplayUpdatesProtocol.action, service: SimulatorDisplayUpdatesProtocol.service,
+      input: SimulatorDisplayUpdatesProtocol.StreamInput(channel: channel)
+    ) { event in
+      try SimulatorDisplayUpdatesProtocol.report(event, channel: channel)
     }
   }
 }

@@ -398,6 +398,7 @@ final class SimulatorHIDOperationTests: XCTestCase {
   /// One of several displays, reached through digitizer target 7, and the sink recording what reaches it. Reads past `block(after:)` wait on the gate.
   private actor Recorder: DisplayCommands, SimulatorHIDOperationSink {
     nonisolated let identities = DisplayIdentityCache()
+    nonisolated let configurationTracker = DisplayConfigurationTracker()
     var currentDisplay: SimulatorDisplay = SimulatorHIDOperationTests.makeScreen()
     var events: [(SimulatorHIDEvent, SimulatorHIDDisplay?)] = []
     var flushes = 0
