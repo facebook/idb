@@ -7,6 +7,14 @@
 
 import Foundation
 
+public enum ProfileReport: Equatable, Sendable {
+  case leaks(LeaksReport)
+  case heap(HeapReport)
+  case sample(SampleReport)
+  case vmmap(VmmapReport)
+  case footprint(FootprintReport)
+}
+
 /// The process a report describes, from the header the runtime tools print.
 public struct ProfiledProcess: Codable, Equatable, Sendable {
   public let name: String
