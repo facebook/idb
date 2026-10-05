@@ -84,6 +84,60 @@ private final class FailingSendLegacyHIDClientStub: NSObject {
   }
 }
 
+/// Stands in for a client that takes each message at once but acknowledges it only when the test
+/// releases it, as the HID server does when the guest is slow to take input.
+private final class HeldAcknowledgementLegacyHIDClientStub: NSObject {
+  static let acknowledgements = HeldAcknowledgements()
+
+  @objc(initWithDevice:error:)
+  func initWithDevice(_ device: Any, error: AutoreleasingUnsafeMutablePointer<AnyObject?>?) -> AnyObject? {
+    self
+  }
+
+  @objc(sendWithMessage:freeWhenDone:completionQueue:completion:)
+  func send(
+    withMessage message: UnsafeMutableRawPointer,
+    freeWhenDone: Bool,
+    completionQueue: DispatchQueue,
+    completion: @escaping @Sendable (Error?) -> Void
+  ) {
+    if freeWhenDone {
+      free(message)
+    }
+    Self.acknowledgements.hold { completionQueue.async { completion(nil) } }
+  }
+}
+
+/// The messages a `HeldAcknowledgementLegacyHIDClientStub` has taken, and the acknowledgements it has
+/// yet to deliver. Locked because messages arrive on the client's queue while the test reads and
+/// releases them from its own thread.
+private final class HeldAcknowledgements: @unchecked Sendable {
+  private let lock = NSLock()
+  private var receivedCount = 0
+  private var held: [@Sendable () -> Void] = []
+
+  func hold(_ acknowledge: @escaping @Sendable () -> Void) {
+    lock.lock()
+    defer { lock.unlock() }
+    receivedCount += 1
+    held.append(acknowledge)
+  }
+
+  var received: Int {
+    lock.lock()
+    defer { lock.unlock() }
+    return receivedCount
+  }
+
+  func releaseAll() {
+    lock.lock()
+    let acknowledgements = held
+    held = []
+    lock.unlock()
+    acknowledgements.forEach { $0() }
+  }
+}
+
 /// Records whether a send started on another task has come back, and with what. Locked because the
 /// send resolves on the client's queue while the test reads from its own thread.
 private final class SendOutcome: @unchecked Sendable {
@@ -169,6 +223,42 @@ struct SimulatorIndigoHIDClientTests {
       try await client.send(Data([0x01, 0x02]))
     }
     #expect(error.localizedDescription == FailingSendLegacyHIDClientStub.reason)
+  }
+
+  @Test("A send is not handed to the client until the previous send is acknowledged")
+  func sendWaitsForThePreviousAcknowledgement() async throws {
+    let acknowledgements = HeldAcknowledgementLegacyHIDClientStub.acknowledgements
+    let client = try SimulatorIndigoHIDClient(
+      device: NSObject(), clientClass: ObjCRuntimeClass(HeldAcknowledgementLegacyHIDClientStub.self))
+
+    let outcome = SendOutcome()
+    Task {
+      do {
+        // A key-down, then its key-up.
+        try await client.send(Data([0x01]))
+        try await client.send(Data([0x02]))
+        outcome.record(nil)
+      } catch {
+        outcome.record(error)
+      }
+    }
+    // Bounded sleeps rather than awaits: nothing here reaches the HID server, so each step happens at
+    // once or not at all.
+    try await Task.sleep(nanoseconds: 200 * NSEC_PER_MSEC)
+
+    // BUG: the key-up waits on the key-down's acknowledgement, so a slow acknowledgement holds the key
+    // down in the guest for as long as it takes. Flipped in the following commit.
+    #expect(acknowledgements.received == 1)
+    #expect(!outcome.returned)
+
+    acknowledgements.releaseAll()
+    try await Task.sleep(nanoseconds: 200 * NSEC_PER_MSEC)
+    #expect(acknowledgements.received == 2)
+
+    acknowledgements.releaseAll()
+    try await Task.sleep(nanoseconds: 200 * NSEC_PER_MSEC)
+    #expect(outcome.returned)
+    #expect(outcome.error == nil)
   }
 
   @Test("A send whose client raises throws the raise to the caller")
