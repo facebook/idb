@@ -241,17 +241,14 @@ actor SimulatorFrameworkBridgePersistentTransport: AXBridgeStreamingTransport {
     helperPath: String,
     socketPath: String,
     scope: BridgeServiceScope,
-    ownership: (FBSubprocess<AnyObject, AnyObject, AnyObject>) -> BridgeGuestOwnership
+    ownership: (RunningSubprocess) -> BridgeGuestOwnership
   ) async throws -> SimulatorFrameworkBridgeConnection {
-    let io = FBProcessIO<AnyObject, AnyObject, AnyObject>.outputToDevNull()
-    let configuration = ProcessSpawnConfiguration(
-      launchPath: helperPath,
+    let process = try await Subprocess(
+      executable: helperPath,
       arguments: serveArguments(socketPath: socketPath, scope: scope),
-      environment: [:],
-      io: io,
-      mode: .default
+      environment: .exact([:])
     )
-    let process = try await simulator.spawn(configuration)
+    .launch(on: SimulatorSubprocessLauncher(simulator: simulator), output: .closed, error: .closed)
     do {
       let fileDescriptor = try await SimulatorFrameworkBridgeConnection.connect(path: socketPath, timeout: 10, guest: process, scope: scope)
       return SimulatorFrameworkBridgeConnection(fileDescriptor: fileDescriptor, ownership: ownership(process))

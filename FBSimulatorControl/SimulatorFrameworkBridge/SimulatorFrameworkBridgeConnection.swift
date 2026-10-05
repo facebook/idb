@@ -11,12 +11,11 @@ import Foundation
 import SimulatorFrameworkBridgeProtocol
 import SimulatorIPC
 
-// SAFETY: the subprocess handle is retained for diagnostics and only queried through thread-safe futures.
-enum BridgeGuestOwnership: @unchecked Sendable {
-  case privateToThisHost(FBSubprocess<AnyObject, AnyObject, AnyObject>)
-  case shared(FBSubprocess<AnyObject, AnyObject, AnyObject>?)
+enum BridgeGuestOwnership: Sendable {
+  case privateToThisHost(RunningSubprocess)
+  case shared(RunningSubprocess?)
 
-  var process: FBSubprocess<AnyObject, AnyObject, AnyObject>? {
+  var process: RunningSubprocess? {
     switch self {
     case let .privateToThisHost(process): process
     case let .shared(process): process
@@ -106,7 +105,7 @@ final class SimulatorFrameworkBridgeConnection: BridgeConnection, @unchecked Sen
   static func connect(
     path: String,
     timeout: TimeInterval,
-    guest: FBSubprocess<AnyObject, AnyObject, AnyObject>? = nil,
+    guest: RunningSubprocess? = nil,
     scope: BridgeServiceScope = .exclusive,
     attempt: @escaping @Sendable (String) -> Int32? = attemptConnection
   ) async throws -> Int32 {
@@ -122,10 +121,9 @@ final class SimulatorFrameworkBridgeConnection: BridgeConnection, @unchecked Sen
             return
           }
           // Our guest exiting does not mean the socket is unbound: the shared per-UDID path may be served by
-          // another host's guest, so try once more before failing. `.done` rather than `hasCompleted`: a
-          // cancelled or failed future is not evidence the process terminated.
-          if let guest, guest.statLoc.state == .done {
-            let exit = terminationCause(waitpidStatus: guest.statLoc.result?.int32Value)
+          // another host's guest, so try once more before failing.
+          if let guest, let status = guest.observedTerminationStatus {
+            let exit = terminationCause(status)
             if scope != .shared || exit.signal != nil || exit.exitCode != 0 {
               if let fileDescriptor = attempt(path) {
                 continuation.resume(returning: fileDescriptor)
@@ -163,7 +161,7 @@ final class SimulatorFrameworkBridgeConnection: BridgeConnection, @unchecked Sen
 
   static func readFrame(
     _ fileDescriptor: Int32,
-    guest: FBSubprocess<AnyObject, AnyObject, AnyObject>?
+    guest: RunningSubprocess?
   ) throws -> Data {
     do {
       return try IPCSocket.readFrame(fileDescriptor)
@@ -182,7 +180,7 @@ final class SimulatorFrameworkBridgeConnection: BridgeConnection, @unchecked Sen
   /// rather than a truncated response.
   static func readFrameUnlessClosed(
     _ fileDescriptor: Int32,
-    guest: FBSubprocess<AnyObject, AnyObject, AnyObject>?
+    guest: RunningSubprocess?
   ) throws -> Data? {
     var byte: UInt8 = 0
     while true {
@@ -199,17 +197,13 @@ final class SimulatorFrameworkBridgeConnection: BridgeConnection, @unchecked Sen
     }
   }
 
-  static func socketClosedMessage(process: FBSubprocess<AnyObject, AnyObject, AnyObject>?) -> String {
+  static func socketClosedMessage(process: RunningSubprocess?) -> String {
     guard let process else {
       return socketClosedMessage(pid: nil, signal: nil, exitCode: nil)
     }
-    // `result` blocks until the future resolves. EOF can arrive before process status, so completion
-    // must be checked first to keep an error-reporting path from hanging.
-    return socketClosedMessage(
-      pid: process.processIdentifier,
-      signal: process.signal.hasCompleted ? process.signal.result?.intValue : nil,
-      exitCode: process.exitCode.hasCompleted ? process.exitCode.result?.intValue : nil
-    )
+    // EOF can arrive before the exit is observed, so this reports only what is already known rather than waiting.
+    let exit = terminationCause(process.observedTerminationStatus)
+    return socketClosedMessage(pid: process.processIdentifier, signal: exit.signal, exitCode: exit.exitCode)
   }
 
   static func socketClosedMessage(pid: pid_t?, signal: Int?, exitCode: Int?) -> String {
@@ -226,26 +220,15 @@ final class SimulatorFrameworkBridgeConnection: BridgeConnection, @unchecked Sen
     return "\(base): the guest (pid \(pid)) is gone, with no exit status recorded"
   }
 
-  /// Splits a `waitpid` status into whichever of the two outcomes it encodes, or neither.
-  ///
-  /// Read from `statLoc` rather than from the sibling `signal` / `exitCode` futures because
-  /// `resolveProcessFinished` resolves `statLoc` first and the other two a few statements later — a
-  /// reader that catches that gap sees neither, and reports a death it cannot describe.
-  ///
-  /// Both nil for a stop rather than a termination, and for no status at all. A stop encodes the
-  /// stopping signal in the byte an exit uses for its code, so reporting it either way names a number
-  /// the process never produced.
-  static func terminationCause(waitpidStatus: Int32?) -> (signal: Int?, exitCode: Int?) {
-    guard let waitpidStatus else {
+  /// Splits a termination into whichever of the two outcomes it is, or neither when none is known.
+  static func terminationCause(_ status: TerminationStatus?) -> (signal: Int?, exitCode: Int?) {
+    switch status {
+    case .none:
       return (signal: nil, exitCode: nil)
+    case let .signalled(signo):
+      return (signal: Int(signo), exitCode: nil)
+    case let .exited(code):
+      return (signal: nil, exitCode: Int(code))
     }
-    let status = waitpidStatus & 0x7f
-    if status == 0x7f {
-      return (signal: nil, exitCode: nil)
-    }
-    if status != 0 {
-      return (signal: Int(status), exitCode: nil)
-    }
-    return (signal: nil, exitCode: Int((waitpidStatus >> 8) & 0xff))
   }
 }

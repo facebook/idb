@@ -149,48 +149,18 @@ final class AXBridgeSocketTests: XCTestCase {
   }
 
   // A guest whose process is already gone, signalled before it could bind.
-  private func exitedGuest(pid: pid_t, signal: Int32) -> FBSubprocess<AnyObject, AnyObject, AnyObject> {
-    let configuration = ProcessSpawnConfiguration(
-      launchPath: "/usr/bin/true",
-      arguments: [],
-      environment: [:],
-      io: FBProcessIO<AnyObject, AnyObject, AnyObject>.outputToDevNull(),
-      mode: .default)
-    // Resolved the way `ProcessSpawnCommandHelpers.resolveProcessFinished` resolves a signalled
-    // process: `statLoc` carries the raw `waitpid` status, `signal` the number, and `exitCode` *errors*
-    // rather than holding a value. A fake that leaves `exitCode` merely pending would let a reader that
-    // depends on the three resolving in order pass here and fail against a real subprocess.
-    let statLoc = FBMutableFuture<NSNumber>()
-    statLoc.resolve(withResult: NSNumber(value: signal))
-    let signalled = FBMutableFuture<NSNumber>()
-    signalled.resolve(withResult: NSNumber(value: signal))
-    let exitCode = FBMutableFuture<NSNumber>()
-    exitCode.resolveWithError(
-      ProcessTerminationError.exitedWithSignal(
-        processIdentifier: pid, processName: "SimulatorFrameworkBridge", signal: signal))
-    return FBSubprocess(
-      processIdentifier: pid,
-      statLoc: convertFBMutableFuture(statLoc),
-      exitCode: convertFBMutableFuture(exitCode),
-      signal: convertFBMutableFuture(signalled),
-      configuration: configuration,
-      queue: DispatchQueue(label: "com.facebook.FBSimulatorControl.tests.axbridge"))
+  private func exitedGuest(signal: Int32) async throws -> RunningSubprocess {
+    let guest = try await Subprocess(executable: "/bin/sh", arguments: ["-c", "kill -\(signal) $$"])
+      .launch(output: .closed, error: .closed)
+    _ = try await guest.terminationStatus
+    return guest
   }
 
-  private func normallyExitedGuest(code: Int32) -> FBSubprocess<AnyObject, AnyObject, AnyObject> {
-    let configuration = ProcessSpawnConfiguration(
-      launchPath: "/usr/bin/true", arguments: [], environment: [:],
-      io: FBProcessIO<AnyObject, AnyObject, AnyObject>.outputToDevNull(), mode: .default)
-    let status = FBMutableFuture<NSNumber>()
-    status.resolve(withResult: NSNumber(value: code << 8))
-    let exit = FBMutableFuture<NSNumber>()
-    exit.resolve(withResult: NSNumber(value: code))
-    let signal = FBMutableFuture<NSNumber>()
-    signal.resolveWithError(ProcessTerminationError.exitedWithCode(processIdentifier: 4242, processName: "SimulatorFrameworkBridge", exitCode: code))
-    return FBSubprocess(
-      processIdentifier: 4242, statLoc: convertFBMutableFuture(status),
-      exitCode: convertFBMutableFuture(exit), signal: convertFBMutableFuture(signal),
-      configuration: configuration, queue: DispatchQueue(label: "com.facebook.FBSimulatorControl.tests.bridge-startup"))
+  private func normallyExitedGuest(code: Int32) async throws -> RunningSubprocess {
+    let guest = try await Subprocess(executable: "/bin/sh", arguments: ["-c", "exit \(code)"])
+      .launch(output: .closed, error: .closed)
+    _ = try await guest.terminationStatus
+    return guest
   }
 
   func testSharedLockLoserWaitsForTheWinnerWithoutHidingFailedStartups() async throws {
@@ -201,11 +171,11 @@ final class AXBridgeSocketTests: XCTestCase {
       close(pair[0])
       close(pair[1])
     }
-    let cases: [(BridgeServiceScope, FBSubprocess<AnyObject, AnyObject, AnyObject>, Int?, Int?)] = [
-      (.shared, normallyExitedGuest(code: 0), nil, nil),
-      (.exclusive, normallyExitedGuest(code: 0), 0, nil),
-      (.shared, normallyExitedGuest(code: 3), 3, nil),
-      (.shared, exitedGuest(pid: 4242, signal: SIGABRT), nil, Int(SIGABRT)),
+    let cases: [(BridgeServiceScope, RunningSubprocess, Int?, Int?)] = [
+      (.shared, try await normallyExitedGuest(code: 0), nil, nil),
+      (.exclusive, try await normallyExitedGuest(code: 0), 0, nil),
+      (.shared, try await normallyExitedGuest(code: 3), 3, nil),
+      (.shared, try await exitedGuest(signal: SIGABRT), nil, Int(SIGABRT)),
     ]
     for (scope, guest, exitCode, signal) in cases {
       let attempts = OSAllocatedUnfairLock(initialState: 0)
@@ -227,7 +197,7 @@ final class AXBridgeSocketTests: XCTestCase {
           return XCTFail("unexpected connection error: \(error)")
         }
         XCTAssertTrue(exitCode != nil || signal != nil, "\(scope)")
-        XCTAssertEqual(pid, 4242)
+        XCTAssertEqual(pid, guest.processIdentifier)
         XCTAssertEqual(actualCode, exitCode, "\(scope)")
         XCTAssertEqual(actualSignal, signal, "\(scope)")
         XCTAssertEqual(attempts.withLock { $0 }, 2, "\(scope)")
@@ -263,7 +233,7 @@ final class AXBridgeSocketTests: XCTestCase {
     XCTAssertEqual(listen(listener, 1), 0)
 
     let connected = try await SimulatorFrameworkBridgeConnection.connect(
-      path: bound, timeout: 2, guest: exitedGuest(pid: 4242, signal: SIGABRT))
+      path: bound, timeout: 2, guest: try await exitedGuest(signal: SIGABRT))
     XCTAssertGreaterThanOrEqual(connected, 0)
     close(connected)
   }
@@ -271,7 +241,7 @@ final class AXBridgeSocketTests: XCTestCase {
   // A guest that is already gone must cost the caller a poll, not the whole deadline.
   func testAGuestThatDiedBeforeBindingIsGivenUpOnWithoutWaiting() async throws {
     let unbound = "\(directory)/dead.sock"
-    let guest = exitedGuest(pid: 4242, signal: SIGABRT)
+    let guest = try await exitedGuest(signal: SIGABRT)
     let started = Date()
     _ = try? await SimulatorFrameworkBridgeConnection.connect(path: unbound, timeout: 2, guest: guest)
     XCTAssertLessThan(Date().timeIntervalSince(started), 1)
@@ -281,7 +251,7 @@ final class AXBridgeSocketTests: XCTestCase {
   // name it rather than read as a timeout.
   func testAGuestThatDiedBeforeBindingIsReportedWithItsSignal() async throws {
     let unbound = "\(directory)/dead.sock"
-    let guest = exitedGuest(pid: 4242, signal: SIGABRT)
+    let guest = try await exitedGuest(signal: SIGABRT)
     do {
       _ = try await SimulatorFrameworkBridgeConnection.connect(path: unbound, timeout: 1, guest: guest)
       XCTFail("connecting to a socket no guest will ever bind must not succeed")
@@ -289,44 +259,34 @@ final class AXBridgeSocketTests: XCTestCase {
       guard case let .guestDiedBeforeBinding(pid, signal, exitCode, _) = error else {
         return XCTFail("expected guestDiedBeforeBinding, got \(error)")
       }
-      XCTAssertEqual(pid, 4242)
+      XCTAssertEqual(pid, guest.processIdentifier)
       XCTAssertEqual(signal, Int(SIGABRT))
       XCTAssertNil(exitCode)
       let message = error.localizedDescription
       XCTAssertFalse(message.contains("timed out connecting"), message)
       XCTAssertTrue(message.contains("signal \(SIGABRT)"), message)
-      XCTAssertTrue(message.contains("4242"), message)
+      XCTAssertTrue(message.contains("\(guest.processIdentifier)"), message)
     }
   }
 
-  // MARK: - Decoding the guest's exit from its waitpid status
+  // MARK: - Decoding the guest's exit
 
-  // The two statuses that name an outcome. A signalled process reports the signal in the low seven
-  // bits; an exited one reports its code in the next byte, and the two must not be read as each other.
+  // A signal and an exit code must not be read as each other.
   func testASignalledStatusDecodesToItsSignal() {
-    let cause = SimulatorFrameworkBridgeConnection.terminationCause(waitpidStatus: SIGABRT)
+    let cause = SimulatorFrameworkBridgeConnection.terminationCause(.signalled(SIGABRT))
     XCTAssertEqual(cause.signal, Int(SIGABRT))
     XCTAssertNil(cause.exitCode)
   }
 
   func testAnExitedStatusDecodesToItsCode() {
-    let cause = SimulatorFrameworkBridgeConnection.terminationCause(waitpidStatus: 3 << 8)
+    let cause = SimulatorFrameworkBridgeConnection.terminationCause(.exited(3))
     XCTAssertEqual(cause.exitCode, 3)
     XCTAssertNil(cause.signal)
   }
 
-  // A stopped process has not terminated, and puts its stopping signal where an exit puts its code.
-  // Decoding it as an exit would report `exited with code 19` for a process that is merely paused.
-  func testAStoppedStatusDecodesToNeither() {
-    let stopped = (SIGSTOP << 8) | 0x7f
-    let cause = SimulatorFrameworkBridgeConnection.terminationCause(waitpidStatus: stopped)
-    XCTAssertNil(cause.signal)
-    XCTAssertNil(cause.exitCode)
-  }
-
   // No status is not the same as a zero status, which would read as a clean exit the guest never made.
   func testAMissingStatusDecodesToNeither() {
-    let cause = SimulatorFrameworkBridgeConnection.terminationCause(waitpidStatus: nil)
+    let cause = SimulatorFrameworkBridgeConnection.terminationCause(nil)
     XCTAssertNil(cause.signal)
     XCTAssertNil(cause.exitCode)
     let error = AXBridgeError.guestDiedBeforeBinding(
