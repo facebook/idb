@@ -294,8 +294,8 @@ jobs:
       - name: Test the installed formulae
         run: brew test facebook/fb/idb-companion facebook/fb/idb-cli facebook/fb/idb
 
-  # Each shard gets its own runner and simulator; `CI.end_to_end_shard` says
-  # which modules it runs. A larger runner, because on the standard 3-core, 7 GB
+  # Each shard gets its own runner and simulator, apart from `install`, whose
+  # companion targets the Mac; `CI.end_to_end_shard` says which modules it runs. A larger runner, because on the standard 3-core, 7 GB
   # VM the simulator stalls for tens of seconds at a time and outlasts test waits.
   mac-end-to-end:
     name: End-to-end ${{ matrix.shard }} (idb through idb_companion, macOS)
@@ -305,7 +305,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        shard: [demos, ui, system, apps]
+        shard: [demos, ui, system, apps, install]
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-python@v6
@@ -336,6 +336,7 @@ jobs:
         run: sudo mdutil -a -i off || true
       # Export DEVICE_UDID and DEVICE_SET_PATH for a dedicated simulator.
       - name: Provision a simulator
+        if: matrix.shard != 'install'
         run: python3 -m CI.provision_simulator --name end-to-end-provided --device-set "$RUNNER_TEMP/end-to-end-device-set.noindex" >> "$GITHUB_ENV"
       # Fail if a required simulator host service is unavailable. Record H.264
       # rather than the default HEVC: this run's video is what the website

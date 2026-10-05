@@ -28,6 +28,7 @@ class EndToEndShardTest(unittest.TestCase):
         for name in (
             "test_accessibility",
             "test_files",
+            "test_install",
             "test_services",
             "test_system",
             "test_targets",
@@ -45,6 +46,11 @@ class EndToEndShardTest(unittest.TestCase):
         self.assertEqual(
             modules(REMAINDER, self.directory),
             ["EndToEndTests.test_files", "EndToEndTests.test_targets"],
+        )
+
+    def test_the_install_shard_runs_on_its_own(self) -> None:
+        self.assertEqual(
+            modules("install", self.directory), ["EndToEndTests.test_install"]
         )
 
     def test_every_documented_demo_runs_in_the_demos_shard(self) -> None:

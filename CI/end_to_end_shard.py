@@ -5,7 +5,7 @@
 
 """Name the end-to-end test modules that one CI shard runs.
 
-Each shard runs on its own runner and simulator. A module no shard names runs
+Each shard runs on its own runner. A module no shard names runs
 in the remainder shard, so a new module is never left out of CI.
 """
 
@@ -18,11 +18,13 @@ from pathlib import Path
 # `demos` holds every documented demo and nothing else, so it is the one
 # shard whose run documents them, and the site depends on no other test.
 # `system` keeps the prompt-raising permission tests away from the others'
-# simulator.
+# simulator. `install` drives a companion targeting the Mac and needs no
+# simulator at all.
 SHARDS: Mapping[str, tuple[str, ...]] = {
     "demos": ("test_demos",),
     "ui": ("test_accessibility", "test_services"),
     "system": ("test_system",),
+    "install": ("test_install",),
 }
 REMAINDER = "apps"
 

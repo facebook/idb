@@ -30,7 +30,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Callable, Iterator
 
-from .fixtures import Archive, archive, build, describe, differences, Kind
+from .install_fixtures import Archive, archive, build, describe, differences, Kind
 
 COMPANION_READY_TIMEOUT_SECONDS = 60.0
 INSTALL_TIMEOUT_SECONDS = 180.0
@@ -105,7 +105,7 @@ KNOWN_BROKEN: dict[str, str] = {
 def _required_binary(name: str) -> Path:
     value = os.environ.get(name)
     if not value:
-        raise unittest.SkipTest(f"{name} is not set")
+        raise RuntimeError(f"{name} is not set")
     path = Path(value)
     if not os.access(path, os.X_OK):
         raise RuntimeError(f"{name}={path} is not executable")
