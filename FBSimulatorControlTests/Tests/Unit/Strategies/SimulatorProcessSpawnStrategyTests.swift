@@ -11,8 +11,7 @@ import XCTest
 
 /// How `Simulator`'s spawn paths build the `SimDevice` launch-option dictionary: argv[0]
 /// handling, `standalone` resolution, stdio keys. Pure-function assertions except the stdin
-/// case, which drives the launcher against a recording device double because what it asserts
-/// is that the device is never reached.
+/// and teardown cases, which drive the launcher against device doubles.
 final class SimulatorProcessSpawnStrategyTests: XCTestCase {
 
   private func simulator(state: TargetState) -> Simulator {
@@ -130,6 +129,34 @@ final class SimulatorProcessSpawnStrategyTests: XCTestCase {
     XCTAssertNil(device.spawnedOptions, "The rejection precedes the spawn, so the device is never handed any options")
   }
 
+  // MARK: - Teardown on the raw spawn path
+
+  func testRawSpawnDrainsStdOutBeforeTheExitResolves() async throws {
+    let payload = Data(repeating: UInt8(ascii: "x"), count: 12_000) + Data("end\n".utf8)
+    let device = ExitingSpawnDevice(stdOutPayload: payload)
+    let simulator = SimulatorTestSupport.testableSimulator(withDevice: device)
+    let received = Received()
+    // Slow enough that a teardown which resolves without waiting for the drain loses the race.
+    let consumer = FBBlockDataConsumer.synchronousDataConsumer { data in
+      Thread.sleep(forTimeInterval: 0.05)
+      received.append(data)
+    }
+    let configuration = ProcessSpawnConfiguration(
+      launchPath: "/bin/echo",
+      arguments: [],
+      environment: [:],
+      io: FBProcessIO<AnyObject, AnyObject, AnyObject>(stdIn: nil, stdOut: FBProcessOutput<AnyObject>(for: consumer), stdErr: nil),
+      mode: .posixSpawn)
+
+    let process = try await simulator.spawn(configuration)
+    let exitCode = try await bridgeFBFuture(process.exitCode)
+
+    XCTAssertEqual(exitCode.int32Value, 0)
+    // The device reports termination while the payload still sits unread in the pipe, so
+    // only a teardown that drains before resolving can have delivered all of it by now.
+    XCTAssertEqual(received.data, payload)
+  }
+
   // MARK: - Application launch options
 
   func testAppLaunchOptionsDoNotPrependLaunchPathAndCarryStdioPaths() {
@@ -191,5 +218,49 @@ private final class RecordingSpawnDevice: @unchecked Sendable {
   ) {
     spawnedOptions = options
     completionQueue.async { completionHandler(nil, 4242) }
+  }
+}
+
+private final class Received: @unchecked Sendable {
+  private let lock = NSLock()
+  private var storage = Data()
+
+  var data: Data {
+    lock.withLock { storage }
+  }
+
+  func append(_ data: Data) {
+    lock.withLock { storage.append(data) }
+  }
+}
+
+/// Device double that behaves like a process which writes to stdout and exits at once: the
+/// payload goes into the stdout descriptor it is handed, and termination is reported before
+/// anything has read it.
+private final class ExitingSpawnDevice: @unchecked Sendable {
+  @objc(UDID) let udid = NSUUID()
+  @objc let state = UInt64(TargetState.booted.rawValue)
+
+  private let stdOutPayload: Data
+
+  init(stdOutPayload: Data) {
+    self.stdOutPayload = stdOutPayload
+  }
+
+  @objc(spawnAsyncWithPath:options:terminationQueue:terminationHandler:completionQueue:completionHandler:)
+  func spawnAsync(
+    withPath path: String,
+    options: [String: Any],
+    terminationQueue: DispatchQueue,
+    terminationHandler: @escaping (Int32) -> Void,
+    completionQueue: DispatchQueue,
+    completionHandler: @escaping (NSError?, pid_t) -> Void
+  ) {
+    let fileDescriptor = (options["stdout"] as! NSNumber).int32Value
+    stdOutPayload.withUnsafeBytes { _ = write(fileDescriptor, $0.baseAddress, $0.count) }
+    completionQueue.async {
+      completionHandler(nil, 4242)
+      terminationQueue.async { terminationHandler(0) }
+    }
   }
 }
