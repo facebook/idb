@@ -15,34 +15,30 @@ final class SimulatorDisplayInteractionSmokeTests: ProvidedSimulatorTestCase {
     let simulator = self.simulator!
     guard simulator.productFamily.hasTouchscreen else { throw XCTSkip("Requires a touchscreen simulator") }
     let commands = SimulatorDisplayCommands.commands(with: simulator)
-    let context: SimulatorDisplayInteractionContext
+    let display: SimulatorDisplay
+    let accessibilityID: UInt32
+    let digitizerTarget: UInt32
     do {
-      if case .target(.sole(.legacy)) = try await commands.currentDisplay() {
+      switch try await commands.resolveDisplay() {
+      case let .target(.sole(.identified(identified))), let .target(.selected(identified)):
+        display = identified
+      case .target(.sole(.legacy)), .fallback:
         throw XCTSkip("Provider does not expose active display identities")
+      case .transitioning:
+        return XCTFail("Display did not settle")
       }
-      context = try await commands.interactionContext()
+      accessibilityID = try await commands.accessibilityID(for: display, transport: AXBridgeOneshotTransport(simulator: simulator))
+      digitizerTarget = try await commands.digitizerTarget(for: display)
     } catch SimulatorCoreDeviceError.unsupported(let reason) {
       throw XCTSkip(reason)
     } catch SimulatorDisplayInteractionError.unsupportedCapability(let capability) {
       throw XCTSkip(capability)
     }
-    XCTAssertTrue(context.display.isActive)
-    XCTAssertTrue(context.display.isIntegrated)
-    XCTAssertGreaterThan(context.accessibilityDisplayID, 0)
-    XCTAssertGreaterThan(context.digitizerTarget, 0)
-    let center = try context.digitizerPoint(from: CGPoint(x: context.pointSize.width / 2, y: context.pointSize.height / 2))
-    XCTAssertEqual(center, CGPoint(x: 0.5, y: 0.5))
-    try await commands.validate(context)
-    guard case let .displays(displays) = try await commands.report() else { return XCTFail("Expected identified displays") }
-    for display in displays where display.isIntegrated && !display.isActive {
-      do {
-        _ = try await commands.interactionContext(for: display.uniqueID)
-        XCTFail("Inactive display selection must fail")
-      } catch SimulatorDisplayInteractionError.inactiveDisplay(let id) {
-        XCTAssertEqual(id, display.uniqueID)
-      }
-    }
-    let details = "\(context.display.uniqueID): AX \(context.accessibilityDisplayID), target \(context.digitizerTarget), points \(context.pointSize), \(context.display.rotation.rawValue)"
+    XCTAssertTrue(display.isActive)
+    XCTAssertTrue(display.isIntegrated)
+    XCTAssertGreaterThan(accessibilityID, 0)
+    XCTAssertGreaterThan(digitizerTarget, 0)
+    let details = "\(display.uniqueID): AX \(accessibilityID), target \(digitizerTarget), points \(display.geometry.pointSize), \(display.rotation.rawValue)"
     let attachment = XCTAttachment(string: details)
     attachment.lifetime = .keepAlways
     add(attachment)

@@ -142,15 +142,12 @@ final class DisplayCommandsTests: XCTestCase {
     let touchscreens = [SimulatorTouchscreen(displayUniqueID: "inner", digitizerTarget: 29)]
     let accessibility = DisplayCommandsDouble([transition, settled])
     let hid = DisplayCommandsDouble([transition, settled], touchscreens: touchscreens)
-    let context = DisplayCommandsDouble([transition, settled], touchscreens: touchscreens)
     let transport = InventoryTransport(inventory)
     let accessibilityID = await outcome { try await accessibility.accessibilityID(for: selected(accessibility), transport: transport) }
     let digitizerTarget = await outcome { try await hid.digitizerTarget(for: selected(hid)) }
-    let contextTarget = await outcome { try await context.interactionContext(for: nil, transport: transport).digitizerTarget }
     XCTAssertEqual(try accessibilityID.get(), 3)
     XCTAssertEqual(try digitizerTarget.get(), 29)
-    XCTAssertEqual(try contextTarget.get(), 29)
-    XCTAssertEqual([accessibility.reads, hid.reads, context.reads], [3, 3, 3])
+    XCTAssertEqual([accessibility.reads, hid.reads], [3, 3])
   }
 
   func testLookupFailsWhenADisplayTransitionDoesNotSettle() async throws {
@@ -160,7 +157,6 @@ final class DisplayCommandsTests: XCTestCase {
     XCTAssertGreaterThan(displays.reads, 1)
     let hid = DisplayCommandsDouble([transition], touchscreens: [SimulatorTouchscreen(displayUniqueID: "inner", digitizerTarget: 29)])
     assertTransitioning(await outcome { try await hid.digitizerTarget(for: display("inner")) })
-    assertTransitioning(await outcome { try await displays.interactionContext(for: nil, transport: InventoryTransport(inventory)) })
   }
 
   private func selected(_ displays: DisplayCommandsDouble) async throws -> SimulatorDisplay {

@@ -213,18 +213,6 @@ public final class SimulatorDisplayCommands: DisplayCommands, @unchecked Sendabl
       decode: SimulatorTouchscreenProtocol.touchscreens)
   }
 
-  /// Resolves one active integrated display and its independent accessibility and input identities.
-  /// An explicit UUID must identify the active integrated display; inactive interaction is unsupported.
-  public func interactionContext(for displayUniqueID: String? = nil) async throws -> SimulatorDisplayInteractionContext {
-    try await interactionContext(for: displayUniqueID, transport: AXBridgeOneshotTransport(simulator: target()))
-  }
-
-  /// Fails if the observed active display, geometry or routing no longer matches the saved context, or the
-  /// configuration generation has moved on since it was resolved.
-  public func validate(_ context: SimulatorDisplayInteractionContext) async throws {
-    try await validate(context, transport: AXBridgeOneshotTransport(simulator: target()))
-  }
-
   private func target() throws -> Simulator {
     guard let simulator else { throw WeakTargetError.simulator }
     return simulator

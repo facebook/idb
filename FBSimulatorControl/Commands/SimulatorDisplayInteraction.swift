@@ -39,37 +39,6 @@ public enum SimulatorDisplayInteractionError: Error, LocalizedError {
   }
 }
 
-/// An immutable mapping for one observed display configuration. Numeric IDs belong to separate namespaces.
-/// Revalidate before using saved coordinates.
-public struct SimulatorDisplayInteractionContext: Equatable, Sendable {
-  public let display: SimulatorDisplay
-  public let accessibilityDisplayID: UInt32
-  public let digitizerTarget: UInt32
-  /// The `SimulatorDisplayConfiguration.generation` the mapping was resolved in.
-  public let generation: UInt64
-
-  /// Display-relative dimensions in points, after interface rotation.
-  public var pointSize: CGSize {
-    CGSize(width: display.size.width / display.scale, height: display.size.height / display.scale)
-  }
-
-  /// Converts display-relative points to unrotated, normalized digitizer coordinates.
-  public func digitizerPoint(from point: CGPoint) throws -> CGPoint {
-    let size = pointSize
-    guard point.x.isFinite, point.y.isFinite,
-      point.x >= 0, point.y >= 0, point.x <= size.width, point.y <= size.height
-    else { throw SimulatorDisplayInteractionError.invalidPoint(point, bounds: size) }
-    let x = point.x / size.width
-    let y = point.y / size.height
-    switch display.rotation {
-    case .upright: return CGPoint(x: x, y: y)
-    case .clockwise: return CGPoint(x: y, y: 1 - x)
-    case .upsideDown: return CGPoint(x: 1 - x, y: 1 - y)
-    case .counterclockwise: return CGPoint(x: 1 - y, y: x)
-    }
-  }
-}
-
 struct SimulatorAccessibilityDisplay: Decodable, Equatable, Sendable {
   let uniqueID: String
   let displayID: UInt32
@@ -111,65 +80,5 @@ enum AXBridgeDisplayInventory {
       Set(displays.map(\.displayID)).count == displays.count
     else { throw AXBridgeError.guestFailure("Invalid accessibility display inventory") }
     return displays
-  }
-}
-
-extension SimulatorDisplayInteractionContext {
-  static func join(
-    display: SimulatorDisplay,
-    touchscreens: [SimulatorTouchscreen],
-    accessibility: [SimulatorAccessibilityDisplay],
-    generation: UInt64
-  ) throws -> SimulatorDisplayInteractionContext {
-    let matchingTouchscreens = touchscreens.filter { $0.displayUniqueID == display.uniqueID }
-    let matchingAccessibility = accessibility.filter { $0.uniqueID == display.uniqueID }
-    guard matchingTouchscreens.count == 1, let touchscreen = matchingTouchscreens.first,
-      matchingAccessibility.count == 1, let axDisplay = matchingAccessibility.first,
-      touchscreen.digitizerTarget > 0, axDisplay.displayID > 0
-    else { throw SimulatorDisplayInteractionError.missingMapping(display.uniqueID) }
-    return SimulatorDisplayInteractionContext(
-      display: display, accessibilityDisplayID: axDisplay.displayID, digitizerTarget: touchscreen.digitizerTarget, generation: generation)
-  }
-}
-
-extension DisplayCommands {
-
-  /// Resolves the active integrated display and both of its identities from fresh inventories, even for a sole
-  /// display that routing reaches without naming it. An explicit UUID must identify the active display.
-  func interactionContext(for displayUniqueID: String?, transport: any AXBridgeTransport) async throws -> SimulatorDisplayInteractionContext {
-    let display: SimulatorDisplay
-    switch try await resolveDisplay() {
-    case .transitioning:
-      throw SimulatorDisplayError.transitioning
-    case .fallback, .target(.sole(.legacy)):
-      throw SimulatorDisplayInteractionError.unsupportedCapability("display identities")
-    case let .target(.sole(.identified(identified))), let .target(.selected(identified)):
-      display = identified
-    }
-    if let displayUniqueID, displayUniqueID != display.uniqueID {
-      throw SimulatorDisplayInteractionError.inactiveDisplay(displayUniqueID)
-    }
-    let touchscreens = try await touchscreens()
-    let accessibility = try AXBridgeDisplayInventory.decode(await transport.send(.displays))
-    try await validate(.identified(display))
-    guard let configuration = configurationTracker.latest, case let .identified(active) = configuration.active,
-      active.hasSameConfiguration(as: display)
-    else {
-      throw SimulatorDisplayError.changed
-    }
-    return try SimulatorDisplayInteractionContext.join(
-      display: display, touchscreens: touchscreens, accessibility: accessibility, generation: configuration.generation)
-  }
-
-  /// Compares the observed identity, geometry and routing. No new display is substituted on mismatch.
-  func validate(_ context: SimulatorDisplayInteractionContext, transport: any AXBridgeTransport) async throws {
-    let current = try await interactionContext(for: nil, transport: transport)
-    guard current.generation == context.generation else {
-      throw SimulatorDisplayError.changed
-    }
-    guard current.display.hasSameConfiguration(as: context.display),
-      current.accessibilityDisplayID == context.accessibilityDisplayID,
-      current.digitizerTarget == context.digitizerTarget
-    else { throw SimulatorDisplayError.changed }
   }
 }
