@@ -97,13 +97,13 @@ private final class ProvisioningCommandsBox: @unchecked Sendable {
 /// Handle to a running `tail` started by a file container. Cancelling stops the
 /// underlying `tail` subprocess and waits for it to exit.
 public final class FileContainerTailOperation {
-  private let completed: FBFuture<NSNull>
-  init(completed: FBFuture<NSNull>) {
-    self.completed = completed
+  private let running: RunningSubprocess
+  init(running: RunningSubprocess) {
+    self.running = running
   }
 
   public func cancel() async throws {
-    try await bridgeFBFutureVoid(self.completed.cancel())
+    try await running.terminate(gracePeriod: 1)
   }
 }
 
@@ -393,18 +393,11 @@ public enum FileContainer {
           }
         }
       }
-      let builder = FBProcessBuilder<AnyObject, AnyObject, AnyObject>
-        .withLaunchPath("/usr/bin/tail", arguments: ["-c+1", "-f", hostPath])
-        .withStdOutConsumer(consumer)
-      let process = try await awaitStart(of: builder)
-      let completed = process.statLoc
-        .mapReplace(NSNull())
-        .onQueue(
-          serialQueue,
-          respondToCancellation: {
-            process.sendSignal(SIGTERM, backingOffToKillWithTimeout: 1, logger: nil).retyped(FBFuture<NSNull>.self)
-          })
-      return FileContainerTailOperation(completed: completed.retyped(FBFuture<NSNull>.self))
+      // The unset builder default buffered stderr into memory that nothing
+      // ever read; an open null device discards it outright.
+      let running = try await Subprocess(executable: "/usr/bin/tail", arguments: ["-c+1", "-f", hostPath])
+        .launch(output: .consumer(consumer), error: .nullDevice)
+      return FileContainerTailOperation(running: running)
     }
 
     public func createDirectory(_ directoryPath: String) async throws {
