@@ -42,10 +42,10 @@ public enum XctraceProfiler {
     logger: any ControlCoreLogger,
     tool: @escaping @Sendable () async throws -> (xctrace: String, recordEnvironment: [String: String])
   ) -> ProfileOperation {
-    ProfileOperation {
+    ProfileOperation(stoppable: { stop in
       let (xctrace, environment) = try await tool()
-      return try await trace(configuration, process: process, xctrace: xctrace, udid: udid, scratchDirectory: scratchDirectory, environment: environment, logger: logger)
-    }
+      return try await trace(configuration, process: process, xctrace: xctrace, udid: udid, scratchDirectory: scratchDirectory, environment: environment, stop: stop, logger: logger)
+    })
   }
 
   private static func trace(
@@ -55,6 +55,7 @@ public enum XctraceProfiler {
     udid: String,
     scratchDirectory: String,
     environment: [String: String],
+    stop: ProfileStopRequest,
     logger: any ControlCoreLogger
   ) async throws -> ProfileResult {
     let tracePath = configuration.outputPath ?? (scratchDirectory as NSString).appendingPathComponent("xctrace-\(UUID().uuidString).trace")
@@ -65,7 +66,7 @@ public enum XctraceProfiler {
     }
 
     let recordArguments = recordArguments(template: configuration.template, timeLimit: configuration.timeLimit, udid: udid, process: process, outputPath: tracePath)
-    try await record(xctrace: xctrace, arguments: recordArguments, environment: environment, logger: logger)
+    try await record(xctrace: xctrace, arguments: recordArguments, environment: environment, stop: stop, logger: logger)
 
     let tableOfContents = try await export(xctrace: xctrace, arguments: ["export", "--input", tracePath, "--toc"], logger: logger)
     let runs = try XctraceExportParser.runs(fromTableOfContents: tableOfContents)
@@ -122,53 +123,58 @@ public enum XctraceProfiler {
     return ["SIM_DEVICE_SET_PATH": deviceSetPath, "DYLD_INSERT_LIBRARIES": shim.macOSTestShimPath]
   }
 
-  private static func record(xctrace: String, arguments: [String], environment: [String: String], logger: any ControlCoreLogger) async throws {
+  private static func record(xctrace: String, arguments: [String], environment: [String: String], stop: ProfileStopRequest, logger: any ControlCoreLogger) async throws {
     logger.log("Recording with xctrace \(CollectionInformation.oneLineDescription(from: arguments))")
-    let process = try await awaitStart(
-      of: FBProcessBuilder<NSNull, NSData, NSData>
-        .withLaunchPath(xctrace, arguments: arguments)
-        .withEnvironmentAdditions(environment)
-        .withStdOutInMemoryAsData()
-        .withStdErrInMemoryAsData()
-        .withTaskLifecycleLogging(to: logger))
-    let recording = Running(process: process)
-    let exitCode = try await withTaskCancellationHandler {
-      try await awaitExitCode(of: recording.process)
-    } onCancel: {
-      // SIGINT is xctrace's Ctrl-C: it stops recording and saves the trace.
-      _ = recording.process.sendSignal(SIGINT, backingOffToKillWithTimeout: stopTimeout, logger: logger)
+    let stdout = FBDataBuffer.accumulatingBuffer()
+    let stderr = FBDataBuffer.accumulatingBuffer()
+    let subprocess = Subprocess(executable: xctrace, arguments: arguments, environment: .additions(environment))
+    let (processIdentifier, status) = try await subprocess.withRunning(output: .consumer(stdout), error: .consumer(stderr), logger: logger) { running in
+      (running.processIdentifier, try await recordUntilStopped(running, stop: stop))
     }
     // xctrace reports why a recording failed on stdout, alongside its progress.
-    try check(tool: "xctrace", exitCode: exitCode, output: [process.stdOut, process.stdErr])
+    try check(tool: "xctrace", processIdentifier: processIdentifier, status: status, output: [stdout.data(), stderr.data()])
+  }
+
+  private static func recordUntilStopped(_ running: RunningSubprocess, stop: ProfileStopRequest) async throws -> TerminationStatus {
+    let finished = try await withThrowingTaskGroup(of: TerminationStatus?.self) { group in
+      group.addTask { try await running.terminationStatus }
+      group.addTask {
+        try await stop.wait()
+        return nil
+      }
+      guard let first = try await group.next() else {
+        preconditionFailure("The task group has two children; next() cannot be empty")
+      }
+      group.cancelAll()
+      return first
+    }
+    if let finished {
+      return finished
+    }
+    // SIGINT is xctrace's Ctrl-C: it stops recording and saves the trace.
+    return try await running.terminate(with: SIGINT, gracePeriod: stopTimeout)
   }
 
   private static func export(xctrace: String, arguments: [String], logger: any ControlCoreLogger) async throws -> Data {
-    let process = try await awaitStart(
-      of: FBProcessBuilder<NSNull, NSData, NSData>
-        .withLaunchPath(xctrace, arguments: arguments)
-        .withStdOutInMemoryAsData()
-        .withStdErrInMemoryAsData()
-        .withTaskLifecycleLogging(to: logger))
-    let exporting = Running(process: process)
-    let exitCode = try await withTaskCancellationHandler {
-      try await awaitExitCode(of: exporting.process)
-    } onCancel: {
-      // An abandoned export has nothing worth saving.
-      _ = exporting.process.sendSignal(SIGKILL)
-    }
-    try check(tool: "xctrace", exitCode: exitCode, output: [process.stdOut, process.stdErr])
-    return process.stdOut.map { Data(referencing: $0) } ?? Data()
+    let stdout = FBDataBuffer.accumulatingBuffer()
+    let stderr = FBDataBuffer.accumulatingBuffer()
+    let (processIdentifier, status) = try await Subprocess(executable: xctrace, arguments: arguments)
+      .withRunning(output: .consumer(stdout), error: .consumer(stderr), logger: logger) { running in
+        (running.processIdentifier, try await running.terminationStatus)
+      }
+    try check(tool: "xctrace", processIdentifier: processIdentifier, status: status, output: [stdout.data(), stderr.data()])
+    return stdout.data()
   }
 
-  private static func check(tool: String, exitCode: Int32, output: [NSData?]) throws {
-    guard exitCode == 0 else {
-      let text = output.compactMap { $0.map { String(decoding: Data(referencing: $0), as: UTF8.self) } }.joined(separator: "\n")
+  private static func check(tool: String, processIdentifier: pid_t, status: TerminationStatus, output: [Data]) throws {
+    switch status {
+    case .exited(0):
+      return
+    case let .exited(exitCode):
+      let text = output.map { String(decoding: $0, as: UTF8.self) }.joined(separator: "\n")
       throw ProfileError.toolFailed(tool: tool, exitCode: exitCode, stderr: text)
+    case let .signalled(signal):
+      throw ProcessTerminationError.exitedWithSignal(processIdentifier: processIdentifier, processName: tool, signal: signal)
     }
-  }
-
-  /// The process a cancellation handler signals; it is only ever signalled, never mutated.
-  private struct Running: @unchecked Sendable {
-    let process: FBSubprocess<NSNull, NSData, NSData>
   }
 }

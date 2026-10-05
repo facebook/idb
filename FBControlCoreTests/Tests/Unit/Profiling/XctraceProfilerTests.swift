@@ -91,8 +91,14 @@ struct XctraceProfilerTests {
     try await FakeXctrace.waitUntilRecording(to: tracePath)
     operation.stop()
 
-    // BUG: stopping a trace cancels it, so the recording is discarded — flipped in the following commit.
-    await #expect(throws: CancellationError.self) { try await operation.result }
+    let result = try await operation.result
+
+    guard case let .trace(report) = result.report else {
+      Issue.record("Expected a trace report, got \(String(describing: result.report))")
+      return
+    }
+    #expect(report.tables.map(\.schema) == ["time-profile"])
+    #expect(FileManager.default.fileExists(atPath: (tracePath as NSString).appendingPathComponent("saved")))
   }
 }
 
