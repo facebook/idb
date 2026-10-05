@@ -217,13 +217,13 @@ final class FBArchiveOperationsTests: XCTestCase {
 
   // MARK: - createGzippedTarForPath with Non-Existent Path
 
-  func testCreateGzippedTarDataForPath_WhenPathDoesNotExist_ReturnsError() {
+  func testCreateGzippedTarDataForPath_WhenPathDoesNotExist_ReturnsError() async {
     let nonExistentPath = "/tmp/this_path_definitely_does_not_exist_12345"
-    let queue = DispatchQueue.global(qos: .default)
-    let future = FBArchiveOperations.createGzippedTarData(
-      forPath: nonExistentPath, queue: queue, logger: logger)
 
-    XCTAssertThrowsError(try future.`await`())
+    do {
+      _ = try await FBArchiveOperations.createGzippedTarData(forPath: nonExistentPath, logger: logger)
+      XCTFail("Expected archiving a missing path to fail")
+    } catch {}
   }
 
   func testCreateGzippedTarForPath_WhenPathDoesNotExist_ErrorContainsPath() {
@@ -260,28 +260,19 @@ final class FBArchiveOperationsTests: XCTestCase {
 
   // MARK: - createGzippedTarDataForPath with Real Paths
 
-  func testCreateGzippedTarDataForPath_WhenPathIsFile_ProducesData() throws {
+  func testCreateGzippedTarDataForPath_WhenPathIsFile_ProducesData() async throws {
     let filePath = (tempDirectory as NSString).appendingPathComponent("single.txt")
     try "file content for tar".write(toFile: filePath, atomically: true, encoding: .utf8)
 
-    let queue = DispatchQueue.global(qos: .default)
-    let future = FBArchiveOperations.createGzippedTarData(
-      forPath: filePath, queue: queue, logger: logger)
-
-    let result = try future.`await`()
-    XCTAssertGreaterThan(result.length, 0)
+    let result = try await FBArchiveOperations.createGzippedTarData(forPath: filePath, logger: logger)
+    XCTAssertGreaterThan(result.count, 0)
   }
 
-  func testCreateGzippedTarDataForPath_ProducesValidGzipData() throws {
+  func testCreateGzippedTarDataForPath_ProducesValidGzipData() async throws {
     let filePath = (tempDirectory as NSString).appendingPathComponent("gzip_check.txt")
     try "content to verify gzip format".write(toFile: filePath, atomically: true, encoding: .utf8)
 
-    let queue = DispatchQueue.global(qos: .default)
-    let future = FBArchiveOperations.createGzippedTarData(
-      forPath: tempDirectory, queue: queue, logger: logger)
-
-    let result = try future.`await`()
-    let data = result as Data
+    let data = try await FBArchiveOperations.createGzippedTarData(forPath: tempDirectory, logger: logger)
     XCTAssertGreaterThanOrEqual(data.count, 2, "Gzip data should be at least 2 bytes")
     XCTAssertEqual(data[0], 0x1f, "First byte of gzip data should be 0x1f")
     XCTAssertEqual(data[1], 0x8b, "Second byte of gzip data should be 0x8b")
@@ -529,8 +520,9 @@ final class FBArchiveOperationsTests: XCTestCase {
       _ = try await extractFromFile(archive)
       XCTFail("Expected the extraction to fail")
     } catch {
-      XCTAssertTrue(
-        (error as NSError).localizedDescription.contains("is not acceptable"), "Got: \(error)")
+      guard case SubprocessError.unacceptableTermination = error else {
+        return XCTFail("Expected bsdtar to fail, got \(error)")
+      }
     }
   }
 
@@ -541,8 +533,9 @@ final class FBArchiveOperationsTests: XCTestCase {
       _ = try await extractFromFile(archive)
       XCTFail("Expected the extraction to fail")
     } catch {
-      XCTAssertTrue(
-        (error as NSError).localizedDescription.contains("is not acceptable"), "Got: \(error)")
+      guard case SubprocessError.unacceptableTermination = error else {
+        return XCTFail("Expected bsdtar to fail, got \(error)")
+      }
     }
   }
 }

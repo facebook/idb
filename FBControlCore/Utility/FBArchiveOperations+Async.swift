@@ -32,15 +32,4 @@ extension FBArchiveOperations {
   ) async throws -> FBSubprocess<NSNull, InputStream, AnyObject> {
     return try await bridgeFBFuture(createGzippedTar(forPath: path, logger: logger))
   }
-
-  /// Async wrapper for `createGzippedTarDataForPath:queue:logger:`.
-  public static func createGzippedTarDataAsync(
-    forPath path: String,
-    queue: DispatchQueue,
-    logger: any ControlCoreLogger
-  ) async throws -> Data {
-    let value = try await bridgeFBFuture(
-      createGzippedTarData(forPath: path, queue: queue, logger: logger))
-    return value as Data
-  }
 }

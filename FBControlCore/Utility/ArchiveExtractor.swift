@@ -64,23 +64,22 @@ public struct BSDTarExtractor: ArchiveExtractor {
     options: ArchiveExtractOptions,
     logger: any ControlCoreLogger
   ) async throws {
-    let future: FBFuture<NSString>
     switch source {
     case .filePath(let path):
-      future = FBArchiveOperations.extractArchive(
+      _ = try await FBArchiveOperations.extractArchive(
         atPath: path,
         toPath: extractPath,
         overrideModificationTime: options.overrideModificationTime,
         logger: logger)
     case .stream(let input):
-      future = FBArchiveOperations.extractArchive(
-        fromStream: input,
-        toPath: extractPath,
-        overrideModificationTime: options.overrideModificationTime,
-        logger: logger,
-        compression: options.compression)
+      _ = try await bridgeFBFuture(
+        FBArchiveOperations.extractArchive(
+          fromStream: input,
+          toPath: extractPath,
+          overrideModificationTime: options.overrideModificationTime,
+          logger: logger,
+          compression: options.compression))
     }
-    _ = try await bridgeFBFuture(future)
   }
 }
 

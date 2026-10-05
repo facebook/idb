@@ -37,7 +37,7 @@ final class DataDownloadInputTests: XCTestCase {
   /// Real gzip bytes for a directory holding a single known file. `padding` adds
   /// incompressible bytes, so that a half-sized prefix of the result is
   /// unambiguously a truncated gzip stream rather than a plausible short one.
-  private func makeArchiveData(padding: Int = 0) throws -> Data {
+  private func makeArchiveData(padding: Int = 0) async throws -> Data {
     let source = (tempDirectory as NSString).appendingPathComponent(UUID().uuidString)
     try FileManager.default.createDirectory(atPath: source, withIntermediateDirectories: true)
     try Self.payloadContents.write(
@@ -53,10 +53,7 @@ final class DataDownloadInputTests: XCTestCase {
       try random.write(
         to: URL(fileURLWithPath: (source as NSString).appendingPathComponent("padding.bin")))
     }
-    let data = try FBArchiveOperations.createGzippedTarData(
-      forPath: source, queue: DispatchQueue.global(qos: .default), logger: logger
-    ).`await`()
-    return data as Data
+    return try await FBArchiveOperations.createGzippedTarData(forPath: source, logger: logger)
   }
 
   private func downloadAndExtract(
@@ -99,7 +96,7 @@ final class DataDownloadInputTests: XCTestCase {
   // MARK: - Success
 
   func testDownload_WhenResponseIsOK_ExtractsTheDownloadedArchive() async throws {
-    StubURLProtocol.behaviour = .respond(statusCode: 200, body: try makeArchiveData())
+    StubURLProtocol.behaviour = .respond(statusCode: 200, body: try await makeArchiveData())
 
     let destination = try await downloadAndExtract()
 
@@ -111,7 +108,7 @@ final class DataDownloadInputTests: XCTestCase {
   }
 
   func testDownload_WhenResponseIsOK_ReportsTheResponseThenEveryByte() async throws {
-    let archive = try makeArchiveData(padding: 256 * 1024)
+    let archive = try await makeArchiveData(padding: 256 * 1024)
     StubURLProtocol.behaviour = .respond(statusCode: 200, body: archive)
     let recorder = DownloadEventRecorder()
 
@@ -182,7 +179,7 @@ final class DataDownloadInputTests: XCTestCase {
   /// A truncated archive only makes the extractor exit non-zero, which says nothing
   /// about the cause; the transport error is what the caller needs.
   func testDownload_WhenTransportFailsMidStream_FailsWithTheNetworkError() async throws {
-    let archive = try makeArchiveData(padding: 512 * 1024)
+    let archive = try await makeArchiveData(padding: 512 * 1024)
     StubURLProtocol.behaviour = .truncate(
       statusCode: 200, body: archive, bytesBeforeFailure: archive.count / 2)
 

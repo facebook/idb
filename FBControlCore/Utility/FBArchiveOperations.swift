@@ -54,20 +54,15 @@ public enum FBArchiveOperations {
     toPath extractPath: String,
     overrideModificationTime overrideMTime: Bool,
     logger: any ControlCoreLogger
-  ) -> FBFuture<NSString> {
+  ) async throws -> String {
     let arguments = commandToExtractArchive(
       atPath: path,
       toPath: extractPath,
       overrideModificationTime: overrideMTime,
       debugLogging: false)
-    return FBProcessBuilder<NSNull, NSData, NSData>
-      .withLaunchPath(BSDTarPath, arguments: arguments)
-      .withStdErr(toLoggerAndErrorMessage: logger.debug())
-      .withStdOut(to: logger.debug())
-      .withTaskLifecycleLogging(to: logger)
-      .runUntilCompletion(withAcceptableExitCodes: [0])
-      .mapReplace(extractPath as NSString)
-      .retyped()
+    _ = try await Subprocess(executable: BSDTarPath, arguments: arguments)
+      .run(output: .logger(logger.debug()), error: .logger(logger.debug()), logger: logger)
+    return extractPath
   }
 
   /// The compressions a stream can be extracted from, given the `PATH` that subprocesses inherit.
@@ -217,22 +212,12 @@ public enum FBArchiveOperations {
   /// Creates a gzipped tar archive, returning the data of the tar.
   public static func createGzippedTarData(
     forPath path: String,
-    queue: DispatchQueue,
     logger: any ControlCoreLogger
-  ) -> FBFuture<NSData> {
-    do {
-      let arguments = try gzippedTarArguments(forPath: path, logger: logger)
-      return FBProcessBuilder<NSNull, NSData, NSData>
-        .withLaunchPath(BSDTarPath, arguments: arguments)
-        .withStdOutInMemoryAsData()
-        .withStdErr(toLoggerAndErrorMessage: logger)
-        .withTaskLifecycleLogging(to: logger)
-        .runUntilCompletion(withAcceptableExitCodes: [0])
-        .onQueue(queue, map: { subprocess in subprocess.stdOut ?? NSData() })
-        .retyped()
-    } catch {
-      return FBFuture(error: error)
-    }
+  ) async throws -> Data {
+    let arguments = try gzippedTarArguments(forPath: path, logger: logger)
+    return try await Subprocess(executable: BSDTarPath, arguments: arguments)
+      .run(output: .data, error: .logger(logger), logger: logger)
+      .standardOutput
   }
 
   private static func flagStringForExtraction(overrideModificationTime overrideMTime: Bool, debugLogging: Bool) -> String {

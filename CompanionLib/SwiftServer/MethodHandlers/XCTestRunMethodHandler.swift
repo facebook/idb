@@ -33,7 +33,7 @@ struct XCTestRunMethodHandler {
       throw RPCError(code: .invalidArgument, message: "failed to create XCTestRunRequest")
     }
 
-    let reporter = IDBXCTestReporter(responseStream: responseStream, queue: target.workQueue, logger: logger)
+    let reporter = IDBXCTestReporter(responseStream: responseStream, logger: logger)
     // The request is not mutated once built, but is not Sendable; rebind as nonisolated(unsafe) so the
     // run can capture it.
     nonisolated(unsafe) let request = transformed

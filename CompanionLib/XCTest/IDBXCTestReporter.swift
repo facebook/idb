@@ -74,16 +74,14 @@ final class IDBXCTestReporter: NSObject, XCTestReporter, DataConsumer, @unchecke
 
   @Atomic private var responseStream: RPCWriter<Idb_XctestRunResponse>?
 
-  private let queue: DispatchQueue
   private let logger: ControlCoreLogger
 
   private let processUnderTestExited = AsyncPromise<Void>()
 
   @Atomic private var currentInfo = CurrentTestInfo()
 
-  init(responseStream: RPCWriter<Idb_XctestRunResponse>, queue: DispatchQueue, logger: ControlCoreLogger) {
+  init(responseStream: RPCWriter<Idb_XctestRunResponse>, logger: ControlCoreLogger) {
     self._responseStream = .init(wrappedValue: responseStream)
-    self.queue = queue
     self.logger = logger
   }
 
@@ -414,10 +412,7 @@ final class IDBXCTestReporter: NSObject, XCTestReporter, DataConsumer, @unchecke
   }
 
   private func gzipFolder(at path: String) async throws -> Data {
-    return try await FBArchiveOperations.createGzippedTarDataAsync(
-      forPath: path,
-      queue: queue,
-      logger: logger)
+    return try await FBArchiveOperations.createGzippedTarData(forPath: path, logger: logger)
   }
 
   private func getCoverageResponseData(config: CodeCoverageConfiguration, binariesPath: [String]) async throws -> Data {

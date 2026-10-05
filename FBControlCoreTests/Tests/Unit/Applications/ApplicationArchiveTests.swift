@@ -71,15 +71,12 @@ final class ApplicationArchiveTests: XCTestCase {
     return bundlePath
   }
 
-  private func makeGzippedTar(of root: String) throws -> Data {
-    let data = try FBArchiveOperations.createGzippedTarData(
-      forPath: root, queue: DispatchQueue.global(qos: .default), logger: logger
-    ).`await`()
-    return data as Data
+  private func makeGzippedTar(of root: String) async throws -> Data {
+    try await FBArchiveOperations.createGzippedTarData(forPath: root, logger: logger)
   }
 
   /// A gzipped tar laid out like an `.ipa`, as raw bytes.
-  private func makePayloadArchive() throws -> Data {
+  private func makePayloadArchive() async throws -> Data {
     let root = path("staging-\(UUID().uuidString)")
     try FileManager.default.createDirectory(
       atPath: (root as NSString).appendingPathComponent("Payload"),
@@ -87,12 +84,12 @@ final class ApplicationArchiveTests: XCTestCase {
     let app = try makeAppBundle("Sample.app", identifier: "com.example.sample")
     try FileManager.default.moveItem(
       atPath: app, toPath: (root as NSString).appendingPathComponent("Payload/Sample.app"))
-    return try makeGzippedTar(of: root)
+    return try await makeGzippedTar(of: root)
   }
 
-  private func makeArchiveFile() throws -> String {
+  private func makeArchiveFile() async throws -> String {
     let archive = path("app-\(UUID().uuidString).ipa")
-    try makePayloadArchive().write(to: URL(fileURLWithPath: archive))
+    try await makePayloadArchive().write(to: URL(fileURLWithPath: archive))
     return archive
   }
 
@@ -153,7 +150,7 @@ final class ApplicationArchiveTests: XCTestCase {
   }
 
   func testResolve_WhenGivenAnArchiveFile_ExtractsAndFindsTheBundle() async throws {
-    let archive = try makeArchiveFile()
+    let archive = try await makeArchiveFile()
 
     let (identifier, _, events) = try await resolve(.localPath(archive))
 
@@ -163,7 +160,8 @@ final class ApplicationArchiveTests: XCTestCase {
   }
 
   func testResolve_WhenGivenAProcessInput_ExtractsAndFindsTheBundle() async throws {
-    let input = FBProcessInput<NSData>(from: try makePayloadArchive())
+    let payload = try await makePayloadArchive()
+    let input = FBProcessInput<NSData>(from: payload)
       .retyped(FBProcessInput<AnyObject>.self)
 
     let (identifier, _, events) = try await resolve(.processInput(input))
@@ -231,7 +229,7 @@ final class ApplicationArchiveTests: XCTestCase {
   // MARK: - Remote sources
 
   func testResolve_WhenGivenAURL_ReportsDownloadAndExtractProgress() async throws {
-    let archive = try makePayloadArchive()
+    let archive = try await makePayloadArchive()
     StubURLProtocol.behaviour = .respond(statusCode: 200, body: archive)
 
     let (identifier, _, events) = try await resolveOverStubbedNetwork()
@@ -253,7 +251,8 @@ final class ApplicationArchiveTests: XCTestCase {
   /// stage opens before the download closes, so a renderer has both on screen at
   /// once and each stage times against its own start.
   func testResolve_WhenGivenAURL_ReportsTheStagesAsNested() async throws {
-    StubURLProtocol.behaviour = .respond(statusCode: 200, body: try makePayloadArchive())
+    let payload = try await makePayloadArchive()
+    StubURLProtocol.behaviour = .respond(statusCode: 200, body: payload)
 
     let (_, _, events) = try await resolveOverStubbedNetwork()
 
@@ -280,7 +279,7 @@ final class ApplicationArchiveTests: XCTestCase {
   /// The extractor sees a truncated transfer as a short archive; the transfer's
   /// own failure is what reaches the caller.
   func testResolve_WhenTheTransferFailsMidStream_FailsWithTheTransferError() async throws {
-    let archive = try makePayloadArchive()
+    let archive = try await makePayloadArchive()
     StubURLProtocol.behaviour = .truncate(
       statusCode: 200, body: archive, bytesBeforeFailure: archive.count / 2)
 
@@ -349,7 +348,7 @@ final class ApplicationArchiveTests: XCTestCase {
   // MARK: - Temporary directory
 
   func testResolve_WhenDone_RemovesWhatItUnpacked() async throws {
-    let archive = try makeArchiveFile()
+    let archive = try await makeArchiveFile()
     let before = leftBehind
 
     _ = try await ApplicationArchive.withResolvedBundle(
@@ -368,7 +367,7 @@ final class ApplicationArchiveTests: XCTestCase {
 
   func testResolve_WhenTheCallerThrows_RemovesWhatItUnpacked() async throws {
     struct CallerFailure: Error {}
-    let archive = try makeArchiveFile()
+    let archive = try await makeArchiveFile()
 
     do {
       _ = try await ApplicationArchive.withResolvedBundle(
@@ -394,7 +393,7 @@ final class ApplicationArchiveTests: XCTestCase {
       toFile: (root as NSString).appendingPathComponent("Payload/readme.txt"),
       atomically: true, encoding: .utf8)
     let archive = path("empty.ipa")
-    try makeGzippedTar(of: root).write(to: URL(fileURLWithPath: archive))
+    try await makeGzippedTar(of: root).write(to: URL(fileURLWithPath: archive))
 
     try await assertResolveThrows(.localPath(archive)) { error in
       guard case .noInstallableBundle(_, let underlying)? = error as? InstallError,
@@ -417,7 +416,7 @@ final class ApplicationArchiveTests: XCTestCase {
         atPath: app, toPath: (payload as NSString).appendingPathComponent("\(name).app"))
     }
     let archive = path("two.ipa")
-    try makeGzippedTar(of: root).write(to: URL(fileURLWithPath: archive))
+    try await makeGzippedTar(of: root).write(to: URL(fileURLWithPath: archive))
 
     try await assertResolveThrows(.localPath(archive)) { error in
       guard case .noInstallableBundle(_, let underlying)? = error as? InstallError,

@@ -56,16 +56,14 @@ final class ApplicationInstallTests: XCTestCase {
     return bundlePath
   }
 
-  private func makeArchiveFile() throws -> String {
+  private func makeArchiveFile() async throws -> String {
     let root = path("staging")
     try FileManager.default.createDirectory(
       atPath: (root as NSString).appendingPathComponent("Payload"), withIntermediateDirectories: true)
     try makeAppBundle("staging/Payload/Sample.app", identifier: "com.example.sample")
-    let data = try FBArchiveOperations.createGzippedTarData(
-      forPath: root, queue: DispatchQueue.global(qos: .default), logger: logger
-    ).`await`()
+    let data = try await FBArchiveOperations.createGzippedTarData(forPath: root, logger: logger)
     let archive = path("app.ipa")
-    try (data as Data).write(to: URL(fileURLWithPath: archive))
+    try data.write(to: URL(fileURLWithPath: archive))
     return archive
   }
 
@@ -82,7 +80,7 @@ final class ApplicationInstallTests: XCTestCase {
   }
 
   func testInstall_WhenGivenAnArchive_ReportsExtractionThenInstall() async throws {
-    let archive = try makeArchiveFile()
+    let archive = try await makeArchiveFile()
     let events = EventCollector()
 
     let installed = try await target.install(
@@ -115,7 +113,7 @@ final class ApplicationInstallTests: XCTestCase {
   }
 
   func testInstall_TimesTheInstallStageAgainstItsOwnStart() async throws {
-    let archive = try makeArchiveFile()
+    let archive = try await makeArchiveFile()
     target.delay = 0.1
     let events = EventCollector()
 
