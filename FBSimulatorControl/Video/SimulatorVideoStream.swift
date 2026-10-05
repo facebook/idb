@@ -443,6 +443,8 @@ public actor SimulatorVideoStream: VideoStreamOperation {
       case .eager:
         break
       }
+    case .configurationChanged:
+      break
     }
   }
 

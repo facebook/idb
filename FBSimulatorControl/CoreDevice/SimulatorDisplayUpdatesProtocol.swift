@@ -49,13 +49,4 @@ enum SimulatorDisplayUpdatesProtocol {
     guard event.channel == channel.uuidString else { throw SimulatorCoreDeviceError.malformed("Unexpected side channel") }
     return event.status.pushing.elements.last.map(SimulatorDisplayProtocol.report(of:))
   }
-
-  /// The interaction target of the latest report in `event`, or nil when there is none or it cannot
-  /// select a display, as mid-transition.
-  static func target(_ event: xpc_object_t, channel: UUID) throws -> SimulatorDisplayTarget? {
-    guard let report = try report(event, channel: channel), case let .target(target) = SimulatorDisplayResolution(report) else {
-      return nil
-    }
-    return target
-  }
 }

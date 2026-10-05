@@ -28,10 +28,6 @@ protocol DisplayCommands: AnyObject, Sendable {
   func reportPushes() throws -> AsyncThrowingStream<SimulatorDisplayReport, Error>
 
   var logger: (any ControlCoreLogger)? { get }
-
-  /// The active display each time it may have changed while several integrated displays are attached,
-  /// until the stream is cancelled. Nothing is yielded for a sole display or mid-transition.
-  func activeDisplayUpdates() -> AsyncStream<SimulatorDisplay>
 }
 
 /// How long one-shot resolution keeps reading while a display transition settles, and how often.
@@ -302,10 +298,6 @@ extension DisplayCommands {
 
 extension DisplayCommands {
 
-  func activeDisplayUpdates() -> AsyncStream<SimulatorDisplay> {
-    polledActiveDisplayUpdates()
-  }
-
   /// The current configuration, then each change to it, until the stream is cancelled. Follows `reportPushes()`,
   /// and polls every `interval` when the runtime does not push or its pushes stop. A failed read yields nothing.
   func followConfigurations(polling interval: Duration = .milliseconds(250)) -> AsyncStream<SimulatorDisplayConfiguration> {
@@ -341,23 +333,6 @@ extension DisplayCommands {
         continuation.finish()
       }
       continuation.onTermination = { _ in follow.cancel() }
-    }
-  }
-
-  /// Every read of the active display while several integrated displays are attached, until the stream
-  /// is cancelled. A read that fails, as one does mid-transition, or that finds a sole display yields nothing.
-  func polledActiveDisplayUpdates(interval: Duration = .milliseconds(250)) -> AsyncStream<SimulatorDisplay> {
-    AsyncStream { continuation in
-      let poll = Task {
-        while !Task.isCancelled {
-          if case let .target(.selected(display))? = try? await currentDisplay() {
-            continuation.yield(display)
-          }
-          try? await Task.sleep(for: interval)
-        }
-        continuation.finish()
-      }
-      continuation.onTermination = { _ in poll.cancel() }
     }
   }
 }

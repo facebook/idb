@@ -20,12 +20,14 @@ protocol FramebufferSurface: AnyObject {
   func immediatelyAvailableSurface() -> IOSurface?
 
   /// Register per-consumer callbacks keyed by `token`. `frameRendered` fires once per presented
-  /// frame (a bare change signal — see the registration note below). Throws if the surface-change
+  /// frame (a bare change signal — see the registration note below), and `configurationChanged` with each
+  /// display configuration a surface that follows them reports. Throws if the surface-change
   /// callback could not be installed on either the plural or singular renderable entry point.
   func registerCallbacks(
     token: UUID,
     ioSurfaceChanged: @escaping (IOSurface?) -> Void,
-    frameRendered: @escaping () -> Void
+    frameRendered: @escaping () -> Void,
+    configurationChanged: @escaping (SimulatorDisplayConfiguration) -> Void
   ) throws
 
   /// Best-effort removal of the callbacks registered under `token`.
@@ -58,10 +60,12 @@ private final class SimDisplayRenderableSurface: FramebufferSurface {
     guardedValue { self.surface.framebufferSurface } ?? guardedValue { self.surface.ioSurface }
   }
 
+  /// A screen follows no display configuration, so `configurationChanged` is never called.
   func registerCallbacks(
     token: UUID,
     ioSurfaceChanged: @escaping (IOSurface?) -> Void,
-    frameRendered: @escaping () -> Void
+    frameRendered: @escaping () -> Void,
+    configurationChanged: @escaping (SimulatorDisplayConfiguration) -> Void
   ) throws {
     // Prefer the new-style `SimScreen` grouped callbacks — `frameCallback` is a real per-present
     // tick and `surfacesChangedCallback` supersedes the two legacy IOSurface variants. Fall back to

@@ -34,13 +34,12 @@ private func push(channel: UUID, _ reports: [xpc_object_t]) -> xpc_object_t {
   ])
 }
 
-private func display(_ id: String) -> SimulatorDisplay {
-  SimulatorDisplay(
-    uniqueID: id, name: id, activity: .active, isPrimary: false, isIntegrated: true,
-    bounds: CGRect(x: 0, y: 0, width: 1200, height: 800), scale: 2, rotation: .upright)
+private func target(_ event: xpc_object_t, channel: UUID) throws -> SimulatorDisplayTarget? {
+  guard let report = try SimulatorDisplayUpdatesProtocol.report(event, channel: channel), case let .target(target) = SimulatorDisplayResolution(report) else {
+    return nil
+  }
+  return target
 }
-
-private struct Unsupported: Error {}
 
 final class SimulatorDisplayUpdatesTests: XCTestCase {
 
@@ -60,7 +59,7 @@ final class SimulatorDisplayUpdatesTests: XCTestCase {
 
   func testTheLatestReportInAPushSelectsTheActiveDisplay() throws {
     let channel = UUID()
-    let target = try SimulatorDisplayUpdatesProtocol.target(
+    let target = try target(
       push(
         channel: channel,
         [
@@ -74,59 +73,12 @@ final class SimulatorDisplayUpdatesTests: XCTestCase {
   func testAPushThatCannotSelectADisplayYieldsNothing() throws {
     let channel = UUID()
     let noneActive = report([displayValue(id: "cover", active: false), displayValue(id: "inner", active: false)])
-    XCTAssertNil(try SimulatorDisplayUpdatesProtocol.target(push(channel: channel, [noneActive]), channel: channel))
-    XCTAssertNil(try SimulatorDisplayUpdatesProtocol.target(push(channel: channel, []), channel: channel))
+    XCTAssertNil(try target(push(channel: channel, [noneActive]), channel: channel))
+    XCTAssertNil(try target(push(channel: channel, []), channel: channel))
   }
 
   func testAPushOnAnotherSideChannelIsMalformed() {
     let pushed = push(channel: UUID(), [report([displayValue(id: "lcd", active: true)])])
-    XCTAssertThrowsError(try SimulatorDisplayUpdatesProtocol.target(pushed, channel: UUID()))
-  }
-
-  // MARK: - Following
-
-  private func collect(_ updates: AsyncStream<SimulatorDisplay>, count: Int) async -> [String] {
-    var ids: [String] = []
-    for await display in updates {
-      ids.append(display.uniqueID)
-      if ids.count == count { break }
-    }
-    return ids
-  }
-
-  private func pushes(_ targets: [SimulatorDisplayTarget], then end: Error? = nil) -> AsyncThrowingStream<SimulatorDisplayTarget, Error> {
-    AsyncThrowingStream { continuation in
-      targets.forEach { continuation.yield($0) }
-      continuation.finish(throwing: end)
-    }
-  }
-
-  private func polling(_ ids: String...) -> AsyncStream<SimulatorDisplay> {
-    AsyncStream { continuation in
-      ids.forEach { continuation.yield(display($0)) }
-    }
-  }
-
-  func testPushedSelectionsAreFollowedAndASoleDisplayIsSkipped() async {
-    let updates = SimulatorDisplayCommands.activeDisplayUpdates(
-      pushes: { self.pushes([.selected(display("inner")), .sole(.identified(display("lcd"))), .selected(display("cover"))]) },
-      polling: { self.polling("polled") }, logger: nil)
-    let ids = await collect(updates, count: 3)
-    XCTAssertEqual(ids, ["inner", "cover", "polled"])
-  }
-
-  func testPollsWhenTheRuntimeDoesNotPush() async {
-    let updates = SimulatorDisplayCommands.activeDisplayUpdates(
-      pushes: { throw Unsupported() }, polling: { self.polling("cover", "inner") }, logger: nil)
-    let ids = await collect(updates, count: 2)
-    XCTAssertEqual(ids, ["cover", "inner"])
-  }
-
-  func testPollsWhenPushesFail() async {
-    let updates = SimulatorDisplayCommands.activeDisplayUpdates(
-      pushes: { self.pushes([.selected(display("inner"))], then: SimulatorCoreDeviceError.unavailable("gone")) },
-      polling: { self.polling("cover") }, logger: nil)
-    let ids = await collect(updates, count: 2)
-    XCTAssertEqual(ids, ["inner", "cover"])
+    XCTAssertThrowsError(try target(pushed, channel: UUID()))
   }
 }

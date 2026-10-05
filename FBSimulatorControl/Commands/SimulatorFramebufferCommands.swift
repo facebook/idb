@@ -47,6 +47,7 @@ public struct SimulatorFramebufferCommands: Sendable {
   /// As for screenshots, the active display improves on the main screen but is never required. A sole
   /// display is the main screen, so only a simulator with several integrated displays follows one. A named
   /// display is required: capturing another in its place would capture something the caller did not ask for.
+  /// Every framebuffer but the main screen's follows the display configuration, to report it.
   static func framebuffer(display: FramebufferDisplay, displays: any DisplayCommands, screens: any FramebufferScreens, logger: any ControlCoreLogger) async throws -> Framebuffer {
     switch display {
     case .main:
@@ -54,7 +55,10 @@ public struct SimulatorFramebufferCommands: Sendable {
     case .active:
       return Framebuffer(surface: try await activeScreen(displays: displays, screens: screens, logger: logger), logger: logger)
     case let .display(uniqueID):
-      return Framebuffer(surface: try await screens.screen(uniqueID: uniqueID), logger: logger)
+      let surface = FollowingFramebufferSurface(
+        displayUniqueID: uniqueID, surface: try await screens.screen(uniqueID: uniqueID), movement: .fixed,
+        configurations: { displays.followConfigurations() }, locate: { try await screens.screen(uniqueID: $0) }, logger: logger)
+      return Framebuffer(surface: surface, logger: logger)
     }
   }
 
@@ -63,12 +67,12 @@ public struct SimulatorFramebufferCommands: Sendable {
       switch try await displays.resolveDisplay() {
       case let .target(.selected(display)):
         return FollowingFramebufferSurface(
-          displayUniqueID: display.uniqueID, surface: try await screens.screen(uniqueID: display.uniqueID),
-          updates: { displays.activeDisplayUpdates() },
-          locate: { try await screens.screen(uniqueID: $0) },
-          logger: logger)
-      case .target(.sole):
-        break
+          displayUniqueID: display.uniqueID, surface: try await screens.screen(uniqueID: display.uniqueID), movement: .followsActiveDisplay,
+          configurations: { displays.followConfigurations() }, locate: { try await screens.screen(uniqueID: $0) }, logger: logger)
+      case let .target(.sole(display)):
+        return FollowingFramebufferSurface(
+          displayUniqueID: display.uniqueID, surface: try screens.mainScreen(), movement: .fixed,
+          configurations: { displays.followConfigurations() }, locate: { try await screens.screen(uniqueID: $0) }, logger: logger)
       case let resolution:
         logger.log("Capturing the main screen, as no active display is identified: \(resolution)")
       }

@@ -10,24 +10,33 @@ import Foundation
 import IOSurface
 import os
 
-/// A surface that moves to each display that becomes active, so its consumers keep rendering the display
-/// in use. A move re-registers every consumer on the new display's screen and reports that screen's
-/// surface, which a consumer handles as it does any other surface change.
-// SAFETY: The current screen, the registrations and the follow task are guarded by the lock.
+/// A surface that follows the simulator's display configuration, reporting each configuration to its
+/// consumers. One that follows the active display also moves to each display that becomes active, so its
+/// consumers keep rendering the display in use. A move re-registers every consumer on the new display's
+/// screen and reports that screen's surface, after the configuration that caused it, which a consumer
+/// handles as it does any other surface change.
+// SAFETY: The current screen, the configuration, the registrations and the follow task are guarded by the lock.
 // patternlint-disable-next-line unchecked-sendable
 final class FollowingFramebufferSurface: FramebufferSurface, @unchecked Sendable {
 
   typealias Locate = @Sendable (_ uniqueID: String) async throws -> any FramebufferSurface
 
+  enum Movement {
+    case followsActiveDisplay
+    case fixed
+  }
+
   private struct Registration {
     let ioSurfaceChanged: (IOSurface?) -> Void
     let frameRendered: () -> Void
+    let configurationChanged: (SimulatorDisplayConfiguration) -> Void
   }
 
   /// A screen being followed. Its gate closes when the screen is left, so a callback it delivers
   /// afterwards cannot report its surface over the new screen's.
   private struct Screen {
-    let uniqueID: String
+    /// Nil for a sole display that the runtime does not identify.
+    let uniqueID: String?
     let surface: any FramebufferSurface
     let gate = OSAllocatedUnfairLock(initialState: true)
   }
@@ -35,21 +44,25 @@ final class FollowingFramebufferSurface: FramebufferSurface, @unchecked Sendable
   private let lock = NSLock()
   private var screen: Screen
   private var registrations: [UUID: Registration] = [:]
+  private var configuration: SimulatorDisplayConfiguration?
   private var follow: Task<Void, Never>?
-  private let updates: @Sendable () -> AsyncStream<SimulatorDisplay>
+  private let movement: Movement
+  private let configurations: @Sendable () -> AsyncStream<SimulatorDisplayConfiguration>
   private let locate: Locate
   private let logger: any ControlCoreLogger
 
-  /// `updates` starts with the first registration and stops with the last one.
+  /// `configurations` starts with the first registration and stops with the last one.
   init(
-    displayUniqueID: String,
+    displayUniqueID: String?,
     surface: any FramebufferSurface,
-    updates: @escaping @Sendable () -> AsyncStream<SimulatorDisplay>,
+    movement: Movement,
+    configurations: @escaping @Sendable () -> AsyncStream<SimulatorDisplayConfiguration>,
     locate: @escaping Locate,
     logger: any ControlCoreLogger
   ) {
     self.screen = Screen(uniqueID: displayUniqueID, surface: surface)
-    self.updates = updates
+    self.movement = movement
+    self.configurations = configurations
     self.locate = locate
     self.logger = logger
   }
@@ -62,17 +75,21 @@ final class FollowingFramebufferSurface: FramebufferSurface, @unchecked Sendable
     lock.withLock { screen.surface.immediatelyAvailableSurface() }
   }
 
+  /// `configurationChanged` runs under the lock, so that a consumer registering late is told the current
+  /// configuration before any later one. It must not re-enter this surface.
   func registerCallbacks(
     token: UUID,
     ioSurfaceChanged: @escaping (IOSurface?) -> Void,
-    frameRendered: @escaping () -> Void
+    frameRendered: @escaping () -> Void,
+    configurationChanged: @escaping (SimulatorDisplayConfiguration) -> Void
   ) throws {
-    let registration = Registration(ioSurfaceChanged: ioSurfaceChanged, frameRendered: frameRendered)
+    let registration = Registration(ioSurfaceChanged: ioSurfaceChanged, frameRendered: frameRendered, configurationChanged: configurationChanged)
     try lock.withLock {
       try Self.register(registration, token: token, on: screen)
       registrations[token] = registration
+      if let configuration { configurationChanged(configuration) }
       if follow == nil {
-        follow = Task { [weak self, updates] in await self?.follow(updates()) }
+        follow = Task { [weak self, configurations] in await self?.follow(configurations()) }
       }
     }
   }
@@ -97,23 +114,30 @@ final class FollowingFramebufferSurface: FramebufferSurface, @unchecked Sendable
       },
       frameRendered: {
         if gate.withLock({ $0 }) { registration.frameRendered() }
-      })
+      },
+      configurationChanged: { _ in })
   }
 
-  /// A display that cannot be captured leaves the current one in place until a later update moves it.
-  private func follow(_ updates: AsyncStream<SimulatorDisplay>) async {
-    for await display in updates {
-      let current = lock.withLock { screen.uniqueID }
-      guard display.uniqueID != current else { continue }
+  /// A display that cannot be captured leaves the current one in place until a later configuration moves it.
+  private func follow(_ configurations: AsyncStream<SimulatorDisplayConfiguration>) async {
+    for await configuration in configurations {
+      let current = lock.withLock {
+        self.configuration = configuration
+        registrations.values.forEach { $0.configurationChanged(configuration) }
+        return screen.uniqueID
+      }
+      guard movement == .followsActiveDisplay, configuration.phase == .settled, let display = configuration.active, display.uniqueID != current else {
+        continue
+      }
       do {
         let surface = try await locate(display.uniqueID)
         try Task.checkCancellation()
         try move(to: Screen(uniqueID: display.uniqueID, surface: surface))
-        logger.log("Framebuffer: following display \(display.uniqueID), previously \(current)")
+        logger.log("Framebuffer: following display \(display.uniqueID), previously \(current ?? "unidentified")")
       } catch is CancellationError {
         return
       } catch {
-        logger.log("Framebuffer: staying on display \(current), as display \(display.uniqueID) could not be captured: \(error)")
+        logger.log("Framebuffer: staying on display \(current ?? "unidentified"), as display \(display.uniqueID) could not be captured: \(error)")
       }
     }
   }

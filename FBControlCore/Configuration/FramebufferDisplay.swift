@@ -8,7 +8,7 @@
 /// The display a framebuffer captures.
 public enum FramebufferDisplay: Hashable, Sendable {
   /// The display with `displayClass` 0: the only display of most devices, and the cover display of an
-  /// iPhone Duo.
+  /// iPhone Duo. Unlike the others, it does not report display configuration changes.
   case main
   /// The display the simulator's user is looking at, followed as it changes. Where it cannot be
   /// found, the main display.

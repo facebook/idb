@@ -47,6 +47,25 @@ final class SimulatorFramebufferCommandsTests: XCTestCase {
     XCTAssertEqual(screens.main.registeredTokens.count, 0)
   }
 
+  func testANamedDisplayAnnouncesTheConfiguration() async throws {
+    let screens = FramebufferScreensDouble("cover", "inner")
+    let attachment = try await framebuffer(.display(uniqueID: "cover"), screens: screens)
+    defer { attachment.cancel() }
+
+    let configuration = await firstConfiguration(of: attachment)
+    XCTAssertEqual(configuration?.active, Self.display("inner"))
+    XCTAssertEqual(screens.screens["inner"]?.registeredTokens.count, 0)
+  }
+
+  func testTheActiveDisplayOfASoleDisplayAnnouncesTheConfiguration() async throws {
+    let screens = FramebufferScreensDouble("lcd")
+    let attachment = try await framebuffer(.active, displays: DisplayCommandsDouble(.sole(.identified(Self.display("lcd")))), screens: screens)
+    defer { attachment.cancel() }
+
+    let configuration = await firstConfiguration(of: attachment)
+    XCTAssertEqual(configuration?.active, Self.display("lcd"))
+  }
+
   func testANamedDisplayIsCapturedWhileAnotherIsActive() async throws {
     let screens = FramebufferScreensDouble("cover", "inner")
     let attachment = try await framebuffer(.display(uniqueID: "cover"), screens: screens)
@@ -75,6 +94,8 @@ final class SimulatorFramebufferCommandsTests: XCTestCase {
     XCTAssertEqual(screens.requested, ["inner"])
     XCTAssertEqual(screens.screens["inner"]?.registeredTokens.count, 1)
     XCTAssertEqual(screens.main.registeredTokens.count, 0)
+    let configuration = await firstConfiguration(of: attachment)
+    XCTAssertEqual(configuration?.active, Self.display("inner"))
   }
 
   func testTheActiveDisplayOfASoleDisplayCapturesTheMainScreen() async throws {
@@ -114,6 +135,13 @@ final class SimulatorFramebufferCommandsTests: XCTestCase {
     XCTAssertEqual(screens.requested, ["inner"])
     XCTAssertEqual(screens.screens["inner"]?.registeredTokens.count, 1)
     XCTAssertEqual(screens.main.registeredTokens.count, 0)
+  }
+
+  private func firstConfiguration(of attachment: FramebufferAttachment) async -> SimulatorDisplayConfiguration? {
+    for await event in attachment.events {
+      if case let .configurationChanged(configuration) = event { return configuration }
+    }
+    return nil
   }
 
   func testActiveIntegratedDisplayAcceptsSelectedAndSoleIdentifiedTargets() throws {
