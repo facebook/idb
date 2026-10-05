@@ -88,6 +88,7 @@ public struct SimulatorDisplayConfiguration: Equatable, Sendable {
 final class DisplayConfigurationTracker: @unchecked Sendable {
   private let lock = NSLock()
   private var current: (configuration: SimulatorDisplayConfiguration, basis: [SimulatorInteractionDisplay])?
+  let follower = DisplayConfigurationFollower()
 
   /// The most recently observed configuration, if any read has succeeded.
   var latest: SimulatorDisplayConfiguration? {

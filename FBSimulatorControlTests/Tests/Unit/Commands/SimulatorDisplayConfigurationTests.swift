@@ -203,6 +203,40 @@ final class SimulatorDisplayConfigurationTests: XCTestCase {
     XCTAssertEqual(configurations.map(\.active), [.identified(display("cover"))])
   }
 
+  func testConcurrentStreamsShareOneFollowing() async {
+    let (pushes, push) = AsyncThrowingStream<SimulatorDisplayReport, Error>.makeStream()
+    let displays = DisplayCommandsDouble([.success(cover)], pushes: pushes)
+    var first = displays.followConfigurations().makeAsyncIterator()
+    var second = displays.followConfigurations().makeAsyncIterator()
+    let initial = await (first.next(), second.next())
+    push.yield(inner)
+    let changed = await (first.next(), second.next())
+    XCTAssertEqual([initial.0, initial.1].map { $0?.generation }, [1, 1])
+    XCTAssertEqual([changed.0, changed.1].map { $0?.active }, [.identified(display("inner")), .identified(display("inner"))])
+    XCTAssertEqual(displays.reads, 1)
+  }
+
+  func testLateStreamStartsFromTheCurrentConfiguration() async {
+    let (pushes, push) = AsyncThrowingStream<SimulatorDisplayReport, Error>.makeStream()
+    let displays = DisplayCommandsDouble([.success(cover)], pushes: pushes)
+    var early = displays.followConfigurations().makeAsyncIterator()
+    _ = await early.next()
+    push.yield(inner)
+    _ = await early.next()
+    let late = await collect(displays.followConfigurations(), count: 1)
+    XCTAssertEqual(late.map(\.active), [.identified(display("inner"))])
+    XCTAssertEqual(displays.reads, 1)
+  }
+
+  func testStreamAfterEveryStreamEndsFollowsAgain() async {
+    let displays = DisplayCommandsDouble([.success(cover), .success(inner)])
+    // The first read, then an immediate poll, after which the following sleeps for the rest of the test.
+    _ = await collect(displays.followConfigurations(polling: .seconds(60)), count: 2)
+    let configurations = await collect(displays.followConfigurations(polling: .seconds(60)), count: 1)
+    XCTAssertEqual(configurations.map(\.generation), [2])
+    XCTAssertGreaterThan(displays.reads, 2, "A restarted following reads afresh rather than replaying")
+  }
+
   /// The first `count` configurations; the stream polls forever, so the test hangs if fewer arrive.
   private func collect(_ stream: AsyncStream<SimulatorDisplayConfiguration>, count: Int) async -> [SimulatorDisplayConfiguration] {
     var collected: [SimulatorDisplayConfiguration] = []
