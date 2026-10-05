@@ -80,9 +80,3 @@ extension SimulatorPoseConfirmationError: SimulatorFailureClassifying {
     }
   }
 }
-
-/// The capability a failure says is missing, or `nil` when it says nothing of the kind.
-public func unsupportedSimulatorCapability(in error: any Error) -> String? {
-  guard case let .unsupported(capability) = SimulatorFailureKind(error) else { return nil }
-  return capability
-}

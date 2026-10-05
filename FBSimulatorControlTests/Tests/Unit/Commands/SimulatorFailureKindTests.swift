@@ -27,12 +27,13 @@ final class SimulatorFailureKindTests: XCTestCase {
   }
 
   func testFailedAttemptsAndWrongRequestsAreFailed() throws {
+    struct Foreign: Error {}
     let errors: [any Error] = [
       SimulatorCoreDeviceError.malformed("reply"), SimulatorDisplayInteractionError.inactiveDisplay("inner"),
       SimulatorDisplayInteractionError.missingMapping("inner"), SimulatorDisplayInteractionError.invalidPoint(.zero, bounds: .zero),
       SimulatorDisplayInteractionError.nonFinitePoint(.zero),
       SimulatorPoseConfirmationError.notReached(target: .hinge(try SimulatorHingeAngle(degrees: 180)), last: .hinge(try SimulatorHingeAngle(degrees: 90))),
-      SimulatorOrientationError.unwritable(.faceUp), NSError(domain: "unsupportedCapability", code: 1),
+      SimulatorOrientationError.unwritable(.faceUp), NSError(domain: "unsupportedCapability", code: 1), Foreign(),
     ]
     for error in errors {
       XCTAssertEqual(SimulatorFailureKind(error), .failed, "\(error)")
@@ -40,6 +41,7 @@ final class SimulatorFailureKindTests: XCTestCase {
   }
 
   func testAnUnsupportedCaseWithNoDetailIsFailed() {
+    XCTAssertEqual(SimulatorFailureKind(SimulatorDisplayInteractionError.unsupportedCapability("")), .failed)
     XCTAssertEqual(SimulatorFailureKind(SimulatorCoreDeviceError.unsupported("")), .failed)
   }
 }
