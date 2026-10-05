@@ -16,14 +16,9 @@ import Testing
 struct ProcessLogOperationTests {
 
   private static func operation(_ script: String) async throws -> (ProcessLogOperation, pid_t) {
-    let process = try await bridgeFBFuture(
-      FBProcessBuilder<NSNull, NSData, NSData>
-        .withLaunchPath("/bin/sh", arguments: ["-c", script])
-        .start())
-    let operation = ProcessLogOperation(
-      process: process.retyped(),
-      consumer: FBDataBuffer.accumulatingBuffer(),
-      queue: DispatchQueue(label: "ProcessLogOperationTests"))
+    let process = try await Subprocess(executable: "/bin/sh", arguments: ["-c", script])
+      .launch(output: .nullDevice, error: .nullDevice)
+    let operation = ProcessLogOperation(process: process, executable: "/bin/sh", consumer: FBDataBuffer.accumulatingBuffer())
     return (operation, process.processIdentifier)
   }
 

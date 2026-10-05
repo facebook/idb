@@ -9,32 +9,29 @@ import Foundation
 
 public final class ProcessLogOperation: LogOperation {
 
-  public let process: FBSubprocess<AnyObject, AnyObject, AnyObject>
+  public let process: RunningSubprocess
   public let consumer: any DataConsumer
-  private let queue: DispatchQueue
+  private let executable: String
 
-  public init(process: FBSubprocess<AnyObject, AnyObject, AnyObject>, consumer: any DataConsumer, queue: DispatchQueue) {
+  public init(process: RunningSubprocess, executable: String, consumer: any DataConsumer) {
     self.process = process
+    self.executable = executable
     self.consumer = consumer
-    self.queue = queue
   }
 
   // MARK: - LogOperation
 
-  public var completed: FBFuture<NSNull> {
-    let process = self.process
-    let result = process.exited(withCodes: Set([NSNumber(value: 0)]))
-      .mapReplace(NSNull())
-      .onQueue(
-        queue,
-        respondToCancellation: {
-          process.sendSignal(SIGTERM, backingOffToKillWithTimeout: 5, logger: nil).retyped(FBFuture<NSNull>.self)
-        })
-    return result.retyped(FBFuture<NSNull>.self)
-  }
-
   public func waitUntilCompleted() async throws {
-    try await bridgeFBFutureVoid(completed)
+    let status: TerminationStatus
+    do {
+      status = try await process.terminationStatus
+    } catch {
+      await process.terminateIgnoringCancellation(gracePeriod: 5)
+      throw error
+    }
+    guard ExitPolicy.mustExitZero.accepts(status) else {
+      throw SubprocessError.unacceptableTermination(status: status, policy: .mustExitZero, executable: executable, processIdentifier: process.processIdentifier)
+    }
   }
 
   public class func osLogArgumentsInsertStreamIfNeeded(_ arguments: [String]) -> [String] {
