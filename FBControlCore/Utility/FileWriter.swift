@@ -81,6 +81,14 @@ public class FileWriter: NSObject, @unchecked Sendable {
     return asyncWriter(withFileDescriptor: fileDescriptor, closeOnEndOfFile: closeOnEndOfFile, queue: queue, error: error)
   }
 
+  /// An async writer whose writes can also report when the descriptor has taken them, so that a
+  /// producer can hold off sending more until it has.
+  static func drainingWriter(withFileDescriptor fileDescriptor: Int32, closeOnEndOfFile: Bool) throws -> Draining {
+    let writer = Async(fileDescriptor: fileDescriptor, closeOnEndOfFile: closeOnEndOfFile, writeQueue: createWorkQueue())
+    try writer.startWriting()
+    return Draining(writer: writer)
+  }
+
   @objc public static func syncWriter(forFilePath filePath: String, error: NSErrorPointer) -> (DataConsumer & DataConsumerLifecycle)? {
     let fd: Int32
     do {
@@ -122,6 +130,25 @@ public class FileWriter: NSObject, @unchecked Sendable {
 
   fileprivate override convenience init() {
     self.init(fileDescriptor: -1, closeOnEndOfFile: false)
+  }
+
+  // MARK: - Draining
+
+  final class Draining: @unchecked Sendable {
+
+    private let writer: Async
+    /// Writes and end-of-file without waiting, as `asyncWriter` does.
+    let consumer: any DataConsumer & DataConsumerLifecycle
+
+    fileprivate init(writer: Async) {
+      self.writer = writer
+      self.consumer = FBDataConsumerAdaptor.dataConsumer(forDispatchDataConsumer: writer)
+    }
+
+    /// Calls `completion` with 0 once all of `data` is written, or with the `errno` that stopped it.
+    func write(_ data: Data, completion: @escaping @Sendable (Int32) -> Void) {
+      writer.write(data.withUnsafeBytes { DispatchData(bytes: $0) }, completion: completion)
+    }
   }
 
   // MARK: - Null
@@ -166,7 +193,7 @@ public class FileWriter: NSObject, @unchecked Sendable {
 
   // MARK: - Async
 
-  private final class Async: FileWriter, DispatchDataConsumer, DataConsumerLifecycle, @unchecked Sendable {
+  fileprivate final class Async: FileWriter, DispatchDataConsumer, DataConsumerLifecycle, @unchecked Sendable {
 
     let writeQueue: DispatchQueue
     var io: DispatchIO?
@@ -179,6 +206,17 @@ public class FileWriter: NSObject, @unchecked Sendable {
     func consumeData(_ data: __DispatchData) {
       guard let io else { return }
       io.write(offset: 0, data: data as DispatchData, queue: writeQueue) { _, _, _ in }
+    }
+
+    func write(_ data: DispatchData, completion: @escaping @Sendable (Int32) -> Void) {
+      guard let io else {
+        completion(ECANCELED)
+        return
+      }
+      io.write(offset: 0, data: data, queue: writeQueue) { done, _, error in
+        guard done else { return }
+        completion(error)
+      }
     }
 
     func consumeEndOfFile() {

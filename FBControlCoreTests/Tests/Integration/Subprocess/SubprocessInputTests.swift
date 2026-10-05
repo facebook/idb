@@ -187,6 +187,43 @@ struct SubprocessInputTests {
     #expect(completed.standardOutput == "kept")
   }
 
+  @Test("An awaited write returns only once the child has read enough to take it")
+  func awaitedWriteIsPacedByTheChild() async throws {
+    let source = InputSource()
+    let running = try await Self.new("sleep 1; cat > /dev/null").launch(output: .nullDevice, error: .nullDevice, input: .source(source))
+    // Well past any pipe buffer, so the pipe cannot absorb it before the child reads.
+    let payload = Data(count: 4 * 1024 * 1024)
+
+    let start = Date()
+    try await source.writeAndWait(payload)
+
+    #expect(Date().timeIntervalSince(start) > 0.5)
+    source.finish()
+    #expect(try await running.terminationStatus == .exited(0))
+  }
+
+  @Test("An awaited write to a child that has exited throws")
+  func awaitedWriteToAnExitedChildThrows() async throws {
+    let source = InputSource()
+    let running = try await Self.new("exit 0").launch(output: .nullDevice, error: .nullDevice, input: .source(source))
+    #expect(try await running.terminationStatus == .exited(0))
+
+    await #expect(throws: SubprocessError.self) {
+      try await source.writeAndWait(Data(count: 4 * 1024 * 1024))
+    }
+  }
+
+  @Test("Awaited writes made before the child launches are flushed")
+  func awaitedWritesBeforeLaunchAreFlushed() async throws {
+    let source = InputSource()
+    try await source.writeAndWait(Data("early\n".utf8))
+    source.finish()
+
+    let completed = try await Self.new("cat").run(output: .string, error: .closed, input: .source(source))
+
+    #expect(completed.standardOutput == "early")
+  }
+
   @Test("A source cannot be attached to a second launch")
   func attachingTwiceFails() async throws {
     let source = InputSource()

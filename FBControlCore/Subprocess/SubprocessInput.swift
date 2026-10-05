@@ -32,9 +32,9 @@ public final class InputSource: @unchecked Sendable {
     /// Attaching: the held bytes are being flushed, so writes queue behind them
     /// and a `finish()` waits until the flush is done. Nothing overtakes the
     /// buffered prefix.
-    case flushing(any DataConsumer, queued: [Data], finished: Bool)
+    case flushing(FileWriter.Draining, queued: [Data], finished: Bool)
     /// Attached: writes go straight through to the pipe.
-    case writing(any DataConsumer)
+    case writing(FileWriter.Draining)
     /// End of file delivered; further writes are ignored.
     case closed
   }
@@ -47,7 +47,7 @@ public final class InputSource: @unchecked Sendable {
   /// Writes `data` to the child's standard input, or holds it until the child
   /// launches. Writes after `finish()` are ignored.
   public func write(_ data: Data) {
-    let writer: (any DataConsumer)? = lock.withLock {
+    let writer: FileWriter.Draining? = lock.withLock {
       switch state {
       case .pending(let buffered, let finished):
         guard !finished else {
@@ -67,13 +67,50 @@ public final class InputSource: @unchecked Sendable {
         return nil
       }
     }
-    writer?.consumeData(data)
+    writer?.consumer.consumeData(data)
+  }
+
+  /// Writes `data` and suspends until the child's pipe has taken all of it, so a producer that
+  /// awaits each write is held to the pace the child reads at rather than queueing without bound.
+  /// Before launch this holds the bytes and returns at once, as `write(_:)` does. Throws if the
+  /// pipe refuses the bytes, typically because the child exited without reading them.
+  public func writeAndWait(_ data: Data) async throws {
+    let writer: FileWriter.Draining? = lock.withLock {
+      switch state {
+      case .pending(let buffered, let finished):
+        if !finished {
+          state = .pending(buffered: buffered + [data], finished: false)
+        }
+        return nil
+      case .flushing(let writer, let queued, let finished):
+        if !finished {
+          state = .flushing(writer, queued: queued + [data], finished: false)
+        }
+        return nil
+      case .writing(let writer):
+        return writer
+      case .closed:
+        return nil
+      }
+    }
+    guard let writer else {
+      return
+    }
+    try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, any Error>) in
+      writer.write(data) { error in
+        guard error == 0 else {
+          continuation.resume(throwing: SubprocessError.inputUnavailable(message: String(cString: strerror(error))))
+          return
+        }
+        continuation.resume()
+      }
+    }
   }
 
   /// Closes the child's standard input, so that a child reading it to
   /// end-of-file completes. Idempotent.
   public func finish() {
-    let writer: (any DataConsumer)? = lock.withLock {
+    let writer: FileWriter.Draining? = lock.withLock {
       switch state {
       case .pending(let buffered, false):
         state = .pending(buffered: buffered, finished: true)
@@ -88,7 +125,7 @@ public final class InputSource: @unchecked Sendable {
         return writer
       }
     }
-    writer?.consumeEndOfFile()
+    writer?.consumer.consumeEndOfFile()
   }
 
   /// Builds the pipe, flushes everything written so far, and returns the read
@@ -101,11 +138,13 @@ public final class InputSource: @unchecked Sendable {
     let readEnd = descriptors[0]
     let writeEnd = descriptors[1]
 
-    var writerError: NSError?
-    guard let writer = FileWriter.asyncWriter(withFileDescriptor: writeEnd, closeOnEndOfFile: true, error: &writerError) else {
+    let writer: FileWriter.Draining
+    do {
+      writer = try FileWriter.drainingWriter(withFileDescriptor: writeEnd, closeOnEndOfFile: true)
+    } catch {
       close(readEnd)
       close(writeEnd)
-      throw SubprocessError.inputUnavailable(message: writerError?.localizedDescription ?? "the writer could not be created")
+      throw SubprocessError.inputUnavailable(message: error.localizedDescription)
     }
 
     do {
@@ -119,7 +158,7 @@ public final class InputSource: @unchecked Sendable {
       }
     } catch {
       close(readEnd)
-      writer.consumeEndOfFile()
+      writer.consumer.consumeEndOfFile()
       throw error
     }
 
@@ -139,11 +178,11 @@ public final class InputSource: @unchecked Sendable {
         return (queued, finished, false)
       }
       for data in batch {
-        writer.consumeData(data)
+        writer.consumer.consumeData(data)
       }
       if drained {
         if finished {
-          writer.consumeEndOfFile()
+          writer.consumer.consumeEndOfFile()
         }
         return readEnd
       }
