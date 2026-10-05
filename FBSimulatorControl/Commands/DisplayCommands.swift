@@ -194,7 +194,7 @@ extension DisplayCommands {
   /// the new display before its backlight follows, and one-shot resolution waits that out. `.transitioning` only
   /// when the transition outlasts `transitionSettling`.
   func resolveDisplay() async throws -> SimulatorDisplayResolution {
-    SimulatorDisplayResolution(try await settledReport())
+    SimulatorDisplayResolution(try await observedSettledReport())
   }
 
   /// Every identified display once any display transition has settled. A runtime that reports no display activity
@@ -202,7 +202,7 @@ extension DisplayCommands {
   func describedDisplays() async throws -> TargetDetail<[TargetDisplayDescription]> {
     let report: SimulatorDisplayReport
     do {
-      report = try await settledReport()
+      report = try await observedSettledReport()
     } catch let error as CancellationError {
       throw error
     } catch {
@@ -216,14 +216,20 @@ extension DisplayCommands {
     }
   }
 
-  /// `.transitioning` only when the transition outlasts `transitionSettling`.
-  private func settledReport() async throws -> SimulatorDisplayReport {
-    let settling = transitionSettling
-    let deadline = ContinuousClock.now + settling.timeout
+  private func observedSettledReport() async throws -> SimulatorDisplayReport {
+    let report = try await settledReport(within: transitionSettling.timeout)
+    _ = try? configurationTracker.observe(report)
+    return report
+  }
+
+  /// `.transitioning` only when the transition outlasts `timeout`. Only the returned report needs observing, as
+  /// neither a transition nor a failed read changes the tracker.
+  private func settledReport(within timeout: Duration) async throws -> SimulatorDisplayReport {
+    let deadline = ContinuousClock.now + timeout
     while true {
-      let current = try await observedReport()
+      let current = try await report()
       guard current == .transitioning, ContinuousClock.now < deadline else { return current }
-      try await Task.sleep(for: settling.interval)
+      try await Task.sleep(for: transitionSettling.interval)
     }
   }
 
@@ -241,12 +247,7 @@ extension DisplayCommands {
   /// The configuration once any display transition has settled. `.transitioning` only when the transition
   /// outlasts `timeout`.
   func settledConfiguration(within timeout: Duration) async throws -> SimulatorDisplayConfiguration {
-    let deadline = ContinuousClock.now + timeout
-    while true {
-      let configuration = try configurationTracker.observe(await report())
-      guard configuration.phase == .transitioning, ContinuousClock.now < deadline else { return configuration }
-      try await Task.sleep(for: transitionSettling.interval)
-    }
+    try configurationTracker.observe(await settledReport(within: timeout))
   }
 
   /// The accessibility identity of a display that has to be named. The guest is asked only for a display it
