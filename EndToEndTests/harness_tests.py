@@ -2947,13 +2947,17 @@ class HostLoadTests(unittest.TestCase):
                 path.rmdir()
             return f"sample {index}\n".encode()
 
+        def recorded_so_far() -> bytes:
+            try:
+                return path.read_bytes()
+            except OSError:
+                # The sampler can swap the file for a directory at any moment.
+                return b""
+
         with self.assertLogs(harness._LOGGER, "WARNING") as logs:
             host_load = HostLoad(path, sample=sample, interval=0.01)
             deadline = time.monotonic() + 10
-            while (
-                not (path.is_file() and b"sample 2" in path.read_bytes())
-                and time.monotonic() < deadline
-            ):
+            while b"sample 2" not in recorded_so_far() and time.monotonic() < deadline:
                 time.sleep(0.01)
             host_load.stop()
 
