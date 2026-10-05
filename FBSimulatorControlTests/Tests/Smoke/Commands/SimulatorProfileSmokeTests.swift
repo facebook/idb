@@ -104,4 +104,19 @@ final class SimulatorProfileSmokeTests: ProvidedSimulatorTestCase {
 
     XCTAssertNil(result.report)
   }
+
+  func testTraceExportsTheTimeProfile() async throws {
+    let configuration = TraceConfiguration(template: "Time Profiler", schemas: nil, timeLimit: .seconds(3), rowLimit: 10, outputPath: nil)
+
+    let result = try await simulator.profile.profile(.trace(configuration), target: .bundleID(Self.bundleID)).result
+
+    guard case let .trace(report) = result.report else {
+      return XCTFail("Expected a trace report, got \(String(describing: result.report))")
+    }
+    XCTAssertEqual(report.runs.count, 1)
+    XCTAssertEqual(report.runs.first?.templateName, "Time Profiler")
+    XCTAssertEqual(report.tables.map(\.schema), ["time-profile"])
+    XCTAssertLessThanOrEqual(report.tables.first?.rows.count ?? .max, 10)
+    XCTAssertNil(result.artifact)
+  }
 }

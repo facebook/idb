@@ -12,4 +12,8 @@ public enum ProfileTarget: Equatable, Sendable {
   case pid(pid_t)
   /// The running process of an installed application.
   case bundleID(String)
+  /// An installed application, launched by the profiler so the profile covers its startup. Only `trace` supports it.
+  case launch(bundleID: String)
+  /// Every process on the target. Only `trace` supports it.
+  case allProcesses
 }

@@ -13,6 +13,7 @@ public enum ProfileReport: Equatable, Sendable {
   case sample(SampleReport)
   case vmmap(VmmapReport)
   case footprint(FootprintReport)
+  case trace(TraceReport)
 }
 
 /// The process a report describes, from the header the runtime tools print.

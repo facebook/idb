@@ -7,6 +7,12 @@
 
 import Foundation
 
+public struct TraceReport: Codable, Equatable, Sendable {
+  public let runs: [TraceRun]
+  /// The exported tables of the last run.
+  public let tables: [TraceTable]
+}
+
 /// One recording in a trace, from `xctrace export --toc`.
 public struct TraceRun: Codable, Equatable, Sendable {
   public let number: Int

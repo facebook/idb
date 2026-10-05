@@ -23,4 +23,6 @@ public enum ProfileConfiguration: Equatable, Sendable {
   case footprint
   /// Resource usage sampled every `interval` until the target exits or the operation is stopped.
   case resources(interval: Duration, scope: ResourceSampleScope)
+  /// An Instruments recording, reported as the tables it exported.
+  case trace(TraceConfiguration)
 }

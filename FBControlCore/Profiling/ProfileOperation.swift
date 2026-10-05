@@ -23,7 +23,8 @@ public struct ProfileOperation: Sendable {
     get async throws { try await task.value }
   }
 
-  /// Ends a `resources` profiler. Any other profiler is cancelled, so `result` throws `CancellationError`.
+  /// Ends a `resources` profiler, or a `trace` before its time limit with what it recorded so far. Any other
+  /// profiler is cancelled, so `result` throws `CancellationError`.
   public func stop() {
     task.cancel()
   }

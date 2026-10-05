@@ -12,7 +12,7 @@ public struct ProfileResult: Equatable, Sendable {
   public let report: ProfileReport?
   /// What the tool wrote, unparsed: text for most tools, JSON for `footprint`.
   public let toolOutput: Data
-  /// The file the profiler wrote, such as a memory graph.
+  /// The file the profiler wrote, such as a memory graph or a trace.
   public let artifact: URL?
 
   public init(report: ProfileReport?, toolOutput: Data, artifact: URL?) {

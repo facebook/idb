@@ -19,16 +19,17 @@ public struct SimulatorProfileCommands: ProfileCommands {
   }
 
   public func profile(_ configuration: ProfileConfiguration, target: ProfileTarget) async throws -> ProfileOperation {
-    let pid = try await resolvePID(target)
     let tools = simulator.runtimeTools
     switch configuration {
     case .leaks:
+      let pid = try await resolvePID(target)
       return Self.oneShot {
         // leaks exits 1 when it finds leaks.
         let stdout = try await Self.run("leaks", [String(pid)], acceptingExitCodes: [0, 1], tools: tools)
         return ProfileResult(report: .leaks(try RuntimeToolOutputParser.leaks(Self.text(stdout))), toolOutput: stdout, artifact: nil)
       }
     case let .memgraph(outputPath):
+      let pid = try await resolvePID(target)
       let graphPath = Self.graphPath(for: outputPath)
       return Self.oneShot {
         // Writing the graph prints nothing useful, so the report comes from reading the graph back.
@@ -37,26 +38,31 @@ public struct SimulatorProfileCommands: ProfileCommands {
         return ProfileResult(report: .leaks(try RuntimeToolOutputParser.leaks(Self.text(stdout))), toolOutput: stdout, artifact: URL(fileURLWithPath: graphPath))
       }
     case .heap:
+      let pid = try await resolvePID(target)
       return Self.oneShot {
         let stdout = try await Self.run("heap", [String(pid)], tools: tools)
         return ProfileResult(report: .heap(try RuntimeToolOutputParser.heap(Self.text(stdout))), toolOutput: stdout, artifact: nil)
       }
     case let .sample(seconds):
+      let pid = try await resolvePID(target)
       return Self.oneShot {
         let stdout = try await Self.run("sample", [String(pid), String(seconds)], tools: tools)
         return ProfileResult(report: .sample(try RuntimeToolOutputParser.sample(Self.text(stdout))), toolOutput: stdout, artifact: nil)
       }
     case .vmmap:
+      let pid = try await resolvePID(target)
       return Self.oneShot {
         let stdout = try await Self.run("vmmap", [String(pid), "-summary"], tools: tools)
         return ProfileResult(report: .vmmap(try RuntimeToolOutputParser.vmmap(Self.text(stdout))), toolOutput: stdout, artifact: nil)
       }
     case .footprint:
+      let pid = try await resolvePID(target)
       return Self.oneShot {
         let json = try await Self.footprint(pid: pid, tools: tools)
         return ProfileResult(report: .footprint(try RuntimeToolOutputParser.footprint(json)), toolOutput: json, artifact: nil)
       }
     case let .resources(interval, scope):
+      let pid = try await resolvePID(target)
       let (samples, continuation) = AsyncStream<ResourceSample>.makeStream()
       let task = Task<ProfileResult, Error> {
         await ResourceSampler.sample(pid: pid, interval: interval, scope: scope) { continuation.yield($0) }
@@ -65,6 +71,12 @@ public struct SimulatorProfileCommands: ProfileCommands {
       }
       continuation.onTermination = { _ in task.cancel() }
       return ProfileOperation(samples: samples, task: task)
+    case let .trace(trace):
+      let process = try await xctraceProcess(target)
+      let simulator = self.simulator
+      return Self.oneShot {
+        try await XctraceProfiler.trace(trace, process: process, target: simulator, logger: simulator.logger)
+      }
     }
   }
 
@@ -74,6 +86,19 @@ public struct SimulatorProfileCommands: ProfileCommands {
       return pid
     case let .bundleID(bundleID):
       return try await simulator.application.processID(forBundleID: bundleID)
+    case .launch, .allProcesses:
+      throw ProfileError.unsupportedTarget(target)
+    }
+  }
+
+  private func xctraceProcess(_ target: ProfileTarget) async throws -> XctraceProcess {
+    switch target {
+    case let .launch(bundleID):
+      return .launch(bundleID: bundleID)
+    case .allProcesses:
+      return .allProcesses
+    case .pid, .bundleID:
+      return .attach(try await resolvePID(target))
     }
   }
 
