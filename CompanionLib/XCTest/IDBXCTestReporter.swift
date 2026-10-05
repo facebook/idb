@@ -435,7 +435,7 @@ final class IDBXCTestReporter: NSObject, XCTestReporter, DataConsumer, @unchecke
     return try await exportCoverage(profdataPath: profdataPath, binariesPath: binariesPath)
   }
 
-  private func mergeRawCoverage(coverageDirectory: URL, profdataPath: URL) async throws {
+  func mergeRawCoverage(coverageDirectory: URL, profdataPath: URL) async throws {
     let profraws = try FileManager.default
       .contentsOfDirectory(at: coverageDirectory, includingPropertiesForKeys: nil, options: [])
       .filter { $0.pathExtension == "profraw" }
@@ -456,7 +456,7 @@ final class IDBXCTestReporter: NSObject, XCTestReporter, DataConsumer, @unchecke
     }
   }
 
-  private func exportCoverage(profdataPath: URL, binariesPath: [String]) async throws -> Data {
+  func exportCoverage(profdataPath: URL, binariesPath: [String]) async throws -> Data {
     let exportArgs: [String] =
       ["llvm-cov", "export", "--num-threads", "2", "-instr-profile", profdataPath.path]
       + binariesPath.reduce(into: []) {
