@@ -38,7 +38,7 @@ struct TailMethodHandler {
       })
   }
 
-  /// Forwards the tail `start` begins until `awaitStop` returns, then cancels it.
+  /// Forwards the tail `start` begins until `awaitStop` returns or throws, then cancels it.
   static func tail(
     send: @escaping @Sendable (Idb_TailResponse) throws -> Void,
     awaitStop: () async throws -> Void,
@@ -59,7 +59,14 @@ struct TailMethodHandler {
     }
 
     let tail = try await start(consumer)
-    try await awaitStop()
+    do {
+      try await awaitStop()
+    } catch {
+      // A client that goes away without a stop ends the stream here, and nothing else would stop the tail.
+      _finished.set(true)
+      try? await tail.cancel()
+      throw error
+    }
     try await tail.cancel()
     _finished.set(true)
   }

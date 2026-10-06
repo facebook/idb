@@ -38,7 +38,6 @@ final class TailMethodHandlerTests: XCTestCase {
       try await TailMethodHandler.tail(send: { _ in }, awaitStop: { throw StreamEnded() }, start: { _ in tail })
       XCTFail("the call outlived its request stream")
     } catch is StreamEnded {}
-    // BUG: the tail process is left running when the client goes away without a stop — flipped in the following commit.
-    XCTAssertFalse(tail.wasCancelled)
+    XCTAssertTrue(tail.wasCancelled)
   }
 }
