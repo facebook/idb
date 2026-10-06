@@ -9,7 +9,7 @@ from __future__ import annotations
 import asyncio
 import io
 from argparse import Namespace
-from collections.abc import AsyncIterator
+from collections.abc import AsyncIterator, Callable
 from contextlib import redirect_stdout
 from typing import cast
 from unittest.mock import AsyncMock, MagicMock, patch
@@ -36,12 +36,21 @@ class _RecordingClient:
         self.calls.append(("dap", kwargs))
 
     async def install_xctest(
-        self, xctest: str, skip_signing_bundles: bool | None = None
+        self,
+        xctest: str,
+        skip_signing_bundles: bool | None = None,
+        *,
+        on_upload_progress: Callable[[str], None] | None = None,
     ) -> AsyncIterator[InstalledArtifact]:
         self.calls.append(("install_xctest", (xctest, skip_signing_bundles)))
         yield InstalledArtifact(name="InstalledTests", uuid=None, progress=0.0)
 
-    async def install(self, bundle: str) -> AsyncIterator[InstalledArtifact]:
+    async def install(
+        self,
+        bundle: str,
+        *,
+        on_upload_progress: Callable[[str], None] | None = None,
+    ) -> AsyncIterator[InstalledArtifact]:
         self.calls.append(("install", bundle))
         names = {
             "App.app": "InstalledApp",

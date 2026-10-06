@@ -11,7 +11,7 @@ import sys
 from argparse import ArgumentParser, Namespace, REMAINDER
 from pathlib import Path
 
-from idb.cli import ClientCommand
+from idb.cli import ClientCommand, print_upload_progress
 from idb.common.command import CommandGroup
 from idb.common.format import (
     human_format_installed_test_info,
@@ -49,7 +49,9 @@ class XctestInstallCommand(ClientCommand):
 
     async def run_with_client(self, args: Namespace, client: Client) -> None:
         async for install_response in client.install_xctest(
-            args.test_bundle_path, args.skip_signing_bundles
+            args.test_bundle_path,
+            args.skip_signing_bundles,
+            on_upload_progress=print_upload_progress,
         ):
             if install_response.progress != 0.0 and not args.json:
                 print(f"Installed {install_response.progress}%")
@@ -127,7 +129,9 @@ class XctestListTestsCommand(ClientCommand):
             print("\n".join(tests))
 
     async def install_bundles(self, args: Namespace, client: Client) -> None:
-        async for test in client.install_xctest(args.test_bundle_id):
+        async for test in client.install_xctest(
+            args.test_bundle_id, on_upload_progress=print_upload_progress
+        ):
             args.test_bundle_id = test.name
 
 
@@ -291,7 +295,9 @@ class CommonRunXcTestCommand(ClientCommand):
 
     async def install_bundles(self, args: Namespace, client: Client) -> None:
         async for test in client.install_xctest(
-            args.test_bundle_id, args.skip_signing_bundles
+            args.test_bundle_id,
+            args.skip_signing_bundles,
+            on_upload_progress=print_upload_progress,
         ):
             args.test_bundle_id = test.name
 
@@ -315,6 +321,7 @@ class CommonRunXcTestCommand(ClientCommand):
             bundle_id=args.test_bundle_id,
             bundle_type=FileContainerType.XCTEST,
             compression=None,
+            on_upload_progress=print_upload_progress,
         ):
             if install_response.progress == 0.0:
                 dsym_name = install_response.name
@@ -363,7 +370,9 @@ class XctestRunAppCommand(CommonRunXcTestCommand):
 
     async def install_bundles(self, args: Namespace, client: Client) -> None:
         await super().install_bundles(args, client)
-        async for app in client.install(args.app_bundle_id):
+        async for app in client.install(
+            args.app_bundle_id, on_upload_progress=print_upload_progress
+        ):
             args.app_bundle_id = app.name
 
     def get_tests_to_run(self, args: Namespace) -> set[str] | None:
@@ -388,7 +397,9 @@ class XctestRunUICommand(XctestRunAppCommand):
 
     async def install_bundles(self, args: Namespace, client: Client) -> None:
         await super().install_bundles(args, client)
-        async for app in client.install(args.test_host_app_bundle_id):
+        async for app in client.install(
+            args.test_host_app_bundle_id, on_upload_progress=print_upload_progress
+        ):
             args.test_host_app_bundle_id = app.name
 
 

@@ -8,7 +8,7 @@
 import json
 from argparse import ArgumentParser, Namespace
 
-from idb.cli import ClientCommand
+from idb.cli import ClientCommand, print_upload_progress
 from idb.common.types import Client
 
 
@@ -26,7 +26,9 @@ class DylibInstallCommand(ClientCommand):
         super().add_parser_arguments(parser)
 
     async def run_with_client(self, args: Namespace, client: Client) -> None:
-        async for install_response in client.install_dylib(args.dylib_path):
+        async for install_response in client.install_dylib(
+            args.dylib_path, on_upload_progress=print_upload_progress
+        ):
             if install_response.progress != 0.0 and not args.json:
                 print(f"Installed {install_response.progress}%")
             elif args.json:

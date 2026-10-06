@@ -19,6 +19,7 @@ from types import ModuleType
 from typing import Any, TypeVar
 from unittest.mock import ANY, MagicMock, patch
 
+from idb.cli import print_upload_progress
 from idb.cli.commands.xctest import NO_SPECIFIED_PATH
 from idb.cli.main import gen_main as cli_main, get_default_companion_path
 from idb.common import plugin
@@ -309,6 +310,7 @@ class TestParser(TestCase):
             make_debuggable=None,
             compression=None,
             override_modification_time=None,
+            on_upload_progress=print_upload_progress,
         )
 
         self.client_mock.install = MagicMock(return_value=AsyncGeneratorMock())
@@ -321,7 +323,30 @@ class TestParser(TestCase):
             make_debuggable=None,
             compression=None,
             override_modification_time=None,
+            on_upload_progress=print_upload_progress,
         )
+
+    async def test_install_prints_upload_progress_to_stderr(self) -> None:
+        async def install(
+            **kwargs: Any,
+        ) -> AsyncIterator[InstalledArtifact]:
+            kwargs["on_upload_progress"]("Uploading: 1.0 MiB sent, 0.5 MiB/s")
+            yield InstalledArtifact(
+                name="com.example.app", uuid="app-uuid", progress=0.0
+            )
+
+        self.client_mock.install = install
+        stdout = StringIO()
+        stderr = StringIO()
+        with redirect_stdout(stdout), redirect_stderr(stderr):
+            self.assertEqual(
+                await cli_main(cmd_input=["install", "--json", "testApp.ipa"]), 0
+            )
+        self.assertEqual(
+            stdout.getvalue(),
+            '{"installedAppBundleId": "com.example.app", "uuid": "app-uuid"}\n',
+        )
+        self.assertIn("Uploading: 1.0 MiB sent, 0.5 MiB/s\n", stderr.getvalue())
 
     async def test_install_from_stdin(self) -> None:
         self.client_mock.install = MagicMock(
@@ -340,6 +365,7 @@ class TestParser(TestCase):
             make_debuggable=None,
             compression=None,
             override_modification_time=None,
+            on_upload_progress=print_upload_progress,
         )
 
     async def test_install_with_mtime_override(self) -> None:
@@ -365,6 +391,7 @@ class TestParser(TestCase):
             make_debuggable=None,
             compression=None,
             override_modification_time=True,
+            on_upload_progress=print_upload_progress,
         )
 
     async def test_install_with_bad_compression(self) -> None:
@@ -401,6 +428,7 @@ class TestParser(TestCase):
             make_debuggable=None,
             compression=Compression.ZSTD,
             override_modification_time=None,
+            on_upload_progress=print_upload_progress,
         )
 
     async def test_dsym_install(self) -> None:
@@ -433,6 +461,7 @@ class TestParser(TestCase):
             bundle_id,
             Compression.GZIP,
             FileContainerType.APPLICATION,
+            on_upload_progress=print_upload_progress,
         )
 
         self.client_mock.install_dsym = MagicMock(return_value=AsyncGeneratorMock())
@@ -457,7 +486,9 @@ class TestParser(TestCase):
             output.getvalue(),
             "Installed 50.0%\nInstalled: libExample.dylib dylib-uuid\n",
         )
-        self.client_mock.install_dylib.assert_called_once_with("libExample.dylib")
+        self.client_mock.install_dylib.assert_called_once_with(
+            "libExample.dylib", on_upload_progress=print_upload_progress
+        )
 
         self.client_mock.install_dylib = MagicMock(return_value=AsyncGeneratorMock())
         output = StringIO()
@@ -483,7 +514,9 @@ class TestParser(TestCase):
             output.getvalue(),
             "Installed 50.0%\nInstalled: Example.framework framework-uuid\n",
         )
-        self.client_mock.install_framework.assert_called_once_with("Example.framework")
+        self.client_mock.install_framework.assert_called_once_with(
+            "Example.framework", on_upload_progress=print_upload_progress
+        )
 
         self.client_mock.install_framework = MagicMock(
             return_value=AsyncGeneratorMock()
@@ -815,7 +848,9 @@ class TestParser(TestCase):
             output.getvalue(),
             "Installed 50.0%\nInstalled: com.example.tests xctest-uuid\n",
         )
-        self.client_mock.install_xctest.assert_called_once_with(test_bundle_path, True)
+        self.client_mock.install_xctest.assert_called_once_with(
+            test_bundle_path, True, on_upload_progress=print_upload_progress
+        )
 
         self.client_mock.install_xctest = MagicMock(return_value=AsyncGeneratorMock())
         output = StringIO()

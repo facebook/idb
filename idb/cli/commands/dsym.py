@@ -8,7 +8,7 @@
 import json
 from argparse import ArgumentParser, Namespace
 
-from idb.cli import ClientCommand
+from idb.cli import ClientCommand, print_upload_progress
 from idb.common.types import Client, Compression, FileContainerType
 
 
@@ -43,6 +43,7 @@ class DsymInstallCommand(ClientCommand):
             args.bundle_id,
             compression,
             bundle_type,
+            on_upload_progress=print_upload_progress,
         ):
             if install_response.progress != 0.0 and not args.json:
                 print(f"Installed {install_response.progress}%")

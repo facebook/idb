@@ -7,6 +7,7 @@
 from __future__ import annotations
 
 import dataclasses
+import functools
 import io
 import logging
 import os
@@ -22,7 +23,10 @@ from idb.grpc.idb_pb2 import InstallRequest, InstallResponse, Payload
 from idb.grpc.install import (
     generate_binary_chunks,
     generate_io_chunks,
+    MIB,
+    remaining_size,
     select_stream_compression,
+    UploadProgress,
     ZSTD_ZIP_STREAM_MARKER,
 )
 from idb.grpc.tests.stream_test_support import make_client, ScriptedStream
@@ -306,3 +310,162 @@ class SelectStreamCompressionTests(unittest.TestCase):
                 select_stream_compression(requested=None, supported=frozenset()),
                 None,
             )
+
+
+class _Clock:
+    def __init__(self, *times: float, step: float = 0.0) -> None:
+        self._times = list(times)
+        self._step = step
+        self._now = 0.0
+
+    def __call__(self) -> float:
+        if self._times:
+            self._now = self._times.pop(0)
+        else:
+            self._now += self._step
+        return self._now
+
+
+class UploadProgressTests(TestCase):
+    def test_reports_the_percentage_of_a_known_total(self) -> None:
+        lines: list[str] = []
+        progress = UploadProgress(
+            report=lines.append,
+            total=10 * MIB,
+            clock=_Clock(0.0, 1.0, 2.0, 4.0, 10.0, 12.0),
+        )
+        for size in (1, 1, 2, 6):
+            progress.count(size * MIB)
+        progress.finish()
+        self.assertEqual(
+            lines,
+            [
+                "Uploading: 2.0 MiB sent (20%), 1.0 MiB/s",
+                "Uploading: 10.0 MiB sent (100%), 1.0 MiB/s",
+                "Uploaded 10.0 MiB in 12s, waiting for the companion to install",
+            ],
+        )
+
+    def test_reports_bytes_and_rate_without_a_total(self) -> None:
+        lines: list[str] = []
+        progress = UploadProgress(
+            report=lines.append, total=None, clock=_Clock(0.0, 3.0, 4.0)
+        )
+        progress.count(6 * MIB)
+        progress.finish()
+        self.assertEqual(
+            lines,
+            [
+                "Uploading: 6.0 MiB sent, 2.0 MiB/s",
+                "Uploaded 6.0 MiB in 4s, waiting for the companion to install",
+            ],
+        )
+
+    def test_an_upload_within_the_delay_reports_nothing(self) -> None:
+        lines: list[str] = []
+        progress = UploadProgress(
+            report=lines.append, total=4 * MIB, clock=_Clock(step=0.5)
+        )
+        for _ in range(3):
+            progress.count(MIB)
+        progress.finish()
+        self.assertEqual(lines, [])
+
+    def test_a_percentage_never_exceeds_100(self) -> None:
+        lines: list[str] = []
+        progress = UploadProgress(
+            report=lines.append, total=MIB, clock=_Clock(0.0, 2.0)
+        )
+        progress.count(2 * MIB)
+        self.assertEqual(lines, ["Uploading: 2.0 MiB sent (100%), 1.0 MiB/s"])
+
+
+class RemainingSizeTests(TestCase):
+    def test_a_regular_file_reports_the_bytes_after_its_position(self) -> None:
+        with tempfile.TemporaryFile() as file:
+            file.write(b"x" * 100)
+            file.seek(30)
+            self.assertEqual(remaining_size(file), 70)
+
+    def test_a_pipe_has_no_size(self) -> None:
+        (read_fd, write_fd) = os.pipe()
+        with os.fdopen(read_fd, "rb") as reader, os.fdopen(write_fd, "wb"):
+            self.assertIsNone(remaining_size(reader))
+
+    def test_an_in_memory_stream_has_no_size(self) -> None:
+        self.assertIsNone(remaining_size(io.BytesIO(b"data")))
+
+
+class InstallUploadProgressTests(TestCase):
+    async def _install(
+        self, bundle: str, *, is_local: bool, clock: _Clock
+    ) -> tuple[list[str], bytes]:
+        stream = ScriptedStream(InstallResponse(name="com.example.app"))
+        client, _ = make_client("install", stream, is_local=is_local)
+        client.companion = dataclasses.replace(
+            client.companion,
+            supported_compressions=frozenset({Compression.GZIP, Compression.ZSTD}),
+            zstd_zip_streams=True,
+        )
+        lines: list[str] = []
+        with (
+            patch("idb.common.tar.has_zstd_compressor", return_value=True),
+            patch(
+                "idb.grpc.client.UploadProgress",
+                functools.partial(UploadProgress, clock=clock),
+            ),
+        ):
+            async for _ in client.install(
+                bundle=bundle, on_upload_progress=lines.append
+            ):
+                pass
+        sent = b"".join(
+            message.payload.data
+            for (message, _) in stream.sent
+            if isinstance(message, InstallRequest) and message.payload.data
+        )
+        return (lines, sent)
+
+    async def test_an_ipa_reports_the_bytes_read_against_its_size(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            path = os.path.join(directory, "App.ipa")
+            with zipfile.ZipFile(path, "w", compression=zipfile.ZIP_STORED) as ipa:
+                ipa.writestr("Payload/App.app/App", b"\0" * (6 * MIB))
+            size = os.path.getsize(path)
+            (lines, sent) = await self._install(
+                path, is_local=False, clock=_Clock(step=3.0)
+            )
+        self.assertLess(len(sent), MIB, "a stored zip is re-wrapped in zstd")
+        self.assertEqual(
+            lines,
+            [
+                f"Uploading: 4.0 MiB sent ({4 * MIB * 100 // size}%), 1.3 MiB/s",
+                "Uploaded 6.0 MiB in 9s, waiting for the companion to install",
+            ],
+        )
+
+    async def test_an_app_reports_the_bytes_sent_without_a_total(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            app = os.path.join(directory, "App.app")
+            os.mkdir(app)
+            with open(os.path.join(app, "App"), "wb") as f:
+                f.write(os.urandom(1024))
+            (lines, sent) = await self._install(
+                app, is_local=False, clock=_Clock(step=3.0)
+            )
+        self.assertGreaterEqual(len(lines), 2, lines)
+        for line in lines[:-1]:
+            self.assertRegex(line, r"^Uploading: \d+\.\d MiB sent, \d+\.\d MiB/s$")
+        self.assertRegex(
+            lines[-1],
+            rf"^Uploaded {len(sent) / MIB:.1f} MiB in \d+s, waiting for the companion to install$",
+        )
+
+    async def test_a_local_companion_reports_nothing(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            app = os.path.join(directory, "App.app")
+            os.mkdir(app)
+            (lines, sent) = await self._install(
+                app, is_local=True, clock=_Clock(step=3.0)
+            )
+        self.assertEqual((lines, sent), ([], b""))

@@ -10,7 +10,7 @@ import sys
 from argparse import ArgumentParser, Namespace
 from typing import Optional
 
-from idb.cli import ClientCommand
+from idb.cli import ClientCommand, print_upload_progress
 from idb.common.format import (
     human_format_installed_app_info,
     json_format_installed_app_info,
@@ -60,6 +60,7 @@ class AppInstallCommand(ClientCommand):
             make_debuggable=args.make_debuggable,
             compression=compression,
             override_modification_time=args.override_mtime,
+            on_upload_progress=print_upload_progress,
         ):
             artifact = info
             progress = info.progress

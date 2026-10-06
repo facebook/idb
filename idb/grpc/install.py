@@ -6,8 +6,10 @@
 
 
 import os
+import stat
 import struct
-from collections.abc import AsyncIterator
+import time
+from collections.abc import AsyncIterator, Callable
 from logging import Logger
 from typing import IO, List, Optional, Union
 
@@ -36,6 +38,69 @@ ZIP_DATA_DESCRIPTOR_SIGNATURE = b"PK\x07\x08"
 ZIP_STORED = 0
 ZIP_HAS_DATA_DESCRIPTOR = 0x08
 
+UPLOAD_PROGRESS_DELAY = 2.0
+UPLOAD_PROGRESS_INTERVAL = 5.0
+MIB = 1024 * 1024
+
+
+class UploadProgress:
+    """Reports how much of an install payload has been sent, as lines of text.
+
+    An upload that finishes within `UPLOAD_PROGRESS_DELAY` seconds reports nothing.
+    """
+
+    def __init__(
+        self,
+        report: Callable[[str], None],
+        total: int | None,
+        clock: Callable[[], float] = time.monotonic,
+    ) -> None:
+        self._report = report
+        self._total = total
+        self._clock = clock
+        self._start: float = clock()
+        self._next_report: float = self._start + UPLOAD_PROGRESS_DELAY
+        self._sent = 0
+        self._reported = False
+
+    @property
+    def total(self) -> int | None:
+        return self._total
+
+    def count(self, size: int) -> None:
+        self._sent += size
+        now = self._clock()
+        if now < self._next_report:
+            return
+        self._next_report = now + UPLOAD_PROGRESS_INTERVAL
+        self._reported = True
+        percent = (
+            f" ({min(100, self._sent * 100 // self._total)}%)" if self._total else ""
+        )
+        rate = self._sent / max(now - self._start, 1e-9) / MIB
+        self._report(
+            f"Uploading: {self._sent / MIB:.1f} MiB sent{percent}, {rate:.1f} MiB/s"
+        )
+
+    def finish(self) -> None:
+        if not self._reported:
+            return
+        elapsed = round(self._clock() - self._start)
+        self._report(
+            f"Uploaded {self._sent / MIB:.1f} MiB in {elapsed}s, waiting for the companion to install"
+        )
+
+
+def remaining_size(io: IO[bytes]) -> int | None:
+    """The bytes left to read from `io` when it is a regular file, otherwise None."""
+    try:
+        status = os.fstat(io.fileno())
+        if not stat.S_ISREG(status.st_mode):
+            return None
+        return max(0, status.st_size - io.tell())
+    except (AttributeError, OSError, ValueError):
+        return None
+
 
 def _zip_stores_files(head: bytes) -> bool:
     """Whether the first file in a zip is stored rather than compressed.
@@ -59,15 +124,31 @@ def _zip_stores_files(head: bytes) -> bool:
     return True
 
 
-async def _read_file(path: str) -> AsyncIterator[bytes]:
+async def _read_file(
+    path: str, progress: UploadProgress | None = None
+) -> AsyncIterator[bytes]:
     async with aiofiles.open(path, "rb") as file:
         while chunk := await file.read(CHUNK_SIZE):
+            if progress is not None:
+                progress.count(len(chunk))
             yield chunk
 
 
-async def _read_io(io: IO[bytes]) -> AsyncIterator[bytes]:
+async def _read_io(
+    io: IO[bytes], progress: UploadProgress | None = None
+) -> AsyncIterator[bytes]:
     while chunk := io.read(CHUNK_SIZE):
+        if progress is not None:
+            progress.count(len(chunk))
         yield chunk
+
+
+async def _count_payloads(
+    requests: AsyncIterator[InstallRequest], progress: UploadProgress
+) -> AsyncIterator[InstallRequest]:
+    async for request in requests:
+        progress.count(len(request.payload.data))
+        yield request
 
 
 async def _prepend(first: bytes, rest: AsyncIterator[bytes]) -> AsyncIterator[bytes]:
@@ -99,11 +180,16 @@ async def _generate_payloads(
 
 
 async def _generate_ipa_chunks(
-    ipa_path: str, zstd_zip_stream: bool, logger: Logger
+    ipa_path: str,
+    zstd_zip_stream: bool,
+    logger: Logger,
+    progress: UploadProgress | None = None,
 ) -> AsyncIterator[InstallRequest]:
     logger.debug(f"Generating Chunks for .ipa {ipa_path}")
     async for request in _generate_payloads(
-        _read_file(ipa_path), zstd_zip_stream=zstd_zip_stream, logger=logger
+        _read_file(ipa_path, progress),
+        zstd_zip_stream=zstd_zip_stream,
+        logger=logger,
     ):
         yield request
     logger.debug(f"Finished generating .ipa chunks for {ipa_path}")
@@ -163,11 +249,14 @@ async def generate_requests(
 
 
 async def generate_io_chunks(
-    io: IO[bytes], logger: Logger, zstd_zip_stream: bool = False
+    io: IO[bytes],
+    logger: Logger,
+    zstd_zip_stream: bool = False,
+    progress: UploadProgress | None = None,
 ) -> AsyncIterator[InstallRequest]:
     logger.debug("Generating io chunks")
     async for request in _generate_payloads(
-        _read_io(io), zstd_zip_stream=zstd_zip_stream, logger=logger
+        _read_io(io, progress), zstd_zip_stream=zstd_zip_stream, logger=logger
     ):
         yield request
     logger.debug("Finished generating io chunks")
@@ -187,19 +276,41 @@ def select_stream_compression(
     return requested
 
 
+def ipa_size(path: str, destination: Destination) -> int | None:
+    """The size of an `.ipa`, the only bundle sent as the file it is read from."""
+    if destination == InstallRequest.APP and path.endswith(".ipa"):
+        return os.path.getsize(path)
+    return None
+
+
 def generate_binary_chunks(
     path: str,
     destination: Destination,
     compression: Compression | None,
     logger: Logger,
     zstd_zip_stream: bool = False,
+    progress: UploadProgress | None = None,
+) -> AsyncIterator[InstallRequest]:
+    # An `.ipa` counts the bytes it reads rather than sends, as its percentage is of its size and a zstd re-wrap changes what is sent.
+    if destination == InstallRequest.APP and path.endswith(".ipa"):
+        return _generate_ipa_chunks(
+            ipa_path=path,
+            zstd_zip_stream=zstd_zip_stream,
+            logger=logger,
+            progress=progress,
+        )
+    requests = _generate_archive_chunks(path, destination, compression, logger)
+    return requests if progress is None else _count_payloads(requests, progress)
+
+
+def _generate_archive_chunks(
+    path: str,
+    destination: Destination,
+    compression: Compression | None,
+    logger: Logger,
 ) -> AsyncIterator[InstallRequest]:
     if destination == InstallRequest.APP:
-        if path.endswith(".ipa"):
-            return _generate_ipa_chunks(
-                ipa_path=path, zstd_zip_stream=zstd_zip_stream, logger=logger
-            )
-        elif path.endswith(".app"):
+        if path.endswith(".app"):
             return _generate_app_chunks(
                 app_path=path,
                 compression=compression or Compression.GZIP,

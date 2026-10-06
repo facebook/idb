@@ -16,7 +16,13 @@ import sys
 import tempfile
 import urllib.parse
 from asyncio import StreamReader, StreamWriter
-from collections.abc import AsyncGenerator, AsyncIterable, AsyncIterator, Iterable
+from collections.abc import (
+    AsyncGenerator,
+    AsyncIterable,
+    AsyncIterator,
+    Callable,
+    Iterable,
+)
 from io import StringIO
 from pathlib import Path
 from typing import Any
@@ -172,7 +178,10 @@ from idb.grpc.install import (
     generate_binary_chunks,
     generate_io_chunks,
     generate_requests,
+    ipa_size,
+    remaining_size,
     select_stream_compression,
+    UploadProgress,
 )
 from idb.grpc.instruments import (
     instruments_drain_until_running,
@@ -444,9 +453,11 @@ class Client(ClientBase):
         bundle_type: FileContainerType | None,
         override_modification_time: bool | None = None,
         skip_signing_bundles: bool | None = None,
+        on_upload_progress: Callable[[str], None] | None = None,
     ) -> AsyncIterator[InstalledArtifact]:
         async with self.stub.install.open() as stream:
             generator = None
+            progress = None
             if isinstance(bundle, str):
                 url = urllib.parse.urlparse(bundle)
                 if url.scheme:
@@ -488,6 +499,11 @@ class Client(ClientBase):
                         self.logger.debug(
                             f"Streaming {file_path} with {(compression or Compression.GZIP).name} compression"
                         )
+                        if on_upload_progress is not None:
+                            progress = UploadProgress(
+                                report=on_upload_progress,
+                                total=ipa_size(file_path, destination),
+                            )
                         # chunk file from file_path
                         generator = generate_binary_chunks(
                             path=file_path,
@@ -497,11 +513,16 @@ class Client(ClientBase):
                             zstd_zip_stream=self._streams_zips_as_zstd(
                                 destination, compression
                             ),
+                            progress=progress,
                         )
 
             else:
                 # chunk file from memory
                 self.logger.debug("Sending file data from input stream")
+                if on_upload_progress is not None:
+                    progress = UploadProgress(
+                        report=on_upload_progress, total=remaining_size(bundle)
+                    )
                 # `compression` is deliberately not reassigned: these bytes go out
                 # as their producer compressed them, so only a zip may be wrapped.
                 generator = generate_io_chunks(
@@ -514,6 +535,7 @@ class Client(ClientBase):
                             supported=self.companion.supported_compressions,
                         ),
                     ),
+                    progress=progress,
                 )
                 # stream to companion
             await stream.send_message(InstallRequest(destination=destination))
@@ -554,6 +576,8 @@ class Client(ClientBase):
 
             async for message in generator:
                 await stream.send_message(message)
+            if progress is not None:
+                progress.finish()
             self.logger.debug("Finished sending install payload to companion")
             await stream.end()
             async for response in stream:
@@ -1042,6 +1066,8 @@ class Client(ClientBase):
         compression: Compression | None = None,
         make_debuggable: bool | None = None,
         override_modification_time: bool | None = None,
+        *,
+        on_upload_progress: Callable[[str], None] | None = None,
     ) -> AsyncIterator[InstalledArtifact]:
         async for response in self._install_to_destination(
             bundle=bundle,
@@ -1051,6 +1077,7 @@ class Client(ClientBase):
             bundle_id=None,
             bundle_type=None,
             override_modification_time=override_modification_time,
+            on_upload_progress=on_upload_progress,
         ):
             yield response
 
@@ -1059,6 +1086,8 @@ class Client(ClientBase):
         self,
         xctest: Bundle,
         skip_signing_bundles: bool | None = None,
+        *,
+        on_upload_progress: Callable[[str], None] | None = None,
     ) -> AsyncIterator[InstalledArtifact]:
         async for response in self._install_to_destination(
             bundle=xctest,
@@ -1068,11 +1097,17 @@ class Client(ClientBase):
             bundle_id=None,
             bundle_type=None,
             skip_signing_bundles=skip_signing_bundles,
+            on_upload_progress=on_upload_progress,
         ):
             yield response
 
     @log_and_handle_exceptions("install")
-    async def install_dylib(self, dylib: Bundle) -> AsyncIterator[InstalledArtifact]:
+    async def install_dylib(
+        self,
+        dylib: Bundle,
+        *,
+        on_upload_progress: Callable[[str], None] | None = None,
+    ) -> AsyncIterator[InstalledArtifact]:
         async for response in self._install_to_destination(
             bundle=dylib,
             destination=InstallRequest.DYLIB,
@@ -1080,6 +1115,7 @@ class Client(ClientBase):
             make_debuggable=None,
             bundle_id=None,
             bundle_type=None,
+            on_upload_progress=on_upload_progress,
         ):
             yield response
 
@@ -1090,6 +1126,8 @@ class Client(ClientBase):
         bundle_id: str | None,
         compression: Compression | None,
         bundle_type: FileContainerType | None = None,
+        *,
+        on_upload_progress: Callable[[str], None] | None = None,
     ) -> AsyncIterator[InstalledArtifact]:
         async for response in self._install_to_destination(
             bundle=dsym,
@@ -1098,12 +1136,16 @@ class Client(ClientBase):
             make_debuggable=None,
             bundle_id=bundle_id,
             bundle_type=bundle_type,
+            on_upload_progress=on_upload_progress,
         ):
             yield response
 
     @log_and_handle_exceptions("install")
     async def install_framework(
-        self, framework_path: Bundle
+        self,
+        framework_path: Bundle,
+        *,
+        on_upload_progress: Callable[[str], None] | None = None,
     ) -> AsyncIterator[InstalledArtifact]:
         async for response in self._install_to_destination(
             bundle=framework_path,
@@ -1112,6 +1154,7 @@ class Client(ClientBase):
             make_debuggable=None,
             bundle_id=None,
             bundle_type=None,
+            on_upload_progress=on_upload_progress,
         ):
             yield response
 

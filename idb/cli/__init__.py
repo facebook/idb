@@ -7,6 +7,7 @@
 
 import logging
 import os
+import sys
 from abc import ABCMeta, abstractmethod
 from argparse import ArgumentParser, Namespace
 from collections.abc import AsyncGenerator
@@ -29,6 +30,11 @@ from idb.common.types import (
 from idb.grpc.client import Client as GrpcClient
 from idb.grpc.management import ClientManager as GrpcClientManager
 from idb.utils.contextlib import asynccontextmanager
+
+
+def print_upload_progress(line: str) -> None:
+    """Prints install upload progress to stderr, which keeps stdout and `--json` output unchanged."""
+    print(line, file=sys.stderr, flush=True)
 
 
 def _parse_address(value: str) -> Address:

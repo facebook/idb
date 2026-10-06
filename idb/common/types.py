@@ -10,7 +10,13 @@ import json
 import math
 from abc import ABC, abstractmethod
 from asyncio import StreamReader, StreamWriter
-from collections.abc import AsyncGenerator, AsyncIterable, AsyncIterator, Mapping
+from collections.abc import (
+    AsyncGenerator,
+    AsyncIterable,
+    AsyncIterator,
+    Callable,
+    Mapping,
+)
 from contextlib import asynccontextmanager
 from dataclasses import asdict, dataclass, field
 from datetime import timedelta
@@ -910,13 +916,18 @@ class Client(ABC):
         compression: Compression | None = None,
         make_debuggable: bool | None = None,
         override_modification_time: bool | None = None,
+        *,
+        on_upload_progress: Callable[[str], None] | None = None,
     ) -> AsyncIterator[InstalledArtifact]:
         # pyrefly: ignore [invalid-yield]
         yield
 
     @abstractmethod
     async def install_dylib(
-        self, dylib: str | IO[bytes]
+        self,
+        dylib: str | IO[bytes],
+        *,
+        on_upload_progress: Callable[[str], None] | None = None,
     ) -> AsyncIterator[InstalledArtifact]:
         # pyrefly: ignore [invalid-yield]
         yield
@@ -928,20 +939,29 @@ class Client(ABC):
         bundle_id: str | None,
         compression: Compression | None,
         bundle_type: FileContainerType | None = None,
+        *,
+        on_upload_progress: Callable[[str], None] | None = None,
     ) -> AsyncIterator[InstalledArtifact]:
         # pyrefly: ignore [invalid-yield]
         yield
 
     @abstractmethod
     async def install_xctest(
-        self, xctest: str | IO[bytes], skip_signing_bundles: bool | None = None
+        self,
+        xctest: str | IO[bytes],
+        skip_signing_bundles: bool | None = None,
+        *,
+        on_upload_progress: Callable[[str], None] | None = None,
     ) -> AsyncIterator[InstalledArtifact]:
         # pyrefly: ignore [invalid-yield]
         yield
 
     @abstractmethod
     async def install_framework(
-        self, framework_path: str | IO[bytes]
+        self,
+        framework_path: str | IO[bytes],
+        *,
+        on_upload_progress: Callable[[str], None] | None = None,
     ) -> AsyncIterator[InstalledArtifact]:
         # pyrefly: ignore [invalid-yield]
         yield

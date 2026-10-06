@@ -12,7 +12,7 @@ import os
 import sys
 import tempfile
 from argparse import Namespace
-from collections.abc import AsyncIterator, Iterator
+from collections.abc import AsyncIterator, Callable, Iterator
 from contextlib import redirect_stderr, redirect_stdout
 from pathlib import Path
 from types import SimpleNamespace
@@ -123,7 +123,11 @@ class _DiscoveryClient:
         return self.names
 
     async def install_xctest(
-        self, xctest: str, skip_signing_bundles: bool | None = None
+        self,
+        xctest: str,
+        skip_signing_bundles: bool | None = None,
+        *,
+        on_upload_progress: Callable[[str], None] | None = None,
     ) -> AsyncIterator[InstalledArtifact]:
         self.calls.append(("install_xctest", (xctest, skip_signing_bundles)))
         yield InstalledArtifact(
