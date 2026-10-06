@@ -186,11 +186,22 @@ struct InstallMethodHandler: @unchecked Sendable {
   }
 
   /// Installs a non-app artifact from a download's stream as it arrives.
+  ///
+  /// A failed download ends the stream early, which the install alone cannot tell from a complete one,
+  /// so its failure takes precedence over the install's outcome.
   static func installDownload(
     _ download: DataDownloadInput,
     install: (FBProcessInput<AnyObject>) async throws -> InstalledArtifact
   ) async throws -> InstalledArtifact {
-    try await install(download.input)
+    let artifact: InstalledArtifact
+    do {
+      artifact = try await install(download.input)
+    } catch {
+      try await download.completed()
+      throw error
+    }
+    try await download.completed()
+    return artifact
   }
 
   private func isZipArchive(_ data: Data) -> Bool {

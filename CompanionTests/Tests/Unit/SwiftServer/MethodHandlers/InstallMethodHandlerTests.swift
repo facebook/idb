@@ -149,10 +149,15 @@ final class InstallMethodHandlerTests: XCTestCase {
     let missing = URL(fileURLWithPath: NSTemporaryDirectory()).appendingPathComponent(UUID().uuidString)
     let download = DataDownloadInput.dataDownload(withURL: missing, logger: FBControlCoreLoggerFactory.systemLoggerWriting(toStderr: false, withDebugLogging: false))
     let staged = URL(fileURLWithPath: NSTemporaryDirectory()).appendingPathComponent(UUID().uuidString)
-    // BUG: the failed download installs whatever the extractor made of no bytes; flipped in the following commit.
-    let artifact = try await InstallMethodHandler.installDownload(download) { _ in
-      InstalledArtifact(name: "A.dSYM", uuid: nil, path: staged)
+    do {
+      _ = try await InstallMethodHandler.installDownload(download) { _ in
+        InstalledArtifact(name: "A.dSYM", uuid: nil, path: staged)
+      }
+      XCTFail("Expected the failed download to fail the install")
+    } catch let error as InstallError {
+      guard case .transferFailed = error else {
+        return XCTFail("Expected transferFailed, got \(error)")
+      }
     }
-    XCTAssertEqual(artifact.path, staged)
   }
 }
