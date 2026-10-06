@@ -101,7 +101,8 @@ enum SimulatorDisplayResolution: Equatable, Sendable {
   }
 }
 
-/// Why interactions fell back to the main display.
+/// Why interactions fell back to the main display. One-shot resolution waits out no active display, or several,
+/// rather than falling back, as both pass during a hinge change.
 enum SimulatorDisplayFallback: Equatable, Sendable {
   /// The display read failed, including on runtimes that do not report displays.
   case unreadable(SimulatorCoreDeviceError)
@@ -165,10 +166,27 @@ extension DisplayCommands {
   var logger: (any ControlCoreLogger)? { nil }
 
   /// The display interactions target once any display transition has settled. A hinge change moves layout to
-  /// the new display before its backlight follows, and one-shot resolution waits that out. `.transitioning` only
-  /// when the transition outlasts `transitionSettling`.
+  /// the new display before its backlight follows, and can pass through no active display or several; one-shot
+  /// resolution waits that out. `.transitioning` only when the transition outlasts `transitionSettling`, and throws
+  /// if no single display is active by then.
   func resolveDisplay() async throws -> SimulatorDisplayResolution {
-    configurationTracker.resolution(of: try await settledReport(within: transitionSettling.timeout))
+    let deadline = ContinuousClock.now + transitionSettling.timeout
+    while true {
+      let resolution = configurationTracker.resolution(of: try await report())
+      let expired = ContinuousClock.now >= deadline
+      switch resolution {
+      case .target, .fallback(.unreadable), .fallback(.legacyIntegratedDisplays), .fallback(.unknownActivity):
+        return resolution
+      case .transitioning where expired:
+        return resolution
+      case .fallback(.noActiveIntegratedDisplay) where expired:
+        throw SimulatorDisplayError.noActiveIntegratedDisplay
+      case let .fallback(.ambiguousActiveDisplays(identities)) where expired:
+        throw SimulatorDisplayError.ambiguousActiveDisplays(identities)
+      case .transitioning, .fallback(.noActiveIntegratedDisplay), .fallback(.ambiguousActiveDisplays):
+        try await Task.sleep(for: transitionSettling.interval)
+      }
+    }
   }
 
   /// Every identified display once any display transition has settled. A runtime that reports no display activity

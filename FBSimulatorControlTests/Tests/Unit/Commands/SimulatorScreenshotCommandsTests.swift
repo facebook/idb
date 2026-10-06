@@ -55,11 +55,10 @@ final class SimulatorScreenshotCommandsTests: XCTestCase {
     }
   }
 
-  func testTheDisplayIsResolvedWithoutWaitingForATransition() async throws {
+  func testTheDisplayIsResolvedOnceATransitionSettles() async throws {
     let displays = DisplayCommandsDouble([.success(.transitioning), .success(.reporting(.selected(inner)))])
     let resolved = try await SimulatorScreenshotCommands.resolution(of: displays)
-    // BUG: captures the main screen mid-transition rather than the display it settles on — flipped in the following commit
-    XCTAssertEqual(resolved, .transitioning)
+    XCTAssertEqual(resolved, .target(.selected(inner)))
   }
 
   func testCancellationIsNotAFallback() async {

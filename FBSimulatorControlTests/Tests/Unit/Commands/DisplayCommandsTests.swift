@@ -94,23 +94,22 @@ final class DisplayCommandsTests: XCTestCase {
     }
   }
 
-  func testResolvingWhileNoDisplayIsActiveFallsBackWithoutWaiting() async throws {
+  func testResolvingWhileNoDisplayIsActiveWaitsForOne() async throws {
     let displays = DisplayCommandsDouble([
       .success(.displays([display("cover", activity: .inactive), display("inner", activity: .inactive)])),
       .success(.reporting(.selected(display("inner")))),
     ])
     let resolved = await outcome { try await displays.resolveDisplay() }
-    // BUG: falls back to the main display rather than waiting for a display to become active — flipped in the following commit
-    XCTAssertEqual(try resolved.get(), .fallback(.noActiveIntegratedDisplay))
-    XCTAssertEqual(displays.reads, 1)
+    XCTAssertEqual(try resolved.get(), .target(.selected(display("inner"))))
+    XCTAssertEqual(displays.reads, 2)
   }
 
-  func testResolvingWhileSeveralDisplaysStayActiveFallsBack() async throws {
+  func testResolvingWhileSeveralDisplaysStayActiveFails() async throws {
     let displays = DisplayCommandsDouble([.success(.displays([display("cover"), display("inner")]))])
     let resolved = await outcome { try await displays.resolveDisplay() }
-    // BUG: falls back to the main display rather than failing once settling gives up — flipped in the following commit
-    XCTAssertEqual(try resolved.get(), .fallback(.ambiguousActiveDisplays(["cover", "inner"])))
-    XCTAssertEqual(displays.reads, 1)
+    guard case let .failure(SimulatorDisplayError.ambiguousActiveDisplays(identities)) = resolved else { return XCTFail("\(resolved)") }
+    XCTAssertEqual(identities, ["cover", "inner"])
+    XCTAssertGreaterThan(displays.reads, 1)
   }
 
   func testFallbackIsAChangeFromAReportedDisplay() async throws {

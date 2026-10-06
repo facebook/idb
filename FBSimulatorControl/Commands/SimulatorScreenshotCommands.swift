@@ -52,7 +52,7 @@ public final class SimulatorScreenshotCommands: ScreenshotCommands {
   }
 
   static func resolution(of displays: any DisplayCommands) async throws -> SimulatorDisplayResolution {
-    try await displays.currentDisplay()
+    try await displays.resolveDisplay()
   }
 
   /// The active display improves on the main screen but is never required: whatever stops it being
