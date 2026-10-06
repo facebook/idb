@@ -114,24 +114,32 @@ final class DisplayConfigurationTracker: @unchecked Sendable {
     let resolution = SimulatorDisplayResolution(report)
     lock.lock()
     defer { lock.unlock() }
+    let configuration = configuration(of: report, resolution: resolution)
+    // Offered under the lock so subscribers see configurations in the order they were numbered. The follower never
+    // takes this lock, so the order is always this lock, then the follower's.
+    if case let .success(observed) = configuration {
+      follower.offer(observed)
+    }
+    return (configuration, resolution)
+  }
+
+  private func configuration(
+    of report: SimulatorDisplayReport, resolution: SimulatorDisplayResolution
+  ) -> Result<SimulatorDisplayConfiguration, SimulatorCoreDeviceError> {
     switch report {
     case let .failed(error):
-      return (.failure(error), resolution)
+      return .failure(error)
     case .transitioning:
       guard let current else {
-        return (.success(SimulatorDisplayConfiguration(generation: 1, displays: [], active: .unresolved, phase: .transitioning)), resolution)
+        return .success(SimulatorDisplayConfiguration(generation: 1, displays: [], active: .unresolved, phase: .transitioning))
       }
       let previous = current.configuration
-      return (
-        .success(
-          SimulatorDisplayConfiguration(
-            generation: previous.generation, displays: previous.displays, active: previous.active, phase: .transitioning)),
-        resolution
-      )
+      return .success(
+        SimulatorDisplayConfiguration(generation: previous.generation, displays: previous.displays, active: previous.active, phase: .transitioning))
     case let .displays(displays):
-      return (.success(settle(displays: displays, basis: displays.map { .identified($0) }, active: Self.active(in: resolution))), resolution)
+      return .success(settle(displays: displays, basis: displays.map { .identified($0) }, active: Self.active(in: resolution)))
     case let .legacy(integrated):
-      return (.success(settle(displays: [], basis: integrated.map { .legacy($0) }, active: Self.active(in: resolution))), resolution)
+      return .success(settle(displays: [], basis: integrated.map { .legacy($0) }, active: Self.active(in: resolution)))
     }
   }
 

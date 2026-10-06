@@ -269,13 +269,14 @@ extension DisplayCommands {
 
   /// The current configuration, then each change to it, until the stream is cancelled. Follows `reportPushes()`,
   /// and polls every `interval` when the runtime does not push or its pushes stop. A failed read yields nothing.
-  /// Every stream shares one following per tracker, so `interval` is the first concurrent subscriber's.
+  /// Every stream shares one following per tracker, which polls at the shortest `interval` of its current streams.
   func followConfigurations(polling interval: Duration = .milliseconds(250)) -> AsyncStream<SimulatorDisplayConfiguration> {
-    configurationTracker.follower.subscribe { publish in
+    configurationTracker.follower.subscribe(polling: interval) {
       Task {
         func observe(_ report: SimulatorDisplayReport) {
-          guard let configuration = try? configurationTracker.observe(report) else { return }
-          publish(configuration)
+          // A stopped following's read can finish after the next following's, and would number a configuration that has since changed.
+          guard !Task.isCancelled else { return }
+          _ = try? configurationTracker.observe(report)
         }
         // Subscribing before the first read means a change between the two is pushed rather than missed.
         let subscription = Result { try reportPushes() }
@@ -296,7 +297,7 @@ extension DisplayCommands {
           if let polled = try? await report() {
             observe(polled)
           }
-          try? await Task.sleep(for: interval)
+          try? await Task.sleep(for: configurationTracker.follower.interval ?? interval)
         }
       }
     }

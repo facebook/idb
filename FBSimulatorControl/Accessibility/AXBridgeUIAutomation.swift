@@ -392,7 +392,7 @@ final class AXBridgeUIAutomation: AXBridgeTreeReader, @unchecked Sendable {
   }
 
   private static let quiescenceCapabilities: AXBridgeDisplayCapabilities = [.scopedInteractions, .scopedTrees, .scopedQuiescence]
-  private static let displayPollInterval: UInt64 = 250_000_000
+  private static let displayPollInterval: Duration = .milliseconds(250)
 
   private enum FollowStep: Sendable {
     case frame(Data)
@@ -418,15 +418,12 @@ final class AXBridgeUIAutomation: AXBridgeTreeReader, @unchecked Sendable {
         }
       }
       let poll = Task {
-        while true {
-          do {
-            try await Task.sleep(nanoseconds: Self.displayPollInterval)
-          } catch {
-            return
-          }
-          guard case let .target(.selected(next))? = try? await displays.currentDisplay(), next.uniqueID != uniqueID,
+        for await configuration in displays.followConfigurations(polling: Self.displayPollInterval) {
+          guard configuration.phase == .settled, case let .identified(next) = configuration.active, next.uniqueID != uniqueID,
+            configuration.displays.filter(\.isIntegrated).count > 1,
             let displayID = try? await displays.accessibilityID(for: next, transport: self.transport, requiring: Self.quiescenceCapabilities),
-            (try? await displays.currentDisplay()) == .target(.selected(next))
+            // The lookup can outlast a transient report; only a fresh read that still agrees moves the stream.
+            (try? await displays.settledConfiguration(within: .zero))?.generation == configuration.generation
           else { continue }
           continuation.yield(.moved(uniqueID: next.uniqueID, displayID: displayID))
           return

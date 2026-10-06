@@ -9,35 +9,38 @@ import Foundation
 
 /// Shares one following of a simulator's display configurations between every subscriber. The first
 /// subscriber starts it and the last to leave stops it; a subscriber that joins late starts from the most
-/// recent configuration.
+/// recent configuration. The following polls as often as the most demanding current subscriber asks.
 // SAFETY: `state` guards the subscribers, the following task and the last configuration. `delivery` serialises
 // yields, so a late subscriber's replay cannot overtake a newer configuration.
 // patternlint-disable-next-line unchecked-sendable
 final class DisplayConfigurationFollower: @unchecked Sendable {
-  typealias Publish = @Sendable (SimulatorDisplayConfiguration) -> Void
-
   /// Yielding to a stream whose consumer is being cancelled waits on that consumer, and cancellation runs
   /// `onTermination`, which takes `state`. So nothing yields while holding `state`.
   private let state = NSLock()
   private let delivery = NSLock()
-  private var subscribers: [UUID: AsyncStream<SimulatorDisplayConfiguration>.Continuation] = [:]
+  private var subscribers: [UUID: (continuation: AsyncStream<SimulatorDisplayConfiguration>.Continuation, interval: Duration)] = [:]
   private var following: Task<Void, Never>?
-  /// Distinguishes the current following from a cancelled one that has not yet stopped publishing.
-  private var epoch: UInt64 = 0
+  /// Only kept while someone subscribes, so a replay is never older than the subscription it joins.
   private var last: SimulatorDisplayConfiguration?
 
-  /// `start` runs only when nothing is following yet, and publishes each configuration it observes.
-  func subscribe(start: (@escaping Publish) -> Task<Void, Never>) -> AsyncStream<SimulatorDisplayConfiguration> {
+  /// The shortest polling interval any current subscriber asked for.
+  var interval: Duration? {
+    state.lock()
+    defer { state.unlock() }
+    return subscribers.values.map(\.interval).min()
+  }
+
+  /// `start` runs only when nothing is following yet. Whatever it observes reaches subscribers through `offer`.
+  func subscribe(polling interval: Duration, start: () -> Task<Void, Never>) -> AsyncStream<SimulatorDisplayConfiguration> {
     let (stream, continuation) = AsyncStream<SimulatorDisplayConfiguration>.makeStream()
     let id = UUID()
     delivery.lock()
     defer { delivery.unlock() }
     state.lock()
-    subscribers[id] = continuation
+    subscribers[id] = (continuation, interval)
     let replay = last
     if following == nil {
-      let epoch = epoch
-      following = start { [weak self] configuration in self?.publish(configuration, epoch: epoch) }
+      following = start()
     }
     state.unlock()
     continuation.onTermination = { [weak self] _ in self?.unsubscribe(id) }
@@ -47,16 +50,17 @@ final class DisplayConfigurationFollower: @unchecked Sendable {
     return stream
   }
 
-  private func publish(_ configuration: SimulatorDisplayConfiguration, epoch: UInt64) {
+  /// Every configuration the tracker observes, whoever read it, so subscribers see a change as soon as any reader does.
+  func offer(_ configuration: SimulatorDisplayConfiguration) {
     delivery.lock()
     defer { delivery.unlock() }
     state.lock()
-    guard epoch == self.epoch, configuration != last else {
+    guard !subscribers.isEmpty, configuration != last else {
       state.unlock()
       return
     }
     last = configuration
-    let recipients = Array(subscribers.values)
+    let recipients = subscribers.values.map(\.continuation)
     state.unlock()
     for recipient in recipients {
       recipient.yield(configuration)
@@ -71,7 +75,6 @@ final class DisplayConfigurationFollower: @unchecked Sendable {
       return
     }
     following = nil
-    epoch += 1
     last = nil
     state.unlock()
     stopping.cancel()

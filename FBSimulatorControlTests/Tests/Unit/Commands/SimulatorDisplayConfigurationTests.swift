@@ -237,6 +237,42 @@ final class SimulatorDisplayConfigurationTests: XCTestCase {
     XCTAssertGreaterThan(displays.reads, 2, "A restarted following reads afresh rather than replaying")
   }
 
+  func testStreamCarriesAConfigurationAnotherReaderObserved() async throws {
+    let displays = DisplayCommandsDouble([.success(cover)])
+    var stream = displays.followConfigurations(polling: .seconds(60)).makeAsyncIterator()
+    _ = await stream.next()
+    _ = try displays.configurationTracker.observe(inner)
+    let next = await stream.next()
+    XCTAssertEqual(next?.active, .identified(display("inner")))
+  }
+
+  func testAFollowingStoppedMidReadDoesNotReachTheNextStream() async {
+    let logger = AnnouncingLogger()
+    let displays = GatedDisplayCommands(first: cover, later: inner, logger: logger)
+    let abandoned = Task { for await _ in displays.followConfigurations(polling: .seconds(60)) {} }
+    await displays.firstReadStarted()
+    abandoned.cancel()
+    await abandoned.value
+    var stream = displays.followConfigurations(polling: .seconds(60)).makeAsyncIterator()
+    let current = await stream.next()
+    displays.releaseFirstRead()
+    // Each following logs that pushes are unavailable once its first read is observed.
+    await logger.wait(forMessages: 2)
+    XCTAssertEqual(displays.configurationTracker.latest, current)
+  }
+
+  func testFollowingPollsAtTheShortestIntervalOfItsStreams() async {
+    let follower = DisplayConfigurationFollower()
+    let slow = follower.subscribe(polling: .seconds(1)) { Task {} }
+    let fast = follower.subscribe(polling: .milliseconds(50)) { Task {} }
+    XCTAssertEqual(follower.interval, .milliseconds(50))
+    let consumer = Task { for await _ in fast {} }
+    consumer.cancel()
+    await consumer.value
+    XCTAssertEqual(follower.interval, .seconds(1))
+    withExtendedLifetime(slow) {}
+  }
+
   /// The first `count` configurations; the stream polls forever, so the test hangs if fewer arrive.
   private func collect(_ stream: AsyncStream<SimulatorDisplayConfiguration>, count: Int) async -> [SimulatorDisplayConfiguration] {
     var collected: [SimulatorDisplayConfiguration] = []
@@ -246,4 +282,78 @@ final class SimulatorDisplayConfigurationTests: XCTestCase {
     }
     return collected
   }
+}
+
+/// Holds its first read until released, ignoring cancellation as a read already sent to the simulator would.
+// SAFETY: Every access to the continuations holds the lock.
+// patternlint-disable-next-line unchecked-sendable
+private final class GatedDisplayCommands: DisplayCommands, @unchecked Sendable {
+  let identities = DisplayIdentityCache()
+  let configurationTracker = DisplayConfigurationTracker()
+  let logger: (any ControlCoreLogger)?
+  private let first: SimulatorDisplayReport
+  private let later: SimulatorDisplayReport
+  private let started = AsyncStream<Void>.makeStream()
+  private let lock = NSLock()
+  private var reads = 0
+  private var release: CheckedContinuation<Void, Never>?
+
+  init(first: SimulatorDisplayReport, later: SimulatorDisplayReport, logger: any ControlCoreLogger) {
+    self.first = first
+    self.later = later
+    self.logger = logger
+  }
+
+  func report() async throws -> SimulatorDisplayReport {
+    let read = lock.withLock {
+      reads += 1
+      return reads
+    }
+    guard read == 1 else { return later }
+    await withCheckedContinuation { continuation in
+      lock.withLock { release = continuation }
+      started.continuation.yield()
+    }
+    return first
+  }
+
+  func touchscreens() async throws -> [SimulatorTouchscreen] { [] }
+
+  func firstReadStarted() async {
+    var iterator = started.stream.makeAsyncIterator()
+    await iterator.next()
+  }
+
+  func releaseFirstRead() {
+    lock.withLock { release }?.resume()
+  }
+}
+
+/// Lets a test wait for a number of messages to be logged.
+// SAFETY: The continuation is safe to yield from any thread, and only one test consumes the stream.
+// patternlint-disable-next-line unchecked-sendable
+private final class AnnouncingLogger: NSObject, ControlCoreLogger, @unchecked Sendable {
+  private let messages = AsyncStream<String>.makeStream()
+
+  func wait(forMessages count: Int) async {
+    var remaining = count
+    for await _ in messages.stream {
+      remaining -= 1
+      if remaining == 0 { return }
+    }
+  }
+
+  @discardableResult
+  func log(_ message: String) -> ControlCoreLogger {
+    messages.continuation.yield(message)
+    return self
+  }
+
+  func info() -> ControlCoreLogger { self }
+  func debug() -> ControlCoreLogger { self }
+  func error() -> ControlCoreLogger { self }
+  func withName(_ prefix: String) -> ControlCoreLogger { self }
+  func withDateFormatEnabled(_ enabled: Bool) -> ControlCoreLogger { self }
+  var name: String? { nil }
+  var level: FBControlCoreLogLevel { .multiple }
 }

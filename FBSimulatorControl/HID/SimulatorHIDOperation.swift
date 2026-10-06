@@ -227,30 +227,18 @@ struct SimulatorHIDOperation {
       try Task.checkCancellation()
       resolvedDisplay = true
       generation = latest?.generation
-      if let display, let displays {
+      if let display, let displays, let generation {
         let observation = observation
-        let generation = generation
-        // Capability round trips must not stretch the gesture's sample intervals. The operation
-        // owns this observer and joins it before releasing its lease, including on cancellation.
+        // The operation owns this observer and joins it before releasing its lease, including on cancellation.
         observationTask = Task {
-          while !Task.isCancelled {
-            do {
-              let current = try await displays.currentDisplay()
-              if Task.isCancelled { return }
-              switch current {
-              case .transitioning:
-                throw SimulatorDisplayError.transitioning
-              case .fallback:
-                throw SimulatorDisplayError.changed
-              case let .target(target):
-                guard target.display.hasSameConfiguration(as: display.interactionDisplay) else { throw SimulatorDisplayError.changed }
+          for await configuration in displays.followConfigurations(polling: .milliseconds(50)) {
+            let failure: SimulatorDisplayError? =
+              switch configuration.phase {
+              case .transitioning: .transitioning
+              case .settled: configuration.generation == generation ? nil : .changed
               }
-              // Another reader of the same simulator may have seen a change that this poll's interval missed.
-              if Self.configurationMoved(in: displays, from: generation) { throw SimulatorDisplayError.changed }
-              try observation.check()
-              try await Task.sleep(nanoseconds: 50_000_000)
-            } catch {
-              if !Task.isCancelled { observation.record(.failure(error), matching: display) }
+            if let failure {
+              if !Task.isCancelled { observation.record(.failure(failure), matching: display) }
               return
             }
           }
