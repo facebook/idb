@@ -32,8 +32,8 @@ final class MacDeviceTests: XCTestCase {
       preconditionFailure("Failed to load MacCommonApp fixture: \(error)")
     }
 
-    // Copy the .app to a temporary directory so that uninstall (which deletes the
-    // installed path) does not destroy the fixture inside the test bundle.
+    // Copy the .app to a temporary directory so that a test which deletes the
+    // installed path does not destroy the fixture inside the test bundle.
     tempInstallDir = NSTemporaryDirectory().appendingFormat("%@", UUID().uuidString)
     let tempDir = tempInstallDir!
     do {
@@ -106,15 +106,13 @@ final class MacDeviceTests: XCTestCase {
   }
 
   func testInstallReportsAMacInstallType() {
-    // BUG: reports .unknown, where installed() reports the same app as .mac — flipped in the following commit
-    XCTAssertEqual(installedApp.installType, .unknown)
+    XCTAssertEqual(installedApp.installType, .mac)
   }
 
   func testUninstallKeepsTheCallersBundle() throws {
     try device.uninstallApplication(withBundleID: installedApp.bundle.identifier)
 
-    // BUG: deletes the bundle at the path the caller installed from — flipped in the following commit
-    XCTAssertFalse(FileManager.default.fileExists(atPath: installedApp.bundle.path))
+    XCTAssertTrue(FileManager.default.fileExists(atPath: installedApp.bundle.path))
   }
 
   func testUninstallForgetsAnAppWhoseBundleIsMissing() throws {
@@ -122,8 +120,7 @@ final class MacDeviceTests: XCTestCase {
 
     try device.uninstallApplication(withBundleID: installedApp.bundle.identifier)
 
-    // BUG: the app stays registered, so it can be uninstalled again — flipped in the following commit
-    XCTAssertNoThrow(try device.uninstallApplication(withBundleID: installedApp.bundle.identifier))
+    XCTAssertThrowsError(try device.uninstallApplication(withBundleID: installedApp.bundle.identifier))
   }
 
   func testLaunchingNotInstalledAppByBuntleID() async {

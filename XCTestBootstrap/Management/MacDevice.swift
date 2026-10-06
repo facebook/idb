@@ -292,20 +292,14 @@ public final class MacDevice: NSObject, Target {
   public func installApplication(withPath path: String) throws -> InstalledApplication {
     let bundle = try BundleDescriptor.bundle(fromPath: path)
     bundleIDToProductMap[bundle.identifier] = bundle
-    return InstalledApplication(bundle: bundle, installType: .unknown, dataContainer: nil)
+    return InstalledApplication(bundle: bundle, installType: .mac, dataContainer: nil)
   }
 
+  /// Installing only registers the bundle where it already is, so uninstalling forgets it and leaves the bundle to whoever owns that path.
   public func uninstallApplication(withBundleID bundleID: String) throws {
-    guard let bundle = bundleIDToProductMap[bundleID] else {
+    guard bundleIDToProductMap.removeValue(forKey: bundleID) != nil else {
       throw MacDeviceError.applicationNotInstalled(bundleID: bundleID)
     }
-
-    if !FileManager.default.fileExists(atPath: bundle.path) {
-      return
-    }
-
-    try FileManager.default.removeItem(atPath: bundle.path)
-    bundleIDToProductMap.removeValue(forKey: bundleID)
   }
 
   public func installedApplication(withBundleID bundleID: String) throws -> InstalledApplication {
