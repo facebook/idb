@@ -157,9 +157,14 @@ public enum Staging {
       // The caller owns the writing end, so a writer that fails partway reaches
       // the extractor as nothing more than a short archive. Only the caller holds
       // the writer's own error.
-      try await runExtractStage(to: extractPath, totalStart: totalStart, onProgress: onProgress) {
-        try await ArchiveExtractors.stream(options.compression).extract(
-          .stream(input), to: extractPath, options: options.extractOptions, logger: logger)
+      try await temporaryDirectory.withTemporaryDirectory { spoolDirectory in
+        try await runExtractStage(to: extractPath, totalStart: totalStart, onProgress: onProgress) {
+          try await withAttached(input) { source in
+            try await extractStream(
+              source, tarExtractor: ArchiveExtractors.stream(options.compression), spoolingIn: spoolDirectory,
+              to: extractPath, options: options, logger: logger)
+          }
+        }
       }
     case .zipStream(let input):
       try await temporaryDirectory.withTemporaryDirectory { spoolDirectory in
@@ -232,7 +237,6 @@ public enum Staging {
     }
   }
 
-  /// Decides on the first bytes, so that only a zip is spooled.
   private static func extractDownload(
     _ input: FBProcessInput<AnyObject>,
     spoolingIn spoolDirectory: URL,
@@ -241,15 +245,28 @@ public enum Staging {
     logger: any ControlCoreLogger
   ) async throws {
     try await withAttached(input) { source in
-      let peekable = HandedOver(PeekableSource(source))
-      let head = try await offCooperativePool { try peekable.value.peek(ArchiveFormat.sniffLength) }.get()
-      switch ArchiveFormat.detect(head) {
-      case .zip, .zstdZip:
-        try await extractZipStream(peekable.value, spoolingIn: spoolDirectory, to: extractPath, options: options, logger: logger)
-      case .zstd, .gzip, .other, .undetermined:
-        try await InProcessTarExtractor(fallback: ArchiveExtractors.bsdTar).extract(
-          from: peekable.value, to: extractPath, options: options.extractOptions, logger: logger)
-      }
+      try await extractStream(
+        source, tarExtractor: ArchiveExtractors.inProcessTar, spoolingIn: spoolDirectory,
+        to: extractPath, options: options, logger: logger)
+    }
+  }
+
+  /// Decides on the first bytes, so that only a zip is spooled; anything else goes to `tarExtractor`.
+  private static func extractStream(
+    _ source: any ByteSource,
+    tarExtractor: any ArchiveExtractor,
+    spoolingIn spoolDirectory: URL,
+    to extractPath: String,
+    options: InstallOptions,
+    logger: any ControlCoreLogger
+  ) async throws {
+    let peekable = HandedOver(PeekableSource(source))
+    let head = try await offCooperativePool { try peekable.value.peek(ArchiveFormat.sniffLength) }.get()
+    switch ArchiveFormat.detect(head) {
+    case .zip, .zstdZip:
+      try await extractZipStream(peekable.value, spoolingIn: spoolDirectory, to: extractPath, options: options, logger: logger)
+    case .zstd, .gzip, .other, .undetermined:
+      try await tarExtractor.extract(from: peekable.value, to: extractPath, options: options.extractOptions, logger: logger)
     }
   }
 

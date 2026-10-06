@@ -145,11 +145,6 @@ struct ArchiveCorpusTests {
         return producer.isZip
       }
     }
-
-    /// Whether `bsdtar` is handed a zip on its stdin, where it never reaches the central directory that records modes and symlinks.
-    func streamsAZipToBSDTar(_ producer: Producer) -> Bool {
-      self == .processInput && producer.isZip
-    }
   }
 
   /// What an extraction left behind, or that it failed.
@@ -209,11 +204,6 @@ struct ArchiveCorpusTests {
     let actual = try await resolve(source, archive: archive, contents: try Data(contentsOf: archive), keepHardLinks: producer.keepsHardLinks, directoryTimes: directoryTimes)
 
     let expected = await bsdtarOutcome(archive, keepHardLinks: producer.keepsHardLinks, directoryTimes: directoryTimes)
-    if source.streamsAZipToBSDTar(producer) {
-      // BUG: a zip read as a stream loses its modes and symlinks, and the app its executable; flipped once zips in a stream are detected and spooled.
-      #expect(actual != expected, "\(producer) \(source)")
-      return
-    }
     guard case .extracted(let expectedTree) = expected, case .extracted(let actualTree) = actual else {
       Issue.record("\(producer): bsdtar \(expected), \(source) \(actual)")
       return
@@ -282,7 +272,7 @@ struct ArchiveCorpusTests {
     let directoryTimes = !producer.isZip
     let expected = await bsdtarOutcome(archive, keepHardLinks: producer.keepsHardLinks, directoryTimes: directoryTimes)
 
-    for source in Source.allCases where source.reads(producer) && !source.streamsAZipToBSDTar(producer) {
+    for source in Source.allCases where source.reads(producer) {
       let actual = try await resolve(source, archive: archive, contents: damaged, keepHardLinks: producer.keepsHardLinks, directoryTimes: directoryTimes)
       switch (expected, actual) {
       case (.extracted(let expectedTree), .extracted(let actualTree)):

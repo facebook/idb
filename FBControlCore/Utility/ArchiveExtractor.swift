@@ -41,6 +41,48 @@ public protocol ArchiveExtractor: Sendable {
     options: ArchiveExtractOptions,
     logger: any ControlCoreLogger
   ) async throws
+
+  /// Extracts what `source` reads, which is already open and may already have been read from.
+  func extract(
+    from source: any ByteSource,
+    to extractPath: String,
+    options: ArchiveExtractOptions,
+    logger: any ControlCoreLogger
+  ) async throws
+}
+
+// MARK: - Extracting a source
+
+extension ArchiveExtractor {
+
+  /// Writes what `source` reads into a stream this extractor reads.
+  public func extract(
+    from source: any ByteSource,
+    to extractPath: String,
+    options: ArchiveExtractOptions,
+    logger: any ControlCoreLogger
+  ) async throws {
+    let replayed = FBProcessInput<OutputStream>.fromStream()
+    let input = HandedOver(replayed.retyped(FBProcessInput<AnyObject>.self))
+    async let extraction: Void = extract(.stream(input.value), to: extractPath, options: options, logger: logger)
+    let output = replayed.contents
+    let source = HandedOver(source)
+    let written = await offCooperativePool {
+      output.open()
+      defer { output.close() }
+      var chunk = [UInt8](repeating: 0, count: 1 << 16)
+      while true {
+        let count = try chunk.withUnsafeMutableBytes { try source.value.read(into: $0) }
+        guard count > 0 else {
+          return
+        }
+        try chunk.withUnsafeBytes { try output.writeAll(UnsafeRawBufferPointer(rebasing: $0[..<count])) }
+      }
+    }
+    // The extractor's error first: it is why writing to it would fail.
+    try await extraction
+    try written.get()
+  }
 }
 
 /// Unpacks by running `bsdtar` as a subprocess, reading either a file it is
@@ -151,8 +193,7 @@ public struct InProcessTarExtractor: ArchiveExtractor {
     }
   }
 
-  /// Extracts what `source` reads.
-  func extract(
+  public func extract(
     from source: any ByteSource,
     to extractPath: String,
     options: ArchiveExtractOptions,
@@ -167,40 +208,11 @@ public struct InProcessTarExtractor: ArchiveExtractor {
     }
     switch try result.get() {
     case .notTar(let read):
-      try await replay(read, to: extractPath, options: options, logger: logger)
+      logger.log("Extracting a stream that is not a tar with \(type(of: fallback))")
+      try await fallback.extract(from: read, to: extractPath, options: options, logger: logger)
     case .extracted(let summary, let waits):
       logger.log("\(summary.description(from: "a tar stream", since: start)), waiting \(String(format: "%.2f", waits.input))s for input and \(String(format: "%.2f", waits.writers))s for writers")
     }
-  }
-
-  /// Writes what `source` reads into `fallback`.
-  private func replay(
-    _ source: any ByteSource,
-    to extractPath: String,
-    options: ArchiveExtractOptions,
-    logger: any ControlCoreLogger
-  ) async throws {
-    logger.log("Extracting a stream that is not a tar with \(type(of: fallback))")
-    let replayed = FBProcessInput<OutputStream>.fromStream()
-    let input = HandedOver(replayed.retyped(FBProcessInput<AnyObject>.self))
-    async let extraction: Void = fallback.extract(.stream(input.value), to: extractPath, options: options, logger: logger)
-    let output = replayed.contents
-    let source = HandedOver(source)
-    let written = await offCooperativePool {
-      output.open()
-      defer { output.close() }
-      var chunk = [UInt8](repeating: 0, count: 1 << 16)
-      while true {
-        let count = try chunk.withUnsafeMutableBytes { try source.value.read(into: $0) }
-        guard count > 0 else {
-          return
-        }
-        try chunk.withUnsafeBytes { try output.writeAll(UnsafeRawBufferPointer(rebasing: $0[..<count])) }
-      }
-    }
-    // The fallback's error first: it is why writing to it would fail.
-    try await extraction
-    try written.get()
   }
 }
 
