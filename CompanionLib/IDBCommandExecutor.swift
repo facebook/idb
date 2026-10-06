@@ -124,44 +124,42 @@ public final class IDBCommandExecutor {
   }
 
   public func install_xctest_app_file_path(_ filePath: String, skipSigningBundles: Bool) async throws -> InstalledArtifact {
-    return try await installXctestFilePath(URL(fileURLWithPath: filePath), skipSigningBundles: skipSigningBundles)
+    return try await install(.xctest, from: .inPlace(URL(fileURLWithPath: filePath)), skipSigningBundles: skipSigningBundles)
   }
 
   public func install_xctest_app_stream(_ stream: FBProcessInput<AnyObject>, skipSigningBundles: Bool) async throws -> InstalledArtifact {
     return try await withStaged(.processInput(stream)) { tree in
-      return try await installXctest(tree.url, skipSigningBundles: skipSigningBundles)
+      return try await install(.xctest, from: tree, skipSigningBundles: skipSigningBundles)
     }
   }
 
   public func install_dylib_file_path(_ filePath: String) async throws -> InstalledArtifact {
-    return try await installFile(URL(fileURLWithPath: filePath), intoStorage: storageManager.dylib)
+    return try await install(.dylib, from: .inPlace(URL(fileURLWithPath: filePath)))
   }
 
   public func install_dylib_stream(_ input: FBProcessInput<AnyObject>, name: String) async throws -> InstalledArtifact {
     return try await withStaged(.gzippedFile(input, name: name)) { tree in
-      return try await installFile(tree.url, intoStorage: storageManager.dylib)
+      return try await install(.dylib, from: tree)
     }
   }
 
   public func install_framework_file_path(_ filePath: String) async throws -> InstalledArtifact {
-    let bundle = try BundleDescriptor.bundle(fromPath: filePath)
-    return try await storageManager.framework.saveBundle(bundle, usingSymlink: true, skipSigningBundles: false)
+    return try await install(.framework, from: .inPlace(URL(fileURLWithPath: filePath)))
   }
 
   public func install_framework_stream(_ input: FBProcessInput<AnyObject>) async throws -> InstalledArtifact {
     return try await withStaged(.processInput(input)) { tree in
-      return try await installBundle(tree.url, intoStorage: storageManager.framework)
+      return try await install(.framework, from: tree)
     }
   }
 
   public func install_dsym_file_path(_ filePath: String, linkTo: DsymInstallLinkToBundle?) async throws -> InstalledArtifact {
-    return try await installAndLinkDsym(URL(fileURLWithPath: filePath), intoStorage: storageManager.dsym, linkTo: linkTo)
+    return try await install(.dsym, from: .inPlace(URL(fileURLWithPath: filePath)), linkTo: linkTo)
   }
 
   public func install_dsym_stream(_ input: FBProcessInput<AnyObject>, compression: FBCompressionFormat, linkTo: DsymInstallLinkToBundle?) async throws -> InstalledArtifact {
     return try await withStaged(.processInput(input), options: InstallOptions(compression: compression)) { tree in
-      let url = try dsymDirnameFromUnzipDir(tree.url)
-      return try await installAndLinkDsym(url, intoStorage: storageManager.dsym, linkTo: linkTo)
+      return try await install(.dsym, from: tree, linkTo: linkTo)
     }
   }
 
@@ -856,7 +854,7 @@ public final class IDBCommandExecutor {
     return try await ApplicationArchive.withResolvedBundle(from: source, options: options, totalStart: totalStart, temporaryDirectory: temporaryDirectory, logger: target.logger, onProgress: onProgress) { bundle in
       let installStart = Date()
       onProgress(.installStarted(timing: .measure(stageStart: installStart, totalStart: totalStart), appPath: bundle.path))
-      let artifact = try await installAppBundle(bundle, makeDebuggable: makeDebuggable, persistByMoving: Staging.unpacks(source))
+      let artifact = try await install(.application(bundle), inPlace: !Staging.unpacks(source), makeDebuggable: makeDebuggable)
       onProgress(.installCompleted(timing: .measure(stageStart: installStart, totalStart: totalStart), appPath: bundle.path, bundleId: bundle.identifier))
       return artifact
     }
@@ -889,24 +887,28 @@ public final class IDBCommandExecutor {
     try await Staging.withMaterialized(source, options: options, temporaryDirectory: temporaryDirectory, logger: target.logger, body)
   }
 
-  private func installXctest(_ extractionDirectory: URL, skipSigningBundles: Bool) async throws -> InstalledArtifact {
-    return try await storageManager.xctest.saveBundleOrTestRunFromBaseDirectory(extractionDirectory, skipSigningBundles: skipSigningBundles)
+  private func install(_ kind: ArtifactKind, from tree: StagedTree, skipSigningBundles: Bool = false, linkTo: DsymInstallLinkToBundle? = nil) async throws -> InstalledArtifact {
+    let artifact = try kind.identify(in: tree, logger: target.logger)
+    return try await install(artifact, inPlace: tree.isInPlace, skipSigningBundles: skipSigningBundles, linkTo: linkTo)
   }
 
-  private func installXctestFilePath(_ xctestURL: URL, skipSigningBundles: Bool) async throws -> InstalledArtifact {
-    return try await storageManager.xctest.saveBundleOrTestRun(xctestURL, skipSigningBundles: skipSigningBundles)
-  }
-
-  private func installFile(_ extractedFile: URL, intoStorage storage: FileStorage) async throws -> InstalledArtifact {
-    return try storage.saveFile(extractedFile)
-  }
-
-  private func dsymDirnameFromUnzipDir(_ parentDir: URL) throws -> URL {
-    let subDirs = try FileManager.default.contentsOfDirectory(at: parentDir, includingPropertiesForKeys: [.isDirectoryKey], options: [])
-    if subDirs.count != 1 {
-      return parentDir
+  /// Stores `artifact` and installs it on the target if it is an application. An artifact that is in place is linked into
+  /// storage; anything staged is moved there, since its staging directory is deleted once the install returns.
+  private func install(_ artifact: Artifact, inPlace: Bool, makeDebuggable: Bool = false, skipSigningBundles: Bool = false, linkTo: DsymInstallLinkToBundle? = nil) async throws -> InstalledArtifact {
+    switch artifact {
+    case .application(let bundle):
+      return try await installAppBundle(bundle, makeDebuggable: makeDebuggable, persistByMoving: !inPlace)
+    case .testBundle(let url):
+      return try await storageManager.xctest.saveTestBundle(url, usingSymlink: inPlace, skipSigningBundles: skipSigningBundles)
+    case .testRun(let url):
+      return try storageManager.xctest.saveTestRun(url)
+    case .framework(let bundle):
+      return try await storageManager.framework.saveBundle(bundle, usingSymlink: inPlace, skipSigningBundles: false)
+    case .dylib(let url):
+      return try storageManager.dylib.saveFile(url)
+    case .dsym(let url):
+      return try await installAndLinkDsym(url, intoStorage: storageManager.dsym, linkTo: linkTo)
     }
-    return subDirs[0]
   }
 
   private func installAndLinkDsym(_ extractionDir: URL, intoStorage storage: FileStorage, linkTo: DsymInstallLinkToBundle?) async throws -> InstalledArtifact {
@@ -931,11 +933,5 @@ public final class IDBCommandExecutor {
     try FileManager.default.createSymbolicLink(at: dsymURL, withDestinationURL: artifact.path)
     logger.log("Created a symlink for dsym from: \(dsymURL) to \(artifact.path)")
     return artifact
-  }
-
-  /// Moves the bundle into storage rather than linking it, since its staging directory is deleted once the install returns.
-  private func installBundle(_ extractedDirectory: URL, intoStorage storage: BundleStorage) async throws -> InstalledArtifact {
-    let bundle = try StorageUtils.bundle(inDirectory: extractedDirectory)
-    return try await storage.saveBundle(bundle, usingSymlink: false, skipSigningBundles: false)
   }
 }

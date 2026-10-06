@@ -20,11 +20,6 @@ let IdbFrameworksFolder: String = "idb-frameworks"
 enum IDBStorageError: Error {
   case bundleMissingBinary(name: String)
   case architecturesIncompatible(supported: [String], bundle: [String])
-  case multipleXctestFiles(files: [URL])
-  case multipleXctestrunFiles(files: [URL])
-  case noTestArtifactsProvided(bucketsDescription: String)
-  case testArtifactNotSaved(xctestDescription: String, xctestrunDescription: String)
-  case invalidPathExtension(pathExtension: String, path: URL)
   case testNotFoundByID(bundleID: String)
   case baseDirectoryUnreadable
   case notExactlyOneTest(count: Int)
@@ -38,16 +33,6 @@ extension IDBStorageError: LocalizedError {
       return "Cannot check the architectures of \(name), it has no binary"
     case let .architecturesIncompatible(supported, bundle):
       return "The supported architectures of the target \(CollectionInformation.oneLineDescription(from: supported)) do not intersect with any architectures in the bundle: \(CollectionInformation.oneLineDescription(from: bundle))"
-    case let .multipleXctestFiles(files):
-      return "Multiple files with .xctest extension: \(CollectionInformation.oneLineDescription(from: files))"
-    case let .multipleXctestrunFiles(files):
-      return "Multiple files with .xctestrun extension: \(CollectionInformation.oneLineDescription(from: files))"
-    case let .noTestArtifactsProvided(bucketsDescription):
-      return "Neither a .xctest bundle or .xctestrun file provided: \(bucketsDescription)"
-    case let .testArtifactNotSaved(xctestDescription, xctestrunDescription):
-      return ".xctest bundle (\(xctestDescription)) or .xctestrun (\(xctestrunDescription)) file was not saved"
-    case let .invalidPathExtension(pathExtension, path):
-      return "The path extension (\(pathExtension)) of the provided bundle (\(path)) is not .xctest or .xctestrun"
     case let .testNotFoundByID(bundleID):
       return "Couldn't find test with id: \(bundleID)"
     case .baseDirectoryUnreadable:
@@ -243,41 +228,6 @@ private let XctestRunExtension = "xctestrun"
 
 public final class XCTestBundleStorage: BundleStorage {
 
-  func saveBundleOrTestRunFromBaseDirectory(_ baseDirectory: URL, skipSigningBundles: Bool) async throws -> InstalledArtifact {
-    let buckets = try StorageUtils.bucketFiles(withExtensions: Set([XctestExtension, XctestRunExtension]), inDirectory: baseDirectory)
-    let xctestBucket = buckets[XctestExtension]?.sorted(by: { $0.path < $1.path }) ?? []
-    let xctestBundleURL = xctestBucket.first
-    if xctestBucket.count > 1 {
-      throw IDBStorageError.multipleXctestFiles(files: xctestBucket)
-    }
-    let xctestrunBucket = buckets[XctestRunExtension]?.sorted(by: { $0.path < $1.path }) ?? []
-    let xctestrunURL = xctestrunBucket.first
-    if xctestrunBucket.count > 1 {
-      throw IDBStorageError.multipleXctestrunFiles(files: xctestrunBucket)
-    }
-    if xctestBundleURL == nil && xctestrunURL == nil {
-      throw IDBStorageError.noTestArtifactsProvided(bucketsDescription: CollectionInformation.oneLineDescription(from: buckets))
-    }
-
-    if let xctestBundleURL {
-      return try await saveTestBundle(xctestBundleURL, usingSymlink: false, skipSigningBundles: skipSigningBundles)
-    }
-    if let xctestrunURL {
-      return try saveTestRun(xctestrunURL)
-    }
-    throw IDBStorageError.testArtifactNotSaved(xctestDescription: String(describing: xctestBundleURL), xctestrunDescription: String(describing: xctestrunURL))
-  }
-
-  func saveBundleOrTestRun(_ filePath: URL, skipSigningBundles: Bool) async throws -> InstalledArtifact {
-    if filePath.pathExtension == XctestExtension {
-      return try await saveTestBundle(filePath, usingSymlink: true, skipSigningBundles: skipSigningBundles)
-    }
-    if filePath.pathExtension == XctestRunExtension {
-      return try saveTestRun(filePath)
-    }
-    throw IDBStorageError.invalidPathExtension(pathExtension: filePath.pathExtension, path: filePath)
-  }
-
   func listTestDescriptors() throws -> [XCTestDescriptor] {
     var testDescriptors: [XCTestDescriptor] = []
 
@@ -408,12 +358,12 @@ public final class XCTestBundleStorage: BundleStorage {
     return XCodebuildTestRunDescriptor(url: xctestrunURL, name: testTarget, testBundle: testBundle, testHostBundle: testHostBundle)
   }
 
-  private func saveTestBundle(_ testBundleURL: URL, usingSymlink useSymlink: Bool, skipSigningBundles: Bool) async throws -> InstalledArtifact {
+  func saveTestBundle(_ testBundleURL: URL, usingSymlink useSymlink: Bool, skipSigningBundles: Bool) async throws -> InstalledArtifact {
     let bundle = try BundleDescriptor.bundleWithFallbackIdentifier(fromPath: testBundleURL.path)
     return try await saveBundle(bundle, usingSymlink: useSymlink, skipSigningBundles: skipSigningBundles)
   }
 
-  private func saveTestRun(_ xcTestRunURL: URL) throws -> InstalledArtifact {
+  func saveTestRun(_ xcTestRunURL: URL) throws -> InstalledArtifact {
     let descriptors = try getXCTestRunDescriptors(from: xcTestRunURL)
     if descriptors.count != 1 {
       throw IDBStorageError.notExactlyOneTest(count: descriptors.count)

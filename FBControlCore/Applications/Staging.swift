@@ -66,6 +66,16 @@ public enum StagedTree {
       return url
     }
   }
+
+  /// Whether the item outlives the body, so storage can link to it rather than move it.
+  public var isInPlace: Bool {
+    switch self {
+    case .inPlace:
+      return true
+    case .extracted, .file:
+      return false
+    }
+  }
 }
 
 /// Gets an install source onto disk for every kind of artifact: fetching,

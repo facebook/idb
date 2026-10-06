@@ -34,22 +34,7 @@ public enum ApplicationArchive {
       source, options: options, totalStart: totalStart, downloadConfiguration: downloadConfiguration,
       temporaryDirectory: temporaryDirectory, logger: logger, onProgress: onProgress
     ) { tree in
-      let directory: URL
-      switch tree {
-      case .inPlace(let bundle):
-        return try await perform(try BundleDescriptor.bundle(fromPath: bundle.path))
-      case .extracted(let extracted):
-        directory = extracted
-      case .file(let file):
-        directory = file.deletingLastPathComponent()
-      }
-      let bundle: BundleDescriptor
-      do {
-        bundle = try BundleDescriptor.findAppPath(fromDirectory: directory, logger: logger)
-      } catch {
-        throw InstallError.noInstallableBundle(inDirectory: directory.path, underlying: error)
-      }
-      return try await perform(bundle)
+      return try await perform(try Artifact.applicationBundle(in: tree, logger: logger))
     }
   }
 }
