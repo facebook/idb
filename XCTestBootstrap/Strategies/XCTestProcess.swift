@@ -49,16 +49,16 @@ final class XCTestProcess {
 
     logger.log("Waiting for \(processIdentifier) to exit within \(timeout) seconds")
     guard let status = try await process.terminationStatus(within: timeout) else {
-      let stackshot: Result<String, any Error>
+      let stackshot: String
       do {
-        stackshot = .success(try await sampleStackshot(processIdentifier))
+        stackshot = try await sampleStackshot(processIdentifier)
       } catch {
-        stackshot = .failure(error)
+        stackshot = "stackshot unavailable: \(error.localizedDescription)"
       }
       logger.log("Terminating stalled xctest process \(processIdentifier)")
       try await process.terminate(gracePeriod: KillBackoffTimeout)
       logger.log("Stalled xctest process \(processIdentifier) has been terminated")
-      throw XCTestProcessError.stalled(timeout: timeout, processIdentifier: processIdentifier, stackshot: try stackshot.get())
+      throw XCTestProcessError.stalled(timeout: timeout, processIdentifier: processIdentifier, stackshot: stackshot)
     }
     switch status {
     case .exited(let exitCode):

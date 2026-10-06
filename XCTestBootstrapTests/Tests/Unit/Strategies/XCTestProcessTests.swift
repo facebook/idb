@@ -79,8 +79,10 @@ final class XCTestProcessTests: XCTestCase {
         throw SamplingFailed()
       }
       XCTFail("Expected the wait to fail")
-    } catch is SamplingFailed {
-      // BUG: the sampling failure is thrown instead of XCTestProcessError.stalled — flipped in the following commit
+    } catch let XCTestProcessError.stalled(timeout, processIdentifier, stackshot) {
+      XCTAssertEqual(timeout, 0.5)
+      XCTAssertEqual(processIdentifier, process.processIdentifier)
+      XCTAssertTrue(stackshot.hasPrefix("stackshot unavailable: "), stackshot)
     }
     XCTAssertNotEqual(kill(process.processIdentifier, 0), 0, "The stalled process is terminated")
   }
