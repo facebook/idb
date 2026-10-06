@@ -172,7 +172,7 @@ extension Subprocess.Output {
       // logged stream twice.
       return (try Self.drainedSink(into: FBLoggingDataConsumer(logger: logger), logger: nil), { Self.captured(()) })
     case .loggerCapturingErrorMessage(let logger):
-      let buffer = FBDataBuffer.accumulatingBuffer(withCapacity: FBProcessOutputErrorMessageLength)
+      let buffer = FBDataBuffer.accumulatingBuffer(withCapacity: Subprocess.errorMessageLength)
       // Lossy, because the tail can begin mid-character, and one invalid byte would otherwise empty the whole message.
       return (try Self.drainedSink(into: buffer, logger: logger), { Self.captured(Self.string(from: buffer.data(), lossy: true)) })
     case .pipe:

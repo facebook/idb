@@ -9,6 +9,9 @@ import Foundation
 
 extension Subprocess {
 
+  /// How many bytes of a stream `loggerCapturingErrorMessage` keeps to quote back in an error.
+  public static let errorMessageLength = 200
+
   /// Where one of the child's output streams goes, and what the caller gets
   /// back for it when the process completes.
   ///
@@ -155,7 +158,7 @@ extension Subprocess.Output where Captured == String {
   }
 
   /// Output is logged to `logger`, and its last
-  /// `FBProcessOutputErrorMessageLength` bytes are returned on completion,
+  /// `Subprocess.errorMessageLength` bytes are returned on completion,
   /// for a caller that logs a stream in full but quotes only its tail back
   /// in an error.
   public static func loggerCapturingErrorMessage(_ logger: any ControlCoreLogger) -> Self {

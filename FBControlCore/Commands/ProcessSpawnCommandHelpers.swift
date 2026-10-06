@@ -7,23 +7,6 @@
 
 import Foundation
 
-/// Set as the error on whichever of `exitCode` / `signal` did not happen.
-public enum ProcessTerminationError: Error {
-  case exitedWithSignal(processIdentifier: pid_t, processName: String, signal: Int32)
-  case exitedWithCode(processIdentifier: pid_t, processName: String, exitCode: Int32)
-}
-
-extension ProcessTerminationError: LocalizedError {
-  public var errorDescription: String? {
-    switch self {
-    case let .exitedWithSignal(processIdentifier, processName, signal):
-      return "Process \(processIdentifier) (\(processName)) exited with signal \(signal)"
-    case let .exitedWithCode(processIdentifier, processName, exitCode):
-      return "Process \(processIdentifier) (\(processName)) exited with code \(exitCode)"
-    }
-  }
-}
-
 @objc
 public final class ProcessSpawnCommandHelpers: NSObject {
 

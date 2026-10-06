@@ -149,12 +149,12 @@ struct SubprocessRunTests {
   @Test("An error-message capture retains only the last bytes of a long stream")
   func errorMessageCaptureRetainsOnlyTheTail() async throws {
     let logger = FBControlCoreLoggerFactory.logger(to: FBDataBuffer.consumableBuffer())
-    let total = FBProcessOutputErrorMessageLength * 2
+    let total = Subprocess.errorMessageLength * 2
 
     let new = try await Self.new("/usr/bin/head -c \(total) /dev/zero | /usr/bin/tr '\\0' 'x' 1>&2")
       .run(output: .closed, error: .loggerCapturingErrorMessage(logger))
 
-    #expect(new.standardError == String(repeating: "x", count: FBProcessOutputErrorMessageLength))
+    #expect(new.standardError == String(repeating: "x", count: Subprocess.errorMessageLength))
   }
 
   @Test("A file the capture creates itself is readable afterwards")
