@@ -78,4 +78,22 @@ struct InstallMethodHandlerTests {
       error is StreamFailed
     }
   }
+
+  @Test
+  func whenTheClientStreamFailsPartwayThroughAZstdZip() async throws {
+    let app = try harness.makeBundle(named: "Sample", extension: "app", identifier: "com.example.sample")
+    let payload = ArchiveFormat.zstdZipMarker + MacInstallHarness.zstd(try harness.zipData(of: app))
+    let rest = AsyncThrowingStream<Data, any Error> { continuation in
+      continuation.finish(throwing: StreamFailed())
+    }
+    await #expect {
+      _ = try await handler.install(Self.request(.app, head: payload.prefix(payload.count / 2), rest: rest))
+    } throws: { error in
+      // BUG: reports the decompressor running out of input rather than the client's failure.
+      guard case ArchiveError.corrupt("the zstd ends early")? = error as? ArchiveError else {
+        return false
+      }
+      return true
+    }
+  }
 }
