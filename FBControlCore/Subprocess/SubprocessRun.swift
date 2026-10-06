@@ -87,15 +87,7 @@ extension Subprocess {
     } else {
       status = try await running.exit.status()
     }
-    guard exitPolicy.accepts(status) else {
-      let errorMessage: String? = if case .loggerCapturingErrorMessage = error.kind { captureErr() as? String } else { nil }
-      throw SubprocessError.unacceptableTermination(
-        status: status,
-        policy: exitPolicy,
-        executable: executable,
-        processIdentifier: running.processIdentifier,
-        errorMessage: errorMessage)
-    }
+    try check(status, against: exitPolicy, processIdentifier: running.processIdentifier, error: error, captureErr: captureErr)
     return Completed(
       executable: executable,
       processIdentifier: running.processIdentifier,
@@ -115,6 +107,24 @@ extension Subprocess {
     logger: (any ControlCoreLogger)? = nil
   ) async throws -> Completed<String, String> {
     try await run(on: launcher, output: .string, error: .string, input: input, exitPolicy: exitPolicy, timeout: timeout, logger: logger)
+  }
+
+  func check<Err>(
+    _ status: TerminationStatus,
+    against exitPolicy: ExitPolicy,
+    processIdentifier: pid_t,
+    error: Output<Err>,
+    captureErr: () -> Err
+  ) throws {
+    guard exitPolicy.accepts(status) else {
+      let errorMessage: String? = if case .loggerCapturingErrorMessage = error.kind { captureErr() as? String } else { nil }
+      throw SubprocessError.unacceptableTermination(
+        status: status,
+        policy: exitPolicy,
+        executable: executable,
+        processIdentifier: processIdentifier,
+        errorMessage: errorMessage)
+    }
   }
 }
 

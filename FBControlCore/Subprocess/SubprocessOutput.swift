@@ -30,6 +30,7 @@ extension Subprocess {
       case data
       case string
       case file(URL)
+      case pipe
     }
 
     let kind: Kind
@@ -123,6 +124,17 @@ extension Subprocess.Output where Captured == Void {
   /// Each line of output is passed to `sink` as it arrives.
   public static func lines(_ sink: @escaping @Sendable (String) -> Void) -> Self {
     .init(.lines(sink))
+  }
+}
+
+extension Subprocess.Output where Captured == Int32 {
+
+  /// The read end of a pipe, returned at launch rather than drained: the
+  /// caller owns it, and must read it while the process runs or the child
+  /// blocks once the pipe fills. Internal, because a capture that `run` only
+  /// hands back at exit would never be read.
+  static var pipe: Self {
+    .init(.pipe)
   }
 }
 

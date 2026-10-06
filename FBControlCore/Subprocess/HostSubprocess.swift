@@ -126,6 +126,9 @@ struct HostSink {
   /// exiting.
   private(set) var childDescriptor: Int32?
   let reader: FileReader?
+  /// The parent's end of an undrained pipe, owned by the caller once the
+  /// launch succeeds and closed here only if it fails.
+  var parentDescriptor: Int32?
 
   mutating func closeChildDescriptor() {
     if let childDescriptor {
@@ -136,6 +139,10 @@ struct HostSink {
 
   mutating func dispose() {
     closeChildDescriptor()
+    if let parentDescriptor {
+      close(parentDescriptor)
+    }
+    parentDescriptor = nil
     if let reader {
       _ = reader.stopReading()
     }
@@ -168,6 +175,12 @@ extension Subprocess.Output {
       let buffer = FBDataBuffer.accumulatingBuffer(withCapacity: FBProcessOutputErrorMessageLength)
       // Lossy, because the tail can begin mid-character, and one invalid byte would otherwise empty the whole message.
       return (try Self.drainedSink(into: buffer, logger: logger), { Self.captured(Self.string(from: buffer.data(), lossy: true)) })
+    case .pipe:
+      var descriptors: [Int32] = [0, 0]
+      guard Darwin.pipe(&descriptors) == 0 else {
+        throw SubprocessError.outputUnavailable(path: "pipe", message: String(cString: strerror(errno)))
+      }
+      return (HostSink(childDescriptor: descriptors[1], reader: nil, parentDescriptor: descriptors[0]), { Self.captured(descriptors[0]) })
     case .lines(let sink):
       let consumer = FBBlockDataConsumer.asynchronousLineConsumer(sink)
       return (try Self.drainedSink(into: consumer, logger: nil), { Self.captured(()) })
@@ -206,7 +219,7 @@ extension Subprocess.Output {
 
   private static func drainedSink(into consumer: any DataConsumer, logger: (any ControlCoreLogger)?) throws -> HostSink {
     var descriptors: [Int32] = [0, 0]
-    guard pipe(&descriptors) == 0 else {
+    guard Darwin.pipe(&descriptors) == 0 else {
       throw SubprocessError.outputUnavailable(path: "pipe", message: String(cString: strerror(errno)))
     }
     let composed: any DataConsumer
