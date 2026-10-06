@@ -84,135 +84,25 @@ final class FBArchiveOperationsTests: XCTestCase {
     XCTAssertEqual(command[5], archivePath, "Archive path should be preserved exactly")
   }
 
-  // MARK: - commandToExtractFromStdIn with GZIP
+  // MARK: - commandToExtractFromStdIn
 
-  func testCommandToExtractFromStdIn_GZIPCompression_NoOverrideMTime_NoDebug() {
+  func testCommandToExtractFromStdIn_NoOverrideMTime_NoDebug() {
     let command = FBArchiveOperations.commandToExtractFromStdIn(
       withExtractPath: "/tmp/output",
       overrideModificationTime: false,
-      compression: .GZIP,
       debugLogging: false)
 
     XCTAssertEqual(command, ["-zxp", "--no-mac-metadata", "-C", "/tmp/output", "-f", "-"])
   }
 
-  func testCommandToExtractFromStdIn_GZIPCompression_WithOverrideMTime() {
+  func testCommandToExtractFromStdIn_WithOverrideMTime() {
     let command = FBArchiveOperations.commandToExtractFromStdIn(
       withExtractPath: "/tmp/output",
       overrideModificationTime: true,
-      compression: .GZIP,
       debugLogging: false)
 
-    XCTAssertEqual(command[0], "-zxpm", "GZIP with overrideMTime should include m flag")
+    XCTAssertEqual(command[0], "-zxpm", "overrideMTime should include m flag")
     XCTAssertEqual(command.last, "-", "Last element should be stdin marker '-'")
-  }
-
-  // MARK: - commandToExtractFromStdIn with ZSTD
-
-  func testCommandToExtractFromStdIn_ZSTDCompression_NoOverrideMTime() {
-    let command = FBArchiveOperations.commandToExtractFromStdIn(
-      withExtractPath: "/tmp/output",
-      overrideModificationTime: false,
-      compression: .ZSTD,
-      debugLogging: false)
-
-    XCTAssertEqual(command, ["--use-compress-program", "pzstd -d", "-xp", "--no-mac-metadata", "-C", "/tmp/output", "-f", "-"])
-  }
-
-  func testCommandToExtractFromStdIn_ZSTDCompression_WithOverrideMTime() {
-    let command = FBArchiveOperations.commandToExtractFromStdIn(
-      withExtractPath: "/tmp/output",
-      overrideModificationTime: true,
-      compression: .ZSTD,
-      debugLogging: false)
-
-    XCTAssertEqual(command, ["--use-compress-program", "pzstd -d", "-xpm", "--no-mac-metadata", "-C", "/tmp/output", "-f", "-"])
-  }
-
-  func testCommandToExtractFromStdIn_ZSTDCompression_IgnoresDebugLogging() {
-    let commandNoDebug = FBArchiveOperations.commandToExtractFromStdIn(
-      withExtractPath: "/tmp/output",
-      overrideModificationTime: false,
-      compression: .ZSTD,
-      debugLogging: false)
-
-    let commandWithDebug = FBArchiveOperations.commandToExtractFromStdIn(
-      withExtractPath: "/tmp/output",
-      overrideModificationTime: false,
-      compression: .ZSTD,
-      debugLogging: true)
-
-    XCTAssertEqual(
-      commandNoDebug, commandWithDebug,
-      "ZSTD compression should produce the same command regardless of debugLogging")
-  }
-
-  // MARK: - streamCompressions
-
-  func testStreamCompressions_WithPzstdOnPath_IncludesZSTD() throws {
-    let pzstd = (tempDirectory as NSString).appendingPathComponent("pzstd")
-    FileManager.default.createFile(atPath: pzstd, contents: Data(), attributes: [.posixPermissions: 0o755])
-
-    XCTAssertEqual(FBArchiveOperations.streamCompressions(searchPath: "/nonexistent:\(tempDirectory!)"), [.GZIP, .ZSTD])
-  }
-
-  func testStreamCompressions_WithNonExecutablePzstd_IsGZIPOnly() throws {
-    let pzstd = (tempDirectory as NSString).appendingPathComponent("pzstd")
-    FileManager.default.createFile(atPath: pzstd, contents: Data(), attributes: [.posixPermissions: 0o644])
-
-    XCTAssertEqual(FBArchiveOperations.streamCompressions(searchPath: tempDirectory), [.GZIP])
-  }
-
-  func testStreamCompressions_WithoutPath_IsGZIPOnly() {
-    XCTAssertEqual(FBArchiveOperations.streamCompressions(searchPath: nil), [.GZIP])
-  }
-
-  func testZstdDecompressorPath_IsTheFirstExecutablePzstdOnPath() throws {
-    let first = (tempDirectory as NSString).appendingPathComponent("first")
-    let second = (tempDirectory as NSString).appendingPathComponent("second")
-    for directory in [first, second] {
-      try FileManager.default.createDirectory(atPath: directory, withIntermediateDirectories: true)
-      FileManager.default.createFile(atPath: "\(directory)/pzstd", contents: Data(), attributes: [.posixPermissions: 0o755])
-    }
-
-    XCTAssertEqual(FBArchiveOperations.zstdDecompressorPath(searchPath: "/nonexistent:\(first):\(second)"), "\(first)/pzstd")
-    XCTAssertNil(FBArchiveOperations.zstdDecompressorPath(searchPath: "/nonexistent"))
-  }
-
-  // MARK: - extractZstd
-
-  func testExtractZstd_SkipsALeadingSkippableFrame() async throws {
-    let searchPath = [ProcessInfo.processInfo.environment["PATH"], "/opt/homebrew/bin", "/usr/local/bin"].compactMap { $0 }.joined(separator: ":")
-    guard let pzstd = FBArchiveOperations.zstdDecompressorPath(searchPath: searchPath) else {
-      throw XCTSkip("pzstd is not installed")
-    }
-    let original = Data((0..<100_000).map { UInt8($0 % 251) })
-    let originalPath = (tempDirectory as NSString).appendingPathComponent("original")
-    try original.write(to: URL(fileURLWithPath: originalPath))
-    let compress = Process()
-    compress.executableURL = URL(fileURLWithPath: pzstd)
-    compress.arguments = ["-q", "-f", originalPath]
-    try compress.run()
-    compress.waitUntilExit()
-    let skippableFrame = Data([0x5E, 0x2A, 0x4D, 0x18, 0x08, 0x00, 0x00, 0x00]) + Data("idb-zip\0".utf8)
-    let compressed = skippableFrame + (try Data(contentsOf: URL(fileURLWithPath: "\(originalPath).zst")))
-
-    let input = FBProcessInput<OutputStream>.fromStream()
-    let extractPath = (tempDirectory as NSString).appendingPathComponent("extracted")
-    let extraction = FBArchiveOperations.extractZstd(
-      fromStream: input.retyped(FBProcessInput<AnyObject>.self),
-      toPath: extractPath,
-      decompressorPath: pzstd,
-      logger: logger)
-    let stream = input.contents
-    stream.open()
-    let bytes = [UInt8](compressed)
-    XCTAssertEqual(stream.write(bytes, maxLength: bytes.count), bytes.count)
-    stream.close()
-
-    let extracted = try await bridgeFBFuture(extraction)
-    XCTAssertEqual(extracted as String, extractPath)
-    XCTAssertEqual(try Data(contentsOf: URL(fileURLWithPath: extractPath)), original)
   }
 
   // MARK: - createGzippedTarForPath with Non-Existent Path
@@ -369,13 +259,10 @@ final class FBArchiveOperationsTests: XCTestCase {
     let destination = try makeExtractionDirectory()
     let data = try Data(contentsOf: URL(fileURLWithPath: archive))
     let input = FBProcessInput<NSData>(from: data).retyped(FBProcessInput<AnyObject>.self)
-    // Production passes GZIP for every container -- the flag only selects between
-    // gzip and zstd, and bsdtar sniffs the real format regardless.
     try await ArchiveExtractors.default.extract(
       .stream(input),
       to: destination,
-      options: ArchiveExtractOptions(
-        overrideModificationTime: overrideModificationTime, compression: .GZIP),
+      options: ArchiveExtractOptions(overrideModificationTime: overrideModificationTime),
       logger: logger)
     return destination
   }

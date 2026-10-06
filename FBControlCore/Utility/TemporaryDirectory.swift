@@ -106,7 +106,7 @@ public struct TemporaryDirectory: Equatable, Sendable {
     try await withTemporaryDirectory { tempDir in
       try await ArchiveExtractors.stream(compression).extract(
         .stream(input), to: tempDir.path,
-        options: ArchiveExtractOptions(overrideModificationTime: overrideMTime, compression: compression),
+        options: ArchiveExtractOptions(overrideModificationTime: overrideMTime),
         logger: logger)
       return try await body(tempDir)
     }
@@ -130,17 +130,6 @@ public struct TemporaryDirectory: Equatable, Sendable {
         options: ArchiveExtractOptions(overrideModificationTime: overrideMTime),
         logger: logger)
       return try await body(tempDir)
-    }
-  }
-
-  /// Extracts the gzip in `input` to a file named `name` inside a temporary directory scoped to
-  /// `body`; the file goes with the directory when the scope ends.
-  public func withGzipExtracted<T>(fromStream input: FBProcessInput<AnyObject>, name: String, _ body: (URL) async throws -> T) async throws -> T {
-    try await withTemporaryDirectory { directory in
-      let tempFile = directory.appendingPathComponent(name)
-      _ = try await bridgeFBFuture(
-        FBArchiveOperations.extractGzip(fromStream: input, toPath: tempFile.path, logger: logger))
-      return try await body(tempFile)
     }
   }
 

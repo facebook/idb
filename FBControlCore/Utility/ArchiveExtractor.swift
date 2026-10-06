@@ -24,17 +24,8 @@ public struct ArchiveExtractOptions: Sendable {
   /// written with the current time instead.
   public var overrideModificationTime: Bool
 
-  /// The compression the producer applied. This only chooses between gzip and
-  /// zstd; the container is detected from the bytes, so it has no bearing on a
-  /// zip.
-  public var compression: FBCompressionFormat
-
-  public init(
-    overrideModificationTime: Bool = false,
-    compression: FBCompressionFormat = .GZIP
-  ) {
+  public init(overrideModificationTime: Bool = false) {
     self.overrideModificationTime = overrideModificationTime
-    self.compression = compression
   }
 }
 
@@ -77,8 +68,7 @@ public struct BSDTarExtractor: ArchiveExtractor {
           fromStream: input,
           toPath: extractPath,
           overrideModificationTime: options.overrideModificationTime,
-          logger: logger,
-          compression: options.compression))
+          logger: logger))
     }
   }
 }
@@ -174,8 +164,6 @@ public struct InProcessTarExtractor: ArchiveExtractor {
     logger.log("Extracting a stream that is not a tar with \(type(of: fallback))")
     let replayed = FBProcessInput<OutputStream>.fromStream()
     let input = HandedOver(replayed.retyped(FBProcessInput<AnyObject>.self))
-    var options = options
-    options.compression = .GZIP
     async let extraction: Void = fallback.extract(.stream(input.value), to: extractPath, options: options, logger: logger)
     let output = replayed.contents
     let source = HandedOver(source)

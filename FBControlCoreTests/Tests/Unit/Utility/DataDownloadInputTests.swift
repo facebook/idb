@@ -75,8 +75,7 @@ final class DataDownloadInputTests: XCTestCase {
       fromStream: download.input,
       toPath: destination,
       overrideModificationTime: false,
-      logger: logger,
-      compression: .GZIP)
+      logger: logger)
     // A data consumer carries only bytes and an end of file, so a failed download
     // reaches the extractor as nothing more than a short stream. Its outcome has
     // to be consulted alongside the extraction's.

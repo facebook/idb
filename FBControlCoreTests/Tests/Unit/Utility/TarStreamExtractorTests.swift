@@ -349,7 +349,7 @@ struct TarStreamExtractorTests {
     try fileManager.createDirectory(atPath: extracted, withIntermediateDirectories: true)
     let stream = FBProcessInput<NSData>(from: ZstdFrame.stored(try Data(contentsOf: archive))).retyped(FBProcessInput<AnyObject>.self)
 
-    try await InProcessTarExtractor(fallback: RefusingExtractor()).extract(.stream(stream), to: extracted, options: ArchiveExtractOptions(compression: .ZSTD), logger: logger)
+    try await InProcessTarExtractor(fallback: RefusingExtractor()).extract(.stream(stream), to: extracted, options: ArchiveExtractOptions(), logger: logger)
 
     #expect(try tree(at: extracted) == tree(at: expected))
   }

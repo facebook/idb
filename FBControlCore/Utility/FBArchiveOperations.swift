@@ -34,8 +34,6 @@ public enum FBArchiveOperations {
   /// in an app bundle's signature depends on them.
   private static let NoMacMetadataFlag = "--no-mac-metadata"
 
-  private static let ZstdDecompressor = "pzstd"
-
   /// Builds a command to extract from a file on disk.
   public static func commandToExtractArchive(
     atPath path: String,
@@ -65,50 +63,27 @@ public enum FBArchiveOperations {
     return extractPath
   }
 
-  /// The compressions a stream can be extracted from, given the `PATH` that subprocesses inherit.
-  /// macOS does not ship the zstd decompressor that `commandToExtractFromStdIn` runs.
-  public static func streamCompressions(searchPath: String?) -> [FBCompressionFormat] {
-    zstdDecompressorPath(searchPath: searchPath) == nil ? [.GZIP] : [.GZIP, .ZSTD]
-  }
-
-  /// The first zstd decompressor on `searchPath`, if any.
-  public static func zstdDecompressorPath(searchPath: String?) -> String? {
-    let directories = searchPath?.split(separator: ":") ?? []
-    return
-      directories
-      .map { "\($0)/\(ZstdDecompressor)" }
-      .first { FileManager.default.isExecutableFile(atPath: $0) }
-  }
-
   /// Builds a command to extract via stdin.
   public static func commandToExtractFromStdIn(
     withExtractPath extractPath: String,
     overrideModificationTime overrideMTime: Bool,
-    compression: FBCompressionFormat,
     debugLogging: Bool
   ) -> [String] {
-    switch compression {
-    case .ZSTD:
-      return ["--use-compress-program", "\(ZstdDecompressor) -d", overrideMTime ? "-xpm" : "-xp", NoMacMetadataFlag, "-C", extractPath, "-f", "-"]
-    case .GZIP:
-      let flags = flagStringForExtraction(overrideModificationTime: overrideMTime, debugLogging: debugLogging)
-      return [flags, NoMacMetadataFlag, "-C", extractPath, "-f", "-"]
-    }
+    let flags = flagStringForExtraction(overrideModificationTime: overrideMTime, debugLogging: debugLogging)
+    return [flags, NoMacMetadataFlag, "-C", extractPath, "-f", "-"]
   }
 
   /// Extracts a tar or zip stream archive to a directory. The stream can be an uncompressed tar, a
-  /// gzipped tar, a zstd compressed tar, or a zip.
+  /// gzipped tar, or a zip.
   public static func extractArchive(
     fromStream stream: FBProcessInput<AnyObject>,
     toPath extractPath: String,
     overrideModificationTime overrideMTime: Bool,
-    logger: any ControlCoreLogger,
-    compression: FBCompressionFormat
+    logger: any ControlCoreLogger
   ) -> FBFuture<NSString> {
     let arguments = commandToExtractFromStdIn(
       withExtractPath: extractPath,
       overrideModificationTime: overrideMTime,
-      compression: compression,
       debugLogging: false)
     return FBProcessBuilder<NSNull, NSData, NSData>
       .withLaunchPath(BSDTarPath, arguments: arguments)
@@ -130,24 +105,6 @@ public enum FBArchiveOperations {
   ) -> FBFuture<NSString> {
     FBProcessBuilder<NSNull, NSData, NSData>
       .withLaunchPath("/usr/bin/gunzip", arguments: ["--to-stdout"])
-      .withStdIn(stream)
-      .withStdErr(toLoggerAndErrorMessage: logger.debug())
-      .withStdOutPath(extractPath)
-      .withTaskLifecycleLogging(to: logger)
-      .runUntilCompletion(withAcceptableExitCodes: [0])
-      .mapReplace(extractPath as NSString)
-      .retyped()
-  }
-
-  /// Decompresses a zstd stream to a single file, skipping any skippable frames in the stream.
-  public static func extractZstd(
-    fromStream stream: FBProcessInput<AnyObject>,
-    toPath extractPath: String,
-    decompressorPath: String,
-    logger: any ControlCoreLogger
-  ) -> FBFuture<NSString> {
-    FBProcessBuilder<NSNull, NSData, NSData>
-      .withLaunchPath(decompressorPath, arguments: ["-d", "-q", "-c"])
       .withStdIn(stream)
       .withStdErr(toLoggerAndErrorMessage: logger.debug())
       .withStdOutPath(extractPath)

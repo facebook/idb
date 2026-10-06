@@ -44,7 +44,7 @@ public struct InstallOptions: Sendable {
   }
 
   fileprivate var extractOptions: ArchiveExtractOptions {
-    ArchiveExtractOptions(overrideModificationTime: overrideModificationTime, compression: compression)
+    ArchiveExtractOptions(overrideModificationTime: overrideModificationTime)
   }
 }
 
