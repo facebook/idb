@@ -145,7 +145,15 @@ final class InstallMethodHandlerTests: XCTestCase {
     }
   }
 
-  func testANonAppDownloadThatFails() async throws {
+  func testEveryKindButADylibIsStagedFromItsURL() {
+    let staged: [InstallDestination] = [.application(makeDebuggable: false), .xctest(skipSigningBundles: false), .dsym(linkTo: nil), .framework]
+    for destination in staged {
+      XCTAssertEqual(InstallMethodHandler.urlRoute(for: destination), .staged, "\(destination)")
+    }
+    XCTAssertEqual(InstallMethodHandler.urlRoute(for: .dylib), .gzippedFile)
+  }
+
+  func testADylibDownloadThatFails() async throws {
     let missing = URL(fileURLWithPath: NSTemporaryDirectory()).appendingPathComponent(UUID().uuidString)
     let download = DataDownloadInput.dataDownload(withURL: missing, logger: FBControlCoreLoggerFactory.systemLoggerWriting(toStderr: false, withDebugLogging: false))
     let staged = URL(fileURLWithPath: NSTemporaryDirectory()).appendingPathComponent(UUID().uuidString)

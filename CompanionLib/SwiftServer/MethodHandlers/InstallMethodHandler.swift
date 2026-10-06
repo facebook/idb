@@ -160,12 +160,14 @@ struct InstallMethodHandler {
       return artifact
 
     case let .url(url):
-      if destination == .app {
+      switch Self.urlRoute(for: installDestination) {
+      case .staged:
         return try await install(from: .remoteURL(url), compression: compression)
-      }
-      let download = DataDownloadInput.dataDownload(withURL: url, logger: targetLogger)
-      return try await Self.installDownload(download) { input in
-        try await installStreamed(input, compression: compression)
+      case .gzippedFile:
+        let download = DataDownloadInput.dataDownload(withURL: url, logger: targetLogger)
+        return try await Self.installDownload(download) { input in
+          try await install(from: .gzippedFile(input, name: name))
+        }
       }
 
     case let .filePath(filePath):
@@ -173,7 +175,24 @@ struct InstallMethodHandler {
     }
   }
 
-  /// Installs a non-app artifact from a download's stream as it arrives.
+  /// How a URL payload reaches staging.
+  enum URLRoute: Equatable {
+    /// Staged from the URL, which reports the download's progress.
+    case staged
+    /// Downloaded as a stream of a single gzipped file, which is not an archive staging could extract.
+    case gzippedFile
+  }
+
+  static func urlRoute(for destination: InstallDestination) -> URLRoute {
+    switch destination {
+    case .application, .xctest, .dsym, .framework:
+      return .staged
+    case .dylib:
+      return .gzippedFile
+    }
+  }
+
+  /// Installs a dylib from a download's stream as it arrives.
   ///
   /// A failed download ends the stream early, which the install alone cannot tell from a complete one,
   /// so its failure takes precedence over the install's outcome.
