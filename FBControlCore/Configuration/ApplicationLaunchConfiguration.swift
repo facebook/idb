@@ -19,18 +19,20 @@ public final class ApplicationLaunchConfiguration: ProcessLaunchConfiguration {
   @objc public let bundleID: String
   @objc public let bundleName: String?
   @objc public let waitForDebugger: Bool
+  @objc public let io: FBProcessIO<AnyObject, AnyObject, AnyObject>
   public let launchMode: ApplicationLaunchMode
 
   public init(bundleID: String, bundleName: String?, arguments: [String], environment: [String: String], waitForDebugger: Bool, io: FBProcessIO<AnyObject, AnyObject, AnyObject>, launchMode: ApplicationLaunchMode) {
     self.bundleID = bundleID
     self.bundleName = bundleName
     self.waitForDebugger = waitForDebugger
+    self.io = io
     self.launchMode = launchMode
-    super.init(arguments: arguments, environment: environment, io: io)
+    super.init(arguments: arguments, environment: environment)
   }
 
   public override var hash: Int {
-    super.hash ^ (bundleID as NSString).hash ^ ((bundleName as NSString?)?.hash ?? 0) &+ (waitForDebugger ? 1231 : 1237)
+    super.hash ^ io.hash ^ (bundleID as NSString).hash ^ ((bundleName as NSString?)?.hash ?? 0) &+ (waitForDebugger ? 1231 : 1237)
   }
 
   public override func isEqual(_ object: Any?) -> Bool {
@@ -39,7 +41,8 @@ public final class ApplicationLaunchConfiguration: ProcessLaunchConfiguration {
     else {
       return false
     }
-    return bundleID == other.bundleID
+    return io.isEqual(other.io)
+      && bundleID == other.bundleID
       && bundleName == other.bundleName
       && waitForDebugger == other.waitForDebugger
       && launchMode == other.launchMode

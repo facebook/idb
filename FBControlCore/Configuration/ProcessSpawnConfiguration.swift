@@ -19,6 +19,7 @@ public final class ProcessSpawnConfiguration: ProcessLaunchConfiguration {
 
   @objc public let launchPath: String
   @objc public let mode: ProcessSpawnMode
+  @objc public let io: FBProcessIO<AnyObject, AnyObject, AnyObject>
 
   @objc public var processName: String {
     (launchPath as NSString).lastPathComponent
@@ -28,7 +29,8 @@ public final class ProcessSpawnConfiguration: ProcessLaunchConfiguration {
   public init(launchPath: String, arguments: [String], environment: [String: String], io: FBProcessIO<AnyObject, AnyObject, AnyObject>, mode: ProcessSpawnMode) {
     self.launchPath = launchPath
     self.mode = mode
-    super.init(arguments: arguments, environment: environment, io: io)
+    self.io = io
+    super.init(arguments: arguments, environment: environment)
   }
 
   public override var hash: Int {

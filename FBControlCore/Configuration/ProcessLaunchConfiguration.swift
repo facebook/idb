@@ -12,18 +12,16 @@ public class ProcessLaunchConfiguration: NSObject {
 
   @objc public let arguments: [String]
   @objc public let environment: [String: String]
-  @objc public let io: FBProcessIO<AnyObject, AnyObject, AnyObject>
 
   @objc
-  public init(arguments: [String], environment: [String: String], io: FBProcessIO<AnyObject, AnyObject, AnyObject>) {
+  public init(arguments: [String], environment: [String: String]) {
     self.arguments = arguments
     self.environment = environment
-    self.io = io
     super.init()
   }
 
   public override var hash: Int {
-    (arguments as NSArray).hash ^ ((environment as NSDictionary).hash & io.hash)
+    (arguments as NSArray).hash ^ (environment as NSDictionary).hash
   }
 
   public override func isEqual(_ object: Any?) -> Bool {
@@ -34,6 +32,5 @@ public class ProcessLaunchConfiguration: NSObject {
     }
     return (arguments as NSArray).isEqual(to: other.arguments)
       && (environment as NSDictionary).isEqual(to: other.environment as NSDictionary)
-      && io.isEqual(other.io)
   }
 }
