@@ -84,6 +84,22 @@ final class CrashLogStoreTests: XCTestCase {
     XCTAssertEqual(delivered.identifier, "assetsd", "A crash log not matching the predicate should not resolve the wait")
   }
 
+  func testNextCrashLog_WhenCancelled_StopsWaiting() async throws {
+    let store = makeStore()
+    let returned = expectation(description: "The cancelled wait returns")
+    // BUG: a cancelled wait never returns — flipped in the following commit
+    returned.isInverted = true
+    let next = Task {
+      defer { returned.fulfill() }
+      _ = try await store.nextCrashLog(forMatchingPredicate: CrashLogInfo.predicate(forIdentifier: "assetsd"))
+    }
+
+    try await Task.sleep(nanoseconds: 200_000_000)
+    next.cancel()
+
+    await fulfillment(of: [returned], timeout: 1)
+  }
+
   /// Ingests `data` repeatedly under distinct names until cancelled. The store registers its
   /// notification observer asynchronously, so a single ingest can be posted before the observer
   /// exists and be missed; identical names are deduplicated and post nothing, so each retry
