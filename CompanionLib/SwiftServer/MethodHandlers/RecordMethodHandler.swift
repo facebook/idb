@@ -98,11 +98,7 @@ struct RecordMethodHandler {
       // A finalize that failed before the file was created leaves nothing to send, and gzip would
       // fail on the missing path with an error that hides the real one.
       if FileManager.default.fileExists(atPath: outputURL.path) {
-        let gzipTask = try await FBArchiveOperations.createGzipAsync(
-          forPath: outputURL.path,
-          logger: logger)
-
-        try await FileDrainWriter.performDrain(task: gzipTask) { data in
+        try await FileDrainWriter.performDrain(FBArchiveOperations.gzipSubprocess(forPath: outputURL.path), logger: logger) { data in
           let response = Idb_RecordResponse.with { $0.payload.data = data }
           try await responseStream.send(response)
         }

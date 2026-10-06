@@ -152,6 +152,11 @@ public enum FBArchiveOperations {
     return gzip.standardOutput
   }
 
+  /// A gzip that writes the compressed file at `path` to its stdout, for the caller to launch and stream.
+  public static func gzipSubprocess(forPath path: String) -> Subprocess {
+    Subprocess(executable: "/usr/bin/gzip", arguments: ["--to-stdout", path])
+  }
+
   /// Creates a gzip archive, returning a task that has an input stream attached to stdout. Read the
   /// input stream to obtain all of the gzip output of the file. To confirm that the stream has been
   /// correctly written, the caller should check the exit code of the returned task upon completion.
