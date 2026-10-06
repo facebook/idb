@@ -9,21 +9,14 @@
 import Foundation
 import Testing
 
-/// Differential coverage for `Subprocess.run`: every scenario is executed
-/// through both the `FBProcessBuilder` path and the `Subprocess` path, and
-/// the observable outcomes — captured output, termination, acceptability —
-/// must be identical. This is what makes the façade's "no behaviour change"
-/// checkable rather than asserted.
+/// Covers `Subprocess.run`: what each output captures, the child's
+/// environment and descriptors, how termination is reported, the deadline,
+/// and the exit policy.
 ///
-/// Serialized: each test spawns two child processes, and running them all
-/// concurrently under suite load produces transient launch failures that
-/// read as differential mismatches.
+/// Serialized: running every test's child concurrently under suite load
+/// produces transient launch failures.
 @Suite(.serialized)
 struct SubprocessRunTests {
-
-  private static func old(_ script: String) -> FBProcessBuilder<NSNull, NSData, NSData> {
-    FBProcessBuilder<NSNull, NSData, NSData>.withLaunchPath("/bin/sh", arguments: ["-c", script])
-  }
 
   private static func new(_ script: String) -> Subprocess {
     Subprocess(executable: "/bin/sh", arguments: ["-c", script])
@@ -31,60 +24,45 @@ struct SubprocessRunTests {
 
   // MARK: - Captures
 
-  @Test("A string capture returns the same stdout as the in-memory string sink")
-  func stringCaptureMatchesTheStringSink() async throws {
-    let old = try await bridgeFBFuture(
-      Self.old("printf 'out'").withStdOutInMemoryAsString().runUntilCompletion(withAcceptableExitCodes: [0]))
+  @Test("A string capture returns stdout")
+  func stringCaptureReturnsStdout() async throws {
     let new = try await Self.new("printf 'out'").run(output: .string, error: .closed)
 
     #expect(new.standardOutput == "out")
-    #expect(new.standardOutput == (old.stdOut as? String))
-    #expect(new.terminationStatus == .exited(old.exitCode.result?.int32Value ?? -1))
+    #expect(new.terminationStatus == .exited(0))
   }
 
-  @Test("A stderr capture returns the same bytes as the in-memory sink")
-  func stderrCaptureMatchesTheStringSink() async throws {
-    let old = try await bridgeFBFuture(
-      Self.old("printf 'err' 1>&2").withStdErrInMemoryAsString().runUntilCompletion(withAcceptableExitCodes: [0]))
+  @Test("A stderr capture returns stderr")
+  func stderrCaptureReturnsStderr() async throws {
     let new = try await Self.new("printf 'err' 1>&2").run(output: .closed, error: .string)
 
     #expect(new.standardError == "err")
-    #expect(new.standardError == (old.stdErr as? String))
   }
 
-  @Test("A data capture returns the same bytes as the in-memory data sink")
-  func dataCaptureMatchesTheDataSink() async throws {
-    let old = try await bridgeFBFuture(
-      Self.old("printf 'bytes'").withStdOutInMemoryAsData().runUntilCompletion(withAcceptableExitCodes: [0]))
+  @Test("A data capture returns the raw bytes")
+  func dataCaptureReturnsTheBytes() async throws {
     let new = try await Self.new("printf 'bytes'").run(output: .data, error: .closed)
 
     #expect(new.standardOutput == Data("bytes".utf8))
-    #expect(new.standardOutput == (old.stdOut as? Data))
   }
 
-  @Test("A file capture writes the same contents as the file-path sink")
-  func fileCaptureMatchesTheFilePathSink() async throws {
+  @Test("A file capture writes stdout to an existing file")
+  func fileCaptureWritesToAnExistingFile() async throws {
     let directory = FileManager.default.temporaryDirectory
       .appendingPathComponent("SubprocessRunTests-\(UUID().uuidString)")
     try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
     defer { try? FileManager.default.removeItem(at: directory) }
-    let oldPath = directory.appendingPathComponent("old.txt")
     let newPath = directory.appendingPathComponent("new.txt")
-    // The engine opens file sinks with O_CREAT and no mode, so a file it
-    // creates itself has undefined permissions and may not be readable back.
-    #expect(FileManager.default.createFile(atPath: oldPath.path, contents: nil))
     #expect(FileManager.default.createFile(atPath: newPath.path, contents: nil))
 
-    _ = try await bridgeFBFuture(
-      Self.old("/usr/bin/seq 1 100").withStdOutPath(oldPath.path).runUntilCompletion(withAcceptableExitCodes: [0]))
-    let new = try await Self.new("/usr/bin/seq 1 100").run(output: .file(newPath), error: .closed)
+    let new = try await Self.new("/usr/bin/seq 1 3").run(output: .file(newPath), error: .closed)
 
     #expect(new.standardOutput == newPath)
-    #expect(try String(contentsOf: newPath, encoding: .utf8) == (try String(contentsOf: oldPath, encoding: .utf8)))
+    #expect(try String(contentsOf: newPath, encoding: .utf8) == "1\n2\n3\n")
   }
 
-  @Test("A line sink receives the same lines as the builder's line reader")
-  func lineSinkMatchesTheLineReader() async throws {
+  @Test("A line sink receives each line")
+  func lineSinkReceivesEachLine() async throws {
     // SAFETY: `lines` is the only mutable state and every read and write of it
     // goes through `lock`; the line sinks call in from arbitrary queues.
     // patternlint-disable-next-line unchecked-sendable
@@ -94,32 +72,24 @@ struct SubprocessRunTests {
       func append(_ line: String) { lock.withLock { lines.append(line) } }
       var snapshot: [String] { lock.withLock { lines } }
     }
-    let oldLines = Collected()
     let newLines = Collected()
 
-    _ = try await bridgeFBFuture(
-      Self.old("printf 'a\\nb\\nc\\n'")
-        .withStdOutLineReader { oldLines.append($0) }
-        .runUntilCompletion(withAcceptableExitCodes: [0]))
     _ = try await Self.new("printf 'a\\nb\\nc\\n'").run(output: .lines { newLines.append($0) }, error: .closed)
 
-    // Both paths deliver lines through the asynchronous block consumer, so
-    // delivery can trail termination; poll rather than assert immediately.
-    for _ in 0..<100 where newLines.snapshot.count < 3 || oldLines.snapshot.count < 3 {
+    // Lines arrive through the asynchronous block consumer, so delivery can
+    // trail termination; poll rather than assert immediately.
+    for _ in 0..<100 where newLines.snapshot.count < 3 {
       try await Task.sleep(nanoseconds: 10_000_000)
     }
     #expect(newLines.snapshot == ["a", "b", "c"])
-    #expect(newLines.snapshot == oldLines.snapshot)
   }
 
-  @Test("An unconfigured run captures both streams as strings, the builder's unset default made visible")
-  func unconfiguredRunMatchesTheBuilderDefaults() async throws {
-    let old = try await bridgeFBFuture(
-      Self.old("printf 'out'; printf 'err' 1>&2").runUntilCompletion(withAcceptableExitCodes: [0]))
+  @Test("An unconfigured run captures both streams as strings")
+  func unconfiguredRunCapturesBothStreams() async throws {
     let new = try await Self.new("printf 'out'; printf 'err' 1>&2").run()
 
-    #expect(new.standardOutput == (old.stdOut as? String))
-    #expect(new.standardError == (old.stdErr as? String))
+    #expect(new.standardOutput == "out")
+    #expect(new.standardError == "err")
     #expect(new.terminationStatus == .exited(0))
   }
 
@@ -165,8 +135,6 @@ struct SubprocessRunTests {
     defer { try? FileManager.default.removeItem(at: directory) }
     let path = directory.appendingPathComponent("created.txt")
 
-    // Not differential: the old engine opens with O_CREAT and no mode, so a
-    // file it creates has undefined permissions. The capture opens with 0644.
     _ = try await Self.new("printf 'created'").run(output: .file(path), error: .closed)
 
     #expect(try String(contentsOf: path, encoding: .utf8) == "created")
@@ -174,64 +142,49 @@ struct SubprocessRunTests {
 
   // MARK: - Environment
 
-  @Test("An exact environment produces the same child environment as the builder's")
-  func exactEnvironmentMatchesTheBuilder() async throws {
-    let old = try await bridgeFBFuture(
-      Self.old("/usr/bin/env")
-        .withEnvironment(["FOO": "BAR"])
-        .withStdOutInMemoryAsString()
-        .runUntilCompletion(withAcceptableExitCodes: [0]))
+  @Test("An exact environment reaches the child")
+  func exactEnvironmentReachesTheChild() async throws {
     var spec = Self.new("/usr/bin/env")
     spec.environment = .exact(["FOO": "BAR"])
     let new = try await spec.run(output: .string, error: .closed)
 
     #expect(new.standardOutput.contains("FOO=BAR"))
-    #expect(new.standardOutput == (old.stdOut as? String))
   }
 
   // MARK: - The two dev nulls
 
-  @Test("A closed output leaves the child's descriptor closed, exactly like the builder's dev-null")
-  func closedOutputMatchesTheBuilderDevNull() async throws {
+  @Test("A closed output leaves the child's descriptor closed")
+  func closedOutputLeavesTheDescriptorClosed() async throws {
     // `/dev/fd/1` exists only while fd 1 is open in the child, so `test -e`
     // discriminates a closed descriptor (exit 1) from any open sink (exit 0).
-    let old = try await bridgeFBFuture(
-      Self.old("test -e /dev/fd/1").withStdOutToDevNull().runUntilCompletion(withAcceptableExitCodes: nil))
     let new = try await Self.new("test -e /dev/fd/1").run(output: .closed, error: .closed, exitPolicy: .any)
 
     #expect(new.terminationStatus == .exited(1))
-    #expect(new.terminationStatus == .exited(old.exitCode.result?.int32Value ?? -1))
   }
 
-  @Test("A null-device output hands the child an open descriptor, which nothing on the old host path could")
+  @Test("A null-device output hands the child an open descriptor")
   func nullDeviceOutputIsOpenOnTheHost() async throws {
     let new = try await Self.new("test -e /dev/fd/1").run(output: .nullDevice, error: .closed, exitPolicy: .any)
 
     #expect(new.terminationStatus == .exited(0))
   }
 
-  // MARK: - Termination parity
+  // MARK: - Termination
 
   @Test(
-    "Any-policy runs report the exit code the old nil-codes path reports",
+    "Any-policy runs report the exit code",
     arguments: [Int32(0), Int32(3), Int32(149)])
-  func exitCodesMatchTheNilCodesPath(code: Int32) async throws {
-    let old = try await bridgeFBFuture(
-      Self.old("exit \(code)").runUntilCompletion(withAcceptableExitCodes: nil))
+  func anyPolicyReportsTheExitCode(code: Int32) async throws {
     let new = try await Self.new("exit \(code)").run(output: .closed, error: .closed, exitPolicy: .any)
 
     #expect(new.terminationStatus == .exited(code))
-    #expect(new.terminationStatus == .exited(old.exitCode.result?.int32Value ?? -1))
   }
 
-  @Test("A signalled process reports the signal the old signal future reports")
-  func signalsMatchTheSignalFuture() async throws {
-    let old = try await bridgeFBFuture(Self.old("kill -TERM $$").start())
-    let oldSignal = try await bridgeFBFuture(old.signal).int32Value
+  @Test("A signalled process reports the signal")
+  func signalledProcessReportsTheSignal() async throws {
     let new = try await Self.new("kill -TERM $$").run(output: .closed, error: .closed, exitPolicy: .any)
 
     #expect(new.terminationStatus == .signalled(SIGTERM))
-    #expect(new.terminationStatus == .signalled(oldSignal))
   }
 
   // MARK: - Deadline
@@ -243,8 +196,7 @@ struct SubprocessRunTests {
       Issue.record("Expected the deadline to fire")
     } catch let SubprocessError.timedOut(seconds, _, processIdentifier) {
       #expect(seconds == 0.3)
-      // The deadline stops observation, it does not kill: the old
-      // future-timeout contract that every adopting callsite relies on.
+      // The deadline stops observation, it does not kill.
       #expect(kill(processIdentifier, 0) == 0)
       kill(processIdentifier, SIGKILL)
     } catch {
@@ -262,13 +214,8 @@ struct SubprocessRunTests {
 
   // MARK: - Policy rejection
 
-  @Test("An unacceptable exit code throws, exactly where the old acceptable-codes path throws")
-  func policyRejectionMatchesAcceptableCodes() async throws {
-    await #expect(throws: (any Error).self) {
-      _ = try await bridgeFBFuture(
-        Self.old("exit 149").runUntilCompletion(withAcceptableExitCodes: [0]))
-    }
-
+  @Test("An exit code outside the policy's list throws")
+  func policyRejectsAnUnlistedExitCode() async throws {
     do {
       _ = try await Self.new("exit 149").run(output: .closed, error: .closed, exitPolicy: .mustExit([0]))
       Issue.record("Expected the code-list policy to reject exit 149")
@@ -279,54 +226,33 @@ struct SubprocessRunTests {
     }
   }
 
-  @Test("A rejected exit quotes the error-message capture, as the old acceptable-codes path does")
+  @Test("A rejected exit quotes the error-message capture")
   func policyRejectionQuotesTheErrorMessageCapture() async throws {
     let script = "printf 'no space left on device\\n' 1>&2; exit 3"
     let logger = FBControlCoreLoggerFactory.logger(to: FBDataBuffer.consumableBuffer())
-    var oldDescription = ""
-    do {
-      _ = try await bridgeFBFuture(
-        Self.old(script).withStdErr(toLoggerAndErrorMessage: logger).runUntilCompletion(withAcceptableExitCodes: [0]))
-    } catch {
-      oldDescription = error.localizedDescription
-    }
 
     let new = await #expect(throws: SubprocessError.self) {
       _ = try await Self.new(script).run(output: .closed, error: .loggerCapturingErrorMessage(logger))
     }
 
-    #expect(oldDescription.contains("no space left on device"))
     #expect(new?.localizedDescription.contains("no space left on device") == true)
   }
 
-  @Test("A rejected exit quotes an error-message capture that is not valid UTF-8, as the old path does")
+  @Test("A rejected exit quotes an error-message capture that is not valid UTF-8")
   func policyRejectionQuotesAnErrorMessageThatIsNotValidUTF8() async throws {
     // `\351` is a Latin-1 é, which is not valid UTF-8.
     let script = "printf 'caf\\351: no space left on device' 1>&2; exit 3"
     let logger = FBControlCoreLoggerFactory.logger(to: FBDataBuffer.consumableBuffer())
-    var oldDescription = ""
-    do {
-      _ = try await bridgeFBFuture(
-        Self.old(script).withStdErr(toLoggerAndErrorMessage: logger).runUntilCompletion(withAcceptableExitCodes: [0]))
-    } catch {
-      oldDescription = error.localizedDescription
-    }
 
     let new = await #expect(throws: SubprocessError.self) {
       _ = try await Self.new(script).run(output: .closed, error: .loggerCapturingErrorMessage(logger))
     }
 
-    #expect(oldDescription.contains("no space left on device"))
     #expect(new?.localizedDescription.contains("no space left on device") == true)
   }
 
-  @Test("A signal fails a zero-exit policy, matching the old path's rejection of signalled processes")
-  func signalRejectionMatchesTheOldPath() async throws {
-    await #expect(throws: (any Error).self) {
-      _ = try await bridgeFBFuture(
-        Self.old("kill -9 $$").runUntilCompletion(withAcceptableExitCodes: nil))
-    }
-
+  @Test("A signal fails a zero-exit policy")
+  func zeroExitPolicyRejectsASignal() async throws {
     do {
       _ = try await Self.new("kill -9 $$").run(output: .closed, error: .closed)
       Issue.record("Expected the zero-exit policy to reject a signalled process")

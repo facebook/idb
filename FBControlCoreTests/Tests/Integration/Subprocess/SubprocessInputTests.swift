@@ -9,13 +9,7 @@
 import Foundation
 import Testing
 
-/// Covers `Subprocess.Input` and the detached `InputSource`. The two forms
-/// that `FBProcessInput` already supports — a fixed blob and an externally
-/// written consumer — are covered differentially against it, so the façade's
-/// stdin is checkably the same stdin. The buffering of writes made before the
-/// child launches has no counterpart to compare against: `FBProcessInput`
-/// forwards to a writer that does not exist until attach, so those writes are
-/// dropped.
+/// Covers `Subprocess.Input` and the detached `InputSource`.
 ///
 /// Serialized for the same reason as `SubprocessRunTests`: concurrent
 /// spawning under suite load produces transient launch failures.
@@ -24,10 +18,6 @@ import Testing
 /// deadline and strand the rest as skipped.
 @Suite(.serialized, .timeLimit(.minutes(1)))
 struct SubprocessInputTests {
-
-  private static func old(_ script: String) -> FBProcessBuilder<NSNull, NSData, NSData> {
-    FBProcessBuilder<NSNull, NSData, NSData>.withLaunchPath("/bin/sh", arguments: ["-c", script])
-  }
 
   private static func new(_ script: String) -> Subprocess {
     Subprocess(executable: "/bin/sh", arguments: ["-c", script])
@@ -72,19 +62,6 @@ struct SubprocessInputTests {
     #expect(new.standardOutput == Self.payload)
   }
 
-  @Test("A data input delivers the same bytes as the builder's data stdin")
-  func dataInputMatchesTheBuilder() async throws {
-    let old = try await bridgeFBFuture(
-      Self.old("cat")
-        .withStdIn(from: Data(Self.payload.utf8))
-        .withStdOutInMemoryAsString()
-        .runUntilCompletion(withAcceptableExitCodes: [0]))
-    let new = try await Self.new("cat").run(output: .string, error: .closed, input: .data(Data(Self.payload.utf8)))
-
-    #expect((old.stdOut as? String) == Self.payload)
-    #expect(new.standardOutput == (old.stdOut as? String))
-  }
-
   @Test("An empty data input is end-of-file, not a closed descriptor")
   func emptyDataInputIsEndOfFile() async throws {
     let completed = try await Self.new("cat").run(output: .string, error: .string, input: .data(Data()))
@@ -119,21 +96,9 @@ struct SubprocessInputTests {
 
   // MARK: - The detached source
 
-  @Test("A source written while the child runs delivers the same bytes as the builder's connected stdin")
-  func liveSourceMatchesTheBuilder() async throws {
+  @Test("A source written while the child runs delivers every chunk")
+  func liveSourceDeliversEveryChunk() async throws {
     let chunks = ["first\n", "second\n", "third\n"]
-
-    let started = try await bridgeFBFuture(
-      Self.old("cat")
-        .withStdInConnected()
-        .withStdOutInMemoryAsString()
-        .start())
-    let stdIn = try #require(started.stdIn)
-    for chunk in chunks {
-      stdIn.consumeData(Data(chunk.utf8))
-    }
-    stdIn.consumeEndOfFile()
-    _ = try await bridgeFBFuture(started.exited(withCodes: [0]))
 
     let source = InputSource()
     let backing = NSMutableData()
@@ -147,10 +112,7 @@ struct SubprocessInputTests {
     source.finish()
 
     #expect(try await running.terminationStatus == .exited(0))
-    // The builder's string capture strips one trailing newline; the raw
-    // consumer capture here does not, so the comparison restores it.
     #expect(String(data: backing as Data, encoding: .utf8) == chunks.joined())
-    #expect(String(data: backing as Data, encoding: .utf8) == (started.stdOut as? String).map { $0 + "\n" })
   }
 
   @Test("A source finished without a write is end-of-file")
