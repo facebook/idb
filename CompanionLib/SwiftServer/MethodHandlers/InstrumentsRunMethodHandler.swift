@@ -80,9 +80,9 @@ struct InstrumentsRunMethodHandler {
     let processedPath = processed.path
     finishedWriting.set(true)
 
-    let archiveOperation = try await FBArchiveOperations.createGzippedTarAsync(forPath: processedPath, logger: logger)
+    let archive = try FBArchiveOperations.gzippedTarSubprocess(forPath: processedPath, logger: logger)
 
-    try await FileDrainWriter.performDrain(task: archiveOperation) { data in
+    try await FileDrainWriter.performDrain(archive, logger: logger) { data in
       let response = Idb_InstrumentsRunResponse.with {
         $0.payload = .with {
           $0.data = data
