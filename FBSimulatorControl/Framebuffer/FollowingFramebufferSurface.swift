@@ -14,7 +14,8 @@ import os
 /// consumers. One that follows the active display also moves to each display that becomes active, so its
 /// consumers keep rendering the display in use. A move re-registers every consumer on the new display's
 /// screen and reports that screen's surface, after the configuration that caused it, which a consumer
-/// handles as it does any other surface change.
+/// handles as it does any other surface change. A fixed surface stays on its display whatever becomes active;
+/// a framebuffer bound to a configuration is ended by its `Framebuffer`, never moved.
 // SAFETY: The current screen, the configuration, the registrations and the follow task are guarded by the lock.
 // patternlint-disable-next-line unchecked-sendable
 final class FollowingFramebufferSurface: FramebufferSurface, @unchecked Sendable {

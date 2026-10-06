@@ -165,6 +165,17 @@ An `IOSurface` is an object that wraps a Framebuffer, with the contents of the F
 
 `IOSurface` objects are also easily convertible to "Pixel Buffer" types that are used in video encoding, which [`SimulatorVideoStream`](https://github.com/facebook/idb/blob/main/FBSimulatorControl/Video/SimulatorVideoStream.swift) takes advantage of. This allows `FBSimulatorControl` to implement video encoding of an iOS Simulator's Framebuffer in a way that avoids large copies of bitmap framebuffers on a per-frame basis.
 
+### Multiple displays
+
+An iPhone Duo has two integrated displays, only one of which is active at a time; a hinge change moves the active display, and settles over a few seconds. [`DisplaySelection`](https://github.com/facebook/idb/blob/main/FBControlCore/Configuration/DisplaySelection.swift) chooses the display that framebuffers, video, screenshots, HID input and accessibility reach:
+
+- `.active`, the default, is resolved when the operation runs, once any transition has settled. A framebuffer follows it to each display that becomes active. Framebuffers and screenshots capture the main display when no active display can be identified; HID input and accessibility fail instead.
+- `.display(uniqueID:)` names a display. A framebuffer captures it even while it is inactive; HID input, accessibility and screenshots fail unless it is the active display.
+- `.configuration(generation:)` names a configuration read from `displays.configuration()` or `displays.configurations()`, so that coordinates computed against it cannot reach a display that has since changed. Operations fail with `SimulatorDisplayError.changed` once it is replaced, and a framebuffer bound to it ends.
+- `.main` is the display with `displayClass` 0, which is the cover display of an iPhone Duo. Framebuffers and screenshots only.
+
+Only `.active` falls back: every other selection fails rather than reaching a display other than the one selected.
+
 ### HID: `IndigoHID` and `DTUHID`
 
 "Indigo" is a service present in the iOS Simulator that is used inside `Simulator.app` to synthesize "Input Events" that are understood within the iOS Simulator. This service is how clicking on the UI of the `Simulator.app` translates into touches within the iOS Simulator.
