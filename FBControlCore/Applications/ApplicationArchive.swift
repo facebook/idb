@@ -321,7 +321,7 @@ private final class ZipSpoolingConsumer: NSObject, DataConsumer, @unchecked Send
   func consumeData(_ data: Data) {
     guard let route = lock.withLock({ decision }) else {
       head.append(data)
-      if head.count >= ZipSignature.localHeaderBytes.count {
+      if head.count >= ArchiveFormat.detectableLength {
         decide()
       }
       return
@@ -338,7 +338,13 @@ private final class ZipSpoolingConsumer: NSObject, DataConsumer, @unchecked Send
   }
 
   private func decide() {
-    let route: Route = head.starts(with: ZipSignature.localHeaderBytes) ? .spooled : .stream
+    let route: Route
+    switch ArchiveFormat.detect(head) {
+    case .zip:
+      route = .spooled
+    case .zstdZip, .zstd, .gzip, .other, .undetermined:
+      route = .stream
+    }
     if route == .spooled {
       do {
         guard FileManager.default.createFile(atPath: spoolPath, contents: nil) else {

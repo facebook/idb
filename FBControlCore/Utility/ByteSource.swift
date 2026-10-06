@@ -169,7 +169,7 @@ public final class GzipSource: ByteSource {
   /// `source`, inflated if it starts as a gzip member does.
   public static func ifGzipped(_ source: any ByteSource) throws -> any ByteSource {
     let peekable = PeekableSource(source)
-    guard try peekable.peek(2) == Data([0x1F, 0x8B]) else {
+    guard ArchiveFormat.detect(try peekable.peek(ArchiveFormat.detectableLength)) == .gzip else {
       return peekable
     }
     return try GzipSource(peekable)

@@ -206,23 +206,25 @@ struct InstallMethodHandler: @unchecked Sendable {
     return artifact
   }
 
-  /// The zstd skippable frame that `CompanionInfo.zstd_zip_streams` clients start a compressed zip with.
-  static let zstdZipStreamMarker: [UInt8] = [0x5E, 0x2A, 0x4D, 0x18, 0x08, 0x00, 0x00, 0x00] + Array("idb-zip\0".utf8)
-
   static func isZstdZipStream(_ data: Data) -> Bool {
-    data.starts(with: zstdZipStreamMarker)
+    ArchiveFormat.detect(data) == .zstdZip
   }
 
   /// The format of a streamed payload, from its first bytes and the compression the client declared. Only an app is
   /// read as a zip; anything else is a tar.
   static func streamFormat(initial: Data, declared: FBCompressionFormat, destination: Idb_InstallRequest.Destination) -> InstallStreamFormat {
-    if destination == .app && initial.starts(with: ZipSignature.localHeaderBytes) {
-      return .zip
+    let format = ArchiveFormat.detect(initial)
+    if destination == .app {
+      switch format {
+      case .zip:
+        return .zip
+      case .zstdZip:
+        return .zstdZip
+      case .zstd, .gzip, .other, .undetermined:
+        break
+      }
     }
-    if destination == .app && isZstdZipStream(initial) {
-      return .zstdZip
-    }
-    return InstallStreamFormat(tarCompression: tarCompression(declared: declared, initial: initial))
+    return InstallStreamFormat(tarCompression: tarCompression(declared: declared, format: format))
   }
 
   /// The compression to extract a streamed tar with, given the one the client declared and the stream's first bytes.
@@ -230,13 +232,19 @@ struct InstallMethodHandler: @unchecked Sendable {
   /// A stream declared zstd that does not start with a zstd frame is extracted as if undeclared, which detects gzip
   /// and plain tars from their contents, rather than by the zstd decompressor, which would reject it.
   static func tarCompression(declared: FBCompressionFormat, initial: Data) -> FBCompressionFormat {
-    guard declared == .ZSTD, initial.count >= 4 else {
+    tarCompression(declared: declared, format: ArchiveFormat.detect(initial))
+  }
+
+  private static func tarCompression(declared: FBCompressionFormat, format: ArchiveFormat) -> FBCompressionFormat {
+    guard declared == .ZSTD else {
       return declared
     }
-    let magic = Array(initial.prefix(4))
-    let isFrame = magic == [0x28, 0xB5, 0x2F, 0xFD]
-    let isSkippableFrame = magic[0] & 0xF0 == 0x50 && magic[1...] == [0x2A, 0x4D, 0x18]
-    return isFrame || isSkippableFrame ? .ZSTD : .GZIP
+    switch format {
+    case .zstd, .zstdZip, .undetermined:
+      return .ZSTD
+    case .zip, .gzip, .other:
+      return .GZIP
+    }
   }
 
   /// A zip is extracted as `receive` spools it to disk, and also from the spool

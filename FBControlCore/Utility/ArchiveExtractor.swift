@@ -122,7 +122,7 @@ public struct InProcessZipExtractor: ArchiveExtractor {
       return false
     }
     defer { try? handle.close() }
-    return (try? handle.read(upToCount: 4)) == ZipSignature.localHeaderBytes
+    return ArchiveFormat.detect((try? handle.read(upToCount: ArchiveFormat.detectableLength)) ?? Data()) == .zip
   }
 }
 
