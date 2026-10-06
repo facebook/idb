@@ -8,29 +8,17 @@
 import FBControlCore
 import Foundation
 
-private let EndOfFileFromStopReadingTimeout: TimeInterval = 5
+private let EndOfFileTimeout: TimeInterval = 5
 
-private final class LogicTestRunOutputs {
-  let stdOutConsumer: DataConsumer & DataConsumerLifecycle
-  let stdErrConsumer: DataConsumer & DataConsumerLifecycle
+private struct LogicTestRunConsumers {
+  let stdOut: DataConsumer
+  let stdErr: DataConsumer
   let stdErrBuffer: ConsumableBuffer
-  let shimConsumer: DataConsumer & DataConsumerLifecycle
-  let shimOutput: ProcessFileOutput
-
-  init(stdOutConsumer: DataConsumer & DataConsumerLifecycle, stdErrConsumer: DataConsumer & DataConsumerLifecycle, stdErrBuffer: ConsumableBuffer, shimConsumer: DataConsumer & DataConsumerLifecycle, shimOutput: ProcessFileOutput) {
-    self.stdOutConsumer = stdOutConsumer
-    self.stdErrConsumer = stdErrConsumer
-    self.stdErrBuffer = stdErrBuffer
-    self.shimConsumer = shimConsumer
-    self.shimOutput = shimOutput
-  }
+  let shim: DataConsumer & DataConsumerLifecycle
 }
 
 enum LogicTestRunError: Error {
-  case missingOutputsAndShim(result: String)
-  case testProcessMissingExitCode(result: String)
   case endOfFileTimedOut
-  case xctestProcessMissingExitCode(result: String)
   case xctestProcessFailed(exitCode: Int32, exitDescription: String, stdErr: String)
   case sigstopWaitFailed(processIdentifier: pid_t, underlying: Error)
   case missingOutputConsumers(result: String)
@@ -39,14 +27,8 @@ enum LogicTestRunError: Error {
 extension LogicTestRunError: LocalizedError {
   public var errorDescription: String? {
     switch self {
-    case let .missingOutputsAndShim(result):
-      return "Expected the test outputs and the shim path, got \(result)"
-    case let .testProcessMissingExitCode(result):
-      return "Expected the test process to resolve to its exit code, got \(result)"
     case .endOfFileTimedOut:
       return "Timed out waiting to receive an end-of-file after fifo has been stopped, as the process has already exited"
-    case let .xctestProcessMissingExitCode(result):
-      return "Expected the xctest process to resolve to its exit code, got \(result)"
     case let .xctestProcessFailed(exitCode, exitDescription, stdErr):
       return "xctest process exited in failure (\(exitCode)): \(exitDescription) \(stdErr)"
     case let .sigstopWaitFailed(processIdentifier, underlying):
@@ -72,72 +54,107 @@ public final class LogicTestRunStrategy: XCTestRunner {
   }
 
   public func execute() -> FBFuture<NSNull> {
-    return testFuture()
+    fbFutureFromAsync {
+      try await self.runTests()
+      return NSNull()
+    }
   }
 
   // MARK: - Private
 
-  private func testFuture() -> FBFuture<NSNull> {
-    let uuid = UUID()
+  private func runTests() async throws {
+    let shimPath = try await target.xctest.extendedTestShim()
+    let consumers = try await buildConsumers()
+    let shimOutput = try FileBackedOutput.fifo(draining: consumers.shim)
 
-    let target = self.target
-    let shimFuture: FBFuture<AnyObject> = fbFutureFromAsync {
-      try await target.xctest.extendedTestShim() as AnyObject
-    }
-    let futures: [FBFuture<AnyObject>] = [
-      buildOutputs(forUUID: uuid),
-      shimFuture,
-    ]
-
-    return
-      FBFuture<AnyObject>.combine(futures)
-      .onQueue(
-        target.workQueue,
-        fmap: { tupleObj -> FBFuture<AnyObject> in
-          let tuple = tupleObj as [AnyObject]
-          guard tuple.count == 2,
-            let outputs = tuple[0] as? LogicTestRunOutputs,
-            let shimPath = tuple[1] as? String
-          else {
-            return FBFuture(error: LogicTestRunError.missingOutputsAndShim(result: String(describing: tuple)))
-          }
-          return self.testFuture(withOutputs: outputs, shimPath: shimPath, uuid: uuid)
-            .retyped(FBFuture<AnyObject>.self)
-        }
-      )
-      .retyped(FBFuture<NSNull>.self)
-  }
-
-  private func testFuture(withOutputs outputs: LogicTestRunOutputs, shimPath: String, uuid: UUID) -> FBFuture<NSNull> {
     logger.log("Starting Logic Test execution of \(configuration)")
     reporter.didBeginExecutingTestPlan()
 
-    let xctestPath = target.xctest.path
-    let testSpecifier = configuration.testFilter ?? "All"
-    let launchPath = xctestPath
-    let arguments = ["-XCTest", testSpecifier, configuration.testBundlePath]
-
-    // The temporary directory is scoped to the inner pipeline: the async wrapper holds it open
-    // until the future chain resolves, exactly as the popped context did.
-    return
-      fbFutureFromAsync {
-        try await TemporaryDirectory(logger: self.logger).withTemporaryDirectory { temporaryDirectoryURL in
-          let libraries = try await OToolDynamicLibs.findFullPath(forSanitiserDyldInBundle: self.configuration.testBundlePath)
-          let environment = LogicTestRunStrategy.setupEnvironment(withDylibs: self.configuration.processUnderTestEnvironment, withLibraries: libraries, injectLibraries: self.configuration.injectLibraries, shimOutputFilePath: outputs.shimOutput.filePath, shimPath: shimPath, bundlePath: self.configuration.testBundlePath, coverageConfiguration: self.configuration.coverageConfiguration, logDirectoryPath: self.configuration.logDirectoryPath, waitForDebugger: self.configuration.waitForDebugger, target: self.target)
-          return try await bridgeFBFuture(
-            self.startTestProcess(withLaunchPath: launchPath, arguments: arguments, environment: environment, outputs: outputs, temporaryDirectory: temporaryDirectoryURL)
-              .onQueue(
-                self.target.workQueue,
-                fmap: { exitCodeFutureObj -> FBFuture<AnyObject> in
-                  guard let exitCodeFuture = exitCodeFutureObj as? FBFuture<NSNumber> else {
-                    return FBFuture(error: LogicTestRunError.testProcessMissingExitCode(result: String(describing: exitCodeFutureObj)))
-                  }
-                  return self.completeLaunchedProcess(exitCodeFuture, outputs: outputs)
-                    .retyped(FBFuture<AnyObject>.self)
-                }))
+    // A failure to launch is not reported as a crash; anything after the launch is.
+    let completion: Result<Int32, any Error>
+    do {
+      completion = try await TemporaryDirectory(logger: logger).withTemporaryDirectory { temporaryDirectory in
+        let subprocess = try await testSubprocess(shimPath: shimPath, shimOutputPath: shimOutput.path, temporaryDirectory: temporaryDirectory)
+        let process = try await subprocess.launch(on: target.subprocessLauncher, output: .consumer(consumers.stdOut), error: .consumer(consumers.stdErr), logger: logger)
+        do {
+          return .success(try await awaitTestProcess(process, processName: (subprocess.executable as NSString).lastPathComponent))
+        } catch {
+          return .failure(error)
         }
       }
-      .retyped(FBFuture<NSNull>.self)
+    } catch {
+      await shimOutput.finish()
+      throw error
+    }
+    await finishReadingShim(shimOutput, consumer: consumers.shim)
+
+    do {
+      let exitCode = try completion.get()
+      logger.log("xctest process terminated, exited with \(exitCode), checking status code")
+      if let descriptionOfExit = XCTestProcess.describeFailingExitCode(exitCode) {
+        let stdErrReversed = consumers.stdErrBuffer.lines().reversed().joined(separator: "\n")
+        throw LogicTestRunError.xctestProcessFailed(exitCode: exitCode, exitDescription: descriptionOfExit, stdErr: stdErrReversed)
+      }
+    } catch {
+      logger.log("Abnormal exit of xctest process \(error)")
+      let reporter = self.reporter
+      await afterQueuedOutput { reporter.didCrashDuringTest(error as NSError) }
+      throw error
+    }
+    logger.log("Normal exit of xctest process")
+    let reporter = self.reporter
+    await afterQueuedOutput { reporter.didFinishExecutingTestPlan() }
+  }
+
+  // The output consumers report each line asynchronously on `target.workQueue`, and finishing
+  // them does not wait for those dispatches, so the end of the plan is reported from the same
+  // serial queue to land behind them.
+  private func afterQueuedOutput(_ report: @escaping () -> Void) async {
+    await withCheckedContinuation { (continuation: CheckedContinuation<Void, Never>) in
+      target.workQueue.async {
+        report()
+        continuation.resume()
+      }
+    }
+  }
+
+  private func testSubprocess(shimPath: String, shimOutputPath: String, temporaryDirectory: URL) async throws -> Subprocess {
+    let libraries = try await OToolDynamicLibs.findFullPath(forSanitiserDyldInBundle: configuration.testBundlePath)
+    let environment = LogicTestRunStrategy.setupEnvironment(withDylibs: configuration.processUnderTestEnvironment, withLibraries: libraries, injectLibraries: configuration.injectLibraries, shimOutputFilePath: shimOutputPath, shimPath: shimPath, bundlePath: configuration.testBundlePath, coverageConfiguration: configuration.coverageConfiguration, logDirectoryPath: configuration.logDirectoryPath, waitForDebugger: configuration.waitForDebugger, target: target)
+    let thinned = try await ArchitectureProcessAdapter.thinExecutable(atPath: target.xctest.path, toAnyArchitectureIn: Set(configuration.architectures.map { Architecture(rawValue: $0) }), temporaryDirectory: temporaryDirectory)
+    let arguments = ["-XCTest", configuration.testFilter ?? "All", configuration.testBundlePath]
+    let launchEnvironment = environment.merging(thinned.environment) { _, thinnedValue in thinnedValue }
+    logger.log("Launching xctest process with arguments \(CollectionInformation.oneLineDescription(from: [thinned.path] + arguments)), environment \(CollectionInformation.oneLineDescription(from: launchEnvironment))")
+    return Subprocess(executable: thinned.path, arguments: arguments, environment: .exact(launchEnvironment), mode: .posixSpawn)
+  }
+
+  private func awaitTestProcess(_ process: RunningSubprocess, processName: String) async throws -> Int32 {
+    if configuration.waitForDebugger {
+      let processIdentifier = process.processIdentifier
+      do {
+        try await ProcessFetcher.waitForStopSignal(process: processIdentifier)
+      } catch {
+        throw LogicTestRunError.sigstopWaitFailed(processIdentifier: processIdentifier, underlying: error)
+      }
+      reporter.processWaitingForDebugger(withProcessIdentifier: processIdentifier)
+    }
+    return try await XCTestProcess.awaitExitCode(of: process, processName: processName, completesWithin: configuration.testTimeout, crashLogCommands: target.crashLog, logger: logger)
+  }
+
+  private func finishReadingShim(_ shimOutput: FileBackedOutput, consumer: DataConsumerLifecycle) async {
+    logger.log("xctest process terminated, Tearing down IO.")
+    await shimOutput.finish()
+    // Bounded so that a consumer that never finishes delays the result without failing the run.
+    let finished = consumer.finishedConsuming.retyped(FBFuture<AnyObject>.self).onQueue(
+      target.workQueue, timeout: EndOfFileTimeout,
+      handler: {
+        FBFuture<AnyObject>(error: LogicTestRunError.endOfFileTimedOut)
+      })
+    do {
+      _ = try await bridgeFBFuture(finished)
+    } catch {
+      logger.log("\(error.localizedDescription)")
+    }
   }
 
   private static func setupEnvironment(withDylibs environment: [String: String], withLibraries libraries: [String], injectLibraries: [String], shimOutputFilePath: String, shimPath: String, bundlePath: String, coverageConfiguration: CodeCoverageConfiguration?, logDirectoryPath: String?, waitForDebugger: Bool, target: any Target) -> [String: String] {
@@ -174,110 +191,7 @@ public final class LogicTestRunStrategy: XCTestRunner {
     return updatedEnvironment
   }
 
-  private func completeLaunchedProcess(_ exitCode: FBFuture<NSNumber>, outputs: LogicTestRunOutputs) -> FBFuture<NSNull> {
-    let logger = self.logger
-    let reporter = self.reporter
-    let queue = target.workQueue
-
-    logger.log("Starting to read shim output from location \(outputs.shimOutput.filePath)")
-
-    return
-      outputs.shimOutput.startReading().retyped(FBFuture<AnyObject>.self)
-      .onQueue(
-        queue,
-        fmap: { _ -> FBFuture<AnyObject> in
-          logger.log("Shim output at \(outputs.shimOutput.filePath) has been opened for reading, waiting for xctest process to exit")
-          return self.waitForSuccessfulCompletion(exitCode, closingOutputs: outputs)
-            .retyped(FBFuture<AnyObject>.self)
-        }
-      )
-      .onQueue(
-        queue,
-        map: { _ -> AnyObject in
-          logger.log("Normal exit of xctest process")
-          reporter.didFinishExecutingTestPlan()
-          return NSNull()
-        }
-      )
-      .onQueue(
-        queue,
-        handleError: { error -> FBFuture<AnyObject> in
-          logger.log("Abnormal exit of xctest process \(error)")
-          reporter.didCrashDuringTest(error as NSError)
-          return FBFuture<AnyObject>(error: error)
-        }
-      )
-      .retyped(FBFuture<NSNull>.self)
-  }
-
-  private func waitForSuccessfulCompletion(_ exitCode: FBFuture<NSNumber>, closingOutputs outputs: LogicTestRunOutputs) -> FBFuture<NSNumber> {
-    let logger = self.logger
-    let queue = target.workQueue
-
-    return
-      exitCode.retyped(FBFuture<AnyObject>.self)
-      .onQueue(
-        queue,
-        chain: { _ -> FBFuture<AnyObject> in
-          logger.log("xctest process terminated, Tearing down IO.")
-          let futures: [FBFuture<AnyObject>] = [
-            outputs.shimOutput.stopReading().retyped(FBFuture<AnyObject>.self),
-            outputs.shimConsumer.finishedConsuming.retyped(FBFuture<AnyObject>.self),
-          ]
-          let combined = FBFuture<AnyObject>.combine(futures)
-          // timeout:waitingFor: is variadic, use onQueue:timeout:handler: instead
-          let timedOut = combined.onQueue(
-            queue, timeout: EndOfFileFromStopReadingTimeout,
-            handler: {
-              FBFuture<AnyObject>(error: LogicTestRunError.endOfFileTimedOut)
-            })
-          return timedOut.chainReplace(exitCode.retyped(FBFuture<AnyObject>.self))
-        }
-      )
-      .onQueue(
-        queue,
-        fmap: { exitCodeObj -> FBFuture<AnyObject> in
-          guard let exitCodeNumber = exitCodeObj as? NSNumber else {
-            return FBFuture(error: LogicTestRunError.xctestProcessMissingExitCode(result: String(describing: exitCodeObj)))
-          }
-          logger.log("xctest process terminated, exited with \(exitCodeNumber), checking status code")
-          let exitCodeValue = exitCodeNumber.int32Value
-          if let descriptionOfExit = XCTestProcess.describeFailingExitCode(exitCodeValue) {
-            let stdErrReversed = outputs.stdErrBuffer.lines().reversed().joined(separator: "\n")
-            return FBFuture(error: LogicTestRunError.xctestProcessFailed(exitCode: exitCodeValue, exitDescription: descriptionOfExit, stdErr: stdErrReversed))
-          }
-          return FBFuture(result: exitCodeNumber as AnyObject)
-        }
-      )
-      .retyped(FBFuture<NSNumber>.self)
-  }
-
-  private static func fromQueue(_ queue: DispatchQueue, reportWaitForDebugger waitFor: Bool, forProcessIdentifier processIdentifier: pid_t, reporter: LogicXCTestReporter) -> FBFuture<NSNull> {
-    if !waitFor {
-      return FBFuture(result: NSNull())
-    }
-    let waitQueue = DispatchQueue(label: "com.facebook.xctestbootstrap.debugger_wait")
-
-    return
-      fbFutureFromAsync {
-        try await ProcessFetcher.waitForStopSignal(process: processIdentifier)
-        return NSNull()
-      }
-      .retyped(FBFuture<AnyObject>.self)
-      .onQueue(
-        waitQueue,
-        chain: { future -> FBFuture<AnyObject> in
-          if let error = future.error {
-            return FBFuture(error: LogicTestRunError.sigstopWaitFailed(processIdentifier: processIdentifier, underlying: error))
-          }
-          reporter.processWaitingForDebugger(withProcessIdentifier: processIdentifier)
-          return FBFuture(result: NSNull() as AnyObject)
-        }
-      )
-      .retyped(FBFuture<NSNull>.self)
-  }
-
-  private func buildOutputs(forUUID udid: UUID) -> FBFuture<AnyObject> {
+  private func buildConsumers() async throws -> LogicTestRunConsumers {
     let reporter = self.reporter
     let logger = self.logger
     let queue = target.workQueue
@@ -321,80 +235,24 @@ public final class LogicTestRunStrategy: XCTestRunner {
     let stdErrConsumer = FBCompositeDataConsumer(consumers: stdErrConsumers)
     let shimConsumer = FBCompositeDataConsumer(consumers: shimConsumers)
 
-    var stdOutFuture: FBFuture<AnyObject> = FBFuture(result: stdOutConsumer as AnyObject)
-    var stdErrFuture: FBFuture<AnyObject> = FBFuture(result: stdErrConsumer as AnyObject)
-    var shimFuture: FBFuture<AnyObject> = FBFuture(result: shimConsumer as AnyObject)
-
-    if mirrorToFiles {
-      let mirrorLogger: XCTestLogger
-      if let logDirectoryPath = configuration.logDirectoryPath {
-        mirrorLogger = XCTestLogger.defaultLogger(inDirectory: logDirectoryPath)
-      } else {
-        mirrorLogger = XCTestLogger.defaultLoggerInDefaultDirectory()
-      }
-      stdOutFuture = mirrorLogger.logConsumption(of: stdOutConsumer, toFileNamed: "test_process_stdout.out", logger: logger)
-      stdErrFuture = mirrorLogger.logConsumption(of: stdErrConsumer, toFileNamed: "test_process_stderr.err", logger: logger)
-      shimFuture = mirrorLogger.logConsumption(of: shimConsumer, toFileNamed: "shimulator_logs.shim", logger: logger)
+    guard mirrorToFiles else {
+      return LogicTestRunConsumers(stdOut: stdOutConsumer, stdErr: stdErrConsumer, stdErrBuffer: stdErrBuffer, shim: shimConsumer)
     }
-
-    let futures: [FBFuture<AnyObject>] = [stdOutFuture, stdErrFuture, shimFuture]
-
-    return FBFuture<AnyObject>.combine(futures)
-      .onQueue(
-        target.workQueue,
-        fmap: { outputsObj -> FBFuture<AnyObject> in
-          let outputsArray = outputsObj as [AnyObject]
-          guard outputsArray.count == 3,
-            let resolvedStdOut = outputsArray[0] as? DataConsumer & DataConsumerLifecycle,
-            let resolvedStdErr = outputsArray[1] as? DataConsumer & DataConsumerLifecycle,
-            let resolvedShim = outputsArray[2] as? DataConsumer & DataConsumerLifecycle
-          else {
-            return FBFuture(error: LogicTestRunError.missingOutputConsumers(result: String(describing: outputsArray)))
-          }
-          return FBProcessOutput<AnyObject>(for: resolvedShim).providedThroughFile()
-            .onQueue(
-              queue,
-              map: { shimOutput -> AnyObject in
-                LogicTestRunOutputs(stdOutConsumer: resolvedStdOut, stdErrConsumer: resolvedStdErr, stdErrBuffer: stdErrBuffer, shimConsumer: resolvedShim, shimOutput: shimOutput)
-              })
-        })
-  }
-
-  private func startTestProcess(withLaunchPath launchPath: String, arguments: [String], environment: [String: String], outputs: LogicTestRunOutputs, temporaryDirectory: URL) -> FBFuture<AnyObject> {
-    let queue = target.workQueue
-    let logger = self.logger
-    let reporter = self.reporter
-    let timeout = configuration.testTimeout
-
-    logger.log("Launching xctest process with arguments \(CollectionInformation.oneLineDescription(from: [launchPath] + arguments)), environment \(CollectionInformation.oneLineDescription(from: environment))")
-
-    let stdOut = FBProcessOutput<AnyObject>(for: outputs.stdOutConsumer)
-    let stdErr = FBProcessOutput<AnyObject>(for: outputs.stdErrConsumer)
-    let io = FBProcessIO<AnyObject, AnyObject, AnyObject>(stdIn: nil, stdOut: stdOut, stdErr: stdErr)
-    let spawnConfig = ProcessSpawnConfiguration(launchPath: launchPath, arguments: arguments, environment: environment, io: io, mode: .posixSpawn)
-
-    let launchAdaptedProcess: (ProcessSpawnConfiguration) -> FBFuture<AnyObject> = { mappedConfig in
-      let target = self.target
-      let launchFuture: FBFuture<FBSubprocess<AnyObject, AnyObject, AnyObject>> = fbFutureFromAsync {
-        try await target.spawn(mappedConfig)
-      }
-      return launchFuture.onQueue(
-        queue,
-        map: { process -> AnyObject in
-          let debuggerFuture = LogicTestRunStrategy.fromQueue(queue, reportWaitForDebugger: self.configuration.waitForDebugger, forProcessIdentifier: process.processIdentifier, reporter: reporter)
-          return debuggerFuture.retyped(FBFuture<AnyObject>.self)
-            .onQueue(
-              queue,
-              fmap: { _ -> FBFuture<AnyObject> in
-                let crashCommands: any CrashLogCommands = self.target.crashLog
-                return XCTestProcess.ensureProcess(process, completesWithin: timeout, crashLogCommands: crashCommands, queue: queue, logger: logger)
-                  .retyped(FBFuture<AnyObject>.self)
-              })
-        })
+    let mirrorLogger: XCTestLogger
+    if let logDirectoryPath = configuration.logDirectoryPath {
+      mirrorLogger = XCTestLogger.defaultLogger(inDirectory: logDirectoryPath)
+    } else {
+      mirrorLogger = XCTestLogger.defaultLoggerInDefaultDirectory()
     }
-    return fbFutureFromAsync {
-      let mappedConfig = try await ArchitectureProcessAdapter.adaptProcessConfiguration(spawnConfig, toAnyArchitectureIn: Set(self.configuration.architectures.map { Architecture(rawValue: $0) }), temporaryDirectory: temporaryDirectory)
-      return try await bridgeFBFuture(launchAdaptedProcess(mappedConfig))
+    let mirroredStdOut = try await bridgeFBFuture(mirrorLogger.logConsumption(of: stdOutConsumer, toFileNamed: "test_process_stdout.out", logger: logger))
+    let mirroredStdErr = try await bridgeFBFuture(mirrorLogger.logConsumption(of: stdErrConsumer, toFileNamed: "test_process_stderr.err", logger: logger))
+    let mirroredShim = try await bridgeFBFuture(mirrorLogger.logConsumption(of: shimConsumer, toFileNamed: "shimulator_logs.shim", logger: logger))
+    guard let resolvedStdOut = mirroredStdOut as? DataConsumer,
+      let resolvedStdErr = mirroredStdErr as? DataConsumer,
+      let resolvedShim = mirroredShim as? DataConsumer & DataConsumerLifecycle
+    else {
+      throw LogicTestRunError.missingOutputConsumers(result: String(describing: [mirroredStdOut, mirroredStdErr, mirroredShim]))
     }
+    return LogicTestRunConsumers(stdOut: resolvedStdOut, stdErr: resolvedStdErr, stdErrBuffer: stdErrBuffer, shim: resolvedShim)
   }
 }

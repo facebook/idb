@@ -23,8 +23,12 @@ final class LogicTestRunStrategyTests: XCTestCase {
   }
 
   private func launches(of target: ScriptedLogicTestTarget) -> [Launch] {
-    target.spawnedConfigurations.map { configuration in
-      Launch(executable: configuration.launchPath, arguments: configuration.arguments, environment: configuration.environment, posixSpawn: configuration.mode == .posixSpawn)
+    target.spawned.compactMap { subprocess -> Launch? in
+      guard case .exact(let environment) = subprocess.environment else {
+        XCTFail("Expected exactly the prepared environment, got \(subprocess.environment)")
+        return nil
+      }
+      return Launch(executable: subprocess.executable, arguments: subprocess.arguments, environment: environment, posixSpawn: subprocess.mode == .posixSpawn)
     }
   }
 
