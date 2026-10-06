@@ -9,7 +9,6 @@ import FBControlCore
 import Foundation
 
 enum ListTestError: Error {
-  case testNamesMalformed(result: String)
   case testListJSONParseFailed
   case unexpectedTestName(value: String)
   case listingFailed(exitCode: Int32, exitDescription: String, stdErr: String)
@@ -18,8 +17,6 @@ enum ListTestError: Error {
 extension ListTestError: LocalizedError {
   public var errorDescription: String? {
     switch self {
-    case let .testNamesMalformed(result):
-      return "Expected a list of test names, got \(result)"
     case .testListJSONParseFailed:
       return "Failed to parse test list JSON"
     case let .unexpectedTestName(value):
@@ -75,10 +72,6 @@ public final class ListTestStrategy {
     return try ListTestStrategy.testNames(fromShimOutput: shimBuffer.data())
   }
 
-  func wrapInReporter(_ reporter: XCTestReporter) -> XCTestRunner {
-    ReporterWrapped(strategy: self, reporter: reporter)
-  }
-
   // MARK: - Private
 
   private func listTestSubprocess(environment: [String: String], temporaryDirectory: URL) async throws -> Subprocess {
@@ -132,46 +125,6 @@ public final class ListTestStrategy {
         throw ListTestError.unexpectedTestName(value: String(describing: test["legacyTestName"]))
       }
       return testName
-    }
-  }
-
-  private final class ReporterWrapped: XCTestRunner {
-
-    let strategy: ListTestStrategy
-    let reporter: XCTestReporter
-
-    init(strategy: ListTestStrategy, reporter: XCTestReporter) {
-      self.strategy = strategy
-      self.reporter = reporter
-    }
-
-    func execute() -> FBFuture<NSNull> {
-      reporter.didBeginExecutingTestPlan()
-
-      let strategy = self.strategy
-      let listTests: FBFuture<NSArray> = fbFutureFromAsync {
-        try await strategy.listTests() as NSArray
-      }
-      return
-        listTests
-        .onQueue(
-          strategy.target.workQueue,
-          fmap: { testNamesObj -> FBFuture<AnyObject> in
-            guard let testNames = testNamesObj as? [String] else {
-              return FBFuture(error: ListTestError.testNamesMalformed(result: String(describing: testNamesObj)))
-            }
-            for testName in testNames {
-              guard let slashRange = testName.range(of: "/") else { continue }
-              let className = String(testName[testName.startIndex..<slashRange.lowerBound])
-              let methodName = String(testName[slashRange.upperBound...])
-              self.reporter.testCaseDidStart(forTestClass: className, method: methodName)
-              self.reporter.testCaseDidFinish(forTestClass: className, method: methodName, with: .passed, duration: 0, logs: nil)
-            }
-            self.reporter.didFinishExecutingTestPlan()
-            return FBFuture<AnyObject>(result: NSNull())
-          }
-        )
-        .retyped(FBFuture<NSNull>.self)
     }
   }
 }
