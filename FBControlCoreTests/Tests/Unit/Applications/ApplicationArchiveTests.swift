@@ -305,8 +305,7 @@ final class ApplicationArchiveTests: XCTestCase {
         atPath: (bundle.path as NSString).appendingPathComponent("Link.plist"))[.type] as? FileAttributeType
     }
 
-    // BUG: the download is sniffed on fewer bytes than the zstd zip marker, so it is read as a zstd tar and its zip reaches bsdtar on stdin; flipped in the following commit.
-    XCTAssertEqual(linkType, .typeRegular)
+    XCTAssertEqual(linkType, .typeSymbolicLink)
   }
 
   /// `data` in a zstd frame of uncompressed blocks, as the tests cannot rely on a zstd compressor being installed.

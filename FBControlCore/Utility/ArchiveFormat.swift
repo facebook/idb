@@ -26,6 +26,9 @@ public enum ArchiveFormat: Equatable, Sendable {
   /// The zstd skippable frame that `CompanionInfo.zstd_zip_streams` clients start a compressed zip with.
   public static let zstdZipMarker = Data([0x5E, 0x2A, 0x4D, 0x18, 0x08, 0x00, 0x00, 0x00]) + Data("idb-zip\0".utf8)
 
+  /// The bytes to read before calling `detect` for it to tell every format apart.
+  public static let sniffLength = zstdZipMarker.count
+
   public static func detect(_ head: Data) -> ArchiveFormat {
     guard head.count >= detectableLength else {
       return .undetermined

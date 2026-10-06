@@ -240,11 +240,11 @@ public enum Staging {
   ) async throws {
     try await withAttached(input) { source in
       let peekable = HandedOver(PeekableSource(source))
-      let head = try await offCooperativePool { try peekable.value.peek(ArchiveFormat.detectableLength) }.get()
+      let head = try await offCooperativePool { try peekable.value.peek(ArchiveFormat.sniffLength) }.get()
       switch ArchiveFormat.detect(head) {
-      case .zip:
+      case .zip, .zstdZip:
         try await extractZipStream(peekable.value, spoolingIn: spoolDirectory, to: extractPath, options: options, logger: logger)
-      case .zstdZip, .zstd, .gzip, .other, .undetermined:
+      case .zstd, .gzip, .other, .undetermined:
         try await InProcessTarExtractor(fallback: ArchiveExtractors.bsdTar).extract(
           from: peekable.value, to: extractPath, options: options.extractOptions, logger: logger)
       }
