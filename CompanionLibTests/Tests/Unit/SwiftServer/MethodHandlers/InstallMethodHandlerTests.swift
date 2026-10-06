@@ -37,7 +37,7 @@ struct InstallMethodHandlerTests {
   @Test
   func whenTheClientStreamFailsPartwayThroughATar() async throws {
     let framework = try harness.makeBundle(named: "Sample", extension: "framework", identifier: "com.example.framework")
-    let archive = try harness.gzippedTarData(of: framework)
+    let archive = try await harness.gzippedTarData(of: framework)
     let rest = AsyncThrowingStream<Data, any Error> { continuation in
       continuation.finish(throwing: StreamFailed())
     }

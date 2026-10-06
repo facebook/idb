@@ -58,11 +58,11 @@ final class MacInstallHarness {
   }
 
   /// A gzipped tar holding `item` and its siblings at its root, as clients stream bundles.
-  func gzippedTar(of item: URL) throws -> FBProcessInput<AnyObject> {
-    FBProcessInput<NSData>(from: try gzippedTarData(of: item)).retyped(FBProcessInput<AnyObject>.self)
+  func gzippedTar(of item: URL) async throws -> FBProcessInput<AnyObject> {
+    FBProcessInput<NSData>(from: try await gzippedTarData(of: item)).retyped(FBProcessInput<AnyObject>.self)
   }
 
-  func gzippedTarData(of item: URL) throws -> Data {
+  func gzippedTarData(of item: URL) async throws -> Data {
     let data =
       try FBProcessBuilder<NSNull, NSData, NSData>
       .withLaunchPath(BSDTarPath, arguments: ["-zc", "-f", "-", "-C", item.deletingLastPathComponent().path, "."])
@@ -88,7 +88,7 @@ final class MacInstallHarness {
   }
 
   /// `item` gzipped on its own, as clients stream single files.
-  func gzipped(_ item: URL) throws -> FBProcessInput<AnyObject> {
+  func gzipped(_ item: URL) async throws -> FBProcessInput<AnyObject> {
     let data =
       try FBProcessBuilder<NSNull, NSData, NSData>
       .withLaunchPath("/usr/bin/gzip", arguments: ["--to-stdout", item.path])
