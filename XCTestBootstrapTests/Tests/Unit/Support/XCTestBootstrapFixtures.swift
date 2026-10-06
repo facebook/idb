@@ -11,11 +11,6 @@ import XCTest
 
 extension XCTestCase {
 
-  class func iosUnitTestBundleFixture() -> Bundle {
-    let fixturePath = Bundle(for: self).path(forResource: "iOSUnitTestFixture", ofType: "xctest")!
-    return Bundle(path: fixturePath)!
-  }
-
   class func macUnitTestBundleFixture() -> Bundle {
     let fixturePath = Bundle(for: self).path(forResource: "MacUnitTestFixture", ofType: "xctest")!
     return Bundle(path: fixturePath)!

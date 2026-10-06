@@ -405,9 +405,6 @@ targets:
       - path: Fixtures/Binaries/MacUnitTestFixture.xctest
         type: folder
         buildPhase: resources
-      - path: Fixtures/Binaries/iOSUnitTestFixture.xctest
-        type: folder
-        buildPhase: resources
     settings:
       base:
         INFOPLIST_FILE: $(SRCROOT)/XCTestBootstrapTests/XCTestBootstrapTests-Info.plist
@@ -570,21 +567,6 @@ targets:
         buildPhase: resources
       - path: FBSimulatorControlTests/Fixtures/video0.mp4
         buildPhase: resources
-      - path: Fixtures/Binaries/MacUnitTestFixture.xctest
-        type: folder
-        buildPhase: resources
-      - path: Fixtures/Binaries/TableSearch.app
-        type: folder
-        buildPhase: resources
-      - path: Fixtures/Binaries/iOSAppFixture.app
-        type: folder
-        buildPhase: resources
-      - path: Fixtures/Binaries/iOSAppUITestFixture.xctest
-        type: folder
-        buildPhase: resources
-      - path: Fixtures/Binaries/iOSUnitTestFixture.xctest
-        type: folder
-        buildPhase: resources
       - path: REPL/IDB/IDBAPI.swiftinterface
         buildPhase: resources
     postBuildScripts:
@@ -668,21 +650,6 @@ targets:
         buildPhase: resources
       - path: FBSimulatorControlTests/Fixtures/video0.mp4
         buildPhase: resources
-      - path: Fixtures/Binaries/MacUnitTestFixture.xctest
-        type: folder
-        buildPhase: resources
-      - path: Fixtures/Binaries/TableSearch.app
-        type: folder
-        buildPhase: resources
-      - path: Fixtures/Binaries/iOSAppFixture.app
-        type: folder
-        buildPhase: resources
-      - path: Fixtures/Binaries/iOSAppUITestFixture.xctest
-        type: folder
-        buildPhase: resources
-      - path: Fixtures/Binaries/iOSUnitTestFixture.xctest
-        type: folder
-        buildPhase: resources
       - path: REPL/IDB/IDBAPI.swiftinterface
         buildPhase: resources
     postBuildScripts:
@@ -765,21 +732,6 @@ targets:
       - path: FBSimulatorControlTests/Fixtures/transient_persistence_iphone11.png
         buildPhase: resources
       - path: FBSimulatorControlTests/Fixtures/video0.mp4
-        buildPhase: resources
-      - path: Fixtures/Binaries/MacUnitTestFixture.xctest
-        type: folder
-        buildPhase: resources
-      - path: Fixtures/Binaries/TableSearch.app
-        type: folder
-        buildPhase: resources
-      - path: Fixtures/Binaries/iOSAppFixture.app
-        type: folder
-        buildPhase: resources
-      - path: Fixtures/Binaries/iOSAppUITestFixture.xctest
-        type: folder
-        buildPhase: resources
-      - path: Fixtures/Binaries/iOSUnitTestFixture.xctest
-        type: folder
         buildPhase: resources
       - path: REPL/IDB/IDBAPI.swiftinterface
         buildPhase: resources
