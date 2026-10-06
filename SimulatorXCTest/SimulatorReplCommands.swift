@@ -86,7 +86,7 @@ public struct SimulatorReplCommands {
       configuration: configuration,
       reporter: ReplNullReporter(),
       logger: logger)
-    return LaunchedRepl(socketPath: socketPath, run: runner.execute(), extraInterfacePaths: extraInterfacePaths)
+    return LaunchedRepl(socketPath: socketPath, host: .testRun(Task { try await runner.run() }), extraInterfacePaths: extraInterfacePaths)
   }
 
   public func startSimulator() async throws -> LaunchedRepl {
@@ -111,11 +111,7 @@ public struct SimulatorReplCommands {
       environment: .exact([:]),
       mode: .posixSpawn
     ).launch(on: SimulatorSubprocessLauncher(simulator: simulator), output: .closed, error: .closed)
-    let run: FBFuture<NSNull> = fbFutureFromAsync {
-      _ = try await process.terminationStatus
-      return NSNull()
-    }
-    return LaunchedRepl(socketPath: socketPath, run: run, extraInterfacePaths: extraInterfacePaths)
+    return LaunchedRepl(socketPath: socketPath, host: .process(process), extraInterfacePaths: extraInterfacePaths)
   }
 
   public func appLaunchEnvironment(bundleID: String) async throws -> [String: String] {
@@ -144,8 +140,7 @@ public struct SimulatorReplCommands {
 
     if reuseSession, await replListenerIsAlive(at: socketPath) {
       logger.info().log("Reattaching to the running REPL for \(bundleID) at \(socketPath)")
-      let run: FBFuture<NSNull> = FBFuture(result: NSNull())
-      return LaunchedRepl(socketPath: socketPath, run: run, extraInterfacePaths: extraInterfacePaths)
+      return LaunchedRepl(socketPath: socketPath, host: .app, extraInterfacePaths: extraInterfacePaths)
     }
 
     // `.relaunchIfRunning` so an app already running without the dylib picks it up.
@@ -179,11 +174,7 @@ public struct SimulatorReplCommands {
         processIdentifier: launched.processIdentifier)
     }
 
-    // The app outlives the REPL session -- it keeps running and resets for the
-    // next client on disconnect -- so `run` is already resolved: teardown must not
-    // wait for the app to exit.
-    let run: FBFuture<NSNull> = FBFuture(result: NSNull())
-    return LaunchedRepl(socketPath: socketPath, run: run, extraInterfacePaths: extraInterfacePaths)
+    return LaunchedRepl(socketPath: socketPath, host: .app, extraInterfacePaths: extraInterfacePaths)
   }
 }
 

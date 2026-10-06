@@ -40,9 +40,12 @@ final class SimulatorReplCommandsTests: XCTestCase {
 
     let repl = try await commands.startSimulator(bridgePath: "/bridge", libReplPath: "/libRepl.dylib", extraInterfacePaths: [])
 
-    XCTAssertFalse(repl.run.hasCompleted, "The session is live while the bridge runs")
+    guard case let .process(process) = repl.host else {
+      return XCTFail("Expected the bridge process to host the session, got \(repl.host)")
+    }
+    XCTAssertNil(process.observedTerminationStatus, "The session is live while the bridge runs")
     device.terminate(statLoc: 1 << 8)
-    try await bridgeFBFutureVoid(repl.run)
+    try await repl.waitForHostToFinish()
   }
 }
 

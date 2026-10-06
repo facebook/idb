@@ -55,14 +55,12 @@ public final class LogicTestRunStrategy: XCTestRunner {
 
   public func execute() -> FBFuture<NSNull> {
     fbFutureFromAsync {
-      try await self.runTests()
+      try await self.run()
       return NSNull()
     }
   }
 
-  // MARK: - Private
-
-  private func runTests() async throws {
+  public func run() async throws {
     let shimPath = try await target.xctest.extendedTestShim()
     let consumers = try await buildConsumers()
     let shimOutput = try FileBackedOutput.fifo(draining: consumers.shim)
@@ -105,6 +103,8 @@ public final class LogicTestRunStrategy: XCTestRunner {
     let reporter = self.reporter
     await afterQueuedOutput { reporter.didFinishExecutingTestPlan() }
   }
+
+  // MARK: - Private
 
   // The output consumers report each line asynchronously on `target.workQueue`, and finishing
   // them does not wait for those dispatches, so the end of the plan is reported from the same
