@@ -71,16 +71,14 @@ final class DataDownloadInputTests: XCTestCase {
       configuration: configuration,
       logger: logger,
       onEvent: onEvent)
-    let extraction = FBArchiveOperations.extractArchive(
-      fromStream: download.input,
-      toPath: destination,
-      overrideModificationTime: false,
-      logger: logger)
+    async let extraction: Void = BSDTarExtractor().extract(
+      .stream(download.input), to: destination, options: ArchiveExtractOptions(), logger: logger)
     // A data consumer carries only bytes and an end of file, so a failed download
     // reaches the extractor as nothing more than a short stream. Its outcome has
     // to be consulted alongside the extraction's.
     try await download.completed()
-    return try extraction.`await`() as String
+    try await extraction
+    return destination
   }
 
   private func assertThrows(_ inspect: (Error) -> Void) async {

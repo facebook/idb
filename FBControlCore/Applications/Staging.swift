@@ -143,7 +143,9 @@ public enum Staging {
     case .gzippedFile(let input, let name):
       let file = stagingDirectory.appendingPathComponent(name)
       try await runExtractStage(to: file.path, totalStart: totalStart, onProgress: onProgress) {
-        _ = try await bridgeFBFuture(FBArchiveOperations.extractGzip(fromStream: input, toPath: file.path, logger: logger))
+        try await withAttached(input) { source in
+          try await FBArchiveOperations.extractGzip(from: source, toPath: file.path, logger: logger)
+        }
       }
       return .file(file)
     case .localPath(let path):

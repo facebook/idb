@@ -6,6 +6,7 @@
  */
 
 import Foundation
+import os
 
 public let BSDTarPath = "/usr/bin/bsdtar"
 
@@ -17,11 +18,16 @@ public enum FBCompressionFormat: UInt, Sendable {
 
 public enum ArchiveOperationsError: Error, LocalizedError {
   case pathDoesNotExist(path: String)
+  /// The tool reading a stream exited unsuccessfully, with the tail of its standard error.
+  case unacceptableExitCode(Int32, standardError: String)
 
   public var errorDescription: String? {
     switch self {
     case let .pathDoesNotExist(path):
       return "Path for tarring \(path) doesn't exist"
+    case let .unacceptableExitCode(code, standardError):
+      let description = "Exit Code \(code) is not acceptable [0]"
+      return standardError.isEmpty ? description : "\(description): \(standardError)"
     }
   }
 }
@@ -73,45 +79,63 @@ public enum FBArchiveOperations {
     return [flags, NoMacMetadataFlag, "-C", extractPath, "-f", "-"]
   }
 
-  /// Extracts a tar or zip stream archive to a directory. The stream can be an uncompressed tar, a
+  /// Extracts a tar or zip read from `source` to a directory. The stream can be an uncompressed tar, a
   /// gzipped tar, or a zip.
   public static func extractArchive(
-    fromStream stream: FBProcessInput<AnyObject>,
+    from source: any ByteSource,
     toPath extractPath: String,
     overrideModificationTime overrideMTime: Bool,
     logger: any ControlCoreLogger
-  ) -> FBFuture<NSString> {
+  ) async throws {
     let arguments = commandToExtractFromStdIn(
       withExtractPath: extractPath,
       overrideModificationTime: overrideMTime,
       debugLogging: false)
-    return FBProcessBuilder<NSNull, NSData, NSData>
-      .withLaunchPath(BSDTarPath, arguments: arguments)
-      .withStdIn(stream)
-      .withStdErr(toLoggerAndErrorMessage: logger.debug())
-      .withStdOut(to: logger.debug())
-      .withTaskLifecycleLogging(to: logger)
-      .runUntilCompletion(withAcceptableExitCodes: [0])
-      .mapReplace(extractPath as NSString)
-      .retyped()
+    try await run(Subprocess(executable: BSDTarPath, arguments: arguments), output: .logger(logger.debug()), reading: source, logger: logger)
   }
 
-  /// Extracts a gzip from a stream to a single file. A plain gzip wrapping a single file is
+  /// Decompresses a gzip read from `source` to a single file. A plain gzip wrapping a single file is
   /// preferred when there's only a single file to transfer.
   public static func extractGzip(
-    fromStream stream: FBProcessInput<AnyObject>,
+    from source: any ByteSource,
     toPath extractPath: String,
     logger: any ControlCoreLogger
-  ) -> FBFuture<NSString> {
-    FBProcessBuilder<NSNull, NSData, NSData>
-      .withLaunchPath("/usr/bin/gunzip", arguments: ["--to-stdout"])
-      .withStdIn(stream)
-      .withStdErr(toLoggerAndErrorMessage: logger.debug())
-      .withStdOutPath(extractPath)
-      .withTaskLifecycleLogging(to: logger)
-      .runUntilCompletion(withAcceptableExitCodes: [0])
-      .mapReplace(extractPath as NSString)
-      .retyped()
+  ) async throws {
+    try await run(
+      Subprocess(executable: "/usr/bin/gunzip", arguments: ["--to-stdout"]),
+      output: .file(URL(fileURLWithPath: extractPath)), reading: source, logger: logger)
+  }
+
+  /// Runs `subprocess` reading `source` on its standard input. Fails on an unsuccessful exit, and
+  /// otherwise if the child stopped reading before `source` ended.
+  private static func run<Out>(
+    _ subprocess: Subprocess,
+    output: Subprocess.Output<Out>,
+    reading source: any ByteSource,
+    logger: any ControlCoreLogger
+  ) async throws {
+    let writer = StandardInputWriter()
+    let standardError = FBDataBuffer.accumulatingBuffer(withCapacity: FBProcessOutputErrorMessageLength)
+    let source = HandedOver(source)
+    async let written = offCooperativePool { try writer.write(from: source.value) }
+    do {
+      let completed = try await subprocess.run(
+        output: output,
+        error: .consumer(FBCompositeDataConsumer(consumers: [standardError, FBLoggingDataConsumer(logger: logger.debug())])),
+        input: .source(writer.input),
+        exitPolicy: .any,
+        logger: logger)
+      try completed.checkExitedCleanly { code in
+        ArchiveOperationsError.unacceptableExitCode(
+          code, standardError: String(decoding: standardError.data(), as: UTF8.self).trimmingCharacters(in: .whitespacesAndNewlines))
+      }
+    } catch {
+      // The writer reads `source`, which the caller may close once this returns.
+      writer.stop()
+      _ = await written
+      throw error
+    }
+    try await written.get()
   }
 
   /// Gzips the file at `path`, returning the compressed data.
@@ -209,5 +233,49 @@ public enum FBArchiveOperations {
       }
     }
     return ["-zvc", "-f", "-", "-C", directory, fileName]
+  }
+}
+
+/// Copies a source into a child's standard input, reading the next chunk only once the child has
+/// taken the last, so a child that reads slowly slows the source rather than filling memory.
+private final class StandardInputWriter: Sendable {
+
+  let input = InputSource()
+  private let stopped = OSAllocatedUnfairLock(initialState: false)
+
+  /// Blocks its thread until `source` ends, the child stops reading, or `stop()` is called.
+  func write(from source: any ByteSource) throws {
+    defer { input.finish() }
+    var chunk = [UInt8](repeating: 0, count: 1 << 16)
+    while !stopped.withLock({ $0 }) {
+      let count = try chunk.withUnsafeMutableBytes { try source.read(into: $0) }
+      guard count > 0 else {
+        return
+      }
+      try Self.wait { [input, data = Data(chunk[..<count])] in
+        try await input.writeAndWait(data)
+      }
+    }
+  }
+
+  /// Ends the child's input after the chunk being written.
+  func stop() {
+    stopped.withLock { $0 = true }
+    input.finish()
+  }
+
+  private static func wait(_ operation: @escaping @Sendable () async throws -> Void) throws {
+    let finished = DispatchSemaphore(value: 0)
+    let result = OSAllocatedUnfairLock<Result<Void, any Error>>(initialState: .success(()))
+    Task {
+      do {
+        try await operation()
+      } catch {
+        result.withLock { $0 = .failure(error) }
+      }
+      finished.signal()
+    }
+    finished.wait()
+    try result.withLock { $0 }.get()
   }
 }

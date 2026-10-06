@@ -63,13 +63,23 @@ public struct BSDTarExtractor: ArchiveExtractor {
         overrideModificationTime: options.overrideModificationTime,
         logger: logger)
     case .stream(let input):
-      _ = try await bridgeFBFuture(
-        FBArchiveOperations.extractArchive(
-          fromStream: input,
-          toPath: extractPath,
-          overrideModificationTime: options.overrideModificationTime,
-          logger: logger))
+      try await withAttached(input) { source in
+        try await extract(from: source, to: extractPath, options: options, logger: logger)
+      }
     }
+  }
+
+  public func extract(
+    from source: any ByteSource,
+    to extractPath: String,
+    options: ArchiveExtractOptions,
+    logger: any ControlCoreLogger
+  ) async throws {
+    try await FBArchiveOperations.extractArchive(
+      from: source,
+      toPath: extractPath,
+      overrideModificationTime: options.overrideModificationTime,
+      logger: logger)
   }
 }
 
