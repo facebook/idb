@@ -41,10 +41,9 @@ struct IDBCommandExecutorInstallTests {
 
     let artifact = try await harness.executor.install_framework_stream(try harness.gzippedTar(of: framework))
 
-    // BUG: storage links to the extracted framework, which is deleted with its staging directory once the install returns.
     let type = try FileManager.default.attributesOfItem(atPath: artifact.path.path)[.type] as? FileAttributeType
-    #expect(type == .typeSymbolicLink)
-    #expect(!FileManager.default.fileExists(atPath: artifact.path.appendingPathComponent("Info.plist").path))
+    #expect(type == .typeDirectory)
+    #expect(FileManager.default.fileExists(atPath: artifact.path.appendingPathComponent("Info.plist").path))
   }
 
   @Test

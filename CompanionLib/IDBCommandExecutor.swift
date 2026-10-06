@@ -144,12 +144,12 @@ public final class IDBCommandExecutor {
   }
 
   public func install_framework_file_path(_ filePath: String) async throws -> InstalledArtifact {
-    return try await installBundle(URL(fileURLWithPath: filePath), intoStorage: storageManager.framework)
+    return try await installBundle(URL(fileURLWithPath: filePath), intoStorage: storageManager.framework, persistByMoving: false)
   }
 
   public func install_framework_stream(_ input: FBProcessInput<AnyObject>) async throws -> InstalledArtifact {
     return try await temporaryDirectory.withArchiveExtracted(fromStream: input, compression: .GZIP) { extractPath in
-      return try await installBundle(extractPath, intoStorage: storageManager.framework)
+      return try await installBundle(extractPath, intoStorage: storageManager.framework, persistByMoving: true)
     }
   }
 
@@ -920,8 +920,9 @@ public final class IDBCommandExecutor {
     return artifact
   }
 
-  private func installBundle(_ extractedDirectory: URL, intoStorage storage: BundleStorage) async throws -> InstalledArtifact {
+  /// A bundle extracted from a stream must be moved into storage, since its staging directory is deleted once the install returns.
+  private func installBundle(_ extractedDirectory: URL, intoStorage storage: BundleStorage, persistByMoving: Bool) async throws -> InstalledArtifact {
     let bundle = try StorageUtils.bundle(inDirectory: extractedDirectory)
-    return try await storage.saveBundle(bundle)
+    return try await storage.saveBundle(bundle, usingSymlink: !persistByMoving, skipSigningBundles: false)
   }
 }

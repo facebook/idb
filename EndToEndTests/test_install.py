@@ -95,9 +95,6 @@ REPL_HOST_ROUTES: list[Route] = [
 # an expected failure, so a fix shows up as an unexpected success.
 KNOWN_BROKEN: dict[str, str] = {
     "test_framework_path": "the companion expects a directory holding one bundle, not the bundle itself",
-    "test_framework_stream": "stored as a symlink into the extraction directory, which is then deleted",
-    "test_framework_stream_gzip": "stored as a symlink into the extraction directory, which is then deleted",
-    "test_framework_stream_zstd": "stored as a symlink into the extraction directory, which is then deleted",
 }
 
 
