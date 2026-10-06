@@ -31,7 +31,7 @@ public enum ApplicationArchive {
     perform: (BundleDescriptor) async throws -> T
   ) async throws -> T {
     try await Staging.withMaterialized(
-      source, options: options, totalStart: totalStart, downloadConfiguration: downloadConfiguration,
+      source, as: .application, options: options, totalStart: totalStart, downloadConfiguration: downloadConfiguration,
       temporaryDirectory: temporaryDirectory, logger: logger, onProgress: onProgress
     ) { tree in
       return try await perform(try Artifact.applicationBundle(in: tree, logger: logger))

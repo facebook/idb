@@ -10,8 +10,8 @@ import Foundation
 /// Where an artifact to install comes from.
 public enum InstallSource {
 
-  /// A path to either an `.app` bundle, which needs no unpacking, or an archive
-  /// containing one.
+  /// A path to the artifact itself, which needs no unpacking, or, for an
+  /// application, to an archive containing one.
   case localPath(String)
 
   /// An archive to fetch over HTTP.
@@ -83,12 +83,13 @@ public enum StagedTree {
 /// caller's body, and reporting the extract stage as it goes.
 public enum Staging {
 
-  /// Stages `source` and calls `body` with what it left on disk.
+  /// Stages `source`, which holds an artifact of `kind`, and calls `body` with what it left on disk.
   ///
   /// `onProgress` reports stages that start and stages that finish. A stage that
   /// fails reports no terminal event; the failure is the thrown error.
   public static func withMaterialized<T>(
     _ source: InstallSource,
+    as kind: ArtifactKind,
     options: InstallOptions = InstallOptions(),
     totalStart: Date = Date(),
     downloadConfiguration: URLSessionConfiguration = .default,
@@ -97,7 +98,7 @@ public enum Staging {
     onProgress: @escaping @Sendable (InstallProgressEvent) -> Void = { _ in },
     _ body: (StagedTree) async throws -> T
   ) async throws -> T {
-    if case .localPath(let path) = source, !unpacks(source) {
+    if case .localPath(let path) = source, !unpacks(source, as: kind) {
       return try await body(.inPlace(URL(fileURLWithPath: path)))
     }
     return try await temporaryDirectory.withTemporaryDirectory { stagingDirectory in
@@ -111,12 +112,18 @@ public enum Staging {
 
   /// Whether staging `source` unpacks it. What is unpacked belongs to staging,
   /// which removes it afterwards, so the body may move it away; anything else is
-  /// the caller's own, and must be left where it is.
-  public static func unpacks(_ source: InstallSource) -> Bool {
+  /// the caller's own, and must be left where it is. Only an application's local
+  /// path may be an archive.
+  public static func unpacks(_ source: InstallSource, as kind: ArtifactKind) -> Bool {
     guard case .localPath(let path) = source else {
       return true
     }
-    return !BundleDescriptor.isApplication(atPath: path)
+    switch kind {
+    case .application:
+      return !BundleDescriptor.isApplication(atPath: path)
+    case .xctest, .framework, .dylib, .dsym:
+      return false
+    }
   }
 
   // MARK: - Stages

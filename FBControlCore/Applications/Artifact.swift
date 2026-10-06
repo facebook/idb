@@ -43,6 +43,16 @@ public enum Artifact {
 
 extension Artifact {
 
+  /// Where the artifact is on disk.
+  public var url: URL {
+    switch self {
+    case .application(let bundle), .framework(let bundle):
+      return URL(fileURLWithPath: bundle.path)
+    case .testBundle(let url), .testRun(let url), .dylib(let url), .dsym(let url):
+      return url
+    }
+  }
+
   /// The application bundle in `tree`, which is the item itself if it is in place, or else the first `.app` found in
   /// what was staged.
   public static func applicationBundle(in tree: StagedTree, logger: (any ControlCoreLogger)? = nil) throws -> BundleDescriptor {
