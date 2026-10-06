@@ -75,8 +75,7 @@ struct IDBCommandExecutorInstallTests {
 
     let artifact = try await harness.executor.install_app_stream(try harness.gzippedTar(of: app), compression: .GZIP, make_debuggable: false, override_modification_time: false)
 
-    // BUG: the app is registered at its staging path, which persisting moved away — flipped in the following commit
-    #expect(!FileManager.default.fileExists(atPath: artifact.path.path))
-    await #expect(throws: (any Error).self) { try await harness.target.application.installed(bundleID: "com.example.sample") }
+    #expect(FileManager.default.fileExists(atPath: artifact.path.path))
+    #expect(try await harness.target.application.installed(bundleID: "com.example.sample").bundle.path == artifact.path.path)
   }
 }

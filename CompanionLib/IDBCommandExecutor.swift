@@ -865,12 +865,20 @@ public final class IDBCommandExecutor {
   private func installAppBundle(_ appBundle: BundleDescriptor, makeDebuggable: Bool, persistByMoving: Bool) async throws -> InstalledArtifact {
     let userDevelopmentAppIsRequired = target is Device
     try storageManager.application.checkArchitecture(appBundle)
-    let installedApp = try await target.application.install(atPath: appBundle.path)
     // TODO: currently we have to persist it even if app is not used for debugging
     // as installed apps are referenced from xctestrun files and expanded by idb
     // by using its own application storage. Fix this by replacing xctestrun
     // placeholders by app bundle paths instead
-    _ = try await storageManager.application.saveBundle(appBundle, usingSymlink: !persistByMoving, skipSigningBundles: false)
+    let persisted = try await storageManager.application.saveBundle(appBundle, usingSymlink: !persistByMoving, skipSigningBundles: false)
+    let installedApp: InstalledApplication
+    do {
+      // A moved bundle no longer exists at its staging path, and a Mac target registers the app where it is installed from.
+      installedApp = try await target.application.install(atPath: persistByMoving ? persisted.path.path : appBundle.path)
+    } catch {
+      // `saveBundle` recreates a directory per bundle ID, holding only the bundle it just persisted.
+      try? FileManager.default.removeItem(at: persisted.path.deletingLastPathComponent())
+      throw error
+    }
     if makeDebuggable && installedApp.installType != .userDevelopment && userDevelopmentAppIsRequired {
       throw IDBCommandError.userDevelopmentSigningRequired(applicationDescription: String(describing: installedApp))
     }
