@@ -17,7 +17,8 @@ import Foundation
 /// write end of its own until `finish()`, so the drain reaches end-of-file
 /// only once `finish()` has been called and every writer the process opened
 /// has closed; a process that never opens the path, or opens it more than
-/// once, is drained all the same.
+/// once, is drained all the same. Releasing an output without finishing it
+/// removes the FIFO and ends the consumer straight away.
 public final class FileBackedOutput: Sendable {
 
   /// The path the process writes to.
@@ -78,6 +79,14 @@ public final class FileBackedOutput: Sendable {
     await drain.finish(within: HostSubprocess.drainTimeout)
     unlink(path)
   }
+
+  deinit {
+    guard let drain else {
+      return
+    }
+    drain.abandon()
+    unlink(path)
+  }
 }
 
 /// Drains a FIFO with blocking reads on a thread of its own. Neither kqueue
@@ -129,10 +138,7 @@ private final class FifoDrain: @unchecked Sendable {
     await withTaskCancellationHandler {
       await withCheckedContinuation { continuation in
         queue.async { [self] in
-          if let keepAlive {
-            close(keepAlive)
-            self.keepAlive = nil
-          }
+          closeKeepAlive()
           guard !ended else {
             continuation.resume()
             return
@@ -147,6 +153,22 @@ private final class FifoDrain: @unchecked Sendable {
       queue.async { [self] in
         end()
       }
+    }
+  }
+
+  /// Gives up on the drain without waiting, for an output released without
+  /// being finished.
+  func abandon() {
+    queue.async { [self] in
+      closeKeepAlive()
+      end()
+    }
+  }
+
+  private func closeKeepAlive() {
+    if let keepAlive {
+      close(keepAlive)
+      self.keepAlive = nil
     }
   }
 

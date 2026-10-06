@@ -119,9 +119,8 @@ struct FileBackedOutputTests {
     output = nil
     try await Task.sleep(for: .milliseconds(500))
 
-    // BUG: nothing removes the FIFO or closes the drain's own write end, so the drain never reaches end-of-file — flipped in the following commit.
-    #expect(FileManager.default.fileExists(atPath: path))
-    #expect(!buffer.finishedConsuming.hasCompleted)
+    #expect(!FileManager.default.fileExists(atPath: path))
+    #expect(buffer.finishedConsuming.hasCompleted)
   }
 
   @Test("A file output hands the process the path it was given, and finishing it leaves the file alone")
