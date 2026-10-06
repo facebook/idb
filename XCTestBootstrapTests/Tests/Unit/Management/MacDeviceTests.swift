@@ -105,6 +105,27 @@ final class MacDeviceTests: XCTestCase {
     XCTAssertThrowsError(try device.uninstallApplication(withBundleID: "not.existed"))
   }
 
+  func testInstallReportsAMacInstallType() {
+    // BUG: reports .unknown, where installed() reports the same app as .mac — flipped in the following commit
+    XCTAssertEqual(installedApp.installType, .unknown)
+  }
+
+  func testUninstallKeepsTheCallersBundle() throws {
+    try device.uninstallApplication(withBundleID: installedApp.bundle.identifier)
+
+    // BUG: deletes the bundle at the path the caller installed from — flipped in the following commit
+    XCTAssertFalse(FileManager.default.fileExists(atPath: installedApp.bundle.path))
+  }
+
+  func testUninstallForgetsAnAppWhoseBundleIsMissing() throws {
+    try FileManager.default.removeItem(atPath: installedApp.bundle.path)
+
+    try device.uninstallApplication(withBundleID: installedApp.bundle.identifier)
+
+    // BUG: the app stays registered, so it can be uninstalled again — flipped in the following commit
+    XCTAssertNoThrow(try device.uninstallApplication(withBundleID: installedApp.bundle.identifier))
+  }
+
   func testLaunchingNotInstalledAppByBuntleID() async {
     let config = ApplicationLaunchConfiguration(
       bundleID: "not.existed",
