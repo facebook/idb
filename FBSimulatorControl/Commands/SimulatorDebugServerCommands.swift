@@ -23,7 +23,7 @@ private final class SimulatorDebugServer: DebugServer {
   // MARK: - DebugServer
 
   func cancel() async throws {
-    try await process.terminate(gracePeriod: 1)
+    await process.terminate(gracePeriod: 1)
   }
 }
 

@@ -101,7 +101,7 @@ public final class XCTraceRecordOperation: @unchecked Sendable {
   /// Stops the xctrace recording and returns the trace directory URL on success.
   public func stop(withTimeout timeout: TimeInterval) async throws -> URL {
     logger.log("Terminating xctrace record with pid \(running.processIdentifier). Backoff Timeout \(timeout)")
-    let status = try await running.terminate(with: SIGINT, gracePeriod: timeout)
+    let status = await running.terminate(with: SIGINT, gracePeriod: timeout)
     switch status {
     case .exited(0):
       return traceDir

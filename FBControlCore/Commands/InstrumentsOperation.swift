@@ -189,7 +189,7 @@ public final class InstrumentsOperation {
       ])
       _ = try await bridgeFBFuture(raced)
     } catch {
-      _ = try? await running.terminate(with: SIGTERM, gracePeriod: configuration.timings.terminateTimeout)
+      await running.terminate(with: SIGTERM, gracePeriod: configuration.timings.terminateTimeout)
       throw error
     }
 
@@ -201,7 +201,7 @@ public final class InstrumentsOperation {
   /// Returns the trace file.
   public func stop() async throws -> URL {
     logger.log("Terminating instruments with pid \(running.processIdentifier). Backoff Timeout \(configuration.timings.terminateTimeout)")
-    let status = try await running.terminate(with: SIGINT, gracePeriod: configuration.timings.terminateTimeout)
+    let status = await running.terminate(with: SIGINT, gracePeriod: configuration.timings.terminateTimeout)
     switch status {
     case .exited(0):
       return traceFile

@@ -94,7 +94,7 @@ struct SubprocessLaunchTests {
     // moment to reach it rather than racing the launch.
     try await Task.sleep(for: .milliseconds(200))
 
-    let status = try await running.terminate(gracePeriod: 0.5)
+    let status = await running.terminate(gracePeriod: 0.5)
 
     #expect(status == .signalled(SIGKILL))
   }
@@ -104,13 +104,11 @@ struct SubprocessLaunchTests {
     let running = try await Self.shell("trap '' TERM; sleep 10000").launch(output: .closed, error: .closed)
     try await Task.sleep(for: .milliseconds(200))
 
-    let terminating = Task { try await running.terminate(gracePeriod: 0.5) }
+    let terminating = Task { await running.terminate(gracePeriod: 0.5) }
     terminating.cancel()
 
-    // BUG: the grace-period wait throws on cancellation, so SIGKILL is never sent and the process survives — flipped in the following commit.
-    await #expect(throws: CancellationError.self) { try await terminating.value }
-    #expect(Self.isAlive(running.processIdentifier))
-    running.sendSignal(SIGKILL)
+    #expect(await terminating.value == .signalled(SIGKILL))
+    #expect(!Self.isAlive(running.processIdentifier))
   }
 
   @Test("Termination is observable only after output has drained")

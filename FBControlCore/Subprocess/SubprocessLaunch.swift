@@ -52,31 +52,20 @@ public struct RunningSubprocess: Sendable {
 
   /// Sends `signo` (`SIGTERM` by default), escalating to `SIGKILL` if the
   /// process has not terminated within `gracePeriod`, and returns the
-  /// termination status.
+  /// termination status. Completes even when the calling task is cancelled —
+  /// teardown must not strand a child.
   @discardableResult
-  public func terminate(with signo: Int32 = SIGTERM, gracePeriod: TimeInterval) async throws -> TerminationStatus {
+  public func terminate(with signo: Int32 = SIGTERM, gracePeriod: TimeInterval) async -> TerminationStatus {
     sendSignal(signo)
-    if let status = try await exit.status(within: gracePeriod) {
+    if let status = await exit.statusIgnoringCancellation(within: gracePeriod) {
       return status
     }
     logger?.log("Process \(processIdentifier) didn't exit after wait for \(gracePeriod) seconds for sending signal \(signo), sending SIGKILL now.")
     sendSignal(SIGKILL)
-    return try await exit.status()
-  }
-
-  /// As `terminate(gracePeriod:)`, but completes even when the surrounding
-  /// task is already cancelled — teardown must not strand a child.
-  func terminateIgnoringCancellation(gracePeriod: TimeInterval) async {
-    let running = self
-    await Task {
-      sendSignal(SIGTERM)
-      if await running.exit.statusIgnoringCancellation(within: gracePeriod) != nil {
-        return
-      }
-      running.logger?.log("Process \(running.processIdentifier) didn't exit after wait for \(gracePeriod) seconds for sending signal \(SIGTERM), sending SIGKILL now.")
-      running.sendSignal(SIGKILL)
-      _ = await running.exit.statusIgnoringCancellation(within: nil)
-    }.value
+    guard let status = await exit.statusIgnoringCancellation(within: nil) else {
+      preconditionFailure("A wait without a deadline cannot time out")
+    }
+    return status
   }
 }
 
@@ -110,10 +99,10 @@ extension Subprocess {
     let running = try await launch(on: launcher, output: output, error: error, input: input, logger: logger)
     do {
       let result = try await body(running)
-      await running.terminateIgnoringCancellation(gracePeriod: gracePeriod)
+      await running.terminate(gracePeriod: gracePeriod)
       return result
     } catch let failure {
-      await running.terminateIgnoringCancellation(gracePeriod: gracePeriod)
+      await running.terminate(gracePeriod: gracePeriod)
       throw failure
     }
   }

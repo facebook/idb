@@ -26,7 +26,7 @@ public final class ProcessLogOperation: LogOperation {
     do {
       status = try await process.terminationStatus
     } catch {
-      await process.terminateIgnoringCancellation(gracePeriod: 5)
+      await process.terminate(gracePeriod: 5)
       throw error
     }
     guard ExitPolicy.mustExitZero.accepts(status) else {

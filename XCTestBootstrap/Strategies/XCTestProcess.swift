@@ -56,7 +56,7 @@ final class XCTestProcess {
         stackshot = "stackshot unavailable: \(error.localizedDescription)"
       }
       logger.log("Terminating stalled xctest process \(processIdentifier)")
-      try await process.terminate(gracePeriod: KillBackoffTimeout)
+      await process.terminate(gracePeriod: KillBackoffTimeout)
       logger.log("Stalled xctest process \(processIdentifier) has been terminated")
       throw XCTestProcessError.stalled(timeout: timeout, processIdentifier: processIdentifier, stackshot: stackshot)
     }

@@ -103,7 +103,7 @@ public final class FileContainerTailOperation {
   }
 
   public func cancel() async throws {
-    try await running.terminate(gracePeriod: 1)
+    await running.terminate(gracePeriod: 1)
   }
 }
 

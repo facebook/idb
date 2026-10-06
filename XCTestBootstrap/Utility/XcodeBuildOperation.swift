@@ -174,7 +174,7 @@ public final class XcodeBuildOperation {
       try await running.terminationStatus
     } onCancel: {
       Task {
-        _ = try? await running.terminate(gracePeriod: 1)
+        await running.terminate(gracePeriod: 1)
       }
     }
     guard case .exited(let code) = status, code == 0 || code == 65 else {

@@ -314,12 +314,8 @@ public final class MacDevice: NSObject, Target {
     guard let task = bundleIDToRunningTask[bundleID] else {
       throw MacDeviceError.applicationNotLaunched(bundleID: bundleID)
     }
-    Task { [logger] in
-      do {
-        _ = try await task.terminate(gracePeriod: 2)
-      } catch {
-        logger.error().log("Failed to terminate \(bundleID): \(error)")
-      }
+    Task {
+      await task.terminate(gracePeriod: 2)
     }
     bundleIDToRunningTask.removeValue(forKey: bundleID)
   }

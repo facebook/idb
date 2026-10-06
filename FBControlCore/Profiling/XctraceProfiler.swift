@@ -168,7 +168,7 @@ public enum XctraceProfiler {
       return finished
     }
     // SIGINT is xctrace's Ctrl-C: it stops recording and saves the trace.
-    return try await running.terminate(with: SIGINT, gracePeriod: stopTimeout)
+    return await running.terminate(with: SIGINT, gracePeriod: stopTimeout)
   }
 
   private static func export(xctrace: String, arguments: [String], logger: any ControlCoreLogger) async throws -> Data {
