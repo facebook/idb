@@ -279,6 +279,25 @@ final class SimulatorDisplayReadTests: XCTestCase {
     }
   }
 
+  func testBacklightActivitySelectsStableIdentityAcrossNamesCountsAndOrder() throws {
+    let ids = ["panel-b", "panel-c", "panel-a"]
+    for count in 1...ids.count {
+      let activeID = ids[count - 1]
+      let values = ids.prefix(count).map { id in
+        let value = displayValue(id: id, active: false)
+        xpc_dictionary_set_string(value, "name", "not-a-device-label")
+        xpc_dictionary_set_value(value, "active", nil)
+        xpc_dictionary_set_string(value, "backlightState", id == activeID ? "activeOn" : "off")
+        return value
+      }
+      let reported = Array(values.reversed())
+      let parsed = try displays(reported)
+      XCTAssertEqual(parsed.map(\.uniqueID), ids.prefix(count).sorted())
+      XCTAssertEqual(parsed.filter(\.isActive).map(\.uniqueID), [activeID])
+      XCTAssertEqual(try target(reported).display.uniqueID, activeID)
+    }
+  }
+
   func testBacklightSelectionRejectsUncertaintyAmbiguityAndPartialLayoutActivity() throws {
     let cover = displayValue(id: "cover", active: false, primary: true)
     let inner = displayValue(id: "inner", active: true)
