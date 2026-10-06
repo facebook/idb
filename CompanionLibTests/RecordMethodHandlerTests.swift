@@ -251,7 +251,8 @@ struct RecordMethodHandlerTests {
         logger: RecordingLogger())
     }
 
-    #expect(error?.message == "Draining operation failed with exit code 1")
+    #expect(error?.message.hasPrefix("Draining operation failed with exit code 1: ") == true)
+    #expect(error?.message.contains("Permission denied") == true)
     #expect(collector.elements.isEmpty)
   }
 }

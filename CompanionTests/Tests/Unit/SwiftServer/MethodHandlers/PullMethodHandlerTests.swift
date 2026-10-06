@@ -102,7 +102,8 @@ final class PullMethodHandlerTests: XCTestCase {
       try await PullMethodHandler.pull(request, using: LocalFilePuller(contents: Data("x".utf8), readable: false), logger: logger, cancellation: ServerContext.RPCCancellationHandle()) { _ in }
       XCTFail("an unreadable file was archived")
     } catch let error as RPCError {
-      XCTAssertEqual(error.message, "Draining operation failed with exit code 1")
+      XCTAssertTrue(error.message.hasPrefix("Draining operation failed with exit code 1: "), error.message)
+      XCTAssertTrue(error.message.contains("Permission denied"), error.message)
     }
   }
 

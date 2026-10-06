@@ -197,6 +197,7 @@ struct XctraceRecordMethodHandlerTests {
       try await XctraceRecordMethodHandler.sendTrace(atPath: trace.path, responseStream: RPCWriter(wrapping: collector), logger: logger)
     }
 
-    #expect(error?.message == "Draining operation failed with exit code 1")
+    #expect(error?.message.hasPrefix("Draining operation failed with exit code 1: ") == true)
+    #expect(error?.message.contains("Permission denied") == true)
   }
 }
