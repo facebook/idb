@@ -10,10 +10,6 @@ import XCTest
 
 final class FBControlCoreTransientTests: XCTestCase {
 
-  private func makeIO() -> FBProcessIO<AnyObject, AnyObject, AnyObject> {
-    return FBProcessIO<AnyObject, AnyObject, AnyObject>(stdIn: nil, stdOut: nil, stdErr: nil)
-  }
-
   private func makeBundle(name: String = "App", identifier: String = "com.test", path: String = "/tmp") -> BundleDescriptor {
     return BundleDescriptor(name: name, identifier: identifier, path: path, binary: nil)
   }
@@ -188,48 +184,6 @@ final class FBControlCoreTransientTests: XCTestCase {
 
     XCTAssertTrue(config.description.contains("com.example.app"))
     XCTAssertTrue(config.description.contains("MyApp"))
-  }
-
-  // MARK: - ProcessSpawnConfiguration
-
-  func testProcessSpawnConfigurationProcessName() {
-    let config = ProcessSpawnConfiguration(
-      launchPath: "/usr/local/bin/my_tool",
-      arguments: [],
-      environment: [:],
-      io: makeIO(),
-      mode: .default
-    )
-
-    XCTAssertEqual(config.processName, "my_tool")
-  }
-
-  func testProcessSpawnConfigurationEquality() {
-    let io = makeIO()
-    let a = ProcessSpawnConfiguration(launchPath: "/usr/bin/env", arguments: ["a"], environment: ["K": "V"], io: io, mode: .posixSpawn)
-    let b = ProcessSpawnConfiguration(launchPath: "/usr/bin/env", arguments: ["a"], environment: ["K": "V"], io: io, mode: .posixSpawn)
-
-    XCTAssertEqual(a, b)
-  }
-
-  func testProcessSpawnConfigurationInequalityByMode() {
-    let io = makeIO()
-    let a = ProcessSpawnConfiguration(launchPath: "/usr/bin/env", arguments: [], environment: [:], io: io, mode: .posixSpawn)
-    let b = ProcessSpawnConfiguration(launchPath: "/usr/bin/env", arguments: [], environment: [:], io: io, mode: .launchd)
-
-    XCTAssertNotEqual(a, b)
-  }
-
-  func testProcessSpawnConfigurationDescription() {
-    let config = ProcessSpawnConfiguration(
-      launchPath: "/usr/bin/env",
-      arguments: ["--help"],
-      environment: [:],
-      io: makeIO(),
-      mode: .default
-    )
-
-    XCTAssertTrue(config.description.contains("/usr/bin/env"))
   }
 
   // MARK: - CollectionInformation

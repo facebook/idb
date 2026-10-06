@@ -23,7 +23,7 @@ final class SimulatorProcessSpawnStrategy {
     return options
   }
 
-  static func simDeviceLaunchOptions(withSimulator simulator: Simulator, launchPath: String, arguments: [String], environment: [String: String], waitForDebugger: Bool, standardOutput: Int32?, standardError: Int32?, mode: ProcessSpawnMode) -> [String: Any] {
+  static func simDeviceLaunchOptions(withSimulator simulator: Simulator, launchPath: String, arguments: [String], environment: [String: String], waitForDebugger: Bool, standardOutput: Int32?, standardError: Int32?, mode: Subprocess.LaunchMode) -> [String: Any] {
     // argv[0] should be launch path of the process. SimDevice does not do this automatically, so we need to add it.
     let fullArguments = [launchPath] + arguments
     var options = launchOptions(withArguments: fullArguments, environment: environment, waitForDebugger: waitForDebugger)
@@ -37,13 +37,13 @@ final class SimulatorProcessSpawnStrategy {
     return options
   }
 
-  static func shouldLaunchStandalone(onSimulator simulator: Simulator, mode: ProcessSpawnMode) -> Bool {
+  static func shouldLaunchStandalone(onSimulator simulator: Simulator, mode: Subprocess.LaunchMode) -> Bool {
     switch mode {
     case .launchd:
       return false
     case .posixSpawn:
       return true
-    default:
+    case .default:
       return simulator.state != .booted
     }
   }
@@ -82,7 +82,7 @@ public struct SimulatorSubprocessLauncher: SubprocessLauncher {
       waitForDebugger: false,
       standardOutput: standardOutput,
       standardError: standardError,
-      mode: ProcessSpawnMode(subprocess.mode))
+      mode: subprocess.mode)
     let exit = SimulatorExit()
     let processIdentifier = try await simulator.device.spawnAsync(
       withPath: subprocess.executable,
@@ -129,19 +129,6 @@ private final class SimulatorExit: @unchecked Sendable {
       if let immediate {
         continuation.resume(returning: immediate)
       }
-    }
-  }
-}
-
-extension ProcessSpawnMode {
-  init(_ mode: Subprocess.LaunchMode) {
-    switch mode {
-    case .default:
-      self = .default
-    case .posixSpawn:
-      self = .posixSpawn
-    case .launchd:
-      self = .launchd
     }
   }
 }
