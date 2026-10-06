@@ -139,7 +139,7 @@ A Device Set is a directory that contains a number of created iOS Simulators. Th
 
 Custom device sets can be placed at any location on disk. This is useful for isolating the filesystems of created iOS Simulators from each other. For instance, if there are independent processes managing iOS Simulators on the same host it can be worthwhile having each of these processes manage their own device sets to prevent data races.
 
-There is also an `XCTestDevices` directory at `~/Library/Developer/XCTestDevices`. This is the set of Simulators that are used by `xcodebuild`, distinct from the user interface. This means that `xcodebuild` can manage and use it's own set of iOS Simulators, independent of the Xcode UI. This may exist for a similar reasons to why custom device sets are practical for automation scenarios. It would also be a confusing user experience if an iOS Simulator that was being used within `xcodebuild` was using an iOS Simulator that a user was using via Xcode when running UI Tests.
+There is also an `XCTestDevices` directory at `~/Library/Developer/XCTestDevices`. This is the set of Simulators that are used by `xcodebuild`, distinct from the user interface. This means that `xcodebuild` can manage and use its own set of iOS Simulators, independent of the Xcode UI. This may exist for similar reasons to why custom device sets are practical for automation scenarios. It would also be a confusing user experience if an iOS Simulator that was being used within `xcodebuild` was using an iOS Simulator that a user was using via Xcode when running UI Tests.
 
 ### `Simulator.app`
 

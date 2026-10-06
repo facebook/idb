@@ -44,7 +44,7 @@ Device Hub's Closed, Book and Open presets correspond to 0, 130 and 180 degrees.
 
 All `idb` cli commands run against a specific iOS Target (Simulator or Device). Since a single host will almost certainly have more than one target attached, there needs to be a way of specifying which iOS Target to run the command against.
 
-The common denominator of all iOS Targets is the presence of a UDID. This is a identifier unique to each target. iOS Simulators have UDIDs based on [NSUUID](https://developer.apple.com/documentation/foundation/nsuuid), for Devices it depends on the phone model, but the [iPhone Wiki has an overview of the formats](https://www.theiphonewiki.com/wiki/UDID). As far as `idb` is concerned, a UDID is just a string.
+The common denominator of all iOS Targets is the presence of a UDID. This is an identifier unique to each target. iOS Simulators have UDIDs based on [NSUUID](https://developer.apple.com/documentation/foundation/nsuuid), for Devices it depends on the phone model, but the [iPhone Wiki has an overview of the formats](https://www.theiphonewiki.com/wiki/UDID). As far as `idb` is concerned, a UDID is just a string.
 
 The `idb` cli is powered by the `idb_companion`, to perform all underlying behaviour. Since an `idb_companion` can be exposed over a domain socket or TCP socket, it's also possible to address a companion directly, instead of addressing via UDID.
 
@@ -77,7 +77,7 @@ SOME_UDID
 `idb` can also transparently start companions in the background, so the user does not need to be aware of how to start a companion or address it directly:
 
 ```
-# This will implictly start a companion in the background and keep it alive
+# This will implicitly start a companion in the background and keep it alive
 $ idb connect TARGET_UDID
 TARGET_UDID
 ```
