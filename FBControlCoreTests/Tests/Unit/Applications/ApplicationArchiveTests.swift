@@ -290,6 +290,40 @@ final class ApplicationArchiveTests: XCTestCase {
     XCTAssertEqual(linkType, .typeSymbolicLink)
   }
 
+  func testResolve_WhenGivenAZstdZipURL_RestoresItsSymlinks() async throws {
+    StubURLProtocol.behaviour = .respond(statusCode: 200, body: ArchiveFormat.zstdZipMarker + Self.zstd(try makeZippedPayloadWithSymlink()))
+    let configuration = URLSessionConfiguration.ephemeral
+    configuration.protocolClasses = [StubURLProtocol.self]
+
+    let linkType = try await ApplicationArchive.withResolvedBundle(
+      from: .remoteURL(Self.stubbedURL),
+      downloadConfiguration: configuration,
+      temporaryDirectory: temporaryDirectory,
+      logger: logger
+    ) { bundle in
+      try FileManager.default.attributesOfItem(
+        atPath: (bundle.path as NSString).appendingPathComponent("Link.plist"))[.type] as? FileAttributeType
+    }
+
+    // BUG: the download is sniffed on fewer bytes than the zstd zip marker, so it is read as a zstd tar and its zip reaches bsdtar on stdin; flipped in the following commit.
+    XCTAssertEqual(linkType, .typeRegular)
+  }
+
+  /// `data` in a zstd frame of uncompressed blocks, as the tests cannot rely on a zstd compressor being installed.
+  private static func zstd(_ data: Data) -> Data {
+    var frame = Data([0x28, 0xB5, 0x2F, 0xFD, 0x00, 0x38])
+    var offset = data.startIndex
+    repeat {
+      let size = min(data.endIndex - offset, 1 << 17)
+      let last = offset + size == data.endIndex
+      let header = UInt32(size) << 3 | (last ? 1 : 0)
+      frame.append(contentsOf: [UInt8(header & 0xFF), UInt8(header >> 8 & 0xFF), UInt8(header >> 16)])
+      frame.append(data[offset..<offset + size])
+      offset += size
+    } while offset < data.endIndex
+    return frame
+  }
+
   func testResolve_WhenAZipTransferFailsMidStream_FailsWithTheTransferError() async throws {
     let zip = try makeZippedPayloadWithSymlink()
     StubURLProtocol.behaviour = .truncate(statusCode: 200, body: zip, bytesBeforeFailure: zip.count / 2)
