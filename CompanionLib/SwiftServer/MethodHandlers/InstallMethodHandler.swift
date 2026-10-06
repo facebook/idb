@@ -129,11 +129,19 @@ struct InstallMethodHandler: @unchecked Sendable {
       }
       let input = FBProcessInput<OutputStream>.fromStream()
       let output = input.contents
-      async let writePayload: Void = writePayload(head: head, rest: rest, output: output, telemetry: telemetry)
-      let artifact = try await installSource(
-        dataStream: input.retyped(FBProcessInput<AnyObject>.self),
-        compression: tarCompression,
-        skipSigningBundles: skipSigningBundles)
+      let clientFailure = OSAllocatedUnfairLock<(any Error)?>(initialState: nil)
+      async let writePayload: Void = writePayload(head: head, rest: rest, output: output, telemetry: telemetry, clientFailure: clientFailure)
+      let artifact: InstalledArtifact
+      do {
+        artifact = try await installSource(
+          dataStream: input.retyped(FBProcessInput<AnyObject>.self),
+          compression: tarCompression,
+          skipSigningBundles: skipSigningBundles)
+      } catch {
+        // A client stream that fails truncates the archive, so extraction fails too; the client's failure is the cause.
+        try? await writePayload
+        throw clientFailure.withLock { $0 } ?? error
+      }
       try await writePayload
       return artifact
 
@@ -352,11 +360,13 @@ struct InstallMethodHandler: @unchecked Sendable {
     try await writePayload
   }
 
+  /// Writes the payload to `output`, recording in `clientFailure` an error thrown by `rest` rather than by the write.
   private func writePayload(
     head: Data,
     rest: AsyncThrowingStream<Data, any Error>,
     output: OutputStream,
-    telemetry: InstallTelemetry
+    telemetry: InstallTelemetry,
+    clientFailure: OSAllocatedUnfairLock<(any Error)?>? = nil
   ) async throws {
     output.open()
     defer { output.close() }
@@ -364,7 +374,18 @@ struct InstallMethodHandler: @unchecked Sendable {
     try await telemetry.receive { receive in
       try output.writeAll(head)
       receive.count(head)
-      for try await data in rest {
+      var frames = rest.makeAsyncIterator()
+      while true {
+        let frame: Data?
+        do {
+          frame = try await frames.next()
+        } catch {
+          clientFailure?.withLock { $0 = error }
+          throw error
+        }
+        guard let data = frame else {
+          return
+        }
         try output.writeAll(data)
         receive.count(data)
       }

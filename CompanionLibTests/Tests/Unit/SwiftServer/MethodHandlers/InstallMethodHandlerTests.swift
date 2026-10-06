@@ -44,11 +44,7 @@ struct InstallMethodHandlerTests {
     await #expect {
       _ = try await handler.install(Self.request(.framework, head: archive.prefix(archive.count / 2), rest: rest))
     } throws: { error in
-      // BUG: the truncated archive's extraction failure is reported instead of the stream failure that caused it — flipped in the following commit.
-      guard case InstallError.extractionFailed = error else {
-        return false
-      }
-      return true
+      error is StreamFailed
     }
   }
 }
