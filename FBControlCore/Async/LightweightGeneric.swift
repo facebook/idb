@@ -15,8 +15,6 @@ public protocol LightweightGeneric: AnyObject {}
 
 extension FBFuture: LightweightGeneric {}
 extension FBProcessInput: LightweightGeneric {}
-extension FBProcessOutput: LightweightGeneric {}
-extension FBSubprocess: LightweightGeneric {}
 
 public extension LightweightGeneric {
 

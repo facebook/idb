@@ -80,9 +80,7 @@ struct SubprocessSpecTests {
   }
 }
 
-/// Pins `TerminationStatus.init(statLoc:)` to the decode in
-/// `ProcessSpawnCommandHelpers`, which `FBSubprocessTerminationTests` pins
-/// against real processes.
+/// Pins how `TerminationStatus.init(statLoc:)` decodes a `wait(2)` status word.
 @Suite
 struct TerminationStatusTests {
 

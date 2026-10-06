@@ -97,8 +97,7 @@ extension Subprocess {
   }
 
   /// As `run(output:error:exitPolicy:logger:)`, capturing both streams in
-  /// memory as strings — the same default an unconfigured `FBProcessBuilder`
-  /// applies, made visible in the return type.
+  /// memory as strings.
   public func run(
     on launcher: any SubprocessLauncher = HostSubprocessLauncher(),
     input: Input = .closed,

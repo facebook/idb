@@ -7,7 +7,7 @@
 
 import Foundation
 
-/// Unlike `FBSubprocess`, no exit code or signal status is available.
+/// Unlike a `Subprocess`, no exit code or signal status is available.
 public protocol LaunchedApplication: AnyObject {
 
   /// The Bundle Identifier of the Launched Application.

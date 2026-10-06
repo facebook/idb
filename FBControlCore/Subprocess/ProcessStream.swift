@@ -25,29 +25,6 @@ import Foundation
   var streamError: Error? { get }
 }
 
-/// Process Output that can be provided through a file.
-@objc public protocol ProcessFileOutput: NSObjectProtocol {
-  /// The File Path to write to.
-  var filePath: String { get }
-
-  /// Should be called just after the file path has been written to.
-  func startReading() -> FBFuture<NSNull>
-
-  /// Should be called just after the file has stopped being written to.
-  func stopReading() -> FBFuture<NSNull>
-}
-
-/// Process output that can be redirected to a file path or to a data consumer.
-@objc(FBProcessOutput)
-public protocol ProcessOutput: NSObjectProtocol {
-  /// Allows the receiver to be written to via a file instead of via a file handle.
-  func providedThroughFile() -> FBFuture<ProcessFileOutput>
-
-  /// Allows the receiver to be written to via a Data Consumer.
-  func providedThroughConsumer() -> FBFuture<DataConsumer>
-}
-
 // MARK: - Conformance extensions for ObjC classes
 
-extension FBProcessOutput: StandardStream, ProcessOutput {}
 extension FBProcessInput: StandardStream {}

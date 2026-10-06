@@ -12,7 +12,6 @@ import FBDeviceControl
 // companion passes across Swift Concurrency domains (returned from Tasks, captured
 // in @Sendable closures) but which predate Sendable annotations. Assert the
 // conformance here; the ones this module does not own are retroactive.
-extension FBSubprocess: @retroactive @unchecked Sendable {}
 extension FBProcessInput: @retroactive @unchecked Sendable {}
 extension DeviceSet: @retroactive @unchecked Sendable {}
 extension IDBLogger: @unchecked Sendable {}

@@ -85,8 +85,7 @@ public struct DeviceSocketForwardingCommands {
     }
   }
 
-  /// Matches `FBProcessOutput`'s detach drain timeout: how long to wait for a
-  /// reader to finish naturally before stopping it.
+  /// How long to wait for a reader to finish naturally before stopping it.
   private static let teardownDrainTimeout: TimeInterval = 4
 
   // The reader dispatch io channel must relinquish localSocket before it is
