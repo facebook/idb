@@ -236,7 +236,7 @@ struct ZipExtractorTests {
       }
     }
     writer.start()
-    let summary = try ZipStreamExtractor.extract(from: readEnd, to: extracted)
+    let summary = try ZipStreamExtractor.extract(from: FileDescriptorSource(readEnd), to: extracted)
     if repair {
       try ZipCentralDirectory(archiveAtPath: archive).repair(extractedAt: extracted)
     }

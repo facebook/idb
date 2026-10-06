@@ -26,21 +26,15 @@ public enum TarStreamExtractor {
 
   public enum Outcome {
     case extracted(ArchiveExtractionSummary, Waits)
-    /// The input does not start with a tar header. `prefix` is everything read
-    /// from it, decompressed, and `rest` reads what follows.
-    case notTar(prefix: Data, rest: ArchiveRead)
+    /// The input does not start with a tar header. The source reads it, decompressed, from its start.
+    case notTar(any ByteSource)
   }
 
-  public static func extract(reading read: @escaping ArchiveRead, to root: String, overrideModificationTime: Bool = false) throws -> Outcome {
-    var inputWait: TimeInterval = 0
-    let decoder = Decoder { buffer in
-      let start = DispatchTime.now().uptimeNanoseconds
-      defer { inputWait += Double(DispatchTime.now().uptimeNanoseconds - start) / 1e9 }
-      return try read(buffer)
-    }
-    var reader = Reader(decoder)
+  public static func extract(from source: any ByteSource, to root: String, overrideModificationTime: Bool = false) throws -> Outcome {
+    let timed = TimedSource(source)
+    let reader = Reader(try GzipSource.ifGzipped(timed))
     guard let first = try reader.peekBlock(), Header.hasValidChecksum(first) else {
-      return .notTar(prefix: reader.buffered, rest: decoder.read)
+      return .notTar(reader.input)
     }
     let writer = ParallelFileWriter(overrideModificationTime: overrideModificationTime)
     var summary = ArchiveExtractionSummary(files: 0, bytes: 0)
@@ -167,7 +161,7 @@ public enum TarStreamExtractor {
         throw POSIXError.current
       }
     }
-    return .extracted(summary, Waits(input: inputWait, writers: writer.waited))
+    return .extracted(summary, Waits(input: timed.wait, writers: writer.waited))
   }
 
   // MARK: - Private
@@ -356,18 +350,14 @@ public enum TarStreamExtractor {
   }
 
   private struct Reader {
-    let decoder: Decoder
-    private var input: BufferedInput
+    let input: PeekableSource
 
-    init(_ decoder: Decoder) {
-      self.decoder = decoder
-      input = BufferedInput(capacity: 1 << 20, read: decoder.read)
+    init(_ source: any ByteSource) {
+      input = PeekableSource(source, capacity: 1 << 20)
     }
 
-    var buffered: Data { input.buffered }
-
     /// The next block without consuming it, or nil if the input ends first.
-    mutating func peekBlock() throws -> [UInt8]? {
+    func peekBlock() throws -> [UInt8]? {
       guard try input.buffer(atLeast: 512) else {
         return nil
       }
@@ -376,7 +366,7 @@ public enum TarStreamExtractor {
 
     /// Nil at the end of the input. An archive without the blocks of zeros that
     /// should end it is taken as complete, as `bsdtar` does.
-    mutating func block() throws -> [UInt8]? {
+    func block() throws -> [UInt8]? {
       guard let block = try peekBlock() else {
         guard input.available == 0 else {
           throw ArchiveError.corrupt("the tar ends partway through a header")
@@ -388,7 +378,7 @@ public enum TarStreamExtractor {
     }
 
     /// Calls `output` with the next `size` bytes, then skips the padding after them.
-    mutating func contents(_ size: UInt64, into output: (UnsafeRawBufferPointer) throws -> Void) throws {
+    func contents(_ size: UInt64, into output: (UnsafeRawBufferPointer) throws -> Void) throws {
       var remaining = size
       while remaining > 0 {
         guard try input.buffer(atLeast: 1) else {
@@ -410,13 +400,13 @@ public enum TarStreamExtractor {
       }
     }
 
-    mutating func skip(_ size: UInt64) throws {
+    func skip(_ size: UInt64) throws {
       try contents(size) { _ in }
     }
 
     /// The contents of an entry describing the next, which are bounded to keep a
     /// corrupt size from exhausting memory.
-    mutating func metadata(_ size: UInt64) throws -> Data {
+    func metadata(_ size: UInt64) throws -> Data {
       guard size <= 1 << 20 else {
         throw ArchiveError.unsupported("a tar metadata entry of \(size) bytes")
       }
@@ -427,78 +417,28 @@ public enum TarStreamExtractor {
 
     /// Reads to the end of the input, discarding it, so a writer is never left
     /// blocked on a pipe that nothing reads.
-    mutating func drain() throws {
-      input.discard()
-      try decoder.drain()
+    func drain() throws {
+      try input.drain()
     }
   }
 
-  /// Passes the input through, inflating it first if it is gzipped.
-  private final class Decoder {
-    private enum State {
-      case undetected
-      case plain
-      case gzip(Inflater)
-      case finished
+  /// Records how long reads of a source block.
+  private final class TimedSource: ByteSource {
+    private let source: any ByteSource
+    private(set) var wait: TimeInterval = 0
+
+    init(_ source: any ByteSource) {
+      self.source = source
     }
 
-    private var state = State.undetected
-    private var input: BufferedInput
-
-    init(_ raw: @escaping ArchiveRead) {
-      input = BufferedInput(capacity: 1 << 18, read: raw)
+    func read(into buffer: UnsafeMutableRawBufferPointer) throws -> Int {
+      let start = DispatchTime.now().uptimeNanoseconds
+      defer { wait += Double(DispatchTime.now().uptimeNanoseconds - start) / 1e9 }
+      return try source.read(into: buffer)
     }
 
-    func read(_ output: UnsafeMutableRawBufferPointer) throws -> Int {
-      switch state {
-      case .undetected:
-        guard try input.buffer(atLeast: 2), input[0] == 0x1F, input[1] == 0x8B else {
-          state = .plain
-          return try read(output)
-        }
-        guard let inflater = Inflater(.gzip) else {
-          throw ArchiveError.corrupt("cannot inflate the gzip")
-        }
-        state = .gzip(inflater)
-        return try read(output)
-      case .plain:
-        return try input.read(into: output)
-      case .gzip(let inflater):
-        return try inflate(inflater, into: output)
-      case .finished:
-        return 0
-      }
-    }
-
-    /// Reads the raw input to its end.
     func drain() throws {
-      state = .finished
-      try input.drain()
-    }
-
-    private func inflate(_ inflater: Inflater, into output: UnsafeMutableRawBufferPointer) throws -> Int {
-      while true {
-        guard try input.buffer(atLeast: 1) else {
-          throw ArchiveError.corrupt("the gzip ends early")
-        }
-        guard let step = input.withAvailable({ inflater.inflate($0, into: output) }) else {
-          throw ArchiveError.corrupt("the gzip does not inflate")
-        }
-        input.consume(step.consumed)
-        var finished = false
-        if step.ended {
-          // gzip allows several members one after another; anything else after one is ignored.
-          if try input.buffer(atLeast: 2), input[0] == 0x1F, input[1] == 0x8B {
-            inflater.reset()
-          } else {
-            state = .finished
-            finished = true
-          }
-        }
-        if step.produced > 0 || finished {
-          return step.produced
-        }
-      }
+      try source.drain()
     }
   }
 }

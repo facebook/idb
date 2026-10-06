@@ -19,8 +19,8 @@ import zlib
 public enum ZipStreamExtractor {
 
   @discardableResult
-  public static func extract(from fileDescriptor: Int32, to root: String, overrideModificationTime: Bool = false) throws -> ArchiveExtractionSummary {
-    var reader = Reader(fileDescriptor: fileDescriptor)
+  public static func extract(from source: any ByteSource, to root: String, overrideModificationTime: Bool = false) throws -> ArchiveExtractionSummary {
+    var reader = Reader(source)
     let writer = ParallelFileWriter(overrideModificationTime: overrideModificationTime)
     var directories: [(path: String, modified: Date?)] = []
     var summary = ArchiveExtractionSummary(files: 0, bytes: 0)
@@ -160,10 +160,10 @@ public enum ZipStreamExtractor {
   }
 
   private struct Reader {
-    private var input: BufferedInput
+    private let input: PeekableSource
 
-    init(fileDescriptor: Int32) {
-      input = BufferedInput(capacity: 1 << 20, read: ArchiveExtraction.reading(fileDescriptor: fileDescriptor))
+    init(_ source: any ByteSource) {
+      input = PeekableSource(source, capacity: 1 << 20)
     }
 
     private mutating func ensure(_ count: Int) throws {
@@ -258,7 +258,7 @@ extension ZipStreamExtractor {
     let fileDescriptor = try await bridgeFBFuture(input.attach()).fileDescriptor
     let start = Date()
     let result = await offCooperativePool {
-      try extract(from: fileDescriptor, to: root, overrideModificationTime: overrideModificationTime)
+      try extract(from: FileDescriptorSource(fileDescriptor), to: root, overrideModificationTime: overrideModificationTime)
     }
     _ = try? await bridgeFBFuture(input.detach())
     let summary = try result.get()

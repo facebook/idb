@@ -18,9 +18,6 @@ public struct ArchiveExtractionSummary: Equatable, Sendable {
 }
 
 /// The file system work shared by the in-process extractors.
-/// Reads up to the buffer's size into it, returning 0 at the end of the input.
-public typealias ArchiveRead = (UnsafeMutableRawBufferPointer) throws -> Int
-
 enum ArchiveExtraction {
 
   /// Creating a small file is mostly waiting, on the file system and on any
@@ -44,20 +41,6 @@ enum ArchiveExtraction {
     let times = [time, time]
     guard apply(times) == 0 else {
       throw POSIXError.current
-    }
-  }
-
-  static func reading(fileDescriptor: Int32) -> ArchiveRead {
-    { buffer in
-      while true {
-        let count = Darwin.read(fileDescriptor, buffer.baseAddress, buffer.count)
-        if count >= 0 {
-          return count
-        }
-        guard errno == EINTR else {
-          throw POSIXError.current
-        }
-      }
     }
   }
 

@@ -153,11 +153,11 @@ public struct InProcessTarExtractor: ArchiveExtractor {
     let fileDescriptor = try await bridgeFBFuture(input.attach()).fileDescriptor
     let result = await offCooperativePool {
       try TarStreamExtractor.extract(
-        reading: ArchiveExtraction.reading(fileDescriptor: fileDescriptor), to: extractPath,
+        from: FileDescriptorSource(fileDescriptor), to: extractPath,
         overrideModificationTime: options.overrideModificationTime)
     }
-    if case .success(.notTar(let prefix, let rest)) = result {
-      try await replay(prefix: prefix, rest: rest, to: extractPath, options: options, logger: logger)
+    if case .success(.notTar(let read)) = result {
+      try await replay(read, to: extractPath, options: options, logger: logger)
       _ = try? await bridgeFBFuture(input.detach())
       return
     }
@@ -167,10 +167,9 @@ public struct InProcessTarExtractor: ArchiveExtractor {
     }
   }
 
-  /// Writes what was read, then the rest, into `fallback`.
+  /// Writes what `source` reads into `fallback`.
   private func replay(
-    prefix: Data,
-    rest: @escaping ArchiveRead,
+    _ source: any ByteSource,
     to extractPath: String,
     options: ArchiveExtractOptions,
     logger: any ControlCoreLogger
@@ -180,13 +179,13 @@ public struct InProcessTarExtractor: ArchiveExtractor {
     let input = HandedOver(replayed.retyped(FBProcessInput<AnyObject>.self))
     async let extraction: Void = fallback.extract(.stream(input.value), to: extractPath, options: options, logger: logger)
     let output = replayed.contents
+    let source = HandedOver(source)
     let written = await offCooperativePool {
       output.open()
       defer { output.close() }
-      try output.writeAll(prefix)
       var chunk = [UInt8](repeating: 0, count: 1 << 16)
       while true {
-        let count = try chunk.withUnsafeMutableBytes { try rest($0) }
+        let count = try chunk.withUnsafeMutableBytes { try source.value.read(into: $0) }
         guard count > 0 else {
           return
         }

@@ -1,0 +1,79 @@
+/*
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ */
+
+@testable import FBControlCore
+import Foundation
+import Testing
+
+@Suite
+struct ByteSourceTests {
+
+  private let root = TemporaryDirectory(logger: ControlCoreGlobalConfiguration.defaultLogger).temporaryDirectory()
+
+  private func gzip(_ data: Data) throws -> Data {
+    let input = root.appendingPathComponent(UUID().uuidString)
+    try data.write(to: input)
+    let process = try Process.run(URL(fileURLWithPath: "/usr/bin/gzip"), arguments: ["-nf", input.path])
+    process.waitUntilExit()
+    return try Data(contentsOf: input.appendingPathExtension("gz"))
+  }
+
+  @Test
+  func whatIsPeekedIsStillRead() throws {
+    let source = PeekableSource(DataSource(Data("abcdef".utf8), pieceSize: 1))
+
+    #expect(try source.peek(3) == Data("abc".utf8))
+    #expect(try source.readAll() == Data("abcdef".utf8))
+  }
+
+  @Test
+  func aPeekPastTheEndIsShort() throws {
+    #expect(try PeekableSource(DataSource(Data("ab".utf8))).peek(4) == Data("ab".utf8))
+  }
+
+  @Test
+  func gzipMembersAreReadOneAfterAnother() throws {
+    let contents = try gzip(Data("first ".utf8)) + gzip(Data("second".utf8))
+
+    #expect(try GzipSource(DataSource(contents, pieceSize: 7)).readAll() == Data("first second".utf8))
+  }
+
+  @Test
+  func anythingAfterAGzipMemberIsIgnored() throws {
+    let contents = try gzip(Data("member".utf8)) + Data("trailing".utf8)
+
+    #expect(try GzipSource(DataSource(contents)).readAll() == Data("member".utf8))
+  }
+
+  @Test
+  func aTruncatedGzipIsCorrupt() throws {
+    let contents = try gzip(Data(String(repeating: "x", count: 10_000).utf8))
+
+    #expect(throws: ArchiveError.corrupt("the gzip ends early")) {
+      try GzipSource(DataSource(contents.prefix(contents.count / 2))).readAll()
+    }
+  }
+
+  @Test
+  func onlyAGzipIsInflated() throws {
+    let plain = Data("not gzipped".utf8)
+
+    #expect(try GzipSource.ifGzipped(DataSource(plain)).readAll() == plain)
+    #expect(try GzipSource.ifGzipped(DataSource(try gzip(plain))).readAll() == plain)
+  }
+
+  @Test
+  func drainingAGzipDoesNotInflateIt() throws {
+    var corrupt = try gzip(Data(String(repeating: "x", count: 10_000).utf8))
+    corrupt[corrupt.count / 2] ^= 0xFF
+    let raw = DataSource(corrupt, pieceSize: 100)
+
+    try GzipSource(raw).drain()
+
+    #expect(try raw.readAll().isEmpty)
+  }
+}

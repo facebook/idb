@@ -102,7 +102,7 @@ struct TarStreamExtractorTests {
       }
     }.start()
     return try TarStreamExtractor.extract(
-      reading: ArchiveExtraction.reading(fileDescriptor: readEnd), to: extracted, overrideModificationTime: overrideModificationTime)
+      from: FileDescriptorSource(readEnd), to: extracted, overrideModificationTime: overrideModificationTime)
   }
 
   private func expectParityWithBSDTar(_ archive: String) async throws {
@@ -243,23 +243,15 @@ struct TarStreamExtractorTests {
     try run("/usr/bin/ditto", ["-c", "-k", "--keepParent", app, archive])
     let contents = try Data(contentsOf: URL(fileURLWithPath: archive))
 
-    var offset = 0
-    let read: ArchiveRead = { buffer in
-      let count = min(buffer.count, contents.count - offset, 7_000)
-      contents.copyBytes(to: buffer.bindMemory(to: UInt8.self), from: offset..<offset + count)
-      offset += count
-      return count
-    }
+    let outcome = try TarStreamExtractor.extract(from: DataSource(contents, pieceSize: 7_000), to: root.appendingPathComponent("extracted").path)
 
-    let outcome = try TarStreamExtractor.extract(reading: read, to: root.appendingPathComponent("extracted").path)
-
-    guard case .notTar(let prefix, let rest) = outcome else {
+    guard case .notTar(let rest) = outcome else {
       Issue.record("a zip was read as a tar")
       return
     }
-    var replayed = prefix
+    var replayed = Data()
     var chunk = [UInt8](repeating: 0, count: 1 << 16)
-    while case let count = try chunk.withUnsafeMutableBytes({ try rest($0) }), count > 0 {
+    while case let count = try chunk.withUnsafeMutableBytes({ try rest.read(into: $0) }), count > 0 {
       replayed.append(contentsOf: chunk[..<count])
     }
     #expect(replayed == contents)
