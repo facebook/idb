@@ -168,6 +168,14 @@ public enum FBArchiveOperations {
       .retyped()
   }
 
+  /// A bsdtar that writes a gzipped tar of `path` to its stdout, for the caller to launch and stream.
+  public static func gzippedTarSubprocess(
+    forPath path: String,
+    logger: any ControlCoreLogger
+  ) throws -> Subprocess {
+    Subprocess(executable: BSDTarPath, arguments: try gzippedTarArguments(forPath: path, logger: logger))
+  }
+
   /// Creates a gzipped tar archive, returning a task that has an input stream attached to stdout.
   /// Read the input stream to obtain the gzipped tar output. To confirm that the stream has been
   /// correctly written, the caller should check the exit code of the returned task upon completion.

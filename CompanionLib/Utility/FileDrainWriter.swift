@@ -11,6 +11,12 @@ import GRPCCore
 
 struct FileDrainWriter {
 
+  /// Launches `subprocess` and sends its stdout as it is produced, failing if it does not exit cleanly.
+  static func performDrain(_ subprocess: Subprocess, logger: any ControlCoreLogger, sendResponse: (Data) async throws -> Void) async throws {
+    let completed = try await subprocess.stream(error: .loggerCapturingErrorMessage(logger), exitPolicy: .any, logger: logger, sendResponse)
+    try completed.checkExitedCleanly { RPCError(code: .internalError, message: "Draining operation failed with exit code \($0)") }
+  }
+
   static func performDrain(task: FBSubprocess<NSNull, InputStream, AnyObject>, sendResponse: (Data) async throws -> Void) async throws {
     guard let inputStream = task.stdOut else {
       throw RPCError(code: .internalError, message: "Unable to get stdOut to write")

@@ -163,6 +163,16 @@ final class FBArchiveOperationsTests: XCTestCase {
     }
   }
 
+  func testGzippedTarSubprocessForPath_WhenPathDoesNotExist_Throws() {
+    let nonExistentPath = "/tmp/nonexistent_path_for_gzipped_tar_subprocess"
+
+    XCTAssertThrowsError(try FBArchiveOperations.gzippedTarSubprocess(forPath: nonExistentPath, logger: logger)) { error in
+      guard case ArchiveOperationsError.pathDoesNotExist(nonExistentPath) = error else {
+        return XCTFail("Expected the missing path to be reported, got \(error)")
+      }
+    }
+  }
+
   // MARK: - createGzippedTarForPath with Real Paths
 
   func testCreateGzippedTarForPath_WhenPathIsDirectoryWithContent_StartsSubprocess() throws {
