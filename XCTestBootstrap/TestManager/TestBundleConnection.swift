@@ -17,7 +17,7 @@ enum TestBundleConnectionError: Error {
   case hostCrashed(crashLog: String)
   case connectionLost(message: String)
   case processStillRunning(processIdentifier: pid_t)
-  case unexpectedCrashLookupResult(processIdentifier: pid_t)
+  case crashLogTimedOut(processIdentifier: pid_t, bundleID: String, timeout: TimeInterval)
 }
 
 extension TestBundleConnectionError: LocalizedError {
@@ -33,8 +33,8 @@ extension TestBundleConnectionError: LocalizedError {
       return message
     case let .processStillRunning(processIdentifier):
       return "The Process for \(processIdentifier) is not crashed as it is running"
-    case let .unexpectedCrashLookupResult(processIdentifier):
-      return "Crash log lookup for pid \(processIdentifier) returned an unexpected result"
+    case let .crashLogTimedOut(processIdentifier, bundleID, timeout):
+      return "Timed out after \(timeout) seconds getting crash log for process with pid \(processIdentifier), bundle ID: \(bundleID)"
     }
   }
 }
@@ -135,12 +135,7 @@ final class TestBundleConnection {
     }
     let pid = testHostApplication.processIdentifier
     let predicate = CrashLogInfo.predicateForCrashLogs(withProcessID: pid)
-    // notifyOfCrash(matching:) has no timeout of its own, so bound it via FBFuture.
-    let future = fbFutureFromAsync { try await self.target.crashLog.notifyOfCrash(matching: predicate) }
-    let timed = future.timeout(crashWaitTimeout, waitingFor: "Getting crash log for process with pid \(pid), bundle ID: \(bundleID)")
-    guard let info = try await bridgeFBFuture(timed) as? CrashLogInfo else {
-      throw TestBundleConnectionError.unexpectedCrashLookupResult(processIdentifier: pid)
-    }
+    let info = try await target.crashLog.notifyOfCrash(matching: predicate, within: crashWaitTimeout, orThrow: TestBundleConnectionError.crashLogTimedOut(processIdentifier: pid, bundleID: bundleID, timeout: crashWaitTimeout))
     return try info.obtainCrashLog()
   }
 }
