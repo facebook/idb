@@ -31,12 +31,13 @@ public enum ApplicationOutput: Equatable, Sendable {
   }
 }
 
-@objc
-public final class ApplicationLaunchConfiguration: ProcessLaunchConfiguration {
+public struct ApplicationLaunchConfiguration: Equatable, CustomStringConvertible {
 
-  @objc public let bundleID: String
-  @objc public let bundleName: String?
-  @objc public let waitForDebugger: Bool
+  public let bundleID: String
+  public let bundleName: String?
+  public let arguments: [String]
+  public let environment: [String: String]
+  public let waitForDebugger: Bool
   public let stdOut: ApplicationOutput
   public let stdErr: ApplicationOutput
   public let launchMode: ApplicationLaunchMode
@@ -44,32 +45,15 @@ public final class ApplicationLaunchConfiguration: ProcessLaunchConfiguration {
   public init(bundleID: String, bundleName: String?, arguments: [String], environment: [String: String], waitForDebugger: Bool, stdOut: ApplicationOutput = .nullDevice, stdErr: ApplicationOutput = .nullDevice, launchMode: ApplicationLaunchMode) {
     self.bundleID = bundleID
     self.bundleName = bundleName
+    self.arguments = arguments
+    self.environment = environment
     self.waitForDebugger = waitForDebugger
     self.stdOut = stdOut
     self.stdErr = stdErr
     self.launchMode = launchMode
-    super.init(arguments: arguments, environment: environment)
   }
 
-  public override var hash: Int {
-    super.hash ^ (bundleID as NSString).hash ^ ((bundleName as NSString?)?.hash ?? 0) &+ (waitForDebugger ? 1231 : 1237)
-  }
-
-  public override func isEqual(_ object: Any?) -> Bool {
-    guard super.isEqual(object),
-      let other = object as? ApplicationLaunchConfiguration
-    else {
-      return false
-    }
-    return bundleID == other.bundleID
-      && bundleName == other.bundleName
-      && waitForDebugger == other.waitForDebugger
-      && stdOut == other.stdOut
-      && stdErr == other.stdErr
-      && launchMode == other.launchMode
-  }
-
-  public override var description: String {
+  public var description: String {
     "App Launch \(bundleID) (\(bundleName ?? "(null)"))"
   }
 }

@@ -12,11 +12,11 @@ import Foundation
 
   @objc public let sessionIdentifier: UUID
   @objc public let timeout: TimeInterval
-  @objc public let testHostLaunchConfiguration: ApplicationLaunchConfiguration
+  public let testHostLaunchConfiguration: ApplicationLaunchConfiguration
   @objc public let testedApplicationAdditionalEnvironment: [String: String]
   @objc public let testConfiguration: FBTestConfiguration
 
-  @objc public init(
+  public init(
     sessionIdentifier: UUID,
     timeout: TimeInterval,
     testHostLaunchConfiguration: ApplicationLaunchConfiguration,
