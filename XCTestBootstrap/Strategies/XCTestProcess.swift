@@ -37,8 +37,10 @@ final class XCTestProcess {
     let startDate = Date(timeIntervalSinceNow: CrashLogStartDateFuzz)
 
     logger.log("Waiting for \(process.processIdentifier) to exit within \(timeout) seconds")
+    // The timeout cancels the future it races, and `statLoc` is what later tells the termination
+    // whether the process is still running, so race a copy of it.
     return
-      process.statLoc.retyped(FBFuture<AnyObject>.self)
+      FBMutableFuture<AnyObject>().resolve(from: process.statLoc.retyped(FBFuture<AnyObject>.self))
       .onQueue(
         queue, timeout: timeout,
         handler: {

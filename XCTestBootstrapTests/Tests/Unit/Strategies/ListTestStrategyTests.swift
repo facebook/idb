@@ -115,10 +115,7 @@ final class ListTestStrategyTests: XCTestCase {
       defer { kill(processIdentifier, SIGKILL) }
       XCTAssertEqual(timeout, 1)
       try await Task.sleep(nanoseconds: 3_000_000_000)
-      // BUG: the timeout races the process's own exit future, and losing the race cancels it, so
-      // the termination that follows believes the process has already exited and never signals it.
-      // Flipped in the following commit.
-      XCTAssertEqual(kill(processIdentifier, 0), 0, "The stalled process is left running")
+      XCTAssertNotEqual(kill(processIdentifier, 0), 0, "The stalled process is terminated")
     }
     XCTAssertLessThan(ContinuousClock.now - started, .seconds(15))
   }
