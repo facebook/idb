@@ -19,7 +19,7 @@ enum TemporaryDirectoryError: Error, LocalizedError {
 }
 
 /// A value over the root it manages: two values with the same root are the same directory.
-public struct TemporaryDirectory: Equatable {
+public struct TemporaryDirectory: Equatable, Sendable {
 
   // MARK: - Properties
 

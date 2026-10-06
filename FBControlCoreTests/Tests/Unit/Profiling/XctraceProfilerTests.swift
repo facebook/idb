@@ -85,7 +85,7 @@ struct XctraceProfilerTests {
     let configuration = TraceConfiguration(template: "Time Profiler", schemas: nil, timeLimit: .seconds(60), rowLimit: nil, outputPath: tracePath)
     let xctrace = directory.appendingPathComponent("xctrace").path
 
-    let operation = XctraceProfiler.operation(configuration, process: .allProcesses, udid: Self.udid, scratchDirectory: directory.path, logger: ControlCoreLoggerDouble()) {
+    let operation = XctraceProfiler.operation(configuration, process: .allProcesses, udid: Self.udid, scratch: TemporaryDirectory(rootDirectory: directory, logger: ControlCoreLoggerDouble()), logger: ControlCoreLoggerDouble()) {
       (xctrace, [:])
     }
     try await FakeXctrace.waitUntilRecording(to: tracePath)
@@ -110,14 +110,19 @@ struct XctraceProfilerTests {
     let configuration = TraceConfiguration(template: "Time Profiler", schemas: nil, timeLimit: .milliseconds(100), rowLimit: nil, outputPath: nil)
     let xctrace = directory.appendingPathComponent("xctrace").path
 
-    let operation = XctraceProfiler.operation(configuration, process: .allProcesses, udid: Self.udid, scratchDirectory: scratchDirectory.path, logger: ControlCoreLoggerDouble()) {
+    let operation = XctraceProfiler.operation(configuration, process: .allProcesses, udid: Self.udid, scratch: TemporaryDirectory(rootDirectory: scratchDirectory, logger: ControlCoreLoggerDouble()), logger: ControlCoreLoggerDouble()) {
       (xctrace, [:])
     }
 
-    // BUG: xctrace can't write the trace into a scratch directory that doesn't exist, so the recording fails — flipped in the following commit
-    await #expect(throws: ProfileError.self) {
-      try await operation.result
+    let result = try await operation.result
+
+    guard case let .trace(report) = result.report else {
+      Issue.record("Expected a trace report, got \(String(describing: result.report))")
+      return
     }
+    #expect(report.tables.map(\.schema) == ["time-profile"])
+    #expect(result.artifact == nil)
+    #expect(try FileManager.default.contentsOfDirectory(atPath: scratchDirectory.path).isEmpty)
   }
 }
 

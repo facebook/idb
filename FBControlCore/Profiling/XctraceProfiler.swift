@@ -28,23 +28,32 @@ public enum XctraceProfiler {
   /// Records until the time limit, or until the operation is stopped.
   public static func operation(_ configuration: TraceConfiguration, process: XctraceProcess, target: any Target, logger: any ControlCoreLogger) -> ProfileOperation {
     let deviceSetPath = target.customDeviceSetPath
-    return operation(configuration, process: process, udid: target.udid, scratchDirectory: target.auxillaryDirectory, logger: logger) {
+    return operation(configuration, process: process, udid: target.udid, scratch: target.temporaryDirectory, logger: logger) {
       (try XCTraceRecordOperation.xctracePath(), try await recordEnvironment(deviceSetPath: deviceSetPath))
     }
   }
 
-  /// `tool` resolves the xctrace to run and the environment `record` needs.
+  /// `tool` resolves the xctrace to run and the environment `record` needs. Without an output path, the trace is
+  /// recorded into a directory in `scratch` that is removed once the trace is exported.
   static func operation(
     _ configuration: TraceConfiguration,
     process: XctraceProcess,
     udid: String,
-    scratchDirectory: String,
+    scratch: TemporaryDirectory,
     logger: any ControlCoreLogger,
     tool: @escaping @Sendable () async throws -> (xctrace: String, recordEnvironment: [String: String])
   ) -> ProfileOperation {
     ProfileOperation(stoppable: { stop in
       let (xctrace, environment) = try await tool()
-      return try await trace(configuration, process: process, xctrace: xctrace, udid: udid, scratchDirectory: scratchDirectory, environment: environment, stop: stop, logger: logger)
+      func trace(into tracePath: String) async throws -> ProfileResult {
+        try await Self.trace(configuration, process: process, xctrace: xctrace, udid: udid, tracePath: tracePath, environment: environment, stop: stop, logger: logger)
+      }
+      if let outputPath = configuration.outputPath {
+        return try await trace(into: outputPath)
+      }
+      return try await scratch.withTemporaryDirectory { directory in
+        try await trace(into: directory.appendingPathComponent("xctrace.trace").path)
+      }
     })
   }
 
@@ -53,20 +62,11 @@ public enum XctraceProfiler {
     process: XctraceProcess,
     xctrace: String,
     udid: String,
-    scratchDirectory: String,
+    tracePath: String,
     environment: [String: String],
     stop: ProfileStopRequest,
     logger: any ControlCoreLogger
   ) async throws -> ProfileResult {
-    let tracePath = configuration.outputPath ?? (scratchDirectory as NSString).appendingPathComponent("xctrace-\(UUID().uuidString).trace")
-    defer {
-      // A failed recording writes nothing. Removing it anyway throws, and XCTest then reports that swallowed error
-      // instead of the one the recording failed with.
-      if configuration.outputPath == nil, FileManager.default.fileExists(atPath: tracePath) {
-        try? FileManager.default.removeItem(atPath: tracePath)
-      }
-    }
-
     let recordArguments = recordArguments(template: configuration.template, timeLimit: configuration.timeLimit, udid: udid, process: process, outputPath: tracePath)
     try await record(xctrace: xctrace, arguments: recordArguments, environment: environment, stop: stop, logger: logger)
 
