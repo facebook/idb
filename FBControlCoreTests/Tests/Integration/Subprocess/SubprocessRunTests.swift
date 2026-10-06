@@ -272,7 +272,7 @@ struct SubprocessRunTests {
     do {
       _ = try await Self.new("exit 149").run(output: .closed, error: .closed, exitPolicy: .mustExit([0]))
       Issue.record("Expected the code-list policy to reject exit 149")
-    } catch let SubprocessError.unacceptableTermination(status, _, _, _) {
+    } catch let SubprocessError.unacceptableTermination(status, _, _, _, _) {
       #expect(status == .exited(149))
     } catch {
       Issue.record("Expected an unacceptableTermination error, got: \(error)")
@@ -296,8 +296,7 @@ struct SubprocessRunTests {
     }
 
     #expect(oldDescription.contains("no space left on device"))
-    // BUG: the rejection drops the captured stderr — flipped in the following commit.
-    #expect(new?.localizedDescription.contains("no space left on device") == false)
+    #expect(new?.localizedDescription.contains("no space left on device") == true)
   }
 
   @Test("A signal fails a zero-exit policy, matching the old path's rejection of signalled processes")
@@ -310,7 +309,7 @@ struct SubprocessRunTests {
     do {
       _ = try await Self.new("kill -9 $$").run(output: .closed, error: .closed)
       Issue.record("Expected the zero-exit policy to reject a signalled process")
-    } catch let SubprocessError.unacceptableTermination(status, _, _, _) {
+    } catch let SubprocessError.unacceptableTermination(status, _, _, _, _) {
       #expect(status == .signalled(SIGKILL))
     } catch {
       Issue.record("Expected an unacceptableTermination error, got: \(error)")

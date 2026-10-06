@@ -9,7 +9,9 @@ import Foundation
 
 /// Thrown by the `Subprocess` entrypoints.
 public enum SubprocessError: Error, Equatable {
-  case unacceptableTermination(status: TerminationStatus, policy: ExitPolicy, executable: String, processIdentifier: pid_t)
+  /// `errorMessage` is the tail of a `.loggerCapturingErrorMessage` capture of stderr; other
+  /// captures are the caller's to read and may be arbitrarily large, so are never quoted.
+  case unacceptableTermination(status: TerminationStatus, policy: ExitPolicy, executable: String, processIdentifier: pid_t, errorMessage: String? = nil)
   case launchFailed(executable: String, message: String)
   case outputUnavailable(path: String, message: String)
   case inputUnavailable(message: String)
@@ -20,13 +22,18 @@ public enum SubprocessError: Error, Equatable {
 extension SubprocessError: LocalizedError {
   public var errorDescription: String? {
     switch self {
-    case let .unacceptableTermination(status, _, executable, processIdentifier):
-      switch status {
-      case .exited(let code):
-        return "Process \(processIdentifier) (\(executable)) exited with code \(code), which is not acceptable"
-      case .signalled(let signo):
-        return "Process \(processIdentifier) (\(executable)) terminated with signal \(signo), which is not acceptable"
+    case let .unacceptableTermination(status, _, executable, processIdentifier, errorMessage):
+      let description =
+        switch status {
+        case .exited(let code):
+          "Process \(processIdentifier) (\(executable)) exited with code \(code), which is not acceptable"
+        case .signalled(let signo):
+          "Process \(processIdentifier) (\(executable)) terminated with signal \(signo), which is not acceptable"
+        }
+      guard let errorMessage, !errorMessage.isEmpty else {
+        return description
       }
+      return "\(description): \(errorMessage)"
     case let .launchFailed(executable, message):
       return "Failed to launch \(executable): \(message)"
     case let .outputUnavailable(path, message):
@@ -81,11 +88,13 @@ extension Subprocess {
       status = try await running.exit.status()
     }
     guard exitPolicy.accepts(status) else {
+      let errorMessage: String? = if case .loggerCapturingErrorMessage = error.kind { captureErr() as? String } else { nil }
       throw SubprocessError.unacceptableTermination(
         status: status,
         policy: exitPolicy,
         executable: executable,
-        processIdentifier: running.processIdentifier)
+        processIdentifier: running.processIdentifier,
+        errorMessage: errorMessage)
     }
     return Completed(
       executable: executable,
