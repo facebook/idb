@@ -8,6 +8,7 @@
 @testable import FBControlCore
 import Foundation
 import Testing
+import os
 
 /// Covers `FileBackedOutput`, driven by real processes that are handed the
 /// path as an argument and write to it themselves, as a CoreSimulator app or
@@ -74,6 +75,26 @@ struct FileBackedOutputTests {
 
     _ = try await bridgeFBFuture(buffer.finishedConsuming)
     #expect(buffer.data().isEmpty)
+  }
+
+  @Test("Concurrent finishes of a FIFO with a lingering writer all return once the grace period ends")
+  func fifoReleasesEveryConcurrentFinish() async throws {
+    let output = try FileBackedOutput.fifo(draining: FBDataBuffer.accumulatingBuffer())
+    let lingering = open(output.path, O_WRONLY)
+    try #require(lingering >= 0)
+    defer { close(lingering) }
+    let finished = OSAllocatedUnfairLock(initialState: 0)
+
+    for _ in 0..<2 {
+      Task {
+        await output.finish()
+        finished.withLock { $0 += 1 }
+      }
+    }
+    try await Task.sleep(for: .seconds(HostSubprocess.drainTimeout + 2))
+
+    // BUG: the second finish replaces the first's waiter, so the first never returns — flipped in the following commit.
+    #expect(finished.withLock { $0 } == 1)
   }
 
   @Test("The FIFO exists for the process before launch and is removed once finished")
