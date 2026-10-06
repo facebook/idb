@@ -10,33 +10,16 @@ import FBControlCore
 import Foundation
 import XCTest
 
-/// Records that the launched application detached from its IO, without needing real files behind it.
-///
-/// `@unchecked Sendable`: `detachCount` is guarded by `lock`.
-private final class AttachmentDouble: FBProcessFileAttachment, @unchecked Sendable {
-  private let lock = NSLock()
-  private var detaches = 0
-
-  var detachCount: Int {
-    lock.withLock { detaches }
-  }
-
-  override func detach() -> FBFuture<NSNull> {
-    lock.withLock { detaches += 1 }
-    return FBFuture<NSNull>.empty()
-  }
-}
-
 final class SimulatorLaunchedApplicationTests: XCTestCase {
 
   private var simulator: Simulator!
-  private var attachment: AttachmentDouble!
+  private var output: ConsumableBuffer!
   private var spawned: [Process] = []
 
   override func setUp() {
     super.setUp()
     simulator = SimulatorTestSupport.testableSimulator()
-    attachment = AttachmentDouble()
+    output = FBDataBuffer.consumableBuffer()
   }
 
   override func tearDown() {
@@ -68,12 +51,11 @@ final class SimulatorLaunchedApplicationTests: XCTestCase {
       arguments: [],
       environment: [:],
       waitForDebugger: false,
-      io: FBProcessIO<AnyObject, AnyObject, AnyObject>(stdIn: nil, stdOut: nil, stdErr: nil),
       launchMode: .failIfRunning)
     return SimulatorLaunchedApplication.application(
       withSimulator: simulator,
       configuration: configuration,
-      attachment: attachment,
+      outputs: [try FileBackedOutput.fifo(draining: output)],
       processIdentifier: process.processIdentifier)
   }
 
@@ -89,23 +71,23 @@ final class SimulatorLaunchedApplicationTests: XCTestCase {
     try await application.waitForTermination()
   }
 
-  func testDetachesTheAttachmentOnceTheProcessExits() async throws {
+  func testFinishesTheOutputOnceTheProcessExits() async throws {
     let process = try spawnBlockedProcess()
     let application = try await launchedApplication(forProcess: process)
-    XCTAssertEqual(attachment.detachCount, 0)
+    XCTAssertFalse(output.finishedConsuming.hasCompleted)
 
     process.terminate()
     try await application.waitForTermination()
 
-    await waitForDetach()
-    XCTAssertEqual(attachment.detachCount, 1)
+    await waitForOutputToFinish()
+    XCTAssertTrue(output.finishedConsuming.hasCompleted)
   }
 
-  /// The detach is hung off the termination, which lands on the simulator's work queue after
+  /// The output is finished after the termination, which lands on the simulator's work queue after
   /// the waiter has been woken.
-  private func waitForDetach(timeout: TimeInterval = 5) async {
+  private func waitForOutputToFinish(timeout: TimeInterval = 5) async {
     let deadline = Date(timeIntervalSinceNow: timeout)
-    while attachment.detachCount == 0 && Date() < deadline {
+    while !output.finishedConsuming.hasCompleted && Date() < deadline {
       try? await Task.sleep(nanoseconds: 10_000_000)
     }
   }
@@ -134,13 +116,13 @@ final class SimulatorLaunchedApplicationTests: XCTestCase {
     }
   }
 
-  func testTerminateDetachesTheAttachment() async throws {
+  func testTerminateFinishesTheOutput() async throws {
     let process = try spawnBlockedProcess()
     let application = try await launchedApplication(forProcess: process)
 
     try await application.terminate()
 
-    await waitForDetach()
-    XCTAssertEqual(attachment.detachCount, 1)
+    await waitForOutputToFinish()
+    XCTAssertTrue(output.finishedConsuming.hasCompleted)
   }
 }

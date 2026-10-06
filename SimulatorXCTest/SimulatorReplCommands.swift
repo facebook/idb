@@ -145,14 +145,12 @@ public struct SimulatorReplCommands {
 
     // `.relaunchIfRunning` so an app already running without the dylib picks it up.
     let environment = try await appLaunchEnvironment(bundleID: bundleID)
-    let io: FBProcessIO<AnyObject, AnyObject, AnyObject> = .outputToDevNull()
     let configuration = ApplicationLaunchConfiguration(
       bundleID: bundleID,
       bundleName: nil,
       arguments: [],
       environment: environment,
       waitForDebugger: false,
-      io: io,
       launchMode: .relaunchIfRunning
     )
     let launched = try await simulator.application.launch(configuration)

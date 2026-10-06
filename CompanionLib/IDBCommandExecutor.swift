@@ -374,7 +374,8 @@ public final class IDBCommandExecutor {
       arguments: configuration.arguments,
       environment: environment,
       waitForDebugger: configuration.waitForDebugger,
-      io: configuration.io,
+      stdOut: configuration.stdOut,
+      stdErr: configuration.stdErr,
       launchMode: configuration.launchMode
     )
     return try await target.application.launch(derived)

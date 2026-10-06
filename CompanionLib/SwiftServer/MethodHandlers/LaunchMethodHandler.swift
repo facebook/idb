@@ -22,20 +22,19 @@ struct LaunchMethodHandler: @unchecked Sendable {
     guard case let .start(start) = request.control else {
       throw RPCError(code: .failedPrecondition, message: "Application not started yet")
     }
-    var stdOut = processOutputForNullDevice()
-    var stdErr = processOutputForNullDevice()
+    var stdOut = ApplicationOutput.nullDevice
+    var stdErr = ApplicationOutput.nullDevice
 
     let responseWriter = FIFOStreamWriter(stream: responseStream)
     if start.waitFor {
       let stdOutConsumer = pipeOutput(interface: .stdout, responseWriter: responseWriter)
       consumers.append(stdOutConsumer)
-      stdOut = FBProcessOutput<AnyObject>(for: stdOutConsumer)
+      stdOut = .consumer(stdOutConsumer)
 
       let stdErrConsumer = pipeOutput(interface: .stderr, responseWriter: responseWriter)
       consumers.append(stdErrConsumer)
-      stdErr = FBProcessOutput<AnyObject>(for: stdErrConsumer)
+      stdErr = .consumer(stdErrConsumer)
     }
-    let io = FBProcessIO<AnyObject, AnyObject, AnyObject>(stdIn: nil, stdOut: stdOut, stdErr: stdErr)
 
     var environment = start.env
     var launchMode: ApplicationLaunchMode = start.foregroundIfRunning ? .foregroundIfRunning : .failIfRunning
@@ -59,7 +58,8 @@ struct LaunchMethodHandler: @unchecked Sendable {
       arguments: start.appArgs,
       environment: environment,
       waitForDebugger: start.waitForDebugger,
-      io: io,
+      stdOut: stdOut,
+      stdErr: stdErr,
       launchMode: launchMode)
     let launchedApp = try await commandExecutor.launch_app(config)
     let response = Idb_LaunchResponse.with {
@@ -84,10 +84,6 @@ struct LaunchMethodHandler: @unchecked Sendable {
       }
       try await group.waitForAll()
     }
-  }
-
-  private func processOutputForNullDevice() -> FBProcessOutput<AnyObject> {
-    return FBProcessOutput<AnyObject>.forNullDevice().retyped(FBProcessOutput<AnyObject>.self)
   }
 
   private func pipeOutput(interface: Idb_ProcessOutput.Interface, responseWriter: FIFOStreamWriter<RPCWriter<Idb_LaunchResponse>>) -> (DataConsumer & DataConsumerLifecycle) {

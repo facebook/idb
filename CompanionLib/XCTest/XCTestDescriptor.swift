@@ -200,14 +200,12 @@ final class XCodebuildTestRunDescriptor: XCTestDescriptor, CustomStringConvertib
 
     let properties = try XCTestRunFileReader.readContents(of: url, expandPlaceholderWithPath: targetAuxillaryDirectory)
 
-    let io = FBProcessIO<AnyObject, AnyObject, AnyObject>(stdIn: nil, stdOut: nil, stdErr: nil)
     let launchConfig = ApplicationLaunchConfiguration(
       bundleID: "not.used.bundleId",
       bundleName: nil,
       arguments: request.arguments,
       environment: request.environment,
       waitForDebugger: request.waitForDebugger,
-      io: io,
       launchMode: .failIfRunning
     )
 
@@ -252,18 +250,14 @@ private func buildAppLaunchConfig(bundleID: String, environment: [String: String
 }
 
 private func applicationLaunchConfiguration(bundleID: String, environment: [String: String], arguments: [String], waitForDebugger: Bool, stdOut: DataConsumer, stdErr: DataConsumer) -> ApplicationLaunchConfiguration {
-  let io = FBProcessIO<AnyObject, AnyObject, AnyObject>(
-    stdIn: nil,
-    stdOut: FBProcessOutput<AnyObject>(for: stdOut),
-    stdErr: FBProcessOutput<AnyObject>(for: stdErr)
-  )
   return ApplicationLaunchConfiguration(
     bundleID: bundleID,
     bundleName: nil,
     arguments: arguments,
     environment: environment,
     waitForDebugger: waitForDebugger,
-    io: io,
+    stdOut: .consumer(stdOut),
+    stdErr: .consumer(stdErr),
     launchMode: .relaunchIfRunning
   )
 }

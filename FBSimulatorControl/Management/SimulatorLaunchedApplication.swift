@@ -77,18 +77,6 @@ private final class TerminationState: @unchecked Sendable {
   }
 }
 
-/// Carries the attachment into the termination task.
-///
-/// `@unchecked Sendable`: `FBProcessFileAttachment` is not annotated, but the task is its only
-/// consumer there and `detach` is documented as safe to call more than once.
-private final class AttachmentBox: @unchecked Sendable {
-  let attachment: FBProcessFileAttachment
-
-  init(_ attachment: FBProcessFileAttachment) {
-    self.attachment = attachment
-  }
-}
-
 public final class SimulatorLaunchedApplication: LaunchedApplication, CustomStringConvertible {
 
   public let configuration: ApplicationLaunchConfiguration
@@ -96,7 +84,6 @@ public final class SimulatorLaunchedApplication: LaunchedApplication, CustomStri
 
   // MARK: - Private Properties
 
-  private let attachment: FBProcessFileAttachment
   private let terminationStrategy: ProcessTerminationStrategy
   private let state: TerminationState
   private let terminationTask: Task<Void, Never>
@@ -129,26 +116,18 @@ public final class SimulatorLaunchedApplication: LaunchedApplication, CustomStri
     await terminationTask.value
   }
 
-  public var stdOut: (any ProcessFileOutput)? {
-    attachment.stdOut
-  }
-
-  public var stdErr: (any ProcessFileOutput)? {
-    attachment.stdErr
-  }
-
   // MARK: - Factory
 
   public class func application(
     withSimulator simulator: Simulator,
     configuration: ApplicationLaunchConfiguration,
-    attachment: FBProcessFileAttachment,
+    outputs: [FileBackedOutput],
     processIdentifier: pid_t
   ) -> SimulatorLaunchedApplication {
     SimulatorLaunchedApplication(
       simulator: simulator,
       configuration: configuration,
-      attachment: attachment,
+      outputs: outputs,
       processIdentifier: processIdentifier
     )
   }
@@ -156,12 +135,11 @@ public final class SimulatorLaunchedApplication: LaunchedApplication, CustomStri
   private init(
     simulator: Simulator,
     configuration: ApplicationLaunchConfiguration,
-    attachment: FBProcessFileAttachment,
+    outputs: [FileBackedOutput],
     processIdentifier: pid_t
   ) {
     let state = TerminationState()
     self.configuration = configuration
-    self.attachment = attachment
     self.processIdentifier = processIdentifier
     self.state = state
     self.terminationStrategy = ProcessTerminationStrategy.strategy(
@@ -171,11 +149,11 @@ public final class SimulatorLaunchedApplication: LaunchedApplication, CustomStri
     // Armed before the task so that a `terminate()` racing construction cannot signal the process
     // before anything is watching for its exit.
     Self.armExitSource(forProcessIdentifier: processIdentifier, state: state)
-    let attachmentBox = AttachmentBox(attachment)
     self.terminationTask = Task {
       await state.waitForExit()
-      // Detaching is best-effort; its outcome was never reported to a waiter.
-      try? await bridgeFBFutureVoid(attachmentBox.attachment.detach())
+      for output in outputs {
+        await output.finish()
+      }
     }
   }
 

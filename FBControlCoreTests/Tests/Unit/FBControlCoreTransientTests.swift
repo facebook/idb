@@ -29,7 +29,6 @@ final class FBControlCoreTransientTests: XCTestCase {
       arguments: [],
       environment: [:],
       waitForDebugger: false,
-      io: makeIO(),
       launchMode: launchMode
     )
   }
@@ -164,9 +163,8 @@ final class FBControlCoreTransientTests: XCTestCase {
   // MARK: - ApplicationLaunchConfiguration
 
   func testApplicationLaunchConfigurationEquality() {
-    let io = makeIO()
-    let a = ApplicationLaunchConfiguration(bundleID: "com.app", bundleName: "App", arguments: [], environment: [:], waitForDebugger: false, io: io, launchMode: .failIfRunning)
-    let b = ApplicationLaunchConfiguration(bundleID: "com.app", bundleName: "App", arguments: [], environment: [:], waitForDebugger: false, io: io, launchMode: .failIfRunning)
+    let a = ApplicationLaunchConfiguration(bundleID: "com.app", bundleName: "App", arguments: [], environment: [:], waitForDebugger: false, launchMode: .failIfRunning)
+    let b = ApplicationLaunchConfiguration(bundleID: "com.app", bundleName: "App", arguments: [], environment: [:], waitForDebugger: false, launchMode: .failIfRunning)
 
     XCTAssertEqual(a, b)
   }
@@ -185,7 +183,6 @@ final class FBControlCoreTransientTests: XCTestCase {
       arguments: [],
       environment: [:],
       waitForDebugger: false,
-      io: makeIO(),
       launchMode: .failIfRunning
     )
 

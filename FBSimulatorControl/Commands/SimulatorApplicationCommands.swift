@@ -60,7 +60,6 @@ public enum SimulatorApplicationUninstallError: Error, LocalizedError {
 }
 
 public enum SimulatorApplicationLaunchError: Error, LocalizedError {
-  case attachmentMissingFiles(bundleID: String)
   case launchingUninstalledApplication(bundleID: String, underlying: Error)
   case foregroundIfRunningIncompatibleWithWaitForDebugger
   case applicationAlreadyRunning(bundleID: String, processIdentifier: pid_t)
@@ -68,8 +67,6 @@ public enum SimulatorApplicationLaunchError: Error, LocalizedError {
 
   public var errorDescription: String? {
     switch self {
-    case let .attachmentMissingFiles(bundleID):
-      return "Attaching to \(bundleID) did not yield both a stdout and a stderr file"
     case let .launchingUninstalledApplication(bundleID, underlying):
       return "App \(bundleID) can't be launched as it isn't installed: \(underlying)"
     case .foregroundIfRunningIncompatibleWithWaitForDebugger:
@@ -145,12 +142,18 @@ public struct SimulatorApplicationCommands: ApplicationCommands {
   public func launch(_ configuration: ApplicationLaunchConfiguration) async throws -> LaunchedApplication {
     try await ensureApplicationIsInstalled(configuration.bundleID)
     try await confirmApplicationLaunchState(configuration.bundleID, launchMode: configuration.launchMode, waitForDebugger: configuration.waitForDebugger)
-    let attachment = try await bridgeFBFuture(configuration.io.attachViaFile())
-    guard let stdOut = attachment.stdOut, let stdErr = attachment.stdErr else {
-      throw SimulatorApplicationLaunchError.attachmentMissingFiles(bundleID: configuration.bundleID)
+    var outputs: [FileBackedOutput] = []
+    do {
+      outputs.append(try Self.fileBackedOutput(configuration.stdOut))
+      outputs.append(try Self.fileBackedOutput(configuration.stdErr))
+      let processIdentifier = try await launch(configuration, stdOutPath: outputs[0].path, stdErrPath: outputs[1].path).int32Value
+      return SimulatorLaunchedApplication.application(withSimulator: simulator, configuration: configuration, outputs: outputs, processIdentifier: processIdentifier)
+    } catch {
+      for output in outputs {
+        await output.finish()
+      }
+      throw error
     }
-    let processIdentifier = try await launch(configuration, stdOut: stdOut, stdErr: stdErr)
-    return SimulatorLaunchedApplication.application(withSimulator: simulator, configuration: configuration, attachment: attachment, processIdentifier: processIdentifier)
   }
 
   public func kill(bundleID: String) async throws {
@@ -374,10 +377,13 @@ public struct SimulatorApplicationCommands: ApplicationCommands {
     }
   }
 
-  private func launch(_ configuration: ApplicationLaunchConfiguration, stdOut: any ProcessFileOutput, stdErr: any ProcessFileOutput) async throws -> pid_t {
-    try await bridgeFBFutureVoid(stdOut.startReading())
-    try await bridgeFBFutureVoid(stdErr.startReading())
-    return try await launch(configuration, stdOutPath: stdOut.filePath, stdErrPath: stdErr.filePath).int32Value
+  private static func fileBackedOutput(_ output: ApplicationOutput) throws -> FileBackedOutput {
+    switch output {
+    case .nullDevice:
+      return .nullDevice
+    case let .consumer(consumer):
+      return try .fifo(draining: consumer)
+    }
   }
 
   private func launch(_ configuration: ApplicationLaunchConfiguration, stdOutPath: String?, stdErrPath: String?) async throws -> NSNumber {

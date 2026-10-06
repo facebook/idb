@@ -232,16 +232,14 @@ public final class TestManagerAPIMediator: NSObject, @unchecked Sendable {
     for (key, value) in environment {
       targetEnvironment[key] = value
     }
-    let stdOut = FBProcessOutput<AnyObject>(for: logger)
-    let stdErr = FBProcessOutput<AnyObject>(for: logger)
-    let processIO = FBProcessIO<AnyObject, AnyObject, AnyObject>(stdIn: nil, stdOut: stdOut, stdErr: stdErr)
     let launch = ApplicationLaunchConfiguration(
       bundleID: bundleID,
       bundleName: bundleID,
       arguments: arguments,
       environment: targetEnvironment,
       waitForDebugger: false,
-      io: processIO,
+      stdOut: .consumer(FBLoggingDataConsumer(logger: logger)),
+      stdErr: .consumer(FBLoggingDataConsumer(logger: logger)),
       launchMode: .failIfRunning
     )
     return try await launchApplication(launch, atPath: path)

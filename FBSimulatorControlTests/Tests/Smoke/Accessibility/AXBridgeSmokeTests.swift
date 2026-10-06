@@ -22,14 +22,12 @@ final class AXBridgeSmokeTests: ProvidedSimulatorTestCase {
 
   private func launchedApplicationPID() async throws -> pid_t {
     let simulator = self.simulator!
-    let io: FBProcessIO<AnyObject, AnyObject, AnyObject> = .outputToDevNull()
     let configuration = ApplicationLaunchConfiguration(
       bundleID: Self.bundleID,
       bundleName: nil,
       arguments: [],
       environment: [:],
       waitForDebugger: false,
-      io: io,
       launchMode: .foregroundIfRunning)
     let launched = try await simulator.application.launch(configuration)
     addTeardownBlock {

@@ -169,7 +169,6 @@ final class SimulatorProcessSpawnStrategyTests: XCTestCase {
       arguments: ["--flag"],
       environment: ["E": "1"],
       waitForDebugger: true,
-      io: FBProcessIO<AnyObject, AnyObject, AnyObject>.outputToDevNull(),
       launchMode: .failIfRunning)
 
     let options = SimulatorApplicationCommands.simDeviceLaunchOptions(

@@ -24,7 +24,6 @@ final class XcodeBuildOperationTests: XCTestCase {
       arguments: [],
       environment: [:],
       waitForDebugger: false,
-      io: FBProcessIO<AnyObject, AnyObject, AnyObject>.outputToDevNull(),
       launchMode: .failIfRunning
     )
 

@@ -46,14 +46,12 @@ final class SimulatorGuestServicesSmokeTests: ProvidedSimulatorTestCase {
     XCTAssertEqual(viaSettingValue, enabled, "currentSettingValue should read autofill-passwords from its real backing")
 
     // A system application, so nothing has to be installed and no fixture architecture applies.
-    let io: FBProcessIO<AnyObject, AnyObject, AnyObject> = .outputToDevNull()
     let configuration = ApplicationLaunchConfiguration(
       bundleID: Self.bundleID,
       bundleName: nil,
       arguments: [],
       environment: [:],
       waitForDebugger: false,
-      io: io,
       launchMode: .relaunchIfRunning)
     let launched = try await simulator.application.launch(configuration)
     XCTAssertGreaterThan(launched.processIdentifier, 0)

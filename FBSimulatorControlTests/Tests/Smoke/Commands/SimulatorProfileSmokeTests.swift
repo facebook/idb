@@ -24,7 +24,6 @@ final class SimulatorProfileSmokeTests: ProvidedSimulatorTestCase {
       arguments: [],
       environment: [:],
       waitForDebugger: false,
-      io: .outputToDevNull(),
       launchMode: .relaunchIfRunning)
     _ = try await simulator.application.launch(configuration)
     addTeardownBlock {

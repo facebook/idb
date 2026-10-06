@@ -60,7 +60,8 @@ public final class ManagedTestRunStrategy {
       arguments: arguments(fromConfiguration: testRunnerConfiguration, attributes: applicationLaunchConfiguration.arguments),
       environment: environment(fromConfiguration: testRunnerConfiguration, environment: applicationLaunchConfiguration.environment),
       waitForDebugger: applicationLaunchConfiguration.waitForDebugger,
-      io: applicationLaunchConfiguration.io,
+      stdOut: applicationLaunchConfiguration.stdOut,
+      stdErr: applicationLaunchConfiguration.stdErr,
       launchMode: .relaunchIfRunning
     )
   }

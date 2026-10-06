@@ -130,7 +130,6 @@ final class MacDeviceTests: XCTestCase {
       arguments: [],
       environment: [:],
       waitForDebugger: false,
-      io: FBProcessIO<AnyObject, AnyObject, AnyObject>.outputToDevNull(),
       launchMode: .relaunchIfRunning
     )
     do {
@@ -148,7 +147,6 @@ final class MacDeviceTests: XCTestCase {
       arguments: [],
       environment: [:],
       waitForDebugger: false,
-      io: FBProcessIO<AnyObject, AnyObject, AnyObject>.outputToDevNull(),
       launchMode: .relaunchIfRunning
     )
 

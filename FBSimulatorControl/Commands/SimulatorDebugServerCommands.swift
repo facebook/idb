@@ -67,7 +67,6 @@ public final class SimulatorDebugServerCommands: DebugServerCommands {
       arguments: [],
       environment: [:],
       waitForDebugger: true,
-      io: FBProcessIO<AnyObject, AnyObject, AnyObject>.outputToDevNull(),
       launchMode: .failIfRunning
     )
     let launchedApp = try await (applicationLauncher ?? simulator.application).launch(configuration)
