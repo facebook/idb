@@ -93,8 +93,7 @@ struct FileBackedOutputTests {
     }
     try await Task.sleep(for: .seconds(HostSubprocess.drainTimeout + 2))
 
-    // BUG: the second finish replaces the first's waiter, so the first never returns — flipped in the following commit.
-    #expect(finished.withLock { $0 } == 1)
+    #expect(finished.withLock { $0 } == 2)
   }
 
   @Test("The FIFO exists for the process before launch and is removed once finished")

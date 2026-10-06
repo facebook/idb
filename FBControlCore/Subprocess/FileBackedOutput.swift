@@ -94,7 +94,7 @@ private final class FifoDrain: @unchecked Sendable {
   private let consumer: any DataConsumer
   private var keepAlive: Int32?
   private var ended = false
-  private var waiter: CheckedContinuation<Void, Never>?
+  private var waiters: [CheckedContinuation<Void, Never>] = []
 
   init(readEnd: Int32, keepAlive: Int32, consumer: any DataConsumer) {
     self.keepAlive = keepAlive
@@ -137,7 +137,7 @@ private final class FifoDrain: @unchecked Sendable {
             continuation.resume()
             return
           }
-          waiter = continuation
+          waiters.append(continuation)
           queue.asyncAfter(deadline: .now() + grace) { [self] in
             end()
           }
@@ -150,7 +150,7 @@ private final class FifoDrain: @unchecked Sendable {
     }
   }
 
-  /// Delivers end-of-file and releases the waiter, once: at the FIFO's
+  /// Delivers end-of-file, once, and releases every waiter: at the FIFO's
   /// end-of-file, or when the drain is abandoned. An abandoned drain's thread
   /// stays blocked until its last writer closes, and delivers nothing more.
   private func end() {
@@ -158,7 +158,9 @@ private final class FifoDrain: @unchecked Sendable {
       ended = true
       consumer.consumeEndOfFile()
     }
-    waiter?.resume()
-    waiter = nil
+    for waiter in waiters {
+      waiter.resume()
+    }
+    waiters = []
   }
 }
