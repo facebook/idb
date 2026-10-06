@@ -109,6 +109,21 @@ struct FileBackedOutputTests {
     #expect(!FileManager.default.fileExists(atPath: output.path))
   }
 
+  @Test("A FIFO output released without finishing is removed and ends its consumer")
+  func fifoIsCleanedUpWhenReleased() async throws {
+    let buffer = FBDataBuffer.accumulatingBuffer()
+    var output: FileBackedOutput? = try FileBackedOutput.fifo(draining: buffer)
+    let path = try #require(output?.path)
+    defer { unlink(path) }
+
+    output = nil
+    try await Task.sleep(for: .milliseconds(500))
+
+    // BUG: nothing removes the FIFO or closes the drain's own write end, so the drain never reaches end-of-file — flipped in the following commit.
+    #expect(FileManager.default.fileExists(atPath: path))
+    #expect(!buffer.finishedConsuming.hasCompleted)
+  }
+
   @Test("A file output hands the process the path it was given, and finishing it leaves the file alone")
   func fileIsWrittenDirectly() async throws {
     let url = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
