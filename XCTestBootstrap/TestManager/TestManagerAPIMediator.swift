@@ -24,6 +24,11 @@ extension TestManagerError: LocalizedError {
   }
 }
 
+private enum RunOutcome {
+  case completed
+  case timedOut
+}
+
 /// A simplified re-implementation of Apple's `_IDETestManagerAPIMediator`: takes over once the test host process has started, mediating between the host, `testmanagerd` and the test runner.
 @objc
 public final class TestManagerAPIMediator: NSObject, @unchecked Sendable {
@@ -101,34 +106,43 @@ public final class TestManagerAPIMediator: NSObject, @unchecked Sendable {
   }
 
   private func runUntilCompletion(launchedApplication: LaunchedApplication, timeout: TimeInterval) async throws {
-    let work: FBFuture<AnyObject> = fbFutureFromAsync { () -> AnyObject in
-      // The transport socket is closed when this scope ends, so the whole connection must run inside it.
-      try await self.target.xctest.withTransportForTestManagerService { socket in
-        let connection = TestBundleConnection(
-          context: self.context,
-          target: self.target,
-          socket: socket.int32Value,
-          interface: self.ideInterface,
-          testHostApplication: launchedApplication,
-          requestQueue: self.requestQueue,
-          logger: self.logger
-        )
-        try await connection.connectAndRun()
-      }
-      try await self.terminateSpawnedProcesses()
-      _ = try? await launchedApplication.terminate()
-      return NSNull()
-    }
     // The timeout is applied to the lifecycle of the entire application.
-    let timed = work.onQueue(requestQueue, timeout: timeout) { () -> FBFuture<AnyObject> in
-      self.logger.log("Timed out after \(timeout), attempting stack sample")
-      return fbFutureFromAsync { () -> AnyObject in
-        let stackshot = (try? await self.sampleStack(forProcessIdentifier: launchedApplication.processIdentifier)) ?? "<no stackshot>"
-        try? await self.terminateSpawnedProcesses()
-        throw TestManagerError.hostProcessStalled(timeout: timeout, processIdentifier: launchedApplication.processIdentifier, stackshot: stackshot)
+    let outcome = try await withThrowingTaskGroup(of: RunOutcome.self) { group in
+      group.addTask {
+        // The transport socket is closed when this scope ends, so the whole connection must run inside it.
+        try await self.target.xctest.withTransportForTestManagerService { socket in
+          let connection = TestBundleConnection(
+            context: self.context,
+            target: self.target,
+            socket: socket.int32Value,
+            interface: self.ideInterface,
+            testHostApplication: launchedApplication,
+            requestQueue: self.requestQueue,
+            logger: self.logger
+          )
+          try await connection.connectAndRun()
+        }
+        try await self.terminateSpawnedProcesses()
+        _ = try? await launchedApplication.terminate()
+        return .completed
       }
+      group.addTask {
+        try await Task.sleep(nanoseconds: UInt64(timeout * 1_000_000_000))
+        return .timedOut
+      }
+      defer { group.cancelAll() }
+      guard let first = try await group.next() else { preconditionFailure("The task group has two children; next() cannot be empty") }
+      return first
     }
-    try await bridgeFBFutureVoid(timed)
+    switch outcome {
+    case .completed:
+      return
+    case .timedOut:
+      logger.log("Timed out after \(timeout), attempting stack sample")
+      let stackshot = (try? await sampleStack(forProcessIdentifier: launchedApplication.processIdentifier)) ?? "<no stackshot>"
+      try? await terminateSpawnedProcesses()
+      throw TestManagerError.hostProcessStalled(timeout: timeout, processIdentifier: launchedApplication.processIdentifier, stackshot: stackshot)
+    }
   }
 
   private func sampleStack(forProcessIdentifier processIdentifier: pid_t) async throws -> String {
