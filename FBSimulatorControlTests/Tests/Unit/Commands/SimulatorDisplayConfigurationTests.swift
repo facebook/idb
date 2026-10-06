@@ -173,6 +173,21 @@ final class SimulatorDisplayConfigurationTests: XCTestCase {
     XCTAssertEqual(configuration.generation, 2)
   }
 
+  func testAReadThatBeganFirstButFinishedLastDoesNotReplaceANewerOne() async throws {
+    let displays = GatedDisplayCommands(first: cover, later: inner)
+    _ = try displays.configurationTracker.observe(cover)
+    let stale = Task { try await displays.settledConfiguration(within: .zero) }
+    await displays.firstReadStarted()
+    let fresh = try await displays.settledConfiguration(within: .zero)
+    displays.releaseFirstRead()
+    let late = try await stale.value
+    XCTAssertEqual(fresh.generation, 2)
+    // BUG: the stale read is numbered as a change back to the cover display. Flipped in the following commit.
+    XCTAssertEqual(late.generation, 3)
+    XCTAssertEqual(late.active, .identified(display("cover")))
+    XCTAssertEqual(displays.configurationTracker.latest, late)
+  }
+
   // MARK: - Stream
 
   func testStreamReplaysTheCurrentConfigurationThenFollowsChangedPushes() async {
@@ -298,7 +313,7 @@ private final class GatedDisplayCommands: DisplayCommands, @unchecked Sendable {
   private var reads = 0
   private var release: CheckedContinuation<Void, Never>?
 
-  init(first: SimulatorDisplayReport, later: SimulatorDisplayReport, logger: any ControlCoreLogger) {
+  init(first: SimulatorDisplayReport, later: SimulatorDisplayReport, logger: (any ControlCoreLogger)? = nil) {
     self.first = first
     self.later = later
     self.logger = logger
