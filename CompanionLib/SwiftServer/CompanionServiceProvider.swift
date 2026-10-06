@@ -26,7 +26,6 @@ final class CompanionServiceProvider: Idb_CompanionService.SimpleServiceProtocol
   /// because a recording can outlive the `repl` stream that started it (the app
   /// context keeps the app -- and the recording -- alive across reconnects).
   private let replRecordingCoordinator: ReplRecordingCoordinator
-  private let streamCapabilities: StreamCapabilities
 
   init(
     target: any Target,
@@ -43,7 +42,6 @@ final class CompanionServiceProvider: Idb_CompanionService.SimpleServiceProtocol
     self.idleMonitor = idleMonitor
     self.replRecordingCoordinator = ReplRecordingCoordinator(
       auxillaryDirectory: commandExecutor.auxillaryDirectory, logger: target.logger)
-    self.streamCapabilities = StreamCapabilities(searchPath: ProcessInfo.processInfo.environment["PATH"])
   }
 
   /// Also counts the call as in-flight for `idleMonitor` (a no-op when idle shutdown is disabled),
@@ -111,7 +109,7 @@ final class CompanionServiceProvider: Idb_CompanionService.SimpleServiceProtocol
 
   func connect(request: Idb_ConnectRequest, context: ServerContext) async throws -> Idb_ConnectResponse {
     return try await trackedUnaryCall(context, request: request) {
-      try await ConnectMethodHandler(reporter: reporter, logger: logger, target: target, streamCapabilities: streamCapabilities)
+      try await ConnectMethodHandler(reporter: reporter, logger: logger, target: target)
         .handle(request: request, context: context)
     }
   }
@@ -134,7 +132,7 @@ final class CompanionServiceProvider: Idb_CompanionService.SimpleServiceProtocol
 
   func describe(request: Idb_TargetDescriptionRequest, context: ServerContext) async throws -> Idb_TargetDescriptionResponse {
     return try await trackedUnaryCall(context, request: request) {
-      try await DescribeMethodHandler(reporter: reporter, logger: logger, target: target, streamCapabilities: streamCapabilities)
+      try await DescribeMethodHandler(reporter: reporter, logger: logger, target: target)
         .handle(request: request, context: context)
     }
   }
@@ -142,7 +140,7 @@ final class CompanionServiceProvider: Idb_CompanionService.SimpleServiceProtocol
   func install(request: RPCAsyncSequence<Idb_InstallRequest, any Error>, response: RPCWriter<Idb_InstallResponse>, context: ServerContext) async throws {
     let reader = RequestStreamReader(request)
     try await trackedBidiStreaming(context) {
-      try await InstallMethodHandler(commandExecutor: commandExecutor, targetLogger: targetLogger, streamCapabilities: streamCapabilities)
+      try await InstallMethodHandler(commandExecutor: commandExecutor, targetLogger: targetLogger)
         .handle(requestStream: reader, responseStream: response, context: context)
     }
   }

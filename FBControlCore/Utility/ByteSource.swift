@@ -269,3 +269,18 @@ public final class ZstdSource: ByteSource {
     try input.drain()
   }
 }
+
+// MARK: - Decompressing
+
+/// `source`, decompressed if it starts as a gzip member or a zstd frame does.
+func decompressed(_ source: any ByteSource) throws -> any ByteSource {
+  let peekable = PeekableSource(source)
+  switch ArchiveFormat.detect(try peekable.peek(ArchiveFormat.zstdZipMarker.count)) {
+  case .gzip:
+    return try GzipSource(peekable)
+  case .zstd, .zstdZip:
+    return try ZstdSource(peekable)
+  case .zip, .other, .undetermined:
+    return peekable
+  }
+}

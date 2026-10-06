@@ -16,7 +16,6 @@ struct InstallMethodHandler {
 
   let commandExecutor: IDBCommandExecutor
   let targetLogger: ControlCoreLogger
-  let streamCapabilities: StreamCapabilities
 
   func handle(requestStream: RequestStreamReader<Idb_InstallRequest>, responseStream: RPCWriter<Idb_InstallResponse>, context: ServerContext) async throws {
 
@@ -322,8 +321,6 @@ struct InstallMethodHandler {
     }
   }
 
-  /// The decompressor writes to the archive file, which is followed as it grows
-  /// to tee the zip, as a pipe between them would need a third process.
   private func decompressZstd(
     head: Data,
     rest: AsyncThrowingStream<Data, any Error>,
@@ -331,32 +328,13 @@ struct InstallMethodHandler {
     teeingTo tee: OutputStream,
     telemetry: InstallTelemetry
   ) async throws {
-    guard let decompressor = streamCapabilities.zstdDecompressorPath else {
-      throw RPCError(code: .failedPrecondition, message: "A zstd zip stream needs pzstd on the companion's PATH")
-    }
-    targetLogger.log("Decompressing a zstd zip stream with \(decompressor)")
     let input = FBProcessInput<OutputStream>.fromStream()
-    let decompressed = OSAllocatedUnfairLock(initialState: false)
     async let writePayload: Void = writePayload(head: head, rest: rest, output: input.contents, telemetry: telemetry)
-    async let decompressing: Void = {
-      defer { decompressed.withLock { $0 = true } }
-      _ = try await bridgeFBFuture(
-        FBArchiveOperations.extractZstd(
-          fromStream: input.retyped(FBProcessInput<AnyObject>.self),
-          toPath: archiveURL.path,
-          decompressorPath: decompressor,
-          logger: targetLogger))
-    }()
-    tee.open()
-    defer { tee.close() }
-    do {
-      try await GrowingFile.copy(from: archiveURL.path, to: tee) { decompressed.withLock { $0 } }
-    } catch {
-      // The reader may finish before the end or fail; the archive file carries on regardless.
-      targetLogger.log("Stopped teeing the decompressed zip to its stream extractor, which extraction from the archive file recovers from: \(error)")
-      tee.close()
-    }
-    try await decompressing
+    try await ZstdStreamDecompressor.decompress(
+      input.retyped(FBProcessInput<AnyObject>.self),
+      toPath: archiveURL.path,
+      teeingTo: tee,
+      logger: targetLogger)
     try await writePayload
   }
 

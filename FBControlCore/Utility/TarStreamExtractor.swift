@@ -7,7 +7,7 @@
 
 import Foundation
 
-/// Extracts a tar, or a gzipped tar, read forwards as it arrives, decoding on the
+/// Extracts a tar, plain or compressed with gzip or zstd, read forwards as it arrives, decoding on the
 /// calling thread and writing several files at once.
 ///
 /// What it writes matches `bsdtar -xp --no-mac-metadata`: modes and modification
@@ -32,7 +32,7 @@ public enum TarStreamExtractor {
 
   public static func extract(from source: any ByteSource, to root: String, overrideModificationTime: Bool = false) throws -> Outcome {
     let timed = TimedSource(source)
-    let reader = Reader(try GzipSource.ifGzipped(timed))
+    let reader = Reader(try decompressed(timed))
     guard let first = try reader.peekBlock(), Header.hasValidChecksum(first) else {
       return .notTar(reader.input)
     }

@@ -97,9 +97,6 @@ public struct TemporaryDirectory: Equatable, Sendable {
   }
 
   /// Extracts the archive in `input` into a temporary directory scoped to `body`.
-  ///
-  /// Always with `bsdtar`: these streams are compressed by the client as it sends,
-  /// which starves an in-process reader of input.
   public func withArchiveExtracted<T>(
     fromStream input: FBProcessInput<AnyObject>,
     compression: FBCompressionFormat,
@@ -107,7 +104,7 @@ public struct TemporaryDirectory: Equatable, Sendable {
     _ body: (URL) async throws -> T
   ) async throws -> T {
     try await withTemporaryDirectory { tempDir in
-      try await ArchiveExtractors.bsdTar.extract(
+      try await ArchiveExtractors.stream(compression).extract(
         .stream(input), to: tempDir.path,
         options: ArchiveExtractOptions(overrideModificationTime: overrideMTime, compression: compression),
         logger: logger)

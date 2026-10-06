@@ -105,13 +105,14 @@ struct TarStreamExtractorTests {
       from: FileDescriptorSource(readEnd), to: extracted, overrideModificationTime: overrideModificationTime)
   }
 
-  private func expectParityWithBSDTar(_ archive: String) async throws {
+  /// Compares extracting `archive` with `bsdtar` against extracting `streamed`, which defaults to `archive`'s contents, in-process.
+  private func expectParityWithBSDTar(_ archive: String, streaming streamed: Data? = nil) async throws {
     let expected = root.appendingPathComponent("bsdtar").path
     try fileManager.createDirectory(atPath: expected, withIntermediateDirectories: true)
     try await BSDTarExtractor().extract(.filePath(archive), to: expected, options: ArchiveExtractOptions(), logger: logger)
     let extracted = root.appendingPathComponent("inprocess").path
 
-    let outcome = try extractFromPipe(try Data(contentsOf: URL(fileURLWithPath: archive)), to: extracted)
+    let outcome = try extractFromPipe(try streamed ?? Data(contentsOf: URL(fileURLWithPath: archive)), to: extracted)
 
     let expectedTree = try tree(at: expected)
     let extractedTree = try tree(at: extracted)
@@ -149,6 +150,27 @@ struct TarStreamExtractorTests {
     try run("/bin/sh", ["-c", "head -c 300000 a.tar | gzip > a.tgz && tail -c +300001 a.tar | gzip >> a.tgz"])
 
     try await expectParityWithBSDTar(root.appendingPathComponent("a.tgz").path)
+  }
+
+  @Test
+  func extract_OfAZstdTar_MatchesBSDTarOfTheTar() async throws {
+    _ = try makeApp()
+    let archive = root.appendingPathComponent("a.tar")
+    try run("/usr/bin/tar", ["-cf", archive.path, "-C", root.path, "A.app"])
+
+    try await expectParityWithBSDTar(archive.path, streaming: ZstdFrame.stored(try Data(contentsOf: archive)))
+  }
+
+  @Test
+  func extract_OfATruncatedZstd_Throws() throws {
+    _ = try makeApp()
+    let archive = root.appendingPathComponent("a.tar")
+    try run("/usr/bin/tar", ["-cf", archive.path, "-C", root.path, "A.app"])
+    let contents = ZstdFrame.stored(try Data(contentsOf: archive))
+
+    #expect(throws: ArchiveError.corrupt("the zstd ends early")) {
+      try extractFromPipe(contents.prefix(contents.count / 2), to: root.appendingPathComponent("extracted").path)
+    }
   }
 
   @Test
@@ -307,6 +329,29 @@ struct TarStreamExtractorTests {
 
     // BUG: the replay waits forever for the fallback to open its input, so extraction never returns — flipped in the following commit.
     #expect(first == nil)
+  }
+
+  private struct RefusingExtractor: ArchiveExtractor {
+    func extract(_ source: ArchiveSource, to extractPath: String, options: ArchiveExtractOptions, logger: any ControlCoreLogger) async throws {
+      throw ArchiveError.corrupt("passed on to the fallback")
+    }
+  }
+
+  @Test
+  func inProcessTarExtractor_ExtractsAZstdTarStreamWithoutItsFallback() async throws {
+    _ = try makeApp()
+    let archive = root.appendingPathComponent("a.tar")
+    try run("/usr/bin/tar", ["-cf", archive.path, "-C", root.path, "A.app"])
+    let expected = root.appendingPathComponent("bsdtar").path
+    try fileManager.createDirectory(atPath: expected, withIntermediateDirectories: true)
+    try await BSDTarExtractor().extract(.filePath(archive.path), to: expected, options: ArchiveExtractOptions(), logger: logger)
+    let extracted = root.appendingPathComponent("inprocess").path
+    try fileManager.createDirectory(atPath: extracted, withIntermediateDirectories: true)
+    let stream = FBProcessInput<NSData>(from: ZstdFrame.stored(try Data(contentsOf: archive))).retyped(FBProcessInput<AnyObject>.self)
+
+    try await InProcessTarExtractor(fallback: RefusingExtractor()).extract(.stream(stream), to: extracted, options: ArchiveExtractOptions(compression: .ZSTD), logger: logger)
+
+    #expect(try tree(at: extracted) == tree(at: expected))
   }
 }
 

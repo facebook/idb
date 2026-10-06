@@ -103,6 +103,29 @@ struct IDBCommandExecutorInstallTests {
   }
 
   @Test
+  func aZstdTarStreamedAppIsInstalled() async throws {
+    let harness = try MacInstallHarness()
+    let app = try harness.makeBundle(named: "Sample", extension: "app", identifier: "com.example.sample")
+    let archive = MacInstallHarness.zstd(try harness.tarData(of: app))
+
+    let artifact = try await harness.executor.install_app_stream(FBProcessInput<NSData>(from: archive).retyped(FBProcessInput<AnyObject>.self), compression: .ZSTD, make_debuggable: false, override_modification_time: false)
+
+    #expect(artifact.name == "com.example.sample")
+  }
+
+  @Test
+  func aZstdTarStreamedDsymIsStored() async throws {
+    let harness = try MacInstallHarness()
+    let dsym = try harness.makeBundle(named: "Sample", extension: "dSYM", identifier: "com.example.sample")
+    let archive = MacInstallHarness.zstd(try harness.tarData(of: dsym))
+
+    let artifact = try await harness.executor.install_dsym_stream(FBProcessInput<NSData>(from: archive).retyped(FBProcessInput<AnyObject>.self), compression: .ZSTD, linkTo: nil)
+
+    #expect(artifact.name == "Sample.dSYM")
+    #expect(FileManager.default.fileExists(atPath: artifact.path.appendingPathComponent("Info.plist").path))
+  }
+
+  @Test
   func aStreamedDsymIsStoredAsItsOnlyItem() async throws {
     let harness = try MacInstallHarness()
     let dsym = try harness.makeBundle(named: "Sample", extension: "dSYM", identifier: "com.example.sample")

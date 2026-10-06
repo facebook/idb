@@ -68,16 +68,46 @@ final class MacInstallHarness {
 
   /// An uncompressed tar holding `item` and its siblings at its root.
   func tar(of item: URL) throws -> FBProcessInput<AnyObject> {
-    let archive = scratch.appendingPathComponent("\(UUID().uuidString).tar")
+    FBProcessInput<NSData>(from: try tarData(of: item)).retyped(FBProcessInput<AnyObject>.self)
+  }
+
+  func tarData(of item: URL) throws -> Data {
+    try archive(extension: "tar") { ("/usr/bin/tar", ["-cf", $0.path, "-C", item.deletingLastPathComponent().path, "."]) }
+  }
+
+  /// A zip holding `item` at its root.
+  func zipData(of item: URL) throws -> Data {
+    try archive(extension: "zip") { ("/usr/bin/ditto", ["-c", "-k", "--keepParent", item.path, $0.path]) }
+  }
+
+  /// `data` in a zstd frame of uncompressed blocks, as the tests cannot rely on a zstd compressor being installed.
+  static func zstd(_ data: Data) -> Data {
+    var frame = Data([0x28, 0xB5, 0x2F, 0xFD, 0x00, 0x38])
+    var offset = data.startIndex
+    repeat {
+      let size = min(data.endIndex - offset, 1 << 17)
+      let last = offset + size == data.endIndex
+      let header = UInt32(size) << 3 | (last ? 1 : 0)
+      frame.append(contentsOf: [UInt8(header & 0xFF), UInt8(header >> 8 & 0xFF), UInt8(header >> 16)])
+      frame.append(data[offset..<offset + size])
+      offset += size
+    } while offset < data.endIndex
+    return frame
+  }
+
+  /// Runs the command `writing` gives for an archive path, and reads the archive it writes there.
+  private func archive(extension pathExtension: String, writing command: (URL) -> (tool: String, arguments: [String])) throws -> Data {
+    let archive = scratch.appendingPathComponent("\(UUID().uuidString).\(pathExtension)")
+    let (tool, arguments) = command(archive)
     let process = Process()
-    process.executableURL = URL(fileURLWithPath: "/usr/bin/tar")
-    process.arguments = ["-cf", archive.path, "-C", item.deletingLastPathComponent().path, "."]
+    process.executableURL = URL(fileURLWithPath: tool)
+    process.arguments = arguments
     try process.run()
     process.waitUntilExit()
     guard process.terminationStatus == 0 else {
-      throw ArchiveToolFailed(tool: "tar", status: process.terminationStatus)
+      throw ArchiveToolFailed(tool: tool, status: process.terminationStatus)
     }
-    return FBProcessInput<NSData>(from: try Data(contentsOf: archive)).retyped(FBProcessInput<AnyObject>.self)
+    return try Data(contentsOf: archive)
   }
 
   /// `item` gzipped on its own, as clients stream single files.

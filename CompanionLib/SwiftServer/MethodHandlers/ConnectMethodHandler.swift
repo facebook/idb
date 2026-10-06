@@ -16,7 +16,6 @@ struct ConnectMethodHandler {
   let reporter: EventReporter
   let logger: IDBLogger
   let target: any Target
-  let streamCapabilities: StreamCapabilities
 
   func handle(request: Idb_ConnectRequest, context: ServerContext) async throws -> Idb_ConnectResponse {
     self.reporter.addMetadata(request.metadata)
@@ -26,7 +25,7 @@ struct ConnectMethodHandler {
       $0.companion = .with {
         $0.udid = target.udid
         $0.isLocal = isLocal
-        $0.setStreamCapabilities(streamCapabilities)
+        $0.setStreamCapabilities()
 
         do {
           $0.metadata = try JSONSerialization.data(withJSONObject: reporter.metadata, options: [])

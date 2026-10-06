@@ -32,21 +32,10 @@ extension Idb_Payload.Compression {
   }
 }
 
-/// What this companion can decompress from a stream. Resolved once, when the companion starts,
-/// from the `PATH` its subprocesses inherit.
-struct StreamCapabilities: Sendable {
-  let compressions: [FBCompressionFormat]
-  let zstdDecompressorPath: String?
-
-  init(searchPath: String?) {
-    compressions = FBArchiveOperations.streamCompressions(searchPath: searchPath)
-    zstdDecompressorPath = FBArchiveOperations.zstdDecompressorPath(searchPath: searchPath)
-  }
-}
-
 extension Idb_CompanionInfo {
-  mutating func setStreamCapabilities(_ capabilities: StreamCapabilities) {
-    supportedCompressions = capabilities.compressions.map(Idb_Payload.Compression.init)
-    zstdZipStreams = capabilities.zstdDecompressorPath != nil
+  /// Every stream is decompressed in-process, so every compression is supported wherever the companion runs.
+  mutating func setStreamCapabilities() {
+    supportedCompressions = [.gzip, .zstd]
+    zstdZipStreams = true
   }
 }

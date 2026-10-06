@@ -126,12 +126,9 @@ public struct InProcessZipExtractor: ArchiveExtractor {
   }
 }
 
-/// Unpacks a gzip tar stream in-process with `TarStreamExtractor`, and anything
-/// else with `fallback`. A stream that turns out not to be a tar is passed on to
-/// `fallback` as read.
-///
-/// A zstd tar goes straight to `fallback`: decoding it is bound by the zstd
-/// decompressor either way, so reading its output in-process gains nothing.
+/// Unpacks a tar stream in-process with `TarStreamExtractor`, and anything else
+/// with `fallback`. A stream that turns out not to be a tar is passed on to
+/// `fallback` as read, already decompressed.
 public struct InProcessTarExtractor: ArchiveExtractor {
 
   private let fallback: any ArchiveExtractor
@@ -146,7 +143,7 @@ public struct InProcessTarExtractor: ArchiveExtractor {
     options: ArchiveExtractOptions,
     logger: any ControlCoreLogger
   ) async throws {
-    guard case .stream(let input) = source, options.compression == .GZIP else {
+    guard case .stream(let input) = source else {
       return try await fallback.extract(source, to: extractPath, options: options, logger: logger)
     }
     let start = Date()
@@ -177,6 +174,8 @@ public struct InProcessTarExtractor: ArchiveExtractor {
     logger.log("Extracting a stream that is not a tar with \(type(of: fallback))")
     let replayed = FBProcessInput<OutputStream>.fromStream()
     let input = HandedOver(replayed.retyped(FBProcessInput<AnyObject>.self))
+    var options = options
+    options.compression = .GZIP
     async let extraction: Void = fallback.extract(.stream(input.value), to: extractPath, options: options, logger: logger)
     let output = replayed.contents
     let source = HandedOver(source)
@@ -228,4 +227,16 @@ public enum ArchiveExtractors {
 
   /// The extractor every extraction goes through unless a caller names another.
   public static var `default`: any ArchiveExtractor { inProcessZip }
+
+  /// The extractor for a stream that a client compresses as it sends. `bsdtar`
+  /// reads a gzip twice as fast as an in-process reader starved of input, but
+  /// macOS has no zstd decompressor for it to run.
+  public static func stream(_ compression: FBCompressionFormat) -> any ArchiveExtractor {
+    switch compression {
+    case .GZIP:
+      return bsdTar
+    case .ZSTD:
+      return inProcessTar
+    }
+  }
 }
