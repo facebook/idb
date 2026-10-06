@@ -21,6 +21,9 @@ settings:
   base:
     SYSTEM_HEADER_SEARCH_PATHS: $(inherited) $(SRCROOT)/../PrivateHeaders
     LD_RUNPATH_SEARCH_PATHS: $(inherited) @executable_path/Resources/Swift
+    # FBControlCore is built without library evolution, so even its internal
+    # import of ZstdDecompress has to resolve in every module that imports it.
+    SWIFT_INCLUDE_PATHS: $(inherited) $(SRCROOT)/../ZstdDecompress/include
 
 packages:
   grpc-swift-2:
@@ -203,7 +206,7 @@ targets:
         FRAMEWORK_SEARCH_PATHS: $(inherited) $(SRCROOT)/../Build/Products/Release
         # The linked static archives ship loose .swiftmodule directories next
         # to the .a files; resolve them independently of -F framework semantics.
-        SWIFT_INCLUDE_PATHS: $(SRCROOT)/../Build/Products/Release
+        SWIFT_INCLUDE_PATHS: $(inherited) $(SRCROOT)/../Build/Products/Release
       # Static archive: keep DWARF for the final link's dSYM, never strip.
       configs:
         Release:
@@ -272,7 +275,7 @@ targets:
         FRAMEWORK_SEARCH_PATHS: $(inherited) $(SRCROOT)/../Build/Products/Release
         # The linked static archives ship loose .swiftmodule directories next
         # to the .a files; resolve them independently of -F framework semantics.
-        SWIFT_INCLUDE_PATHS: $(SRCROOT)/../Build/Products/Release
+        SWIFT_INCLUDE_PATHS: $(inherited) $(SRCROOT)/../Build/Products/Release
         # FBControlCore and XCTestBootstrap contain category-only Objective-C
         # object files. Keep -ObjC so those members survive the final link, but
         # do not force-load the same archives that project-deps.yml already links.
@@ -402,7 +405,7 @@ targets:
         CODE_SIGNING_ALLOWED: NO
         # The linked static archives ship loose .swiftmodule directories next
         # to the .a files; resolve them independently of -F framework semantics.
-        SWIFT_INCLUDE_PATHS: $(SRCROOT)/../Build/Products/Release
+        SWIFT_INCLUDE_PATHS: $(inherited) $(SRCROOT)/../Build/Products/Release
       # Linked tool: strip DWARF into a dSYM in Release.
       configs:
         Release:
@@ -450,7 +453,7 @@ targets:
         CODE_SIGNING_ALLOWED: NO
         SYSTEM_HEADER_SEARCH_PATHS: $(inherited) $(SRCROOT)/../PrivateHeaders
         FRAMEWORK_SEARCH_PATHS: $(inherited) $(SRCROOT)/../Build/Products/Release
-        SWIFT_INCLUDE_PATHS: $(SRCROOT)/../Build/Products/Release
+        SWIFT_INCLUDE_PATHS: $(inherited) $(SRCROOT)/../Build/Products/Release
         OTHER_LDFLAGS: $(inherited) -ObjC -weak_library $(SRCROOT)/../PrivateHeaders/CoreSimulator/CoreSimulator.tbd -weak_library $(SRCROOT)/../PrivateHeaders/AccessibilityPlatformTranslation/AccessibilityPlatformTranslation.tbd
       configs:
         Release:
