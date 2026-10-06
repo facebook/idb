@@ -68,7 +68,15 @@ public enum XctraceProfiler {
     logger: any ControlCoreLogger
   ) async throws -> ProfileResult {
     let recordArguments = recordArguments(template: configuration.template, timeLimit: configuration.timeLimit, udid: udid, process: process, outputPath: tracePath)
-    try await record(xctrace: xctrace, arguments: recordArguments, environment: environment, stop: stop, logger: logger)
+    do {
+      try await record(xctrace: xctrace, arguments: recordArguments, environment: environment, stop: stop, logger: logger)
+    } catch let ProfileError.toolFailed(tool, exitCode, output) {
+      guard case let .attach(pid) = process else {
+        throw ProfileError.toolFailed(tool: tool, exitCode: exitCode, stderr: output)
+      }
+      // xctrace says only that it can't find the process, which doesn't tell one that exited from one it can't see.
+      throw ProfileError.toolFailed(tool: tool, exitCode: exitCode, stderr: output + "\n" + runningState(of: pid))
+    }
 
     let tableOfContents = try await export(xctrace: xctrace, arguments: ["export", "--input", tracePath, "--toc"], logger: logger)
     let runs = try XctraceExportParser.runs(fromTableOfContents: tableOfContents)
@@ -135,6 +143,12 @@ public enum XctraceProfiler {
     }
     // xctrace reports why a recording failed on stdout, alongside its progress.
     try check(tool: "xctrace", processIdentifier: processIdentifier, status: status, output: [stdout.data(), stderr.data()])
+  }
+
+  private static func runningState(of pid: pid_t) -> String {
+    // EPERM means the process exists but belongs to another user.
+    let running = kill(pid, 0) == 0 || errno == EPERM
+    return "Process \(pid) was \(running ? "still" : "no longer") running when xctrace exited."
   }
 
   private static func recordUntilStopped(_ running: RunningSubprocess, stop: ProfileStopRequest) async throws -> TerminationStatus {

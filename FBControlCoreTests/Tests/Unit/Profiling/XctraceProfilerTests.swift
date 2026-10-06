@@ -124,11 +124,51 @@ struct XctraceProfilerTests {
     #expect(result.artifact == nil)
     #expect(try FileManager.default.contentsOfDirectory(atPath: scratchDirectory.path).isEmpty)
   }
+
+  @Test
+  func aFailedAttachSaysTheProcessWasStillRunning() async throws {
+    let output = try await failedAttachOutput(pid: getpid())
+
+    #expect(output.contains("Cannot find process for provided pid: \(getpid())"))
+    #expect(output.contains("Process \(getpid()) was still running when xctrace exited."))
+  }
+
+  @Test
+  func aFailedAttachSaysTheProcessWasNoLongerRunning() async throws {
+    let exited = Process()
+    exited.executableURL = URL(fileURLWithPath: "/usr/bin/true")
+    try exited.run()
+    exited.waitUntilExit()
+
+    let output = try await failedAttachOutput(pid: exited.processIdentifier)
+
+    #expect(output.contains("Process \(exited.processIdentifier) was no longer running when xctrace exited."))
+  }
+
+  private func failedAttachOutput(pid: pid_t) async throws -> String {
+    let directory = try FakeXctrace.makeDirectory()
+    defer { try? FileManager.default.removeItem(at: directory) }
+    let configuration = TraceConfiguration(template: "Time Profiler", schemas: nil, timeLimit: .seconds(60), rowLimit: nil, outputPath: nil)
+    let xctrace = directory.appendingPathComponent("xctrace").path
+
+    let operation = XctraceProfiler.operation(configuration, process: .attach(pid), udid: Self.udid, scratch: TemporaryDirectory(rootDirectory: directory, logger: ControlCoreLoggerDouble()), logger: ControlCoreLoggerDouble()) {
+      (xctrace, [:])
+    }
+
+    do {
+      _ = try await operation.result
+    } catch let ProfileError.toolFailed(tool: _, exitCode: 21, stderr: output) {
+      return output
+    }
+    Issue.record("Expected the recording to fail to attach")
+    return ""
+  }
 }
 
 /// Stands in for xctrace: `record` creates its output once it is recording, and saves it on SIGINT, as Ctrl-C does, or
-/// finishes at the time limit; like xctrace, it exits 40 if it can't create the output. `export` prints the captured
-/// Probe app exports.
+/// finishes at the time limit; like xctrace, it exits 40 if it can't create the output. It never finds a process to
+/// attach to, as xctrace on a host that can't see the simulator's processes. `export` prints the captured Probe app
+/// exports.
 private enum FakeXctrace {
 
   static func makeDirectory() throws -> URL {
@@ -141,8 +181,13 @@ private enum FakeXctrace {
         while [ $# -gt 0 ]; do
           [ "$1" = --output ] && out="$2"
           [ "$1" = --time-limit ] && limit="${2%ms}"
+          [ "$1" = --attach ] && pid="$2"
           shift
         done
+        if [ -n "$pid" ]; then
+          echo "Cannot find process for provided pid: $pid"
+          exit 21
+        fi
         trap 'touch "$out/saved"; exit 0' INT
         mkdir "$out" || exit 40
         elapsed=0
