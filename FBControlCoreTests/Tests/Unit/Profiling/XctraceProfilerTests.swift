@@ -100,10 +100,30 @@ struct XctraceProfilerTests {
     #expect(report.tables.map(\.schema) == ["time-profile"])
     #expect(FileManager.default.fileExists(atPath: (tracePath as NSString).appendingPathComponent("saved")))
   }
+
+  @Test
+  func aTraceWithoutAnOutputPathIsRecordedIntoScratch() async throws {
+    let directory = try FakeXctrace.makeDirectory()
+    defer { try? FileManager.default.removeItem(at: directory) }
+    // Nothing creates it beforehand, just as nothing creates a simulator's auxillary directory.
+    let scratchDirectory = directory.appendingPathComponent("scratch")
+    let configuration = TraceConfiguration(template: "Time Profiler", schemas: nil, timeLimit: .milliseconds(100), rowLimit: nil, outputPath: nil)
+    let xctrace = directory.appendingPathComponent("xctrace").path
+
+    let operation = XctraceProfiler.operation(configuration, process: .allProcesses, udid: Self.udid, scratchDirectory: scratchDirectory.path, logger: ControlCoreLoggerDouble()) {
+      (xctrace, [:])
+    }
+
+    // BUG: xctrace can't write the trace into a scratch directory that doesn't exist, so the recording fails — flipped in the following commit
+    await #expect(throws: ProfileError.self) {
+      try await operation.result
+    }
+  }
 }
 
-/// Stands in for xctrace: `record` creates its output once it is recording, and saves it on SIGINT, as Ctrl-C does;
-/// `export` prints the captured Probe app exports.
+/// Stands in for xctrace: `record` creates its output once it is recording, and saves it on SIGINT, as Ctrl-C does, or
+/// finishes at the time limit; like xctrace, it exits 40 if it can't create the output. `export` prints the captured
+/// Probe app exports.
 private enum FakeXctrace {
 
   static func makeDirectory() throws -> URL {
@@ -115,11 +135,16 @@ private enum FakeXctrace {
       record)
         while [ $# -gt 0 ]; do
           [ "$1" = --output ] && out="$2"
+          [ "$1" = --time-limit ] && limit="${2%ms}"
           shift
         done
         trap 'touch "$out/saved"; exit 0' INT
-        mkdir "$out"
-        while true; do sleep 0.05; done
+        mkdir "$out" || exit 40
+        elapsed=0
+        while [ "$elapsed" -lt "$limit" ]; do
+          sleep 0.05
+          elapsed=$((elapsed + 50))
+        done
         ;;
       export)
         case "$*" in
