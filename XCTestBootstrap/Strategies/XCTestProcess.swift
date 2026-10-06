@@ -70,7 +70,13 @@ final class XCTestProcess {
       logger.log("xctest process (\(processIdentifier)) died prematurely, checking for crash log for \(CrashLogWaitTime) seconds")
       let crashLog: CrashLogInfo
       do {
-        crashLog = try await XCTestProcess.crashLog(forTerminationOfProcessIdentifier: processIdentifier, since: startDate, crashLogCommands: crashLogCommands)
+        crashLog = try await crashLogCommands.notifyOfCrash(
+          matching: NSCompoundPredicate(andPredicateWithSubpredicates: [
+            CrashLogInfo.predicateForCrashLogs(withProcessID: processIdentifier),
+            CrashLogInfo.predicateNewer(thanDate: startDate),
+          ]),
+          within: CrashLogWaitTime,
+          orThrow: XCTestProcessError.crashLogTimedOut(processIdentifier: processIdentifier))
       } catch {
         throw ControlCoreError.describe("xctest process (\(processIdentifier)) exited abnormally with no crash log, to check for yourself look in ~/Library/Logs/DiagnosticReports").caused(by: error).build()
       }
@@ -96,44 +102,4 @@ final class XCTestProcess {
       return "Unknown xctest exit code \(exitCode)"
     }
   }
-
-  private static func crashLog(forTerminationOfProcessIdentifier processIdentifier: pid_t, since sinceDate: Date, crashLogCommands: any CrashLogCommands) async throws -> CrashLogInfo {
-    let query = CrashLogQuery(
-      crashLogCommands: crashLogCommands,
-      predicate: NSCompoundPredicate(andPredicateWithSubpredicates: [
-        CrashLogInfo.predicateForCrashLogs(withProcessID: processIdentifier),
-        CrashLogInfo.predicateNewer(thanDate: sinceDate),
-      ]))
-
-    return try await withThrowingTaskGroup(of: CrashLogBox.self) { group in
-      group.addTask {
-        try await query.next()
-      }
-      group.addTask {
-        try await Task.sleep(nanoseconds: UInt64(CrashLogWaitTime * 1_000_000_000))
-        throw XCTestProcessError.crashLogTimedOut(processIdentifier: processIdentifier)
-      }
-      defer { group.cancelAll() }
-      guard let first = try await group.next() else {
-        preconditionFailure("The task group has two children; next() cannot be empty")
-      }
-      return first.value
-    }
-  }
-}
-
-/// Neither `CrashLogCommands` nor `NSPredicate` is Sendable; the query is only ever used by the
-/// one child task that waits on it.
-private struct CrashLogQuery: @unchecked Sendable {
-  let crashLogCommands: any CrashLogCommands
-  let predicate: NSPredicate
-
-  func next() async throws -> CrashLogBox {
-    CrashLogBox(try await crashLogCommands.notifyOfCrash(matching: predicate))
-  }
-}
-
-private final class CrashLogBox: @unchecked Sendable {
-  let value: CrashLogInfo
-  init(_ value: CrashLogInfo) { self.value = value }
 }
