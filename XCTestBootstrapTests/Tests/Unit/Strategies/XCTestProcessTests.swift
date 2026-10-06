@@ -70,6 +70,20 @@ final class XCTestProcessTests: XCTestCase {
       XCTAssertEqual(cause?.domain, (NoCrashLog() as NSError).domain, "The lookup's failure is the cause")
     }
   }
+
+  func testAStalledProcessWhoseStackshotCannotBeSampledIsTerminated() async throws {
+    struct SamplingFailed: Error {}
+    let process = try await Subprocess(executable: "/bin/sh", arguments: ["-c", "sleep 60"]).launch(output: .closed, error: .closed)
+    do {
+      _ = try await XCTestProcess.awaitExitCode(of: process, processName: "sh", completesWithin: 0.5, crashLogCommands: nil, logger: ControlCoreGlobalConfiguration.defaultLogger) { _ in
+        throw SamplingFailed()
+      }
+      XCTFail("Expected the wait to fail")
+    } catch is SamplingFailed {
+      // BUG: the sampling failure is thrown instead of XCTestProcessError.stalled — flipped in the following commit
+    }
+    XCTAssertNotEqual(kill(process.processIdentifier, 0), 0, "The stalled process is terminated")
+  }
 }
 
 /// Answers with `crash` only if it matches the lookup's predicate, so a predicate that misses

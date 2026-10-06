@@ -36,7 +36,14 @@ final class XCTestProcess {
   /// Waits for `process` to exit within `timeout` and returns its exit code. A process that
   /// overstays is sampled, terminated and reported as stalled; one killed by a signal is reported
   /// with its crash log when `crashLogCommands` can find one.
-  static func awaitExitCode(of process: RunningSubprocess, processName: String, completesWithin timeout: TimeInterval, crashLogCommands: (any CrashLogCommands)?, logger: ControlCoreLogger) async throws -> Int32 {
+  static func awaitExitCode(
+    of process: RunningSubprocess,
+    processName: String,
+    completesWithin timeout: TimeInterval,
+    crashLogCommands: (any CrashLogCommands)?,
+    logger: ControlCoreLogger,
+    sampleStackshot: (pid_t) async throws -> String = ProcessFetcher.sampleStackshot
+  ) async throws -> Int32 {
     let startDate = Date(timeIntervalSinceNow: CrashLogStartDateFuzz)
     let processIdentifier = process.processIdentifier
 
@@ -44,7 +51,7 @@ final class XCTestProcess {
     guard let status = try await process.terminationStatus(within: timeout) else {
       let stackshot: Result<String, any Error>
       do {
-        stackshot = .success(try await ProcessFetcher.sampleStackshot(processIdentifier: processIdentifier))
+        stackshot = .success(try await sampleStackshot(processIdentifier))
       } catch {
         stackshot = .failure(error)
       }
