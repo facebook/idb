@@ -128,8 +128,8 @@ public final class IDBCommandExecutor {
   }
 
   public func install_xctest_app_stream(_ stream: FBProcessInput<AnyObject>, skipSigningBundles: Bool) async throws -> InstalledArtifact {
-    return try await temporaryDirectory.withArchiveExtracted(fromStream: stream, compression: .GZIP) { extractPath in
-      return try await installXctest(extractPath, skipSigningBundles: skipSigningBundles)
+    return try await withStaged(.processInput(stream)) { tree in
+      return try await installXctest(tree.url, skipSigningBundles: skipSigningBundles)
     }
   }
 
@@ -138,8 +138,8 @@ public final class IDBCommandExecutor {
   }
 
   public func install_dylib_stream(_ input: FBProcessInput<AnyObject>, name: String) async throws -> InstalledArtifact {
-    return try await temporaryDirectory.withGzipExtracted(fromStream: input, name: name) { extractPath in
-      return try await installFile(extractPath, intoStorage: storageManager.dylib)
+    return try await withStaged(.gzippedFile(input, name: name)) { tree in
+      return try await installFile(tree.url, intoStorage: storageManager.dylib)
     }
   }
 
@@ -149,8 +149,8 @@ public final class IDBCommandExecutor {
   }
 
   public func install_framework_stream(_ input: FBProcessInput<AnyObject>) async throws -> InstalledArtifact {
-    return try await temporaryDirectory.withArchiveExtracted(fromStream: input, compression: .GZIP) { extractPath in
-      return try await installBundle(extractPath, intoStorage: storageManager.framework)
+    return try await withStaged(.processInput(input)) { tree in
+      return try await installBundle(tree.url, intoStorage: storageManager.framework)
     }
   }
 
@@ -159,8 +159,8 @@ public final class IDBCommandExecutor {
   }
 
   public func install_dsym_stream(_ input: FBProcessInput<AnyObject>, compression: FBCompressionFormat, linkTo: DsymInstallLinkToBundle?) async throws -> InstalledArtifact {
-    return try await temporaryDirectory.withArchiveExtracted(fromStream: input, compression: compression) { extractPath in
-      let url = try dsymDirnameFromUnzipDir(extractPath)
+    return try await withStaged(.processInput(input), options: InstallOptions(compression: compression)) { tree in
+      let url = try dsymDirnameFromUnzipDir(tree.url)
       return try await installAndLinkDsym(url, intoStorage: storageManager.dsym, linkTo: linkTo)
     }
   }
@@ -856,7 +856,7 @@ public final class IDBCommandExecutor {
     return try await ApplicationArchive.withResolvedBundle(from: source, options: options, totalStart: totalStart, temporaryDirectory: temporaryDirectory, logger: target.logger, onProgress: onProgress) { bundle in
       let installStart = Date()
       onProgress(.installStarted(timing: .measure(stageStart: installStart, totalStart: totalStart), appPath: bundle.path))
-      let artifact = try await installAppBundle(bundle, makeDebuggable: makeDebuggable, persistByMoving: ApplicationArchive.unpacks(source))
+      let artifact = try await installAppBundle(bundle, makeDebuggable: makeDebuggable, persistByMoving: Staging.unpacks(source))
       onProgress(.installCompleted(timing: .measure(stageStart: installStart, totalStart: totalStart), appPath: bundle.path, bundleId: bundle.identifier))
       return artifact
     }
@@ -883,6 +883,10 @@ public final class IDBCommandExecutor {
       throw IDBCommandError.userDevelopmentSigningRequired(applicationDescription: String(describing: installedApp))
     }
     return InstalledArtifact(name: appBundle.identifier, uuid: appBundle.binary?.uuid as NSUUID?, path: URL(fileURLWithPath: installedApp.bundle.path))
+  }
+
+  private func withStaged<T>(_ source: InstallSource, options: InstallOptions = InstallOptions(), _ body: (StagedTree) async throws -> T) async throws -> T {
+    try await Staging.withMaterialized(source, options: options, temporaryDirectory: temporaryDirectory, logger: target.logger, body)
   }
 
   private func installXctest(_ extractionDirectory: URL, skipSigningBundles: Bool) async throws -> InstalledArtifact {
