@@ -217,10 +217,10 @@ final class DataConsumerTests: XCTestCase {
   }
 
   func testCompositeWithCompletion() {
-    let accumilating = FBDataBuffer.consumableBuffer()
+    let accumulating = FBDataBuffer.consumableBuffer()
     let consumable = FBDataBuffer.consumableBuffer()
     let composite = FBCompositeDataConsumer(consumers: [
-      accumilating,
+      accumulating,
       consumable,
     ])
 
@@ -234,12 +234,12 @@ final class DataConsumerTests: XCTestCase {
     XCTAssertEqual(consumable.consumeLineString(), "FOOBAR")
     XCTAssertNil(consumable.consumeLineString())
     XCTAssertFalse(consumable.finishedConsuming.hasCompleted)
-    XCTAssertFalse(accumilating.finishedConsuming.hasCompleted)
+    XCTAssertFalse(accumulating.finishedConsuming.hasCompleted)
     XCTAssertFalse(composite.finishedConsuming.hasCompleted)
 
     composite.consumeEndOfFile()
     XCTAssertTrue(consumable.finishedConsuming.hasCompleted)
-    XCTAssertTrue(accumilating.finishedConsuming.hasCompleted)
+    XCTAssertTrue(accumulating.finishedConsuming.hasCompleted)
     XCTAssertTrue(composite.finishedConsuming.hasCompleted)
   }
 

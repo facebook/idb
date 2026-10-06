@@ -42,7 +42,7 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nullable, nonatomic, readonly) id ioSurface;
 
 /**
- In Xcode 13.2 ioSurface was splitted to two surfaces. Use `framebufferSurface` as primary implementation.
+ In Xcode 13.2 ioSurface was split into two surfaces. Use `framebufferSurface` as primary implementation.
  */
 @property (nullable, nonatomic, readonly) id framebufferSurface;
 

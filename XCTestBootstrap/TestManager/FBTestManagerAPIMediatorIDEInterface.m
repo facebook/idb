@@ -60,7 +60,7 @@
 
 /// This callback is called when the UI tests call `-[XCUIApplication launch]` to launch the target app
 /// It should return an NSNumber containing an unique identifier to this process, the `token`
-/// This `token` will be used later on for further requests ralated to this process
+/// This `token` will be used later on for further requests related to this process
 - (id)_XCT_launchProcessWithPath:(NSString *)path bundleID:(NSString *)bundleID arguments:(NSArray *)arguments environmentVariables:(NSDictionary *)environment
 {
   DTXRemoteInvocationReceipt *receipt = [objc_lookUpClass("DTXRemoteInvocationReceipt") new];
@@ -106,7 +106,7 @@
 
 - (id)_XCT_didBeginInitializingForUITesting
 {
-  [self.logger log:@"Started initilizing for UI testing."];
+  [self.logger log:@"Started initializing for UI testing."];
   return nil;
 }
 

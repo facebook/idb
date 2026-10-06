@@ -160,7 +160,7 @@ extension InstrumentsClientError: LocalizedError {
     case let .auxillaryDataTooShort(described):
       return "Data is of insufficient length \(described)"
     case let .undecodableArgumentType(type):
-      return "Canot decode argument of type \(type)"
+      return "Cannot decode argument of type \(type)"
     case let .undecodableArgument(described):
       return "Failed to decode argument \(described)"
     case .corruptHeader:

@@ -73,7 +73,7 @@ private let kUsageHelpMessage = """
     Options:
       --grpc-port PORT           Port to start the grpc companion server on (default: 10882).
       --tls-cert-path PATH       If specified exposed GRPC server will be listening on a TLS enabled socket.
-      --grpc-domain-sock PATH    Unix Domain Socket path to start the companion server on, will superceed TCP binding via --grpc-port.
+      --grpc-domain-sock PATH    Unix Domain Socket path to start the companion server on, will supersede TCP binding via --grpc-port.
       --debug-port PORT          Port to connect debugger on (default: 10881).
       --log-file-path PATH       Path to write a log file to e.g ./output.log (default: logs to stdErr).
       --log-level info|debug     The log level to use, 'debug' for a higher level of debugging 'info' for a lower level of logging (default 'debug').

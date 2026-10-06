@@ -64,7 +64,7 @@ BOOL FBLoadXCTestIfNeeded(void)
   // As a last attempt, idb tries itself to find XCTest.framework and passes the absolute path to `dlopen`
   NSArray<NSString *> *fallbackFrameworkDirs = [[[NSProcessInfo processInfo].environment objectForKey:@"DYLD_FALLBACK_FRAMEWORK_PATH"] componentsSeparatedByString:@":"];
 
-  FBDebugLog(@"[XCTestMainEntryPoint] Explictly looking for XCTest.framework in DYLD_FALLBACK_FRAMEWORK_PATH: %@", fallbackFrameworkDirs);
+  FBDebugLog(@"[XCTestMainEntryPoint] Explicitly looking for XCTest.framework in DYLD_FALLBACK_FRAMEWORK_PATH: %@", fallbackFrameworkDirs);
 
   for (NSString *frameworkDir in fallbackFrameworkDirs) {
     NSString *possibleLocation = [frameworkDir stringByAppendingPathComponent:@"XCTest.framework/XCTest"];

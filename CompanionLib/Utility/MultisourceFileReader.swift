@@ -58,7 +58,7 @@ enum MultisourceFileReader {
       return try await body(filePaths)
 
     case .url, .compression, .none:
-      throw RPCError(code: .invalidArgument, message: "Unrecogized initial payload type \(payload.source as Any)")
+      throw RPCError(code: .invalidArgument, message: "Unrecognized initial payload type \(payload.source as Any)")
     }
   }
 
@@ -67,10 +67,10 @@ enum MultisourceFileReader {
 
     for try await request in requestStream {
       guard let payload = request.extractPayload()
-      else { throw RPCError(code: .invalidArgument, message: "Unrecogized buffer frame. Expect payload, got \(request)") }
+      else { throw RPCError(code: .invalidArgument, message: "Unrecognized buffer frame. Expect payload, got \(request)") }
 
       guard case .filePath(let filePath) = payload.source
-      else { throw RPCError(code: .invalidArgument, message: "Unrecogized buffer frame. Expect file path, got \(payload.source as Any)") }
+      else { throw RPCError(code: .invalidArgument, message: "Unrecognized buffer frame. Expect file path, got \(payload.source as Any)") }
 
       filePaths.append(URL(fileURLWithPath: filePath))
     }
@@ -107,10 +107,10 @@ enum MultisourceFileReader {
 
     for try await request in requestStream {
       guard let payload = request.extractPayload()
-      else { throw RPCError(code: .invalidArgument, message: "Unrecogized buffer frame. Expect payload, got \(request)") }
+      else { throw RPCError(code: .invalidArgument, message: "Unrecognized buffer frame. Expect payload, got \(request)") }
 
       guard case .data(let data) = payload.source
-      else { throw RPCError(code: .invalidArgument, message: "Unrecogized buffer frame. Expect file path, got \(payload.source as Any)") }
+      else { throw RPCError(code: .invalidArgument, message: "Unrecognized buffer frame. Expect file path, got \(payload.source as Any)") }
 
       try write(data, to: stream)
     }

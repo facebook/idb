@@ -45,7 +45,7 @@
 - (NSString *)description
 {
   @synchronized(self) {
-    return [NSString stringWithFormat:@"Accumilating Buffer %lu Bytes", self.data.length];
+    return [NSString stringWithFormat:@"Accumulating Buffer %lu Bytes", self.data.length];
   }
 }
 

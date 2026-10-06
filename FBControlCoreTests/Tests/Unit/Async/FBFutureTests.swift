@@ -1039,7 +1039,7 @@ final class FBFutureTests: XCTestCase {
       .onQueue(
         queue,
         map: { _ in
-          XCTFail("Cancellation should prevent propogation")
+          XCTFail("Cancellation should prevent propagation")
           return FBFuture<AnyObject>(result: NSNumber(value: false))
         })
 
@@ -1057,7 +1057,7 @@ final class FBFutureTests: XCTestCase {
       .onQueue(
         queue,
         fmap: { _ in
-          XCTFail("Cancellation should prevent propogation")
+          XCTFail("Cancellation should prevent propagation")
           return FBFuture<AnyObject>(result: NSNumber(value: false))
         }
       )

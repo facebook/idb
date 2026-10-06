@@ -186,7 +186,7 @@ The bootstrapping commands returned can then be used to initialize a debug sessi
 #### Bootstrapping via `lldb`
 
 ```
-# Start lldb and pass the bootrapping commands from above
+# Start lldb and pass the bootstrapping commands from above
 $ lldb
 (lldb) platform select remote-ios --sysroot '/Users/Someone/Library/Developer/Xcode/iOS DeviceSupport/15.2.1 (19C63) arm64e/Symbols'
   Platform: remote-ios

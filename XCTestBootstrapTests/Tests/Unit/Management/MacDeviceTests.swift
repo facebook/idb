@@ -134,7 +134,7 @@ final class MacDeviceTests: XCTestCase {
     )
     do {
       _ = try await device.launch(config)
-      XCTFail("Launhing not existed app should fail")
+      XCTFail("Launching a nonexistent app should fail")
     } catch {
       // Expected.
     }

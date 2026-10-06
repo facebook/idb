@@ -48,7 +48,7 @@ private func amDeviceConnected(_ device: AMDevice, manager: AMDeviceManager) {
     try AMDeviceUsage.startSessionByPairing(with: device, calls: calls, logger: logger)
   } catch {
     pairedWithSession = false
-    logger.log("Device is not paired, degraded device information will be provied \(error)")
+    logger.log("Device is not paired, degraded device information will be provided \(error)")
   }
 
   let info = AMDeviceUsage.obtainDeviceValues(device, calls: calls)

@@ -20,7 +20,7 @@
  @param sessionIdentifier the session identifier.
  @param moduleName name the test module name.
  @param testBundlePath the absolute path to the test bundle.
- @param uiTesting YES if to initialize the Test Configuraiton for UI Testing, NO otherwise.
+ @param uiTesting YES if to initialize the Test Configuration for UI Testing, NO otherwise.
  @param testsToRun the tests to run.
  @param testsToSkip the tests to skip.
  @param targetApplicationPath Target application path
@@ -40,7 +40,7 @@
  @param moduleName name the test module name.
  @param testBundlePath the absolute path to the test bundle.
  @param path the path to the test configuration file.
- @param uiTesting YES if to initialize the Test Configuraiton for UI Testing, NO otherwise.
+ @param uiTesting YES if to initialize the Test Configuration for UI Testing, NO otherwise.
  @param xcTestConfiguration underlying XCTestConfiguration object
  */
 + (nonnull instancetype)configurationWithSessionIdentifier:(nonnull NSUUID *)sessionIdentifier moduleName:(nonnull NSString *)moduleName testBundlePath:(nonnull NSString *)testBundlePath path:(nonnull NSString *)path uiTesting:(BOOL)uiTesting xcTestConfiguration:(nonnull XCTestConfiguration *)xcTestConfiguration;
