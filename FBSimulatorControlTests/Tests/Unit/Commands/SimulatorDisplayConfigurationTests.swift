@@ -182,10 +182,8 @@ final class SimulatorDisplayConfigurationTests: XCTestCase {
     displays.releaseFirstRead()
     let late = try await stale.value
     XCTAssertEqual(fresh.generation, 2)
-    // BUG: the stale read is numbered as a change back to the cover display. Flipped in the following commit.
-    XCTAssertEqual(late.generation, 3)
-    XCTAssertEqual(late.active, .identified(display("cover")))
-    XCTAssertEqual(displays.configurationTracker.latest, late)
+    XCTAssertEqual(late, fresh)
+    XCTAssertEqual(displays.configurationTracker.latest, fresh)
   }
 
   // MARK: - Stream

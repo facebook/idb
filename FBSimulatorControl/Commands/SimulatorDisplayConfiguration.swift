@@ -81,13 +81,22 @@ public struct SimulatorDisplayConfiguration: Equatable, Sendable {
   }
 }
 
+/// A display report, numbered by when its read began.
+struct DisplayRead: Sendable {
+  fileprivate let sequence: UInt64
+  let report: SimulatorDisplayReport
+}
+
 /// Assigns generations to display reports. Every read of a simulator's displays passes through one tracker,
-/// so all readers agree on the generation of a configuration.
-// SAFETY: Every access to the stored configuration holds the lock.
+/// so all readers agree on the generation of a configuration. Reads can overlap and finish in any order, so a
+/// read that began before the newest one observed cannot replace it.
+// SAFETY: Every access to the stored configuration and read sequence holds the lock.
 // patternlint-disable-next-line unchecked-sendable
 final class DisplayConfigurationTracker: @unchecked Sendable {
   private let lock = NSLock()
   private var current: (configuration: SimulatorDisplayConfiguration, basis: [SimulatorInteractionDisplay])?
+  private var newest: (sequence: UInt64, configuration: SimulatorDisplayConfiguration, resolution: SimulatorDisplayResolution)?
+  private var sequence: UInt64 = 0
   let follower = DisplayConfigurationFollower()
 
   /// The most recently observed configuration, if any read has succeeded.
@@ -97,27 +106,53 @@ final class DisplayConfigurationTracker: @unchecked Sendable {
     return current?.configuration
   }
 
-  /// Throws a failed read's error, which says nothing about the configuration.
-  func observe(_ report: SimulatorDisplayReport) throws -> SimulatorDisplayConfiguration {
-    try observation(of: report).configuration.get()
+  /// Numbers the read before it begins, so that it is ordered by when it began rather than when it finished.
+  func read(_ report: () async throws -> SimulatorDisplayReport) async rethrows -> DisplayRead {
+    let sequence = next()
+    return DisplayRead(sequence: sequence, report: try await report())
   }
 
-  /// Where interactions route for `report`, numbered alongside its configuration. A failed read falls back to the
+  /// A report that arrived without being read, such as a push, is numbered as it arrives.
+  func arrived(_ report: SimulatorDisplayReport) -> DisplayRead {
+    DisplayRead(sequence: next(), report: report)
+  }
+
+  private func next() -> UInt64 {
+    lock.lock()
+    defer { lock.unlock() }
+    sequence += 1
+    return sequence
+  }
+
+  /// Throws a failed read's error, which says nothing about the configuration. A read overtaken by a newer one
+  /// returns the newer configuration.
+  func observe(_ read: DisplayRead) throws -> SimulatorDisplayConfiguration {
+    try observation(of: read).configuration.get()
+  }
+
+  /// Where interactions route for `read`, numbered alongside its configuration. A failed read falls back to the
   /// main display rather than throwing.
-  func resolution(of report: SimulatorDisplayReport) -> SimulatorDisplayResolution {
-    observation(of: report).resolution
+  func resolution(of read: DisplayRead) -> SimulatorDisplayResolution {
+    observation(of: read).resolution
   }
 
   private func observation(
-    of report: SimulatorDisplayReport
+    of read: DisplayRead
   ) -> (configuration: Result<SimulatorDisplayConfiguration, SimulatorCoreDeviceError>, resolution: SimulatorDisplayResolution) {
-    let resolution = SimulatorDisplayResolution(report)
+    let resolution = SimulatorDisplayResolution(read.report)
     lock.lock()
     defer { lock.unlock() }
-    let configuration = configuration(of: report, resolution: resolution)
+    if case let .failed(error) = read.report {
+      return (.failure(error), resolution)
+    }
+    if let newest, newest.sequence > read.sequence {
+      return (.success(newest.configuration), newest.resolution)
+    }
+    let configuration = configuration(of: read.report, resolution: resolution)
     // Offered under the lock so subscribers see configurations in the order they were numbered. The follower never
     // takes this lock, so the order is always this lock, then the follower's.
     if case let .success(observed) = configuration {
+      newest = (read.sequence, observed, resolution)
       follower.offer(observed)
     }
     return (configuration, resolution)

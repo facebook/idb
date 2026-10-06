@@ -172,7 +172,7 @@ extension DisplayCommands {
   func resolveDisplay() async throws -> SimulatorDisplayResolution {
     let deadline = ContinuousClock.now + transitionSettling.timeout
     while true {
-      let resolution = configurationTracker.resolution(of: try await report())
+      let resolution = configurationTracker.resolution(of: try await read())
       let expired = ContinuousClock.now >= deadline
       switch resolution {
       case .target, .fallback(.unreadable), .fallback(.legacyIntegratedDisplays), .fallback(.unknownActivity):
@@ -192,48 +192,44 @@ extension DisplayCommands {
   /// Every identified display once any display transition has settled. A runtime that reports no display activity
   /// does not identify its displays, so none are listed.
   func describedDisplays() async throws -> TargetDetail<[TargetDisplayDescription]> {
-    let report: SimulatorDisplayReport
+    let configuration: SimulatorDisplayConfiguration
     do {
-      report = try await observedSettledReport()
+      configuration = try await settledConfiguration(within: transitionSettling.timeout)
     } catch let error as CancellationError {
       throw error
     } catch {
       return .failed(error)
     }
-    switch report {
-    case let .displays(displays): return .read(displays.map(TargetDisplayDescription.init))
-    case .legacy: return .read([])
+    switch configuration.phase {
+    case .settled: return .read(configuration.displays.map(TargetDisplayDescription.init))
     case .transitioning: return .failed(SimulatorDisplayError.transitioning)
-    case let .failed(error): return .failed(error)
     }
   }
 
-  private func observedSettledReport() async throws -> SimulatorDisplayReport {
-    let report = try await settledReport(within: transitionSettling.timeout)
-    _ = try? configurationTracker.observe(report)
-    return report
+  private func read() async throws -> DisplayRead {
+    try await configurationTracker.read { try await report() }
   }
 
-  /// `.transitioning` only when the transition outlasts `timeout`. Only the returned report needs observing, as
+  /// `.transitioning` only when the transition outlasts `timeout`. Only the returned read needs observing, as
   /// neither a transition nor a failed read changes the tracker.
-  private func settledReport(within timeout: Duration) async throws -> SimulatorDisplayReport {
+  private func settledRead(within timeout: Duration) async throws -> DisplayRead {
     let deadline = ContinuousClock.now + timeout
     while true {
-      let current = try await report()
-      guard current == .transitioning, ContinuousClock.now < deadline else { return current }
+      let current = try await read()
+      guard current.report == .transitioning, ContinuousClock.now < deadline else { return current }
       try await Task.sleep(for: transitionSettling.interval)
     }
   }
 
   /// One read of the display interactions target, without waiting for a transition to settle.
   func currentDisplay() async throws -> SimulatorDisplayResolution {
-    configurationTracker.resolution(of: try await report())
+    configurationTracker.resolution(of: try await read())
   }
 
   /// The configuration once any display transition has settled. `.transitioning` only when the transition
   /// outlasts `timeout`.
   func settledConfiguration(within timeout: Duration) async throws -> SimulatorDisplayConfiguration {
-    try configurationTracker.observe(await settledReport(within: timeout))
+    try configurationTracker.observe(await settledRead(within: timeout))
   }
 
   /// The active display once any transition has settled, provided it is the one `selection` names. Unlike the
@@ -300,19 +296,17 @@ extension DisplayCommands {
   func followConfigurations(polling interval: Duration = .milliseconds(250)) -> AsyncStream<SimulatorDisplayConfiguration> {
     configurationTracker.follower.subscribe(polling: interval) {
       Task {
-        func observe(_ report: SimulatorDisplayReport) {
-          // A stopped following's read can finish after the next following's, and would number a configuration that has since changed.
-          guard !Task.isCancelled else { return }
-          _ = try? configurationTracker.observe(report)
+        func observe(_ read: DisplayRead) {
+          _ = try? configurationTracker.observe(read)
         }
         // Subscribing before the first read means a change between the two is pushed rather than missed.
         let subscription = Result { try reportPushes() }
-        if let current = try? await report() {
+        if let current = try? await read() {
           observe(current)
         }
         do {
           for try await pushed in try subscription.get() {
-            observe(pushed)
+            observe(configurationTracker.arrived(pushed))
           }
           if !Task.isCancelled {
             logger?.log("Display pushes ended, polling the display configuration")
@@ -321,7 +315,7 @@ extension DisplayCommands {
           logger?.log("Polling the display configuration, as display pushes are unavailable: \(error)")
         }
         while !Task.isCancelled {
-          if let polled = try? await report() {
+          if let polled = try? await read() {
             observe(polled)
           }
           try? await Task.sleep(for: configurationTracker.follower.interval ?? interval)

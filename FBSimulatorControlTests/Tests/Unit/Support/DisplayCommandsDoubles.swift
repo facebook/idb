@@ -104,3 +104,10 @@ actor InventoryTransport: AXBridgeTransport {
       withJSONObject: ["ok": true, "displayScopedInteractions": scopedInteractions, "displays": displays])
   }
 }
+
+extension DisplayConfigurationTracker {
+  /// Observes `report` as a read that began just now.
+  func observe(_ report: SimulatorDisplayReport) throws -> SimulatorDisplayConfiguration {
+    try observe(arrived(report))
+  }
+}
