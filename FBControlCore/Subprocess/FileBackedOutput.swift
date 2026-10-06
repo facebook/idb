@@ -64,7 +64,14 @@ public final class FileBackedOutput: Sendable {
       unlink(path)
       throw SubprocessError.outputUnavailable(path: path, message: message)
     }
-    _ = fcntl(readEnd, F_SETFL, fcntl(readEnd, F_GETFL) & ~O_NONBLOCK)
+    let flags = fcntl(readEnd, F_GETFL)
+    guard flags >= 0, fcntl(readEnd, F_SETFL, flags & ~O_NONBLOCK) == 0 else {
+      let message = String(cString: strerror(errno))
+      close(keepAlive)
+      close(readEnd)
+      unlink(path)
+      throw SubprocessError.outputUnavailable(path: path, message: message)
+    }
     return FileBackedOutput(path: path, drain: FifoDrain(readEnd: readEnd, keepAlive: keepAlive, consumer: consumer))
   }
 
