@@ -57,8 +57,12 @@ final class MacInstallHarness {
     return file
   }
 
-  /// A gzipped tar holding `item` at its root, as clients stream bundles.
+  /// A gzipped tar holding `item` and its siblings at its root, as clients stream bundles.
   func gzippedTar(of item: URL) throws -> FBProcessInput<AnyObject> {
+    FBProcessInput<NSData>(from: try gzippedTarData(of: item)).retyped(FBProcessInput<AnyObject>.self)
+  }
+
+  func gzippedTarData(of item: URL) throws -> Data {
     let data =
       try FBProcessBuilder<NSNull, NSData, NSData>
       .withLaunchPath(BSDTarPath, arguments: ["-zc", "-f", "-", "-C", item.deletingLastPathComponent().path, "."])
@@ -66,7 +70,21 @@ final class MacInstallHarness {
       .withStdOutInMemoryAsData()
       .runUntilCompletion(withAcceptableExitCodes: [0])
       .`await`().stdOut ?? NSData()
-    return FBProcessInput<NSData>(from: data as Data).retyped(FBProcessInput<AnyObject>.self)
+    return data as Data
+  }
+
+  /// An uncompressed tar holding `item` and its siblings at its root.
+  func tar(of item: URL) throws -> FBProcessInput<AnyObject> {
+    let archive = scratch.appendingPathComponent("\(UUID().uuidString).tar")
+    let process = Process()
+    process.executableURL = URL(fileURLWithPath: "/usr/bin/tar")
+    process.arguments = ["-cf", archive.path, "-C", item.deletingLastPathComponent().path, "."]
+    try process.run()
+    process.waitUntilExit()
+    guard process.terminationStatus == 0 else {
+      throw ArchiveToolFailed(tool: "tar", status: process.terminationStatus)
+    }
+    return FBProcessInput<NSData>(from: try Data(contentsOf: archive)).retyped(FBProcessInput<AnyObject>.self)
   }
 
   /// `item` gzipped on its own, as clients stream single files.
@@ -80,4 +98,11 @@ final class MacInstallHarness {
       .`await`().stdOut ?? NSData()
     return FBProcessInput<NSData>(from: data as Data).retyped(FBProcessInput<AnyObject>.self)
   }
+}
+
+private struct ArchiveToolFailed: Error, CustomStringConvertible {
+  let tool: String
+  let status: Int32
+
+  var description: String { "\(tool) exited with status \(status)" }
 }

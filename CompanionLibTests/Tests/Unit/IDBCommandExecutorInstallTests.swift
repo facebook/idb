@@ -78,4 +78,73 @@ struct IDBCommandExecutorInstallTests {
     #expect(FileManager.default.fileExists(atPath: artifact.path.path))
     #expect(try await harness.target.application.installed(bundleID: "com.example.sample").bundle.path == artifact.path.path)
   }
+
+  @Test
+  func aStreamedXctestIsStoredUnderItsIdentifier() async throws {
+    let harness = try MacInstallHarness()
+    let xctest = try harness.makeBundle(named: "SampleTests", extension: "xctest", identifier: "com.example.sampletests")
+
+    let artifact = try await harness.executor.install_xctest_app_stream(try harness.gzippedTar(of: xctest), skipSigningBundles: true)
+
+    #expect(artifact.name == "com.example.sampletests")
+    #expect(try harness.executor.storageManager.xctest.testDescriptor(withID: "com.example.sampletests").url.lastPathComponent == "SampleTests.xctest")
+  }
+
+  @Test
+  func anUncompressedTarStreamIsExtractedDespiteTheDeclaredGzip() async throws {
+    let harness = try MacInstallHarness()
+    let framework = try harness.makeBundle(named: "Sample", extension: "framework", identifier: "com.example.sample")
+
+    let artifact = try await harness.executor.install_framework_stream(try harness.tar(of: framework))
+
+    #expect(artifact.name == "com.example.sample")
+  }
+
+  @Test
+  func aStreamedDsymIsStoredAsItsOnlyItem() async throws {
+    let harness = try MacInstallHarness()
+    let dsym = try harness.makeBundle(named: "Sample", extension: "dSYM", identifier: "com.example.sample")
+
+    let artifact = try await harness.executor.install_dsym_stream(try harness.gzippedTar(of: dsym), compression: .GZIP, linkTo: nil)
+
+    #expect(artifact.name == "Sample.dSYM")
+    #expect(artifact.path.deletingLastPathComponent().deletingLastPathComponent().standardizedFileURL.path == harness.executor.storageManager.dsym.basePath.standardizedFileURL.path)
+    #expect(FileManager.default.fileExists(atPath: artifact.path.appendingPathComponent("Info.plist").path))
+  }
+
+  @Test
+  func aStreamedDsymOfSeveralItemsIsStoredAsTheirDirectory() async throws {
+    let harness = try MacInstallHarness()
+    let dsym = try harness.makeBundle(named: "Sample", extension: "dSYM", identifier: "com.example.sample")
+    try FileManager.default.copyItem(at: dsym, to: dsym.deletingLastPathComponent().appendingPathComponent("Other.dSYM"))
+
+    let artifact = try await harness.executor.install_dsym_stream(try harness.gzippedTar(of: dsym), compression: .GZIP, linkTo: nil)
+
+    let children = try FileManager.default.contentsOfDirectory(atPath: artifact.path.path).sorted()
+    #expect(children == ["Other.dSYM", "Sample.dSYM"])
+  }
+
+  @Test
+  func aStreamedDsymIsLinkedBesideTheAppItNames() async throws {
+    let harness = try MacInstallHarness()
+    let app = try harness.makeBundle(named: "Sample", extension: "app", identifier: "com.example.sample")
+    let installed = try await harness.executor.install_app_stream(try harness.gzippedTar(of: app), compression: .GZIP, make_debuggable: false, override_modification_time: false)
+    let dsym = try harness.makeBundle(named: "Sample", extension: "dSYM", identifier: "com.example.sample")
+
+    let artifact = try await harness.executor.install_dsym_stream(try harness.gzippedTar(of: dsym), compression: .GZIP, linkTo: DsymInstallLinkToBundle(bundleID: "com.example.sample", bundleType: .app))
+
+    let link = installed.path.deletingLastPathComponent().appendingPathComponent("Sample.dSYM")
+    #expect(try FileManager.default.destinationOfSymbolicLink(atPath: link.path) == artifact.path.path)
+  }
+
+  @Test
+  func aTarPushedToDylibStorageLandsAtTheDestination() async throws {
+    let harness = try MacInstallHarness()
+    let dylib = try harness.makeFile(named: "libSample.dylib")
+
+    try await harness.executor.push_file_from_tar(try harness.gzippedTarData(of: dylib), to_path: "nested", containerType: "dylib")
+
+    let pushed = harness.executor.storageManager.dylib.basePath.appendingPathComponent("nested/libSample.dylib")
+    #expect(FileManager.default.contentsEqual(atPath: pushed.path, andPath: dylib.path))
+  }
 }
