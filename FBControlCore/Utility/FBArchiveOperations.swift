@@ -68,7 +68,7 @@ public enum FBArchiveOperations {
       overrideModificationTime: overrideMTime,
       debugLogging: false)
     _ = try await Subprocess(executable: BSDTarPath, arguments: arguments)
-      .run(output: .logger(logger.debug()), error: .logger(logger.debug()), logger: logger)
+      .run(output: .logger(logger.debug()), error: .loggerCapturingErrorMessage(logger.debug()), logger: logger)
     return extractPath
   }
 
@@ -196,7 +196,7 @@ public enum FBArchiveOperations {
   ) async throws -> Data {
     let arguments = try gzippedTarArguments(forPath: path, logger: logger)
     return try await Subprocess(executable: BSDTarPath, arguments: arguments)
-      .run(output: .data, error: .logger(logger), logger: logger)
+      .run(output: .data, error: .loggerCapturingErrorMessage(logger), logger: logger)
       .standardOutput
   }
 

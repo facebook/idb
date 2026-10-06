@@ -136,8 +136,7 @@ final class FBArchiveOperationsTests: XCTestCase {
       guard case SubprocessError.unacceptableTermination = error else {
         return XCTFail("Expected bsdtar to fail, got \(error)")
       }
-      // BUG: the error omits bsdtar's stderr — flipped in the following commit.
-      XCTAssertFalse(error.localizedDescription.contains("Permission denied"), error.localizedDescription)
+      XCTAssertTrue(error.localizedDescription.contains("Permission denied"), error.localizedDescription)
     }
   }
 
@@ -459,8 +458,7 @@ final class FBArchiveOperationsTests: XCTestCase {
       guard case SubprocessError.unacceptableTermination = error else {
         return XCTFail("Expected bsdtar to fail, got \(error)")
       }
-      // BUG: the error omits bsdtar's stderr — flipped in the following commit.
-      XCTAssertFalse(error.localizedDescription.contains("No such file or directory"), error.localizedDescription)
+      XCTAssertTrue(error.localizedDescription.contains("No such file or directory"), error.localizedDescription)
     }
   }
 
