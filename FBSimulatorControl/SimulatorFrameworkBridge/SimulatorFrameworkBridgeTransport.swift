@@ -248,7 +248,7 @@ actor SimulatorFrameworkBridgePersistentTransport: AXBridgeStreamingTransport {
       arguments: serveArguments(socketPath: socketPath, scope: scope),
       environment: .exact([:])
     )
-    .launch(on: SimulatorSubprocessLauncher(simulator: simulator), output: .closed, error: .closed)
+    .launch(on: SimulatorSubprocessLauncher(simulator: simulator), output: .nullDevice, error: .nullDevice)
     do {
       let fileDescriptor = try await SimulatorFrameworkBridgeConnection.connect(path: socketPath, timeout: 10, guest: process, scope: scope)
       return SimulatorFrameworkBridgeConnection(fileDescriptor: fileDescriptor, ownership: ownership(process))
