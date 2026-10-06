@@ -29,8 +29,8 @@ final class SimulatorReplCommandsTests: XCTestCase {
     let options = try XCTUnwrap(device.spawnedOptions)
     XCTAssertEqual(options["arguments"] as? [String], ["/bridge", "repl", "start", repl.socketPath, "/libRepl.dylib"])
     XCTAssertEqual(options["environment"] as? [String: String], [:])
-    XCTAssertFalse(Self.isWritable(options["stdout"]), "The bridge's output is discarded")
-    XCTAssertFalse(Self.isWritable(options["stderr"]), "The bridge's output is discarded")
+    XCTAssertTrue(Self.isWritable(options["stdout"]), "The bridge writes to /dev/null")
+    XCTAssertTrue(Self.isWritable(options["stderr"]), "The bridge writes to /dev/null")
     device.terminate(statLoc: 0)
   }
 

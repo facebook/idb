@@ -110,7 +110,7 @@ public struct SimulatorReplCommands {
       arguments: ["repl", "start", socketPath, libReplPath],
       environment: .exact([:]),
       mode: .posixSpawn
-    ).launch(on: SimulatorSubprocessLauncher(simulator: simulator), output: .closed, error: .closed)
+    ).launch(on: SimulatorSubprocessLauncher(simulator: simulator), output: .nullDevice, error: .nullDevice)
     return LaunchedRepl(socketPath: socketPath, host: .process(process), extraInterfacePaths: extraInterfacePaths)
   }
 
