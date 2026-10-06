@@ -151,15 +151,13 @@ final class FBArchiveOperationsTests: XCTestCase {
     }
   }
 
-  func testCreateGzippedTarForPath_WhenPathDoesNotExist_ErrorContainsPath() {
+  func testGzippedTarSubprocessForPath_WhenPathDoesNotExist_ErrorContainsPath() {
     let nonExistentPath = "/tmp/nonexistent_path_for_error_check"
-    let future = FBArchiveOperations.createGzippedTar(forPath: nonExistentPath, logger: logger)
 
-    XCTAssertThrowsError(try future.`await`()) { error in
-      let nsError = error as NSError
+    XCTAssertThrowsError(try FBArchiveOperations.gzippedTarSubprocess(forPath: nonExistentPath, logger: logger)) { error in
       XCTAssertTrue(
-        nsError.localizedDescription.contains(nonExistentPath),
-        "Error description should mention the non-existent path, got: \(nsError.localizedDescription)")
+        error.localizedDescription.contains(nonExistentPath),
+        "Error description should mention the non-existent path, got: \(error.localizedDescription)")
     }
   }
 
@@ -171,26 +169,6 @@ final class FBArchiveOperationsTests: XCTestCase {
         return XCTFail("Expected the missing path to be reported, got \(error)")
       }
     }
-  }
-
-  // MARK: - createGzippedTarForPath with Real Paths
-
-  func testCreateGzippedTarForPath_WhenPathIsDirectoryWithContent_StartsSubprocess() throws {
-    let filePath = (tempDirectory as NSString).appendingPathComponent("testfile.txt")
-    try "hello".write(toFile: filePath, atomically: true, encoding: .utf8)
-
-    let future = FBArchiveOperations.createGzippedTar(forPath: tempDirectory, logger: logger)
-    let subprocess = try future.`await`()
-    XCTAssertNotNil(subprocess.stdOut)
-  }
-
-  func testCreateGzippedTarForPath_WhenPathIsFile_StartsSubprocess() throws {
-    let filePath = (tempDirectory as NSString).appendingPathComponent("testfile.txt")
-    try "some content".write(toFile: filePath, atomically: true, encoding: .utf8)
-
-    let future = FBArchiveOperations.createGzippedTar(forPath: filePath, logger: logger)
-    let subprocess = try future.`await`()
-    XCTAssertNotNil(subprocess.stdOut)
   }
 
   // MARK: - createGzippedTarDataForPath with Real Paths

@@ -6,7 +6,6 @@
  */
 
 import FBControlCore
-import FBSimulatorControl
 import GRPCCore
 
 struct FileDrainWriter {
@@ -17,35 +16,4 @@ struct FileDrainWriter {
     try completed.checkExitedCleanly { RPCError(code: .internalError, message: "Draining operation failed with exit code \($0)") }
   }
 
-  static func performDrain(task: FBSubprocess<NSNull, InputStream, AnyObject>, sendResponse: (Data) async throws -> Void) async throws {
-    guard let inputStream = task.stdOut else {
-      throw RPCError(code: .internalError, message: "Unable to get stdOut to write")
-    }
-
-    inputStream.open()
-    defer { inputStream.close() }
-
-    // inputStream.hasBytesAvailable is unavailable due to custom implementation of NSInputStream
-    while true {
-      let sixteenKilobytes = 16384
-      var buffer = [UInt8](repeating: 0, count: sixteenKilobytes)
-      let readBytes = inputStream.read(&buffer, maxLength: sixteenKilobytes)
-
-      guard readBytes >= 0 else {
-        let message = "Draining operation failed with stream error: \(inputStream.streamError?.localizedDescription ?? "Unknown")"
-        throw RPCError(code: .internalError, message: message)
-      }
-      if readBytes == 0 {
-        break
-      }
-
-      let data = Data(bytes: &buffer, count: readBytes)
-      try await sendResponse(data)
-    }
-
-    let exitCode = try await awaitExitCode(of: task)
-    if exitCode != 0 {
-      throw RPCError(code: .internalError, message: "Draining operation failed with exit code \(exitCode)")
-    }
-  }
 }

@@ -157,49 +157,12 @@ public enum FBArchiveOperations {
     Subprocess(executable: "/usr/bin/gzip", arguments: ["--to-stdout", path])
   }
 
-  /// Creates a gzip archive, returning a task that has an input stream attached to stdout. Read the
-  /// input stream to obtain all of the gzip output of the file. To confirm that the stream has been
-  /// correctly written, the caller should check the exit code of the returned task upon completion.
-  public static func createGzip(
-    forPath path: String,
-    logger: any ControlCoreLogger
-  ) -> FBFuture<FBSubprocess<NSNull, InputStream, AnyObject>> {
-    FBProcessBuilder<NSNull, NSData, NSData>
-      .withLaunchPath("/usr/bin/gzip", arguments: ["--to-stdout", path])
-      .withStdErr(toLoggerAndErrorMessage: logger)
-      .withStdOutToInputStream()
-      .withTaskLifecycleLogging(to: logger)
-      .start()
-      .retyped()
-  }
-
   /// A bsdtar that writes a gzipped tar of `path` to its stdout, for the caller to launch and stream.
   public static func gzippedTarSubprocess(
     forPath path: String,
     logger: any ControlCoreLogger
   ) throws -> Subprocess {
     Subprocess(executable: BSDTarPath, arguments: try gzippedTarArguments(forPath: path, logger: logger))
-  }
-
-  /// Creates a gzipped tar archive, returning a task that has an input stream attached to stdout.
-  /// Read the input stream to obtain the gzipped tar output. To confirm that the stream has been
-  /// correctly written, the caller should check the exit code of the returned task upon completion.
-  public static func createGzippedTar(
-    forPath path: String,
-    logger: any ControlCoreLogger
-  ) -> FBFuture<FBSubprocess<NSNull, InputStream, AnyObject>> {
-    do {
-      let arguments = try gzippedTarArguments(forPath: path, logger: logger)
-      return FBProcessBuilder<NSNull, NSData, NSData>
-        .withLaunchPath(BSDTarPath, arguments: arguments)
-        .withStdOutToInputStream()
-        .withStdErr(toLoggerAndErrorMessage: logger)
-        .withTaskLifecycleLogging(to: logger)
-        .start()
-        .retyped()
-    } catch {
-      return FBFuture(error: error)
-    }
   }
 
   /// Creates a gzipped tar archive, returning the data of the tar.
