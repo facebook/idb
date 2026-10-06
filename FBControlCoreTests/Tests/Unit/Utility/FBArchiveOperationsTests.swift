@@ -116,6 +116,18 @@ final class FBArchiveOperationsTests: XCTestCase {
     } catch {}
   }
 
+  func testCreateGzipDataForPath_WhenPathDoesNotExist_ErrorQuotesGzip() async {
+    let nonExistentPath = "/tmp/nonexistent_path_for_gzip_error_check"
+
+    do {
+      _ = try await FBArchiveOperations.createGzipData(forPath: nonExistentPath, logger: logger)
+      XCTFail("Expected compressing a missing path to fail")
+    } catch {
+      // BUG: the error carries only gzip's exit status, not what gzip wrote to stderr — flipped in the following commit.
+      XCTAssertFalse(error.localizedDescription.contains("No such file or directory"), error.localizedDescription)
+    }
+  }
+
   func testCreateGzippedTarForPath_WhenPathDoesNotExist_ErrorContainsPath() {
     let nonExistentPath = "/tmp/nonexistent_path_for_error_check"
     let future = FBArchiveOperations.createGzippedTar(forPath: nonExistentPath, logger: logger)
