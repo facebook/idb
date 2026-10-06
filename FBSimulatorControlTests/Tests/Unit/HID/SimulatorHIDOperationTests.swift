@@ -35,6 +35,25 @@ final class SimulatorHIDOperationTests: XCTestCase {
     XCTAssertEqual(events.compactMap(\.1), [])
   }
 
+  func testSeveralActiveDisplaysDeliverEventsWithoutADisplay() async throws {
+    let recorder = Recorder()
+    var operation = SimulatorHIDOperation(
+      displays: DisplayCommandsDouble([.success(.displays([screen("cover"), screen("inner")]))]),
+      sink: recorder)
+    let sent: Result<Void, any Error>
+    do {
+      _ = try await operation.send(.tapAt(x: 20, y: 30))
+      try await operation.finish(flushing: false)
+      sent = .success(())
+    } catch {
+      sent = .failure(error)
+    }
+    // BUG: taps the main display though neither active display is the one input targets — flipped in the following commit
+    XCTAssertNoThrow(try sent.get())
+    let events = await recorder.events
+    XCTAssertEqual(events.count, 2)
+  }
+
   func testNonFiniteTouchWithoutADisplay() async throws {
     let recorder = Recorder()
     var operation = SimulatorHIDOperation(

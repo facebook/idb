@@ -11,9 +11,9 @@ import Foundation
 import XCTest
 
 final class DisplayCommandsTests: XCTestCase {
-  private func display(_ id: String, width: Double = 1200) -> SimulatorDisplay {
+  private func display(_ id: String, width: Double = 1200, activity: SimulatorDisplayActivity = .active) -> SimulatorDisplay {
     SimulatorDisplay(
-      uniqueID: id, name: id, activity: .active, isPrimary: false, isIntegrated: true,
+      uniqueID: id, name: id, activity: activity, isPrimary: false, isIntegrated: true,
       bounds: CGRect(x: 0, y: 0, width: width, height: 800), scale: 2, rotation: .upright)
   }
 
@@ -79,13 +79,7 @@ final class DisplayCommandsTests: XCTestCase {
 
   func testRuntimeThatCannotSayWhichDisplayIsTargetedFallsBack() async throws {
     let geometry = SimulatorDisplayGeometry(bounds: CGRect(x: 0, y: 0, width: 1200, height: 800), scale: 2, rotation: .upright)
-    let cover = display("cover")
-    let inactive = SimulatorDisplay(
-      uniqueID: "inner", name: "inner", activity: .inactive, isPrimary: false, isIntegrated: true, bounds: cover.bounds, scale: 2,
-      rotation: .upright)
-    let unknown = SimulatorDisplay(
-      uniqueID: "lcd", name: "lcd", activity: .unknown, isPrimary: false, isIntegrated: true, bounds: cover.bounds, scale: 2,
-      rotation: .upright)
+    let unknown = display("lcd", activity: .unknown)
     let cases: [(SimulatorDisplayReport, SimulatorDisplayFallback)] = [
       (.failed(.unavailable("displayinfo")), .unreadable(.unavailable("displayinfo"))),
       (.failed(.timedOut), .unreadable(.timedOut)),
@@ -93,20 +87,30 @@ final class DisplayCommandsTests: XCTestCase {
       (.displays([unknown]), .unknownActivity),
       (.legacy(integrated: []), .legacyIntegratedDisplays(count: 0)),
       (.legacy(integrated: [geometry, geometry]), .legacyIntegratedDisplays(count: 2)),
-      (
-        .displays([
-          inactive,
-          SimulatorDisplay(
-            uniqueID: "cover", name: "cover", activity: .inactive, isPrimary: false, isIntegrated: true, bounds: cover.bounds, scale: 2,
-            rotation: .upright),
-        ]), .noActiveIntegratedDisplay
-      ),
-      (.displays([cover, display("inner")]), .ambiguousActiveDisplays(["cover", "inner"])),
     ]
     for (report, fallback) in cases {
       let resolved = try await DisplayCommandsDouble([.success(report)]).resolveDisplay()
       XCTAssertEqual(resolved, .fallback(fallback))
     }
+  }
+
+  func testResolvingWhileNoDisplayIsActiveFallsBackWithoutWaiting() async throws {
+    let displays = DisplayCommandsDouble([
+      .success(.displays([display("cover", activity: .inactive), display("inner", activity: .inactive)])),
+      .success(.reporting(.selected(display("inner")))),
+    ])
+    let resolved = await outcome { try await displays.resolveDisplay() }
+    // BUG: falls back to the main display rather than waiting for a display to become active — flipped in the following commit
+    XCTAssertEqual(try resolved.get(), .fallback(.noActiveIntegratedDisplay))
+    XCTAssertEqual(displays.reads, 1)
+  }
+
+  func testResolvingWhileSeveralDisplaysStayActiveFallsBack() async throws {
+    let displays = DisplayCommandsDouble([.success(.displays([display("cover"), display("inner")]))])
+    let resolved = await outcome { try await displays.resolveDisplay() }
+    // BUG: falls back to the main display rather than failing once settling gives up — flipped in the following commit
+    XCTAssertEqual(try resolved.get(), .fallback(.ambiguousActiveDisplays(["cover", "inner"])))
+    XCTAssertEqual(displays.reads, 1)
   }
 
   func testFallbackIsAChangeFromAReportedDisplay() async throws {

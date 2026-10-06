@@ -45,10 +45,14 @@ public final class SimulatorScreenshotCommands: ScreenshotCommands {
       throw WeakTargetError.simulator
     }
     return try await Self.capture(
-      resolveDisplay: { try await simulator.displays.currentDisplay() },
+      resolveDisplay: { try await Self.resolution(of: simulator.displays) },
       display: { try await self.takeActiveDisplay($0, configuration: configuration, simulator: simulator) },
       mainScreen: { try await self.takeMainScreen(configuration: configuration, simulator: simulator) },
       logger: simulator.logger)
+  }
+
+  static func resolution(of displays: any DisplayCommands) async throws -> SimulatorDisplayResolution {
+    try await displays.currentDisplay()
   }
 
   /// The active display improves on the main screen but is never required: whatever stops it being
