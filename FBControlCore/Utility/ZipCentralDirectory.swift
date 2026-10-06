@@ -76,7 +76,7 @@ public struct ZipCentralDirectory {
     var sequestered = false
     for entry in entries {
       let relative = try Self.safeRelativePath(entry.path)
-      if relative.hasPrefix("__MACOSX/") {
+      if ArchiveExtraction.isMacMetadata(relative) {
         sequestered = true
         continue
       }

@@ -106,14 +106,7 @@ struct ArchiveCorpusTests {
     case .zipStream:
       let input = FBProcessInput<NSData>(from: try Data(contentsOf: archive)).retyped(FBProcessInput<AnyObject>.self)
       try await ZipStreamExtractor.extract(input, to: extracted, overrideModificationTime: false, logger: logger)
-      do {
-        try ZipCentralDirectory(archiveAtPath: archive.path).repair(extractedAt: extracted)
-        #expect(producer != .dittoZipWithResourceForks)
-      } catch {
-        // BUG: the repair removes the `__MACOSX` directory, then sets its mode, failing with ENOENT; an install extracts the spooled copy again instead.
-        #expect(producer == .dittoZipWithResourceForks, "\(producer) \(route): \(error)")
-        return
-      }
+      try ZipCentralDirectory(archiveAtPath: archive.path).repair(extractedAt: extracted)
     }
 
     // The repair removes AppleDouble files after the fact, which moves their directories' times.
