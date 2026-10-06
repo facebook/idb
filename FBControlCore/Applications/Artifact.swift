@@ -7,7 +7,7 @@
 
 import Foundation
 
-enum ArtifactError: Error {
+enum ArtifactError: Error, Sendable {
   case multipleXctestFiles(files: [URL])
   case multipleXctestrunFiles(files: [URL])
   case noTestArtifactsProvided(bucketsDescription: String)
@@ -30,7 +30,7 @@ extension ArtifactError: LocalizedError {
 }
 
 /// What a staged install source holds, found without touching storage or the target.
-public enum Artifact {
+public enum Artifact: Sendable {
   case application(BundleDescriptor)
   case testBundle(URL)
   case testRun(URL)
@@ -126,7 +126,7 @@ public enum ArtifactKind: Sendable {
     }
   }
 
-  private static func testArtifact(at item: URL) throws -> Artifact {
+  private static func testArtifact(at item: URL) throws(ArtifactError) -> Artifact {
     switch item.pathExtension {
     case XctestExtension:
       return .testBundle(item)

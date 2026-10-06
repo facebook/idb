@@ -7,6 +7,7 @@
 
 import FBControlCore
 import Foundation
+import Synchronization
 
 /// How the client handed over what it wants installed.
 enum InstallPayloadKind: String {
@@ -56,32 +57,39 @@ enum InstallFailureStage: Equatable {
 /// `receive_ms` and `size` describe getting the payload onto the companion's host: streamed over the
 /// RPC for `data`, downloaded for `url`. Stage durations come from each stage's completion, so a stage
 /// that never finished has none.
-// SAFETY: every stored property is only read or written inside `lock`.
-// patternlint-disable-next-line unchecked-sendable
-final class InstallTelemetry: @unchecked Sendable {
+final class InstallTelemetry: Sendable {
 
-  private let lock = NSLock()
+  private struct Failure {
+    var stage: InstallFailureStage?
+    var kind: String
+    var cancelled: Bool
+  }
+
+  private struct State {
+    var streamFormat: InstallStreamFormat?
+    var receivedBytes: Int64?
+    var receiveMs: Int64?
+    var receiving = false
+    var stagesInFlight: Set<InstallStage> = []
+    var stageMs: [InstallStage: Int64] = [:]
+    var failure: Failure?
+  }
+
   private let payloadKind: InstallPayloadKind
-  private var streamFormat: InstallStreamFormat?
-  private var receivedBytes: Int64?
-  private var receiveMs: Int64?
-  private var receiving = false
-  private var stagesInFlight: Set<InstallStage> = []
-  private var stageMs: [InstallStage: Int64] = [:]
-  private var failure: (stage: InstallFailureStage?, kind: String, cancelled: Bool)?
+  private let state = Mutex(State())
 
   init(payloadKind: InstallPayloadKind) {
     self.payloadKind = payloadKind
   }
 
   func streamed(_ format: InstallStreamFormat) {
-    lock.withLock { streamFormat = format }
+    state.withLock { $0.streamFormat = format }
   }
 
   /// Measures `body` receiving the streamed payload, reporting what it received whether or not it
   /// completes. A receive that throws is left in progress, so the failure is attributed to it.
   func receive<T>(_ body: (inout InstallReceive) async throws -> T) async rethrows -> T {
-    lock.withLock { receiving = true }
+    state.withLock { $0.receiving = true }
     var receive = InstallReceive(telemetry: self)
     do {
       let result = try await body(&receive)
@@ -94,27 +102,27 @@ final class InstallTelemetry: @unchecked Sendable {
   }
 
   fileprivate func received(bytes: Int64, elapsedMs: Int64, completed: Bool) {
-    lock.withLock {
-      receiving = !completed
-      receivedBytes = bytes
-      receiveMs = elapsedMs
+    state.withLock { state in
+      state.receiving = !completed
+      state.receivedBytes = bytes
+      state.receiveMs = elapsedMs
     }
   }
 
   func observe(_ event: InstallProgressEvent) {
-    lock.withLock {
+    state.withLock { state in
       switch event {
       case .downloadStarted, .extractStarted, .installStarted:
-        stagesInFlight.insert(event.stage)
+        state.stagesInFlight.insert(event.stage)
       case .downloadProgress:
         break
       case .downloadCompleted(let timing, let totalBytes):
-        stagesInFlight.remove(.download)
-        receivedBytes = totalBytes
-        receiveMs = timing.elapsedMs
+        state.stagesInFlight.remove(.download)
+        state.receivedBytes = totalBytes
+        state.receiveMs = timing.elapsedMs
       case .extractCompleted, .installCompleted:
-        stagesInFlight.remove(event.stage)
-        stageMs[event.stage] = event.elapsedMs
+        state.stagesInFlight.remove(event.stage)
+        state.stageMs[event.stage] = event.elapsedMs
       }
     }
   }
@@ -128,40 +136,40 @@ final class InstallTelemetry: @unchecked Sendable {
   /// callers pass what the RPC's cancellation handle says.
   func failed(_ error: Error, rpcCancelled: Bool = false) {
     let cancelled = rpcCancelled || Task.isCancelled
-    lock.withLock {
+    let kind = Self.kind(of: error)
+    state.withLock { state in
       let stage =
-        [InstallStage.download, .extract, .install].first(where: stagesInFlight.contains).map(InstallFailureStage.stage)
-        ?? (receiving ? .receive : nil)
-      failure = (stage, Self.kind(of: error), cancelled)
+        [InstallStage.download, .extract, .install].first(where: state.stagesInFlight.contains).map(InstallFailureStage.stage)
+        ?? (state.receiving ? .receive : nil)
+      state.failure = Failure(stage: stage, kind: kind, cancelled: cancelled)
     }
   }
 
   func record(into call: CallTelemetry) {
-    lock.withLock {
-      call.setNormal(payloadKind.rawValue, forKey: "payload_kind")
-      if let streamFormat {
-        call.setNormal(streamFormat.rawValue, forKey: "stream_format")
+    let state = self.state.withLock { $0 }
+    call.setNormal(payloadKind.rawValue, forKey: "payload_kind")
+    if let streamFormat = state.streamFormat {
+      call.setNormal(streamFormat.rawValue, forKey: "stream_format")
+    }
+    if let receivedBytes = state.receivedBytes {
+      call.setSize(receivedBytes)
+    }
+    if let receiveMs = state.receiveMs {
+      call.setInt(Int(receiveMs), forKey: "receive_ms")
+    }
+    if let extractMs = state.stageMs[.extract] {
+      call.setInt(Int(extractMs), forKey: "extract_ms")
+    }
+    if let installMs = state.stageMs[.install] {
+      call.setInt(Int(installMs), forKey: "install_ms")
+    }
+    if let failure = state.failure {
+      if let stage = failure.stage {
+        call.setNormal(stage.name, forKey: "failure_stage")
       }
-      if let receivedBytes {
-        call.setSize(receivedBytes)
-      }
-      if let receiveMs {
-        call.setInt(Int(receiveMs), forKey: "receive_ms")
-      }
-      if let extractMs = stageMs[.extract] {
-        call.setInt(Int(extractMs), forKey: "extract_ms")
-      }
-      if let installMs = stageMs[.install] {
-        call.setInt(Int(installMs), forKey: "install_ms")
-      }
-      if let failure {
-        if let stage = failure.stage {
-          call.setNormal(stage.name, forKey: "failure_stage")
-        }
-        call.setNormal(failure.kind, forKey: "failure_kind")
-        if failure.cancelled {
-          call.setNormal("client", forKey: "cancel_source")
-        }
+      call.setNormal(failure.kind, forKey: "failure_kind")
+      if failure.cancelled {
+        call.setNormal("client", forKey: "cancel_source")
       }
     }
   }

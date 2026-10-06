@@ -49,7 +49,7 @@ public struct InstallOptions: Sendable {
 }
 
 /// What staging an install source leaves on disk while its body runs.
-public enum StagedTree {
+public enum StagedTree: Sendable {
 
   /// A directory holding what an archive held, removed once the body returns.
   case extracted(URL)

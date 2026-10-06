@@ -12,7 +12,7 @@ import GRPCCore
 import IDBGRPCSwift
 import os
 
-struct InstallMethodHandler: @unchecked Sendable {
+struct InstallMethodHandler {
 
   let commandExecutor: IDBCommandExecutor
   let targetLogger: ControlCoreLogger
