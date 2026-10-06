@@ -47,6 +47,19 @@ struct IDBCommandExecutorInstallTests {
   }
 
   @Test
+  func aFrameworkAtALocalPath() async throws {
+    let harness = try MacInstallHarness()
+    let framework = try harness.makeBundle(named: "Sample", extension: "framework", identifier: "com.example.sample")
+
+    // BUG: the framework's own path is listed as if it were a directory holding one framework, so its executable and Info.plist are two candidates.
+    await #expect {
+      _ = try await harness.executor.install_framework_file_path(framework.path)
+    } throws: { error in
+      error.localizedDescription.hasPrefix("Expected one top level file, found 2")
+    }
+  }
+
+  @Test
   func aStreamedAppIsInstalledUnderItsIdentifier() async throws {
     let harness = try MacInstallHarness()
     let app = try harness.makeBundle(named: "Sample", extension: "app", identifier: "com.example.sample")
