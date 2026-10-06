@@ -38,7 +38,7 @@ public struct SimulatorFramebufferCommands: Sendable {
     self.simulator = simulator
   }
 
-  @usableFromInline static let defaultDisplay: FramebufferDisplay = .main
+  @usableFromInline static let defaultDisplay: FramebufferDisplay = .active
 
   /// A framebuffer for `display`. Each call connects anew; callers that need one connection across
   /// several operations hold on to the result.

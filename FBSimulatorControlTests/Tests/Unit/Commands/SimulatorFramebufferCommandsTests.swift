@@ -142,9 +142,9 @@ final class SimulatorFramebufferCommandsTests: XCTestCase {
     let attachment = try await framebuffer(SimulatorFramebufferCommands.defaultDisplay, screens: screens)
     defer { attachment.cancel() }
 
-    // BUG: captures the main screen, the cover display, while the inner display is active — flipped in the following commit
-    XCTAssertEqual(screens.requested, [])
-    XCTAssertEqual(screens.main.registeredTokens.count, 1)
+    XCTAssertEqual(screens.requested, ["inner"])
+    XCTAssertEqual(screens.screens["inner"]?.registeredTokens.count, 1)
+    XCTAssertEqual(screens.main.registeredTokens.count, 0)
   }
 
   private func firstConfiguration(of attachment: FramebufferAttachment) async -> SimulatorDisplayConfiguration? {
