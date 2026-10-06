@@ -299,6 +299,28 @@ struct SubprocessRunTests {
     #expect(new?.localizedDescription.contains("no space left on device") == true)
   }
 
+  @Test("A rejected exit quotes an error-message capture that is not valid UTF-8, as the old path does")
+  func policyRejectionQuotesAnErrorMessageThatIsNotValidUTF8() async throws {
+    // `\351` is a Latin-1 é, which is not valid UTF-8.
+    let script = "printf 'caf\\351: no space left on device' 1>&2; exit 3"
+    let logger = FBControlCoreLoggerFactory.logger(to: FBDataBuffer.consumableBuffer())
+    var oldDescription = ""
+    do {
+      _ = try await bridgeFBFuture(
+        Self.old(script).withStdErr(toLoggerAndErrorMessage: logger).runUntilCompletion(withAcceptableExitCodes: [0]))
+    } catch {
+      oldDescription = error.localizedDescription
+    }
+
+    let new = await #expect(throws: SubprocessError.self) {
+      _ = try await Self.new(script).run(output: .closed, error: .loggerCapturingErrorMessage(logger))
+    }
+
+    #expect(oldDescription.contains("no space left on device"))
+    // BUG: the capture decodes strictly, so one invalid byte empties the quoted message — flipped in the following commit.
+    #expect(new?.localizedDescription.contains("no space left on device") == false)
+  }
+
   @Test("A signal fails a zero-exit policy, matching the old path's rejection of signalled processes")
   func signalRejectionMatchesTheOldPath() async throws {
     await #expect(throws: (any Error).self) {
