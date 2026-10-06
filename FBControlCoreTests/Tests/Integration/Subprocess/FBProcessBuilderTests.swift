@@ -95,18 +95,17 @@ struct FBProcessBuilderTests {
 
   @Test("FBProcessIO.outputToDevNull cannot be spawned by the host engine")
   func nullDeviceOutputCannotBeSpawnedOnTheHost() async throws {
-    let configuration = ProcessSpawnConfiguration(
-      launchPath: "/bin/sh",
-      arguments: ["-c", "true"],
-      environment: [:],
-      io: FBProcessIO<AnyObject, AnyObject, AnyObject>.outputToDevNull(),
-      mode: .default)
 
     // Descriptor -1 cannot be duplicated onto stdout, so the launch fails
     // outright. Only the file-based attachment below resolves to a usable sink.
     await #expect(throws: (any Error).self) {
       _ = try await bridgeFBFuture(
-        FBSubprocess<AnyObject, AnyObject, AnyObject>.launchProcess(with: configuration, logger: nil))
+        FBSubprocess<AnyObject, AnyObject, AnyObject>.launchProcess(
+          withLaunchPath: "/bin/sh",
+          arguments: ["-c", "true"],
+          environment: [:],
+          io: FBProcessIO<AnyObject, AnyObject, AnyObject>.outputToDevNull(),
+          logger: nil))
     }
   }
 

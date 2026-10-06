@@ -35,7 +35,7 @@ public final class ProcessSpawnCommandHelpers: NSObject {
     exitCodeFuture: FBMutableFuture<NSNumber>,
     signalFuture: FBMutableFuture<NSNumber>,
     processIdentifier: pid_t,
-    configuration: ProcessSpawnConfiguration,
+    processName: String,
     queue: DispatchQueue,
     logger: (any ControlCoreLogger)?
   ) {
@@ -52,13 +52,13 @@ public final class ProcessSpawnCommandHelpers: NSObject {
           if wstatus != 0x7f /* _WSTOPPED */ && wstatus != 0 {
             // WIFSIGNALED
             let signalCode = statLoc & 0x7f // WTERMSIG
-            let error = ProcessTerminationError.exitedWithSignal(processIdentifier: processIdentifier, processName: configuration.processName, signal: signalCode)
+            let error = ProcessTerminationError.exitedWithSignal(processIdentifier: processIdentifier, processName: processName, signal: signalCode)
             logger?.log(error.localizedDescription)
             exitCodeFuture.resolveWithError(error)
             signalFuture.resolve(withResult: NSNumber(value: signalCode))
           } else {
             let exitCode = (statLoc >> 8) & 0xff // WEXITSTATUS
-            let error = ProcessTerminationError.exitedWithCode(processIdentifier: processIdentifier, processName: configuration.processName, exitCode: exitCode)
+            let error = ProcessTerminationError.exitedWithCode(processIdentifier: processIdentifier, processName: processName, exitCode: exitCode)
             logger?.log(error.localizedDescription)
             signalFuture.resolveWithError(error)
             exitCodeFuture.resolve(withResult: NSNumber(value: exitCode))

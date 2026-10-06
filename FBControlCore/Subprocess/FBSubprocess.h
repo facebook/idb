@@ -11,7 +11,7 @@
 
 static const size_t FBProcessOutputErrorMessageLength = 200;
 
-@class ProcessSpawnConfiguration;
+@class FBProcessIO;
 
 /**
  A representation of a process that has been launched.
@@ -47,11 +47,6 @@ static const size_t FBProcessOutputErrorMessageLength = 200;
 @property (nonnull, nonatomic, readonly, strong) FBFuture<NSNumber *> *signal;
 
 /**
- The configuration the process was launched with.
- */
-@property (nonnull, nonatomic, readonly, strong) ProcessSpawnConfiguration *configuration;
-
-/**
  Returns the stdin of the task.
  May be called from any thread.
  The valid types for these values are the wrapped types in FBProcessInput.
@@ -75,26 +70,16 @@ static const size_t FBProcessOutputErrorMessageLength = 200;
 #pragma mark Initializers
 
 /**
- The Designated Initializer.
+ Launches a process.
 
- @param processIdentifier the process identifier of the launched process
- @param statLoc a future that will fire when the process has terminated. The value is that of waitpid(2).
- @param exitCode a future that will fire when the process exits. See -[FBSubprocess exitCode]
- @param signal a future that will fire when the process is signalled. See -[FBSubprocess signal]
- @param configuration the configuration the process was launched with.
- @param queue the queue to perform actions on.
- @return an implementation of FBSubprocess.
- */
-- (nonnull instancetype)initWithProcessIdentifier:(pid_t)processIdentifier statLoc:(nonnull FBFuture<NSNumber *> *)statLoc exitCode:(nonnull FBFuture<NSNumber *> *)exitCode signal:(nonnull FBFuture<NSNumber *> *)signal configuration:(nonnull ProcessSpawnConfiguration *)configuration queue:(nonnull dispatch_queue_t)queue;
-
-/**
- Launches a process with the provided configuration.
-
- @param configuration the configuration to use.
+ @param launchPath the path of the executable to launch.
+ @param arguments the arguments to launch it with, not including the launch path.
+ @param environment the complete environment of the launched process.
+ @param io the standard streams of the launched process.
  @param logger an optional logger to log process lifecycle events to.
  @return a future that resolves with the launched process once it has been started.
  */
-+ (nonnull FBFuture<FBSubprocess *> *)launchProcessWithConfiguration:(nonnull ProcessSpawnConfiguration *)configuration logger:(nullable id<ControlCoreLogger>)logger;
++ (nonnull FBFuture<FBSubprocess *> *)launchProcessWithLaunchPath:(nonnull NSString *)launchPath arguments:(nonnull NSArray<NSString *> *)arguments environment:(nonnull NSDictionary<NSString *, NSString *> *)environment io:(nonnull FBProcessIO *)io logger:(nullable id<ControlCoreLogger>)logger;
 
 #pragma mark Methods
 

@@ -53,13 +53,16 @@ static BOOL AddInputFileActions(posix_spawn_file_actions_t *fileActions, FBProce
 
 @interface FBSubprocess ()
 
+@property (nonatomic, readonly, copy) NSString *launchPath;
+@property (nonatomic, readonly, copy) NSArray<NSString *> *arguments;
+@property (nonatomic, readonly, copy) NSDictionary<NSString *, NSString *> *environment;
+@property (nonatomic, readonly, strong) FBProcessIO *io;
 @property (nonatomic, readonly, strong) dispatch_queue_t queue;
 
 @end
 
 @implementation FBSubprocess
 
-@synthesize configuration = _configuration;
 @synthesize exitCode = _exitCode;
 @synthesize processIdentifier = _processIdentifier;
 @synthesize signal = _signal;
@@ -67,14 +70,17 @@ static BOOL AddInputFileActions(posix_spawn_file_actions_t *fileActions, FBProce
 
 #pragma mark Initializers
 
-- (instancetype)initWithProcessIdentifier:(pid_t)processIdentifier statLoc:(FBFuture<NSNumber *> *)statLoc exitCode:(FBFuture<NSNumber *> *)exitCode signal:(FBFuture<NSNumber *> *)signal configuration:(ProcessSpawnConfiguration *)configuration queue:(dispatch_queue_t)queue
+- (instancetype)initWithProcessIdentifier:(pid_t)processIdentifier statLoc:(FBFuture<NSNumber *> *)statLoc exitCode:(FBFuture<NSNumber *> *)exitCode signal:(FBFuture<NSNumber *> *)signal launchPath:(NSString *)launchPath arguments:(NSArray<NSString *> *)arguments environment:(NSDictionary<NSString *, NSString *> *)environment io:(FBProcessIO *)io queue:(dispatch_queue_t)queue
 {
   self = [super init];
   if (!self) {
     return nil;
   }
 
-  _configuration = configuration;
+  _launchPath = [launchPath copy];
+  _arguments = [arguments copy];
+  _environment = [environment copy];
+  _io = io;
   _processIdentifier = processIdentifier;
   _exitCode = exitCode;
   _signal = signal;
@@ -84,15 +90,15 @@ static BOOL AddInputFileActions(posix_spawn_file_actions_t *fileActions, FBProce
   return self;
 }
 
-+ (FBFuture<FBSubprocess *> *)launchProcessWithConfiguration:(ProcessSpawnConfiguration *)configuration logger:(id<ControlCoreLogger>)logger
++ (FBFuture<FBSubprocess *> *)launchProcessWithLaunchPath:(NSString *)launchPath arguments:(NSArray<NSString *> *)arguments environment:(NSDictionary<NSString *, NSString *> *)environment io:(FBProcessIO *)io logger:(id<ControlCoreLogger>)logger
 {
   dispatch_queue_t queue = dispatch_queue_create("com.facebook.fbcontrolcore.task", DISPATCH_QUEUE_SERIAL);
-  return [[configuration.io
+  return [[io
            attach]
           onQueue:queue
           fmap:^(FBProcessIOAttachment *attachment) {
             NSError *error = nil;
-            FBSubprocess *process = [FBSubprocess processWithConfiguration:configuration attachment:attachment queue:queue logger:logger error:&error];
+            FBSubprocess *process = [FBSubprocess processWithLaunchPath:launchPath arguments:arguments environment:environment io:io attachment:attachment queue:queue logger:logger error:&error];
             if (!process) {
               return [FBFuture futureWithError:error];
             }
@@ -143,17 +149,17 @@ static BOOL AddInputFileActions(posix_spawn_file_actions_t *fileActions, FBProce
 
 - (nullable id)stdIn
 {
-  return [self.configuration.io.stdIn contents];
+  return [self.io.stdIn contents];
 }
 
 - (nullable id)stdOut
 {
-  return [self.configuration.io.stdOut contents];
+  return [self.io.stdOut contents];
 }
 
 - (nullable id)stdErr
 {
-  return [self.configuration.io.stdErr contents];
+  return [self.io.stdErr contents];
 }
 
 #pragma mark Private
@@ -196,17 +202,15 @@ static BOOL AddInputFileActions(posix_spawn_file_actions_t *fileActions, FBProce
   return [string stringByTrimmingCharactersInSet:NSCharacterSet.whitespaceAndNewlineCharacterSet];
 }
 
-+ (FBSubprocess *)processWithConfiguration:(ProcessSpawnConfiguration *)configuration attachment:(FBProcessIOAttachment *)attachment queue:(dispatch_queue_t)queue logger:(id<ControlCoreLogger>)logger error:(NSError **)error
++ (FBSubprocess *)processWithLaunchPath:(NSString *)launchPath arguments:(NSArray<NSString *> *)arguments environment:(NSDictionary<NSString *, NSString *> *)environment io:(FBProcessIO *)io attachment:(FBProcessIOAttachment *)attachment queue:(dispatch_queue_t)queue logger:(id<ControlCoreLogger>)logger error:(NSError **)error
 {
-  NSArray<NSString *> *arguments = configuration.arguments;
   char *argv[arguments.count + 2]; // 0th arg is launch path, last arg is NULL
-  argv[0] = (char *) configuration.launchPath.UTF8String;
+  argv[0] = (char *) launchPath.UTF8String;
   argv[arguments.count + 1] = NULL;
   for (NSUInteger index = 0; index < arguments.count; index++) {
     argv[index + 1] = (char *) arguments[index].UTF8String;
   }
 
-  NSDictionary<NSString *, NSString *> *environment = configuration.environment;
   NSArray<NSString *> *environmentNames = environment.allKeys;
   char *envp[environment.count + 1];
   envp[environment.count] = NULL;
@@ -250,19 +254,25 @@ static BOOL AddInputFileActions(posix_spawn_file_actions_t *fileActions, FBProce
   posix_spawnattr_destroy(&spawnAttributes);
   if (status != 0) {
     return [[ControlCoreError
-             describe:[NSString stringWithFormat:@"Failed to launch %@ with error %s", configuration, strerror(status)]]
+             describe:[NSString stringWithFormat:@"Failed to launch %@ with error %s", [self launchDescriptionWithLaunchPath:launchPath arguments:arguments environment:environment io:io], strerror(status)]]
             fail:error];
   }
-  [logger log:[NSString stringWithFormat:@"%@ Launched with pid %d", configuration.processName, processIdentifier]];
+  NSString *processName = launchPath.lastPathComponent;
+  [logger log:[NSString stringWithFormat:@"%@ Launched with pid %d", processName, processIdentifier]];
 
   FBMutableFuture<NSNumber *> *statLoc = FBMutableFuture.future;
   FBMutableFuture<NSNumber *> *exitCode = FBMutableFuture.future;
   FBMutableFuture<NSNumber *> *signal = FBMutableFuture.future;
-  [self resolveProcessCompletion:processIdentifier attachment:attachment statLoc:statLoc exitCode:exitCode signal:signal configuration:configuration logger:logger];
-  return [[self alloc] initWithProcessIdentifier:processIdentifier statLoc:statLoc exitCode:exitCode signal:signal configuration:configuration queue:queue];
+  [self resolveProcessCompletion:processIdentifier attachment:attachment statLoc:statLoc exitCode:exitCode signal:signal processName:processName logger:logger];
+  return [[self alloc] initWithProcessIdentifier:processIdentifier statLoc:statLoc exitCode:exitCode signal:signal launchPath:launchPath arguments:arguments environment:environment io:io queue:queue];
 }
 
-+ (void)resolveProcessCompletion:(pid_t)processIdentifier attachment:(FBProcessIOAttachment *)attachment statLoc:(FBMutableFuture<NSNumber *> *)statLoc exitCode:(FBMutableFuture<NSNumber *> *)exitCode signal:(FBMutableFuture<NSNumber *> *)signal configuration:(ProcessSpawnConfiguration *)configuration logger:(id<ControlCoreLogger>)logger
++ (NSString *)launchDescriptionWithLaunchPath:(NSString *)launchPath arguments:(NSArray<NSString *> *)arguments environment:(NSDictionary<NSString *, NSString *> *)environment io:(FBProcessIO *)io
+{
+  return [NSString stringWithFormat:@"Process Launch %@ | Arguments %@ | Environment %@ | Output %@", launchPath, [CollectionInformation oneLineDescriptionFromArray:arguments], [CollectionInformation oneLineDescriptionFromDictionary:environment], io];
+}
+
++ (void)resolveProcessCompletion:(pid_t)processIdentifier attachment:(FBProcessIOAttachment *)attachment statLoc:(FBMutableFuture<NSNumber *> *)statLoc exitCode:(FBMutableFuture<NSNumber *> *)exitCode signal:(FBMutableFuture<NSNumber *> *)signal processName:(NSString *)processName logger:(id<ControlCoreLogger>)logger
 {
   dispatch_queue_t queue = dispatch_queue_create("com.facebook.fbcontrolcore.task.posix_spawn.wait", DISPATCH_QUEUE_SERIAL);
   dispatch_source_t source = dispatch_source_create(
@@ -290,7 +300,7 @@ static BOOL AddInputFileActions(posix_spawn_file_actions_t *fileActions, FBProce
      exitCodeFuture:exitCode
      signalFuture:signal
      processIdentifier:processIdentifier
-     configuration:configuration
+     processName:processName
      queue:queue
      logger:logger];
 
@@ -305,7 +315,7 @@ static BOOL AddInputFileActions(posix_spawn_file_actions_t *fileActions, FBProce
 
 - (NSString *)description
 {
-  return [NSString stringWithFormat:@"Process %@ | pid %d | State %@", self.configuration.description, self.processIdentifier, self.statLoc];
+  return [NSString stringWithFormat:@"Process %@ | pid %d | State %@", [FBSubprocess launchDescriptionWithLaunchPath:self.launchPath arguments:self.arguments environment:self.environment io:self.io], self.processIdentifier, self.statLoc];
 }
 
 @end

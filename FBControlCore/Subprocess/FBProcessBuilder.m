@@ -232,7 +232,12 @@
 
 - (FBFuture<FBSubprocess *> *)start
 {
-  return [FBSubprocess launchProcessWithConfiguration:self.buildConfiguration logger:self.logger];
+  return [FBSubprocess
+          launchProcessWithLaunchPath:self.launchPath
+          arguments:self.arguments
+          environment:self.environment
+          io:[[FBProcessIO alloc] initWithStdIn:self.stdIn stdOut:self.stdOut stdErr:self.stdErr]
+          logger:self.logger];
 }
 
 - (FBFuture<FBSubprocess *> *)runUntilCompletionWithAcceptableExitCodes:(NSSet<NSNumber *> *)exitCodes
@@ -247,16 +252,6 @@
 }
 
 #pragma mark Private
-
-- (ProcessSpawnConfiguration *)buildConfiguration
-{
-  return [[ProcessSpawnConfiguration alloc]
-          initWithLaunchPath:self.launchPath
-          arguments:self.arguments
-          environment:self.environment
-          io:[[FBProcessIO alloc] initWithStdIn:self.stdIn stdOut:self.stdOut stdErr:self.stdErr]
-          mode:ProcessSpawnModeDefault];
-}
 
 + (NSDictionary<NSString *, NSString *> *)defaultEnvironmentForSubprocess
 {
