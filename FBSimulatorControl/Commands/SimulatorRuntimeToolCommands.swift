@@ -88,33 +88,13 @@ public struct SimulatorRuntimeToolCommands: Sendable {
     arguments: [String] = [],
     environment: [String: String] = [:]
   ) async throws -> InSimulatorToolOutput {
-    let stdoutConsumer = FBDataBuffer.accumulatingBuffer()
-    let stderrConsumer = FBDataBuffer.accumulatingBuffer()
-    let io = FBProcessIO<AnyObject, AnyObject, AnyObject>(
-      stdIn: nil,
-      stdOut: FBProcessOutput<AnyObject>(for: stdoutConsumer),
-      stdErr: FBProcessOutput<AnyObject>(for: stderrConsumer)
-    )
-    let configuration = ProcessSpawnConfiguration(
-      launchPath: launchPath,
-      arguments: arguments,
-      environment: environment,
-      io: io,
-      mode: .default
-    )
-
-    let process = try await simulator.spawn(configuration)
-    let statLoc = try await bridgeFBFuture(process.statLoc)
-
-    switch TerminationStatus(statLoc: statLoc.int32Value) {
+    let completed = try await Subprocess(executable: launchPath, arguments: arguments, environment: .exact(environment))
+      .run(on: SimulatorSubprocessLauncher(simulator: simulator), output: .data, error: .data, exitPolicy: .any)
+    switch completed.terminationStatus {
     case let .signalled(signal):
-      throw InSimulatorToolError.signalled(launchPath: launchPath, signal: signal, stderr: String(decoding: stderrConsumer.data(), as: UTF8.self))
+      throw InSimulatorToolError.signalled(launchPath: launchPath, signal: signal, stderr: String(decoding: completed.standardError, as: UTF8.self))
     case let .exited(exitCode):
-      return InSimulatorToolOutput(
-        stdout: stdoutConsumer.data(),
-        stderr: stderrConsumer.data(),
-        exitCode: exitCode
-      )
+      return InSimulatorToolOutput(stdout: completed.standardOutput, stderr: completed.standardError, exitCode: exitCode)
     }
   }
 
