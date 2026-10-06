@@ -123,8 +123,7 @@ final class FBArchiveOperationsTests: XCTestCase {
       _ = try await FBArchiveOperations.createGzipData(forPath: nonExistentPath, logger: logger)
       XCTFail("Expected compressing a missing path to fail")
     } catch {
-      // BUG: the error carries only gzip's exit status, not what gzip wrote to stderr — flipped in the following commit.
-      XCTAssertFalse(error.localizedDescription.contains("No such file or directory"), error.localizedDescription)
+      XCTAssertTrue(error.localizedDescription.contains("No such file or directory"), error.localizedDescription)
     }
   }
 

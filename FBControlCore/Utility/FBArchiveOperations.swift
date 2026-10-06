@@ -20,6 +20,7 @@ public enum ArchiveOperationsError: Error, LocalizedError {
   case pathDoesNotExist(path: String)
   /// The tool reading a stream exited unsuccessfully, with the tail of its standard error.
   case unacceptableExitCode(Int32, standardError: String)
+  case compressionFailed(path: String, exitCode: Int32, stderr: String)
 
   public var errorDescription: String? {
     switch self {
@@ -28,6 +29,8 @@ public enum ArchiveOperationsError: Error, LocalizedError {
     case let .unacceptableExitCode(code, standardError):
       let description = "Exit Code \(code) is not acceptable [0]"
       return standardError.isEmpty ? description : "\(description): \(standardError)"
+    case let .compressionFailed(path, exitCode, stderr):
+      return "Compressing \(path) failed with exit code \(exitCode): \(stderr)"
     }
   }
 }
@@ -143,9 +146,10 @@ public enum FBArchiveOperations {
     forPath path: String,
     logger: any ControlCoreLogger
   ) async throws -> Data {
-    try await Subprocess(executable: "/usr/bin/gzip", arguments: ["--to-stdout", path])
-      .run(output: .data, error: .logger(logger), logger: logger)
-      .standardOutput
+    let gzip = try await Subprocess(executable: "/usr/bin/gzip", arguments: ["--to-stdout", path])
+      .run(output: .data, error: .loggerCapturingErrorMessage(logger), exitPolicy: .any, logger: logger)
+    try gzip.checkExitedCleanly { ArchiveOperationsError.compressionFailed(path: path, exitCode: $0, stderr: gzip.standardError) }
+    return gzip.standardOutput
   }
 
   /// Creates a gzip archive, returning a task that has an input stream attached to stdout. Read the
