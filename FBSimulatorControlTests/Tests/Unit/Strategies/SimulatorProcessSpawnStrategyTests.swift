@@ -27,8 +27,8 @@ final class SimulatorProcessSpawnStrategyTests: XCTestCase {
       arguments: ["hello", "world"],
       environment: [:],
       waitForDebugger: false,
-      stdOut: nil,
-      stdErr: nil,
+      standardOutput: nil,
+      standardError: nil,
       mode: .launchd)
 
     XCTAssertEqual(
@@ -43,8 +43,8 @@ final class SimulatorProcessSpawnStrategyTests: XCTestCase {
       arguments: [],
       environment: ["KEY": "VALUE"],
       waitForDebugger: false,
-      stdOut: nil,
-      stdErr: nil,
+      standardOutput: nil,
+      standardError: nil,
       mode: .launchd)
 
     XCTAssertEqual(options["environment"] as? [String: String], ["KEY": "VALUE"])
@@ -60,8 +60,8 @@ final class SimulatorProcessSpawnStrategyTests: XCTestCase {
       arguments: [],
       environment: [:],
       waitForDebugger: true,
-      stdOut: nil,
-      stdErr: nil,
+      standardOutput: nil,
+      standardError: nil,
       mode: .launchd)
 
     XCTAssertEqual((options["wait_for_debugger"] as? NSNumber)?.intValue, 1)
@@ -72,12 +72,12 @@ final class SimulatorProcessSpawnStrategyTests: XCTestCase {
 
     let launchd = SimulatorProcessSpawnStrategy.simDeviceLaunchOptions(
       withSimulator: booted, launchPath: "/bin/echo", arguments: [], environment: [:],
-      waitForDebugger: false, stdOut: nil, stdErr: nil, mode: .launchd)
+      waitForDebugger: false, standardOutput: nil, standardError: nil, mode: .launchd)
     XCTAssertEqual((launchd["standalone"] as? NSNumber)?.boolValue, false)
 
     let posix = SimulatorProcessSpawnStrategy.simDeviceLaunchOptions(
       withSimulator: booted, launchPath: "/bin/echo", arguments: [], environment: [:],
-      waitForDebugger: false, stdOut: nil, stdErr: nil, mode: .posixSpawn)
+      waitForDebugger: false, standardOutput: nil, standardError: nil, mode: .posixSpawn)
     XCTAssertEqual((posix["standalone"] as? NSNumber)?.boolValue, true)
   }
 
@@ -100,61 +100,6 @@ final class SimulatorProcessSpawnStrategyTests: XCTestCase {
     XCTAssertTrue(
       SimulatorProcessSpawnStrategy.shouldLaunchStandalone(onSimulator: simulator(state: .shutdown), mode: .default),
       "When not booted, default mode launches standalone")
-  }
-
-  // MARK: - stdin on the raw spawn path
-
-  func testRawSpawnRejectsAConfigurationCarryingStdIn() async throws {
-    let device = RecordingSpawnDevice()
-    let simulator = SimulatorTestSupport.testableSimulator(withDevice: device)
-    let stdIn = FBProcessInput<NSObject>.fromConsumer().retyped(FBProcessInput<AnyObject>.self)
-    let stdOut = FBProcessOutput<AnyObject>(for: FBNullDataConsumer())
-    let configuration = ProcessSpawnConfiguration(
-      launchPath: "/bin/cat",
-      arguments: [],
-      environment: [:],
-      io: FBProcessIO<AnyObject, AnyObject, AnyObject>(stdIn: stdIn, stdOut: stdOut, stdErr: nil),
-      mode: .posixSpawn)
-
-    // `SimDevice`'s option dictionary carries stdout and stderr as file
-    // descriptors but has no stdin key at all, so there is nowhere for the
-    // attached input to go.
-    do {
-      _ = try await simulator.spawn(configuration)
-      XCTFail("Expected the launch to be rejected, but a process was returned")
-    } catch SimulatorProcessSpawnError.stdInUnsupported {
-      // Expected.
-    }
-
-    XCTAssertNil(device.spawnedOptions, "The rejection precedes the spawn, so the device is never handed any options")
-  }
-
-  // MARK: - Teardown on the raw spawn path
-
-  func testRawSpawnDrainsStdOutBeforeTheExitResolves() async throws {
-    let payload = Data(repeating: UInt8(ascii: "x"), count: 12_000) + Data("end\n".utf8)
-    let device = ExitingSpawnDevice(stdOutPayload: payload)
-    let simulator = SimulatorTestSupport.testableSimulator(withDevice: device)
-    let received = Received()
-    // Slow enough that a teardown which resolves without waiting for the drain loses the race.
-    let consumer = FBBlockDataConsumer.synchronousDataConsumer { data in
-      Thread.sleep(forTimeInterval: 0.05)
-      received.append(data)
-    }
-    let configuration = ProcessSpawnConfiguration(
-      launchPath: "/bin/echo",
-      arguments: [],
-      environment: [:],
-      io: FBProcessIO<AnyObject, AnyObject, AnyObject>(stdIn: nil, stdOut: FBProcessOutput<AnyObject>(for: consumer), stdErr: nil),
-      mode: .posixSpawn)
-
-    let process = try await simulator.spawn(configuration)
-    let exitCode = try await bridgeFBFuture(process.exitCode)
-
-    XCTAssertEqual(exitCode.int32Value, 0)
-    // The device reports termination while the payload still sits unread in the pipe, so
-    // only a teardown that drains before resolving can have delivered all of it by now.
-    XCTAssertEqual(received.data, payload)
   }
 
   // MARK: - SubprocessLauncher

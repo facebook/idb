@@ -415,8 +415,4 @@ extension Simulator {
     }
     return details
   }
-
-  public func spawn(_ configuration: ProcessSpawnConfiguration) async throws -> FBSubprocess<AnyObject, AnyObject, AnyObject> {
-    try await SimulatorProcessSpawnStrategy.spawn(self, configuration: configuration)
-  }
 }

@@ -9,19 +9,6 @@
 @preconcurrency import FBControlCore
 import Foundation
 
-enum SimulatorProcessSpawnError: Error {
-  case stdInUnsupported
-}
-
-extension SimulatorProcessSpawnError: LocalizedError {
-  var errorDescription: String? {
-    switch self {
-    case .stdInUnsupported:
-      return "A process cannot be spawned on a Simulator with a stdin attached, as SimDevice provides no way of connecting one"
-    }
-  }
-}
-
 final class SimulatorProcessSpawnStrategy {
 
   // MARK: - Launch Options
@@ -34,96 +21,6 @@ final class SimulatorProcessSpawnStrategy {
       options["wait_for_debugger"] = NSNumber(value: 1)
     }
     return options
-  }
-
-  static func spawn(_ simulator: Simulator, configuration: ProcessSpawnConfiguration) async throws -> FBSubprocess<AnyObject, AnyObject, AnyObject> {
-    // Rejected before attaching, so that no file descriptor is opened for an input
-    // that could never be read: SimDevice's launch options address stdout and stderr
-    // by file descriptor and have no equivalent for stdin.
-    guard configuration.io.stdIn == nil else {
-      throw SimulatorProcessSpawnError.stdInUnsupported
-    }
-    let attachment = try await bridgeFBFuture(configuration.io.attach())
-    return try await launchProcess(
-      withSimulator: simulator,
-      configuration: configuration,
-      attachment: attachment
-    )
-  }
-
-  private static func launchProcess(withSimulator simulator: Simulator, configuration: ProcessSpawnConfiguration, attachment: FBProcessIOAttachment) async throws -> FBSubprocess<AnyObject, AnyObject, AnyObject> {
-    let logger = simulator.logger
-    let statLoc = FBMutableFuture<NSNumber>(name: "Process completion of \(configuration.launchPath) on \(simulator.udid)")
-    let exitCode = FBMutableFuture<NSNumber>(name: "Process exit of \(configuration.launchPath) on \(simulator.udid)")
-    let signal = FBMutableFuture<NSNumber>(name: "Process signal of \(configuration.launchPath) on \(simulator.udid)")
-
-    let options = simDeviceLaunchOptions(
-      withSimulator: simulator,
-      launchPath: configuration.launchPath,
-      arguments: configuration.arguments,
-      environment: configuration.environment,
-      waitForDebugger: false,
-      stdOut: attachment.stdOut,
-      stdErr: attachment.stdErr,
-      mode: configuration.mode
-    )
-
-    // PID is needed by the termination handler for logging; we populate the
-    // holder once `spawnAsync` returns it. The terminationHandler will only be
-    // invoked after the process exits, which strictly follows that return.
-    let pidHolder = PIDHolder()
-    let processIdentifier = try await simulator.device.spawnAsync(
-      withPath: configuration.launchPath,
-      options: options,
-      terminationQueue: simulator.workQueue,
-      terminationHandler: { (statLocValue: Int32) in
-        // The attachment descriptors are closed exactly once, by the detach that
-        // resolveProcessFinished runs. Closing them here as well would race that
-        // asynchronous teardown and double-close recycled descriptor numbers,
-        // which crashes whichever component now owns them (EV_VANISHED on
-        // dispatch-source-monitored descriptors, EBADF traps in SwiftNIO).
-        ProcessSpawnCommandHelpers.resolveProcessFinished(
-          withStatLoc: statLocValue,
-          inTeardownOfIOAttachment: attachment,
-          statLocFuture: statLoc,
-          exitCodeFuture: exitCode,
-          signalFuture: signal,
-          processIdentifier: pidHolder.value,
-          configuration: configuration,
-          queue: simulator.workQueue,
-          logger: logger
-        )
-      },
-      completionQueue: simulator.workQueue
-    )
-    pidHolder.value = processIdentifier
-
-    return FBSubprocess<AnyObject, AnyObject, AnyObject>(
-      processIdentifier: processIdentifier,
-      statLoc: convertFBMutableFuture(statLoc),
-      exitCode: convertFBMutableFuture(exitCode),
-      signal: convertFBMutableFuture(signal),
-      configuration: configuration,
-      queue: simulator.workQueue
-    )
-  }
-
-  /// Lets the termination handler reach the PID once it's known, since
-  /// `spawnAsync` produces the PID after the handler is registered.
-  private final class PIDHolder: @unchecked Sendable {
-    var value: Int32 = 0
-  }
-
-  static func simDeviceLaunchOptions(withSimulator simulator: Simulator, launchPath: String, arguments: [String], environment: [String: String], waitForDebugger: Bool, stdOut: FBProcessStreamAttachment?, stdErr: FBProcessStreamAttachment?, mode: ProcessSpawnMode) -> [String: Any] {
-    simDeviceLaunchOptions(
-      withSimulator: simulator,
-      launchPath: launchPath,
-      arguments: arguments,
-      environment: environment,
-      waitForDebugger: waitForDebugger,
-      standardOutput: stdOut?.fileDescriptor,
-      standardError: stdErr?.fileDescriptor,
-      mode: mode)
   }
 
   static func simDeviceLaunchOptions(withSimulator simulator: Simulator, launchPath: String, arguments: [String], environment: [String: String], waitForDebugger: Bool, standardOutput: Int32?, standardError: Int32?, mode: ProcessSpawnMode) -> [String: Any] {
