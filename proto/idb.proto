@@ -156,6 +156,11 @@ message CompanionInfo {
   // whose 8 byte content is "idb-zip\0", which tells it apart from a
   // compressed tar. Companions without this must be sent the zip as is.
   bool zstd_zip_streams = 8;
+  // The destinations whose stream the companion reads as a zip, or as a zstd
+  // compressed zip if zstd_zip_streams is set, telling it apart from a tar by
+  // its first bytes. Companions that predate this field leave it empty, and
+  // read only an app stream as a zip.
+  repeated InstallRequest.Destination zip_stream_destinations = 9;
 }
 
 enum Setting {

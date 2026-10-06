@@ -20,4 +20,12 @@ struct StreamCapabilitiesTests {
     #expect(info.supportedCompressions == [.gzip, .zstd])
     #expect(info.zstdZipStreams)
   }
+
+  @Test
+  func everyArchiveDestinationReadsAZipStream() {
+    var info = Idb_CompanionInfo()
+    info.setStreamCapabilities()
+
+    #expect(info.zipStreamDestinations == [.app, .xctest, .dsym, .framework])
+  }
 }

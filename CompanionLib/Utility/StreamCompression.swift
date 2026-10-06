@@ -37,5 +37,6 @@ extension Idb_CompanionInfo {
   mutating func setStreamCapabilities() {
     supportedCompressions = [.gzip, .zstd]
     zstdZipStreams = true
+    zipStreamDestinations = [.app, .xctest, .dsym, .framework]
   }
 }
