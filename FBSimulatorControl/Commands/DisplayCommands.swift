@@ -236,6 +236,15 @@ extension DisplayCommands {
     try configurationTracker.observe(await settledReport(within: timeout))
   }
 
+  /// The active display once any transition has settled, provided it is the one `selection` names. Unlike the
+  /// active display that interactions fall back from, a selected display is required.
+  func activeDisplay(selectedBy selection: DisplaySelection, within timeout: Duration) async throws -> SimulatorDisplay {
+    let configuration = try await settledConfiguration(within: timeout)
+    let active = try configuration.activeDisplay()
+    try selection.confirm(routedTo: .identified(active), latest: configuration)
+    return active
+  }
+
   /// The accessibility identity of a display that has to be named. The guest is asked only for a display it
   /// has not seen, and only then are `capabilities` required of it.
   func accessibilityID(

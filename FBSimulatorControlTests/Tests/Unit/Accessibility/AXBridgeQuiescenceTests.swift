@@ -246,12 +246,13 @@ final class AXBridgeQuiescenceTests: XCTestCase {
 
   // MARK: - Following the active display
 
-  private func automation(_ transport: FollowingTransport, displays: DisplayCommandsDouble) -> AXBridgeUIAutomation {
+  private func automation(_ transport: FollowingTransport, displays: DisplayCommandsDouble, selection: DisplaySelection = .active) -> AXBridgeUIAutomation {
     AXBridgeUIAutomation(
       simulator: SimulatorTestSupport.testableSimulator(withDevice: AXBridgeQuiescenceDevice()),
       transport: transport,
       persistence: .exclusive,
-      displays: displays)
+      displays: displays,
+      selection: selection)
   }
 
   private static func display(_ uniqueID: String, rotation: SimulatorDisplayRotation = .upright) -> SimulatorDisplayTarget {
@@ -294,6 +295,32 @@ final class AXBridgeQuiescenceTests: XCTestCase {
     let requests = await transport.streamRequests
     XCTAssertEqual(requests.map { $0.payload["displayID"] as? UInt32 }, [82, 83])
     try await transport.waitUntilTerminated(streams: 1)
+  }
+
+  func testASwitchAwayFromASelectedDisplayEndsTheStream() async throws {
+    let transport = FollowingTransport(inventory: Self.inventory, streams: [[Self.state("quiet")], [Self.state("busy", pid: 43)]])
+    let displays = DisplayCommandsDouble(Self.display("inner"), Self.display("inner"), Self.display("cover"))
+    let stream = try await automation(transport, displays: displays, selection: .display(uniqueID: "inner"))
+      .quiescence(.frontmost, parameters: QuiescenceParameters())
+    var events: [QuiescenceEvent] = []
+    do {
+      for try await event in stream { events.append(event) }
+      XCTFail("Expected a display change")
+    } catch { guard case SimulatorDisplayError.changed = error else { return XCTFail("\(error)") } }
+    XCTAssertEqual(events, [.state(.quiet, pid: 42)])
+    let requests = await transport.streamRequests
+    XCTAssertEqual(requests.map { $0.payload["displayID"] as? UInt32 }, [82])
+  }
+
+  func testSelectingAnInactiveDisplayOpensNoStream() async throws {
+    let transport = FollowingTransport(inventory: Self.inventory, streams: [[Self.state("quiet")]])
+    do {
+      _ = try await automation(transport, displays: DisplayCommandsDouble(Self.display("inner")), selection: .display(uniqueID: "cover"))
+        .quiescence(.frontmost, parameters: QuiescenceParameters())
+      XCTFail("Expected an inactive display")
+    } catch { guard case SimulatorDisplayInteractionError.inactiveDisplay("cover") = error else { return XCTFail("\(error)") } }
+    let requests = await transport.streamRequests
+    XCTAssertTrue(requests.isEmpty)
   }
 
   func testASwitchThatKeepsTheSameApplicationDoesNotReportATargetChange() async throws {

@@ -5,6 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+import FBControlCore
 import Foundation
 
 /// Accessibility requests name a display by the identity the guest's accessibility inventory assigns it.
@@ -52,4 +53,23 @@ extension RoutedDisplay where Route == AccessibilityRoute {
 
 extension RoutedDisplay where Route == DigitizerRoute {
   var digitizerTarget: UInt64 { UInt64(id ?? 0) }
+}
+
+extension DisplaySelection {
+  /// Refuses an interaction routed to `display` unless it is the display this selection names. A nil display
+  /// means the interaction falls back to the main display, which names no display.
+  func confirm(routedTo display: SimulatorInteractionDisplay?, latest: SimulatorDisplayConfiguration?) throws {
+    switch self {
+    case .active:
+      return
+    case let .display(uniqueID):
+      guard case let .identified(identified)? = display, identified.uniqueID == uniqueID else {
+        throw SimulatorDisplayInteractionError.inactiveDisplay(uniqueID)
+      }
+    case let .configuration(generation):
+      guard latest?.generation == generation else { throw SimulatorDisplayError.changed }
+    case .main:
+      throw SimulatorDisplayInteractionError.unsupportedCapability("an interaction bound to the main display")
+    }
+  }
 }

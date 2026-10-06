@@ -83,4 +83,11 @@ final class UIAutomationTests: XCTestCase {
       XCTAssertTrue(reader.transport is AXBridgeOneshotTransport)
     }
   }
+
+  func testTheAccessibilityBackendRefusesToSelectADisplay() {
+    let simulator = SimulatorTestSupport.testableSimulator()
+    XCTAssertThrowsError(try simulator.uiAutomation(backend: .accessibility, display: .display(uniqueID: "cover"))) { error in
+      guard case UIAutomationError.operationUnsupported(backend: .accessibility, _) = error else { return XCTFail("\(error)") }
+    }
+  }
 }

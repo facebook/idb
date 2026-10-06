@@ -748,6 +748,47 @@ final class AXBridgeReadsTests: XCTestCase {
     }
   }
 
+  func testSelectingTheActiveDisplayOrItsConfigurationReadsIt() async throws {
+    for selection in [DisplaySelection.display(uniqueID: "inner"), .configuration(generation: 1)] {
+      let transport = try StubAXBridgeWaitTransport(responses: [
+        envelope(["ok": true, "pid": 42, "tree": [AXWire.Node.label.rawValue: "target"]])
+      ])
+      let reader = AXBridgeUIAutomation(
+        simulator: SimulatorTestSupport.testableSimulator(withDevice: AXBridgeWaitDevice()),
+        transport: transport, persistence: .exclusive, displays: displays(), selection: selection)
+      let response = try await reader.describe(.point(CGPoint(x: 80, y: 180)), options: AccessibilityRequestOptions())
+      XCTAssertEqual(response.screen?.display?.uniqueID, "inner", "\(selection)")
+      let requests = await transport.requests
+      XCTAssertEqual(requests.first?.payload["displayID"] as? UInt32, 82, "\(selection)")
+    }
+  }
+
+  func testSelectingAnInactiveDisplaySendsNothing() async throws {
+    let transport = StubAXBridgeWaitTransport(responses: [])
+    let reader = AXBridgeUIAutomation(
+      simulator: SimulatorTestSupport.testableSimulator(withDevice: AXBridgeWaitDevice()),
+      transport: transport, persistence: .exclusive, displays: displays(), selection: .display(uniqueID: "inner-inactive"))
+    do {
+      try await reader.tap(.point(CGPoint(x: 80, y: 180)), options: TapOptions())
+      XCTFail("Expected an inactive display")
+    } catch { guard case SimulatorDisplayInteractionError.inactiveDisplay("inner-inactive") = error else { return XCTFail("\(error)") } }
+    let count = await transport.readCount
+    XCTAssertEqual(count, 0)
+  }
+
+  func testSelectingAStaleConfigurationSendsNothing() async throws {
+    let transport = StubAXBridgeWaitTransport(responses: [])
+    let reader = AXBridgeUIAutomation(
+      simulator: SimulatorTestSupport.testableSimulator(withDevice: AXBridgeWaitDevice()),
+      transport: transport, persistence: .exclusive, displays: displays(), selection: .configuration(generation: 2))
+    do {
+      _ = try await reader.describe(.frontmost, options: AccessibilityRequestOptions())
+      XCTFail("Expected a display change")
+    } catch { guard case SimulatorDisplayError.changed = error else { return XCTFail("\(error)") } }
+    let count = await transport.readCount
+    XCTAssertEqual(count, 0)
+  }
+
   func testMarkerWritePinsDisplayAcrossLookupAndWrite() async throws {
     let displays = displays()
     let transport = try StubAXBridgeWaitTransport(responses: [

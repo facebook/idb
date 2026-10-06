@@ -107,17 +107,21 @@ public struct ScreenshotConfiguration: Hashable, Sendable {
   public let scale: ScreenshotScale
   /// The unit `cropRect` and `scale`'s fit bounds are expressed in.
   public let unit: ScreenshotUnit
+  /// The display to capture, on a simulator with several. Every other target has one screen.
+  public let display: DisplaySelection
 
   public init(
     encoding: ScreenshotEncoding = .png,
     cropRect: CGRect? = nil,
     scale: ScreenshotScale = .native,
-    unit: ScreenshotUnit = .pixels
+    unit: ScreenshotUnit = .pixels,
+    display: DisplaySelection = .active
   ) {
     self.encoding = encoding
     self.cropRect = cropRect
     self.scale = scale
     self.unit = unit
+    self.display = display
   }
 
   /// Only a crop rect or a fit bound carries a unit; `native` and `factor` have nothing to convert.
@@ -140,7 +144,7 @@ public struct ScreenshotConfiguration: Hashable, Sendable {
 extension ScreenshotConfiguration: CustomStringConvertible {
   public var description: String {
     let crop = cropRect.map { "\($0)" } ?? "full screen"
-    return "Encoding \(encoding) | Crop \(crop) | Scale \(scale) | Unit \(unit.rawValue)"
+    return "Encoding \(encoding) | Crop \(crop) | Scale \(scale) | Unit \(unit.rawValue) | Display \(display)"
   }
 }
 

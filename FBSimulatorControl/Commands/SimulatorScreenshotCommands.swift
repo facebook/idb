@@ -44,11 +44,26 @@ public final class SimulatorScreenshotCommands: ScreenshotCommands {
     guard let simulator = self.simulator else {
       throw WeakTargetError.simulator
     }
-    return try await Self.capture(
-      resolveDisplay: { try await Self.resolution(of: simulator.displays) },
-      display: { try await self.takeActiveDisplay($0, configuration: configuration, simulator: simulator) },
-      mainScreen: { try await self.takeMainScreen(configuration: configuration, simulator: simulator) },
-      logger: simulator.logger)
+    let displays = simulator.displays
+    switch configuration.display {
+    case .main:
+      return try await takeMainScreen(configuration: configuration, simulator: simulator)
+    case .active:
+      return try await Self.capture(
+        resolveDisplay: { try await Self.resolution(of: displays) },
+        display: { active in
+          try await self.take(active, configuration: configuration, simulator: simulator) {
+            Self.activeDisplay(in: try await displays.currentDisplay()) == active
+          }
+        },
+        mainScreen: { try await self.takeMainScreen(configuration: configuration, simulator: simulator) },
+        logger: simulator.logger)
+    case .display, .configuration:
+      let selected = try await displays.activeDisplay(selectedBy: configuration.display, within: displays.transitionSettling.timeout)
+      return try await take(selected, configuration: configuration, simulator: simulator) {
+        try await displays.activeDisplay(selectedBy: configuration.display, within: .zero) == selected
+      }
+    }
   }
 
   static func resolution(of displays: any DisplayCommands) async throws -> SimulatorDisplayResolution {
@@ -103,13 +118,15 @@ public final class SimulatorScreenshotCommands: ScreenshotCommands {
     )
   }
 
-  private func takeActiveDisplay(_ display: SimulatorDisplay, configuration: ScreenshotConfiguration, simulator: Simulator) async throws -> ScreenshotResult {
+  private func take(
+    _ display: SimulatorDisplay, configuration: ScreenshotConfiguration, simulator: Simulator, stillCurrent: () async throws -> Bool
+  ) async throws -> ScreenshotResult {
     let framebuffer = try await FramebufferSurfaceLocator.framebuffer(for: display, simulator: simulator)
     let image = SimulatorImage(framebuffer: framebuffer, logger: simulator.logger)
     guard let captured = try await image.image(configuration: configuration, screenScale: display.scale, display: display) else {
       throw SimulatorScreenshotError.captureFailed
     }
-    guard Self.activeDisplay(in: try await simulator.displays.currentDisplay()) == display else { throw SimulatorDisplayError.changed }
+    guard try await stillCurrent() else { throw SimulatorDisplayError.changed }
     return try ScreenshotRenderer.render(
       transformed: captured.image, sourceSize: captured.sourceSize,
       encoding: configuration.encoding, screenScale: display.scale)
@@ -122,7 +139,7 @@ public final class SimulatorScreenshotCommands: ScreenshotCommands {
     guard let simulator = self.simulator else {
       throw WeakTargetError.simulator
     }
-    let framebuffer = try await simulator.framebuffer.connect()
+    let framebuffer = try await simulator.framebuffer.connect(display: .main)
     let image = SimulatorImage(framebuffer: framebuffer, logger: simulator.logger)
     self.image = image
     return image

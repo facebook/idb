@@ -352,9 +352,15 @@ extension Simulator {
   ///   what ends it — for a process that owns the simulator for its lifetime.
   /// - `.accessibility` and `.axBridge(persistence: .oneShot, …)` are stateless — they hold no warm
   ///   resource, so reconstructing them per call is free.
-  public func uiAutomation(backend: UIAutomationBackend) throws -> any UIAutomation {
+  ///
+  /// Operations reach the display `display` selects, and fail rather than reach another. Only the AXBridge
+  /// backends route to a display, so `.accessibility` refuses any selection but `.active`.
+  public func uiAutomation(backend: UIAutomationBackend, display: DisplaySelection = .active) throws -> any UIAutomation {
     switch backend {
     case .accessibility:
+      guard display == .active else {
+        throw UIAutomationError.operationUnsupported(backend: backend, operation: "Selecting a display other than the active one")
+      }
       return AccessibilityUIAutomation(simulator: self)
     case let .axBridge(persistence, frontmostMethod, automationMode):
       let transport: any AXBridgeTransport =
@@ -365,7 +371,7 @@ extension Simulator {
         }
       return AXBridgeUIAutomation(
         simulator: self, transport: transport, persistence: persistence, frontmostMethod: frontmostMethod,
-        automationMode: automationMode, displays: displays
+        automationMode: automationMode, displays: displays, selection: display
       )
     }
   }

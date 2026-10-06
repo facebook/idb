@@ -208,24 +208,7 @@ struct SimulatorHIDOperation {
     if !resolvedDisplay {
       display = try await Self.route(displays)
       let latest = displays?.configurationTracker.latest
-      switch binding {
-      case .active:
-        break
-      case let .display(uniqueID):
-        let pinnedDisplay: SimulatorDisplay?
-        switch display {
-        case let .selected(selected, _): pinnedDisplay = selected
-        case let .sole(.identified(identified)): pinnedDisplay = identified
-        case .sole(.legacy), nil: pinnedDisplay = nil
-        }
-        guard pinnedDisplay?.uniqueID == uniqueID else {
-          throw SimulatorDisplayInteractionError.inactiveDisplay(uniqueID)
-        }
-      case let .configuration(generation):
-        guard latest?.generation == generation else { throw SimulatorDisplayError.changed }
-      case .main:
-        throw SimulatorDisplayInteractionError.unsupportedCapability("HID input bound to the main display")
-      }
+      try binding.confirm(routedTo: display?.interactionDisplay, latest: latest)
       try Task.checkCancellation()
       resolvedDisplay = true
       generation = latest?.generation
