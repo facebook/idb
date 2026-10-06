@@ -54,9 +54,13 @@ public enum FramebufferEvent: Sendable {
   /// The simulator's displays are now in this configuration. Delivered first with the configuration at
   /// attachment, once it has been read, then for each change. A framebuffer following the active display
   /// delivers it ahead of the `surfaceChanged` that moves to the new display, so no frame of that display
-  /// precedes it; frames of the outgoing display may arrive in between. Only framebuffers connected to
-  /// `.active` or a named display deliver it.
+  /// precedes it; frames of the outgoing display may arrive in between. Every framebuffer but the main
+  /// screen's delivers it.
   case configurationChanged(SimulatorDisplayConfiguration)
+  /// The framebuffer no longer captures what it was connected to, and delivers nothing more. A
+  /// framebuffer bound to a display configuration ends with `SimulatorDisplayError.changed`, after the
+  /// `configurationChanged` that replaced it.
+  case ended(SimulatorDisplayError)
 }
 
 /// Tracks the surface an attachment last reported and refuses re-reports of it. Compared by
@@ -86,6 +90,7 @@ private final class SurfaceChangeFilter: @unchecked Sendable {
 public final class Framebuffer: @unchecked Sendable {
 
   private let surface: any FramebufferSurface
+  private let boundGeneration: UInt64?
   private let statsRecorder: FramebufferStatsRecorder
   private let logger: any ControlCoreLogger
 
@@ -94,8 +99,10 @@ public final class Framebuffer: @unchecked Sendable {
     return Framebuffer(surface: surface, logger: logger)
   }
 
-  init(surface: any FramebufferSurface, logger: any ControlCoreLogger) {
+  /// A framebuffer bound to `generation` ends once the display configuration moves on from it.
+  init(surface: any FramebufferSurface, boundTo generation: UInt64? = nil, logger: any ControlCoreLogger) {
     self.surface = surface
+    self.boundGeneration = generation
     self.statsRecorder = FramebufferStatsRecorder(logger: logger)
     self.logger = logger
   }
@@ -168,7 +175,12 @@ public final class Framebuffer: @unchecked Sendable {
         statsRecorder.recordFrameRendered()
         continuation.yield(.frameRendered)
       },
-      configurationChanged: { continuation.yield(.configurationChanged($0)) })
+      configurationChanged: { [boundGeneration] configuration in
+        continuation.yield(.configurationChanged(configuration))
+        guard let boundGeneration, configuration.generation != boundGeneration else { return }
+        continuation.yield(.ended(.changed))
+        continuation.finish()
+      })
   }
 }
 

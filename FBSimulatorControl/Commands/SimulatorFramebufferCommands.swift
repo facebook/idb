@@ -49,7 +49,8 @@ public struct SimulatorFramebufferCommands: Sendable {
   /// As for screenshots, the active display improves on the main screen but is never required. A sole
   /// display is the main screen, so only a simulator with several integrated displays follows one. A named
   /// display is required: capturing another in its place would capture something the caller did not ask for.
-  /// Every framebuffer but the main screen's follows the display configuration, to report it.
+  /// A configuration is required too, and its framebuffer ends once the configuration is replaced. Every
+  /// framebuffer but the main screen's follows the display configuration, to report it.
   static func framebuffer(display: DisplaySelection, displays: any DisplayCommands, screens: any FramebufferScreens, logger: any ControlCoreLogger) async throws -> Framebuffer {
     switch display {
     case .main:
@@ -61,8 +62,12 @@ public struct SimulatorFramebufferCommands: Sendable {
         displayUniqueID: uniqueID, surface: try await screens.screen(uniqueID: uniqueID), movement: .fixed,
         configurations: { displays.followConfigurations() }, locate: { try await screens.screen(uniqueID: $0) }, logger: logger)
       return Framebuffer(surface: surface, logger: logger)
-    case .configuration:
-      throw SimulatorDisplayInteractionError.unsupportedCapability("a framebuffer bound to a display configuration")
+    case let .configuration(generation):
+      let active = try await displays.activeDisplay(selectedBy: display, within: displays.transitionSettling.timeout)
+      let surface = FollowingFramebufferSurface(
+        displayUniqueID: active.uniqueID, surface: try await screens.screen(uniqueID: active.uniqueID), movement: .fixed,
+        configurations: { displays.followConfigurations() }, locate: { try await screens.screen(uniqueID: $0) }, logger: logger)
+      return Framebuffer(surface: surface, boundTo: generation, logger: logger)
     }
   }
 

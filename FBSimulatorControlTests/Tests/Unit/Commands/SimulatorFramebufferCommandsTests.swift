@@ -124,6 +124,42 @@ final class SimulatorFramebufferCommandsTests: XCTestCase {
     XCTAssertEqual(screens.main.registeredTokens.count, 1)
   }
 
+  func testAConfigurationCapturesItsActiveDisplay() async throws {
+    let screens = FramebufferScreensDouble("cover", "inner")
+    let attachment = try await framebuffer(.configuration(generation: 1), screens: screens)
+    defer { attachment.cancel() }
+
+    XCTAssertEqual(screens.requested, ["inner"])
+    XCTAssertEqual(screens.screens["inner"]?.registeredTokens.count, 1)
+    XCTAssertEqual(screens.main.registeredTokens.count, 0)
+  }
+
+  func testAConfigurationEndsOnceItIsReplaced() async throws {
+    let (pushes, push) = AsyncThrowingStream<SimulatorDisplayReport, any Error>.makeStream()
+    let displays = DisplayCommandsDouble([.success(.reporting(.selected(Self.display("inner"))))], pushes: pushes)
+    let attachment = try await framebuffer(.configuration(generation: 1), displays: displays, screens: FramebufferScreensDouble("cover", "inner"))
+    defer { attachment.cancel() }
+
+    var events: [FramebufferEvent] = []
+    for await event in attachment.events {
+      events.append(event)
+      if events.count == 1 { push.yield(.reporting(.selected(Self.display("cover")))) }
+    }
+    guard events.count == 3, case let .configurationChanged(replacement) = events[1], case .ended(.changed) = events[2] else {
+      return XCTFail("Unexpected events \(events)")
+    }
+    XCTAssertEqual(replacement.active, .identified(Self.display("cover")))
+  }
+
+  func testAReplacedConfigurationIsNotCaptured() async throws {
+    let screens = FramebufferScreensDouble("cover", "inner")
+    do {
+      _ = try await framebuffer(.configuration(generation: 2), screens: screens)
+      XCTFail("Expected a replaced configuration to fail")
+    } catch SimulatorDisplayError.changed {}
+    XCTAssertEqual(screens.requested, [])
+  }
+
   func testTheDisplayAVideoCapturesByDefault() async throws {
     let configuration = VideoStreamConfiguration(
       format: VideoStreamFormat.compressedVideo(withCodec: VideoStreamCodec.h264, transport: VideoStreamTransport.annexB),

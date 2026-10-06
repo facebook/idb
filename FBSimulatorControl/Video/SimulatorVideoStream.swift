@@ -445,6 +445,9 @@ public actor SimulatorVideoStream: VideoStreamOperation {
       }
     case .configurationChanged:
       break
+    case let .ended(error):
+      logger.log("Framebuffer ended: \(error)")
+      failPendingStart(with: error)
     }
   }
 

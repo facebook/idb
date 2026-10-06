@@ -70,6 +70,24 @@ final class FramebufferTests: XCTestCase {
     XCTAssertEqual(delivered, configuration)
   }
 
+  func testABoundFramebufferEndsOnceItsConfigurationIsReplaced() async throws {
+    let surface = FakeFramebufferSurface()
+    let attachment = try Framebuffer(surface: surface, boundTo: 2, logger: CapturingLogger()).attach()
+
+    surface.configurationChanged?(SimulatorDisplayConfiguration(generation: 2, displays: [], active: .unresolved, phase: .settled))
+    surface.configurationChanged?(SimulatorDisplayConfiguration(generation: 2, displays: [], active: .unresolved, phase: .transitioning))
+    surface.frameRendered?()
+    surface.configurationChanged?(SimulatorDisplayConfiguration(generation: 3, displays: [], active: .unresolved, phase: .settled))
+    surface.frameRendered?()
+
+    var events: [FramebufferEvent] = []
+    for await event in attachment.events { events.append(event) }
+    guard events.count == 5, case .frameRendered = events[2], case let .configurationChanged(replacement) = events[3], case .ended(.changed) = events[4] else {
+      return XCTFail("Unexpected events \(events)")
+    }
+    XCTAssertEqual(replacement.generation, 3)
+  }
+
   func testStreamBuffersAndDeliversEventsInOrder() async throws {
     let surface = FakeFramebufferSurface()
     let framebuffer = makeFramebuffer(surface: surface)
