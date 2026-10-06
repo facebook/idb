@@ -51,12 +51,10 @@ struct IDBCommandExecutorInstallTests {
     let harness = try MacInstallHarness()
     let framework = try harness.makeBundle(named: "Sample", extension: "framework", identifier: "com.example.sample")
 
-    // BUG: the framework's own path is listed as if it were a directory holding one framework, so its executable and Info.plist are two candidates.
-    await #expect {
-      _ = try await harness.executor.install_framework_file_path(framework.path)
-    } throws: { error in
-      error.localizedDescription.hasPrefix("Expected one top level file, found 2")
-    }
+    let artifact = try await harness.executor.install_framework_file_path(framework.path)
+
+    #expect(artifact.name == "com.example.sample")
+    #expect(try FileManager.default.destinationOfSymbolicLink(atPath: artifact.path.path) == framework.path)
   }
 
   @Test

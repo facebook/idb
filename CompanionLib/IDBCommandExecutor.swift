@@ -144,12 +144,13 @@ public final class IDBCommandExecutor {
   }
 
   public func install_framework_file_path(_ filePath: String) async throws -> InstalledArtifact {
-    return try await installBundle(URL(fileURLWithPath: filePath), intoStorage: storageManager.framework, persistByMoving: false)
+    let bundle = try BundleDescriptor.bundle(fromPath: filePath)
+    return try await storageManager.framework.saveBundle(bundle, usingSymlink: true, skipSigningBundles: false)
   }
 
   public func install_framework_stream(_ input: FBProcessInput<AnyObject>) async throws -> InstalledArtifact {
     return try await temporaryDirectory.withArchiveExtracted(fromStream: input, compression: .GZIP) { extractPath in
-      return try await installBundle(extractPath, intoStorage: storageManager.framework, persistByMoving: true)
+      return try await installBundle(extractPath, intoStorage: storageManager.framework)
     }
   }
 
@@ -920,9 +921,9 @@ public final class IDBCommandExecutor {
     return artifact
   }
 
-  /// A bundle extracted from a stream must be moved into storage, since its staging directory is deleted once the install returns.
-  private func installBundle(_ extractedDirectory: URL, intoStorage storage: BundleStorage, persistByMoving: Bool) async throws -> InstalledArtifact {
+  /// Moves the bundle into storage rather than linking it, since its staging directory is deleted once the install returns.
+  private func installBundle(_ extractedDirectory: URL, intoStorage storage: BundleStorage) async throws -> InstalledArtifact {
     let bundle = try StorageUtils.bundle(inDirectory: extractedDirectory)
-    return try await storage.saveBundle(bundle, usingSymlink: !persistByMoving, skipSigningBundles: false)
+    return try await storage.saveBundle(bundle, usingSymlink: false, skipSigningBundles: false)
   }
 }

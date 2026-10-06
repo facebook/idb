@@ -93,9 +93,7 @@ REPL_HOST_ROUTES: list[Route] = [
 
 # Cases that fail today, by test name, with what goes wrong. Each still runs, as
 # an expected failure, so a fix shows up as an unexpected success.
-KNOWN_BROKEN: dict[str, str] = {
-    "test_framework_path": "the companion expects a directory holding one bundle, not the bundle itself",
-}
+KNOWN_BROKEN: dict[str, str] = {}
 
 
 def _required_binary(name: str) -> Path:
