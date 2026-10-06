@@ -60,7 +60,9 @@ public enum XctraceProfiler {
   ) async throws -> ProfileResult {
     let tracePath = configuration.outputPath ?? (scratchDirectory as NSString).appendingPathComponent("xctrace-\(UUID().uuidString).trace")
     defer {
-      if configuration.outputPath == nil {
+      // A failed recording writes nothing. Removing it anyway throws, and XCTest then reports that swallowed error
+      // instead of the one the recording failed with.
+      if configuration.outputPath == nil, FileManager.default.fileExists(atPath: tracePath) {
         try? FileManager.default.removeItem(atPath: tracePath)
       }
     }
