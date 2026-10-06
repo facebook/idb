@@ -29,6 +29,8 @@ targets:
         embed: false
       - framework: ../Build/Products/Release/XCTestBootstrap.framework
         embed: false
+      - framework: ../Build/Products/Release/libZstdDecompress.a
+        embed: false
   idb-repl:
     dependencies:
       - framework: ../Build/Products/Release/libCompanionUtilities.a
@@ -46,4 +48,6 @@ targets:
       - framework: ../Build/Products/Release/libSimulatorIPC.a
         embed: false
       - framework: ../Build/Products/Release/libSimulatorVideo.a
+        embed: false
+      - framework: ../Build/Products/Release/libZstdDecompress.a
         embed: false

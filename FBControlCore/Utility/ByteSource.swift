@@ -207,3 +207,65 @@ public final class GzipSource: ByteSource {
     try input.drain()
   }
 }
+
+/// Decompresses zstd frames, one after another, skipping skippable frames; anything else is corrupt.
+public final class ZstdSource: ByteSource {
+
+  private enum State {
+    case decoding(ZstdDecoder)
+    case finished
+  }
+
+  private var state: State
+  private let input: PeekableSource
+  private var frameEnded = false
+
+  public init(_ source: any ByteSource) throws {
+    guard let decoder = ZstdDecoder() else {
+      throw ArchiveError.corrupt("cannot decompress the zstd")
+    }
+    input = source as? PeekableSource ?? PeekableSource(source)
+    state = .decoding(decoder)
+  }
+
+  /// `source`, decompressed if it starts as a zstd frame or skippable frame does.
+  public static func ifZstd(_ source: any ByteSource) throws -> any ByteSource {
+    let peekable = PeekableSource(source)
+    switch ArchiveFormat.detect(try peekable.peek(ArchiveFormat.zstdZipMarker.count)) {
+    case .zstd, .zstdZip:
+      return try ZstdSource(peekable)
+    case .zip, .gzip, .other, .undetermined:
+      return peekable
+    }
+  }
+
+  public func read(into buffer: UnsafeMutableRawBufferPointer) throws -> Int {
+    guard case .decoding(let decoder) = state else {
+      return 0
+    }
+    while true {
+      // The decoder can still hold output once the input has run out, so it is asked for more until a frame ends.
+      let hasInput = try input.buffer(atLeast: 1)
+      if !hasInput && frameEnded {
+        state = .finished
+        return 0
+      }
+      guard let step = input.withAvailable({ decoder.decompress($0, into: buffer) }) else {
+        throw ArchiveError.corrupt("the zstd does not decompress")
+      }
+      input.consume(step.consumed)
+      frameEnded = step.frameEnded
+      if step.produced > 0 {
+        return step.produced
+      }
+      guard hasInput else {
+        throw ArchiveError.corrupt("the zstd ends early")
+      }
+    }
+  }
+
+  public func drain() throws {
+    state = .finished
+    try input.drain()
+  }
+}
