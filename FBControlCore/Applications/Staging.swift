@@ -17,12 +17,9 @@ public enum InstallSource {
   /// An archive to fetch over HTTP.
   case remoteURL(URL)
 
-  /// An archive arriving on a process input that the caller is writing to.
+  /// An archive arriving on a process input that the caller is writing to: a
+  /// zip or a tar, either of them compressed or not, told apart by its first bytes.
   case processInput(FBProcessInput<AnyObject>)
-
-  /// A zip, or a zstd-compressed zip, arriving on a process input that the
-  /// caller is writing to.
-  case zipStream(FBProcessInput<AnyObject>)
 
   /// A single file, gzipped, arriving on a process input that the caller is
   /// writing to; it is staged as `name`.
@@ -163,14 +160,6 @@ public enum Staging {
             try await extractStream(
               source, tarExtractor: ArchiveExtractors.stream(options.compression), spoolingIn: spoolDirectory,
               to: extractPath, options: options, logger: logger)
-          }
-        }
-      }
-    case .zipStream(let input):
-      try await temporaryDirectory.withTemporaryDirectory { spoolDirectory in
-        try await runExtractStage(to: extractPath, totalStart: totalStart, onProgress: onProgress) {
-          try await withAttached(input) { source in
-            try await extractZipStream(source, spoolingIn: spoolDirectory, to: extractPath, options: options, logger: logger)
           }
         }
       }

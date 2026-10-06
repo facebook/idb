@@ -113,7 +113,7 @@ struct InstallMethodHandler {
       return try await commandExecutor.install(installDestination, from: source, options: options, onProgress: telemetry.observe)
     }
 
-    /// A dylib arrives as a single gzipped file; everything else as a tar.
+    /// A dylib arrives as a single gzipped file; everything else as an archive.
     func installStreamed(_ dataStream: FBProcessInput<AnyObject>, compression: FBCompressionFormat) async throws -> InstalledArtifact {
       if case .dylib = installDestination {
         return try await install(from: .gzippedFile(dataStream, name: name))
@@ -125,7 +125,7 @@ struct InstallMethodHandler {
       let tarCompression: FBCompressionFormat
       switch format {
       case .zip, .zstdZip:
-        return try await install(from: .zipStream(dataStream))
+        return try await installStreamed(dataStream, compression: compression)
       case .gzipTar:
         tarCompression = .GZIP
       case .zstdTar:
@@ -140,7 +140,7 @@ struct InstallMethodHandler {
 
     switch payload {
     case let .data(head, rest):
-      let format = Self.streamFormat(initial: head, declared: compression, destination: destination)
+      let format = Self.streamFormat(initial: head, declared: compression)
       if destination == .app {
         telemetry.streamed(format)
       }
@@ -196,21 +196,17 @@ struct InstallMethodHandler {
     ArchiveFormat.detect(data) == .zstdZip
   }
 
-  /// The format of a streamed payload, from its first bytes and the compression the client declared. Only an app is
-  /// read as a zip; anything else is a tar.
-  static func streamFormat(initial: Data, declared: FBCompressionFormat, destination: Idb_InstallRequest.Destination) -> InstallStreamFormat {
+  /// The format of a streamed payload, from its first bytes and the compression the client declared.
+  static func streamFormat(initial: Data, declared: FBCompressionFormat) -> InstallStreamFormat {
     let format = ArchiveFormat.detect(initial)
-    if destination == .app {
-      switch format {
-      case .zip:
-        return .zip
-      case .zstdZip:
-        return .zstdZip
-      case .zstd, .gzip, .other, .undetermined:
-        break
-      }
+    switch format {
+    case .zip:
+      return .zip
+    case .zstdZip:
+      return .zstdZip
+    case .zstd, .gzip, .other, .undetermined:
+      return InstallStreamFormat(tarCompression: tarCompression(declared: declared, format: format))
     }
-    return InstallStreamFormat(tarCompression: tarCompression(declared: declared, format: format))
   }
 
   /// The compression to extract a streamed tar with, given the one the client declared and the stream's first bytes.

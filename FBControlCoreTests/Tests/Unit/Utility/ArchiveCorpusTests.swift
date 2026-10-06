@@ -132,19 +132,9 @@ struct ArchiveCorpusTests {
   enum Source: String, CaseIterable, CustomTestStringConvertible {
     case localPath
     case processInput
-    case zipStream
     case remoteURL
 
     var testDescription: String { rawValue }
-
-    func reads(_ producer: Producer) -> Bool {
-      switch self {
-      case .localPath, .processInput, .remoteURL:
-        return true
-      case .zipStream:
-        return producer.isZip
-      }
-    }
   }
 
   /// What an extraction left behind, or that it failed.
@@ -168,8 +158,6 @@ struct ArchiveCorpusTests {
       return (.localPath(archive.path), .default)
     case .processInput:
       return (.processInput(FBProcessInput<NSData>(from: contents).retyped(FBProcessInput<AnyObject>.self)), .default)
-    case .zipStream:
-      return (.zipStream(FBProcessInput<NSData>(from: contents).retyped(FBProcessInput<AnyObject>.self)), .default)
     case .remoteURL:
       return (.remoteURL(CorpusURLProtocol.serving(contents)), CorpusURLProtocol.configuration)
     }
@@ -192,7 +180,7 @@ struct ArchiveCorpusTests {
   }
 
   private static var installCases: [(Producer, Source)] {
-    Producer.allCases.flatMap { producer in Source.allCases.filter { $0.reads(producer) }.map { (producer, $0) } }
+    Producer.allCases.flatMap { producer in Source.allCases.map { (producer, $0) } }
   }
 
   @Test(arguments: installCases)
@@ -272,7 +260,7 @@ struct ArchiveCorpusTests {
     let directoryTimes = !producer.isZip
     let expected = await bsdtarOutcome(archive, keepHardLinks: producer.keepsHardLinks, directoryTimes: directoryTimes)
 
-    for source in Source.allCases where source.reads(producer) {
+    for source in Source.allCases {
       let actual = try await resolve(source, archive: archive, contents: damaged, keepHardLinks: producer.keepsHardLinks, directoryTimes: directoryTimes)
       switch (expected, actual) {
       case (.extracted(let expectedTree), .extracted(let actualTree)):

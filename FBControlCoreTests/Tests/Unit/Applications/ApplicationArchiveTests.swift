@@ -172,7 +172,7 @@ final class ApplicationArchiveTests: XCTestCase {
   }
 
   private func zipStream(_ zip: Data) -> InstallSource {
-    .zipStream(FBProcessInput<NSData>(from: zip).retyped(FBProcessInput<AnyObject>.self))
+    .processInput(FBProcessInput<NSData>(from: zip).retyped(FBProcessInput<AnyObject>.self))
   }
 
   func testResolve_WhenGivenAZipStream_RestoresWhatOnlyItsCentralDirectoryRecords() async throws {

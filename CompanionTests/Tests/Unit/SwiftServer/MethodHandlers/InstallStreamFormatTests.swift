@@ -48,8 +48,8 @@ struct InstallStreamFormatTests {
     var testDescription: String { rawValue }
   }
 
-  /// The format an app stream is read as, for each head and declared compression.
-  static let appFormats: [(Head, FBCompressionFormat, InstallStreamFormat)] = [
+  /// The format a stream is read as, for each head and declared compression.
+  static let formats: [(Head, FBCompressionFormat, InstallStreamFormat)] = [
     (.zip, .GZIP, .zip),
     (.zip, .ZSTD, .zip),
     (.zstdZipMarker, .GZIP, .zstdZip),
@@ -68,18 +68,8 @@ struct InstallStreamFormatTests {
     (.empty, .ZSTD, .zstdTar),
   ]
 
-  @Test(arguments: appFormats)
-  func anAppStream(_ head: Head, _ declared: FBCompressionFormat, _ expected: InstallStreamFormat) {
-    #expect(InstallMethodHandler.streamFormat(initial: head.bytes, declared: declared, destination: .app) == expected)
-  }
-
-  /// Heads a stream declared zstd keeps that declaration for: a zstd frame, any skippable frame, or too little to tell.
-  static let keepsZstd: Set<Head> = [.zstdFrame, .zstdZipMarker, .otherSkippableFrame, .tooShort, .empty]
-
-  /// Every other kind is read as a tar whatever it starts with, a zip included, as only an app is read as a zip.
-  @Test(arguments: [Idb_InstallRequest.Destination.xctest, .dsym, .dylib, .framework], Head.allCases)
-  func anotherKindOfStream(_ destination: Idb_InstallRequest.Destination, _ head: Head) {
-    #expect(InstallMethodHandler.streamFormat(initial: head.bytes, declared: .GZIP, destination: destination) == .gzipTar)
-    #expect(InstallMethodHandler.streamFormat(initial: head.bytes, declared: .ZSTD, destination: destination) == (Self.keepsZstd.contains(head) ? .zstdTar : .gzipTar))
+  @Test(arguments: formats)
+  func aStream(_ head: Head, _ declared: FBCompressionFormat, _ expected: InstallStreamFormat) {
+    #expect(InstallMethodHandler.streamFormat(initial: head.bytes, declared: declared) == expected)
   }
 }
