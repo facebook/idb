@@ -6,8 +6,10 @@
  */
 
 @testable import CompanionLib
+import FBControlCore
 import Foundation
 import Testing
+import os
 
 @Suite
 struct IDBCommandExecutorInstallTests {
@@ -135,6 +137,59 @@ struct IDBCommandExecutorInstallTests {
 
     let link = installed.path.deletingLastPathComponent().appendingPathComponent("Sample.dSYM")
     #expect(try FileManager.default.destinationOfSymbolicLink(atPath: link.path) == artifact.path.path)
+  }
+
+  // MARK: - Progress
+
+  private final class ProgressEvents: Sendable {
+    private let events = OSAllocatedUnfairLock<[InstallProgressEvent]>(initialState: [])
+
+    var all: [InstallProgressEvent] { events.withLock { $0 } }
+
+    var stages: [String] { all.map { "\($0.stage.rawValue).\($0.phase.rawValue)" } }
+
+    func append(_ event: InstallProgressEvent) {
+      events.withLock { $0.append(event) }
+    }
+  }
+
+  @Test
+  func aStreamedFrameworkReportsItsExtractionThenItsInstall() async throws {
+    let harness = try MacInstallHarness()
+    let framework = try harness.makeBundle(named: "Sample", extension: "framework", identifier: "com.example.sample")
+    let progress = ProgressEvents()
+
+    let artifact = try await harness.executor.install_framework_stream(try harness.gzippedTar(of: framework), on_progress: progress.append)
+
+    #expect(progress.stages == ["extract.started", "extract.completed", "install.started", "install.completed"])
+    guard case .installCompleted(_, let artifactPath, let name)? = progress.all.last else {
+      Issue.record("Expected the install to complete last, got \(progress.all)")
+      return
+    }
+    #expect((artifactPath as NSString).lastPathComponent == "Sample.framework")
+    #expect(name == artifact.name)
+  }
+
+  @Test
+  func aFrameworkAtALocalPathReportsOnlyItsInstall() async throws {
+    let harness = try MacInstallHarness()
+    let framework = try harness.makeBundle(named: "Sample", extension: "framework", identifier: "com.example.sample")
+    let progress = ProgressEvents()
+
+    _ = try await harness.executor.install_framework_file_path(framework.path, on_progress: progress.append)
+
+    #expect(progress.stages == ["install.started", "install.completed"])
+  }
+
+  @Test
+  func aStreamedDylibReportsItsDecompressionAsExtraction() async throws {
+    let harness = try MacInstallHarness()
+    let dylib = try harness.makeFile(named: "libSample.dylib")
+    let progress = ProgressEvents()
+
+    _ = try await harness.executor.install_dylib_stream(try harness.gzipped(dylib), name: "libSample.dylib", on_progress: progress.append)
+
+    #expect(progress.stages == ["extract.started", "extract.completed", "install.started", "install.completed"])
   }
 
   @Test

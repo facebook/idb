@@ -90,13 +90,13 @@ struct InstallMethodHandler: @unchecked Sendable {
       case .app:
         return try await commandExecutor.install_app_stream(dataStream, compression: compression, make_debuggable: makeDebuggable, override_modification_time: overrideModificationTime, on_progress: telemetry.observe)
       case .xctest:
-        return try await commandExecutor.install_xctest_app_stream(dataStream, skipSigningBundles: skipSigningBundles)
+        return try await commandExecutor.install_xctest_app_stream(dataStream, skipSigningBundles: skipSigningBundles, on_progress: telemetry.observe)
       case .dsym:
-        return try await commandExecutor.install_dsym_stream(dataStream, compression: compression, linkTo: linkToBundle)
+        return try await commandExecutor.install_dsym_stream(dataStream, compression: compression, linkTo: linkToBundle, on_progress: telemetry.observe)
       case .dylib:
-        return try await commandExecutor.install_dylib_stream(dataStream, name: name)
+        return try await commandExecutor.install_dylib_stream(dataStream, name: name, on_progress: telemetry.observe)
       case .framework:
-        return try await commandExecutor.install_framework_stream(dataStream)
+        return try await commandExecutor.install_framework_stream(dataStream, on_progress: telemetry.observe)
       case .UNRECOGNIZED:
         throw RPCError(code: .invalidArgument, message: "Unrecognized destination")
       }
@@ -159,13 +159,13 @@ struct InstallMethodHandler: @unchecked Sendable {
       case .app:
         return try await commandExecutor.install_app_file_path(filePath, make_debuggable: makeDebuggable, override_modification_time: overrideModificationTime, on_progress: telemetry.observe)
       case .xctest:
-        return try await commandExecutor.install_xctest_app_file_path(filePath, skipSigningBundles: skipSigningBundles)
+        return try await commandExecutor.install_xctest_app_file_path(filePath, skipSigningBundles: skipSigningBundles, on_progress: telemetry.observe)
       case .dsym:
-        return try await commandExecutor.install_dsym_file_path(filePath, linkTo: linkToBundle)
+        return try await commandExecutor.install_dsym_file_path(filePath, linkTo: linkToBundle, on_progress: telemetry.observe)
       case .dylib:
-        return try await commandExecutor.install_dylib_file_path(filePath)
+        return try await commandExecutor.install_dylib_file_path(filePath, on_progress: telemetry.observe)
       case .framework:
-        return try await commandExecutor.install_framework_file_path(filePath)
+        return try await commandExecutor.install_framework_file_path(filePath, on_progress: telemetry.observe)
       case .UNRECOGNIZED:
         throw RPCError(code: .invalidArgument, message: "Unrecognized destination")
       }

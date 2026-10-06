@@ -123,36 +123,36 @@ public final class IDBCommandExecutor {
     return try await install(.application, from: .remoteURL(url), options: InstallOptions(overrideModificationTime: overrideModificationTime, compression: compression), makeDebuggable: makeDebuggable, onProgress: onProgress)
   }
 
-  public func install_xctest_app_file_path(_ filePath: String, skipSigningBundles: Bool) async throws -> InstalledArtifact {
-    return try await install(.xctest, from: .localPath(filePath), skipSigningBundles: skipSigningBundles)
+  public func install_xctest_app_file_path(_ filePath: String, skipSigningBundles: Bool, on_progress onProgress: @escaping @Sendable (InstallProgressEvent) -> Void = { _ in }) async throws -> InstalledArtifact {
+    return try await install(.xctest, from: .localPath(filePath), skipSigningBundles: skipSigningBundles, onProgress: onProgress)
   }
 
-  public func install_xctest_app_stream(_ stream: FBProcessInput<AnyObject>, skipSigningBundles: Bool) async throws -> InstalledArtifact {
-    return try await install(.xctest, from: .processInput(stream), skipSigningBundles: skipSigningBundles)
+  public func install_xctest_app_stream(_ stream: FBProcessInput<AnyObject>, skipSigningBundles: Bool, on_progress onProgress: @escaping @Sendable (InstallProgressEvent) -> Void = { _ in }) async throws -> InstalledArtifact {
+    return try await install(.xctest, from: .processInput(stream), skipSigningBundles: skipSigningBundles, onProgress: onProgress)
   }
 
-  public func install_dylib_file_path(_ filePath: String) async throws -> InstalledArtifact {
-    return try await install(.dylib, from: .localPath(filePath))
+  public func install_dylib_file_path(_ filePath: String, on_progress onProgress: @escaping @Sendable (InstallProgressEvent) -> Void = { _ in }) async throws -> InstalledArtifact {
+    return try await install(.dylib, from: .localPath(filePath), onProgress: onProgress)
   }
 
-  public func install_dylib_stream(_ input: FBProcessInput<AnyObject>, name: String) async throws -> InstalledArtifact {
-    return try await install(.dylib, from: .gzippedFile(input, name: name))
+  public func install_dylib_stream(_ input: FBProcessInput<AnyObject>, name: String, on_progress onProgress: @escaping @Sendable (InstallProgressEvent) -> Void = { _ in }) async throws -> InstalledArtifact {
+    return try await install(.dylib, from: .gzippedFile(input, name: name), onProgress: onProgress)
   }
 
-  public func install_framework_file_path(_ filePath: String) async throws -> InstalledArtifact {
-    return try await install(.framework, from: .localPath(filePath))
+  public func install_framework_file_path(_ filePath: String, on_progress onProgress: @escaping @Sendable (InstallProgressEvent) -> Void = { _ in }) async throws -> InstalledArtifact {
+    return try await install(.framework, from: .localPath(filePath), onProgress: onProgress)
   }
 
-  public func install_framework_stream(_ input: FBProcessInput<AnyObject>) async throws -> InstalledArtifact {
-    return try await install(.framework, from: .processInput(input))
+  public func install_framework_stream(_ input: FBProcessInput<AnyObject>, on_progress onProgress: @escaping @Sendable (InstallProgressEvent) -> Void = { _ in }) async throws -> InstalledArtifact {
+    return try await install(.framework, from: .processInput(input), onProgress: onProgress)
   }
 
-  public func install_dsym_file_path(_ filePath: String, linkTo: DsymInstallLinkToBundle?) async throws -> InstalledArtifact {
-    return try await install(.dsym, from: .localPath(filePath), linkTo: linkTo)
+  public func install_dsym_file_path(_ filePath: String, linkTo: DsymInstallLinkToBundle?, on_progress onProgress: @escaping @Sendable (InstallProgressEvent) -> Void = { _ in }) async throws -> InstalledArtifact {
+    return try await install(.dsym, from: .localPath(filePath), linkTo: linkTo, onProgress: onProgress)
   }
 
-  public func install_dsym_stream(_ input: FBProcessInput<AnyObject>, compression: FBCompressionFormat, linkTo: DsymInstallLinkToBundle?) async throws -> InstalledArtifact {
-    return try await install(.dsym, from: .processInput(input), options: InstallOptions(compression: compression), linkTo: linkTo)
+  public func install_dsym_stream(_ input: FBProcessInput<AnyObject>, compression: FBCompressionFormat, linkTo: DsymInstallLinkToBundle?, on_progress onProgress: @escaping @Sendable (InstallProgressEvent) -> Void = { _ in }) async throws -> InstalledArtifact {
+    return try await install(.dsym, from: .processInput(input), options: InstallOptions(compression: compression), linkTo: linkTo, onProgress: onProgress)
   }
 
   // MARK: - Public Methods
