@@ -370,8 +370,8 @@ public final class DeviceApplicationCommands: ApplicationCommands {
 
     let bundle = BundleDescriptor(name: bundleName, identifier: bundleID, path: path, binary: nil)
 
-    return InstalledApplication.installedApplication(
-      withBundle: bundle,
+    return InstalledApplication(
+      bundle: bundle,
       installTypeString: app[ApplicationInstallInfoKey.applicationType.rawValue] as? String ?? "",
       signerIdentity: app[ApplicationInstallInfoKey.signerIdentity.rawValue] as? String ?? "",
       dataContainer: nil

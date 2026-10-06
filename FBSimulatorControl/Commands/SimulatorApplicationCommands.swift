@@ -472,8 +472,8 @@ public struct SimulatorApplicationCommands: ApplicationCommands {
     let bundle = try BundleDescriptor.bundle(fromPath: appPath)
 
     _ = appName // used for validation only
-    return InstalledApplication.installedApplication(
-      withBundle: bundle,
+    return InstalledApplication(
+      bundle: bundle,
       installTypeString: typeString,
       signerIdentity: nil,
       dataContainer: (dataContainer as? URL)?.path)

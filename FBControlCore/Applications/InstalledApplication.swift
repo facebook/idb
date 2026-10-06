@@ -15,19 +15,19 @@ private let installTypeStringUserEnterprise = "user_enterprise"
 private let installTypeStringUserDevelopment = "user_development"
 
 /// How an application came to be installed.
-@objc public enum ApplicationInstallType: UInt, Sendable {
+public enum ApplicationInstallType: Sendable {
   /// The Application is unknown.
-  case unknown = 0
+  case unknown
   /// The Application is part of the Operating System.
-  case system = 1
+  case system
   /// The Application is part of macOS.
-  case mac = 2
+  case mac
   /// The Application has been installed by the user.
-  case user = 3
+  case user
   /// The Application has been installed by the user and signed with a distribution certificate.
-  case userEnterprise = 4
+  case userEnterprise
   /// The Application has been installed by the user and signed with a development certificate.
-  case userDevelopment = 5
+  case userDevelopment
 }
 
 /// Keys of the application info dictionary.
@@ -52,14 +52,6 @@ public struct InstalledApplication: Hashable, Sendable, CustomStringConvertible 
 
   public var installTypeString: String {
     InstalledApplication.string(from: installType)
-  }
-
-  public static func installedApplication(withBundle bundle: BundleDescriptor, installType: ApplicationInstallType, dataContainer: String?) -> InstalledApplication {
-    InstalledApplication(bundle: bundle, installType: installType, dataContainer: dataContainer)
-  }
-
-  public static func installedApplication(withBundle bundle: BundleDescriptor, installTypeString: String?, signerIdentity: String?, dataContainer: String?) -> InstalledApplication {
-    InstalledApplication(bundle: bundle, installTypeString: installTypeString, signerIdentity: signerIdentity, dataContainer: dataContainer)
   }
 
   public init(bundle: BundleDescriptor, installType: ApplicationInstallType, dataContainer: String?) {
@@ -100,7 +92,6 @@ public struct InstalledApplication: Hashable, Sendable, CustomStringConvertible 
     case .system: return installTypeStringSystem
     case .mac: return installTypeStringMac
     case .unknown: return installTypeStringUnknown
-    @unknown default: return installTypeStringUnknown
     }
   }
 
