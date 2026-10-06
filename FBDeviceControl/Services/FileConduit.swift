@@ -71,7 +71,7 @@ extension FileConduitError: LocalizedError {
     case let .hostFileMissing(path):
       return "Could not find file on host: \(path)"
     case .noConnectionToClose:
-      return "Cannot close a non-existant connection"
+      return "Cannot close a non-existent connection"
     case let .closeFailed(status):
       return "Failed to close connection with error \(status)"
     case let .connectionNotValid(description):

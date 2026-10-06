@@ -24,7 +24,7 @@ typedef AXPTranslatorResponse *(^AXPTranslationCallback)(AXPTranslatorRequest *r
 
 /**
  This function is used by AXPTranslator through delegation. Upon requesting additional fields for a given AXPMacPlatformElement.
- The implementation of this function calls out the the underlying API to obtain a AXPTranslatorResponse for a given AXPTranslatorRequest.
+ The implementation of this function calls out to the underlying API to obtain an AXPTranslatorResponse for a given AXPTranslatorRequest.
  The call is synchronous and the CoreSimulator API is asynchronous, so this needs to operate on a background queue that can block.
  */
 - (AXPTranslationCallback)accessibilityTranslationDelegateBridgeCallback;

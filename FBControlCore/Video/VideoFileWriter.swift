@@ -22,7 +22,7 @@ extension VideoFileWriterError: LocalizedError {
     case .failedToRemoveExistingVideo(let filePath, _):
       return "Failed to remove existing device video at \(filePath)"
     case .failedToCreateAuxiliaryDirectory(let filePath, _):
-      return "Failed to remove create auxillary directory for device at \(filePath)"
+      return "Failed to create auxiliary directory for device video at \(filePath)"
     }
   }
 
