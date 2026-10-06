@@ -67,9 +67,14 @@ final class XCTestProcess {
       guard let crashLogCommands else {
         throw ProcessTerminationError.exitedWithSignal(processIdentifier: processIdentifier, processName: processName, signal: signo)
       }
-      return try await bridgeFBFuture(
-        XCTestProcess.performCrashLogQuery(forProcessIdentifier: processIdentifier, startDate: startDate, crashLogCommands: crashLogCommands, crashLogWaitTime: CrashLogWaitTime, queue: DispatchQueue.global(qos: .userInitiated), logger: logger)
-      ).int32Value
+      logger.log("xctest process (\(processIdentifier)) died prematurely, checking for crash log for \(CrashLogWaitTime) seconds")
+      let crashLog: CrashLogInfo
+      do {
+        crashLog = try await XCTestProcess.crashLog(forTerminationOfProcessIdentifier: processIdentifier, since: startDate, crashLogCommands: crashLogCommands)
+      } catch {
+        throw ControlCoreError.describe("xctest process (\(processIdentifier)) exited abnormally with no crash log, to check for yourself look in ~/Library/Logs/DiagnosticReports").caused(by: error).build()
+      }
+      throw XCTestProcessError.crashed(info: String(describing: crashLog), rawLog: (try? crashLog.loadRawCrashLogString()) ?? "")
     }
   }
 
@@ -92,38 +97,43 @@ final class XCTestProcess {
     }
   }
 
-  private static func performCrashLogQuery(forProcessIdentifier processIdentifier: pid_t, startDate: Date, crashLogCommands: any CrashLogCommands, crashLogWaitTime: TimeInterval, queue: DispatchQueue, logger: ControlCoreLogger) -> FBFuture<NSNumber> {
-    logger.log("xctest process (\(processIdentifier)) died prematurely, checking for crash log for \(crashLogWaitTime) seconds")
-    return
-      XCTestProcess.crashLogs(forTerminationOfProcessIdentifier: processIdentifier, since: startDate, crashLogCommands: crashLogCommands, crashLogWaitTime: crashLogWaitTime, queue: queue)
-      .rephraseFailure("xctest process (\(processIdentifier)) exited abnormally with no crash log, to check for yourself look in ~/Library/Logs/DiagnosticReports")
-      .onQueue(
-        queue,
-        fmap: { info -> FBFuture<AnyObject> in
-          let rawLog = (try? info.loadRawCrashLogString()) ?? ""
-          return FBFuture(error: XCTestProcessError.crashed(info: String(describing: info), rawLog: rawLog))
-        }
-      )
-      .retyped(FBFuture<NSNumber>.self)
-  }
+  private static func crashLog(forTerminationOfProcessIdentifier processIdentifier: pid_t, since sinceDate: Date, crashLogCommands: any CrashLogCommands) async throws -> CrashLogInfo {
+    let query = CrashLogQuery(
+      crashLogCommands: crashLogCommands,
+      predicate: NSCompoundPredicate(andPredicateWithSubpredicates: [
+        CrashLogInfo.predicateForCrashLogs(withProcessID: processIdentifier),
+        CrashLogInfo.predicateNewer(thanDate: sinceDate),
+      ]))
 
-  private static func crashLogs(forTerminationOfProcessIdentifier processIdentifier: pid_t, since sinceDate: Date, crashLogCommands: any CrashLogCommands, crashLogWaitTime: TimeInterval, queue: DispatchQueue) -> FBFuture<CrashLogInfo> {
-    let predicate = NSCompoundPredicate(andPredicateWithSubpredicates: [
-      CrashLogInfo.predicateForCrashLogs(withProcessID: processIdentifier),
-      CrashLogInfo.predicateNewer(thanDate: sinceDate),
-    ])
-
-    let notify: FBFuture<CrashLogInfo> = fbFutureFromAsync {
-      try await crashLogCommands.notifyOfCrash(matching: predicate)
+    return try await withThrowingTaskGroup(of: CrashLogBox.self) { group in
+      group.addTask {
+        try await query.next()
+      }
+      group.addTask {
+        try await Task.sleep(nanoseconds: UInt64(CrashLogWaitTime * 1_000_000_000))
+        throw XCTestProcessError.crashLogTimedOut(processIdentifier: processIdentifier)
+      }
+      defer { group.cancelAll() }
+      guard let first = try await group.next() else {
+        preconditionFailure("The task group has two children; next() cannot be empty")
+      }
+      return first.value
     }
-    return
-      notify.retyped(FBFuture<AnyObject>.self)
-      .onQueue(
-        queue, timeout: crashLogWaitTime,
-        handler: {
-          FBFuture<AnyObject>(error: XCTestProcessError.crashLogTimedOut(processIdentifier: processIdentifier))
-        }
-      )
-      .retyped(FBFuture<CrashLogInfo>.self)
   }
+}
+
+/// Neither `CrashLogCommands` nor `NSPredicate` is Sendable; the query is only ever used by the
+/// one child task that waits on it.
+private struct CrashLogQuery: @unchecked Sendable {
+  let crashLogCommands: any CrashLogCommands
+  let predicate: NSPredicate
+
+  func next() async throws -> CrashLogBox {
+    CrashLogBox(try await crashLogCommands.notifyOfCrash(matching: predicate))
+  }
+}
+
+private final class CrashLogBox: @unchecked Sendable {
+  let value: CrashLogInfo
+  init(_ value: CrashLogInfo) { self.value = value }
 }
