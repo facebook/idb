@@ -153,7 +153,7 @@ public struct InProcessTarExtractor: ArchiveExtractor {
     let fileDescriptor = try await bridgeFBFuture(input.attach()).fileDescriptor
     let result = await offCooperativePool {
       try TarStreamExtractor.extract(
-        reading: TarStreamExtractor.reading(fileDescriptor: fileDescriptor), to: extractPath,
+        reading: ArchiveExtraction.reading(fileDescriptor: fileDescriptor), to: extractPath,
         overrideModificationTime: options.overrideModificationTime)
     }
     if case .success(.notTar(let prefix, let rest)) = result {
@@ -170,7 +170,7 @@ public struct InProcessTarExtractor: ArchiveExtractor {
   /// Writes what was read, then the rest, into `fallback`.
   private func replay(
     prefix: Data,
-    rest: @escaping TarStreamExtractor.Read,
+    rest: @escaping ArchiveRead,
     to extractPath: String,
     options: ArchiveExtractOptions,
     logger: any ControlCoreLogger

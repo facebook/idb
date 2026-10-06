@@ -8,14 +8,6 @@
 import Foundation
 import os
 
-public enum ZipCentralDirectoryError: Error, Equatable {
-  case noEndOfCentralDirectory
-  case truncated
-  case undecodableName
-  case unsafePath(String)
-  case unexpectedFileType(String)
-}
-
 /// Record signatures, as read little-endian from the file.
 public enum ZipSignature {
   public static let localHeaderBytes = Data([0x50, 0x4B, 0x03, 0x04])
@@ -66,7 +58,7 @@ public struct ZipCentralDirectory {
     let (count, length, offset) = try Self.locate(in: handle, size: size)
     try handle.seek(toOffset: offset)
     guard let directory = try handle.read(upToCount: Int(length)), directory.count == length else {
-      throw ZipCentralDirectoryError.truncated
+      throw ArchiveError.corrupt("the central directory is truncated")
     }
     entries = try Self.parse(directory, count: count)
   }
@@ -76,7 +68,7 @@ public struct ZipCentralDirectory {
   /// entries for another entry, which only a complete-file extraction folds away,
   /// are removed.
   public func repair(extractedAt root: String) throws {
-    let paths = Set(entries.map { Self.trimmingTrailingSlash($0.path) })
+    let paths = Set(entries.map { ArchiveExtraction.trimmingTrailingSlash($0.path) })
     var verifiedDirectories: Set<String> = [""]
     var symlinks: [String] = []
     var files: [(path: String, mode: mode_t)] = []
@@ -92,7 +84,7 @@ public struct ZipCentralDirectory {
       // extracted, so nothing here may be reached through a symlink.
       try Self.verifyNoSymlinkAncestors(of: relative, in: root, verified: &verifiedDirectories)
       let path = (root as NSString).appendingPathComponent(relative)
-      if Self.isAppleDouble(relative, alongside: paths) {
+      if ArchiveExtraction.isAppleDouble(relative, alongside: paths) {
         if Self.hasAppleDoubleHeader(atPath: path) {
           try FileManager.default.removeItem(atPath: path)
           continue
@@ -133,17 +125,16 @@ public struct ZipCentralDirectory {
   // MARK: - Private
 
   private static let unixHost: UInt16 = 3
-  static let appleDoubleMagic = Data([0x00, 0x05, 0x16, 0x07])
 
   private static func locate(in handle: FileHandle, size: UInt64) throws -> (count: UInt64, length: UInt64, offset: UInt64) {
     // The record is 22 bytes, followed by a comment of at most 65535.
     let tailLength = min(size, 22 + 0xFFFF)
     try handle.seek(toOffset: size - tailLength)
     guard let tail = try handle.read(upToCount: Int(tailLength)), tail.count == tailLength, tail.count >= 22 else {
-      throw ZipCentralDirectoryError.noEndOfCentralDirectory
+      throw ArchiveError.corrupt("no end of central directory record")
     }
     guard let record = stride(from: tail.count - 22, through: 0, by: -1).first(where: { tail.uint32(at: $0) == ZipSignature.endOfCentralDirectory }) else {
-      throw ZipCentralDirectoryError.noEndOfCentralDirectory
+      throw ArchiveError.corrupt("no end of central directory record")
     }
     let recordOffset = size - tailLength + UInt64(record)
     if recordOffset >= 20 {
@@ -151,7 +142,7 @@ public struct ZipCentralDirectory {
       if let locator = try handle.read(upToCount: 20), locator.count == 20, locator.uint32(at: 0) == ZipSignature.zip64Locator {
         try handle.seek(toOffset: locator.uint64(at: 8))
         guard let zip64 = try handle.read(upToCount: 56), zip64.count == 56, zip64.uint32(at: 0) == ZipSignature.zip64EndOfCentralDirectory else {
-          throw ZipCentralDirectoryError.truncated
+          throw ArchiveError.corrupt("the central directory is truncated")
         }
         return (zip64.uint64(at: 32), zip64.uint64(at: 40), zip64.uint64(at: 48))
       }
@@ -164,7 +155,7 @@ public struct ZipCentralDirectory {
     var offset = 0
     for _ in 0..<count {
       guard offset + 46 <= directory.count, directory.uint32(at: offset) == ZipSignature.centralDirectoryEntry else {
-        throw ZipCentralDirectoryError.truncated
+        throw ArchiveError.corrupt("the central directory is truncated")
       }
       let host = directory.uint16(at: offset + 4) >> 8
       let flags = directory.uint16(at: offset + 8)
@@ -178,14 +169,14 @@ public struct ZipCentralDirectory {
       let attributes = directory.uint32(at: offset + 38)
       let nameStart = directory.startIndex + offset + 46
       guard offset + 46 + nameLength <= directory.count else {
-        throw ZipCentralDirectoryError.truncated
+        throw ArchiveError.corrupt("the central directory is truncated")
       }
       guard let path = String(data: directory[nameStart..<(nameStart + nameLength)], encoding: .utf8) else {
-        throw ZipCentralDirectoryError.undecodableName
+        throw ArchiveError.unsupported("an entry name that is not UTF-8")
       }
       let extraStart = offset + 46 + nameLength
       guard extraStart + extraLength <= directory.count else {
-        throw ZipCentralDirectoryError.truncated
+        throw ArchiveError.corrupt("the central directory is truncated")
       }
       var entry = Entry(path: path, mode: host == unixHost ? mode_t(attributes >> 16) : nil)
       entry.flags = flags
@@ -214,7 +205,7 @@ public struct ZipCentralDirectory {
       let size = Int(directory.uint16(at: offset + 2))
       let data = offset + 4
       guard data + size <= start + length else {
-        throw ZipCentralDirectoryError.truncated
+        throw ArchiveError.corrupt("the central directory is truncated")
       }
       switch id {
       case zip64ExtraField:
@@ -222,7 +213,7 @@ public struct ZipCentralDirectory {
         var field = data
         func next() throws -> UInt64 {
           guard field + 8 <= data + size else {
-            throw ZipCentralDirectoryError.truncated
+            throw ArchiveError.corrupt("the central directory is truncated")
           }
           defer { field += 8 }
           return directory.uint64(at: field)
@@ -236,14 +227,22 @@ public struct ZipCentralDirectory {
         if entry.localHeaderOffset == 0xFFFF_FFFF {
           entry.localHeaderOffset = try next()
         }
-      case extendedTimestampExtraField where size >= 5 && directory[directory.startIndex + data] & 1 != 0:
-        entry.modified = Date(timeIntervalSince1970: TimeInterval(Int32(bitPattern: directory.uint32(at: data + 1))))
-      case infoZipUnixExtraField where size >= 8:
-        entry.modified = Date(timeIntervalSince1970: TimeInterval(Int32(bitPattern: directory.uint32(at: data + 4))))
       default:
-        break
+        entry.modified = modified(fromExtraField: id, in: directory, at: data, size: size) ?? entry.modified
       }
       offset = data + size
+    }
+  }
+
+  /// The modification time an extra field records, in a central directory entry or a local header alike.
+  static func modified(fromExtraField id: UInt16, in extra: Data, at data: Int, size: Int) -> Date? {
+    switch id {
+    case extendedTimestampExtraField where size >= 5 && extra[extra.startIndex + data] & 1 != 0:
+      return Date(timeIntervalSince1970: TimeInterval(Int32(bitPattern: extra.uint32(at: data + 1))))
+    case infoZipUnixExtraField where size >= 8:
+      return Date(timeIntervalSince1970: TimeInterval(Int32(bitPattern: extra.uint32(at: data + 4))))
+    default:
+      return nil
     }
   }
 
@@ -258,24 +257,12 @@ public struct ZipCentralDirectory {
     return Calendar.current.date(from: components)
   }
 
-  static func trimmingTrailingSlash(_ path: String) -> String {
-    path.hasSuffix("/") ? String(path.dropLast()) : path
-  }
-
   static func safeRelativePath(_ path: String) throws -> String {
-    let relative = trimmingTrailingSlash(path)
+    let relative = ArchiveExtraction.trimmingTrailingSlash(path)
     guard !relative.hasPrefix("/"), !relative.split(separator: "/").contains("..") else {
-      throw ZipCentralDirectoryError.unsafePath(path)
+      throw ArchiveError.unsafePath(path)
     }
     return relative
-  }
-
-  static func isAppleDouble(_ path: String, alongside paths: Set<String>) -> Bool {
-    let name = (path as NSString).lastPathComponent
-    guard name.hasPrefix("._") else {
-      return false
-    }
-    return paths.contains(((path as NSString).deletingLastPathComponent as NSString).appendingPathComponent(String(name.dropFirst(2))))
   }
 
   private static func hasAppleDoubleHeader(atPath path: String) -> Bool {
@@ -283,7 +270,7 @@ public struct ZipCentralDirectory {
       return false
     }
     defer { try? handle.close() }
-    return (try? handle.read(upToCount: appleDoubleMagic.count)) == appleDoubleMagic
+    return (try? handle.read(upToCount: ArchiveExtraction.appleDoubleMagic.count)) == ArchiveExtraction.appleDoubleMagic
   }
 
   private static func verifyNoSymlinkAncestors(of relative: String, in root: String, verified: inout Set<String>) throws {
@@ -294,7 +281,7 @@ public struct ZipCentralDirectory {
     try verifyNoSymlinkAncestors(of: parent, in: root, verified: &verified)
     let type = try FileManager.default.attributesOfItem(atPath: (root as NSString).appendingPathComponent(parent))[.type] as? FileAttributeType
     guard type == .typeDirectory else {
-      throw ZipCentralDirectoryError.unexpectedFileType(parent)
+      throw ArchiveError.unsafePath(parent)
     }
     verified.insert(parent)
   }
@@ -332,7 +319,7 @@ public struct ZipCentralDirectory {
       return
     }
     guard type == .typeRegular else {
-      throw ZipCentralDirectoryError.unexpectedFileType(path)
+      throw ArchiveError.corrupt("\(path) is neither a symlink nor a file holding its target")
     }
     let target = try String(contentsOfFile: path, encoding: .utf8)
     try FileManager.default.removeItem(atPath: path)

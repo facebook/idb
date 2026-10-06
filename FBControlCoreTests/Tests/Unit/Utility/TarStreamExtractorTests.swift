@@ -102,7 +102,7 @@ struct TarStreamExtractorTests {
       }
     }.start()
     return try TarStreamExtractor.extract(
-      reading: TarStreamExtractor.reading(fileDescriptor: readEnd), to: extracted, overrideModificationTime: overrideModificationTime)
+      reading: ArchiveExtraction.reading(fileDescriptor: readEnd), to: extracted, overrideModificationTime: overrideModificationTime)
   }
 
   private func expectParityWithBSDTar(_ archive: String) async throws {
@@ -158,7 +158,7 @@ struct TarStreamExtractorTests {
     try run("/usr/bin/tar", ["-czf", archive, "-C", root.path, "A.app"])
     let contents = try Data(contentsOf: URL(fileURLWithPath: archive))
 
-    #expect(throws: TarExtractorError.corrupt("the gzip ends early")) {
+    #expect(throws: ArchiveError.corrupt("the gzip ends early")) {
       try extractFromPipe(contents.prefix(contents.count / 2), to: root.appendingPathComponent("extracted").path)
     }
   }
@@ -216,7 +216,7 @@ struct TarStreamExtractorTests {
     try run("/usr/bin/tar", ["-cf", archive, "-C", root.path, "-s", ",^A.app/Info.plist$,../escaped,", "A.app"])
     let extracted = root.appendingPathComponent("extracted").path
 
-    #expect(throws: TarExtractorError.unsafePath("../escaped")) {
+    #expect(throws: ArchiveError.unsafePath("../escaped")) {
       try extractFromPipe(try Data(contentsOf: URL(fileURLWithPath: archive)), to: extracted)
     }
     #expect(!fileManager.fileExists(atPath: root.appendingPathComponent("escaped").path))
@@ -244,7 +244,7 @@ struct TarStreamExtractorTests {
     let contents = try Data(contentsOf: URL(fileURLWithPath: archive))
 
     var offset = 0
-    let read: TarStreamExtractor.Read = { buffer in
+    let read: ArchiveRead = { buffer in
       let count = min(buffer.count, contents.count - offset, 7_000)
       contents.copyBytes(to: buffer.bindMemory(to: UInt8.self), from: offset..<offset + count)
       offset += count

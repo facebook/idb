@@ -10,13 +10,13 @@ import zlib
 
 /// Bytes read ahead of an extractor that parses its archive forwards.
 struct BufferedInput {
-  private let source: TarStreamExtractor.Read
+  private let source: ArchiveRead
   private var bytes: [UInt8]
   private var start = 0
   private var end = 0
   private var ended = false
 
-  init(capacity: Int, read: @escaping TarStreamExtractor.Read) {
+  init(capacity: Int, read: @escaping ArchiveRead) {
     source = read
     bytes = [UInt8](repeating: 0, count: capacity)
   }

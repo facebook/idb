@@ -9,12 +9,6 @@ import Foundation
 import os
 import zlib
 
-public enum ZipExtractorError: Error, Equatable {
-  /// A zip this extractor does not read, though another extractor may.
-  case unsupported(String)
-  case corrupt(String)
-}
-
 /// Extracts a complete zip file from its central directory, writing several
 /// files at once: an app bundle is tens of thousands of small files, and
 /// creating them one after another, as `bsdtar` does, takes about twice as
@@ -67,7 +61,7 @@ public enum ZipExtractor {
       var target = Data()
       try decode(entry, from: archive) { target.append(contentsOf: $0) }
       guard let destination = String(data: target, encoding: .utf8) else {
-        throw ZipExtractorError.corrupt("symlink target of \(relative)")
+        throw ArchiveError.corrupt("symlink target of \(relative)")
       }
       guard symlink(destination, (root as NSString).appendingPathComponent(relative)) == 0 else {
         throw POSIXError.current
@@ -98,7 +92,7 @@ public enum ZipExtractor {
     var directoriesToCreate: [String] = []
 
     init(_ entries: [ZipCentralDirectory.Entry]) throws {
-      let paths = Set(entries.map { ZipCentralDirectory.trimmingTrailingSlash($0.path) })
+      let paths = Set(entries.map { ArchiveExtraction.trimmingTrailingSlash($0.path) })
       var create: Set<String> = []
       func createAncestors(of relative: String) {
         var parent = (relative as NSString).deletingLastPathComponent
@@ -112,7 +106,7 @@ public enum ZipExtractor {
           continue
         }
         guard entry.flags & 1 == 0 else {
-          throw ZipExtractorError.unsupported("\(relative) is encrypted")
+          throw ArchiveError.unsupported("\(relative) is encrypted")
         }
         let type = (entry.mode ?? 0) & S_IFMT
         if entry.path.hasSuffix("/") || type == S_IFDIR {
@@ -122,15 +116,15 @@ public enum ZipExtractor {
           continue
         }
         guard entry.method == 0 || entry.method == 8 else {
-          throw ZipExtractorError.unsupported("\(relative) uses compression method \(entry.method)")
+          throw ArchiveError.unsupported("\(relative) uses compression method \(entry.method)")
         }
         switch type {
         case S_IFLNK:
           symlinks.append((entry, relative))
         case S_IFREG, 0:
-          files.append((entry, relative, ZipCentralDirectory.isAppleDouble(relative, alongside: paths)))
+          files.append((entry, relative, ArchiveExtraction.isAppleDouble(relative, alongside: paths)))
         default:
-          throw ZipExtractorError.unsupported("\(relative) has file type \(type)")
+          throw ArchiveError.unsupported("\(relative) has file type \(type)")
         }
         createAncestors(of: relative)
       }
@@ -149,7 +143,7 @@ public enum ZipExtractor {
     if file.appleDoubleCandidate {
       var contents = Data()
       try decode(file.entry, from: archive) { contents.append(contentsOf: $0) }
-      if contents.starts(with: ZipCentralDirectory.appleDoubleMagic) {
+      if contents.starts(with: ArchiveExtraction.appleDoubleMagic) {
         return false
       }
       try write(to: path, entry: file.entry, overrideModificationTime: overrideModificationTime) { output in
@@ -202,7 +196,7 @@ public enum ZipExtractor {
   private static func decode(_ entry: ZipCentralDirectory.Entry, from archive: Int32, into output: (UnsafeRawBufferPointer) throws -> Void) throws {
     var header = [UInt8](repeating: 0, count: 30)
     guard pread(archive, &header, 30, off_t(entry.localHeaderOffset)) == 30, Data(header).uint32(at: 0) == ZipSignature.localHeader else {
-      throw ZipExtractorError.corrupt("no local header for \(entry.path)")
+      throw ArchiveError.corrupt("no local header for \(entry.path)")
     }
     let dataOffset = entry.localHeaderOffset + 30 + UInt64(Data(header).uint16(at: 26)) + UInt64(Data(header).uint16(at: 28))
     var crc = crc32(0, nil, 0)
@@ -218,10 +212,10 @@ public enum ZipExtractor {
     case 8:
       try inflate(entry, at: dataOffset, from: archive, into: emit)
     default:
-      throw ZipExtractorError.unsupported("compression method \(entry.method)")
+      throw ArchiveError.unsupported("compression method \(entry.method)")
     }
     guard size == entry.size, UInt32(crc) == entry.crc32 else {
-      throw ZipExtractorError.corrupt("\(entry.path) does not match its size or CRC")
+      throw ArchiveError.corrupt("\(entry.path) does not match its size or CRC")
     }
   }
 
@@ -234,7 +228,7 @@ public enum ZipExtractor {
     while remaining > 0 {
       let count = pread(archive, &buffer, Int(min(UInt64(buffer.count), remaining)), off_t(position))
       guard count > 0 else {
-        throw ZipExtractorError.corrupt("\(entry.path) is truncated")
+        throw ArchiveError.corrupt("\(entry.path) is truncated")
       }
       try buffer.withUnsafeBytes { try output(UnsafeRawBufferPointer(rebasing: $0[0..<count])) }
       remaining -= UInt64(count)
@@ -244,7 +238,7 @@ public enum ZipExtractor {
 
   private static func inflate(_ entry: ZipCentralDirectory.Entry, at offset: UInt64, from archive: Int32, into output: (UnsafeRawBufferPointer) throws -> Void) throws {
     guard let inflater = Inflater(.deflate) else {
-      throw ZipExtractorError.corrupt("cannot inflate \(entry.path)")
+      throw ArchiveError.corrupt("cannot inflate \(entry.path)")
     }
     var decompressed = [UInt8](repeating: 0, count: chunkSize)
     var finished = false
@@ -253,7 +247,7 @@ public enum ZipExtractor {
       var filled: Bool
       repeat {
         guard let step = decompressed.withUnsafeMutableBytes({ inflater.inflate(remaining, into: $0) }) else {
-          throw ZipExtractorError.corrupt("\(entry.path) does not inflate")
+          throw ArchiveError.corrupt("\(entry.path) does not inflate")
         }
         remaining = UnsafeRawBufferPointer(rebasing: remaining[step.consumed...])
         try decompressed.withUnsafeBytes { try output(UnsafeRawBufferPointer(rebasing: $0[0..<step.produced])) }
@@ -262,7 +256,7 @@ public enum ZipExtractor {
       } while filled && !finished
     }
     guard finished || entry.size == 0 else {
-      throw ZipExtractorError.corrupt("\(entry.path) is truncated")
+      throw ArchiveError.corrupt("\(entry.path) is truncated")
     }
   }
 }

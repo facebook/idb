@@ -112,7 +112,7 @@ struct ZipCentralDirectoryTests {
     let path = root.appendingPathComponent("not.zip").path
     try Data(repeating: 0, count: 100).write(to: URL(fileURLWithPath: path))
 
-    #expect(throws: ZipCentralDirectoryError.noEndOfCentralDirectory) {
+    #expect(throws: ArchiveError.corrupt("no end of central directory record")) {
       try ZipCentralDirectory(archiveAtPath: path)
     }
   }
@@ -127,7 +127,7 @@ struct ZipCentralDirectoryTests {
     try fileManager.createSymbolicLink(atPath: extracted.appendingPathComponent("link").path, withDestinationPath: outside.path)
     let directory = ZipCentralDirectory(entries: [.init(path: "link/file", mode: S_IFREG | 0o777)])
 
-    #expect(throws: ZipCentralDirectoryError.unexpectedFileType("link")) {
+    #expect(throws: ArchiveError.unsafePath("link")) {
       try directory.repair(extractedAt: extracted.path)
     }
     #expect(try permissions(outside.appendingPathComponent("file").path) != 0o777)
@@ -137,7 +137,7 @@ struct ZipCentralDirectoryTests {
   func repair_RejectsAPathOutsideTheExtraction() throws {
     let directory = ZipCentralDirectory(entries: [.init(path: "../escape", mode: S_IFLNK | 0o755)])
 
-    #expect(throws: ZipCentralDirectoryError.unsafePath("../escape")) {
+    #expect(throws: ArchiveError.unsafePath("../escape")) {
       try directory.repair(extractedAt: root.path)
     }
   }

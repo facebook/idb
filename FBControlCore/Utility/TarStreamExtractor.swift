@@ -7,12 +7,6 @@
 
 import Foundation
 
-public enum TarExtractorError: Error, Equatable {
-  case unsupported(String)
-  case corrupt(String)
-  case unsafePath(String)
-}
-
 /// Extracts a tar, or a gzipped tar, read forwards as it arrives, decoding on the
 /// calling thread and writing several files at once.
 ///
@@ -22,9 +16,6 @@ public enum TarExtractorError: Error, Equatable {
 /// AppleDouble `._` entries are skipped. An entry that is neither a file, a
 /// directory nor a link fails the extraction, as does a path named twice.
 public enum TarStreamExtractor {
-
-  /// Reads up to the buffer's size into it, returning 0 at the end of the input.
-  public typealias Read = (UnsafeMutableRawBufferPointer) throws -> Int
 
   /// Time the decoding thread spent blocked, which says whether the input or
   /// the disk held the extraction back.
@@ -37,24 +28,10 @@ public enum TarStreamExtractor {
     case extracted(ArchiveExtractionSummary, Waits)
     /// The input does not start with a tar header. `prefix` is everything read
     /// from it, decompressed, and `rest` reads what follows.
-    case notTar(prefix: Data, rest: Read)
+    case notTar(prefix: Data, rest: ArchiveRead)
   }
 
-  public static func reading(fileDescriptor: Int32) -> Read {
-    { buffer in
-      while true {
-        let count = Darwin.read(fileDescriptor, buffer.baseAddress, buffer.count)
-        if count >= 0 {
-          return count
-        }
-        guard errno == EINTR else {
-          throw POSIXError.current
-        }
-      }
-    }
-  }
-
-  public static func extract(reading read: @escaping Read, to root: String, overrideModificationTime: Bool = false) throws -> Outcome {
+  public static func extract(reading read: @escaping ArchiveRead, to root: String, overrideModificationTime: Bool = false) throws -> Outcome {
     var inputWait: TimeInterval = 0
     let decoder = Decoder { buffer in
       let start = DispatchTime.now().uptimeNanoseconds
@@ -104,7 +81,7 @@ public enum TarStreamExtractor {
         let attributes = extendedAttributes(pax)
         if let paxSize = try paxString(pax, "size") {
           guard let value = UInt64(paxSize) else {
-            throw TarExtractorError.corrupt("\(path) has a size of \(paxSize)")
+            throw ArchiveError.corrupt("\(path) has a size of \(paxSize)")
           }
           size = value
         }
@@ -112,8 +89,7 @@ public enum TarStreamExtractor {
         (pax, longName, longLink) = ([:], nil, nil)
 
         // bsdtar reads these as the metadata of the entry that follows.
-        let name = (path as NSString).lastPathComponent
-        if name.hasPrefix("._"), name.count > 2 {
+        if ArchiveExtraction.isAppleDoubleName(path) {
           try reader.skip(size)
           continue
         }
@@ -148,7 +124,7 @@ public enum TarStreamExtractor {
         case UInt8(ascii: "2"):
           try reader.skip(size)
           guard !relative.isEmpty else {
-            throw TarExtractorError.unsafePath(path)
+            throw ArchiveError.unsafePath(path)
           }
           try created.create((relative as NSString).deletingLastPathComponent)
           guard symlink(link, destination) == 0 else {
@@ -162,12 +138,12 @@ public enum TarStreamExtractor {
           try reader.skip(size)
           let target = try relativePath(link)
           guard files.contains(target), !relative.isEmpty else {
-            throw TarExtractorError.unsupported("\(path) is a hard link to \(link), which is not a file extracted before it")
+            throw ArchiveError.unsupported("\(path) is a hard link to \(link), which is not a file extracted before it")
           }
           try created.create((relative as NSString).deletingLastPathComponent)
           hardlinks.append((destination, (root as NSString).appendingPathComponent(target)))
         default:
-          throw TarExtractorError.unsupported("\(path) has type \(Character(Unicode.Scalar(header.type)))")
+          throw ArchiveError.unsupported("\(path) has type \(Character(Unicode.Scalar(header.type)))")
         }
       }
       try reader.drain()
@@ -234,7 +210,7 @@ public enum TarStreamExtractor {
     var components: [Substring] = []
     for component in path.split(separator: "/") where component != "." {
       guard component != ".." else {
-        throw TarExtractorError.unsafePath(path)
+        throw ArchiveError.unsafePath(path)
       }
       components.append(component)
     }
@@ -252,11 +228,11 @@ public enum TarStreamExtractor {
         let length = Int(String(decoding: bytes[offset..<space], as: UTF8.self)),
         length > space - offset, offset + length <= bytes.count, bytes[offset + length - 1] == UInt8(ascii: "\n")
       else {
-        throw TarExtractorError.corrupt("a malformed pax header")
+        throw ArchiveError.corrupt("a malformed pax header")
       }
       let record = bytes[(space + 1)..<(offset + length - 1)]
       guard let equals = record.firstIndex(of: UInt8(ascii: "=")) else {
-        throw TarExtractorError.corrupt("a malformed pax header")
+        throw ArchiveError.corrupt("a malformed pax header")
       }
       records[String(decoding: record[..<equals], as: UTF8.self)] = Array(record[(equals + 1)...])
       offset += length
@@ -291,7 +267,7 @@ public enum TarStreamExtractor {
       return nil
     }
     guard let string = String(bytes: value, encoding: .utf8) else {
-      throw TarExtractorError.unsupported("a pax \(key) that is not UTF-8")
+      throw ArchiveError.unsupported("a pax \(key) that is not UTF-8")
     }
     return string
   }
@@ -306,7 +282,7 @@ public enum TarStreamExtractor {
 
     init(_ block: [UInt8]) throws {
       guard Self.hasValidChecksum(block) else {
-        throw TarExtractorError.corrupt("a tar header with the wrong checksum")
+        throw ArchiveError.corrupt("a tar header with the wrong checksum")
       }
       name = try Self.string(block[0..<100])
       mode = mode_t(try Self.number(block[100..<108]) & 0o7777)
@@ -340,7 +316,7 @@ public enum TarStreamExtractor {
     static func string(_ field: ArraySlice<UInt8>) throws -> String {
       let bytes = field.prefix { $0 != 0 }
       guard let string = String(bytes: bytes, encoding: .utf8) else {
-        throw TarExtractorError.unsupported("a name that is not UTF-8")
+        throw ArchiveError.unsupported("a name that is not UTF-8")
       }
       return string
     }
@@ -349,12 +325,12 @@ public enum TarStreamExtractor {
     static func number(_ field: ArraySlice<UInt8>) throws -> UInt64 {
       if let first = field.first, first & 0x80 != 0 {
         guard first == 0x80 else {
-          throw TarExtractorError.unsupported("a negative number in a tar header")
+          throw ArchiveError.unsupported("a negative number in a tar header")
         }
         var value: UInt64 = 0
         for byte in field.dropFirst() {
           guard value >> 56 == 0 else {
-            throw TarExtractorError.unsupported("a number too large in a tar header")
+            throw ArchiveError.unsupported("a number too large in a tar header")
           }
           value = value << 8 | UInt64(byte)
         }
@@ -370,7 +346,7 @@ public enum TarStreamExtractor {
           continue
         }
         guard (UInt8(ascii: "0")...UInt8(ascii: "7")).contains(byte), value >> 60 == 0 else {
-          throw TarExtractorError.corrupt("a malformed number in a tar header")
+          throw ArchiveError.corrupt("a malformed number in a tar header")
         }
         value = value << 3 | UInt64(byte - UInt8(ascii: "0"))
         digits = true
@@ -403,7 +379,7 @@ public enum TarStreamExtractor {
     mutating func block() throws -> [UInt8]? {
       guard let block = try peekBlock() else {
         guard input.available == 0 else {
-          throw TarExtractorError.corrupt("the tar ends partway through a header")
+          throw ArchiveError.corrupt("the tar ends partway through a header")
         }
         return nil
       }
@@ -416,7 +392,7 @@ public enum TarStreamExtractor {
       var remaining = size
       while remaining > 0 {
         guard try input.buffer(atLeast: 1) else {
-          throw TarExtractorError.corrupt("the tar ends partway through an entry")
+          throw ArchiveError.corrupt("the tar ends partway through an entry")
         }
         let count = Int(min(UInt64(input.available), remaining))
         try input.withAvailable { try output(UnsafeRawBufferPointer(rebasing: $0[0..<count])) }
@@ -426,7 +402,7 @@ public enum TarStreamExtractor {
       var padding = Int((512 - size % 512) % 512)
       while padding > 0 {
         guard try input.buffer(atLeast: 1) else {
-          throw TarExtractorError.corrupt("the tar ends partway through an entry")
+          throw ArchiveError.corrupt("the tar ends partway through an entry")
         }
         let count = min(input.available, padding)
         input.consume(count)
@@ -442,7 +418,7 @@ public enum TarStreamExtractor {
     /// corrupt size from exhausting memory.
     mutating func metadata(_ size: UInt64) throws -> Data {
       guard size <= 1 << 20 else {
-        throw TarExtractorError.unsupported("a tar metadata entry of \(size) bytes")
+        throw ArchiveError.unsupported("a tar metadata entry of \(size) bytes")
       }
       var data = Data()
       try contents(size) { data.append(contentsOf: $0) }
@@ -469,7 +445,7 @@ public enum TarStreamExtractor {
     private var state = State.undetected
     private var input: BufferedInput
 
-    init(_ raw: @escaping Read) {
+    init(_ raw: @escaping ArchiveRead) {
       input = BufferedInput(capacity: 1 << 18, read: raw)
     }
 
@@ -481,7 +457,7 @@ public enum TarStreamExtractor {
           return try read(output)
         }
         guard let inflater = Inflater(.gzip) else {
-          throw TarExtractorError.corrupt("cannot inflate the gzip")
+          throw ArchiveError.corrupt("cannot inflate the gzip")
         }
         state = .gzip(inflater)
         return try read(output)
@@ -503,10 +479,10 @@ public enum TarStreamExtractor {
     private func inflate(_ inflater: Inflater, into output: UnsafeMutableRawBufferPointer) throws -> Int {
       while true {
         guard try input.buffer(atLeast: 1) else {
-          throw TarExtractorError.corrupt("the gzip ends early")
+          throw ArchiveError.corrupt("the gzip ends early")
         }
         guard let step = input.withAvailable({ inflater.inflate($0, into: output) }) else {
-          throw TarExtractorError.corrupt("the gzip does not inflate")
+          throw ArchiveError.corrupt("the gzip does not inflate")
         }
         input.consume(step.consumed)
         var finished = false

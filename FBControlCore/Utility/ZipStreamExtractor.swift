@@ -29,7 +29,7 @@ public enum ZipStreamExtractor {
       var seen: Set<String> = []
       while let header = try LocalHeader(reading: &reader) {
         let relative = try ZipCentralDirectory.safeRelativePath(header.path)
-        defer { seen.insert(ZipCentralDirectory.trimmingTrailingSlash(relative)) }
+        defer { seen.insert(ArchiveExtraction.trimmingTrailingSlash(relative)) }
         if header.path.hasSuffix("/") {
           try reader.decode(header) { _ in }
           if !relative.isEmpty {
@@ -45,10 +45,10 @@ public enum ZipStreamExtractor {
         // `ditto` puts each file's AppleDouble entry straight after it, so skipping
         // it here saves creating a file that the repair would only remove.
         var appleDoubleCandidate: Data?
-        if ZipCentralDirectory.isAppleDouble(relative, alongside: seen) {
+        if ArchiveExtraction.isAppleDouble(relative, alongside: seen) {
           var contents = Data()
           try reader.decode(header) { contents.append(contentsOf: $0) }
-          if contents.starts(with: ZipCentralDirectory.appleDoubleMagic) {
+          if contents.starts(with: ArchiveExtraction.appleDoubleMagic) {
             continue
           }
           appleDoubleCandidate = contents
@@ -107,14 +107,14 @@ public enum ZipStreamExtractor {
       case ZipSignature.centralDirectoryEntry, ZipSignature.endOfCentralDirectory, ZipSignature.zip64EndOfCentralDirectory:
         return nil
       default:
-        throw ZipExtractorError.corrupt("no local header where one should be")
+        throw ArchiveError.corrupt("no local header where one should be")
       }
       let fixed = try reader.read(30)
       let nameLength = Int(fixed.uint16(at: 26))
       let extraLength = Int(fixed.uint16(at: 28))
       let variable = try reader.read(nameLength + extraLength)
       guard let path = String(data: variable.prefix(nameLength), encoding: .utf8) else {
-        throw ZipExtractorError.unsupported("an entry name that is not UTF-8")
+        throw ArchiveError.unsupported("an entry name that is not UTF-8")
       }
       self.path = path
       flags = fixed.uint16(at: 6)
@@ -124,14 +124,14 @@ public enum ZipStreamExtractor {
       size = UInt64(fixed.uint32(at: 22))
       modified = ZipCentralDirectory.dosDate(date: fixed.uint16(at: 12), time: fixed.uint16(at: 10))
       guard flags & 1 == 0 else {
-        throw ZipExtractorError.unsupported("\(path) is encrypted")
+        throw ArchiveError.unsupported("\(path) is encrypted")
       }
       guard method == 0 || method == 8 else {
-        throw ZipExtractorError.unsupported("\(path) uses compression method \(method)")
+        throw ArchiveError.unsupported("\(path) uses compression method \(method)")
       }
       // A stored entry's end can only be found from its size.
       guard method == 8 || flags & 8 == 0 else {
-        throw ZipExtractorError.unsupported("\(path) is stored with its size after it")
+        throw ArchiveError.unsupported("\(path) is stored with its size after it")
       }
       try applyExtraFields(Data(variable.suffix(extraLength)))
     }
@@ -143,7 +143,7 @@ public enum ZipStreamExtractor {
         let size = Int(extra.uint16(at: offset + 2))
         let data = offset + 4
         guard data + size <= extra.count else {
-          throw ZipExtractorError.corrupt("\(path) has a truncated extra field")
+          throw ArchiveError.corrupt("\(path) has a truncated extra field")
         }
         switch id {
         case 0x0001 where size >= 16:
@@ -151,12 +151,8 @@ public enum ZipStreamExtractor {
           zip64 = true
           self.size = extra.uint64(at: data)
           compressedSize = extra.uint64(at: data + 8)
-        case 0x5455 where size >= 5 && extra[extra.startIndex + data] & 1 != 0:
-          modified = Date(timeIntervalSince1970: TimeInterval(Int32(bitPattern: extra.uint32(at: data + 1))))
-        case 0x5855 where size >= 8:
-          modified = Date(timeIntervalSince1970: TimeInterval(Int32(bitPattern: extra.uint32(at: data + 4))))
         default:
-          break
+          modified = ZipCentralDirectory.modified(fromExtraField: id, in: extra, at: data, size: size) ?? modified
         }
         offset = data + size
       }
@@ -167,12 +163,12 @@ public enum ZipStreamExtractor {
     private var input: BufferedInput
 
     init(fileDescriptor: Int32) {
-      input = BufferedInput(capacity: 1 << 20, read: TarStreamExtractor.reading(fileDescriptor: fileDescriptor))
+      input = BufferedInput(capacity: 1 << 20, read: ArchiveExtraction.reading(fileDescriptor: fileDescriptor))
     }
 
     private mutating func ensure(_ count: Int) throws {
       guard try input.buffer(atLeast: count) else {
-        throw ZipExtractorError.corrupt("the zip ends early")
+        throw ArchiveError.corrupt("the zip ends early")
       }
     }
 
@@ -227,14 +223,14 @@ public enum ZipStreamExtractor {
         expected = (descriptor.uint32(at: 0), header.zip64 ? descriptor.uint64(at: 12) : UInt64(descriptor.uint32(at: 8)))
       }
       guard size == expected.size, UInt32(crc) == expected.crc32 else {
-        throw ZipExtractorError.corrupt("\(header.path) does not match its size or CRC")
+        throw ArchiveError.corrupt("\(header.path) does not match its size or CRC")
       }
       return size
     }
 
     private mutating func inflate(_ path: String, into output: (UnsafeRawBufferPointer) throws -> Void) throws {
       guard let inflater = Inflater(.deflate) else {
-        throw ZipExtractorError.corrupt("cannot inflate \(path)")
+        throw ArchiveError.corrupt("cannot inflate \(path)")
       }
       var decompressed = [UInt8](repeating: 0, count: 1 << 18)
       while true {
@@ -243,7 +239,7 @@ public enum ZipStreamExtractor {
           decompressed.withUnsafeMutableBytes { inflater.inflate(compressed, into: $0) }
         }
         guard let step else {
-          throw ZipExtractorError.corrupt("\(path) does not inflate")
+          throw ArchiveError.corrupt("\(path) does not inflate")
         }
         input.consume(step.consumed)
         try decompressed.withUnsafeBytes { try output(UnsafeRawBufferPointer(rebasing: $0[0..<step.produced])) }

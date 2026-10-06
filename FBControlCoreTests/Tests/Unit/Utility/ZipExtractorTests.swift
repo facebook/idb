@@ -163,7 +163,7 @@ struct ZipExtractorTests {
     let extracted = root.appendingPathComponent("inprocess").path
     try fileManager.createDirectory(atPath: extracted, withIntermediateDirectories: true)
 
-    #expect(throws: ZipExtractorError.corrupt("A.app/file does not match its size or CRC")) {
+    #expect(throws: ArchiveError.corrupt("A.app/file does not match its size or CRC")) {
       try ZipExtractor.extract(archiveAtPath: archive.path, to: extracted)
     }
   }
@@ -180,7 +180,7 @@ struct ZipExtractorTests {
     let extracted = root.appendingPathComponent("inprocess").path
     try fileManager.createDirectory(atPath: extracted, withIntermediateDirectories: true)
 
-    #expect(throws: ZipCentralDirectoryError.unsafePath("../escape")) {
+    #expect(throws: ArchiveError.unsafePath("../escape")) {
       try ZipExtractor.extract(archiveAtPath: archive.path, to: extracted)
     }
     #expect(!fileManager.fileExists(atPath: root.appendingPathComponent("escape").path))
@@ -194,7 +194,7 @@ struct ZipExtractorTests {
     let extracted = root.appendingPathComponent("inprocess").path
     try fileManager.createDirectory(atPath: extracted, withIntermediateDirectories: true)
 
-    #expect(throws: ZipExtractorError.unsupported("A.app/Info.plist is encrypted")) {
+    #expect(throws: ArchiveError.unsupported("A.app/Info.plist is encrypted")) {
       try ZipExtractor.extract(archiveAtPath: archive, to: extracted)
     }
   }
@@ -350,7 +350,7 @@ struct ZipExtractorTests {
     bytes[range.lowerBound] ^= 0xFF
     try bytes.write(to: archive)
 
-    #expect(throws: ZipExtractorError.corrupt("A.app/file does not match its size or CRC")) {
+    #expect(throws: ArchiveError.corrupt("A.app/file does not match its size or CRC")) {
       try extractAsStream(archive.path, to: root.appendingPathComponent("stream").path)
     }
   }
@@ -361,7 +361,7 @@ struct ZipExtractorTests {
     let archive = root.appendingPathComponent("a.ipa").path
     try run("/bin/sh", ["-c", "/usr/bin/zip -qry0 - A.app/Info.plist | /bin/cat > \"$0\"", archive])
 
-    #expect(throws: ZipExtractorError.unsupported("A.app/Info.plist is stored with its size after it")) {
+    #expect(throws: ArchiveError.unsupported("A.app/Info.plist is stored with its size after it")) {
       try extractAsStream(archive, to: root.appendingPathComponent("stream").path)
     }
   }

@@ -18,6 +18,9 @@ public struct ArchiveExtractionSummary: Equatable, Sendable {
 }
 
 /// The file system work shared by the in-process extractors.
+/// Reads up to the buffer's size into it, returning 0 at the end of the input.
+public typealias ArchiveRead = (UnsafeMutableRawBufferPointer) throws -> Int
+
 enum ArchiveExtraction {
 
   /// Creating a small file is mostly waiting, on the file system and on any
@@ -44,8 +47,43 @@ enum ArchiveExtraction {
     }
   }
 
+  static func reading(fileDescriptor: Int32) -> ArchiveRead {
+    { buffer in
+      while true {
+        let count = Darwin.read(fileDescriptor, buffer.baseAddress, buffer.count)
+        if count >= 0 {
+          return count
+        }
+        guard errno == EINTR else {
+          throw POSIXError.current
+        }
+      }
+    }
+  }
+
   static func isMacMetadata(_ relative: String) -> Bool {
     relative == "__MACOSX" || relative.hasPrefix("__MACOSX/")
+  }
+
+  static let appleDoubleMagic = Data([0x00, 0x05, 0x16, 0x07])
+
+  /// A `._` name, which `bsdtar` reads as the metadata of the entry it names.
+  static func isAppleDoubleName(_ path: String) -> Bool {
+    let name = (path as NSString).lastPathComponent
+    return name.hasPrefix("._") && name.count > 2
+  }
+
+  /// A `._` entry whose named entry is also in the archive.
+  static func isAppleDouble(_ path: String, alongside paths: Set<String>) -> Bool {
+    let name = (path as NSString).lastPathComponent
+    guard name.hasPrefix("._") else {
+      return false
+    }
+    return paths.contains(((path as NSString).deletingLastPathComponent as NSString).appendingPathComponent(String(name.dropFirst(2))))
+  }
+
+  static func trimmingTrailingSlash(_ path: String) -> String {
+    path.hasSuffix("/") ? String(path.dropLast()) : path
   }
 
   /// Clears a failed extraction before the next extractor writes into the same place.
