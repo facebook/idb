@@ -90,15 +90,11 @@ struct CodesignProviderTests {
 
     // `codesign -dvvvv` writes its whole report to stderr, so a reader that took
     // the conventional stream would find nothing to match `CDHash=` against.
-    let process = try await bridgeFBFuture(
-      FBProcessBuilder<NSNull, NSData, NSData>
-        .withLaunchPath("/usr/bin/codesign", arguments: ["-dvvvv", bundle.path])
-        .withStdOutInMemoryAsString()
-        .withStdErrInMemoryAsString()
-        .runUntilCompletion(withAcceptableExitCodes: [0]))
+    let process = try await Subprocess(executable: "/usr/bin/codesign", arguments: ["-dvvvv", bundle.path])
+      .run(output: .string, error: .string)
 
-    #expect((process.stdOut as String?) == "")
-    let standardError = (process.stdErr as String?) ?? ""
+    #expect(process.standardOutput == "")
+    let standardError = process.standardError
     #expect(standardError.contains("CDHash="))
 
     let cdHash = try await provider.cdHashForBundle(atPath: bundle.path)

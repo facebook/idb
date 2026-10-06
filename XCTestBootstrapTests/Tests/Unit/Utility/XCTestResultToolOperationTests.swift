@@ -143,12 +143,9 @@ final class XCTestResultToolOperationTests: XCTestCase {
   }
 
   private func standardError(ofDirectlyRunning arguments: [String]) async throws -> String {
-    let process = try await bridgeFBFuture(
-      FBProcessBuilder<NSNull, NSData, NSData>
-        .withLaunchPath("/usr/bin/xcrun", arguments: arguments)
-        .withStdErrInMemoryAsString()
-        .runUntilCompletion(withAcceptableExitCodes: nil))
-    return (process.stdErr as String?) ?? ""
+    try await Subprocess(executable: "/usr/bin/xcrun", arguments: arguments)
+      .run(output: .nullDevice, error: .string, exitPolicy: .any)
+      .standardError
   }
 }
 

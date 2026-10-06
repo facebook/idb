@@ -10,22 +10,18 @@ import XCTest
 
 final class FBProcessInputTests: XCTestCase {
 
-  func testConsumerInput_BytesWrittenBeforeTheProcessStarts() async throws {
+  func testConsumerInput_BytesWrittenBeforeAttachAreKept() async throws {
     let rawInput = FBProcessInput<NSObject>.fromConsumer()
     let consumer = rawInput.contents
     consumer.consumeData(Data("early".utf8))
 
-    let process = try await bridgeFBFuture(
-      FBProcessBuilder<NSNull, NSData, NSData>
-        .withLaunchPath("/bin/cat", arguments: [])
-        .withStdIn(rawInput.retyped(FBProcessInput<AnyObject>.self))
-        .withStdOutInMemoryAsString()
-        .start())
+    let attachment = try await bridgeFBFuture(rawInput.attach())
     consumer.consumeData(Data(" late".utf8))
     consumer.consumeEndOfFile()
-    _ = try await bridgeFBFuture(process.exited(withCodes: [0]))
+    let received = FileHandle(fileDescriptor: attachment.fileDescriptor).readDataToEndOfFile()
+    _ = try await bridgeFBFuture(rawInput.detach())
 
-    XCTAssertEqual(process.stdOut as? String, "early late")
+    XCTAssertEqual(String(decoding: received, as: UTF8.self), "early late")
   }
 
   func testConsumerInput_BytesWrittenAfterDetachAreNotKept() async throws {
