@@ -16,16 +16,12 @@ final class ScriptedLogicTestTarget: NSObject, LogicTestTarget {
 
   private let device = MacDevice()
   private let launcher: ScriptedLauncher
-  private let script: String
-  private let lock = NSLock()
   // Serial, as the real targets' main queue is: the strategies rely on work they hop onto it
   // running in submission order.
   private let serialWorkQueue = DispatchQueue(label: "com.facebook.xctestbootstrap.scripted_target")
-  private var recordedConfigurations: [ProcessSpawnConfiguration] = []
   let xctest: ShimmedXCTest
 
   init(shimPath: String, script: String) {
-    self.script = script
     self.launcher = ScriptedLauncher(script: script)
     self.xctest = ShimmedXCTest(shimPath: shimPath, path: device.xctest.path)
   }
@@ -35,19 +31,8 @@ final class ScriptedLogicTestTarget: NSObject, LogicTestTarget {
     launcher.spawned
   }
 
-  /// What was launched through `spawn`.
-  var spawnedConfigurations: [ProcessSpawnConfiguration] {
-    lock.withLock { recordedConfigurations }
-  }
-
   var subprocessLauncher: any SubprocessLauncher {
     launcher
-  }
-
-  func spawn(_ configuration: ProcessSpawnConfiguration) async throws -> FBSubprocess<AnyObject, AnyObject, AnyObject> {
-    lock.withLock { recordedConfigurations.append(configuration) }
-    let scripted = ProcessSpawnConfiguration(launchPath: "/bin/sh", arguments: ["-c", script], environment: scriptEnvironment(configuration.environment), io: configuration.io, mode: configuration.mode)
-    return try await bridgeFBFuture(FBSubprocess<AnyObject, AnyObject, AnyObject>.launchProcess(with: scripted, logger: logger))
   }
 
   func environmentAdditions() -> [String: String] {

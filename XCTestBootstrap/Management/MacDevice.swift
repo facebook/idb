@@ -380,18 +380,6 @@ public final class MacDevice: NSObject, Target {
 
 }
 
-// MARK: - MacDevice+ProcessSpawn
-
-extension MacDevice {
-
-  public func spawn(
-    _ configuration: ProcessSpawnConfiguration
-  ) async throws -> FBSubprocess<AnyObject, AnyObject, AnyObject> {
-    let logger = self.logger
-    return try await bridgeFBFuture(FBSubprocess<AnyObject, AnyObject, AnyObject>.launchProcess(with: configuration, logger: logger))
-  }
-}
-
 // MARK: - MacDevice+XCTestExtendedCommands
 
 extension MacDevice: XCTestExtendedCommands {

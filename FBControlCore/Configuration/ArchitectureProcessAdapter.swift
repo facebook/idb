@@ -91,23 +91,6 @@ public enum ArchitectureProcessAdapter {
       ])
   }
 
-  /// Force binaries to be launched in desired architectures.
-  public static func adaptProcessConfiguration(
-    _ processConfiguration: ProcessSpawnConfiguration,
-    toAnyArchitectureIn requestedArchitectures: Set<Architecture>,
-    hostArchitectures: Set<Architecture> = ArchitectureProcessAdapter.hostMachineSupportedArchitectures(),
-    temporaryDirectory: URL
-  ) async throws -> ProcessSpawnConfiguration {
-    let thinned = try await thinExecutable(atPath: processConfiguration.launchPath, toAnyArchitectureIn: requestedArchitectures, hostArchitectures: hostArchitectures, temporaryDirectory: temporaryDirectory)
-    return ProcessSpawnConfiguration(
-      launchPath: thinned.path,
-      arguments: processConfiguration.arguments,
-      environment: (processConfiguration.environment as [String: String]).merging(thinned.environment) { _, thinnedValue in thinnedValue },
-      io: processConfiguration.io,
-      mode: processConfiguration.mode
-    )
-  }
-
   /// Verifies that we can extract desired architecture from binary
   private static func verifyArchitectureAvailable(
     _ binary: String,

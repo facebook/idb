@@ -37,23 +37,10 @@ struct ArchitectureProcessAdapterTests {
     return url
   }
 
-  private static func configuration(launchPath: String, environment: [String: String] = [:]) -> ProcessSpawnConfiguration {
-    ProcessSpawnConfiguration(
-      launchPath: launchPath,
-      arguments: ["--first", "--second"],
-      environment: environment,
-      io: FBProcessIO<AnyObject, AnyObject, AnyObject>.outputToDevNull(),
-      mode: .posixSpawn)
-  }
-
   private static func architectures(of binary: String) async throws -> [String] {
-    let process = try await bridgeFBFuture(
-      FBProcessBuilder<NSNull, NSData, NSData>
-        .withLaunchPath("/usr/bin/lipo", arguments: ["-archs", binary])
-        .withStdOutInMemoryAsString()
-        .withStdErrToDevNull()
-        .runUntilCompletion(withAcceptableExitCodes: [0]))
-    return ((process.stdOut as String?) ?? "").split(separator: " ").map(String.init)
+    let result = try await Subprocess(executable: "/usr/bin/lipo", arguments: ["-archs", binary])
+      .run(output: .string, error: .closed, timeout: 10)
+    return result.standardOutput.split(whereSeparator: \.isWhitespace).map(String.init)
   }
 
   // MARK: - Architecture selection
@@ -64,8 +51,8 @@ struct ArchitectureProcessAdapterTests {
     defer { try? FileManager.default.removeItem(at: directory) }
 
     do {
-      _ = try await ArchitectureProcessAdapter.adaptProcessConfiguration(
-        Self.configuration(launchPath: Self.fatBinary),
+      _ = try await ArchitectureProcessAdapter.thinExecutable(
+        atPath: Self.fatBinary,
         toAnyArchitectureIn: [.arm64],
         hostArchitectures: [.x86_64],
         temporaryDirectory: directory)
@@ -90,8 +77,8 @@ struct ArchitectureProcessAdapterTests {
     // -verify_arch arm64` then fails against a binary that only has arm64e. The
     // failure is the evidence of the preference: x86_64 was available and unused.
     do {
-      _ = try await ArchitectureProcessAdapter.adaptProcessConfiguration(
-        Self.configuration(launchPath: Self.fatBinary),
+      _ = try await ArchitectureProcessAdapter.thinExecutable(
+        atPath: Self.fatBinary,
         toAnyArchitectureIn: [.arm64, .x86_64],
         hostArchitectures: [.arm64, .x86_64],
         temporaryDirectory: directory)
@@ -102,40 +89,35 @@ struct ArchitectureProcessAdapterTests {
     }
 
     // Take arm64 off the host and the same request succeeds on x86_64.
-    let adapted = try await ArchitectureProcessAdapter.adaptProcessConfiguration(
-      Self.configuration(launchPath: Self.fatBinary),
+    let adapted = try await ArchitectureProcessAdapter.thinExecutable(
+      atPath: Self.fatBinary,
       toAnyArchitectureIn: [.arm64, .x86_64],
       hostArchitectures: [.x86_64],
       temporaryDirectory: directory)
-    #expect(try await Self.architectures(of: adapted.launchPath) == ["x86_64"])
+    #expect(try await Self.architectures(of: adapted.path) == ["x86_64"])
   }
 
   // MARK: - Extraction
 
-  @Test("The selected slice is thinned into the temporary directory and everything else is carried over")
-  func adaptationThinsTheBinaryAndPreservesTheRestOfTheConfiguration() async throws {
+  @Test("The selected slice is thinned into the temporary directory")
+  func adaptationThinsTheBinaryIntoTheTemporaryDirectory() async throws {
     let directory = try Self.makeTemporaryDirectory()
     defer { try? FileManager.default.removeItem(at: directory) }
-    let original = Self.configuration(launchPath: Self.fatBinary, environment: ["KEEP": "ME"])
 
-    let adapted = try await ArchitectureProcessAdapter.adaptProcessConfiguration(
-      original,
+    let adapted = try await ArchitectureProcessAdapter.thinExecutable(
+      atPath: Self.fatBinary,
       toAnyArchitectureIn: [.x86_64],
       hostArchitectures: [.x86_64],
       temporaryDirectory: directory)
 
-    let fileName = (adapted.launchPath as NSString).lastPathComponent
-    #expect((adapted.launchPath as NSString).deletingLastPathComponent == directory.path)
+    let fileName = (adapted.path as NSString).lastPathComponent
+    #expect((adapted.path as NSString).deletingLastPathComponent == directory.path)
     // The name is the original binary's, a UUID, and the architecture — the UUID is
     // what keeps concurrent adaptations of the same binary from colliding.
     #expect(fileName.hasPrefix("echo"))
     #expect(fileName.hasSuffix(".x86_64"))
-    #expect(FileManager.default.fileExists(atPath: adapted.launchPath))
-
-    #expect(adapted.arguments == original.arguments)
-    #expect(adapted.mode == original.mode)
-    #expect(adapted.io === original.io)
-    #expect(adapted.environment["KEEP"] == "ME")
+    #expect(FileManager.default.fileExists(atPath: adapted.path))
+    #expect(Set(adapted.environment.keys) == ["DYLD_FRAMEWORK_PATH", "DYLD_LIBRARY_PATH"])
   }
 
   // MARK: - Dyld search paths
@@ -150,8 +132,8 @@ struct ArchitectureProcessAdapterTests {
     let directory = try Self.makeTemporaryDirectory()
     defer { try? FileManager.default.removeItem(at: directory) }
 
-    let adapted = try await ArchitectureProcessAdapter.adaptProcessConfiguration(
-      Self.configuration(launchPath: binary),
+    let adapted = try await ArchitectureProcessAdapter.thinExecutable(
+      atPath: binary,
       toAnyArchitectureIn: [.x86_64],
       hostArchitectures: [.x86_64],
       temporaryDirectory: directory)
@@ -170,8 +152,8 @@ struct ArchitectureProcessAdapterTests {
     let directory = try Self.makeTemporaryDirectory()
     defer { try? FileManager.default.removeItem(at: directory) }
 
-    let adapted = try await ArchitectureProcessAdapter.adaptProcessConfiguration(
-      Self.configuration(launchPath: Self.fatBinary),
+    let adapted = try await ArchitectureProcessAdapter.thinExecutable(
+      atPath: Self.fatBinary,
       toAnyArchitectureIn: [.x86_64],
       hostArchitectures: [.x86_64],
       temporaryDirectory: directory)

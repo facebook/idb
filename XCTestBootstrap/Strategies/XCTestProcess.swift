@@ -66,42 +66,6 @@ final class XCTestProcess {
     }
   }
 
-  public static func ensureProcess(_ process: FBSubprocess<AnyObject, AnyObject, AnyObject>, completesWithin timeout: TimeInterval, crashLogCommands: (any CrashLogCommands)?, queue: DispatchQueue, logger: ControlCoreLogger) -> FBFuture<NSNumber> {
-    let startDate = Date(timeIntervalSinceNow: CrashLogStartDateFuzz)
-
-    logger.log("Waiting for \(process.processIdentifier) to exit within \(timeout) seconds")
-    // The timeout cancels the future it races, and `statLoc` is what later tells the termination
-    // whether the process is still running, so race a copy of it.
-    return
-      FBMutableFuture<AnyObject>().resolve(from: process.statLoc.retyped(FBFuture<AnyObject>.self))
-      .onQueue(
-        queue, timeout: timeout,
-        handler: {
-          XCTestProcess.performSampleStackshot(onProcess: process, forTimeout: timeout, queue: queue, logger: logger)
-        }
-      )
-      .onQueue(
-        queue,
-        fmap: { _ -> FBFuture<AnyObject> in
-          process.exitCode.retyped(FBFuture<AnyObject>.self)
-            .onQueue(
-              queue,
-              chain: { exitCodeFuture -> FBFuture<AnyObject> in
-                if exitCodeFuture.state == .done {
-                  return exitCodeFuture
-                }
-                guard let crashLogCommands else {
-                  return exitCodeFuture
-                }
-                return XCTestProcess.performCrashLogQuery(
-                  forProcessIdentifier: process.processIdentifier, startDate: startDate, crashLogCommands: crashLogCommands, crashLogWaitTime: CrashLogWaitTime, queue: queue, logger: logger
-                ).retyped(FBFuture<AnyObject>.self)
-              })
-        }
-      )
-      .retyped(FBFuture<NSNumber>.self)
-  }
-
   public static func describeFailingExitCode(_ exitCode: Int32) -> String? {
     switch exitCode {
     case 0, 1:
@@ -119,30 +83,6 @@ final class XCTestProcess {
     default:
       return "Unknown xctest exit code \(exitCode)"
     }
-  }
-
-  private static func performSampleStackshot(onProcess process: FBSubprocess<AnyObject, AnyObject, AnyObject>, forTimeout timeout: TimeInterval, queue: DispatchQueue, logger: ControlCoreLogger) -> FBFuture<AnyObject> {
-    fbFutureFromAsync {
-      try await ProcessFetcher.sampleStackshot(processIdentifier: process.processIdentifier) as NSString
-    }
-    .retyped(FBFuture<AnyObject>.self)
-    .onQueue(
-      queue,
-      fmap: { stackshot -> FBFuture<AnyObject> in
-        FBFuture(error: XCTestProcessError.stalled(timeout: timeout, processIdentifier: process.processIdentifier, stackshot: String(describing: stackshot)))
-      }
-    )
-    .onQueue(
-      queue,
-      notifyOfCompletion: { _ in
-        logger.log("Terminating stalled xctest process \(process)")
-        process.sendSignal(SIGTERM, backingOffToKillWithTimeout: KillBackoffTimeout, logger: logger)
-          .onQueue(
-            queue,
-            notifyOfCompletion: { _ in
-              logger.log("Stalled xctest process \(process) has been terminated")
-            })
-      })
   }
 
   private static func performCrashLogQuery(forProcessIdentifier processIdentifier: pid_t, startDate: Date, crashLogCommands: any CrashLogCommands, crashLogWaitTime: TimeInterval, queue: DispatchQueue, logger: ControlCoreLogger) -> FBFuture<NSNumber> {

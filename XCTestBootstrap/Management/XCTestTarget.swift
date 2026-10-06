@@ -26,9 +26,6 @@ public protocol XCTestExtendedTarget: XCTestTarget where XCTest: XCTestExtendedC
 /// itself rather than hosted by an application. Simulators and the local Mac qualify; devices do not.
 public protocol LogicTestTarget: XCTestExtendedTarget {
 
-  /// Spawns a process on the target itself.
-  func spawn(_ configuration: ProcessSpawnConfiguration) async throws -> FBSubprocess<AnyObject, AnyObject, AnyObject>
-
   /// Launches a `Subprocess` on the target itself.
   var subprocessLauncher: any SubprocessLauncher { get }
 }
