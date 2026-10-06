@@ -28,7 +28,7 @@ final class ListTestStrategyTests: XCTestCase {
       timeout: timeout,
       architectures: ["arm64", "x86_64"]
     )
-    let tests: [String] = try await bridgeFBFutureArray(ListTestStrategy(target: target, configuration: configuration, logger: ControlCoreGlobalConfiguration.defaultLogger).listTests())
+    let tests = try await ListTestStrategy(target: target, configuration: configuration, logger: ControlCoreGlobalConfiguration.defaultLogger).listTests()
     return (tests, target)
   }
 

@@ -369,7 +369,7 @@ public final class MacDevice: NSObject, Target {
       architectures: Set(binary.architectures.map { $0.rawValue })
     )
 
-    return try await bridgeFBFutureArray(ListTestStrategy(target: self, configuration: configuration, logger: self.logger).listTests())
+    return try await ListTestStrategy(target: self, configuration: configuration, logger: self.logger).listTests()
   }
 
 }

@@ -42,19 +42,7 @@ public final class ListTestStrategy {
     self.logger = logger
   }
 
-  public func listTests() -> FBFuture<NSArray> {
-    fbFutureFromAsync {
-      try await self.listTestNames() as NSArray
-    }
-  }
-
-  func wrapInReporter(_ reporter: XCTestReporter) -> XCTestRunner {
-    ReporterWrapped(strategy: self, reporter: reporter)
-  }
-
-  // MARK: - Private
-
-  private func listTestNames() async throws -> [String] {
+  public func listTests() async throws -> [String] {
     let shimPath = try await target.xctest.extendedTestShim()
     let shimBuffer = FBDataBuffer.consumableBuffer()
     let shimOutput = try FileBackedOutput.fifo(draining: shimBuffer)
@@ -86,6 +74,12 @@ public final class ListTestStrategy {
     _ = try await bridgeFBFuture(shimBuffer.finishedConsuming)
     return try ListTestStrategy.testNames(fromShimOutput: shimBuffer.data())
   }
+
+  func wrapInReporter(_ reporter: XCTestReporter) -> XCTestRunner {
+    ReporterWrapped(strategy: self, reporter: reporter)
+  }
+
+  // MARK: - Private
 
   private func listTestSubprocess(environment: [String: String], temporaryDirectory: URL) async throws -> Subprocess {
     guard let runnerAppPath = configuration.runnerAppPath, BundleDescriptor.isApplication(atPath: runnerAppPath) else {
@@ -154,8 +148,12 @@ public final class ListTestStrategy {
     func execute() -> FBFuture<NSNull> {
       reporter.didBeginExecutingTestPlan()
 
+      let strategy = self.strategy
+      let listTests: FBFuture<NSArray> = fbFutureFromAsync {
+        try await strategy.listTests() as NSArray
+      }
       return
-        strategy.listTests()
+        listTests
         .onQueue(
           strategy.target.workQueue,
           fmap: { testNamesObj -> FBFuture<AnyObject> in
