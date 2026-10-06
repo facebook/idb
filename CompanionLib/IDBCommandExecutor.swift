@@ -115,8 +115,8 @@ public final class IDBCommandExecutor {
     return try await install(.application, from: .processInput(input), options: InstallOptions(overrideModificationTime: overrideModificationTime, compression: compression), makeDebuggable: makeDebuggable, onProgress: onProgress)
   }
 
-  public func install_app_zip_stream(_ input: FBProcessInput<AnyObject>, spoolPath: String, spooled: @escaping @Sendable () async throws -> Void, make_debuggable makeDebuggable: Bool, override_modification_time overrideModificationTime: Bool, on_progress onProgress: @escaping @Sendable (InstallProgressEvent) -> Void = { _ in }) async throws -> InstalledArtifact {
-    return try await install(.application, from: .zipStream(input, spoolPath: spoolPath, spooled: spooled), options: InstallOptions(overrideModificationTime: overrideModificationTime), makeDebuggable: makeDebuggable, onProgress: onProgress)
+  public func install_app_zip_stream(_ input: FBProcessInput<AnyObject>, make_debuggable makeDebuggable: Bool, override_modification_time overrideModificationTime: Bool, on_progress onProgress: @escaping @Sendable (InstallProgressEvent) -> Void = { _ in }) async throws -> InstalledArtifact {
+    return try await install(.application, from: .zipStream(input), options: InstallOptions(overrideModificationTime: overrideModificationTime), makeDebuggable: makeDebuggable, onProgress: onProgress)
   }
 
   public func install_app_url(_ url: URL, compression: FBCompressionFormat, make_debuggable makeDebuggable: Bool, override_modification_time overrideModificationTime: Bool, on_progress onProgress: @escaping @Sendable (InstallProgressEvent) -> Void = { _ in }) async throws -> InstalledArtifact {

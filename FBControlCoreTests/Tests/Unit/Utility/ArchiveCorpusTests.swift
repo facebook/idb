@@ -167,16 +167,14 @@ struct ArchiveCorpusTests {
     }
   }
 
-  private func installSource(_ source: Source, archive: URL, contents: Data) throws -> (InstallSource, URLSessionConfiguration) {
+  private func installSource(_ source: Source, archive: URL, contents: Data) -> (InstallSource, URLSessionConfiguration) {
     switch source {
     case .localPath:
       return (.localPath(archive.path), .default)
     case .processInput:
       return (.processInput(FBProcessInput<NSData>(from: contents).retyped(FBProcessInput<AnyObject>.self)), .default)
     case .zipStream:
-      let spool = root.appendingPathComponent("spool-\(UUID().uuidString).zip")
-      try contents.write(to: spool)
-      return (.zipStream(FBProcessInput<NSData>(from: contents).retyped(FBProcessInput<AnyObject>.self), spoolPath: spool.path, spooled: {}), .default)
+      return (.zipStream(FBProcessInput<NSData>(from: contents).retyped(FBProcessInput<AnyObject>.self)), .default)
     case .remoteURL:
       return (.remoteURL(CorpusURLProtocol.serving(contents)), CorpusURLProtocol.configuration)
     }
@@ -184,7 +182,7 @@ struct ArchiveCorpusTests {
 
   /// Resolves `contents` through `source`, as the tree beside the bundle it finds.
   private func resolve(_ source: Source, archive: URL, contents: Data, keepHardLinks: Bool, directoryTimes: Bool) async throws -> Outcome {
-    let (installSource, configuration) = try installSource(source, archive: archive, contents: contents)
+    let (installSource, configuration) = installSource(source, archive: archive, contents: contents)
     do {
       return try await ApplicationArchive.withResolvedBundle(
         from: installSource, downloadConfiguration: configuration, temporaryDirectory: temporaryDirectory, logger: logger

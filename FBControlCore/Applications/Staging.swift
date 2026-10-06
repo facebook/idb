@@ -20,9 +20,9 @@ public enum InstallSource {
   /// An archive arriving on a process input that the caller is writing to.
   case processInput(FBProcessInput<AnyObject>)
 
-  /// A zip arriving on a process input that the caller is writing to, and also
-  /// writing to `spoolPath`; `spooled` returns once that file is complete.
-  case zipStream(FBProcessInput<AnyObject>, spoolPath: String, spooled: @Sendable () async throws -> Void)
+  /// A zip, or a zstd-compressed zip, arriving on a process input that the
+  /// caller is writing to.
+  case zipStream(FBProcessInput<AnyObject>)
 
   /// A single file, gzipped, arriving on a process input that the caller is
   /// writing to; it is staged as `name`.
@@ -159,17 +159,19 @@ public enum Staging {
         try await ArchiveExtractors.stream(options.compression).extract(
           .stream(input), to: extractPath, options: options.extractOptions, logger: logger)
       }
-    case .zipStream(let input, let spoolPath, let spooled):
-      try await runExtractStage(to: extractPath, totalStart: totalStart, onProgress: onProgress) {
-        try await extractZipStream(
-          input, spoolPath: spoolPath, spooled: spooled, to: extractPath, options: options, logger: logger)
+    case .zipStream(let input):
+      try await temporaryDirectory.withTemporaryDirectory { spoolDirectory in
+        try await runExtractStage(to: extractPath, totalStart: totalStart, onProgress: onProgress) {
+          try await withAttached(input) { source in
+            try await extractZipStream(source, spoolingIn: spoolDirectory, to: extractPath, options: options, logger: logger)
+          }
+        }
       }
     case .remoteURL(let url):
       try await temporaryDirectory.withTemporaryDirectory { spoolDirectory in
         try await downloadAndExtract(
           url, to: extractPath, options: options, totalStart: totalStart,
-          configuration: downloadConfiguration,
-          spoolPath: spoolDirectory.appendingPathComponent("download.zip").path,
+          configuration: downloadConfiguration, spoolDirectory: spoolDirectory,
           logger: logger, onProgress: onProgress)
       }
     }
@@ -180,16 +182,14 @@ public enum Staging {
   /// complete file, so the download and extract stages overlap and each times
   /// against its own start.
   ///
-  /// A zip is also written to `spoolPath`, since it records symlinks and
-  /// permissions only in the central directory at its end, which a reader of the
-  /// transfer never reaches.
+  /// A zip is spooled into `spoolDirectory` as it is extracted.
   private static func downloadAndExtract(
     _ url: URL,
     to extractPath: String,
     options: InstallOptions,
     totalStart: Date,
     configuration: URLSessionConfiguration,
-    spoolPath: String,
+    spoolDirectory: URL,
     logger: any ControlCoreLogger,
     onProgress: @escaping @Sendable (InstallProgressEvent) -> Void
   ) async throws {
@@ -201,11 +201,7 @@ public enum Staging {
     // after delivering its last chunk.
     // patternlint-disable-next-line swift-nonisolated-unsafe
     nonisolated(unsafe) var progress = DownloadProgressState(startedAt: downloadStart)
-    let router = ZipSpoolingConsumer(spoolPath: spoolPath)
-    let download = DataDownloadInput.dataDownload(
-      withURL: url, configuration: configuration, logger: logger,
-      interposing: { router.forwardingTo($0) }
-    ) { event in
+    let download = DataDownloadInput.dataDownload(withURL: url, configuration: configuration, logger: logger) { event in
       switch event {
       case .response(let expectedContentLength):
         progress.observe(expectedContentLength: expectedContentLength)
@@ -221,60 +217,62 @@ public enum Staging {
       }
     }
 
-    func downloadCompleted() async throws {
+    try await runExtractStage(to: extractPath, totalStart: totalStart, onProgress: onProgress) {
+      async let extraction: Void = extractDownload(download.input, spoolingIn: spoolDirectory, to: extractPath, options: options, logger: logger)
+      // The transfer's outcome first: the extractor only sees bytes and then an
+      // end of file, so a failed transfer looks to it like a short archive.
       try await download.completed()
       onProgress(
         .downloadCompleted(
           timing: .measure(stageStart: downloadStart, totalStart: totalStart),
           totalBytes: progress.downloadedBytes))
-    }
-
-    try await runExtractStage(to: extractPath, totalStart: totalStart, onProgress: onProgress) {
-      switch try await router.route() {
-      case .stream:
-        async let extraction: Void = ArchiveExtractors.default.extract(
-          .stream(download.input), to: extractPath, options: options.extractOptions, logger: logger)
-        // The transfer's outcome first: the extractor only sees bytes and then an
-        // end of file, so a failed transfer looks to it like a short archive.
-        try await downloadCompleted()
-        try await extraction
-      case .spooled:
-        logger.log("Spooling the zip at \(url) to \(spoolPath) as it is extracted")
-        try await extractZipStream(
-          download.input, spoolPath: spoolPath,
-          spooled: {
-            try await downloadCompleted()
-            try router.checkSpool()
-          },
-          to: extractPath, options: options, logger: logger)
-      }
+      try await extraction
     }
   }
 
-  /// Extracts a zip as it arrives, then applies what only the central directory
-  /// at its end records once the spooled copy is complete. A zip the stream
-  /// reader cannot handle is extracted again from the spooled copy.
-  private static func extractZipStream(
+  /// Decides on the first bytes, so that only a zip is spooled.
+  private static func extractDownload(
     _ input: FBProcessInput<AnyObject>,
-    spoolPath: String,
-    spooled: () async throws -> Void,
+    spoolingIn spoolDirectory: URL,
     to extractPath: String,
     options: InstallOptions,
     logger: any ControlCoreLogger
   ) async throws {
-    var streamError: Error?
-    do {
-      try await ZipStreamExtractor.extract(
-        input, to: extractPath, overrideModificationTime: options.extractOptions.overrideModificationTime, logger: logger)
-    } catch {
-      streamError = error
-    }
-    try await spooled()
-    do {
-      if let streamError {
-        throw streamError
+    try await withAttached(input) { source in
+      let peekable = HandedOver(PeekableSource(source))
+      let head = try await offCooperativePool { try peekable.value.peek(ArchiveFormat.detectableLength) }.get()
+      switch ArchiveFormat.detect(head) {
+      case .zip:
+        try await extractZipStream(peekable.value, spoolingIn: spoolDirectory, to: extractPath, options: options, logger: logger)
+      case .zstdZip, .zstd, .gzip, .other, .undetermined:
+        try await InProcessTarExtractor(fallback: ArchiveExtractors.bsdTar).extract(
+          from: peekable.value, to: extractPath, options: options.extractOptions, logger: logger)
       }
+    }
+  }
+
+  /// Extracts a zip, or a zstd-compressed zip, as it arrives, spooling it into
+  /// `spoolDirectory` as it is read, since symlinks and permissions are recorded
+  /// only in the central directory at its end, which a reader of the stream never
+  /// reaches. A zip the stream reader cannot handle is extracted again from the
+  /// spooled copy.
+  private static func extractZipStream(
+    _ source: any ByteSource,
+    spoolingIn spoolDirectory: URL,
+    to extractPath: String,
+    options: InstallOptions,
+    logger: any ControlCoreLogger
+  ) async throws {
+    let spoolPath = spoolDirectory.appendingPathComponent("archive.zip").path
+    let source = HandedOver(source)
+    let start = Date()
+    let streamed = try await offCooperativePool {
+      try spool(source.value, to: spoolPath, extractingTo: extractPath, overrideModificationTime: options.overrideModificationTime)
+    }.get()
+    do {
+      let summary = try streamed.get()
       try ZipCentralDirectory(archiveAtPath: spoolPath).repair(extractedAt: extractPath)
+      logger.log(summary.description(from: "a zip stream", since: start))
       return
     } catch {
       logger.log("Extracting the spooled zip at \(spoolPath), as extracting it as it arrived failed: \(error)")
@@ -282,6 +280,34 @@ public enum Staging {
     ArchiveExtraction.removeContents(of: extractPath)
     try await ArchiveExtractors.default.extract(
       .filePath(spoolPath), to: extractPath, options: options.extractOptions, logger: logger)
+  }
+
+  /// Reads `source` to its end, extracting it as it goes and writing it,
+  /// decompressed, to `spoolPath`. Throws if the spooled zip is incomplete;
+  /// whether extracting it as it arrived worked is the result.
+  private static func spool(
+    _ source: any ByteSource,
+    to spoolPath: String,
+    extractingTo extractPath: String,
+    overrideModificationTime: Bool
+  ) throws -> Result<ArchiveExtractionSummary, Error> {
+    do {
+      guard FileManager.default.createFile(atPath: spoolPath, contents: nil) else {
+        throw CocoaError(.fileWriteUnknown, userInfo: [NSFilePathErrorKey: spoolPath])
+      }
+      let file = try FileHandle(forWritingTo: URL(fileURLWithPath: spoolPath))
+      defer { try? file.close() }
+      let tee = TeeSource(try ZstdSource.ifZstd(source), to: file)
+      let streamed = Result {
+        try ZipStreamExtractor.extract(from: tee, to: extractPath, overrideModificationTime: overrideModificationTime)
+      }
+      try tee.drain()
+      return streamed
+    } catch {
+      // Leaves nothing writing to the input blocked on it.
+      try? source.drain()
+      throw error
+    }
   }
 
   private static func runExtractStage(
@@ -304,117 +330,5 @@ public enum Staging {
       throw InstallError.extractionFailed(underlying: error)
     }
     onProgress(.extractCompleted(timing: .measure(stageStart: stageStart, totalStart: totalStart), destinationPath: extractPath))
-  }
-}
-
-/// Sends a download on to the extractor, and to a file as well if it is a zip,
-/// deciding on the first bytes.
-// SAFETY: everything but `decision` and `spoolError` is touched only from the
-// download's serial delegate queue, after `forwardingTo` is called before the
-// download starts; those two are read from the awaiting task under `lock`.
-// patternlint-disable-next-line unchecked-sendable
-private final class ZipSpoolingConsumer: NSObject, DataConsumer, @unchecked Sendable {
-
-  enum Route {
-    case stream
-    case spooled
-  }
-
-  private let spoolPath: String
-  private let decided = FBMutableFuture<NSNull>()
-  private let lock = NSLock()
-  private var downstream: (any DataConsumer)?
-  private var head = Data()
-  private var spool: FileHandle?
-  private var decision: Route?
-  private var spoolError: Error?
-
-  init(spoolPath: String) {
-    self.spoolPath = spoolPath
-  }
-
-  func forwardingTo(_ consumer: any DataConsumer) -> any DataConsumer {
-    downstream = consumer
-    return self
-  }
-
-  /// Waits for the first bytes, or the end of a transfer too short to have any.
-  func route() async throws -> Route {
-    _ = try await bridgeFBFuture(decided)
-    // swiftlint:disable:next force_unwrapping
-    return lock.withLock { decision! }
-  }
-
-  /// Throws if the zip could not be written in full; call once the transfer is complete.
-  func checkSpool() throws {
-    if let error = lock.withLock({ spoolError }) {
-      throw error
-    }
-  }
-
-  func consumeData(_ data: Data) {
-    guard let route = lock.withLock({ decision }) else {
-      head.append(data)
-      if head.count >= ArchiveFormat.detectableLength {
-        decide()
-      }
-      return
-    }
-    write(data, to: route)
-  }
-
-  func consumeEndOfFile() {
-    if lock.withLock({ decision == nil }) {
-      decide()
-    }
-    try? spool?.close()
-    downstream?.consumeEndOfFile()
-  }
-
-  private func decide() {
-    let route: Route
-    switch ArchiveFormat.detect(head) {
-    case .zip:
-      route = .spooled
-    case .zstdZip, .zstd, .gzip, .other, .undetermined:
-      route = .stream
-    }
-    if route == .spooled {
-      do {
-        guard FileManager.default.createFile(atPath: spoolPath, contents: nil) else {
-          throw CocoaError(.fileWriteUnknown, userInfo: [NSFilePathErrorKey: spoolPath])
-        }
-        spool = try FileHandle(forWritingTo: URL(fileURLWithPath: spoolPath))
-      } catch {
-        fail(error)
-      }
-    }
-    lock.withLock { decision = route }
-    write(head, to: route)
-    head = Data()
-    _ = decided.resolve(withResult: NSNull())
-  }
-
-  private func write(_ data: Data, to route: Route) {
-    downstream?.consumeData(data)
-    switch route {
-    case .stream:
-      return
-    case .spooled:
-      guard let spool else {
-        return
-      }
-      do {
-        try spool.write(contentsOf: data)
-      } catch {
-        fail(error)
-      }
-    }
-  }
-
-  private func fail(_ error: Error) {
-    lock.withLock { spoolError = spoolError ?? error }
-    try? spool?.close()
-    spool = nil
   }
 }

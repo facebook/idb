@@ -101,22 +101,11 @@ struct InstallMethodHandler {
       }
     }
 
-    switch payload {
-    case let .data(head, rest):
-      let format = Self.streamFormat(initial: head, declared: compression, destination: destination)
-      if destination == .app {
-        telemetry.streamed(format)
-      }
+    func installStream(_ dataStream: FBProcessInput<AnyObject>, format: InstallStreamFormat, head: Data) async throws -> InstalledArtifact {
       let tarCompression: FBCompressionFormat
       switch format {
-      case .zip:
-        return try await installStreamedZip(makeDebuggable: makeDebuggable, overrideModificationTime: overrideModificationTime, telemetry: telemetry) { archiveURL, tee in
-          try await spool(head: head, rest: rest, to: archiveURL, teeingTo: tee, telemetry: telemetry)
-        }
-      case .zstdZip:
-        return try await installStreamedZip(makeDebuggable: makeDebuggable, overrideModificationTime: overrideModificationTime, telemetry: telemetry) { archiveURL, tee in
-          try await decompressZstd(head: head, rest: rest, to: archiveURL, teeingTo: tee, telemetry: telemetry)
-        }
+      case .zip, .zstdZip:
+        return try await commandExecutor.install_app_zip_stream(dataStream, make_debuggable: makeDebuggable, override_modification_time: overrideModificationTime, on_progress: telemetry.observe)
       case .gzipTar:
         tarCompression = .GZIP
       case .zstdTar:
@@ -126,16 +115,22 @@ struct InstallMethodHandler {
         let prefix = head.prefix(16).map { String(format: "%02x", $0) }.joined(separator: " ")
         targetLogger.log("Extracting a stream declared \(compression) as \(tarCompression), as it does not start with a zstd frame: \(prefix)")
       }
+      return try await installSource(dataStream: dataStream, compression: tarCompression, skipSigningBundles: skipSigningBundles)
+    }
+
+    switch payload {
+    case let .data(head, rest):
+      let format = Self.streamFormat(initial: head, declared: compression, destination: destination)
+      if destination == .app {
+        telemetry.streamed(format)
+      }
       let input = FBProcessInput<OutputStream>.fromStream()
       let output = input.contents
       let clientFailure = OSAllocatedUnfairLock<(any Error)?>(initialState: nil)
       async let writePayload: Void = writePayload(head: head, rest: rest, output: output, telemetry: telemetry, clientFailure: clientFailure)
       let artifact: InstalledArtifact
       do {
-        artifact = try await installSource(
-          dataStream: input.retyped(FBProcessInput<AnyObject>.self),
-          compression: tarCompression,
-          skipSigningBundles: skipSigningBundles)
+        artifact = try await installStream(input.retyped(FBProcessInput<AnyObject>.self), format: format, head: head)
       } catch {
         // A client stream that fails truncates the archive, so extraction fails too; the client's failure is the cause.
         try? await writePayload
@@ -231,127 +226,13 @@ struct InstallMethodHandler {
     }
   }
 
-  /// A zip is extracted as `receive` spools it to disk, and also from the spool
-  /// once complete, as its central directory is at the end.
-  private func installStreamedZip(
-    makeDebuggable: Bool,
-    overrideModificationTime: Bool,
-    telemetry: InstallTelemetry,
-    receive: sending @escaping (_ archiveURL: URL, _ tee: OutputStream) async throws -> Void
-  ) async throws -> InstalledArtifact {
-    let archiveURL = try makeArchiveFile()
-    defer { try? FileManager.default.removeItem(at: archiveURL) }
-
-    let input = FBProcessInput<OutputStream>.fromStream()
-    let (spooled, spoolCompletion) = AsyncThrowingStream<Never, Error>.makeStream()
-    async let receiving: Void = {
-      do {
-        try await receive(archiveURL, input.contents)
-        spoolCompletion.finish()
-      } catch {
-        spoolCompletion.finish(throwing: error)
-        throw error
-      }
-    }()
-    let artifact: InstalledArtifact
-    do {
-      artifact = try await commandExecutor.install_app_zip_stream(
-        input.retyped(FBProcessInput<AnyObject>.self),
-        spoolPath: archiveURL.path,
-        spooled: {
-          for try await _ in spooled {}
-        },
-        make_debuggable: makeDebuggable,
-        override_modification_time: overrideModificationTime,
-        on_progress: telemetry.observe)
-    } catch {
-      // The installer sees a failed receive only as a failed extraction.
-      try await receiving
-      throw error
-    }
-    try await receiving
-    return artifact
-  }
-
-  private func makeArchiveFile() throws -> URL {
-    let archiveURL = commandExecutor.temporaryDirectory.ephemeralTemporaryDirectory().appendingPathExtension("ipa")
-    guard FileManager.default.createFile(atPath: archiveURL.path, contents: nil) else {
-      throw RPCError(code: .internalError, message: "Failed to create temporary install archive")
-    }
-    return archiveURL
-  }
-
-  private func spool(
-    head: Data,
-    rest: AsyncThrowingStream<Data, any Error>,
-    to archiveURL: URL,
-    teeingTo output: OutputStream,
-    telemetry: InstallTelemetry
-  ) async throws {
-    let file = try FileHandle(forWritingTo: archiveURL)
-    var tee: OutputStream? = output
-    tee?.open()
-    defer { tee?.close() }
-    try await telemetry.receive { receive in
-      func append(_ data: Data) throws {
-        try file.write(contentsOf: data)
-        receive.count(data)
-        guard let stream = tee else {
-          return
-        }
-        do {
-          try stream.writeAll(data)
-        } catch {
-          // The reader may finish before the end or fail; the spooled file carries on regardless.
-          targetLogger.log("Stopped teeing the streamed zip to its stream extractor, which extraction from the spooled file recovers from: \(error)")
-          stream.close()
-          tee = nil
-        }
-      }
-      do {
-        try append(head)
-        for try await data in rest {
-          try append(data)
-        }
-        try file.close()
-      } catch {
-        try? file.close()
-        throw error
-      }
-    }
-  }
-
-  private func decompressZstd(
-    head: Data,
-    rest: AsyncThrowingStream<Data, any Error>,
-    to archiveURL: URL,
-    teeingTo tee: OutputStream,
-    telemetry: InstallTelemetry
-  ) async throws {
-    let input = FBProcessInput<OutputStream>.fromStream()
-    let clientFailure = OSAllocatedUnfairLock<(any Error)?>(initialState: nil)
-    async let writePayload: Void = writePayload(head: head, rest: rest, output: input.contents, telemetry: telemetry, clientFailure: clientFailure)
-    do {
-      try await ZstdStreamDecompressor.decompress(
-        input.retyped(FBProcessInput<AnyObject>.self),
-        toPath: archiveURL.path,
-        teeingTo: tee,
-        logger: targetLogger)
-    } catch {
-      // A client stream that fails truncates the zstd, so decompression fails too; the client's failure is the cause.
-      try? await writePayload
-      throw clientFailure.withLock { $0 } ?? error
-    }
-    try await writePayload
-  }
-
   /// Writes the payload to `output`, recording in `clientFailure` an error thrown by `rest` rather than by the write.
   private func writePayload(
     head: Data,
     rest: AsyncThrowingStream<Data, any Error>,
     output: OutputStream,
     telemetry: InstallTelemetry,
-    clientFailure: OSAllocatedUnfairLock<(any Error)?>? = nil
+    clientFailure: OSAllocatedUnfairLock<(any Error)?>
   ) async throws {
     output.open()
     defer { output.close() }
@@ -365,7 +246,7 @@ struct InstallMethodHandler {
         do {
           frame = try await frames.next()
         } catch {
-          clientFailure?.withLock { $0 = error }
+          clientFailure.withLock { $0 = error }
           throw error
         }
         guard let data = frame else {

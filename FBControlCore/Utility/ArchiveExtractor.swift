@@ -136,20 +136,29 @@ public struct InProcessTarExtractor: ArchiveExtractor {
     guard case .stream(let input) = source else {
       return try await fallback.extract(source, to: extractPath, options: options, logger: logger)
     }
+    try await withAttached(input) { source in
+      try await extract(from: source, to: extractPath, options: options, logger: logger)
+    }
+  }
+
+  /// Extracts what `source` reads.
+  func extract(
+    from source: any ByteSource,
+    to extractPath: String,
+    options: ArchiveExtractOptions,
+    logger: any ControlCoreLogger
+  ) async throws {
     let start = Date()
-    let fileDescriptor = try await bridgeFBFuture(input.attach()).fileDescriptor
+    let source = HandedOver(source)
     let result = await offCooperativePool {
       try TarStreamExtractor.extract(
-        from: FileDescriptorSource(fileDescriptor), to: extractPath,
+        from: source.value, to: extractPath,
         overrideModificationTime: options.overrideModificationTime)
     }
-    if case .success(.notTar(let read)) = result {
+    switch try result.get() {
+    case .notTar(let read):
       try await replay(read, to: extractPath, options: options, logger: logger)
-      _ = try? await bridgeFBFuture(input.detach())
-      return
-    }
-    _ = try? await bridgeFBFuture(input.detach())
-    if case .extracted(let summary, let waits) = try result.get() {
+    case .extracted(let summary, let waits):
       logger.log("\(summary.description(from: "a tar stream", since: start)), waiting \(String(format: "%.2f", waits.input))s for input and \(String(format: "%.2f", waits.writers))s for writers")
     }
   }
@@ -183,6 +192,18 @@ public struct InProcessTarExtractor: ArchiveExtractor {
     try await extraction
     try written.get()
   }
+}
+
+/// Calls `body` with a source reading `input`, detaching it however `body` returns.
+func withAttached(_ input: FBProcessInput<AnyObject>, _ body: (any ByteSource) async throws -> Void) async throws {
+  let fileDescriptor = try await bridgeFBFuture(input.attach()).fileDescriptor
+  do {
+    try await body(FileDescriptorSource(fileDescriptor))
+  } catch {
+    _ = try? await bridgeFBFuture(input.detach())
+    throw error
+  }
+  _ = try? await bridgeFBFuture(input.detach())
 }
 
 /// Runs `work` off the cooperative pool, for work that blocks its thread.

@@ -44,24 +44,19 @@ public final class DataDownloadInput: NSObject, @unchecked Sendable {
   /// `onEvent` reports how many bytes have arrived, while the bytes themselves
   /// still go only to `input`, so a caller can show progress without getting
   /// between the download and whatever is consuming it.
-  ///
-  /// `interposing` wraps the consumer that feeds `input`, for a caller that
-  /// needs to see or divert the bytes before they reach it.
   public static func dataDownload(
     withURL url: URL,
     configuration: URLSessionConfiguration,
     logger: ControlCoreLogger,
-    interposing: (any DataConsumer) -> any DataConsumer = { $0 },
     onEvent: (@Sendable (DataDownloadEvent) -> Void)? = nil
   ) -> DataDownloadInput {
-    let download = DataDownloadInput(logger: logger, interposing: interposing, onEvent: onEvent)
+    let download = DataDownloadInput(logger: logger, onEvent: onEvent)
     download.startDownload(from: url, configuration: configuration)
     return download
   }
 
   private init(
     logger: ControlCoreLogger,
-    interposing: (any DataConsumer) -> any DataConsumer,
     onEvent: (@Sendable (DataDownloadEvent) -> Void)?
   ) {
     self.logger = logger
@@ -69,7 +64,7 @@ public final class DataDownloadInput: NSObject, @unchecked Sendable {
     self.completedFuture = FBMutableFuture<NSNull>()
     let rawInput = FBProcessInput<NSObject>.fromConsumer()
     self.input = rawInput.retyped(FBProcessInput<AnyObject>.self)
-    self.consumer = interposing(rawInput.contents)
+    self.consumer = rawInput.contents
     super.init()
   }
 

@@ -54,6 +54,27 @@ public final class FileDescriptorSource: ByteSource {
   }
 }
 
+/// Reads another source, writing everything read to a file as well. Draining reads
+/// to the end through the file, so what a reader stops short of still reaches it.
+final class TeeSource: ByteSource {
+
+  private let source: any ByteSource
+  private let file: FileHandle
+
+  init(_ source: any ByteSource, to file: FileHandle) {
+    self.source = source
+    self.file = file
+  }
+
+  func read(into buffer: UnsafeMutableRawBufferPointer) throws -> Int {
+    let count = try source.read(into: buffer)
+    if count > 0 {
+      try file.write(contentsOf: UnsafeRawBufferPointer(rebasing: buffer[..<count]))
+    }
+    return count
+  }
+}
+
 /// Reads ahead of a parser that reads forwards, which can look at what is buffered
 /// before consuming it. Whatever is not consumed is still read afterwards.
 public final class PeekableSource: ByteSource {
