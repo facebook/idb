@@ -113,7 +113,32 @@ final class FBArchiveOperationsTests: XCTestCase {
     do {
       _ = try await FBArchiveOperations.createGzippedTarData(forPath: nonExistentPath, logger: logger)
       XCTFail("Expected archiving a missing path to fail")
-    } catch {}
+    } catch {
+      guard case ArchiveOperationsError.pathDoesNotExist(nonExistentPath) = error else {
+        return XCTFail("Expected the missing path to be reported, got \(error)")
+      }
+    }
+  }
+
+  func testCreateGzippedTarDataForPath_WhenAFileIsUnreadable_Fails() async throws {
+    let directory = (tempDirectory as NSString).appendingPathComponent("unreadable")
+    try FileManager.default.createDirectory(atPath: directory, withIntermediateDirectories: true)
+    let file = (directory as NSString).appendingPathComponent("file.txt")
+    try "hello".write(toFile: file, atomically: true, encoding: .utf8)
+    try FileManager.default.setAttributes([.posixPermissions: 0o000], ofItemAtPath: file)
+    defer { try? FileManager.default.setAttributes([.posixPermissions: 0o644], ofItemAtPath: file) }
+    try XCTSkipIf(FileManager.default.isReadableFile(atPath: file), "Permissions do not restrict this user")
+
+    do {
+      _ = try await FBArchiveOperations.createGzippedTarData(forPath: directory, logger: logger)
+      XCTFail("Expected archiving an unreadable file to fail")
+    } catch {
+      guard case SubprocessError.unacceptableTermination = error else {
+        return XCTFail("Expected bsdtar to fail, got \(error)")
+      }
+      // BUG: the error omits bsdtar's stderr — flipped in the following commit.
+      XCTAssertFalse(error.localizedDescription.contains("Permission denied"), error.localizedDescription)
+    }
   }
 
   func testCreateGzipDataForPath_WhenPathDoesNotExist_ErrorQuotesGzip() async {
@@ -434,6 +459,8 @@ final class FBArchiveOperationsTests: XCTestCase {
       guard case SubprocessError.unacceptableTermination = error else {
         return XCTFail("Expected bsdtar to fail, got \(error)")
       }
+      // BUG: the error omits bsdtar's stderr — flipped in the following commit.
+      XCTAssertFalse(error.localizedDescription.contains("No such file or directory"), error.localizedDescription)
     }
   }
 
