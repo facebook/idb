@@ -59,7 +59,7 @@ final class LogicTestRunStrategyTests: XCTestCase {
     )
     let strategy = LogicTestRunStrategy(target: target, configuration: configuration, reporter: reporter, logger: ControlCoreGlobalConfiguration.defaultLogger)
     do {
-      try await bridgeFBFutureVoid(strategy.execute())
+      try await strategy.run()
       return (target, reporter, .success(()))
     } catch {
       return (target, reporter, .failure(error))

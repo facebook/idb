@@ -246,10 +246,7 @@ public struct XCTestRunRequest {
       reporter: adapter,
       logger: logger
     )
-    let completed = runner.execute()
-    if let error = completed.error {
-      throw error
-    }
+    let completion = TestRun { try await runner.run() }.start()
     let reporterConfiguration = XCTestReporterConfiguration(
       resultBundlePath: nil,
       coverageConfiguration: configuration.coverageConfiguration,
@@ -263,7 +260,7 @@ public struct XCTestRunRequest {
       reporterConfiguration: reporterConfiguration,
       reporter: reporter,
       logger: logger,
-      completed: completed,
+      completion: completion,
       queue: target.workQueue
     )
   }
@@ -296,10 +293,7 @@ public struct XCTestRunRequest {
       binariesPaths.append(binaryPath)
     }
 
-    let testCompleted: FBFuture<NSNull> = fbFutureFromAsync {
-      try await target.xctest.runTest(launchConfiguration: testLaunchConfiguration, reporter: reporter, logger: logger)
-      return NSNull()
-    }
+    let completion = TestRun { try await target.xctest.runTest(launchConfiguration: testLaunchConfiguration, reporter: reporter, logger: logger) }.start()
     let reporterConfiguration = XCTestReporterConfiguration(
       resultBundlePath: testLaunchConfiguration.resultBundlePath,
       coverageConfiguration: coverageConfiguration,
@@ -313,7 +307,7 @@ public struct XCTestRunRequest {
       reporterConfiguration: reporterConfiguration,
       reporter: reporter,
       logger: logger,
-      completed: testCompleted,
+      completion: completion,
       queue: target.workQueue
     )
   }
@@ -342,5 +336,15 @@ extension XCTestRunRequest.BundleSource: CustomStringConvertible {
     case let .path(path):
       return "bundle at \(path.path)"
     }
+  }
+}
+
+/// A test run shares the target, reporter and logger with the operation that is returned for it.
+/// None of them are `Sendable`-annotated, but the run already calls them from its own queues.
+private struct TestRun: @unchecked Sendable {
+  let run: () async throws -> Void
+
+  func start() -> Task<Void, Error> {
+    Task { try await run() }
   }
 }

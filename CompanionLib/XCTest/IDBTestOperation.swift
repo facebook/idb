@@ -9,13 +9,6 @@ import FBControlCore
 import Foundation
 import XCTestBootstrap
 
-public enum IDBTestOperationState: UInt {
-  case notRunning
-  case terminatedNormally
-  case terminatedAbnormally
-  case running
-}
-
 public final class IDBTestOperation: CustomStringConvertible {
 
   /// The configuration the run was started from. A logic test and an app-hosted test are
@@ -34,31 +27,30 @@ public final class IDBTestOperation: CustomStringConvertible {
     }
   }
 
-  public let completed: FBFuture<NSNull>
   public let logger: ControlCoreLogger
   public let queue: DispatchQueue
   public let reporter: XCTestReporter
   public let reporterConfiguration: XCTestReporterConfiguration
   private let configuration: Configuration
+  private let completion: Task<Void, Error>
 
-  public var state: IDBTestOperationState {
-    if completed.error != nil {
-      return .terminatedAbnormally
-    }
-    return completed.hasCompleted ? .terminatedNormally : .running
-  }
-
-  public init(configuration: Configuration, reporterConfiguration: XCTestReporterConfiguration, reporter: XCTestReporter, logger: ControlCoreLogger, completed: FBFuture<NSNull>, queue: DispatchQueue) {
+  public init(configuration: Configuration, reporterConfiguration: XCTestReporterConfiguration, reporter: XCTestReporter, logger: ControlCoreLogger, completion: Task<Void, Error>, queue: DispatchQueue) {
     self.configuration = configuration
     self.reporterConfiguration = reporterConfiguration
     self.reporter = reporter
     self.logger = logger
-    self.completed = completed
+    self.completion = completion
     self.queue = queue
   }
 
+  /// Cancelling the waiting task cancels the run.
   public func awaitCompletion() async throws {
-    try await bridgeFBFutureVoid(self.completed)
+    let completion = self.completion
+    try await withTaskCancellationHandler {
+      try await completion.value
+    } onCancel: {
+      completion.cancel()
+    }
   }
 
   public var description: String {

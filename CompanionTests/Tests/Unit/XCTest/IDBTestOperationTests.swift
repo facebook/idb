@@ -22,7 +22,7 @@ private struct DiscardingWriter: RPCWriterProtocol {
 final class IDBTestOperationTests: XCTestCase {
 
   func testAFailedRunIsThrownFromAwaitingCompletion() async throws {
-    let operation = makeOperation(completed: fbFutureFromAsync { () -> NSNull in throw RunFailed() })
+    let operation = makeOperation(completion: Task { throw RunFailed() })
 
     do {
       try await operation.awaitCompletion()
@@ -34,7 +34,7 @@ final class IDBTestOperationTests: XCTestCase {
     let started = expectation(description: "the run starts")
     let stopped = expectation(description: "the run stops")
     let operation = makeOperation(
-      completed: fbFutureFromAsync { () -> NSNull in
+      completion: Task {
         started.fulfill()
         do {
           try await Task.sleep(nanoseconds: 60_000_000_000)
@@ -42,7 +42,6 @@ final class IDBTestOperationTests: XCTestCase {
           stopped.fulfill()
           throw error
         }
-        return NSNull()
       })
     let wait = Task { try await operation.awaitCompletion() }
     await fulfillment(of: [started], timeout: 5)
@@ -52,7 +51,7 @@ final class IDBTestOperationTests: XCTestCase {
     await fulfillment(of: [stopped], timeout: 5)
   }
 
-  private func makeOperation(completed: FBFuture<NSNull>) -> IDBTestOperation {
+  private func makeOperation(completion: Task<Void, Error>) -> IDBTestOperation {
     let logger = IDBLogger(loggers: [FBControlCoreLoggerFactory.systemLoggerWriting(toStderr: true, withDebugLogging: false)])
     return IDBTestOperation(
       configuration: .logic(
@@ -71,7 +70,7 @@ final class IDBTestOperationTests: XCTestCase {
       reporterConfiguration: XCTestReporterConfiguration(resultBundlePath: nil, coverageConfiguration: nil, logDirectoryPath: nil, binariesPaths: [], reportAttachments: false, reportResultBundle: false),
       reporter: IDBXCTestReporter(responseStream: RPCWriter(wrapping: DiscardingWriter()), logger: logger),
       logger: logger,
-      completed: completed,
+      completion: completion,
       queue: DispatchQueue(label: "com.facebook.idb.tests.testoperation"))
   }
 }

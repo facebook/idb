@@ -36,7 +36,7 @@ extension LogicTestRunError: LocalizedError {
   }
 }
 
-public final class LogicTestRunStrategy: XCTestRunner {
+public final class LogicTestRunStrategy {
 
   private let target: any LogicTestTarget
   private let configuration: LogicTestConfiguration
@@ -48,13 +48,6 @@ public final class LogicTestRunStrategy: XCTestRunner {
     self.configuration = configuration
     self.reporter = reporter
     self.logger = logger
-  }
-
-  public func execute() -> FBFuture<NSNull> {
-    fbFutureFromAsync {
-      try await self.run()
-      return NSNull()
-    }
   }
 
   public func run() async throws {
