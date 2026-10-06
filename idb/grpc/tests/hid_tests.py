@@ -69,11 +69,13 @@ class HidTests(TestCase):
             GrpcHIDPressAction(button=GrpcHIDButton(button=GrpcHIDEvent.HOME)),
             GrpcHIDPressAction(key=GrpcHIDKey(keycode=3)),
         ]
-        for action, expected in zip(actions, expected):
+        for action, expected_action in zip(actions, expected):
             self.assertEqual(
                 event_to_grpc(HIDPress(action=action, direction=HIDDirection.UP)),
                 GrpcHIDEvent(
-                    press=GrpcHIDPress(action=expected, direction=GrpcHIDEvent.UP)
+                    press=GrpcHIDPress(
+                        action=expected_action, direction=GrpcHIDEvent.UP
+                    )
                 ),
             )
         for button in HIDButtonType:

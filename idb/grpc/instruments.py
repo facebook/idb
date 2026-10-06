@@ -8,7 +8,6 @@
 import asyncio
 from collections.abc import AsyncIterator
 from logging import Logger
-from typing import Optional
 
 from idb.common.types import InstrumentsTimings
 from idb.grpc.idb_pb2 import InstrumentsRunRequest, InstrumentsRunResponse

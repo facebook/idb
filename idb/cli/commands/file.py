@@ -11,7 +11,6 @@ import sys
 import tempfile
 from abc import abstractmethod
 from argparse import _MutuallyExclusiveGroup, ArgumentParser, Namespace
-from typing import List, Tuple
 
 import aiofiles
 from idb.cli import ClientCommand

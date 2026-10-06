@@ -113,7 +113,7 @@ class AsyncMock(_mock.Mock):
 
 class AsyncContextManagerMock:
     """
-    Helper mocking class to handle context manager consturcts.
+    Helper mocking class to handle context manager constructs.
     Example of usage:
     async def target():
         async with aiofiles.open('/tmp/b.txt') as f:

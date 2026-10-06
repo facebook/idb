@@ -8,7 +8,6 @@
 import json
 import sys
 from argparse import ArgumentParser, Namespace
-from typing import Optional
 
 from idb.cli import ClientCommand, print_upload_progress
 from idb.common.format import (

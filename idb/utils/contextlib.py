@@ -213,7 +213,7 @@ class _AsyncGeneratorContextManager(
                 # was passed to throw() and later wrapped into a RuntimeError
                 # (see PEP 479 for sync generators; async generators also
                 # have this behavior). But do this only if the exception wrapped
-                # by the RuntimeError is actully Stop(Async)Iteration (see
+                # by the RuntimeError is actually Stop(Async)Iteration (see
                 # issue29692).
                 if isinstance(value, (StopIteration, StopAsyncIteration)):
                     if exc.__cause__ is value:
@@ -258,5 +258,5 @@ def _asynccontextmanager(
     return helper
 
 
-# Use the offical python one if available
-from contextlib import asynccontextmanager
+# Use the official python one if available
+from contextlib import asynccontextmanager  # noqa: F401

@@ -5,8 +5,6 @@
 # LICENSE file in the root directory of this source tree.
 
 
-from typing import List
-
 from idb.common.types import CrashLog, CrashLogInfo, CrashLogQuery
 from idb.grpc.idb_pb2 import (
     CrashLogInfo as CrashLogInfoProto,

@@ -24,12 +24,9 @@ from idb.cli.command_tree import build_command_graph
 from idb.cli.commands.dap import StdStreams
 from idb.common.types import (
     Client,
-    Compression,
     IdbException,
     InstalledArtifact,
     InstalledTestInfo,
-    TestActivity,
-    TestAttachment,
     TestRunFailureInfo,
     TestRunInfo,
 )

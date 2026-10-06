@@ -9,7 +9,7 @@ import os
 import plistlib
 from enum import Enum
 from logging import Logger
-from typing import Any, Dict, List, Optional, Set
+from typing import Any
 
 from idb.common.tar import untar
 from idb.common.types import (

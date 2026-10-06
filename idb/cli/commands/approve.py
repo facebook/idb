@@ -6,7 +6,6 @@
 
 
 from argparse import ArgumentParser, Namespace
-from typing import Dict
 
 from idb.cli import ClientCommand
 from idb.common.types import Client, Permission

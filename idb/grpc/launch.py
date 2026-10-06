@@ -7,7 +7,6 @@
 
 import asyncio
 import sys
-from typing import Optional
 
 from idb.common.format import json_format_debugger_info
 from idb.common.types import DebuggerInfo

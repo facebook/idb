@@ -13,7 +13,6 @@ import tempfile
 import uuid
 from abc import abstractmethod
 from collections.abc import AsyncGenerator, AsyncIterator
-from typing import List, Optional
 
 from idb.common.types import Compression
 from idb.utils.contextlib import asynccontextmanager

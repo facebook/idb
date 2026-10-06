@@ -9,7 +9,6 @@ import asyncio
 import re
 from collections.abc import AsyncIterator
 from logging import Logger
-from typing import Optional
 
 from idb.grpc.idb_pb2 import XctraceRecordRequest, XctraceRecordResponse
 from idb.grpc.stream import Stream

@@ -7,7 +7,6 @@
 
 import json
 from collections.abc import Sequence
-from typing import List
 
 from idb.common.format import target_type_from_string
 from idb.common.types import (

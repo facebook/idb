@@ -6,7 +6,6 @@
 
 
 from collections.abc import AsyncIterator, Iterable, Iterator
-from typing import Dict, List, Optional, Tuple
 
 from idb.common.types import (
     HIDButton,

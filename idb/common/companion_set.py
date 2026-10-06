@@ -15,7 +15,6 @@ from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
 from datetime import datetime, timedelta
 from pathlib import Path
-from typing import List, Optional
 
 from idb.common.constants import IDB_STATE_FILE_PATH
 from idb.common.format import json_data_companions, json_to_companion_info

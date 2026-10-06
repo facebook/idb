@@ -72,7 +72,7 @@ ORIENTATION_TYPE_PAIRS: "List[Tuple[HIDOrientationType, GrpcHIDOrientationType]]
 
 
 def _translation_from_pairs(pairs: list[tuple[_A, _B]], item: _A) -> _B:
-    pair_map = {py: grpc for (py, grpc) in pairs}
+    pair_map = dict(pairs)
     return pair_map[item]
 
 

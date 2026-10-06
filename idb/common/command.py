@@ -7,7 +7,6 @@
 
 from abc import ABCMeta, abstractmethod
 from argparse import ArgumentParser, Namespace
-from typing import Dict, List, Optional
 
 
 class Command(metaclass=ABCMeta):

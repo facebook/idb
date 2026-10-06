@@ -9,7 +9,6 @@ import asyncio
 import logging
 from asyncio import StreamReader, StreamWriter
 from collections.abc import AsyncGenerator
-from typing import Optional
 
 from idb.common.types import IdbException
 from idb.grpc.idb_grpc import CompanionServiceStub

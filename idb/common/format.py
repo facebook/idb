@@ -11,7 +11,7 @@ import math
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from textwrap import indent
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Optional
 
 from idb.common.types import (
     AppProcessState,

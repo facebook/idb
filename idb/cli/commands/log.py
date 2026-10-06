@@ -6,7 +6,6 @@
 
 
 from argparse import ArgumentParser, Namespace, REMAINDER
-from typing import List, Optional
 
 from idb.cli import ClientCommand
 from idb.common.signal import signal_handler_event

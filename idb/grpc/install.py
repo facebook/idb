@@ -11,7 +11,7 @@ import struct
 import time
 from collections.abc import AsyncIterator, Callable
 from logging import Logger
-from typing import IO, List, Optional, Union
+from typing import IO, Union
 
 import aiofiles
 import idb.common.gzip as gzip

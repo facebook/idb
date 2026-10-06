@@ -5,7 +5,7 @@
 # LICENSE file in the root directory of this source tree.
 
 
-from typing import Optional, TypeVar
+from typing import TypeVar
 
 
 T = TypeVar("T")

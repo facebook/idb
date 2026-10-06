@@ -9,7 +9,6 @@ import json
 import os
 from argparse import ArgumentParser, Namespace, SUPPRESS
 from collections.abc import Mapping
-from typing import Union
 
 from idb.cli import ClientCommand, CompanionCommand, ManagementCommand
 from idb.common.format import human_format_target_info, json_format_target_info

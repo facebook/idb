@@ -8,7 +8,7 @@
 import asyncio
 from collections.abc import AsyncIterator
 from logging import Logger
-from typing import Dict, Generic, Optional, TypeVar
+from typing import Generic, TypeVar
 
 from idb.utils.typing import none_throws
 

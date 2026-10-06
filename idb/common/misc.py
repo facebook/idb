@@ -6,7 +6,6 @@
 
 
 import os
-from typing import Dict
 
 
 def get_env_with_idb_prefix() -> dict[str, str]:

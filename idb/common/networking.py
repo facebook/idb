@@ -10,7 +10,6 @@ import json
 import logging
 import socket
 from contextlib import closing
-from typing import Optional, Tuple
 
 import aiofiles
 

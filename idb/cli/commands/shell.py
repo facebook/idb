@@ -8,7 +8,6 @@
 import shlex
 import sys
 from argparse import ArgumentParser, Namespace
-from typing import Optional
 
 from idb.cli import ClientCommand
 from idb.common.command import CommandGroup
