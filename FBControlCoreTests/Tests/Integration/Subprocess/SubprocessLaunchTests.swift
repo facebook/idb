@@ -99,6 +99,20 @@ struct SubprocessLaunchTests {
     #expect(status == .signalled(SIGKILL))
   }
 
+  @Test("Terminating from a cancelled task still escalates to SIGKILL")
+  func terminationFromACancelledTaskEscalates() async throws {
+    let running = try await Self.shell("trap '' TERM; sleep 10000").launch(output: .closed, error: .closed)
+    try await Task.sleep(for: .milliseconds(200))
+
+    let terminating = Task { try await running.terminate(gracePeriod: 0.5) }
+    terminating.cancel()
+
+    // BUG: the grace-period wait throws on cancellation, so SIGKILL is never sent and the process survives — flipped in the following commit.
+    await #expect(throws: CancellationError.self) { try await terminating.value }
+    #expect(Self.isAlive(running.processIdentifier))
+    running.sendSignal(SIGKILL)
+  }
+
   @Test("Termination is observable only after output has drained")
   func terminationWaitsForTheDrain() async throws {
     final class Collected: @unchecked Sendable {
