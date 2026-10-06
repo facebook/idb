@@ -50,6 +50,26 @@ private final class SentResponses: @unchecked Sendable {
   }
 }
 
+/// Pulls by writing `contents` to the destination, unreadable when `readable` is false.
+private final class LocalFilePuller: FilePulling, @unchecked Sendable {
+  let temporaryDirectory = TemporaryDirectory(logger: logger)
+  let contents: Data
+  let readable: Bool
+
+  init(contents: Data, readable: Bool = true) {
+    self.contents = contents
+    self.readable = readable
+  }
+
+  func pull_file_path(_ path: String, destination_path destinationPath: String, containerType: String?) async throws -> String {
+    try contents.write(to: URL(fileURLWithPath: destinationPath))
+    if !readable {
+      try FileManager.default.setAttributes([.posixPermissions: 0o000], ofItemAtPath: destinationPath)
+    }
+    return destinationPath
+  }
+}
+
 final class PullMethodHandlerTests: XCTestCase {
 
   private let request = Idb_PullRequest.with {
@@ -63,6 +83,27 @@ final class PullMethodHandlerTests: XCTestCase {
       sent.append($0)
     }
     XCTAssertEqual(sent.all, [.with { $0.payload = .with { $0.source = .filePath("/tmp/file.txt") } }])
+  }
+
+  func testAPullWithoutADestinationStreamsAGzippedTar() async throws {
+    let sent = SentResponses()
+    let request = Idb_PullRequest.with { $0.srcPath = "Documents/file.txt" }
+    try await PullMethodHandler.pull(request, using: LocalFilePuller(contents: Data(repeating: 0xAB, count: 64 * 1024)), logger: logger, cancellation: ServerContext.RPCCancellationHandle()) {
+      sent.append($0)
+    }
+    let received = sent.all.reduce(into: Data()) { $0.append($1.payload.data) }
+    XCTAssertEqual(Array(received.prefix(2)), [0x1F, 0x8B])
+  }
+
+  func testAPullThatCannotBeArchivedReportsTheExitCode() async throws {
+    try XCTSkipIf(getuid() == 0, "root reads a file whatever its mode")
+    let request = Idb_PullRequest.with { $0.srcPath = "Documents/file.txt" }
+    do {
+      try await PullMethodHandler.pull(request, using: LocalFilePuller(contents: Data("x".utf8), readable: false), logger: logger, cancellation: ServerContext.RPCCancellationHandle()) { _ in }
+      XCTFail("an unreadable file was archived")
+    } catch let error as RPCError {
+      XCTAssertEqual(error.message, "Draining operation failed with exit code 1")
+    }
   }
 
   // gRPC reports a client going away through the RPC's cancellation handle, not by cancelling the

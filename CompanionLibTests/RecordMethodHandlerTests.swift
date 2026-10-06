@@ -229,4 +229,29 @@ struct RecordMethodHandlerTests {
     let delivered = collector.elements.reduce(0) { $0 + $1.payload.data.count }
     #expect(delivered > 0)
   }
+
+  @Test(.enabled(if: getuid() != 0, "root reads a file whatever its mode"))
+  func aRecordingThatCannotBeCompressedReportsTheExitCode() async throws {
+    let directory = URL(fileURLWithPath: NSTemporaryDirectory())
+      .appendingPathComponent("record-unreadable-\(UUID().uuidString)")
+    try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+    defer { try? FileManager.default.removeItem(at: directory) }
+    let recorded = directory.appendingPathComponent("segment_001.mp4")
+    try Data(repeating: 0xCD, count: 1024).write(to: recorded)
+    try FileManager.default.setAttributes([.posixPermissions: 0o000], ofItemAtPath: recorded.path)
+    let collector = CollectingWriter<Idb_RecordResponse>()
+
+    let error = await #expect(throws: RPCError.self) {
+      try await RecordMethodHandler.deliverThenReport(
+        outputURL: recorded,
+        streamingToClient: true,
+        localFilePath: "",
+        finalizeError: nil,
+        responseStream: RPCWriter(wrapping: collector),
+        logger: RecordingLogger())
+    }
+
+    #expect(error?.message == "Draining operation failed with exit code 1")
+    #expect(collector.elements.isEmpty)
+  }
 }

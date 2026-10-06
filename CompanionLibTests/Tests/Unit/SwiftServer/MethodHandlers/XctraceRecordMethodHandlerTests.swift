@@ -182,4 +182,21 @@ struct XctraceRecordMethodHandlerTests {
     let received = collector.elements.reduce(into: Data()) { $0.append($1.payload.data) }
     #expect(gzipMembers(in: received) == 1)
   }
+
+  @Test(.enabled(if: getuid() != 0, "root reads a file whatever its mode"))
+  func aTraceThatCannotBeArchivedReportsTheExitCode() async throws {
+    let trace = URL(fileURLWithPath: NSTemporaryDirectory()).appendingPathComponent("xctrace-unreadable-\(UUID().uuidString).trace")
+    try FileManager.default.createDirectory(at: trace, withIntermediateDirectories: true)
+    defer { try? FileManager.default.removeItem(at: trace) }
+    let sample = trace.appendingPathComponent("sample")
+    try Data(repeating: 0xAB, count: 1024).write(to: sample)
+    try FileManager.default.setAttributes([.posixPermissions: 0o000], ofItemAtPath: sample.path)
+    let collector = CollectingWriter<Idb_XctraceRecordResponse>()
+
+    let error = await #expect(throws: RPCError.self) {
+      try await XctraceRecordMethodHandler.sendTrace(atPath: trace.path, responseStream: RPCWriter(wrapping: collector), logger: logger)
+    }
+
+    #expect(error?.message == "Draining operation failed with exit code 1")
+  }
 }
