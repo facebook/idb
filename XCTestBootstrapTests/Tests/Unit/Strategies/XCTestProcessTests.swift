@@ -87,32 +87,3 @@ final class XCTestProcessTests: XCTestCase {
     XCTAssertNotEqual(kill(process.processIdentifier, 0), 0, "The stalled process is terminated")
   }
 }
-
-/// Answers with `crash` only if it matches the lookup's predicate, so a predicate that misses
-/// the crash of the process being waited on fails the lookup.
-private struct StubCrashLogCommands: CrashLogCommands {
-
-  private struct CrashDoesNotMatch: Error {}
-
-  let crash: @Sendable () throws -> CrashLogInfo
-
-  func notifyOfCrash(matching predicate: NSPredicate) async throws -> CrashLogInfo {
-    let crash = try crash()
-    guard predicate.evaluate(with: crash) else {
-      throw CrashDoesNotMatch()
-    }
-    return crash
-  }
-
-  func crashes(matching predicate: NSPredicate, useCache: Bool) async throws -> [CrashLogInfo] {
-    fatalError("Not used by XCTestProcess")
-  }
-
-  func prune(matching predicate: NSPredicate) async throws -> [CrashLogInfo] {
-    fatalError("Not used by XCTestProcess")
-  }
-
-  func withFiles<R>(body: (any AsyncFileContainer) async throws -> R) async throws -> R {
-    fatalError("Not used by XCTestProcess")
-  }
-}
