@@ -5,6 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+import FBControlCore
 import Foundation
 
 /// Exclusive use of HID for one complete operation, shared by a simulator's HID instances.
