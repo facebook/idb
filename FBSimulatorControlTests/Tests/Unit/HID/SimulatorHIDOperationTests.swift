@@ -385,7 +385,7 @@ final class SimulatorHIDOperationTests: XCTestCase {
   func testConfigurationBoundGestureDeliversWhileItsGenerationIsCurrent() async throws {
     let recorder = Recorder()
     let configuration = try recorder.configurationTracker.observe(.reporting(.selected(screen())))
-    var operation = makeOperation(recorder, binding: .configuration(configuration))
+    var operation = makeOperation(recorder, binding: .configuration(generation: configuration.generation))
     _ = try await operation.send(.tapAt(x: 20, y: 30))
     try await operation.finish(flushing: true)
     let events = await recorder.events
@@ -395,7 +395,7 @@ final class SimulatorHIDOperationTests: XCTestCase {
   func testConfigurationBoundGestureIsRefusedOnceTheGenerationMovesOn() async throws {
     let recorder = Recorder()
     let stale = try recorder.configurationTracker.observe(.reporting(.selected(screen(rotation: .clockwise))))
-    var operation = makeOperation(recorder, binding: .configuration(stale))
+    var operation = makeOperation(recorder, binding: .configuration(generation: stale.generation))
     do {
       _ = try await operation.send(.touch(direction: .down, x: 20, y: 30))
       XCTFail("expected a stale configuration")
@@ -428,7 +428,7 @@ final class SimulatorHIDOperationTests: XCTestCase {
   private func makeOperation(
     _ recorder: Recorder,
     observation: SimulatorHIDDisplayObservation = SimulatorHIDDisplayObservation(),
-    binding: SimulatorHIDDisplayBinding = .active
+    binding: DisplaySelection = .active
   ) -> SimulatorHIDOperation {
     SimulatorHIDOperation(
       displays: recorder,

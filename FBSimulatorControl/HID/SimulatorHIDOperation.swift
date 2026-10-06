@@ -120,7 +120,7 @@ protocol SimulatorHIDOperationSink: Sendable {
 /// Operation-local state; no caller can send another event through this binding concurrently.
 struct SimulatorHIDOperation {
   let displays: (any DisplayCommands)?
-  let binding: SimulatorHIDDisplayBinding
+  let binding: DisplaySelection
   let sink: any SimulatorHIDOperationSink
 
   private let observation: SimulatorHIDDisplayObservation
@@ -134,7 +134,7 @@ struct SimulatorHIDOperation {
 
   init(
     displays: (any DisplayCommands)?,
-    binding: SimulatorHIDDisplayBinding = .active,
+    binding: DisplaySelection = .active,
     sink: any SimulatorHIDOperationSink,
     observation: SimulatorHIDDisplayObservation = SimulatorHIDDisplayObservation()
   ) {
@@ -221,8 +221,10 @@ struct SimulatorHIDOperation {
         guard pinnedDisplay?.uniqueID == uniqueID else {
           throw SimulatorDisplayInteractionError.inactiveDisplay(uniqueID)
         }
-      case let .configuration(configuration):
-        guard latest?.generation == configuration.generation else { throw SimulatorDisplayError.changed }
+      case let .configuration(generation):
+        guard latest?.generation == generation else { throw SimulatorDisplayError.changed }
+      case .main:
+        throw SimulatorDisplayInteractionError.unsupportedCapability("HID input bound to the main display")
       }
       try Task.checkCancellation()
       resolvedDisplay = true

@@ -20,7 +20,7 @@ final class SimulatorFramebufferCommandsTests: XCTestCase {
   }
 
   private func framebuffer(
-    _ display: FramebufferDisplay,
+    _ display: DisplaySelection,
     displays: any DisplayCommands = DisplayCommandsDouble(.selected(display("inner"))),
     screens: FramebufferScreensDouble
   ) async throws -> FramebufferAttachment {

@@ -115,20 +115,20 @@ public struct VideoStreamConfiguration: Hashable, CustomStringConvertible, Senda
 
   public let format: VideoStreamFormat
   public let encodeOptions: VideoEncodeOptions
-  public let display: FramebufferDisplay
+  public let display: DisplaySelection
 
   public var framesPerSecond: Int? { encodeOptions.framesPerSecond }
   public var rateControl: VideoStreamRateControl { encodeOptions.rateControl }
   public var scaleFactor: Double? { encodeOptions.scaleFactor }
   public var keyFrameRate: Double { encodeOptions.keyFrameRate }
 
-  public init(format: VideoStreamFormat, encodeOptions: VideoEncodeOptions, display: FramebufferDisplay = .active) {
+  public init(format: VideoStreamFormat, encodeOptions: VideoEncodeOptions, display: DisplaySelection = .active) {
     self.format = format
     self.encodeOptions = encodeOptions
     self.display = display
   }
 
-  public init(format: VideoStreamFormat, framesPerSecond: Int?, rateControl: VideoStreamRateControl?, scaleFactor: Double?, keyFrameRate: Double?, display: FramebufferDisplay = .active) {
+  public init(format: VideoStreamFormat, framesPerSecond: Int?, rateControl: VideoStreamRateControl?, scaleFactor: Double?, keyFrameRate: Double?, display: DisplaySelection = .active) {
     self.init(format: format, encodeOptions: VideoEncodeOptions(framesPerSecond: framesPerSecond, rateControl: rateControl, scaleFactor: scaleFactor, keyFrameRate: keyFrameRate), display: display)
   }
 

@@ -38,11 +38,11 @@ public struct SimulatorFramebufferCommands: Sendable {
     self.simulator = simulator
   }
 
-  @usableFromInline static let defaultDisplay: FramebufferDisplay = .active
+  @usableFromInline static let defaultDisplay: DisplaySelection = .active
 
   /// A framebuffer for `display`. Each call connects anew; callers that need one connection across
   /// several operations hold on to the result.
-  public func connect(display: FramebufferDisplay = defaultDisplay) async throws -> Framebuffer {
+  public func connect(display: DisplaySelection = defaultDisplay) async throws -> Framebuffer {
     try await Self.framebuffer(display: display, displays: simulator.displays, screens: SimulatorFramebufferScreens(simulator: simulator), logger: simulator.logger)
   }
 
@@ -50,7 +50,7 @@ public struct SimulatorFramebufferCommands: Sendable {
   /// display is the main screen, so only a simulator with several integrated displays follows one. A named
   /// display is required: capturing another in its place would capture something the caller did not ask for.
   /// Every framebuffer but the main screen's follows the display configuration, to report it.
-  static func framebuffer(display: FramebufferDisplay, displays: any DisplayCommands, screens: any FramebufferScreens, logger: any ControlCoreLogger) async throws -> Framebuffer {
+  static func framebuffer(display: DisplaySelection, displays: any DisplayCommands, screens: any FramebufferScreens, logger: any ControlCoreLogger) async throws -> Framebuffer {
     switch display {
     case .main:
       return Framebuffer(surface: try screens.mainScreen(), logger: logger)
@@ -61,6 +61,8 @@ public struct SimulatorFramebufferCommands: Sendable {
         displayUniqueID: uniqueID, surface: try await screens.screen(uniqueID: uniqueID), movement: .fixed,
         configurations: { displays.followConfigurations() }, locate: { try await screens.screen(uniqueID: $0) }, logger: logger)
       return Framebuffer(surface: surface, logger: logger)
+    case .configuration:
+      throw SimulatorDisplayInteractionError.unsupportedCapability("a framebuffer bound to a display configuration")
     }
   }
 
