@@ -74,11 +74,11 @@ struct PullMethodHandler {
       destination_path: tempPath,
       containerType: fileContainer)
 
-    let archive = try await FBArchiveOperations.createGzippedTarAsync(forPath: filePath, logger: logger)
+    let archive = try FBArchiveOperations.gzippedTarSubprocess(forPath: filePath, logger: logger)
 
     var totalBytes = 0
     do {
-      try await FileDrainWriter.performDrain(task: archive) { data in
+      try await FileDrainWriter.performDrain(archive, logger: logger) { data in
         totalBytes += data.count
         let response = Idb_PullResponse.with { $0.payload.data = data }
         try await send(response)
