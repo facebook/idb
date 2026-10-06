@@ -57,6 +57,40 @@ public enum ArchitectureProcessAdapter {
     return nil
   }
 
+  /// A single-architecture copy of an executable, and the environment it must be launched with
+  /// for its dynamic library imports to resolve from its new location.
+  public struct ThinnedExecutable: Sendable, Equatable {
+    public let path: String
+    public let environment: [String: String]
+  }
+
+  /// Thins the executable at `path` into `temporaryDirectory`, so that it launches in the first
+  /// of `requestedArchitectures` the host supports.
+  public static func thinExecutable(
+    atPath path: String,
+    toAnyArchitectureIn requestedArchitectures: Set<Architecture>,
+    hostArchitectures: Set<Architecture> = ArchitectureProcessAdapter.hostMachineSupportedArchitectures(),
+    temporaryDirectory: URL
+  ) async throws -> ThinnedExecutable {
+    guard let architecture = selectArchitecture(from: requestedArchitectures, supportedArchitectures: hostArchitectures) else {
+      throw ArchitectureAdapterError.noCompatibleArchitecture(requested: requestedArchitectures.map(\.rawValue), host: hostArchitectures.map(\.rawValue))
+    }
+
+    try await verifyArchitectureAvailable(path, architecture: architecture)
+
+    let fileName = (path as NSString).lastPathComponent + UUID().uuidString + "." + (architecture.rawValue)
+    let filePath = temporaryDirectory.appendingPathComponent(fileName, isDirectory: false)
+    try await extractArchitecture(architecture, launchPath: path, outputPath: filePath)
+
+    let dyldFrameworkPath = try await getFixedupDyldFrameworkPath(fromOriginalBinary: path)
+    return ThinnedExecutable(
+      path: filePath.path,
+      environment: [
+        "DYLD_FRAMEWORK_PATH": dyldFrameworkPath,
+        "DYLD_LIBRARY_PATH": dyldFrameworkPath,
+      ])
+  }
+
   /// Force binaries to be launched in desired architectures.
   public static func adaptProcessConfiguration(
     _ processConfiguration: ProcessSpawnConfiguration,
@@ -64,24 +98,11 @@ public enum ArchitectureProcessAdapter {
     hostArchitectures: Set<Architecture> = ArchitectureProcessAdapter.hostMachineSupportedArchitectures(),
     temporaryDirectory: URL
   ) async throws -> ProcessSpawnConfiguration {
-    guard let architecture = selectArchitecture(from: requestedArchitectures, supportedArchitectures: hostArchitectures) else {
-      throw ArchitectureAdapterError.noCompatibleArchitecture(requested: requestedArchitectures.map(\.rawValue), host: hostArchitectures.map(\.rawValue))
-    }
-
-    try await verifyArchitectureAvailable(processConfiguration.launchPath, architecture: architecture)
-
-    let fileName = (processConfiguration.launchPath as NSString).lastPathComponent + UUID().uuidString + "." + (architecture.rawValue)
-    let filePath = temporaryDirectory.appendingPathComponent(fileName, isDirectory: false)
-    try await extractArchitecture(architecture, launchPath: processConfiguration.launchPath, outputPath: filePath)
-
-    let dyldFrameworkPath = try await getFixedupDyldFrameworkPath(fromOriginalBinary: processConfiguration.launchPath)
-    var updatedEnvironment = processConfiguration.environment as [String: String]
-    updatedEnvironment["DYLD_FRAMEWORK_PATH"] = dyldFrameworkPath
-    updatedEnvironment["DYLD_LIBRARY_PATH"] = dyldFrameworkPath
+    let thinned = try await thinExecutable(atPath: processConfiguration.launchPath, toAnyArchitectureIn: requestedArchitectures, hostArchitectures: hostArchitectures, temporaryDirectory: temporaryDirectory)
     return ProcessSpawnConfiguration(
-      launchPath: filePath.path,
+      launchPath: thinned.path,
       arguments: processConfiguration.arguments,
-      environment: updatedEnvironment,
+      environment: (processConfiguration.environment as [String: String]).merging(thinned.environment) { _, thinnedValue in thinnedValue },
       io: processConfiguration.io,
       mode: processConfiguration.mode
     )

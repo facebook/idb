@@ -23,4 +23,8 @@ extension Simulator: @retroactive LogicTestTarget {
   public var repl: SimulatorReplCommands {
     SimulatorReplCommands.commands(with: self)
   }
+
+  public var subprocessLauncher: any SubprocessLauncher {
+    SimulatorSubprocessLauncher(simulator: self)
+  }
 }

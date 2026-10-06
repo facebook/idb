@@ -10,8 +10,8 @@ import XCTest
 @testable import XCTestBootstrap
 
 /// Covers `ListTestStrategy` end to end on the host. The real shim cannot be loaded here, so the
-/// target spawns a shell script in place of the `xctest` binary, handing it the environment and
-/// output streams the strategy prepared; the script plays the shim by writing the test list to
+/// target's launcher runs a shell script in place of the `xctest` binary, handing it the environment
+/// and output streams the strategy prepared; the script plays the shim by writing the test list to
 /// `TEST_SHIM_OUTPUT_PATH`.
 final class ListTestStrategyTests: XCTestCase {
 
@@ -48,17 +48,20 @@ final class ListTestStrategyTests: XCTestCase {
     XCTAssertEqual(target.spawned.count, 1)
     let xctestPath = target.xctest.path
     let architecture = ArchitectureProcessAdapter.hostMachineSupportedArchitectures().contains(.arm64) ? "arm64" : "x86_64"
-    XCTAssertNotEqual(spawned.launchPath, xctestPath, "The universal xctest binary is thinned to a copy before launch")
-    XCTAssertTrue((spawned.launchPath as NSString).lastPathComponent.hasPrefix("xctest"), spawned.launchPath)
-    XCTAssertTrue(spawned.launchPath.hasSuffix(".\(architecture)"), spawned.launchPath)
+    XCTAssertNotEqual(spawned.executable, xctestPath, "The universal xctest binary is thinned to a copy before launch")
+    XCTAssertTrue((spawned.executable as NSString).lastPathComponent.hasPrefix("xctest"), spawned.executable)
+    XCTAssertTrue(spawned.executable.hasSuffix(".\(architecture)"), spawned.executable)
     XCTAssertEqual(spawned.arguments, [])
     XCTAssertEqual(spawned.mode, .default)
-    XCTAssertEqual(spawned.environment["DYLD_INSERT_LIBRARIES"], Self.shimPath)
-    XCTAssertEqual(spawned.environment["TEST_SHIM_BUNDLE_PATH"], Self.macUnitTestBundleFixture().bundlePath)
-    XCTAssertNotNil(spawned.environment["TEST_SHIM_OUTPUT_PATH"])
-    XCTAssertEqual(spawned.environment["IDB_TARGET_ADDITION"], "1", "The target's environment additions are applied")
-    XCTAssertNotNil(spawned.environment["DYLD_FRAMEWORK_PATH"])
-    XCTAssertNotNil(spawned.environment["DYLD_LIBRARY_PATH"])
+    guard case .exact(let environment) = spawned.environment else {
+      return XCTFail("Expected exactly the prepared environment, got \(spawned.environment)")
+    }
+    XCTAssertEqual(environment["DYLD_INSERT_LIBRARIES"], Self.shimPath)
+    XCTAssertEqual(environment["TEST_SHIM_BUNDLE_PATH"], Self.macUnitTestBundleFixture().bundlePath)
+    XCTAssertNotNil(environment["TEST_SHIM_OUTPUT_PATH"])
+    XCTAssertEqual(environment["IDB_TARGET_ADDITION"], "1", "The target's environment additions are applied")
+    XCTAssertNotNil(environment["DYLD_FRAMEWORK_PATH"])
+    XCTAssertNotNil(environment["DYLD_LIBRARY_PATH"])
   }
 
   func testAShimFailureExitCodeFailsWithTheStandardErrorMostRecentFirst() async throws {
@@ -125,7 +128,7 @@ final class ListTestStrategyTests: XCTestCase {
       _ = try await listTests(running: "kill -KILL $$")
       XCTFail("Expected listing to fail")
     } catch let ProcessTerminationError.exitedWithSignal(_, processName, signal) {
-      XCTAssertEqual(processName, "sh")
+      XCTAssertTrue(processName.hasPrefix("xctest"), processName)
       XCTAssertEqual(signal, SIGKILL)
     }
   }
@@ -134,34 +137,28 @@ final class ListTestStrategyTests: XCTestCase {
 // MARK: - Target double
 
 /// A logic test target that forwards everything to the local Mac, except that the shim is a fixed
-/// path and a spawn runs `script` under `/bin/sh` in place of the requested binary.
+/// path and its launcher runs `script` under `/bin/sh` in place of the requested binary.
 private final class ScriptedLogicTestTarget: NSObject, LogicTestTarget {
 
   private let device = MacDevice()
-  private let script: String
-  private let lock = NSLock()
-  private var spawnedConfigurations: [ProcessSpawnConfiguration] = []
+  private let launcher: ScriptedLauncher
   let xctest: ShimmedXCTest
 
   init(shimPath: String, script: String) {
-    self.script = script
+    self.launcher = ScriptedLauncher(script: script)
     self.xctest = ShimmedXCTest(shimPath: shimPath, path: device.xctest.path)
   }
 
-  var spawned: [ProcessSpawnConfiguration] {
-    lock.withLock { spawnedConfigurations }
+  var spawned: [Subprocess] {
+    launcher.spawned
+  }
+
+  var subprocessLauncher: any SubprocessLauncher {
+    launcher
   }
 
   func spawn(_ configuration: ProcessSpawnConfiguration) async throws -> FBSubprocess<AnyObject, AnyObject, AnyObject> {
-    lock.withLock { spawnedConfigurations.append(configuration) }
-    let scripted = ProcessSpawnConfiguration(launchPath: "/bin/sh", arguments: ["-c", script], environment: Self.scriptEnvironment(configuration.environment), io: configuration.io, mode: configuration.mode)
-    return try await bridgeFBFuture(FBSubprocess<AnyObject, AnyObject, AnyObject>.launchProcess(with: scripted, logger: logger))
-  }
-
-  /// SIP strips `DYLD_*` from `/bin/sh`, but not on every host: where it survives, dyld aborts the
-  /// shell trying to insert the nonexistent shim before the script runs.
-  private static func scriptEnvironment(_ environment: [String: String]) -> [String: String] {
-    environment.filter { !$0.key.hasPrefix("DYLD_") }
+    fatalError("Not used by ListTestStrategy")
   }
 
   func environmentAdditions() -> [String: String] {
@@ -209,6 +206,39 @@ private final class ScriptedLogicTestTarget: NSObject, LogicTestTarget {
   var asyncQueue: DispatchQueue { device.asyncQueue }
   func requiresBundlesToBeSigned() -> Bool { device.requiresBundlesToBeSigned() }
   func replacementMapping() -> [String: String] { device.replacementMapping() }
+}
+
+// SAFETY: `recorded` is only read or written inside `lock`.
+// patternlint-disable-next-line unchecked-sendable
+private final class ScriptedLauncher: SubprocessLauncher, @unchecked Sendable {
+
+  private let script: String
+  private let lock = NSLock()
+  private var recorded: [Subprocess] = []
+
+  init(script: String) {
+    self.script = script
+  }
+
+  var spawned: [Subprocess] {
+    lock.withLock { recorded }
+  }
+
+  var supportsStandardInput: Bool {
+    true
+  }
+
+  func spawn(_ subprocess: Subprocess, standardInput: Int32?, standardOutput: Int32?, standardError: Int32?, logger: (any ControlCoreLogger)?) async throws -> LaunchedProcess {
+    lock.withLock { recorded.append(subprocess) }
+    let scripted = Subprocess(executable: "/bin/sh", arguments: ["-c", script], environment: Self.scriptEnvironment(subprocess.environment), mode: subprocess.mode)
+    return try await HostSubprocessLauncher().spawn(scripted, standardInput: standardInput, standardOutput: standardOutput, standardError: standardError, logger: logger)
+  }
+
+  /// SIP strips `DYLD_*` from `/bin/sh`, but not on every host: where it survives, dyld aborts the
+  /// shell trying to insert the nonexistent shim before the script runs.
+  private static func scriptEnvironment(_ environment: Subprocess.Environment) -> Subprocess.Environment {
+    .exact(environment.resolved(against: ProcessInfo.processInfo.environment).filter { !$0.key.hasPrefix("DYLD_") })
+  }
 }
 
 private struct ShimmedXCTest: XCTestExtendedCommands {

@@ -33,6 +33,39 @@ extension XCTestProcessError: LocalizedError {
 
 final class XCTestProcess {
 
+  /// Waits for `process` to exit within `timeout` and returns its exit code. A process that
+  /// overstays is sampled, terminated and reported as stalled; one killed by a signal is reported
+  /// with its crash log when `crashLogCommands` can find one.
+  static func awaitExitCode(of process: RunningSubprocess, processName: String, completesWithin timeout: TimeInterval, crashLogCommands: (any CrashLogCommands)?, logger: ControlCoreLogger) async throws -> Int32 {
+    let startDate = Date(timeIntervalSinceNow: CrashLogStartDateFuzz)
+    let processIdentifier = process.processIdentifier
+
+    logger.log("Waiting for \(processIdentifier) to exit within \(timeout) seconds")
+    guard let status = try await process.terminationStatus(within: timeout) else {
+      let stackshot: Result<String, any Error>
+      do {
+        stackshot = .success(try await ProcessFetcher.sampleStackshot(processIdentifier: processIdentifier))
+      } catch {
+        stackshot = .failure(error)
+      }
+      logger.log("Terminating stalled xctest process \(processIdentifier)")
+      try await process.terminate(gracePeriod: KillBackoffTimeout)
+      logger.log("Stalled xctest process \(processIdentifier) has been terminated")
+      throw XCTestProcessError.stalled(timeout: timeout, processIdentifier: processIdentifier, stackshot: try stackshot.get())
+    }
+    switch status {
+    case .exited(let exitCode):
+      return exitCode
+    case .signalled(let signo):
+      guard let crashLogCommands else {
+        throw ProcessTerminationError.exitedWithSignal(processIdentifier: processIdentifier, processName: processName, signal: signo)
+      }
+      return try await bridgeFBFuture(
+        XCTestProcess.performCrashLogQuery(forProcessIdentifier: processIdentifier, startDate: startDate, crashLogCommands: crashLogCommands, crashLogWaitTime: CrashLogWaitTime, queue: DispatchQueue.global(qos: .userInitiated), logger: logger)
+      ).int32Value
+    }
+  }
+
   public static func ensureProcess(_ process: FBSubprocess<AnyObject, AnyObject, AnyObject>, completesWithin timeout: TimeInterval, crashLogCommands: (any CrashLogCommands)?, queue: DispatchQueue, logger: ControlCoreLogger) -> FBFuture<NSNumber> {
     let startDate = Date(timeIntervalSinceNow: CrashLogStartDateFuzz)
 
@@ -61,7 +94,7 @@ final class XCTestProcess {
                   return exitCodeFuture
                 }
                 return XCTestProcess.performCrashLogQuery(
-                  forProcess: process, startDate: startDate, crashLogCommands: crashLogCommands, crashLogWaitTime: CrashLogWaitTime, queue: queue, logger: logger
+                  forProcessIdentifier: process.processIdentifier, startDate: startDate, crashLogCommands: crashLogCommands, crashLogWaitTime: CrashLogWaitTime, queue: queue, logger: logger
                 ).retyped(FBFuture<AnyObject>.self)
               })
         }
@@ -112,11 +145,11 @@ final class XCTestProcess {
       })
   }
 
-  private static func performCrashLogQuery(forProcess process: FBSubprocess<AnyObject, AnyObject, AnyObject>, startDate: Date, crashLogCommands: any CrashLogCommands, crashLogWaitTime: TimeInterval, queue: DispatchQueue, logger: ControlCoreLogger) -> FBFuture<NSNumber> {
-    logger.log("xctest process (\(process.processIdentifier)) died prematurely, checking for crash log for \(crashLogWaitTime) seconds")
+  private static func performCrashLogQuery(forProcessIdentifier processIdentifier: pid_t, startDate: Date, crashLogCommands: any CrashLogCommands, crashLogWaitTime: TimeInterval, queue: DispatchQueue, logger: ControlCoreLogger) -> FBFuture<NSNumber> {
+    logger.log("xctest process (\(processIdentifier)) died prematurely, checking for crash log for \(crashLogWaitTime) seconds")
     return
-      XCTestProcess.crashLogs(forTerminationOfProcess: process, since: startDate, crashLogCommands: crashLogCommands, crashLogWaitTime: crashLogWaitTime, queue: queue)
-      .rephraseFailure("xctest process (\(process.processIdentifier)) exited abnormally with no crash log, to check for yourself look in ~/Library/Logs/DiagnosticReports")
+      XCTestProcess.crashLogs(forTerminationOfProcessIdentifier: processIdentifier, since: startDate, crashLogCommands: crashLogCommands, crashLogWaitTime: crashLogWaitTime, queue: queue)
+      .rephraseFailure("xctest process (\(processIdentifier)) exited abnormally with no crash log, to check for yourself look in ~/Library/Logs/DiagnosticReports")
       .onQueue(
         queue,
         fmap: { info -> FBFuture<AnyObject> in
@@ -127,9 +160,9 @@ final class XCTestProcess {
       .retyped(FBFuture<NSNumber>.self)
   }
 
-  private static func crashLogs(forTerminationOfProcess process: FBSubprocess<AnyObject, AnyObject, AnyObject>, since sinceDate: Date, crashLogCommands: any CrashLogCommands, crashLogWaitTime: TimeInterval, queue: DispatchQueue) -> FBFuture<CrashLogInfo> {
+  private static func crashLogs(forTerminationOfProcessIdentifier processIdentifier: pid_t, since sinceDate: Date, crashLogCommands: any CrashLogCommands, crashLogWaitTime: TimeInterval, queue: DispatchQueue) -> FBFuture<CrashLogInfo> {
     let predicate = NSCompoundPredicate(andPredicateWithSubpredicates: [
-      CrashLogInfo.predicateForCrashLogs(withProcessID: process.processIdentifier),
+      CrashLogInfo.predicateForCrashLogs(withProcessID: processIdentifier),
       CrashLogInfo.predicateNewer(thanDate: sinceDate),
     ])
 
@@ -141,7 +174,7 @@ final class XCTestProcess {
       .onQueue(
         queue, timeout: crashLogWaitTime,
         handler: {
-          FBFuture<AnyObject>(error: XCTestProcessError.crashLogTimedOut(processIdentifier: process.processIdentifier))
+          FBFuture<AnyObject>(error: XCTestProcessError.crashLogTimedOut(processIdentifier: processIdentifier))
         }
       )
       .retyped(FBFuture<CrashLogInfo>.self)

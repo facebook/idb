@@ -721,4 +721,9 @@ extension MacDevice: PowerCommands {
 
 // MARK: - MacDevice+LogicTestTarget
 
-extension MacDevice: LogicTestTarget {}
+extension MacDevice: LogicTestTarget {
+
+  public var subprocessLauncher: any SubprocessLauncher {
+    HostSubprocessLauncher()
+  }
+}
