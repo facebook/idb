@@ -84,28 +84,48 @@ struct InstallMethodHandler {
     telemetry: InstallTelemetry
   ) async throws -> InstalledArtifact {
 
-    func installSource(dataStream: FBProcessInput<AnyObject>, compression: FBCompressionFormat, skipSigningBundles: Bool) async throws -> InstalledArtifact {
-      switch destination {
-      case .app:
-        return try await commandExecutor.install_app_stream(dataStream, compression: compression, make_debuggable: makeDebuggable, override_modification_time: overrideModificationTime, on_progress: telemetry.observe)
-      case .xctest:
-        return try await commandExecutor.install_xctest_app_stream(dataStream, skipSigningBundles: skipSigningBundles, on_progress: telemetry.observe)
+    let installDestination: InstallDestination
+    switch destination {
+    case .app:
+      installDestination = .application(makeDebuggable: makeDebuggable)
+    case .xctest:
+      installDestination = .xctest(skipSigningBundles: skipSigningBundles)
+    case .dsym:
+      installDestination = .dsym(linkTo: linkToBundle)
+    case .dylib:
+      installDestination = .dylib
+    case .framework:
+      installDestination = .framework
+    case .UNRECOGNIZED:
+      throw RPCError(code: .invalidArgument, message: "Unrecognized destination")
+    }
+
+    func install(from source: InstallSource, compression: FBCompressionFormat = .GZIP) async throws -> InstalledArtifact {
+      let options: InstallOptions
+      switch installDestination {
+      case .application:
+        options = InstallOptions(overrideModificationTime: overrideModificationTime, compression: compression)
       case .dsym:
-        return try await commandExecutor.install_dsym_stream(dataStream, compression: compression, linkTo: linkToBundle, on_progress: telemetry.observe)
-      case .dylib:
-        return try await commandExecutor.install_dylib_stream(dataStream, name: name, on_progress: telemetry.observe)
-      case .framework:
-        return try await commandExecutor.install_framework_stream(dataStream, on_progress: telemetry.observe)
-      case .UNRECOGNIZED:
-        throw RPCError(code: .invalidArgument, message: "Unrecognized destination")
+        options = InstallOptions(compression: compression)
+      case .xctest, .framework, .dylib:
+        options = InstallOptions()
       }
+      return try await commandExecutor.install(installDestination, from: source, options: options, onProgress: telemetry.observe)
+    }
+
+    /// A dylib arrives as a single gzipped file; everything else as a tar.
+    func installStreamed(_ dataStream: FBProcessInput<AnyObject>, compression: FBCompressionFormat) async throws -> InstalledArtifact {
+      if case .dylib = installDestination {
+        return try await install(from: .gzippedFile(dataStream, name: name))
+      }
+      return try await install(from: .processInput(dataStream), compression: compression)
     }
 
     func installStream(_ dataStream: FBProcessInput<AnyObject>, format: InstallStreamFormat, head: Data) async throws -> InstalledArtifact {
       let tarCompression: FBCompressionFormat
       switch format {
       case .zip, .zstdZip:
-        return try await commandExecutor.install_app_zip_stream(dataStream, make_debuggable: makeDebuggable, override_modification_time: overrideModificationTime, on_progress: telemetry.observe)
+        return try await install(from: .zipStream(dataStream))
       case .gzipTar:
         tarCompression = .GZIP
       case .zstdTar:
@@ -115,7 +135,7 @@ struct InstallMethodHandler {
         let prefix = head.prefix(16).map { String(format: "%02x", $0) }.joined(separator: " ")
         targetLogger.log("Extracting a stream declared \(compression) as \(tarCompression), as it does not start with a zstd frame: \(prefix)")
       }
-      return try await installSource(dataStream: dataStream, compression: tarCompression, skipSigningBundles: skipSigningBundles)
+      return try await installStreamed(dataStream, compression: tarCompression)
     }
 
     switch payload {
@@ -141,28 +161,15 @@ struct InstallMethodHandler {
 
     case let .url(url):
       if destination == .app {
-        return try await commandExecutor.install_app_url(url, compression: compression, make_debuggable: makeDebuggable, override_modification_time: overrideModificationTime, on_progress: telemetry.observe)
+        return try await install(from: .remoteURL(url), compression: compression)
       }
       let download = DataDownloadInput.dataDownload(withURL: url, logger: targetLogger)
       return try await Self.installDownload(download) { input in
-        try await installSource(dataStream: input, compression: compression, skipSigningBundles: skipSigningBundles)
+        try await installStreamed(input, compression: compression)
       }
 
     case let .filePath(filePath):
-      switch destination {
-      case .app:
-        return try await commandExecutor.install_app_file_path(filePath, make_debuggable: makeDebuggable, override_modification_time: overrideModificationTime, on_progress: telemetry.observe)
-      case .xctest:
-        return try await commandExecutor.install_xctest_app_file_path(filePath, skipSigningBundles: skipSigningBundles, on_progress: telemetry.observe)
-      case .dsym:
-        return try await commandExecutor.install_dsym_file_path(filePath, linkTo: linkToBundle, on_progress: telemetry.observe)
-      case .dylib:
-        return try await commandExecutor.install_dylib_file_path(filePath, on_progress: telemetry.observe)
-      case .framework:
-        return try await commandExecutor.install_framework_file_path(filePath, on_progress: telemetry.observe)
-      case .UNRECOGNIZED:
-        throw RPCError(code: .invalidArgument, message: "Unrecognized destination")
-      }
+      return try await install(from: .localPath(filePath))
     }
   }
 

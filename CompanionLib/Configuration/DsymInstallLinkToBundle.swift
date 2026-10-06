@@ -7,12 +7,12 @@
 
 import Foundation
 
-public enum DsymBundleType {
+public enum DsymBundleType: Sendable {
   case xcTest
   case app
 }
 
-public struct DsymInstallLinkToBundle {
+public struct DsymInstallLinkToBundle: Sendable {
 
   public let bundleID: String
   public let bundleType: DsymBundleType

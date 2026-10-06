@@ -107,52 +107,23 @@ public final class IDBCommandExecutor {
     return listing
   }
 
-  public func install_app_file_path(_ filePath: String, make_debuggable makeDebuggable: Bool, override_modification_time overrideModificationTime: Bool, on_progress onProgress: @escaping @Sendable (InstallProgressEvent) -> Void = { _ in }) async throws -> InstalledArtifact {
-    return try await install(.application, from: .localPath(filePath), options: InstallOptions(overrideModificationTime: overrideModificationTime), makeDebuggable: makeDebuggable, onProgress: onProgress)
-  }
-
-  public func install_app_stream(_ input: FBProcessInput<AnyObject>, compression: FBCompressionFormat, make_debuggable makeDebuggable: Bool, override_modification_time overrideModificationTime: Bool, on_progress onProgress: @escaping @Sendable (InstallProgressEvent) -> Void = { _ in }) async throws -> InstalledArtifact {
-    return try await install(.application, from: .processInput(input), options: InstallOptions(overrideModificationTime: overrideModificationTime, compression: compression), makeDebuggable: makeDebuggable, onProgress: onProgress)
-  }
-
-  public func install_app_zip_stream(_ input: FBProcessInput<AnyObject>, make_debuggable makeDebuggable: Bool, override_modification_time overrideModificationTime: Bool, on_progress onProgress: @escaping @Sendable (InstallProgressEvent) -> Void = { _ in }) async throws -> InstalledArtifact {
-    return try await install(.application, from: .zipStream(input), options: InstallOptions(overrideModificationTime: overrideModificationTime), makeDebuggable: makeDebuggable, onProgress: onProgress)
-  }
-
-  public func install_app_url(_ url: URL, compression: FBCompressionFormat, make_debuggable makeDebuggable: Bool, override_modification_time overrideModificationTime: Bool, on_progress onProgress: @escaping @Sendable (InstallProgressEvent) -> Void = { _ in }) async throws -> InstalledArtifact {
-    return try await install(.application, from: .remoteURL(url), options: InstallOptions(overrideModificationTime: overrideModificationTime, compression: compression), makeDebuggable: makeDebuggable, onProgress: onProgress)
-  }
-
-  public func install_xctest_app_file_path(_ filePath: String, skipSigningBundles: Bool, on_progress onProgress: @escaping @Sendable (InstallProgressEvent) -> Void = { _ in }) async throws -> InstalledArtifact {
-    return try await install(.xctest, from: .localPath(filePath), skipSigningBundles: skipSigningBundles, onProgress: onProgress)
-  }
-
-  public func install_xctest_app_stream(_ stream: FBProcessInput<AnyObject>, skipSigningBundles: Bool, on_progress onProgress: @escaping @Sendable (InstallProgressEvent) -> Void = { _ in }) async throws -> InstalledArtifact {
-    return try await install(.xctest, from: .processInput(stream), skipSigningBundles: skipSigningBundles, onProgress: onProgress)
-  }
-
-  public func install_dylib_file_path(_ filePath: String, on_progress onProgress: @escaping @Sendable (InstallProgressEvent) -> Void = { _ in }) async throws -> InstalledArtifact {
-    return try await install(.dylib, from: .localPath(filePath), onProgress: onProgress)
-  }
-
-  public func install_dylib_stream(_ input: FBProcessInput<AnyObject>, name: String, on_progress onProgress: @escaping @Sendable (InstallProgressEvent) -> Void = { _ in }) async throws -> InstalledArtifact {
-    return try await install(.dylib, from: .gzippedFile(input, name: name), onProgress: onProgress)
-  }
-
-  public func install_framework_file_path(_ filePath: String, on_progress onProgress: @escaping @Sendable (InstallProgressEvent) -> Void = { _ in }) async throws -> InstalledArtifact {
-    return try await install(.framework, from: .localPath(filePath), onProgress: onProgress)
-  }
-
-  public func install_framework_stream(_ input: FBProcessInput<AnyObject>, on_progress onProgress: @escaping @Sendable (InstallProgressEvent) -> Void = { _ in }) async throws -> InstalledArtifact {
-    return try await install(.framework, from: .processInput(input), onProgress: onProgress)
-  }
-
-  public func install_dsym_file_path(_ filePath: String, linkTo: DsymInstallLinkToBundle?, on_progress onProgress: @escaping @Sendable (InstallProgressEvent) -> Void = { _ in }) async throws -> InstalledArtifact {
-    return try await install(.dsym, from: .localPath(filePath), linkTo: linkTo, onProgress: onProgress)
-  }
-
-  public func install_dsym_stream(_ input: FBProcessInput<AnyObject>, compression: FBCompressionFormat, linkTo: DsymInstallLinkToBundle?, on_progress onProgress: @escaping @Sendable (InstallProgressEvent) -> Void = { _ in }) async throws -> InstalledArtifact {
-    return try await install(.dsym, from: .processInput(input), options: InstallOptions(compression: compression), linkTo: linkTo, onProgress: onProgress)
+  /// Stages `source`, finds the artifact `destination` names in it and installs that, reporting each stage through `onProgress`.
+  public func install(
+    _ destination: InstallDestination,
+    from source: InstallSource,
+    options: InstallOptions = InstallOptions(),
+    onProgress: @escaping @Sendable (InstallProgressEvent) -> Void = { _ in }
+  ) async throws -> InstalledArtifact {
+    let totalStart = Date()
+    let kind = destination.kind
+    return try await Staging.withMaterialized(source, as: kind, options: options, totalStart: totalStart, temporaryDirectory: temporaryDirectory, logger: target.logger, onProgress: onProgress) { tree in
+      let artifact = try kind.identify(in: tree, logger: target.logger)
+      let installStart = Date()
+      onProgress(.installStarted(timing: .measure(stageStart: installStart, totalStart: totalStart), artifactPath: artifact.url.path))
+      let installed = try await install(artifact, as: destination, inPlace: tree.isInPlace)
+      onProgress(.installCompleted(timing: .measure(stageStart: installStart, totalStart: totalStart), artifactPath: artifact.url.path, name: installed.name))
+      return installed
+    }
   }
 
   // MARK: - Public Methods
@@ -498,7 +469,7 @@ public final class IDBCommandExecutor {
     guard let appPath = BundledResources.path(forItem: "ReplHost.app") else {
       throw IDBCommandError.replHostAppMissing
     }
-    _ = try await install_app_file_path(appPath, make_debuggable: false, override_modification_time: false)
+    _ = try await install(.application(makeDebuggable: false), from: .localPath(appPath))
     return bundleID
   }
 
@@ -864,35 +835,14 @@ public final class IDBCommandExecutor {
     return InstalledArtifact(name: appBundle.identifier, uuid: appBundle.binary?.uuid as NSUUID?, path: URL(fileURLWithPath: installedApp.bundle.path))
   }
 
-  /// Stages `source`, finds the artifact of `kind` in it and installs that, reporting each stage through `onProgress`.
-  private func install(
-    _ kind: ArtifactKind,
-    from source: InstallSource,
-    options: InstallOptions = InstallOptions(),
-    makeDebuggable: Bool = false,
-    skipSigningBundles: Bool = false,
-    linkTo: DsymInstallLinkToBundle? = nil,
-    onProgress: @escaping @Sendable (InstallProgressEvent) -> Void = { _ in }
-  ) async throws -> InstalledArtifact {
-    let totalStart = Date()
-    return try await Staging.withMaterialized(source, as: kind, options: options, totalStart: totalStart, temporaryDirectory: temporaryDirectory, logger: target.logger, onProgress: onProgress) { tree in
-      let artifact = try kind.identify(in: tree, logger: target.logger)
-      let installStart = Date()
-      onProgress(.installStarted(timing: .measure(stageStart: installStart, totalStart: totalStart), artifactPath: artifact.url.path))
-      let installed = try await install(artifact, inPlace: tree.isInPlace, makeDebuggable: makeDebuggable, skipSigningBundles: skipSigningBundles, linkTo: linkTo)
-      onProgress(.installCompleted(timing: .measure(stageStart: installStart, totalStart: totalStart), artifactPath: artifact.url.path, name: installed.name))
-      return installed
-    }
-  }
-
   /// Stores `artifact` and installs it on the target if it is an application. An artifact that is in place is linked into
   /// storage; anything staged is moved there, since its staging directory is deleted once the install returns.
-  private func install(_ artifact: Artifact, inPlace: Bool, makeDebuggable: Bool = false, skipSigningBundles: Bool = false, linkTo: DsymInstallLinkToBundle? = nil) async throws -> InstalledArtifact {
+  private func install(_ artifact: Artifact, as destination: InstallDestination, inPlace: Bool) async throws -> InstalledArtifact {
     switch artifact {
     case .application(let bundle):
-      return try await installAppBundle(bundle, makeDebuggable: makeDebuggable, persistByMoving: !inPlace)
+      return try await installAppBundle(bundle, makeDebuggable: destination.makeDebuggable, persistByMoving: !inPlace)
     case .testBundle(let url):
-      return try await storageManager.xctest.saveTestBundle(url, usingSymlink: inPlace, skipSigningBundles: skipSigningBundles)
+      return try await storageManager.xctest.saveTestBundle(url, usingSymlink: inPlace, skipSigningBundles: destination.skipSigningBundles)
     case .testRun(let url):
       return try storageManager.xctest.saveTestRun(url)
     case .framework(let bundle):
@@ -900,7 +850,7 @@ public final class IDBCommandExecutor {
     case .dylib(let url):
       return try storageManager.dylib.saveFile(url)
     case .dsym(let url):
-      return try await installAndLinkDsym(url, intoStorage: storageManager.dsym, linkTo: linkTo)
+      return try await installAndLinkDsym(url, intoStorage: storageManager.dsym, linkTo: destination.linkTo)
     }
   }
 
