@@ -82,6 +82,7 @@ final class SimulatorDisplayReadTests: XCTestCase {
     xpc_dictionary_set_value(value, "uniqueId", nil)
     guard case let .legacy(geometry) = try target([value]).display else { return XCTFail("Expected legacy geometry") }
     XCTAssertEqual(geometry.pointSize, CGSize(width: 951, height: 669))
+    XCTAssertEqual(geometry.unrotatedPointSize, CGSize(width: 669, height: 951))
     XCTAssertEqual(try geometry.unrotatedPoint(from: CGPoint(x: 787, y: 570)), CGPoint(x: 570, y: 164))
     XCTAssertEqual(resolution([value, value]), .fallback(.legacyIntegratedDisplays(count: 2)))
     XCTAssertEqual(report([value], current: false), .failed(.malformed("Report is not current")))

@@ -21,8 +21,13 @@ public struct SimulatorDisplayGeometry: Equatable, Sendable {
   public let scale: Double
   public let rotation: SimulatorDisplayRotation
 
+  /// The point size of the physical panel, whatever the interface rotation. The digitizer is fixed to it.
+  public var unrotatedPointSize: CGSize {
+    CGSize(width: bounds.width / scale, height: bounds.height / scale)
+  }
+
   public var pointSize: CGSize {
-    let size = CGSize(width: bounds.width / scale, height: bounds.height / scale)
+    let size = unrotatedPointSize
     switch rotation {
     case .upright, .upsideDown: return size
     case .clockwise, .counterclockwise: return CGSize(width: size.height, height: size.width)
@@ -35,8 +40,8 @@ public struct SimulatorDisplayGeometry: Equatable, Sendable {
     guard point.x.isFinite, point.y.isFinite,
       point.x >= 0, point.y >= 0, point.x <= size.width, point.y <= size.height
     else { throw SimulatorDisplayInteractionError.invalidPoint(point, bounds: size) }
-    let width = bounds.width / scale
-    let height = bounds.height / scale
+    let width = unrotatedPointSize.width
+    let height = unrotatedPointSize.height
     switch rotation {
     case .upright: return point
     case .clockwise: return CGPoint(x: point.y, y: height - point.x)
@@ -220,6 +225,15 @@ public final class SimulatorDisplayCommands: DisplayCommands, @unchecked Sendabl
     -> SimulatorDisplayConfiguration
   {
     try await settledConfiguration(within: timeout)
+  }
+
+  /// The active display once any transition settles, provided it is the one `selection` names. Throws
+  /// `SimulatorDisplayInteractionError.inactiveDisplay` for a named display that is not active, and
+  /// `SimulatorDisplayError.changed` for a configuration that has been replaced.
+  public func activeDisplay(
+    selectedBy selection: DisplaySelection, settledWithin timeout: Duration = DisplayTransitionSettling.standard.timeout
+  ) async throws -> SimulatorDisplay {
+    try await activeDisplay(selectedBy: selection, within: timeout)
   }
 
   /// The current display configuration, then each change to it, until the stream is cancelled. Follows
