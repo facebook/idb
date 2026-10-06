@@ -6,6 +6,7 @@
  */
 
 @testable import CompanionLib
+import FBControlCore
 import FBSimulatorControl
 import GRPCCore
 import XCTest
@@ -142,5 +143,16 @@ final class InstallMethodHandlerTests: XCTestCase {
     for stream in [Data([0x1F, 0x8B, 0x08, 0x00]), Data([0x28, 0xB5, 0x2F, 0xFD])] {
       XCTAssertEqual(InstallMethodHandler.tarCompression(declared: .GZIP, initial: stream), .GZIP, "\(stream as NSData)")
     }
+  }
+
+  func testANonAppDownloadThatFails() async throws {
+    let missing = URL(fileURLWithPath: NSTemporaryDirectory()).appendingPathComponent(UUID().uuidString)
+    let download = DataDownloadInput.dataDownload(withURL: missing, logger: FBControlCoreLoggerFactory.systemLoggerWriting(toStderr: false, withDebugLogging: false))
+    let staged = URL(fileURLWithPath: NSTemporaryDirectory()).appendingPathComponent(UUID().uuidString)
+    // BUG: the failed download installs whatever the extractor made of no bytes; flipped in the following commit.
+    let artifact = try await InstallMethodHandler.installDownload(download) { _ in
+      InstalledArtifact(name: "A.dSYM", uuid: nil, path: staged)
+    }
+    XCTAssertEqual(artifact.path, staged)
   }
 }
