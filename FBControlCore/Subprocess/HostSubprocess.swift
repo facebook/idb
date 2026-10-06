@@ -166,7 +166,8 @@ extension Subprocess.Output {
       return (try Self.drainedSink(into: FBLoggingDataConsumer(logger: logger), logger: nil), { Self.captured(()) })
     case .loggerCapturingErrorMessage(let logger):
       let buffer = FBDataBuffer.accumulatingBuffer(withCapacity: FBProcessOutputErrorMessageLength)
-      return (try Self.drainedSink(into: buffer, logger: logger), { Self.captured(Self.string(from: buffer.data())) })
+      // Lossy, because the tail can begin mid-character, and one invalid byte would otherwise empty the whole message.
+      return (try Self.drainedSink(into: buffer, logger: logger), { Self.captured(Self.string(from: buffer.data(), lossy: true)) })
     case .lines(let sink):
       let consumer = FBBlockDataConsumer.asynchronousLineConsumer(sink)
       return (try Self.drainedSink(into: consumer, logger: nil), { Self.captured(()) })
@@ -182,13 +183,14 @@ extension Subprocess.Output {
   }
 
   /// The engine's string capture has always stripped exactly one trailing
-  /// newline byte, and decoded invalid UTF-8 to the empty string.
-  private static func string(from data: Data) -> String {
+  /// newline byte, and decoded invalid UTF-8 to the empty string unless
+  /// `lossy`.
+  private static func string(from data: Data, lossy: Bool = false) -> String {
     var data = data
     if data.last == UInt8(ascii: "\n") {
       data.removeLast()
     }
-    return String(data: data, encoding: .utf8) ?? ""
+    return lossy ? String(decoding: data, as: UTF8.self) : String(data: data, encoding: .utf8) ?? ""
   }
 
   /// Opens without `O_TRUNC`, as the engine always has; the explicit mode is

@@ -317,8 +317,7 @@ struct SubprocessRunTests {
     }
 
     #expect(oldDescription.contains("no space left on device"))
-    // BUG: the capture decodes strictly, so one invalid byte empties the quoted message — flipped in the following commit.
-    #expect(new?.localizedDescription.contains("no space left on device") == false)
+    #expect(new?.localizedDescription.contains("no space left on device") == true)
   }
 
   @Test("A signal fails a zero-exit policy, matching the old path's rejection of signalled processes")
