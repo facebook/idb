@@ -207,12 +207,18 @@ func withAttached(_ input: FBProcessInput<AnyObject>, _ body: (any ByteSource) a
 }
 
 /// Runs `work` off the cooperative pool, for work that blocks its thread.
+///
+/// Each call gets a thread of its own. The global queues run only a bounded number of threads at once, and blocking
+/// work there that waits on other blocking work, such as a reader on a pipe whose writer is another call, deadlocks
+/// once every one of those threads is waiting.
 func offCooperativePool<T>(_ work: @escaping () throws -> T) async -> Result<T, Error> {
   let work = HandedOver(work)
   return await withCheckedContinuation { (continuation: CheckedContinuation<HandedOver<Result<T, Error>>, Never>) in
-    DispatchQueue.global(qos: .userInitiated).async {
+    let thread = Thread {
       continuation.resume(returning: HandedOver(Result { try work.value() }))
     }
+    thread.qualityOfService = .userInitiated
+    thread.start()
   }.value
 }
 

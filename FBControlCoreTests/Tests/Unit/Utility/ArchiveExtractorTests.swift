@@ -43,8 +43,7 @@ struct ArchiveExtractorTests {
       for _ in 0..<count {
         release.signal()
       }
-      // BUG: calls past the constrained pool's limit wait for a blocked one to return, so a reader whose writer is queued behind it never returns — flipped in the following commit.
-      #expect(running < count)
+      #expect(running == count)
     }
   }
 }
