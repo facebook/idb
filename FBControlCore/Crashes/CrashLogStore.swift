@@ -91,28 +91,24 @@ public final class CrashLogStore {
   }
 
   public func nextCrashLog(forMatchingPredicate predicate: NSPredicate) async throws -> CrashLogInfo {
-    let holder = ObserverHolder()
+    let wait = CrashLogWait()
     nonisolated(unsafe) let predicateRef = predicate
     let box = try await withTaskCancellationHandler {
       try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<CrashLogResultBox, Error>) in
-        holder.observer = NotificationCenter.default.addObserver(
-          forName: CrashLogAppeared,
-          object: nil,
-          queue: .main
-        ) { notification in
-          guard let crashLog = notification.object as? CrashLogInfo else { return }
-          if !predicateRef.evaluate(with: crashLog) { return }
-          if let obs = holder.observer {
-            NotificationCenter.default.removeObserver(obs)
-            holder.observer = nil
+        wait.begin(continuation) {
+          NotificationCenter.default.addObserver(
+            forName: CrashLogAppeared,
+            object: nil,
+            queue: nil
+          ) { notification in
+            guard let crashLog = notification.object as? CrashLogInfo else { return }
+            if !predicateRef.evaluate(with: crashLog) { return }
+            wait.finish(.success(CrashLogResultBox(crashLog)))
           }
-          continuation.resume(returning: CrashLogResultBox(crashLog))
         }
       }
     } onCancel: {
-      if let obs = holder.observer {
-        NotificationCenter.default.removeObserver(obs)
-      }
+      wait.finish(.failure(CancellationError()))
     }
     return box.value
   }
@@ -146,8 +142,38 @@ public final class CrashLogStore {
     return crashLog
   }
 
-  private class ObserverHolder: @unchecked Sendable {
-    var observer: NSObjectProtocol?
+  /// Resumes the wait exactly once, from whichever of delivery and cancellation comes first.
+  /// Cancellation can arrive before `begin`, so it is remembered rather than dropped.
+  private final class CrashLogWait: @unchecked Sendable {
+    private let lock = NSLock()
+    private var continuation: CheckedContinuation<CrashLogResultBox, Error>?
+    private var observer: NSObjectProtocol?
+    private var finished = false
+
+    func begin(_ continuation: CheckedContinuation<CrashLogResultBox, Error>, observe: () -> NSObjectProtocol) {
+      lock.lock()
+      defer { lock.unlock() }
+      guard !finished else {
+        continuation.resume(throwing: CancellationError())
+        return
+      }
+      self.continuation = continuation
+      observer = observe()
+    }
+
+    func finish(_ result: Result<CrashLogResultBox, Error>) {
+      lock.lock()
+      finished = true
+      let continuation = self.continuation
+      let observer = self.observer
+      self.continuation = nil
+      self.observer = nil
+      lock.unlock()
+      if let observer {
+        NotificationCenter.default.removeObserver(observer)
+      }
+      continuation?.resume(with: result)
+    }
   }
 
   private final class CrashLogResultBox: @unchecked Sendable {

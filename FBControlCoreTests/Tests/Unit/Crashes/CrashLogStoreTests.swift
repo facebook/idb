@@ -87,8 +87,6 @@ final class CrashLogStoreTests: XCTestCase {
   func testNextCrashLog_WhenCancelled_StopsWaiting() async throws {
     let store = makeStore()
     let returned = expectation(description: "The cancelled wait returns")
-    // BUG: a cancelled wait never returns — flipped in the following commit
-    returned.isInverted = true
     let next = Task {
       defer { returned.fulfill() }
       _ = try await store.nextCrashLog(forMatchingPredicate: CrashLogInfo.predicate(forIdentifier: "assetsd"))
