@@ -21,7 +21,16 @@ struct InstallMethodHandler {
 
     let artifact = try await Self.mapSimulatorInstallErrors {
       let request = try await InstallRequest.read(requestStream)
-      return try await install(request, isCancelled: { context.cancellation.isCancelled })
+      let isCancelled = { context.cancellation.isCancelled }
+      // Clients print every response to any other install as an installed artifact, so only an application reports its progress.
+      guard request.header.destination == .app else {
+        return try await install(request, isCancelled: isCancelled)
+      }
+      return try await InstallPercentages.reporting(to: { progress in
+        try await responseStream.send(Idb_InstallResponse.with { $0.progress = progress })
+      }) { onProgress in
+        try await install(request, isCancelled: isCancelled, onProgress: onProgress)
+      }
     }
 
     let response = Idb_InstallResponse.with {
@@ -47,7 +56,11 @@ struct InstallMethodHandler {
     }
   }
 
-  func install(_ request: InstallRequest, isCancelled: () -> Bool = { false }) async throws -> InstalledArtifact {
+  func install(
+    _ request: InstallRequest,
+    isCancelled: () -> Bool = { false },
+    onProgress: @escaping @Sendable (InstallProgressEvent) -> Void = { _ in }
+  ) async throws -> InstalledArtifact {
     let header = request.header
     let telemetry = InstallTelemetry(payloadKind: request.payload.kind)
     defer {
@@ -65,7 +78,8 @@ struct InstallMethodHandler {
         compression: header.compression,
         overrideModificationTime: header.overrideModificationTime,
         skipSigningBundles: header.skipSigningBundles,
-        telemetry: telemetry)
+        telemetry: telemetry,
+        onProgress: onProgress)
     } catch {
       telemetry.failed(error, rpcCancelled: isCancelled())
       throw error
@@ -81,7 +95,8 @@ struct InstallMethodHandler {
     compression: FBCompressionFormat,
     overrideModificationTime: Bool,
     skipSigningBundles: Bool,
-    telemetry: InstallTelemetry
+    telemetry: InstallTelemetry,
+    onProgress: @escaping @Sendable (InstallProgressEvent) -> Void
   ) async throws -> InstalledArtifact {
 
     let installDestination: InstallDestination
@@ -110,7 +125,10 @@ struct InstallMethodHandler {
       case .xctest, .framework, .dylib:
         options = InstallOptions()
       }
-      return try await commandExecutor.install(installDestination, from: source, options: options, onProgress: telemetry.observe)
+      return try await commandExecutor.install(installDestination, from: source, options: options) { event in
+        telemetry.observe(event)
+        onProgress(event)
+      }
     }
 
     /// A dylib arrives as a single gzipped file; everything else as an archive.
