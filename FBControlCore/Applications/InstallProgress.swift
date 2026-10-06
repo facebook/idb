@@ -60,8 +60,9 @@ public enum InstallProgressEvent: Sendable {
   case downloadCompleted(timing: InstallProgressTiming, totalBytes: Int64)
   case extractStarted(timing: InstallProgressTiming, destinationPath: String)
   case extractCompleted(timing: InstallProgressTiming, destinationPath: String)
-  case installStarted(timing: InstallProgressTiming, appPath: String)
-  case installCompleted(timing: InstallProgressTiming, appPath: String, bundleId: String)
+  case installStarted(timing: InstallProgressTiming, artifactPath: String)
+  /// `name` is what the installed artifact is known by on the target: an application's bundle identifier, or the file name of anything else.
+  case installCompleted(timing: InstallProgressTiming, artifactPath: String, name: String)
 
   public var stage: InstallStage {
     switch self {

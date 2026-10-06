@@ -35,8 +35,8 @@ private struct Refused: Error {}
     telemetry.observe(.downloadProgress(timing: timing(seconds: 10), bytesDownloaded: 100, totalBytes: 4096))
     telemetry.observe(.downloadCompleted(timing: timing(seconds: 20), totalBytes: 4096))
     telemetry.observe(.extractCompleted(timing: timing(seconds: 30), destinationPath: "/tmp/x"))
-    telemetry.observe(.installStarted(timing: timing(seconds: 0), appPath: "/tmp/x/A.app"))
-    telemetry.observe(.installCompleted(timing: timing(seconds: 40), appPath: "/tmp/x/A.app", bundleId: "com.a"))
+    telemetry.observe(.installStarted(timing: timing(seconds: 0), artifactPath: "/tmp/x/A.app"))
+    telemetry.observe(.installCompleted(timing: timing(seconds: 40), artifactPath: "/tmp/x/A.app", name: "com.a"))
 
     #expect(columns(of: telemetry) == ["size=4096", "extract_ms=30000", "install_ms=40000", "payload_kind=url", "receive_ms=20000"])
   }
@@ -70,8 +70,8 @@ private struct Refused: Error {}
 
   @Test func aLocalPathReportsOnlyItsKindAndStages() {
     let telemetry = InstallTelemetry(payloadKind: .filePath)
-    telemetry.observe(.installStarted(timing: timing(seconds: 0), appPath: "/a/A.app"))
-    telemetry.observe(.installCompleted(timing: timing(seconds: 7), appPath: "/a/A.app", bundleId: "com.a"))
+    telemetry.observe(.installStarted(timing: timing(seconds: 0), artifactPath: "/a/A.app"))
+    telemetry.observe(.installCompleted(timing: timing(seconds: 7), artifactPath: "/a/A.app", name: "com.a"))
 
     #expect(columns(of: telemetry) == ["install_ms=7000", "payload_kind=file_path"])
   }
@@ -101,7 +101,7 @@ private struct Refused: Error {}
 
   @Test func aRefusedInstallIsAttributedToTheInstallAndNamedByType() {
     let telemetry = InstallTelemetry(payloadKind: .filePath)
-    telemetry.observe(.installStarted(timing: timing(seconds: 0), appPath: "/a/A.app"))
+    telemetry.observe(.installStarted(timing: timing(seconds: 0), artifactPath: "/a/A.app"))
     telemetry.failed(Refused())
 
     #expect(columns(of: telemetry) == ["failure_kind=Refused", "failure_stage=install", "payload_kind=file_path"])

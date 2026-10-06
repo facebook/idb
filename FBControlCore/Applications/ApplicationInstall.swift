@@ -33,13 +33,13 @@ extension ApplicationCommands {
       onProgress: onProgress
     ) { bundle in
       let stageStart = Date()
-      onProgress(.installStarted(timing: .measure(stageStart: stageStart, totalStart: totalStart), appPath: bundle.path))
+      onProgress(.installStarted(timing: .measure(stageStart: stageStart, totalStart: totalStart), artifactPath: bundle.path))
       let installed = try await install(atPath: bundle.path)
       onProgress(
         .installCompleted(
           timing: .measure(stageStart: stageStart, totalStart: totalStart),
-          appPath: bundle.path,
-          bundleId: installed.bundle.identifier))
+          artifactPath: bundle.path,
+          name: installed.bundle.identifier))
       return installed
     }
   }

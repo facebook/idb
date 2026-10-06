@@ -878,9 +878,9 @@ public final class IDBCommandExecutor {
     return try await Staging.withMaterialized(source, as: kind, options: options, totalStart: totalStart, temporaryDirectory: temporaryDirectory, logger: target.logger, onProgress: onProgress) { tree in
       let artifact = try kind.identify(in: tree, logger: target.logger)
       let installStart = Date()
-      onProgress(.installStarted(timing: .measure(stageStart: installStart, totalStart: totalStart), appPath: artifact.url.path))
+      onProgress(.installStarted(timing: .measure(stageStart: installStart, totalStart: totalStart), artifactPath: artifact.url.path))
       let installed = try await install(artifact, inPlace: tree.isInPlace, makeDebuggable: makeDebuggable, skipSigningBundles: skipSigningBundles, linkTo: linkTo)
-      onProgress(.installCompleted(timing: .measure(stageStart: installStart, totalStart: totalStart), appPath: artifact.url.path, bundleId: installed.name))
+      onProgress(.installCompleted(timing: .measure(stageStart: installStart, totalStart: totalStart), artifactPath: artifact.url.path, name: installed.name))
       return installed
     }
   }

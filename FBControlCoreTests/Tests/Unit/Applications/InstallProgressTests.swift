@@ -18,8 +18,8 @@ final class InstallProgressTests: XCTestCase {
 
     let event = InstallProgressEvent.installCompleted(
       timing: .measure(stageStart: stageStart, totalStart: totalStart),
-      appPath: "/x",
-      bundleId: "com.x")
+      artifactPath: "/x",
+      name: "com.x")
 
     XCTAssertEqual(event.stage, .install)
     XCTAssertEqual(event.phase, .completed)
@@ -71,8 +71,8 @@ final class InstallProgressTests: XCTestCase {
       (.downloadCompleted(timing: timing, totalBytes: 1), .download, .completed),
       (.extractStarted(timing: timing, destinationPath: "/x"), .extract, .started),
       (.extractCompleted(timing: timing, destinationPath: "/x"), .extract, .completed),
-      (.installStarted(timing: timing, appPath: "/x"), .install, .started),
-      (.installCompleted(timing: timing, appPath: "/x", bundleId: "com.x"), .install, .completed),
+      (.installStarted(timing: timing, artifactPath: "/x"), .install, .started),
+      (.installCompleted(timing: timing, artifactPath: "/x", name: "com.x"), .install, .completed),
     ]
 
     for (event, stage, phase) in cases {
