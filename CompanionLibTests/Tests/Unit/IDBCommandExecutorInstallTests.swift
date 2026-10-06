@@ -35,6 +35,19 @@ struct IDBCommandExecutorInstallTests {
   }
 
   @Test
+  func aStreamedFrameworkOutlivesItsStaging() async throws {
+    let harness = try MacInstallHarness()
+    let framework = try harness.makeBundle(named: "Sample", extension: "framework", identifier: "com.example.sample")
+
+    let artifact = try await harness.executor.install_framework_stream(try harness.gzippedTar(of: framework))
+
+    // BUG: storage links to the extracted framework, which is deleted with its staging directory once the install returns.
+    let type = try FileManager.default.attributesOfItem(atPath: artifact.path.path)[.type] as? FileAttributeType
+    #expect(type == .typeSymbolicLink)
+    #expect(!FileManager.default.fileExists(atPath: artifact.path.appendingPathComponent("Info.plist").path))
+  }
+
+  @Test
   func aStreamedAppIsInstalledUnderItsIdentifier() async throws {
     let harness = try MacInstallHarness()
     let app = try harness.makeBundle(named: "Sample", extension: "app", identifier: "com.example.sample")
