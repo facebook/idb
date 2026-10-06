@@ -26,6 +26,29 @@ struct IDBCommandExecutorInstallTests {
   }
 
   @Test
+  func aStreamedDylibLargerThanAPipeBufferIsStoredWhole() async throws {
+    let harness = try MacInstallHarness()
+    let dylib = try harness.makeFile(named: "libSample.dylib", padding: 8 << 20)
+
+    let artifact = try await harness.executor.install(.dylib, from: .gzippedFile(try await harness.gzipped(dylib), name: "libSample.dylib"))
+
+    #expect(FileManager.default.contentsEqual(atPath: artifact.path.path, andPath: dylib.path))
+  }
+
+  @Test
+  func aStreamedDylibThatIsNotAGzipFailsWithGunzipsStandardError() async throws {
+    let harness = try MacInstallHarness()
+    let input = FBProcessInput<NSData>(from: Data("not a gzip at all".utf8)).retyped(FBProcessInput<AnyObject>.self)
+
+    let error = await #expect(throws: (any Error).self) {
+      try await harness.executor.install(.dylib, from: .gzippedFile(input, name: "libSample.dylib"))
+    }
+
+    let description = error?.localizedDescription
+    #expect(description == "Could not extract the archive: Exit Code 1 is not acceptable [0]: gunzip: unknown compression format")
+  }
+
+  @Test
   func aStreamedFrameworkIsStoredUnderItsIdentifier() async throws {
     let harness = try MacInstallHarness()
     let framework = try harness.makeBundle(named: "Sample", extension: "framework", identifier: "com.example.sample")

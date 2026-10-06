@@ -425,4 +425,49 @@ final class FBArchiveOperationsTests: XCTestCase {
       }
     }
   }
+
+  func testBSDTarExtractingAStream_WhenItIsCorrupt_FailsWithBSDTarsStandardError() async throws {
+    let input = FBProcessInput<NSData>(from: Data("not an archive at all".utf8)).retyped(FBProcessInput<AnyObject>.self)
+
+    do {
+      try await BSDTarExtractor().extract(.stream(input), to: try makeExtractionDirectory(), options: ArchiveExtractOptions(), logger: logger)
+      XCTFail("Expected the extraction to fail")
+    } catch {
+      XCTAssertTrue(error.localizedDescription.hasPrefix("Exit Code 1 is not acceptable [0]: "), error.localizedDescription)
+      XCTAssertTrue(error.localizedDescription.contains("Unrecognized archive format"), error.localizedDescription)
+    }
+  }
+
+  func testBSDTarExtractingAStream_WhenItStopsReadingEarly_FailsRatherThanWaiting() async throws {
+    let input = FBProcessInput<NSData>(from: Self.randomData(count: 8 << 20)).retyped(FBProcessInput<AnyObject>.self)
+
+    do {
+      try await BSDTarExtractor().extract(.stream(input), to: try makeExtractionDirectory(), options: ArchiveExtractOptions(), logger: logger)
+      XCTFail("Expected the extraction to fail")
+    } catch {
+      XCTAssertTrue(error.localizedDescription.hasPrefix("Exit Code 1 is not acceptable [0]"), error.localizedDescription)
+    }
+  }
+
+  // MARK: - Streams larger than a pipe buffer
+
+  func testBSDTarExtractingAStream_LargerThanAPipeBuffer_RestoresEveryByte() async throws {
+    let source = try makePayloadFixture()
+    let contents = Self.randomData(count: 8 << 20)
+    try contents.write(to: URL(fileURLWithPath: (source as NSString).appendingPathComponent("Payload/Sample.app/Large")))
+    let archive = try makeArchive(from: source, format: .gzippedTar)
+    let input = FBProcessInput<NSData>(from: try Data(contentsOf: URL(fileURLWithPath: archive))).retyped(FBProcessInput<AnyObject>.self)
+    let root = try makeExtractionDirectory()
+
+    try await BSDTarExtractor().extract(.stream(input), to: root, options: ArchiveExtractOptions(), logger: logger)
+
+    try assertPayloadContents(extractedTo: root)
+    XCTAssertEqual(try Data(contentsOf: URL(fileURLWithPath: (root as NSString).appendingPathComponent("Payload/Sample.app/Large"))), contents)
+  }
+
+  private static func randomData(count: Int) -> Data {
+    var data = Data(count: count)
+    data.withUnsafeMutableBytes { arc4random_buf($0.baseAddress, $0.count) }
+    return data
+  }
 }

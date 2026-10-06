@@ -57,6 +57,18 @@ final class MacInstallHarness {
     return file
   }
 
+  /// As `makeFile(named:)`, followed by `padding` random bytes, so the file outgrows a pipe's buffer.
+  func makeFile(named name: String, padding: Int) throws -> URL {
+    let file = try makeFile(named: name)
+    var bytes = Data(count: padding)
+    bytes.withUnsafeMutableBytes { arc4random_buf($0.baseAddress, $0.count) }
+    let handle = try FileHandle(forWritingTo: file)
+    defer { try? handle.close() }
+    try handle.seekToEnd()
+    try handle.write(contentsOf: bytes)
+    return file
+  }
+
   /// A gzipped tar holding `item` and its siblings at its root, as clients stream bundles.
   func gzippedTar(of item: URL) async throws -> FBProcessInput<AnyObject> {
     FBProcessInput<NSData>(from: try await gzippedTarData(of: item)).retyped(FBProcessInput<AnyObject>.self)
