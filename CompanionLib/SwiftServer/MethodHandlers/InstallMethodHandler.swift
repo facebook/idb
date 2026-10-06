@@ -121,26 +121,28 @@ struct InstallMethodHandler: @unchecked Sendable {
 
     switch source {
     case let .data(data):
-      if destination == .app && isZipArchive(data) {
-        telemetry.streamed(.zip)
+      let format = Self.streamFormat(initial: data, declared: compression, destination: destination)
+      if destination == .app {
+        telemetry.streamed(format)
+      }
+      let tarCompression: FBCompressionFormat
+      switch format {
+      case .zip:
         return try await installStreamedZip(makeDebuggable: makeDebuggable, overrideModificationTime: overrideModificationTime, telemetry: telemetry) { archiveURL, tee in
           try await spool(initial: data, requestStream: requestStream, to: archiveURL, teeingTo: tee, telemetry: telemetry)
         }
-      }
-      if destination == .app && Self.isZstdZipStream(data) {
-        telemetry.streamed(.zstdZip)
+      case .zstdZip:
         return try await installStreamedZip(makeDebuggable: makeDebuggable, overrideModificationTime: overrideModificationTime, telemetry: telemetry) { archiveURL, tee in
           try await decompressZstd(initial: data, requestStream: requestStream, to: archiveURL, teeingTo: tee, telemetry: telemetry)
         }
+      case .gzipTar:
+        tarCompression = .GZIP
+      case .zstdTar:
+        tarCompression = .ZSTD
       }
-
-      let tarCompression = Self.tarCompression(declared: compression, initial: data)
       if tarCompression != compression {
         let head = data.prefix(16).map { String(format: "%02x", $0) }.joined(separator: " ")
         targetLogger.log("Extracting a stream declared \(compression) as \(tarCompression), as it does not start with a zstd frame: \(head)")
-      }
-      if destination == .app {
-        telemetry.streamed(InstallStreamFormat(tarCompression: tarCompression))
       }
       let input = FBProcessInput<OutputStream>.fromStream()
       let output = input.contents
@@ -204,15 +206,23 @@ struct InstallMethodHandler: @unchecked Sendable {
     return artifact
   }
 
-  private func isZipArchive(_ data: Data) -> Bool {
-    data.starts(with: ZipSignature.localHeaderBytes)
-  }
-
   /// The zstd skippable frame that `CompanionInfo.zstd_zip_streams` clients start a compressed zip with.
   static let zstdZipStreamMarker: [UInt8] = [0x5E, 0x2A, 0x4D, 0x18, 0x08, 0x00, 0x00, 0x00] + Array("idb-zip\0".utf8)
 
   static func isZstdZipStream(_ data: Data) -> Bool {
     data.starts(with: zstdZipStreamMarker)
+  }
+
+  /// The format of a streamed payload, from its first bytes and the compression the client declared. Only an app is
+  /// read as a zip; anything else is a tar.
+  static func streamFormat(initial: Data, declared: FBCompressionFormat, destination: Idb_InstallRequest.Destination) -> InstallStreamFormat {
+    if destination == .app && initial.starts(with: ZipSignature.localHeaderBytes) {
+      return .zip
+    }
+    if destination == .app && isZstdZipStream(initial) {
+      return .zstdZip
+    }
+    return InstallStreamFormat(tarCompression: tarCompression(declared: declared, initial: initial))
   }
 
   /// The compression to extract a streamed tar with, given the one the client declared and the stream's first bytes.
