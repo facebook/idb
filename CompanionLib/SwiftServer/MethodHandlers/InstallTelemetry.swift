@@ -73,6 +73,7 @@ final class InstallTelemetry: Sendable {
     var stagesInFlight: Set<InstallStage> = []
     var stageMs: [InstallStage: Int64] = [:]
     var failure: Failure?
+    var downloadFailure: DownloadFailureDetail?
   }
 
   private let payloadKind: InstallPayloadKind
@@ -142,6 +143,11 @@ final class InstallTelemetry: Sendable {
         [InstallStage.download, .extract, .install].first(where: state.stagesInFlight.contains).map(InstallFailureStage.stage)
         ?? (state.receiving ? .receive : nil)
       state.failure = Failure(stage: stage, kind: kind, cancelled: cancelled)
+      if case .transferFailed(_, let underlying, let report) = error as? InstallError {
+        // A download that fails never completes, so what it received is only known from here.
+        state.receivedBytes = report.receivedBytes
+        state.downloadFailure = DownloadFailureDetail(underlying: underlying, report: report)
+      }
     }
   }
 
@@ -172,6 +178,7 @@ final class InstallTelemetry: Sendable {
         call.setNormal("client", forKey: "cancel_source")
       }
     }
+    state.downloadFailure?.record(into: call)
   }
 
   /// An `InstallError` is named by its case, so failures group by cause. Anything else is named by its

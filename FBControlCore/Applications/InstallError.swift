@@ -17,8 +17,8 @@ public enum InstallError: Error, CustomStringConvertible {
 
   case httpStatus(url: URL?, statusCode: Int)
 
-  /// The transfer did not finish.
-  case transferFailed(url: URL?, underlying: Error)
+  /// The transfer did not finish. `report` is what the connection said about itself before it failed.
+  case transferFailed(url: URL?, underlying: Error, report: DownloadReport = DownloadReport())
 
   /// The response was not HTTP at all, so there is no status to report.
   case notAnHTTPResponse(url: URL)
@@ -34,7 +34,7 @@ public enum InstallError: Error, CustomStringConvertible {
     case .httpStatus(let url, let statusCode):
       let target = url.map { " of \($0.absoluteString)" } ?? ""
       return "Download\(target) failed with HTTP status \(statusCode)"
-    case .transferFailed(let url, let underlying):
+    case .transferFailed(let url, let underlying, _):
       let target = url.map { " of \($0.absoluteString)" } ?? ""
       return "Download\(target) did not complete: \(underlying)"
     case .notAnHTTPResponse(let url):

@@ -30,6 +30,8 @@ public final class DataDownloadInput: NSObject, @unchecked Sendable {
   }
 
   private let completedFuture: FBMutableFuture<NSNull>
+  // Written only from the session's delegate queue, which is serial.
+  private var report = DownloadReport()
   private let consumer: any DataConsumer
   private let onEvent: (@Sendable (DataDownloadEvent) -> Void)?
   private let logger: ControlCoreLogger
@@ -107,16 +109,23 @@ extension DataDownloadInput: URLSessionDataDelegate {
 
   public func urlSession(_ session: URLSession, dataTask: URLSessionDataTask, didReceive data: Data) {
     consumer.consumeData(data)
+    report.receivedBytes += Int64(data.count)
     onEvent?(.data(byteCount: data.count))
+  }
+
+  // Delivered before the task completes.
+  public func urlSession(_ session: URLSession, task: URLSessionTask, didFinishCollecting metrics: URLSessionTaskMetrics) {
+    report.observe(metrics)
   }
 
   public func urlSession(_ session: URLSession, task: URLSessionTask, didCompleteWithError error: Error?) {
     if let error {
       logger.error().log("Download task \(task) failed with error \(error)")
+      report.trust = DownloadReport.Trust.evaluating(failure: error)
       // First resolution wins, so a cancellation triggered by a rejected response
       // does not displace the HTTP status that caused it.
       completedFuture.resolveWithError(
-        InstallError.transferFailed(url: task.originalRequest?.url, underlying: error))
+        InstallError.transferFailed(url: task.originalRequest?.url, underlying: error, report: report))
     } else {
       _ = completedFuture.resolve(withResult: NSNull())
     }

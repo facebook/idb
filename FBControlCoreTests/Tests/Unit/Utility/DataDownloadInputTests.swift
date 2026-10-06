@@ -181,13 +181,28 @@ final class DataDownloadInputTests: XCTestCase {
       statusCode: 200, body: archive, bytesBeforeFailure: archive.count / 2)
 
     await assertThrows { error in
-      guard case .transferFailed(_, let underlying)? = error as? InstallError else {
+      guard case .transferFailed(_, let underlying, _)? = error as? InstallError else {
         XCTFail("Expected a transfer failure, got: \(error)")
         return
       }
       let nsError = underlying as NSError
       XCTAssertEqual(nsError.domain, NSURLErrorDomain)
       XCTAssertEqual(nsError.code, URLError.Code.networkConnectionLost.rawValue)
+    }
+  }
+
+  func testDownload_WhenTransportFailsMidStream_ReportsWhatArrivedBeforeIt() async throws {
+    let archive = try await makeArchiveData(padding: 512 * 1024)
+    StubURLProtocol.behaviour = .truncate(
+      statusCode: 200, body: archive, bytesBeforeFailure: archive.count / 2)
+
+    await assertThrows { error in
+      guard case .transferFailed(_, _, let report)? = error as? InstallError else {
+        XCTFail("Expected a transfer failure, got: \(error)")
+        return
+      }
+      XCTAssertEqual(report.receivedBytes, Int64(archive.count / 2))
+      XCTAssertNil(report.trust)
     }
   }
 }

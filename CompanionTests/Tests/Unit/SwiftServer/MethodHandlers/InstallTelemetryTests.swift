@@ -153,7 +153,10 @@ private struct Refused: Error {}
     }.value
 
     #expect(
-      columns(of: telemetry) == ["cancel_source=client", "failure_kind=transfer_failed", "failure_stage=download", "payload_kind=url"])
+      columns(of: telemetry) == [
+        "size=0", "cancel_source=client", "failure_kind=transfer_failed", "failure_stage=download", "ns_error_code=NSURLErrorDomain:-1005",
+        "payload_kind=url",
+      ])
   }
 
   @Test func aFailureOnceTheRPCIsCancelledReportsTheClientAsItsCancelSource() {
@@ -164,6 +167,52 @@ private struct Refused: Error {}
     let call = CallTelemetry()
     telemetry.record(into: call)
     #expect(call.normals["cancel_source"] == "client")
+  }
+
+  @Test func aTLSFailureReportsItsErrorsTrustAndChainButNothingOfTheURL() {
+    let cause = NSError(domain: kCFErrorDomainCFNetwork as String, code: -1200, userInfo: ["_kCFStreamErrorCodeKey": -9807])
+    let failure = NSError(
+      domain: NSURLErrorDomain, code: NSURLErrorSecureConnectionFailed,
+      userInfo: [NSUnderlyingErrorKey: cause, "_kCFStreamErrorCodeKey": -9807, NSURLErrorFailingURLErrorKey: url])
+    let report = DownloadReport(
+      receivedBytes: 0, remoteAddress: "192.0.2.1:443", proxied: false,
+      trust: DownloadReport.Trust(
+        error: "“idb.test” certificate is not trusted",
+        chain: [
+          DownloadReport.Certificate(subject: "idb.test", issuer: "idb test root", notAfter: Date(timeIntervalSince1970: 1_577_836_800)),
+          DownloadReport.Certificate(subject: "idb test root", issuer: nil, notAfter: nil),
+        ]))
+    let telemetry = InstallTelemetry(payloadKind: .url)
+    telemetry.observe(.downloadStarted(timing: timing(seconds: 0), url: url))
+    telemetry.failed(InstallError.transferFailed(url: url, underlying: failure, report: report))
+
+    #expect(
+      columns(of: telemetry) == [
+        "size=0",
+        "cf_stream_error_code=-9807",
+        "failure_kind=transfer_failed",
+        "failure_stage=download",
+        "ns_error_code=NSURLErrorDomain:-1200",
+        "ns_underlying_error=kCFErrorDomainCFNetwork:-1200",
+        "payload_kind=url",
+        "proxy_used=0",
+        "remote_address=192.0.2.1:443",
+        #"tls_chain=[{"issuer":"idb test root","not_after":"2020-01-01T00:00:00Z","subject":"idb.test"},{"subject":"idb test root"}]"#,
+        "tls_trust_error=“idb.test” certificate is not trusted",
+      ])
+  }
+
+  @Test func aDownloadThatFailsPartWayReportsWhatItReceived() {
+    let telemetry = InstallTelemetry(payloadKind: .url)
+    telemetry.observe(.downloadStarted(timing: timing(seconds: 0), url: url))
+    telemetry.failed(
+      InstallError.transferFailed(url: url, underlying: URLError(.networkConnectionLost), report: DownloadReport(receivedBytes: 4096, proxied: true)))
+
+    let call = CallTelemetry()
+    telemetry.record(into: call)
+    #expect(call.size == 4096)
+    #expect(call.ints["proxy_used"] == 1)
+    #expect(call.normals["tls_chain"] == nil)
   }
 
   @Test(arguments: [
