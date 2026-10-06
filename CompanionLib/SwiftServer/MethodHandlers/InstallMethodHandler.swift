@@ -329,12 +329,19 @@ struct InstallMethodHandler {
     telemetry: InstallTelemetry
   ) async throws {
     let input = FBProcessInput<OutputStream>.fromStream()
-    async let writePayload: Void = writePayload(head: head, rest: rest, output: input.contents, telemetry: telemetry)
-    try await ZstdStreamDecompressor.decompress(
-      input.retyped(FBProcessInput<AnyObject>.self),
-      toPath: archiveURL.path,
-      teeingTo: tee,
-      logger: targetLogger)
+    let clientFailure = OSAllocatedUnfairLock<(any Error)?>(initialState: nil)
+    async let writePayload: Void = writePayload(head: head, rest: rest, output: input.contents, telemetry: telemetry, clientFailure: clientFailure)
+    do {
+      try await ZstdStreamDecompressor.decompress(
+        input.retyped(FBProcessInput<AnyObject>.self),
+        toPath: archiveURL.path,
+        teeingTo: tee,
+        logger: targetLogger)
+    } catch {
+      // A client stream that fails truncates the zstd, so decompression fails too; the client's failure is the cause.
+      try? await writePayload
+      throw clientFailure.withLock { $0 } ?? error
+    }
     try await writePayload
   }
 

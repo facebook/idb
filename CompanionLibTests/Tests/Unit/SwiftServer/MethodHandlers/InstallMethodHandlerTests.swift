@@ -89,11 +89,7 @@ struct InstallMethodHandlerTests {
     await #expect {
       _ = try await handler.install(Self.request(.app, head: payload.prefix(payload.count / 2), rest: rest))
     } throws: { error in
-      // BUG: reports the decompressor running out of input rather than the client's failure.
-      guard case ArchiveError.corrupt("the zstd ends early")? = error as? ArchiveError else {
-        return false
-      }
-      return true
+      error is StreamFailed
     }
   }
 }
