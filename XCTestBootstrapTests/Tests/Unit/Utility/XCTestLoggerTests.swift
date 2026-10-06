@@ -17,8 +17,7 @@ final class XCTestLoggerTests: XCTestCase {
     defer { try? FileManager.default.removeItem(atPath: directory) }
     let buffer = FBDataBuffer.consumableBuffer()
 
-    let mirrored = try await bridgeFBFuture(XCTestLogger.defaultLogger(inDirectory: directory).logConsumption(of: buffer, toFileNamed: "mirror.out", logger: ControlCoreGlobalConfiguration.defaultLogger))
-    let consumer = try XCTUnwrap(mirrored as? DataConsumer)
+    let consumer = try await XCTestLogger.defaultLogger(inDirectory: directory).logConsumption(of: buffer, toFileNamed: "mirror.out", logger: ControlCoreGlobalConfiguration.defaultLogger)
     consumer.consumeData(Data("mirrored output".utf8))
     consumer.consumeEndOfFile()
 

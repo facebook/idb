@@ -21,7 +21,6 @@ enum LogicTestRunError: Error {
   case endOfFileTimedOut
   case xctestProcessFailed(exitCode: Int32, exitDescription: String, stdErr: String)
   case sigstopWaitFailed(processIdentifier: pid_t, underlying: Error)
-  case missingOutputConsumers(result: String)
 }
 
 extension LogicTestRunError: LocalizedError {
@@ -33,8 +32,6 @@ extension LogicTestRunError: LocalizedError {
       return "xctest process exited in failure (\(exitCode)): \(exitDescription) \(stdErr)"
     case let .sigstopWaitFailed(processIdentifier, underlying):
       return "Failed to wait test process (pid \(processIdentifier)) to receive a SIGSTOP: '\(underlying.localizedDescription)'"
-    case let .missingOutputConsumers(result):
-      return "Expected stdout, stderr and shim consumers, got \(result)"
     }
   }
 }
@@ -244,15 +241,9 @@ public final class LogicTestRunStrategy: XCTestRunner {
     } else {
       mirrorLogger = XCTestLogger.defaultLoggerInDefaultDirectory()
     }
-    let mirroredStdOut = try await bridgeFBFuture(mirrorLogger.logConsumption(of: stdOutConsumer, toFileNamed: "test_process_stdout.out", logger: logger))
-    let mirroredStdErr = try await bridgeFBFuture(mirrorLogger.logConsumption(of: stdErrConsumer, toFileNamed: "test_process_stderr.err", logger: logger))
-    let mirroredShim = try await bridgeFBFuture(mirrorLogger.logConsumption(of: shimConsumer, toFileNamed: "shimulator_logs.shim", logger: logger))
-    guard let resolvedStdOut = mirroredStdOut as? DataConsumer,
-      let resolvedStdErr = mirroredStdErr as? DataConsumer,
-      let resolvedShim = mirroredShim as? DataConsumer & DataConsumerLifecycle
-    else {
-      throw LogicTestRunError.missingOutputConsumers(result: String(describing: [mirroredStdOut, mirroredStdErr, mirroredShim]))
-    }
-    return LogicTestRunConsumers(stdOut: resolvedStdOut, stdErr: resolvedStdErr, stdErrBuffer: stdErrBuffer, shim: resolvedShim)
+    let mirroredStdOut = try await mirrorLogger.logConsumption(of: stdOutConsumer, toFileNamed: "test_process_stdout.out", logger: logger)
+    let mirroredStdErr = try await mirrorLogger.logConsumption(of: stdErrConsumer, toFileNamed: "test_process_stderr.err", logger: logger)
+    let mirroredShim = try await mirrorLogger.logConsumption(of: shimConsumer, toFileNamed: "shimulator_logs.shim", logger: logger)
+    return LogicTestRunConsumers(stdOut: mirroredStdOut, stdErr: mirroredStdErr, stdErrBuffer: stdErrBuffer, shim: mirroredShim)
   }
 }

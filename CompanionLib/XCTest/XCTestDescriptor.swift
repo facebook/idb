@@ -27,7 +27,6 @@ enum XCTestDescriptorError: Error {
   case uiTestMissingAppBundleID
   case appTestMissingBundleIDs
   case noTestHostApplication(requestDescription: String)
-  case notADataConsumer(result: String)
 }
 
 extension XCTestDescriptorError: LocalizedError {
@@ -39,8 +38,6 @@ extension XCTestDescriptorError: LocalizedError {
       return "Request for Application Test, but no app_bundle_id or test_host_app_bundle_id provided"
     case let .noTestHostApplication(requestDescription):
       return "Cannot build a test configuration for \(requestDescription), no test host application was resolved"
-    case let .notADataConsumer(result):
-      return "Expected a data consumer for the mirrored test process output, got \(result)"
     }
   }
 }
@@ -247,22 +244,11 @@ private func buildAppLaunchConfig(bundleID: String, environment: [String: String
     return applicationLaunchConfiguration(bundleID: bundleID, environment: environment, arguments: arguments, waitForDebugger: waitForDebugger, stdOut: stdOutConsumer, stdErr: stdErrConsumer)
   }
 
-  // Both mirrors are created before either is awaited, so the two file writers are opened concurrently.
+  // Both mirrors are started before either is awaited, so the two file writers are opened concurrently.
   let mirrorLogger = XCTestLogger.defaultLogger(inDirectory: processLogDirectory)
-  let stdOutFuture = mirrorLogger.logConsumption(of: stdOutConsumer, toFileNamed: "test_process_stdout.out", logger: logger)
-  let stdErrFuture = mirrorLogger.logConsumption(of: stdErrConsumer, toFileNamed: "test_process_stderr.err", logger: logger)
-
-  let stdOut = try await mirroredConsumer(stdOutFuture)
-  let stdErr = try await mirroredConsumer(stdErrFuture)
-  return applicationLaunchConfiguration(bundleID: bundleID, environment: environment, arguments: arguments, waitForDebugger: waitForDebugger, stdOut: stdOut, stdErr: stdErr)
-}
-
-private func mirroredConsumer(_ future: FBFuture<AnyObject>) async throws -> DataConsumer {
-  let result = try await bridgeFBFuture(future)
-  guard let consumer = result as? DataConsumer else {
-    throw XCTestDescriptorError.notADataConsumer(result: String(describing: result))
-  }
-  return consumer
+  async let stdOut = mirrorLogger.logConsumption(of: stdOutConsumer, toFileNamed: "test_process_stdout.out", logger: logger)
+  async let stdErr = mirrorLogger.logConsumption(of: stdErrConsumer, toFileNamed: "test_process_stderr.err", logger: logger)
+  return applicationLaunchConfiguration(bundleID: bundleID, environment: environment, arguments: arguments, waitForDebugger: waitForDebugger, stdOut: try await stdOut, stdErr: try await stdErr)
 }
 
 private func applicationLaunchConfiguration(bundleID: String, environment: [String: String], arguments: [String], waitForDebugger: Bool, stdOut: DataConsumer, stdErr: DataConsumer) -> ApplicationLaunchConfiguration {

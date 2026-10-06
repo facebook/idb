@@ -129,23 +129,17 @@ public final class XCTestLogger: NSObject, ControlCoreLogger, @unchecked Sendabl
 
   // MARK: - Log Consumption
 
-  public func logConsumption(of consumer: DataConsumer, toFileNamed fileName: String, logger: ControlCoreLogger) -> FBFuture<AnyObject> {
-    let queue = DispatchQueue.global(qos: .userInitiated)
+  public func logConsumption(of consumer: DataConsumer, toFileNamed fileName: String, logger: ControlCoreLogger) async throws -> FBCompositeDataConsumer {
     let filePath = (logDirectory as NSString).appendingPathComponent(fileName)
-
-    return FileWriter.asyncWriter(forFilePath: filePath).onQueue(
-      queue,
-      fmap: { writer -> FBFuture<AnyObject> in
-        guard let writer = writer as? DataConsumer else {
-          return FBFuture(error: XCTestLoggerError.notADataConsumer(path: filePath, writer: String(describing: writer)))
-        }
-        logger.info().log("Mirroring output to \(filePath)")
-        return FBFuture<AnyObject>(
-          result: FBCompositeDataConsumer(consumers: [
-            consumer,
-            writer,
-            FBLoggingDataConsumer(logger: logger),
-          ]))
-      })
+    let writer = try await bridgeFBFuture(FileWriter.asyncWriter(forFilePath: filePath))
+    guard let writer = writer as? DataConsumer else {
+      throw XCTestLoggerError.notADataConsumer(path: filePath, writer: String(describing: writer))
+    }
+    logger.info().log("Mirroring output to \(filePath)")
+    return FBCompositeDataConsumer(consumers: [
+      consumer,
+      writer,
+      FBLoggingDataConsumer(logger: logger),
+    ])
   }
 }
