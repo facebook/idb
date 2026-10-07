@@ -8,7 +8,7 @@
 import Foundation
 
 /// The File Reader States
-@objc public enum FBFileReaderState: UInt {
+public enum FBFileReaderState: UInt {
   case notStarted = 0
   case reading = 1
   case finishedReadingNormally = 2
@@ -54,8 +54,7 @@ enum FileReaderError: Error, LocalizedError {
   }
 }
 
-@objc
-public final class FileReader: NSObject {
+public final class FileReader: CustomStringConvertible {
 
   // MARK: - Private Properties
 
@@ -67,7 +66,7 @@ public final class FileReader: NSObject {
   private let closeOnEndOfFile: Bool
   private let logger: ControlCoreLogger?
 
-  @objc public private(set) var state: FBFileReaderState
+  public private(set) var state: FBFileReaderState
   private var io: DispatchIO?
 
   // MARK: - Initializers
@@ -76,16 +75,16 @@ public final class FileReader: NSObject {
     DispatchQueue(label: "com.facebook.fbcontrolcore.fbfilereader")
   }
 
-  @objc public static func reader(withFileDescriptor fileDescriptor: Int32, closeOnEndOfFile: Bool, consumer: DataConsumer, logger: ControlCoreLogger?) -> Self {
+  public static func reader(withFileDescriptor fileDescriptor: Int32, closeOnEndOfFile: Bool, consumer: DataConsumer, logger: ControlCoreLogger?) -> Self {
     dispatchDataReader(withFileDescriptor: fileDescriptor, closeOnEndOfFile: closeOnEndOfFile, consumer: FBDataConsumerAdaptor.dispatchDataConsumer(for: consumer), logger: logger)
   }
 
-  @objc public static func dispatchDataReader(withFileDescriptor fileDescriptor: Int32, closeOnEndOfFile: Bool, consumer: DispatchDataConsumer, logger: ControlCoreLogger?) -> Self {
+  public static func dispatchDataReader(withFileDescriptor fileDescriptor: Int32, closeOnEndOfFile: Bool, consumer: DispatchDataConsumer, logger: ControlCoreLogger?) -> Self {
     let targeting = "fd \(fileDescriptor)"
     return self.init(fileDescriptor: fileDescriptor, closeOnEndOfFile: closeOnEndOfFile, consumer: consumer, targeting: targeting, queue: createQueue(), logger: logger)
   }
 
-  @objc public static func reader(withFilePath filePath: String, consumer: DataConsumer, logger: ControlCoreLogger?) -> FBFuture<FileReader> {
+  public static func reader(withFilePath filePath: String, consumer: DataConsumer, logger: ControlCoreLogger?) -> FBFuture<FileReader> {
     let queue = createQueue()
     return FBFuture<AnyObject>.onQueue(
       queue,
@@ -116,16 +115,15 @@ public final class FileReader: NSObject {
     self.logger = logger
     self.state = .notStarted
     self.closeOnEndOfFile = closeOnEndOfFile
-    super.init()
   }
 
-  public override var description: String {
+  public var description: String {
     "Reader for \(targeting) with state \(stateString(from: state))"
   }
 
   // MARK: - Public Methods
 
-  @objc public func startReading() -> FBFuture<NSNull> {
+  public func startReading() -> FBFuture<NSNull> {
     return FBFuture<AnyObject>.onQueue(
       readQueue,
       resolve: {
@@ -134,7 +132,7 @@ public final class FileReader: NSObject {
     ).retyped(FBFuture<NSNull>.self)
   }
 
-  @objc public func stopReading() -> FBFuture<NSNumber> {
+  public func stopReading() -> FBFuture<NSNumber> {
     return FBFuture<AnyObject>.onQueue(
       readQueue,
       resolve: {
@@ -143,7 +141,7 @@ public final class FileReader: NSObject {
     ).retyped(FBFuture<NSNumber>.self)
   }
 
-  @objc public func finishedReading(withTimeout timeout: TimeInterval) -> FBFuture<NSNumber> {
+  public func finishedReading(withTimeout timeout: TimeInterval) -> FBFuture<NSNumber> {
     return
       finishedReading
       .onQueue(readQueue, timeout: timeout) {
@@ -152,7 +150,7 @@ public final class FileReader: NSObject {
       .retyped(FBFuture<NSNumber>.self)
   }
 
-  @objc public var finishedReading: FBFuture<NSNumber> {
+  public var finishedReading: FBFuture<NSNumber> {
     // A fresh future, so cancelling the returned future does not cancel `ioChannelRelinquishedControl`.
     let future: FBMutableFuture<AnyObject> = FBMutableFuture(name: "Finished reading of \(targeting)")
     future.resolve(from: ioChannelRelinquishedControl)
