@@ -94,9 +94,12 @@ struct TarSourceTests {
       return
     }
 
-    // BUG: Foundation's error escapes rather than ArchiveOperationsError.unreadable naming the directory; flipped in the following commit.
-    #expect(throws: CocoaError.self) {
-      try TarSource(path: root.appendingPathComponent("tree").path).readAll()
+    do {
+      _ = try TarSource(path: root.appendingPathComponent("tree").path).readAll()
+      Issue.record("archiving an unreadable directory should fail")
+    } catch ArchiveOperationsError.unreadable(let path, let reason) {
+      #expect(path == directory.path)
+      #expect(reason == "Permission denied")
     }
   }
 }

@@ -114,7 +114,7 @@ final class TarSource: ByteSource {
     case S_IFDIR:
       let name = node.name.hasSuffix("/") ? node.name : node.name + "/"
       emitHeader(name: name, type: "5", mode: mode, status: status, modificationTime: modificationTime)
-      let children = try FileManager.default.contentsOfDirectory(atPath: node.path).sorted()
+      let children = try Self.children(ofDirectory: node.path)
       pending.append(contentsOf: children.reversed().map { Node(name: name + $0, path: (node.path as NSString).appendingPathComponent($0)) })
     case S_IFLNK:
       let target = try FileManager.default.destinationOfSymbolicLink(atPath: node.path)
@@ -143,6 +143,28 @@ final class TarSource: ByteSource {
     default:
       // Sockets and devices cannot be extracted anywhere an archive the companion sends is used.
       return
+    }
+  }
+
+  private static func children(ofDirectory path: String) throws -> [String] {
+    guard let directory = opendir(path) else {
+      throw ArchiveOperationsError.unreadable(atPath: path)
+    }
+    defer { closedir(directory) }
+    var children: [String] = []
+    while true {
+      // `readdir` returns nil at the end and on failure alike, telling them apart only by `errno`.
+      errno = 0
+      guard let entry = readdir(directory) else {
+        guard errno == 0 else {
+          throw ArchiveOperationsError.unreadable(atPath: path)
+        }
+        return children.sorted()
+      }
+      let name = withUnsafeBytes(of: entry.pointee.d_name) { String(decoding: $0.prefix(Int(entry.pointee.d_namlen)), as: UTF8.self) }
+      if name != "." && name != ".." {
+        children.append(name)
+      }
     }
   }
 
