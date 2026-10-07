@@ -255,4 +255,43 @@ final class DataConsumerTests: XCTestCase {
     XCTAssertNil(consumer.consumeLength(4))
     XCTAssertEqual(consumer.consumeCurrentData(), Data())
   }
+
+  func testLoggingConsumerLogsEachChunkTrimmedOfNewlines() {
+    let logger = RecordingLogger()
+    let consumer = FBLoggingDataConsumer(logger: logger)
+
+    consumer.consumeData("FOO\n".data(using: .utf8)!)
+    consumer.consumeData("\nBAR BAZ\r\n".data(using: .utf8)!)
+    consumer.consumeEndOfFile()
+
+    XCTAssertEqual(logger.messages, ["FOO", "BAR BAZ"])
+  }
+
+  func testLoggingConsumerDropsEmptyAndNonUTF8Chunks() {
+    let logger = RecordingLogger()
+    let consumer = FBLoggingDataConsumer(logger: logger)
+
+    consumer.consumeData("\n\n".data(using: .utf8)!)
+    consumer.consumeData(Data([0xFF, 0xFE]))
+    consumer.consumeData(Data())
+
+    XCTAssertEqual(logger.messages, [])
+  }
+}
+
+// SAFETY: the tests only log from the test thread.
+private final class RecordingLogger: NSObject, ControlCoreLogger, @unchecked Sendable {
+  var messages: [String] = []
+  var name: String? { nil }
+  var level: FBControlCoreLogLevel { .multiple }
+
+  func log(_ message: String) -> any ControlCoreLogger {
+    messages.append(message)
+    return self
+  }
+  func info() -> any ControlCoreLogger { self }
+  func debug() -> any ControlCoreLogger { self }
+  func error() -> any ControlCoreLogger { self }
+  func withName(_ name: String) -> any ControlCoreLogger { self }
+  func withDateFormatEnabled(_ enabled: Bool) -> any ControlCoreLogger { self }
 }
