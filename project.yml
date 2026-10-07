@@ -86,16 +86,16 @@ targets:
       - target: SimulatorIPC
       - sdk: Foundation.framework
       - sdk: XCTest.framework
-  SimulatorFrameworkBridgeProtocol:
+  FBSimulatorBridgeProtocol:
     type: library.static
     platform: macOS
     sources:
-      - path: SimulatorFrameworkBridgeProtocol
+      - path: FBSimulatorBridgeProtocol
     settings:
       base:
-        INFOPLIST_FILE: $(SRCROOT)/SimulatorFrameworkBridgeProtocol/SimulatorFrameworkBridgeProtocol-Info.plist
-        PRODUCT_BUNDLE_IDENTIFIER: com.facebook.SimulatorFrameworkBridgeProtocol
-        PRODUCT_NAME: SimulatorFrameworkBridgeProtocol
+        INFOPLIST_FILE: $(SRCROOT)/FBSimulatorBridgeProtocol/FBSimulatorBridgeProtocol-Info.plist
+        PRODUCT_BUNDLE_IDENTIFIER: com.facebook.FBSimulatorBridgeProtocol
+        PRODUCT_NAME: FBSimulatorBridgeProtocol
         DEFINES_MODULE: "YES"
         MACH_O_TYPE: staticlib
         SWIFT_VERSION: "6.0"
@@ -105,22 +105,22 @@ targets:
           STRIP_INSTALLED_PRODUCT: "NO"
     dependencies:
       - sdk: Foundation.framework
-  SimulatorFrameworkBridgeProtocolTests:
+  FBSimulatorBridgeProtocolTests:
     type: bundle.unit-test
     platform: macOS
     scheme:
       testTargets:
-        - SimulatorFrameworkBridgeProtocolTests
+        - FBSimulatorBridgeProtocolTests
     sources:
-      - path: SimulatorFrameworkBridgeProtocolTests
+      - path: FBSimulatorBridgeProtocolTests
         excludes:
           - "**/*-Info.plist"
           - "**/*.xcconfig"
     settings:
       base:
-        INFOPLIST_FILE: $(SRCROOT)/SimulatorFrameworkBridgeProtocolTests/SimulatorFrameworkBridgeProtocolTests-Info.plist
-        PRODUCT_BUNDLE_IDENTIFIER: com.facebook.SimulatorFrameworkBridgeProtocolTests
-        PRODUCT_NAME: SimulatorFrameworkBridgeProtocolTests
+        INFOPLIST_FILE: $(SRCROOT)/FBSimulatorBridgeProtocolTests/FBSimulatorBridgeProtocolTests-Info.plist
+        PRODUCT_BUNDLE_IDENTIFIER: com.facebook.FBSimulatorBridgeProtocolTests
+        PRODUCT_NAME: FBSimulatorBridgeProtocolTests
         SWIFT_VERSION: "6.0"
         SWIFT_PACKAGE_NAME: idb
         CLANG_ENABLE_OBJC_ARC: "YES"
@@ -132,7 +132,7 @@ targets:
           DEBUG_INFORMATION_FORMAT: dwarf-with-dsym
           STRIP_INSTALLED_PRODUCT: "YES"
     dependencies:
-      - target: SimulatorFrameworkBridgeProtocol
+      - target: FBSimulatorBridgeProtocol
       - sdk: Foundation.framework
       - sdk: XCTest.framework
   FBSimulatorVideo:
@@ -171,11 +171,11 @@ targets:
         embed: false
       - target: FBControlCore
         embed: false
+      - target: FBSimulatorBridgeProtocol
+        embed: false
       - target: FBSimulatorControl
         embed: false
       - target: FBVideoCore
-        embed: false
-      - target: SimulatorFrameworkBridgeProtocol
         embed: false
       - target: SimulatorIPC
         embed: false
@@ -241,10 +241,10 @@ targets:
       - target: CompanionUtilities
       - target: FBAXCore
       - target: FBControlCore
+      - target: FBSimulatorBridgeProtocol
       - target: FBSimulatorControl
       - target: FBSimulatorVideo
       - target: FBVideoCore
-      - target: SimulatorFrameworkBridgeProtocol
       - target: SimulatorIPC
       - target: ZstdDecompress
       - sdk: XCTest.framework
@@ -600,7 +600,7 @@ targets:
         embed: false
       - target: FBControlCore
         embed: false
-      - target: SimulatorFrameworkBridgeProtocol
+      - target: FBSimulatorBridgeProtocol
         embed: false
       - target: SimulatorIPC
         embed: false
@@ -650,9 +650,9 @@ targets:
         embed: false
       - target: FBControlCore
         embed: false
-      - target: FBSimulatorControl
+      - target: FBSimulatorBridgeProtocol
         embed: false
-      - target: SimulatorFrameworkBridgeProtocol
+      - target: FBSimulatorControl
         embed: false
       - target: SimulatorIPC
         embed: false
@@ -698,11 +698,11 @@ targets:
         embed: false
       - target: FBControlCore
         embed: false
+      - target: FBSimulatorBridgeProtocol
+        embed: false
       - target: FBSimulatorControl
         embed: false
       - target: FBXCTestCore
-        embed: false
-      - target: SimulatorFrameworkBridgeProtocol
         embed: false
       - target: SimulatorIPC
         embed: false
@@ -786,12 +786,12 @@ targets:
       - target: FBAXCore
       - target: FBControlCore
       - target: FBSimulatorAX
+      - target: FBSimulatorBridgeProtocol
       - target: FBSimulatorControl
       - target: FBSimulatorVideo
       - target: FBSimulatorXCTest
       - target: FBVideoCore
       - target: FBXCTestCore
-      - target: SimulatorFrameworkBridgeProtocol
       - target: SimulatorIPC
       - target: ZstdDecompress
       - sdk: AVFoundation.framework
@@ -875,12 +875,12 @@ targets:
       - target: FBAXCore
       - target: FBControlCore
       - target: FBSimulatorAX
+      - target: FBSimulatorBridgeProtocol
       - target: FBSimulatorControl
       - target: FBSimulatorVideo
       - target: FBSimulatorXCTest
       - target: FBVideoCore
       - target: FBXCTestCore
-      - target: SimulatorFrameworkBridgeProtocol
       - target: SimulatorIPC
       - target: ZstdDecompress
       - sdk: AVFoundation.framework
@@ -964,12 +964,12 @@ targets:
       - target: FBAXCore
       - target: FBControlCore
       - target: FBSimulatorAX
+      - target: FBSimulatorBridgeProtocol
       - target: FBSimulatorControl
       - target: FBSimulatorVideo
       - target: FBSimulatorXCTest
       - target: FBVideoCore
       - target: FBXCTestCore
-      - target: SimulatorFrameworkBridgeProtocol
       - target: SimulatorIPC
       - target: ZstdDecompress
       - sdk: AVFoundation.framework

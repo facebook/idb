@@ -91,6 +91,8 @@ flowchart TD
     FBSimulatorXCTest --> FBSimulatorControl
     FBSimulatorXCTest --> FBXCTestCore
     FBSimulatorControl --> FBAXCore
+    FBSimulatorControl --> FBSimulatorBridgeProtocol
+    guest["SimulatorFrameworkBridge (in the Simulator)"] --> FBSimulatorBridgeProtocol
     FBDeviceControl --> FBVideoCore
     FBDeviceControl --> FBXCTestCore
     FBVideoCore --> FBControlCore
@@ -99,7 +101,7 @@ flowchart TD
     FBSimulatorControl --> FBControlCore
 ```
 
-Each library has its own page: [`FBControlCore`](fbcontrolcore.mdx), [`FBVideoCore`](fbvideocore.mdx), [`FBAXCore`](fbaxcore.mdx), [`FBXCTestCore`](fbxctestcore.mdx), [`FBSimulatorControl`](fbsimulatorcontrol.mdx), [`FBSimulatorVideo`](fbsimulatorvideo.mdx), [`FBSimulatorAX`](fbsimulatorax.mdx), [`FBSimulatorXCTest`](fbsimulatorxctest.mdx) and [`FBDeviceControl`](fbdevicecontrol.mdx).
+Each library has its own page: [`FBControlCore`](fbcontrolcore.mdx), [`FBVideoCore`](fbvideocore.mdx), [`FBAXCore`](fbaxcore.mdx), [`FBXCTestCore`](fbxctestcore.mdx), [`FBSimulatorBridgeProtocol`](fbsimulatorbridgeprotocol.mdx), [`FBSimulatorControl`](fbsimulatorcontrol.mdx), [`FBSimulatorVideo`](fbsimulatorvideo.mdx), [`FBSimulatorAX`](fbsimulatorax.mdx), [`FBSimulatorXCTest`](fbsimulatorxctest.mdx) and [`FBDeviceControl`](fbdevicecontrol.mdx).
 
 ### Targets
 

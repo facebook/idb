@@ -7,8 +7,8 @@
 
 import Darwin
 @preconcurrency import FBControlCore
+import FBSimulatorBridgeProtocol
 import Foundation
-import SimulatorFrameworkBridgeProtocol
 
 package protocol AXBridgeTransport {
   func send(_ request: AXBridgeRequest) async throws -> Data

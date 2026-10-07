@@ -7,7 +7,7 @@
 
 import FBAXCore
 import FBControlCore
-import SimulatorFrameworkBridgeProtocol
+import FBSimulatorBridgeProtocol
 
 package typealias AXWire = BridgeAXWire
 

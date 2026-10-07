@@ -6,8 +6,8 @@
  */
 
 import Darwin
+import FBSimulatorBridgeProtocol
 import Foundation
-import SimulatorFrameworkBridgeProtocol
 import SimulatorIPC
 
 /// Where a persistent bridge's socket lives, and how to recognise one.

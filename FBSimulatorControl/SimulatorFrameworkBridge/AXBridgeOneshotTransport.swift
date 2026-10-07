@@ -6,8 +6,8 @@
  */
 
 @preconcurrency import FBControlCore
+import FBSimulatorBridgeProtocol
 import Foundation
-import SimulatorFrameworkBridgeProtocol
 
 package struct AXBridgeOneshotTransport: AXBridgeTransport {
   private let transport: SimulatorFrameworkBridgeOneshotTransport

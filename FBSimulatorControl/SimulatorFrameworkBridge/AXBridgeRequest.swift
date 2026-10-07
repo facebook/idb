@@ -8,8 +8,8 @@
 import Darwin
 import FBAXCore
 import FBControlCore
+import FBSimulatorBridgeProtocol
 import Foundation
-import SimulatorFrameworkBridgeProtocol
 
 /// Selects how an in-guest frontmost read resolves the foreground application.
 public enum AXBridgeFrontmostMethod: String, Sendable, CaseIterable {

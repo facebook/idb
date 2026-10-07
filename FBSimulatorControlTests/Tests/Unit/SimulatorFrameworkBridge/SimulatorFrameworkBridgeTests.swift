@@ -5,9 +5,9 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+import FBSimulatorBridgeProtocol
 @testable import FBSimulatorControl
 import Foundation
-@_implementationOnly import SimulatorFrameworkBridgeProtocol
 import XCTest
 
 final class SimulatorFrameworkBridgeTests: XCTestCase {

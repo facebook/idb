@@ -6,8 +6,8 @@
  */
 
 import Darwin
+import FBSimulatorBridgeProtocol
 import Foundation
-import SimulatorFrameworkBridgeProtocol
 @_implementationOnly import SimulatorIPC
 
 #if canImport(SimulatorFrameworkBridgeRuntime)

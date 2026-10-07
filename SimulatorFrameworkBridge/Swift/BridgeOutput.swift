@@ -5,8 +5,8 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+import FBSimulatorBridgeProtocol
 import Foundation
-import SimulatorFrameworkBridgeProtocol
 
 public final class BridgeOutput {
   public private(set) var values: [BridgeJSONValue] = []

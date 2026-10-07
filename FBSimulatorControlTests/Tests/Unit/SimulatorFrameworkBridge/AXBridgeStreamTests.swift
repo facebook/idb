@@ -6,9 +6,9 @@
  */
 
 import Darwin
+import FBSimulatorBridgeProtocol
 @testable import FBSimulatorControl
 import Foundation
-@_implementationOnly import SimulatorFrameworkBridgeProtocol
 import XCTest
 
 /// A streamed response read off a connection whose far end is a socket this test plays the guest on.

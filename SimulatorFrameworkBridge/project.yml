@@ -8,10 +8,10 @@ targetTemplates:
     type: library.static
     deploymentTarget: "15.0"
     sources:
-      - path: ../SimulatorFrameworkBridgeProtocol
+      - path: ../FBSimulatorBridgeProtocol
     settings:
       base:
-        PRODUCT_MODULE_NAME: SimulatorFrameworkBridgeProtocol
+        PRODUCT_MODULE_NAME: FBSimulatorBridgeProtocol
         SWIFT_VERSION: "6"
     dependencies:
       - sdk: Foundation.framework
@@ -51,13 +51,13 @@ targetTemplates:
       - sdk: CoreData.framework
 
 targets:
-  SimulatorFrameworkBridgeProtocol-iOS:
+  FBSimulatorBridgeProtocol-iOS:
     templates: [Protocol]
     platform: iOS
     settings:
       base:
         SDKROOT: iphonesimulator
-  SimulatorFrameworkBridgeProtocol-tvOS:
+  FBSimulatorBridgeProtocol-tvOS:
     templates: [Protocol]
     platform: tvOS
     settings:
@@ -94,7 +94,7 @@ targets:
         IPHONEOS_DEPLOYMENT_TARGET: "15.0"
         PRODUCT_NAME: SimulatorFrameworkBridge-iOS
     dependencies:
-      - target: SimulatorFrameworkBridgeProtocol-iOS
+      - target: FBSimulatorBridgeProtocol-iOS
       - target: SimulatorIPC-iOS
       - sdk: Contacts.framework
       - sdk: UserNotifications.framework
@@ -115,5 +115,5 @@ targets:
         TVOS_DEPLOYMENT_TARGET: "15.0"
         PRODUCT_NAME: SimulatorFrameworkBridge-tvOS
     dependencies:
-      - target: SimulatorFrameworkBridgeProtocol-tvOS
+      - target: FBSimulatorBridgeProtocol-tvOS
       - target: SimulatorIPC-tvOS

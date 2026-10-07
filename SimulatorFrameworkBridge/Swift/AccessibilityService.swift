@@ -8,8 +8,8 @@
 import CoreFoundation
 import CoreGraphics
 import Darwin
+import FBSimulatorBridgeProtocol
 import Foundation
-import SimulatorFrameworkBridgeProtocol
 
 #if canImport(SimulatorFrameworkBridgeRuntime)
 @_implementationOnly import SimulatorFrameworkBridgeRuntime

@@ -5,8 +5,8 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+import FBSimulatorBridgeProtocol
 import Foundation
-import SimulatorFrameworkBridgeProtocol
 
 public enum BridgeServices {
   public static func execute(_ command: BridgeCommand) -> BridgeResult {

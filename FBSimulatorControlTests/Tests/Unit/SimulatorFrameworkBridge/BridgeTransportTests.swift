@@ -6,9 +6,9 @@
  */
 
 import Darwin
+import FBSimulatorBridgeProtocol
 @testable import FBSimulatorControl
 import Foundation
-@_implementationOnly import SimulatorFrameworkBridgeProtocol
 import XCTest
 
 func decodedBridgeAXArguments(_ request: AXBridgeRequest) throws -> [String: Any] {

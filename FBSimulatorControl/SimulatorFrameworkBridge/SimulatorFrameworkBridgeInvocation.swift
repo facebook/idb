@@ -6,8 +6,8 @@
  */
 
 import FBControlCore
+import FBSimulatorBridgeProtocol
 import Foundation
-import SimulatorFrameworkBridgeProtocol
 
 /// The failures of running a service inside the guest with `SimulatorFrameworkBridge`.
 public enum SimulatorFrameworkBridgeError: Error, LocalizedError {

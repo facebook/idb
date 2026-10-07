@@ -6,8 +6,8 @@
  */
 
 import Darwin
+import FBSimulatorBridgeProtocol
 import Foundation
-@_implementationOnly import SimulatorFrameworkBridgeProtocol
 @_implementationOnly import SimulatorFrameworkBridgeRuntime
 @_implementationOnly import SimulatorFrameworkBridgeSupport
 import XCTest

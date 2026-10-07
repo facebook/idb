@@ -7,8 +7,8 @@
 
 import Darwin
 @preconcurrency import FBControlCore
+import FBSimulatorBridgeProtocol
 import Foundation
-import SimulatorFrameworkBridgeProtocol
 import SimulatorIPC
 
 enum BridgeGuestOwnership: Sendable {

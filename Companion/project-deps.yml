@@ -23,6 +23,8 @@ targets:
         embed: false
       - framework: ../Build/Products/Release/libFBSimulatorAX.a
         embed: false
+      - framework: ../Build/Products/Release/libFBSimulatorBridgeProtocol.a
+        embed: false
       - framework: ../Build/Products/Release/libFBSimulatorControl.a
         embed: false
       - framework: ../Build/Products/Release/libFBSimulatorVideo.a
@@ -32,8 +34,6 @@ targets:
       - framework: ../Build/Products/Release/libFBVideoCore.a
         embed: false
       - framework: ../Build/Products/Release/FBXCTestCore.framework
-        embed: false
-      - framework: ../Build/Products/Release/libSimulatorFrameworkBridgeProtocol.a
         embed: false
       - framework: ../Build/Products/Release/libSimulatorIPC.a
         embed: false
@@ -51,13 +51,13 @@ targets:
         embed: false
       - framework: ../Build/Products/Release/FBControlCore.framework
         embed: false
+      - framework: ../Build/Products/Release/libFBSimulatorBridgeProtocol.a
+        embed: false
       - framework: ../Build/Products/Release/libFBSimulatorControl.a
         embed: false
       - framework: ../Build/Products/Release/libFBSimulatorVideo.a
         embed: false
       - framework: ../Build/Products/Release/libFBVideoCore.a
-        embed: false
-      - framework: ../Build/Products/Release/libSimulatorFrameworkBridgeProtocol.a
         embed: false
       - framework: ../Build/Products/Release/libSimulatorIPC.a
         embed: false
