@@ -10,7 +10,7 @@ import Foundation
 
 /// The display reads that route interactions. `SimulatorDisplayCommands` reads the simulator; the
 /// routing built on these reads is shared by every conformance.
-protocol DisplayCommands: AnyObject, Sendable {
+package protocol DisplayCommands: AnyObject, Sendable {
 
   func report() async throws -> SimulatorDisplayReport
 
@@ -32,7 +32,7 @@ protocol DisplayCommands: AnyObject, Sendable {
 
 /// How long one-shot resolution keeps reading while a display transition settles, and how often.
 @usableFromInline
-struct DisplayTransitionSettling: Sendable {
+package struct DisplayTransitionSettling: Sendable {
   @usableFromInline let timeout: Duration
   let interval: Duration
 
@@ -41,7 +41,7 @@ struct DisplayTransitionSettling: Sendable {
 }
 
 /// The display an interaction targets, and whether routing has to name it.
-enum SimulatorDisplayTarget: Equatable, Sendable {
+package enum SimulatorDisplayTarget: Equatable, Sendable {
   /// The only integrated display. Accessibility and input reach it without naming it.
   case sole(SimulatorInteractionDisplay)
   /// The active one of several integrated displays. Accessibility and input have to name it.
@@ -56,7 +56,7 @@ enum SimulatorDisplayTarget: Equatable, Sendable {
 }
 
 /// Whether interactions route to a display the runtime reported, or fall back to the main display.
-enum SimulatorDisplayResolution: Equatable, Sendable {
+package enum SimulatorDisplayResolution: Equatable, Sendable {
   /// The runtime cannot say which display interactions target. Accessibility and input reach the main
   /// display without naming one, as they did before runtimes reported displays.
   case fallback(SimulatorDisplayFallback)
@@ -103,7 +103,7 @@ enum SimulatorDisplayResolution: Equatable, Sendable {
 
 /// Why interactions fell back to the main display. One-shot resolution waits out no active display, or several,
 /// rather than falling back, as both pass during a hinge change.
-enum SimulatorDisplayFallback: Equatable, Sendable {
+package enum SimulatorDisplayFallback: Equatable, Sendable {
   /// The display read failed, including on runtimes that do not report displays.
   case unreadable(SimulatorCoreDeviceError)
   /// A runtime without display activity reports other than one integrated display.
@@ -118,7 +118,7 @@ enum SimulatorDisplayFallback: Equatable, Sendable {
 /// again only when a display it has not seen is selected.
 // SAFETY: Every access to the mapping holds the lock.
 // patternlint-disable-next-line unchecked-sendable
-final class DisplayIdentityCache: @unchecked Sendable {
+package final class DisplayIdentityCache: @unchecked Sendable {
   private let lock = NSLock()
   private var accessibility: [String: UInt32] = [:]
   private var verified: AXBridgeDisplayCapabilities = []
@@ -157,7 +157,7 @@ final class DisplayIdentityCache: @unchecked Sendable {
 
 extension DisplayCommands {
 
-  var transitionSettling: DisplayTransitionSettling { .standard }
+  package var transitionSettling: DisplayTransitionSettling { .standard }
 
   func reportPushes() throws -> AsyncThrowingStream<SimulatorDisplayReport, Error> {
     throw SimulatorCoreDeviceError.unsupported("display pushes")
@@ -169,7 +169,7 @@ extension DisplayCommands {
   /// the new display before its backlight follows, and can pass through no active display or several; one-shot
   /// resolution waits that out. `.transitioning` only when the transition outlasts `transitionSettling`, and throws
   /// if no single display is active by then.
-  func resolveDisplay() async throws -> SimulatorDisplayResolution {
+  package func resolveDisplay() async throws -> SimulatorDisplayResolution {
     let deadline = ContinuousClock.now + transitionSettling.timeout
     while true {
       let resolution = configurationTracker.resolution(of: try await read())
@@ -228,7 +228,7 @@ extension DisplayCommands {
 
   /// The configuration once any display transition has settled. `.transitioning` only when the transition
   /// outlasts `timeout`.
-  func settledConfiguration(within timeout: Duration) async throws -> SimulatorDisplayConfiguration {
+  package func settledConfiguration(within timeout: Duration) async throws -> SimulatorDisplayConfiguration {
     try configurationTracker.observe(await settledRead(within: timeout))
   }
 
@@ -243,7 +243,7 @@ extension DisplayCommands {
 
   /// The accessibility identity of a display that has to be named. The guest is asked only for a display it
   /// has not seen, and only then are `capabilities` required of it.
-  func accessibilityID(
+  package func accessibilityID(
     for display: SimulatorDisplay, transport: any AXBridgeTransport, requiring capabilities: AXBridgeDisplayCapabilities = []
   ) async throws -> UInt32 {
     if let accessibilityID = identities.accessibilityID(for: display.uniqueID, requiring: capabilities) {
@@ -276,7 +276,7 @@ extension DisplayCommands {
   }
 
   /// Fails if the active display, or its geometry, differs from the snapshot.
-  func validate(_ display: SimulatorInteractionDisplay) async throws {
+  package func validate(_ display: SimulatorInteractionDisplay) async throws {
     switch try await resolveDisplay() {
     case let .target(target):
       guard target.display.hasSameConfiguration(as: display) else { throw SimulatorDisplayError.changed }
@@ -293,7 +293,7 @@ extension DisplayCommands {
   /// The current configuration, then each change to it, until the stream is cancelled. Follows `reportPushes()`,
   /// and polls every `interval` when the runtime does not push or its pushes stop. A failed read yields nothing.
   /// Every stream shares one following per tracker, which polls at the shortest `interval` of its current streams.
-  func followConfigurations(polling interval: Duration = .milliseconds(250)) -> AsyncStream<SimulatorDisplayConfiguration> {
+  package func followConfigurations(polling interval: Duration = .milliseconds(250)) -> AsyncStream<SimulatorDisplayConfiguration> {
     configurationTracker.follower.subscribe(polling: interval) {
       Task {
         func observe(_ read: DisplayRead) {

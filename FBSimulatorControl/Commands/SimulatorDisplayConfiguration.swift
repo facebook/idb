@@ -92,7 +92,7 @@ struct DisplayRead: Sendable {
 /// read that began before the newest one observed cannot replace it.
 // SAFETY: Every access to the stored configuration and read sequence holds the lock.
 // patternlint-disable-next-line unchecked-sendable
-final class DisplayConfigurationTracker: @unchecked Sendable {
+package final class DisplayConfigurationTracker: @unchecked Sendable {
   private let lock = NSLock()
   private var current: (configuration: SimulatorDisplayConfiguration, basis: [SimulatorInteractionDisplay])?
   private var newest: (sequence: UInt64, configuration: SimulatorDisplayConfiguration, resolution: SimulatorDisplayResolution)?
@@ -100,7 +100,7 @@ final class DisplayConfigurationTracker: @unchecked Sendable {
   let follower = DisplayConfigurationFollower()
 
   /// The most recently observed configuration, if any read has succeeded.
-  var latest: SimulatorDisplayConfiguration? {
+  package var latest: SimulatorDisplayConfiguration? {
     lock.lock()
     defer { lock.unlock() }
     return current?.configuration

@@ -9,7 +9,7 @@ import Foundation
 import XPC
 
 /// What one `displayinfo` read says about the simulator's displays, before anything is selected from it.
-enum SimulatorDisplayReport: Equatable, Sendable {
+package enum SimulatorDisplayReport: Equatable, Sendable {
   /// Every display, identified, with its activity.
   case displays([SimulatorDisplay])
   /// A runtime that reports no display activity. The geometry of each integrated display, which may not be

@@ -9,20 +9,20 @@
 import Foundation
 import SimulatorFrameworkBridgeProtocol
 
-struct AXBridgeOneshotTransport: AXBridgeTransport {
+package struct AXBridgeOneshotTransport: AXBridgeTransport {
   private let transport: SimulatorFrameworkBridgeOneshotTransport
 
-  init(simulator: Simulator) {
+  package init(simulator: Simulator) {
     transport = SimulatorFrameworkBridgeOneshotTransport(simulator: simulator)
   }
 
-  init(transport: SimulatorFrameworkBridgeOneshotTransport) {
+  package init(transport: SimulatorFrameworkBridgeOneshotTransport) {
     self.transport = transport
   }
 
   /// A missing guest binary is raised as the persistent transport raises it, so a write that never left the
   /// host is not mistaken for one that was sent.
-  func send(_ request: AXBridgeRequest) async throws -> Data {
+  package func send(_ request: AXBridgeRequest) async throws -> Data {
     do {
       return try await transport.send(BridgeRequest(command: request.command)).accessibilityData()
     } catch SimulatorFrameworkBridgeError.binaryMissing {

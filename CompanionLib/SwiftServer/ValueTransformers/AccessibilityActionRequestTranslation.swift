@@ -8,6 +8,7 @@
 import CoreGraphics
 import FBAXCore
 import FBControlCore
+import FBSimulatorAX
 import FBSimulatorControl
 import Foundation
 import GRPCCore

@@ -10,16 +10,16 @@ import Darwin
 import Foundation
 import SimulatorFrameworkBridgeProtocol
 
-protocol AXBridgeTransport {
+package protocol AXBridgeTransport {
   func send(_ request: AXBridgeRequest) async throws -> Data
 }
 
 /// A transport that can hold a connection open for a response streamed in many frames.
-protocol AXBridgeStreamingTransport: AXBridgeTransport {
+package protocol AXBridgeStreamingTransport: AXBridgeTransport {
   func stream(_ request: AXBridgeRequest) async throws -> AsyncThrowingStream<Data, Error>
 }
 
-enum BridgeServiceScope: Sendable, Hashable {
+package enum BridgeServiceScope: Sendable, Hashable {
   case shared
   case exclusive
 }
@@ -43,7 +43,7 @@ extension BridgeConnector {
 }
 
 /// Owns the lifecycle of a shared or exclusive SimulatorFrameworkBridge guest.
-actor SimulatorFrameworkBridgePersistentTransport: AXBridgeStreamingTransport {
+package actor SimulatorFrameworkBridgePersistentTransport: AXBridgeStreamingTransport {
   private let connector: any BridgeConnector
   private var connectionTask: Task<any BridgeConnection, Error>?
   private var connectionGeneration = UUID()
@@ -56,7 +56,7 @@ actor SimulatorFrameworkBridgePersistentTransport: AXBridgeStreamingTransport {
     self.connector = connector
   }
 
-  func send(_ request: AXBridgeRequest) async throws -> Data {
+  package func send(_ request: AXBridgeRequest) async throws -> Data {
     try await send(BridgeRequest(command: request.command)).accessibilityData()
   }
 
@@ -69,7 +69,7 @@ actor SimulatorFrameworkBridgePersistentTransport: AXBridgeStreamingTransport {
     }
   }
 
-  func stream(_ request: AXBridgeRequest) async throws -> AsyncThrowingStream<Data, Error> {
+  package func stream(_ request: AXBridgeRequest) async throws -> AsyncThrowingStream<Data, Error> {
     let results = try await connector.streamConnection().stream(BridgeRequest(command: request.command))
     return AsyncThrowingStream { continuation in
       let task = Task {

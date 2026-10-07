@@ -9,6 +9,7 @@
 import CoreGraphics
 import FBAXCore
 @preconcurrency import FBControlCore
+import FBSimulatorAX
 @preconcurrency import FBSimulatorControl
 import Foundation
 import IDBGRPCSwift

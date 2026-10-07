@@ -93,19 +93,3 @@ public enum AXBridgeError: LocalizedError, Sendable {
 extension AXBridgeError: CustomStringConvertible {
   public var description: String { errorDescription ?? "AXBridgeError" }
 }
-
-extension AXBridgeError {
-
-  /// Whether a read failure met while polling for a marker is worth polling through.
-  ///
-  /// A wait is for something that has not happened *yet*, so a failure is worth swallowing only when
-  /// waiting could plausibly change it. An app still launching has no frontmost, no readable tree and no
-  /// accessibility server, and acquires all three shortly — so all of those are "not there yet" and the
-  /// poll continues. A failure of the reader or its plumbing is not that: it answers the same way on
-  /// every poll, and swallowing it spends the caller's whole timeout only to report a timeout, hiding
-  /// the diagnosis the failure already carried.
-  var isTransientDuringMarkerWait: Bool {
-    retry.verdict == .safe
-  }
-
-}

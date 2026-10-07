@@ -7,6 +7,7 @@
 
 import FBAXCore
 import FBControlCore
+@testable import FBSimulatorAX
 @testable import FBSimulatorControl
 @testable import FBSimulatorVideo
 import FBVideoCore

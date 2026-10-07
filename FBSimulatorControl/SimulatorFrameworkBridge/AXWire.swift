@@ -9,7 +9,7 @@ import FBAXCore
 import FBControlCore
 import SimulatorFrameworkBridgeProtocol
 
-typealias AXWire = BridgeAXWire
+package typealias AXWire = BridgeAXWire
 
 extension BridgeAXWire.Node {
   /// The attribute list a read must request to serialize `keys`, or nil when that is exactly the default
@@ -18,7 +18,7 @@ extension BridgeAXWire.Node {
   ///
   /// Nil rather than "the default list" so the caller can omit the request field entirely, keeping a
   /// default read byte-identical to one from a host that predates the field.
-  static func fetchList(for keys: Set<AXKeys>) -> [String]? {
+  package static func fetchList(for keys: Set<AXKeys>) -> [String]? {
     var list = defaultFetchList
     if !keys.contains(.traits) {
       list.removeAll { $0 == xcTraits.rawValue }
@@ -35,7 +35,7 @@ extension BridgeAXWire.Node {
   /// Only three of the searchable keys name something the guest fetches, because the rest are host-side
   /// derivations the host-side platform element answers nil for over this wire in the first place.
   /// A marker on one of those still writes; it just goes unasserted.
-  init?(assertableSearchKey key: AXSearchableKey) {
+  package init?(assertableSearchKey key: AXSearchableKey) {
     switch key {
     case .label:
       self = .label

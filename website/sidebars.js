@@ -24,6 +24,7 @@ module.exports = {
         "idb/fbaxcore",
         "idb/fbsimulatorcontrol",
         "idb/fbsimulatorvideo",
+        "idb/fbsimulatorax",
         "idb/fbdevicecontrol",
         "idb/xctestbootstrap",
         "idb/video",

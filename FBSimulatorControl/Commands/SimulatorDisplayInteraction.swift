@@ -45,12 +45,16 @@ struct SimulatorAccessibilityDisplay: Decodable, Equatable, Sendable {
 }
 
 /// What the guest advertises it can scope to a named display, beyond reporting its displays.
-struct AXBridgeDisplayCapabilities: OptionSet, Sendable {
-  let rawValue: Int
+package struct AXBridgeDisplayCapabilities: OptionSet, Sendable {
+  package let rawValue: Int
 
-  static let scopedInteractions = AXBridgeDisplayCapabilities(rawValue: 1 << 0)
-  static let scopedTrees = AXBridgeDisplayCapabilities(rawValue: 1 << 1)
-  static let scopedQuiescence = AXBridgeDisplayCapabilities(rawValue: 1 << 2)
+  package init(rawValue: Int) {
+    self.rawValue = rawValue
+  }
+
+  package static let scopedInteractions = AXBridgeDisplayCapabilities(rawValue: 1 << 0)
+  package static let scopedTrees = AXBridgeDisplayCapabilities(rawValue: 1 << 1)
+  package static let scopedQuiescence = AXBridgeDisplayCapabilities(rawValue: 1 << 2)
 }
 
 enum AXBridgeDisplayInventory {

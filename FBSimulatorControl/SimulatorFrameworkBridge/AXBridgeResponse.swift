@@ -9,8 +9,8 @@ import Darwin
 import Foundation
 
 /// Parses the response envelope shared by every axbridge verb and preserves the guest's typed failure.
-enum AXBridgeResponse {
-  static func validated(
+package enum AXBridgeResponse {
+  package static func validated(
     _ data: Data,
     context: String,
     pid: pid_t? = nil,
@@ -56,7 +56,7 @@ enum AXBridgeResponse {
   }
 }
 
-struct AXDeviceSettingResponse {
+package struct AXDeviceSettingResponse {
   let enabled: Bool
 
   init(data: Data) throws {

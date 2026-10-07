@@ -138,7 +138,7 @@ protocol BridgeGuestLauncher {
   func launch(_ arguments: [String]) async throws -> InSimulatorToolOutput
 }
 
-struct SimulatorFrameworkBridgeOneshotTransport {
+package struct SimulatorFrameworkBridgeOneshotTransport {
   private let launcher: any BridgeGuestLauncher
 
   init(simulator: Simulator, bundleIdentity: String? = nil) {
@@ -201,7 +201,7 @@ extension BridgeResult {
 
 extension Simulator {
   /// Reuses guest startup across services while keeping shared and exclusive connections separate.
-  func frameworkBridgeTransport(scope: BridgeServiceScope) -> SimulatorFrameworkBridgePersistentTransport {
+  package func frameworkBridgeTransport(scope: BridgeServiceScope) -> SimulatorFrameworkBridgePersistentTransport {
     commandCache.resolve { BridgeTransportsByScope() }
       .transport(for: scope) { SimulatorFrameworkBridgePersistentTransport(simulator: self, scope: scope) }
   }

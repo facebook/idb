@@ -18,13 +18,18 @@ public enum AXBridgeFrontmostMethod: String, Sendable, CaseIterable {
   case runningBoard = "runningboard"
 }
 
-struct AXBridgeWriteAssertion: Sendable, Equatable {
+package struct AXBridgeWriteAssertion: Sendable, Equatable {
   let key: AXWire.Node
   let value: String
+
+  package init(key: AXWire.Node, value: String) {
+    self.key = key
+    self.value = value
+  }
 }
 
-struct AXBridgeWriteRequest: Sendable, Equatable {
-  enum Kind: Sendable, Equatable {
+package struct AXBridgeWriteRequest: Sendable, Equatable {
+  package enum Kind: Sendable, Equatable {
     case perform(AXWire.Action)
     case setValue(String)
   }
@@ -36,8 +41,17 @@ struct AXBridgeWriteRequest: Sendable, Equatable {
   let assertion: AXBridgeWriteAssertion?
   var displayID: UInt32?
 
+  package init(kind: Kind, x: Double, y: Double, pid: pid_t?, assertion: AXBridgeWriteAssertion?, displayID: UInt32? = nil) {
+    self.kind = kind
+    self.x = x
+    self.y = y
+    self.pid = pid
+    self.assertion = assertion
+    self.displayID = displayID
+  }
+
   /// Whether sending this write twice leaves the same state as sending it once.
-  var isIdempotent: Bool {
+  package var isIdempotent: Bool {
     switch kind {
     case .perform: false
     case .setValue: true
@@ -77,13 +91,22 @@ struct AXBridgeWriteRequest: Sendable, Equatable {
   }
 }
 
-struct AXBridgeReadRequest: Sendable, Equatable {
+package struct AXBridgeReadRequest: Sendable, Equatable {
   let maxDepth: Int
   let maxNodes: Int
   let attributes: [String]?
   let explainUnreachable: Bool
   let traversal: AXTraversal
   let automationMode: Bool?
+
+  package init(maxDepth: Int, maxNodes: Int, attributes: [String]?, explainUnreachable: Bool, traversal: AXTraversal, automationMode: Bool?) {
+    self.maxDepth = maxDepth
+    self.maxNodes = maxNodes
+    self.attributes = attributes
+    self.explainUnreachable = explainUnreachable
+    self.traversal = traversal
+    self.automationMode = automationMode
+  }
 
   func appendingPayload(to payload: [String: Any]) -> [String: Any] {
     var payload = payload
@@ -108,7 +131,7 @@ struct AXBridgeReadRequest: Sendable, Equatable {
   }
 }
 
-enum AXBridgeRequest: Sendable {
+package enum AXBridgeRequest: Sendable {
   case read(pid: pid_t, options: AXBridgeReadRequest, displayID: UInt32? = nil)
   case readFrontmost(x: Double, y: Double, method: AXBridgeFrontmostMethod, options: AXBridgeReadRequest, displayID: UInt32? = nil)
   case hitTest(x: Double, y: Double, attributes: [String]?, displayID: UInt32? = nil)

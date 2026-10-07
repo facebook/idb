@@ -2,7 +2,7 @@
 
 The accessibility data model: the requests a caller makes of a target's accessibility tree and the documents it gets back. Every reader produces this model, so a consumer can use one result regardless of which backend read it. The model also defines the wire vocabulary the in-guest `SimulatorFrameworkBridge` reader answers in.
 
-It depends only on `FBControlCore`, and internal-imports the `AXRuntime` private headers for trait names. It holds no reader; the Simulator's readers are in `FBSimulatorControl`.
+It depends only on `FBControlCore`, and internal-imports the `AXRuntime` private headers for trait names. It holds no reader; the Simulator's readers are in [`FBSimulatorAX`](../FBSimulatorAX/README.md).
 
 ## What it provides
 

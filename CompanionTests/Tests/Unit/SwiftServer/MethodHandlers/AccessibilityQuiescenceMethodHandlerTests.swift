@@ -7,6 +7,7 @@
 
 @testable import CompanionLib
 @preconcurrency import FBControlCore
+import FBSimulatorAX
 import FBSimulatorControl
 import GRPCCore
 import IDBGRPCSwift

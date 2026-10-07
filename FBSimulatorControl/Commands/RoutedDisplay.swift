@@ -9,19 +9,19 @@ import FBControlCore
 import Foundation
 
 /// Accessibility requests name a display by the identity the guest's accessibility inventory assigns it.
-enum AccessibilityRoute {}
+package enum AccessibilityRoute {}
 /// Touches name a display by the digitizer target that reaches it.
 enum DigitizerRoute {}
 
 /// A display snapshot captured together with the identity that routes one kind of interaction to it. `Route`
 /// keeps an accessibility identity from being sent as a digitizer target, and the reverse.
-enum RoutedDisplay<Route>: Equatable, Sendable {
+package enum RoutedDisplay<Route>: Equatable, Sendable {
   /// The only integrated display, which interactions reach without naming it.
   case sole(SimulatorInteractionDisplay)
   /// The active one of several integrated displays, and the identity that reaches it.
   case selected(SimulatorDisplay, id: UInt32)
 
-  var interactionDisplay: SimulatorInteractionDisplay {
+  package var interactionDisplay: SimulatorInteractionDisplay {
     switch self {
     case let .sole(display): display
     case let .selected(display, _): .identified(display)
@@ -35,20 +35,20 @@ enum RoutedDisplay<Route>: Equatable, Sendable {
     }
   }
 
-  var geometry: SimulatorDisplayGeometry { interactionDisplay.geometry }
+  package var geometry: SimulatorDisplayGeometry { interactionDisplay.geometry }
 
-  var bounds: CGRect { CGRect(origin: .zero, size: geometry.pointSize) }
+  package var bounds: CGRect { CGRect(origin: .zero, size: geometry.pointSize) }
 
   func hasSameConfiguration(as other: Self) -> Bool {
     interactionDisplay.hasSameConfiguration(as: other.interactionDisplay) && id == other.id
   }
 }
 
-typealias AXTranslationDisplay = RoutedDisplay<AccessibilityRoute>
+package typealias AXTranslationDisplay = RoutedDisplay<AccessibilityRoute>
 typealias SimulatorHIDDisplay = RoutedDisplay<DigitizerRoute>
 
 extension RoutedDisplay where Route == AccessibilityRoute {
-  var accessibilityID: UInt32? { id }
+  package var accessibilityID: UInt32? { id }
 }
 
 extension RoutedDisplay where Route == DigitizerRoute {
@@ -58,7 +58,7 @@ extension RoutedDisplay where Route == DigitizerRoute {
 extension DisplaySelection {
   /// Refuses an interaction routed to `display` unless it is the display this selection names. A nil display
   /// means the interaction falls back to the main display, which names no display.
-  func confirm(routedTo display: SimulatorInteractionDisplay?, latest: SimulatorDisplayConfiguration?) throws {
+  package func confirm(routedTo display: SimulatorInteractionDisplay?, latest: SimulatorDisplayConfiguration?) throws {
     switch self {
     case .active:
       return

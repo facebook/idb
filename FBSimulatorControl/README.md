@@ -15,7 +15,7 @@ The trade-off is stability. The `idb` cli and its gRPC interface are the project
 - Boots iOS Simulators across a range of Xcode and iOS Versions.
 - Runs independently of Xcode and `xcodebuild` without requiring embedding in a Graphical User Interface. Uses whatever Xcode toolchain is defined by `xcode-select`.
 - Exposes a broad range of functionality that is available in `simctl` and Xcode.
-- Implements additional functionality not available in `simctl` including file manipulation, accessibility fetching, direct input event injection and more. Hardware-encoded video recording and streaming are in [`FBSimulatorVideo`](../FBSimulatorVideo/README.md).
+- Implements additional functionality not available in `simctl` including file manipulation, direct input event injection and more. Hardware-encoded video recording and streaming are in [`FBSimulatorVideo`](../FBSimulatorVideo/README.md), and accessibility reading in [`FBSimulatorAX`](../FBSimulatorAX/README.md).
 - No external dependencies.
 - A Swift framework. What Objective-C remains is an implementation detail of reaching Apple's private frameworks, not part of the API.
 
@@ -23,7 +23,7 @@ The trade-off is stability. The `idb` cli and its gRPC interface are the project
 
 The original use-case for `FBSimulatorControl` was to boot multiple Simulators on the same host, before this was officially supported in Xcode.
 
-`FBSimulatorControl` works by linking with the private `CoreSimulator` and `SimulatorKit` frameworks that are installed as part of Xcode. Doing this allows  `FBSimulatorControl` to talk directly to the same APIs that Xcode and `simctl` use. `FBSimulatorControl` also adds features that aren't present in Xcode or the iOS Simulator, such as accessibility fetching.
+`FBSimulatorControl` works by linking with the private `CoreSimulator` and `SimulatorKit` frameworks that are installed as part of Xcode. Doing this allows  `FBSimulatorControl` to talk directly to the same APIs that Xcode and `simctl` use. `FBSimulatorControl` and the libraries built on it also add features that aren't present in Xcode or the iOS Simulator, such as accessibility fetching.
 
 ## Installation
 
@@ -82,7 +82,7 @@ The framework also provides functionality that has no equivalent in `simctl`, `x
 
 - **Live screen access.** A booted Simulator's screen is available to the linking process as an `IOSurface`-backed framebuffer. The framework turns this into screenshots, and [`FBSimulatorVideo`](../FBSimulatorVideo/README.md) into video files or live streams of hardware-encoded H.264, MJPEG, or raw frames. `simctl` can only record a video file after the fact; it cannot stream, and it cannot give your process access to the GPU-resident surface.
 - **Input synthesis.** Touch, keyboard and hardware-button events are delivered over the Simulator's own HID services: the reverse-engineered Indigo mach protocol, or the `dtuhidd` XPC path on newer Xcodes. Device orientation is delivered over GSEvent ("Purple"), and shake via Darwin notifications. Apple's only supported route to synthesized input is an XCUITest bundle.
-- **Accessibility reading.** The framework reads the full element hierarchy of the frontmost application without a test bundle, either through host-side translation or in-guest at XCUITest fidelity via the bundled `SimulatorFrameworkBridge` helper. This is described in [the accessibility documentation](https://www.fbidb.io/idb/accessibility).
+- **Accessibility reading.** [`FBSimulatorAX`](../FBSimulatorAX/README.md) reads the full element hierarchy of the frontmost application without a test bundle, either through host-side translation or in-guest at XCUITest fidelity via the bundled `SimulatorFrameworkBridge` helper. This is described in [the accessibility documentation](https://www.fbidb.io/idb/accessibility).
 - **In-guest state injection.** `SimulatorFrameworkBridge` runs inside the booted Simulator and can modify state that no `simctl` verb reaches, such as overwriting the contacts database or clearing the photo library.
 
 Combined, live screen access, input synthesis and accessibility reading are enough to build a new "simulator app": a macOS application or remote-streaming service that presents and drives Simulators with its own UI and transport, the way `Simulator.app` does.

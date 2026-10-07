@@ -8,6 +8,7 @@
 @testable import CompanionLib
 import CoreGraphics
 @preconcurrency import FBControlCore
+import FBSimulatorAX
 @preconcurrency import FBSimulatorControl
 import Foundation
 import GRPCCore

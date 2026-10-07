@@ -1,0 +1,110 @@
+/*
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ */
+
+import CoreGraphics
+import FBAXCore
+import FBControlCore
+import FBSimulatorControl
+
+struct AXWriteTarget: Equatable {
+  let point: CGPoint
+  let pid: pid_t?
+  let assertion: AXBridgeWriteAssertion?
+}
+
+extension AXBridgeTreeReader {
+  func writeTarget(
+    for query: AccessibilityElementQuery,
+    operation: String,
+    callerAssertion: TapOptions.Assertion? = nil
+  ) async throws -> AXWriteTarget {
+    switch query {
+    case let .point(point):
+      if let callerAssertion {
+        try await assertBeforeWriting(callerAssertion, atPoint: point)
+      }
+      return AXWriteTarget(point: point, pid: nil, assertion: nil)
+    case let .marker(value, key, _, ignoresCase):
+      // Writes resolve against the structural tree: a semantic traversal can omit the element a marker names.
+      let read = try await readRawTree(
+        for: query,
+        attributes: nil,
+        explainUnreachable: false,
+        traversal: .viewHierarchy
+      )
+      await warnIfTruncated(read.truncated)
+      let elements = AXTreeWalk.describeAllElements(
+        fromTree: read.tree,
+        keys: AXKeys.defaultSet.union([key.serializationKey]),
+        nestedFormat: false,
+        pid: read.pid
+      )
+      switch AXTreeWalk.markerTarget(inElements: elements, markerValue: value, key: key, ignoresCase: ignoresCase) {
+      case let .resolved(match, x, y):
+        try validate(callerAssertion, against: match)
+        // Marker lookup is a substring match, but the guest's safety check is equality. Assert the
+        // matched element's actual value rather than the substring the caller searched for.
+        return AXWriteTarget(
+          point: CGPoint(x: x, y: y),
+          pid: read.pid,
+          assertion: Self.derivedAssertion(from: match, key: key)
+        )
+      case .offScreen:
+        throw UIAutomationError.elementNotOnScreen(backend: backend, key: key.rawValue, value: value)
+      case .notFound:
+        throw UIAutomationError.elementNotFound(backend: backend, key: key.rawValue, value: value)
+      }
+    case .frontmost, .application:
+      throw UIAutomationError.pointOrMarkerRequired(backend: backend, operation: operation)
+    }
+  }
+
+  func emptyWriteTargetError(for query: AccessibilityElementQuery, at point: CGPoint) -> UIAutomationError {
+    guard case let .marker(value, key, _, _) = query else {
+      return .noElementAtPoint(backend: backend, x: Double(point.x), y: Double(point.y))
+    }
+    return .elementMoved(backend: backend, key: key.rawValue, value: value)
+  }
+
+  private static func derivedAssertion(
+    from match: AccessibilityDocumentElement,
+    key: AXSearchableKey
+  ) -> AXBridgeWriteAssertion? {
+    guard let node = AXWire.Node(assertableSearchKey: key), let actual = match.searchableValue(for: key) else {
+      return nil
+    }
+    return AXBridgeWriteAssertion(key: node, value: actual)
+  }
+
+  private func assertBeforeWriting(_ assertion: TapOptions.Assertion, atPoint point: CGPoint) async throws {
+    let options = AccessibilityRequestOptions(keys: AXKeys.defaultSet.union([assertion.key.serializationKey]))
+    guard let response = try await hitTest(at: point, options: options),
+      let element = response.elements.elements.first
+    else {
+      throw UIAutomationError.noElementAtPoint(backend: backend, x: Double(point.x), y: Double(point.y))
+    }
+    try validate(assertion, against: element)
+  }
+
+  private func validate(
+    _ assertion: TapOptions.Assertion?,
+    against element: AccessibilityDocumentElement
+  ) throws {
+    guard let assertion else {
+      return
+    }
+    let actual = element.searchableValue(for: assertion.key) ?? ""
+    guard actual == assertion.value else {
+      throw UIAutomationError.valueMismatch(
+        backend: backend,
+        key: assertion.key.rawValue,
+        expected: assertion.value,
+        actual: actual
+      )
+    }
+  }
+}

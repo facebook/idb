@@ -21,6 +21,8 @@ targets:
         embed: false
       - framework: ../Build/Products/Release/libFBDeviceControl.a
         embed: false
+      - framework: ../Build/Products/Release/libFBSimulatorAX.a
+        embed: false
       - framework: ../Build/Products/Release/libFBSimulatorControl.a
         embed: false
       - framework: ../Build/Products/Release/libFBSimulatorVideo.a

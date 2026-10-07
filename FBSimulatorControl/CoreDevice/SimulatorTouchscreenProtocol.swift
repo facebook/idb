@@ -9,7 +9,7 @@ import Foundation
 import XPC
 
 /// An available touchscreen, joined to display snapshots by stable identity.
-struct SimulatorTouchscreen: Equatable, Sendable {
+package struct SimulatorTouchscreen: Equatable, Sendable {
   let displayUniqueID: String
   /// The explicit target accepted by the Indigo digitizer service.
   let digitizerTarget: UInt32

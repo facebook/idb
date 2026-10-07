@@ -79,7 +79,7 @@ public struct SimulatorDisplayGeometry: Equatable, Sendable {
 }
 
 /// A legacy provider can describe its sole integrated display without identifying it.
-enum SimulatorInteractionDisplay: Equatable, Sendable {
+package enum SimulatorInteractionDisplay: Equatable, Sendable {
   case identified(SimulatorDisplay)
   case legacy(SimulatorDisplayGeometry)
 
@@ -195,8 +195,8 @@ public enum SimulatorDisplayError: Error, LocalizedError {
 // patternlint-disable-next-line unchecked-sendable
 public final class SimulatorDisplayCommands: DisplayCommands, @unchecked Sendable {
   private weak var simulator: Simulator?
-  let identities = DisplayIdentityCache()
-  let configurationTracker = DisplayConfigurationTracker()
+  package let identities = DisplayIdentityCache()
+  package let configurationTracker = DisplayConfigurationTracker()
 
   public class func commands(with simulator: Simulator) -> SimulatorDisplayCommands {
     SimulatorDisplayCommands(simulator: simulator)
@@ -207,7 +207,7 @@ public final class SimulatorDisplayCommands: DisplayCommands, @unchecked Sendabl
   }
 
   /// Only cancellation and a released simulator throw; every CoreDevice failure is reported.
-  func report() async throws -> SimulatorDisplayReport {
+  package func report() async throws -> SimulatorDisplayReport {
     do {
       return try await target().coreDevice.perform(
         action: SimulatorDisplayProtocol.action, service: SimulatorDisplayProtocol.service, input: CoreDeviceEmptyInput(),
@@ -242,10 +242,10 @@ public final class SimulatorDisplayCommands: DisplayCommands, @unchecked Sendabl
     followConfigurations()
   }
 
-  var logger: (any ControlCoreLogger)? { simulator?.logger }
+  package var logger: (any ControlCoreLogger)? { simulator?.logger }
 
   /// Lists connected touchscreens. Match `displayUniqueID` to a display snapshot before routing input.
-  func touchscreens() async throws -> [SimulatorTouchscreen] {
+  package func touchscreens() async throws -> [SimulatorTouchscreen] {
     // Universal HID can advertise a virtual digitizer even when the target has no touch display.
     let simulator = try target()
     guard simulator.productFamily.hasTouchscreen else { return [] }
@@ -259,7 +259,7 @@ public final class SimulatorDisplayCommands: DisplayCommands, @unchecked Sendabl
     return simulator
   }
 
-  func reportPushes() throws -> AsyncThrowingStream<SimulatorDisplayReport, Error> {
+  package func reportPushes() throws -> AsyncThrowingStream<SimulatorDisplayReport, Error> {
     let channel = UUID()
     return try target().coreDevice.subscribe(
       action: SimulatorDisplayUpdatesProtocol.action, service: SimulatorDisplayUpdatesProtocol.service,
