@@ -9,4 +9,3 @@
 #import <FBControlCore/FBFuture.h>
 #import <FBControlCore/FBFuture+Sync.h>
 #import <FBControlCore/FBObjCExceptionGuard.h>
-#import <FBControlCore/FBProcessStream.h>

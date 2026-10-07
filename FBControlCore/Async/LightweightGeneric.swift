@@ -14,7 +14,6 @@ import Foundation
 public protocol LightweightGeneric: AnyObject {}
 
 extension FBFuture: LightweightGeneric {}
-extension FBProcessInput: LightweightGeneric {}
 
 public extension LightweightGeneric {
 
