@@ -606,8 +606,6 @@ private func waitForAnySignal(_ signals: [(code: Int32, message: String)], logge
 private func archName() -> String {
   #if arch(arm64)
   return "arm64"
-  #elseif arch(x86_64)
-  return "x86_64"
   #else
   return "not supported"
   #endif

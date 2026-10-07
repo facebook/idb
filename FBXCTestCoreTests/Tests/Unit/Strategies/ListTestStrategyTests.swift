@@ -26,7 +26,7 @@ final class ListTestStrategyTests: XCTestCase {
       runnerAppPath: nil,
       waitForDebugger: false,
       timeout: timeout,
-      architectures: ["arm64", "x86_64"]
+      architectures: ["arm64"]
     )
     let tests = try await ListTestStrategy(target: target, configuration: configuration, logger: ControlCoreGlobalConfiguration.defaultLogger).listTests()
     return (tests, target)
@@ -47,10 +47,9 @@ final class ListTestStrategyTests: XCTestCase {
     let spawned = try XCTUnwrap(target.spawned.first)
     XCTAssertEqual(target.spawned.count, 1)
     let xctestPath = target.xctest.path
-    let architecture = ArchitectureProcessAdapter.hostMachineSupportedArchitectures().contains(.arm64) ? "arm64" : "x86_64"
     XCTAssertNotEqual(spawned.executable, xctestPath, "The universal xctest binary is thinned to a copy before launch")
     XCTAssertTrue((spawned.executable as NSString).lastPathComponent.hasPrefix("xctest"), spawned.executable)
-    XCTAssertTrue(spawned.executable.hasSuffix(".\(architecture)"), spawned.executable)
+    XCTAssertTrue(spawned.executable.hasSuffix(".arm64"), spawned.executable)
     XCTAssertEqual(spawned.arguments, [])
     XCTAssertEqual(spawned.mode, .default)
     guard case .exact(let environment) = spawned.environment else {

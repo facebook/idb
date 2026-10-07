@@ -100,7 +100,7 @@ final class XCTestRunConfigurationTransientTests: XCTestCase {
     runnerAppPath: String? = nil,
     waitForDebugger: Bool = false,
     timeout: TimeInterval = 100,
-    architectures: Set<String> = ["x86_64"]
+    architectures: Set<String> = ["arm64"]
   ) -> ListTestConfiguration {
     return ListTestConfiguration(
       environment: env,

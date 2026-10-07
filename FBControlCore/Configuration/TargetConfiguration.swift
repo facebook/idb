@@ -194,8 +194,6 @@ public final class TargetConfiguration {
       .arm64: [.arm64, .armv7s, .armv7],
       .armv7s: [.armv7s, .armv7],
       .armv7: [.armv7],
-      .i386: [.i386],
-      .x86_64: [.x86_64, .i386],
     ]
 
     var result = Set<Architecture>()

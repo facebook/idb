@@ -7,21 +7,6 @@
 
 import Foundation
 
-// https://developer.apple.com/documentation/apple-silicon/about-the-rosetta-translation-environment#Determine-Whether-Your-App-Is-Running-as-a-Translated-Binary
-private func processIsTranslated() -> Int32 {
-  var ret: Int32 = 0
-  var size = MemoryLayout<Int32>.size
-  // patternlint-disable-next-line prefer-metasystemcontrol-byname
-  let result = sysctlbyname("sysctl.proc_translated", &ret, &size, nil, 0)
-  if result == -1 {
-    if errno == ENOENT {
-      return 0
-    }
-    return -1
-  }
-  return ret
-}
-
 enum ArchitectureAdapterError: Error, LocalizedError {
   case noCompatibleArchitecture(requested: [String], host: [String])
   case verificationFailed(architecture: String, binary: String)
@@ -50,9 +35,6 @@ public enum ArchitectureProcessAdapter {
   ) -> Architecture? {
     if requestedArchitectures.contains(.arm64) && supportedArchitectures.contains(.arm64) {
       return .arm64
-    }
-    if requestedArchitectures.contains(.x86_64) && supportedArchitectures.contains(.x86_64) {
-      return .x86_64
     }
     return nil
   }
@@ -199,20 +181,7 @@ public enum ArchitectureProcessAdapter {
     return nil
   }
 
-  /// Returns supported architectures based on companion launch architecture and launch under rosetta determination.
   public static func hostMachineSupportedArchitectures() -> Set<Architecture> {
-    #if arch(x86_64)
-    let isTranslated = processIsTranslated()
-    if isTranslated == 1 {
-      // Companion running as x86_64 with translation (Rosetta) -> Processor supports Arm64 and x86_64
-      return [.arm64, .x86_64]
-    } else {
-      // Companion running as x86_64 and translation is disabled or unknown
-      // Assuming processor only supports x86_64 even if translation state is unknown
-      return [.x86_64]
-    }
-    #else
-    return [.arm64, .x86_64]
-    #endif
+    [.arm64]
   }
 }
