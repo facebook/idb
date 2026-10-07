@@ -56,7 +56,8 @@ struct HidMethodHandler {
           xEnd: swipe.end.x,
           yEnd: swipe.end.y,
           delta: swipe.delta,
-          duration: swipe.duration))
+          duration: swipe.duration,
+          edge: try simulatorHIDEdge(from: swipe.edge)))
 
     case let .delay(delay):
       return .input(.delay(delay.duration))
@@ -113,17 +114,35 @@ struct HidMethodHandler {
       }
 
     case let .touch(touch):
+      let edge = try simulatorHIDEdge(from: touch.edge)
       switch press.direction {
       case .up:
-        return .touch(direction: .up, x: touch.point.x, y: touch.point.y)
+        return .touch(direction: .up, x: touch.point.x, y: touch.point.y, edge: edge)
       case .down:
-        return .touch(direction: .down, x: touch.point.x, y: touch.point.y)
+        return .touch(direction: .down, x: touch.point.x, y: touch.point.y, edge: edge)
       case .UNRECOGNIZED:
         throw RPCError(code: .invalidArgument, message: "Unrecognized press.direction")
       }
 
     case .none:
       throw RPCError(code: .invalidArgument, message: "Unrecognized press.action")
+    }
+  }
+
+  private static func simulatorHIDEdge(from request: Idb_HIDEvent.HIDEdge) throws -> SimulatorHIDEdge {
+    switch request {
+    case .noEdge:
+      return .none
+    case .topEdge:
+      return .top
+    case .leftEdge:
+      return .left
+    case .bottomEdge:
+      return .bottom
+    case .rightEdge:
+      return .right
+    case .UNRECOGNIZED:
+      throw RPCError(code: .invalidArgument, message: "Unrecognized hid edge")
     }
   }
 

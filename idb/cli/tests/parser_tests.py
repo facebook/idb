@@ -46,6 +46,7 @@ from idb.common.types import (
     HIDButtonType,
     HIDDelay,
     HIDDirection,
+    HIDEdge,
     HIDOrientationType,
     IdbException,
     InstalledArtifact,
@@ -2444,7 +2445,11 @@ class TestParser(TestCase):
         self.client_mock.swipe = AsyncMock(return_value=[])
         await cli_main(cmd_input=["ui", "swipe", "1", "2", "3", "4", "--delta", "5"])
         self.client_mock.swipe.assert_called_once_with(
-            p_start=(1, 2), p_end=(3, 4), duration=None, delta=5
+            p_start=(1, 2),
+            p_end=(3, 4),
+            duration=None,
+            delta=5,
+            edge=HIDEdge.NONE,
         )
 
     async def test_swipe_with_duration(self) -> None:
@@ -2453,14 +2458,35 @@ class TestParser(TestCase):
             cmd_input=["ui", "swipe", "1", "2", "3", "4", "--duration", "0.5"]
         )
         self.client_mock.swipe.assert_called_once_with(
-            p_start=(1, 2), p_end=(3, 4), duration=0.5, delta=None
+            p_start=(1, 2),
+            p_end=(3, 4),
+            duration=0.5,
+            delta=None,
+            edge=HIDEdge.NONE,
         )
 
     async def test_swipe_without_extra_params(self) -> None:
         self.client_mock.swipe = AsyncMock(return_value=[])
         await cli_main(cmd_input=["ui", "swipe", "1", "2", "3", "4"])
         self.client_mock.swipe.assert_called_once_with(
-            p_start=(1, 2), p_end=(3, 4), duration=None, delta=None
+            p_start=(1, 2),
+            p_end=(3, 4),
+            duration=None,
+            delta=None,
+            edge=HIDEdge.NONE,
+        )
+
+    async def test_swipe_from_an_edge(self) -> None:
+        self.client_mock.swipe = AsyncMock(return_value=[])
+        await cli_main(
+            cmd_input=["ui", "swipe", "201", "873", "201", "437", "--edge", "bottom"]
+        )
+        self.client_mock.swipe.assert_called_once_with(
+            p_start=(201, 873),
+            p_end=(201, 437),
+            duration=None,
+            delta=None,
+            edge=HIDEdge.BOTTOM,
         )
 
     async def test_contacts_update(self) -> None:

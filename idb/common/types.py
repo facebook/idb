@@ -656,9 +656,18 @@ class Point:
     y: float
 
 
+class HIDEdge(Enum):
+    NONE = 0
+    TOP = 1
+    LEFT = 2
+    BOTTOM = 3
+    RIGHT = 4
+
+
 @dataclass(frozen=True)
 class HIDTouch:
     point: Point
+    edge: HIDEdge = HIDEdge.NONE
 
 
 @dataclass(frozen=True)
@@ -686,6 +695,7 @@ class HIDSwipe:
     end: Point
     delta: float | None
     duration: float | None
+    edge: HIDEdge = HIDEdge.NONE
 
 
 @dataclass(frozen=True)
@@ -1140,6 +1150,7 @@ class Client(ABC):
         p_end: tuple[int, int],
         duration: float | None = None,
         delta: int | None = None,
+        edge: HIDEdge = HIDEdge.NONE,
     ) -> None:
         pass
 
