@@ -14,36 +14,33 @@ private let syslogRelayService = "com.apple.syslog_relay"
 
 public final class DeviceLogOperation: LogOperation {
   public let consumer: any DataConsumer
-
-  /// Never resolves of its own accord: the device reaching the end of its log is not the end of the
-  /// tail, and only the caller decides that. Cancelling is what invalidates the connection.
-  public let completed: FBFuture<NSNull>
+  private let connection: LockdownServiceConnection
+  private let service: String
+  private let logger: any ControlCoreLogger
 
   init(
     consumer: any DataConsumer,
     connection: LockdownServiceConnection,
     service: String,
-    queue: DispatchQueue,
     logger: any ControlCoreLogger
   ) {
     self.consumer = consumer
-    let tailing = FBMutableFuture<NSNull>(name: "Tailing \(service)")
-    self.completed = convertFBMutableFuture(
-      tailing.onQueue(
-        queue,
-        respondToCancellation: {
-          fbFutureFromAsync {
-            await MobileDevice.invalidateServiceConnection(connection, service: service, logger: logger)
-            return NSNull()
-          }
-        }
-      ))
+    self.connection = connection
+    self.service = service
+    self.logger = logger
   }
 
   // MARK: - LogOperation
 
+  /// Never returns of its own accord: the device reaching the end of its log is not the end of the
+  /// tail, and only the caller decides that. Cancelling is what invalidates the connection.
   public func waitUntilCompleted() async throws {
-    try await bridgeFBFutureVoid(completed)
+    do {
+      try await Task.sleep(nanoseconds: .max)
+    } catch {
+      await MobileDevice.invalidateServiceConnection(connection, service: service, logger: logger)
+      throw error
+    }
   }
 }
 
@@ -78,7 +75,6 @@ public struct DeviceLogCommands: LogCommands {
       consumer: consumer,
       connection: connection,
       service: syslogRelayService,
-      queue: device.asyncQueue,
       logger: device.logger
     )
   }

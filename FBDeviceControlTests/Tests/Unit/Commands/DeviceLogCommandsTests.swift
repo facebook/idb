@@ -82,11 +82,19 @@ final class DeviceLogCommandsTests {
   func tailLog_LeavesTheConnectionOpenWhenTheDeviceStopsWriting() async throws {
     let consumer = FBDataBuffer.accumulatingBuffer()
 
-    let operation = try #require(try await device.log.tail(arguments: [], consumer: consumer) as? DeviceLogOperation)
+    let operation = try await device.log.tail(arguments: [], consumer: consumer)
     _ = try await bridgeFBFuture(consumer.finishedConsuming)
     await waitFor("the AMDevice session to close") { self.amDevice.events == syslogSessionEvents }
 
-    #expect((operation.completed.state) == (.running))
+    var returned = false
+    let waiting = Task {
+      try await operation.waitUntilCompleted()
+      returned = true
+    }
+    defer { waiting.cancel() }
+    try await Task.sleep(nanoseconds: 200_000_000)
+
+    #expect(!returned)
     #expect(!syslog.isInvalidated)
   }
 
