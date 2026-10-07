@@ -62,7 +62,7 @@ final class InstrumentsConsumer: NSObject, DataConsumer, @unchecked Sendable {
     let logs = Logs()
     self.hasStoppedRecording = hasStoppedRecording
     self.hasStartedLoadingTemplate = hasStartedLoadingTemplate
-    self.lineConsumer = FBBlockDataConsumer.asynchronousLineConsumer { logLine in
+    self.lineConsumer = LineConsumer { logLine in
       if !logLine.isEmpty {
         logs.lines.append(logLine)
       }

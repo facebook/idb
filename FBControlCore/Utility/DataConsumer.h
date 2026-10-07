@@ -62,15 +62,6 @@
 + (nonnull id<DataConsumer, DataConsumerLifecycle, DataConsumerSync>)synchronousDataConsumerWithBlock:(void (^_Nonnull)(NSData * _Nonnull))consumer;
 
 /**
- Creates a Consumer of lines from a block.
- Lines will be delivered synchronously.
-
- @param consumer the block to call when a line has been consumed.
- @return a new consumer.
- */
-+ (nonnull id<DataConsumer, DataConsumerLifecycle, DataConsumerSync>)synchronousLineConsumerWithBlock:(void (^_Nonnull)(NSString * _Nonnull))consumer;
-
-/**
  Creates a consumer that delivers data when available.
  Data will be delivered asynchronously to the provided queue.
 
@@ -88,34 +79,5 @@
  @return a new consumer.
  */
 + (nonnull id<DataConsumer, DataConsumerLifecycle, DataConsumerAsync>)asynchronousDataConsumerWithBlock:(void (^_Nonnull)(NSData * _Nonnull))consumer;
-
-/**
- Creates a Consumer of lines from a block.
- Lines will be delivered asynchronously to a private queue.
-
- @param consumer the block to call when a line has been consumed.
- @return a new consumer.
- */
-+ (nonnull id<DataConsumer, DataConsumerLifecycle>)asynchronousLineConsumerWithBlock:(void (^_Nonnull)(NSString * _Nonnull))consumer;
-
-/**
- Creates a Consumer of lines from a block.
- Lines will be delivered asynchronously to the given queue.
-
- @param queue the queue to call the consumer from.
- @param consumer the block to call when a line has been consumed.
- @return a new consumer.
- */
-+ (nonnull id<DataConsumer, DataConsumerLifecycle>)asynchronousLineConsumerWithQueue:(nonnull dispatch_queue_t)queue consumer:(void (^_Nonnull)(NSString * _Nonnull))consumer;
-
-/**
- Creates a Consumer of lines from a block.
- Lines will be delivered as data asynchronously to the given queue.
-
- @param queue the queue to call the consumer from.
- @param consumer the block to call when a line has been consumed.
- @return a new consumer.
- */
-+ (nonnull id<DataConsumer, DataConsumerLifecycle>)asynchronousLineConsumerWithQueue:(nonnull dispatch_queue_t)queue dataConsumer:(void (^_Nonnull)(NSData * _Nonnull))consumer;
 
 @end

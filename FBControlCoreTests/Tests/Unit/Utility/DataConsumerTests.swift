@@ -48,7 +48,7 @@ final class DataConsumerTests: XCTestCase {
 
   func testLineBufferedConsumer() {
     var lines: [String] = []
-    let consumer = FBBlockDataConsumer.synchronousLineConsumer { line in
+    let consumer = LineConsumer(delivery: .synchronous) { line in
       lines.append(line)
     }
 
@@ -71,7 +71,7 @@ final class DataConsumerTests: XCTestCase {
     let queue = DispatchQueue(label: "testLineBufferedConsumerAsync")
     var lines: [String] = []
     let bothLines = expectation(description: "both lines delivered to the consumer")
-    let consumer = FBBlockDataConsumer.asynchronousLineConsumer { line in
+    let consumer = LineConsumer { line in
       queue.sync {
         lines.append(line)
         if lines.count == 2 { bothLines.fulfill() }

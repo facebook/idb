@@ -23,7 +23,7 @@ final class JSONTestReporterTests: XCTestCase {
     super.setUp()
     mutableLines = NSMutableArray()
     let linesRef = mutableLines!
-    consumer = FBBlockDataConsumer.synchronousLineConsumer { line in
+    consumer = LineConsumer(delivery: .synchronous) { (line: String) in
       linesRef.add(line)
     }
     reporter = JSONTestReporter(testBundlePath: "/path.bundle", testType: "footype", logger: nil, dataConsumer: consumer)

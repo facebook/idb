@@ -27,13 +27,7 @@ import Foundation
 
   /// A data buffer that is appended to by consuming data and can be drained.
   @objc public static func consumableBuffer() -> ConsumableBuffer {
-    ConsumableDataBuffer(forwarder: nil)
-  }
-
-  /// A buffer that drains itself by forwarding each `terminal`-delimited chunk, without the terminal, to `consumer`.
-  @objc(consumableBufferForwardingToConsumer:terminal:)
-  public static func consumableBuffer(forwardingTo consumer: DataConsumer, terminal: Data) -> ConsumableBuffer {
-    ConsumableDataBuffer(forwarder: TerminalForwarder(terminal: terminal, consumer: consumer))
+    ConsumableDataBuffer()
   }
 
   /// Data for a newline.
@@ -45,8 +39,7 @@ import Foundation
 }
 
 private class AccumulatingDataBuffer: NSObject, AccumulatingBuffer, @unchecked Sendable {
-  // Recursive because a consumable buffer forwards from inside `consumeData(_:)`, re-entering through `consume(until:)`.
-  let lock = NSRecursiveLock()
+  let lock = NSLock()
   let buffer: NSMutableData
   private let capacity: Int
   private let finishedConsumingFuture = FBMutableFuture<NSNull>()
@@ -99,10 +92,7 @@ private class AccumulatingDataBuffer: NSObject, AccumulatingBuffer, @unchecked S
 }
 
 private final class ConsumableDataBuffer: AccumulatingDataBuffer, ConsumableBuffer, @unchecked Sendable {
-  private let forwarder: TerminalForwarder?
-
-  init(forwarder: TerminalForwarder?) {
-    self.forwarder = forwarder
+  init() {
     super.init(backing: NSMutableData(), capacity: 0)
   }
 
@@ -156,23 +146,5 @@ private final class ConsumableDataBuffer: AccumulatingDataBuffer, ConsumableBuff
 
   func consumeLineString() -> String? {
     consumeLineData().flatMap { String(data: $0, encoding: .utf8) }
-  }
-
-  override func consumeData(_ data: Data) {
-    lock.withLock {
-      super.consumeData(data)
-      forwarder?.run(self)
-    }
-  }
-}
-
-private struct TerminalForwarder {
-  let terminal: Data
-  let consumer: DataConsumer
-
-  func run(_ buffer: ConsumableBuffer) {
-    while let partial = buffer.consume(until: terminal) {
-      consumer.consumeData(partial)
-    }
   }
 }

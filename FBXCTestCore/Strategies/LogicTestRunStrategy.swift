@@ -195,22 +195,22 @@ public final class LogicTestRunStrategy {
     var stdOutConsumers: [DataConsumer] = []
     var stdErrConsumers: [DataConsumer] = []
 
-    let shimReportingConsumer = FBBlockDataConsumer.asynchronousLineConsumer(
-      with: queue,
+    let shimReportingConsumer = LineConsumer(
+      delivery: .queue(queue),
       dataConsumer: { line in
         reporter.handleEventJSONData(line)
       })
     shimConsumers.append(shimReportingConsumer)
 
-    let stdOutReportingConsumer = FBBlockDataConsumer.asynchronousLineConsumer(
-      with: queue,
+    let stdOutReportingConsumer = LineConsumer(
+      delivery: .queue(queue),
       consumer: { line in
         reporter.testHadOutput(line + "\n")
       })
     stdOutConsumers.append(stdOutReportingConsumer)
 
-    let stdErrReportingConsumer = FBBlockDataConsumer.asynchronousLineConsumer(
-      with: queue,
+    let stdErrReportingConsumer = LineConsumer(
+      delivery: .queue(queue),
       consumer: { line in
         reporter.testHadOutput(line + "\n")
       })

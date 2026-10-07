@@ -176,7 +176,7 @@ extension Subprocess.Output {
       }
       return (HostSink(childDescriptor: descriptors[1], reader: nil, parentDescriptor: descriptors[0]), { Self.captured(descriptors[0]) })
     case .lines(let sink):
-      let consumer = FBBlockDataConsumer.asynchronousLineConsumer(sink)
+      let consumer = LineConsumer(consumer: sink)
       return (try Self.drainedSink(into: consumer, logger: nil), { Self.captured(()) })
     case .data:
       let backing = NSMutableData()

@@ -151,18 +151,6 @@
 
 @end
 
-typedef void (^dataBlock)(NSData *);
-static inline dataBlock FBDataConsumerToStringConsumer(void (^consumer)(NSString *))
-{
-  return ^(NSData *data) {
-    NSString *line = [[NSString alloc] initWithData:data encoding:NSUTF8StringEncoding];
-    if (line == nil) {
-      line = @"non-utf8";
-    }
-    consumer(line);
-  };
-}
-
 @interface FBBlockDataConsumer_Dispatcher : NSObject <DataConsumer>
 
 @property (nullable, nonatomic, readwrite, strong) dispatch_queue_t queue;
@@ -245,22 +233,6 @@ static inline dataBlock FBDataConsumerToStringConsumer(void (^consumer)(NSString
 
 @end
 
-@interface FBBlockDataConsumer_Buffered : FBBlockDataConsumer
-
-@property (nonatomic, readonly, strong) id<ConsumableBuffer> buffer;
-
-- (instancetype)initWithDispatcher:(FBBlockDataConsumer_Dispatcher *)dispatcher terminal:(NSData *)terminal;
-
-@end
-
-// Used when the dispatcher has no queue (synchronous delivery), so callers that
-// branch on `-conformsToProtocol:@protocol(DataConsumerSync)` find the marker.
-@interface FBBlockDataConsumer_Buffered_Sync : FBBlockDataConsumer_Buffered <DataConsumerSync>
-@end
-
-@implementation FBBlockDataConsumer_Buffered_Sync
-@end
-
 @interface FBBlockDataConsumer_Unbuffered : FBBlockDataConsumer <DataConsumerSync>
 
 @property (nonatomic, readonly, strong) FBMutableFuture<NSNull *> *finishedConsumingFuture;
@@ -283,12 +255,6 @@ static inline dataBlock FBDataConsumerToStringConsumer(void (^consumer)(NSString
   return [[FBBlockDataConsumer_Unbuffered alloc] initWithDispatcher:dispatcher];
 }
 
-+ (id<DataConsumer, DataConsumerLifecycle>)synchronousLineConsumerWithBlock:(void (^)(NSString *))consumer
-{
-  FBBlockDataConsumer_Dispatcher *dispatcher = [[FBBlockDataConsumer_Dispatcher alloc] initWithQueue:nil consumer:FBDataConsumerToStringConsumer(consumer)];
-  return [[FBBlockDataConsumer_Buffered_Sync alloc] initWithDispatcher:dispatcher terminal:FBDataBuffer.newlineTerminal];
-}
-
 + (id<DataConsumer, DataConsumerLifecycle, DataConsumerAsync>)asynchronousDataConsumerOnQueue:(dispatch_queue_t)queue consumer:(void (^)(NSData *))consumer
 {
   FBBlockDataConsumer_Dispatcher *dispatcher = [[FBBlockDataConsumer_Dispatcher alloc] initWithQueue:queue consumer:consumer];
@@ -299,25 +265,6 @@ static inline dataBlock FBDataConsumerToStringConsumer(void (^consumer)(NSString
 {
   dispatch_queue_t queue = dispatch_queue_create("com.facebook.FBControlCore.BlockDataConsumer.data", DISPATCH_QUEUE_SERIAL);
   return [self asynchronousDataConsumerOnQueue:queue consumer:consumer];
-}
-
-+ (id<DataConsumer, DataConsumerLifecycle>)asynchronousLineConsumerWithBlock:(void (^)(NSString *))consumer
-{
-  dispatch_queue_t queue = dispatch_queue_create("com.facebook.FBControlCore.BlockDataConsumer.lines", DISPATCH_QUEUE_SERIAL);
-  FBBlockDataConsumer_Dispatcher *dispatcher = [[FBBlockDataConsumer_Dispatcher alloc] initWithQueue:queue consumer:FBDataConsumerToStringConsumer(consumer)];
-  return [[FBBlockDataConsumer_Buffered alloc] initWithDispatcher:dispatcher terminal:FBDataBuffer.newlineTerminal];
-}
-
-+ (id<DataConsumer, DataConsumerLifecycle>)asynchronousLineConsumerWithQueue:(dispatch_queue_t)queue consumer:(void (^)(NSString *))consumer
-{
-  FBBlockDataConsumer_Dispatcher *dispatcher = [[FBBlockDataConsumer_Dispatcher alloc] initWithQueue:queue consumer:FBDataConsumerToStringConsumer(consumer)];
-  return [[FBBlockDataConsumer_Buffered alloc] initWithDispatcher:dispatcher terminal:FBDataBuffer.newlineTerminal];
-}
-
-+ (id<DataConsumer, DataConsumerLifecycle>)asynchronousLineConsumerWithQueue:(dispatch_queue_t)queue dataConsumer:(void (^)(NSData *))consumer
-{
-  FBBlockDataConsumer_Dispatcher *dispatcher = [[FBBlockDataConsumer_Dispatcher alloc] initWithQueue:queue consumer:consumer];
-  return [[FBBlockDataConsumer_Buffered alloc] initWithDispatcher:dispatcher terminal:FBDataBuffer.newlineTerminal];
 }
 
 - (instancetype)initWithDispatcher:(FBBlockDataConsumer_Dispatcher *)dispatcher
@@ -394,47 +341,6 @@ static inline dataBlock FBDataConsumerToStringConsumer(void (^consumer)(NSString
 {
   NSAssert(NO, @"-[%@ %@] is abstract and should be overridden", NSStringFromClass(self.class), NSStringFromSelector(_cmd));
   return 0;
-}
-
-@end
-
-@implementation FBBlockDataConsumer_Buffered
-
-#pragma mark Initializers
-
-- (instancetype)initWithDispatcher:(FBBlockDataConsumer_Dispatcher *)dispatcher terminal:(NSData *)terminal
-{
-  self = [super initWithDispatcher:dispatcher];
-  if (!self) {
-    return nil;
-  }
-
-  _buffer = [FBDataBuffer consumableBufferForwardingToConsumer:dispatcher terminal:terminal];
-
-  return self;
-}
-
-#pragma mark DataConsumer
-
-- (void)consumeData:(NSData *)data
-{
-  @synchronized(self) {
-    [self.buffer consumeData:data];
-  }
-}
-
-- (void)consumeEndOfFile
-{
-  @synchronized(self) {
-    [self.buffer consumeEndOfFile];
-  }
-}
-
-#pragma mark DataConsumerLifecycle
-
-- (FBFuture<NSNull *> *)finishedConsuming
-{
-  return self.buffer.finishedConsuming;
 }
 
 @end
