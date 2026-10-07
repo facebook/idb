@@ -90,13 +90,13 @@ flowchart TD
     FBSimulatorAX --> FBSimulatorControl
     FBSimulatorXCTest --> FBSimulatorControl
     FBSimulatorXCTest --> FBXCTestCore
-    FBSimulatorControl --> FBAXCore
     FBSimulatorControl --> FBSimulatorBridgeProtocol
     guest["SimulatorFrameworkBridge (in the Simulator)"] --> FBSimulatorBridgeProtocol
     FBDeviceControl --> FBVideoCore
     FBDeviceControl --> FBXCTestCore
     FBVideoCore --> FBControlCore
     FBAXCore --> FBControlCore
+    FBAXCore --> FBSimulatorBridgeProtocol
     FBXCTestCore --> FBControlCore
     FBSimulatorControl --> FBControlCore
 ```

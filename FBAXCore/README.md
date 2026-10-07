@@ -2,7 +2,7 @@
 
 The accessibility data model: the requests a caller makes of a target's accessibility tree and the documents it gets back. Every reader produces this model, so a consumer can use one result regardless of which backend read it. The model also defines the wire vocabulary the in-guest `SimulatorFrameworkBridge` reader answers in.
 
-It depends only on `FBControlCore`, and internal-imports the `AXRuntime` private headers for trait names. It holds no reader; the Simulator's readers are in [`FBSimulatorAX`](../FBSimulatorAX/README.md).
+It depends on `FBControlCore` and on [`FBSimulatorBridgeProtocol`](../FBSimulatorBridgeProtocol/README.md), whose traversal it shares, and internal-imports the `AXRuntime` private headers for trait names. It holds no reader; the Simulator's readers are in [`FBSimulatorAX`](../FBSimulatorAX/README.md).
 
 ## What it provides
 
@@ -13,4 +13,4 @@ It depends only on `FBControlCore`, and internal-imports the `AXRuntime` private
 
 ## Who reads it
 
-Host-side translation and the in-guest bridge both answer with this model, which is why the bridge's request types in `FBSimulatorControl` encode with `AXTraversal` and `AXKeys`. How the Simulator reads its tree is described in [the accessibility documentation](https://www.fbidb.io/idb/accessibility).
+Host-side translation and the in-guest bridge both answer with this model. `AXTraversal` is the bridge protocol's `BridgeAXTraversal`, so a read's traversal means the same thing to the host and to the guest, and `FBSimulatorAX` maps `AXKeys` onto the attributes the bridge fetches. How the Simulator reads its tree is described in [the accessibility documentation](https://www.fbidb.io/idb/accessibility).
