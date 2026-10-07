@@ -105,6 +105,12 @@ final class SimulatorProfileSmokeTests: ProvidedSimulatorTestCase {
   }
 
   func testTraceExportsTheTimeProfile() async throws {
+    // xctrace on hosted runners cannot attach to a simulator process: it either
+    // exits 21 ("Cannot find process for provided pid") or hangs past its time
+    // limit. Internal runs, where it can attach, remain the coverage of record.
+    try XCTSkipIf(
+      ProcessInfo.processInfo.environment["GITHUB_ACTIONS"] == "true",
+      "xctrace cannot attach to simulator processes on hosted CI runners")
     let configuration = TraceConfiguration(template: "Time Profiler", schemas: nil, timeLimit: .seconds(3), rowLimit: 10, outputPath: nil)
 
     let result = try await simulator.profile.profile(.trace(configuration), target: .bundleID(Self.bundleID)).result
