@@ -37,9 +37,3 @@ import Foundation
   /// Consume a line if one is available, returning it as a String.
   func consumeLineString() -> String?
 }
-
-/// Internal forwarding protocol used by FBDataBuffer implementations.
-@objc public protocol BufferForwarder: NSObjectProtocol {
-  func run(_ buffer: ConsumableBuffer)
-  var consumer: DataConsumer { get }
-}

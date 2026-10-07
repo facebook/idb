@@ -11,7 +11,6 @@
 
 #import "FBControlCore-Swift.h"
 #import "FBControlCore-SwiftImport.h"
-#import "FBDataBuffer.h"
 
 @interface FBDataConsumerAdaptor ()
 
@@ -410,7 +409,7 @@ static inline dataBlock FBDataConsumerToStringConsumer(void (^consumer)(NSString
     return nil;
   }
 
-  _buffer = [FBDataBuffer consumableBufferForwardingToConsumer:dispatcher onQueue:nil terminal:terminal];
+  _buffer = [FBDataBuffer consumableBufferForwardingToConsumer:dispatcher terminal:terminal];
 
   return self;
 }

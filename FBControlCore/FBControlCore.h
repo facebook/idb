@@ -6,7 +6,6 @@
  */
 
 #import <FBControlCore/DataConsumer.h>
-#import <FBControlCore/FBDataBuffer.h>
 #import <FBControlCore/FBFuture.h>
 #import <FBControlCore/FBFuture+Sync.h>
 #import <FBControlCore/FBObjCExceptionGuard.h>
