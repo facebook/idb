@@ -193,98 +193,50 @@ final class InstrumentsClient {
   private var lastChannelIdentifier: Int32 = 0
   private let channels: [String: Any]
   private let connection: LockdownServiceConnection
-  private let queue: DispatchQueue
   private let logger: any ControlCoreLogger
 
   // MARK: - Initializers
 
-  class func instrumentsClient(
-    with connection: LockdownServiceConnection,
-    logger: any ControlCoreLogger
-  ) -> FBFuture<InstrumentsClient> {
-    let queue = DispatchQueue(label: "com.facebook.fbdevicecontrol.fbinstrumentsclient")
-    return FBFuture<AnyObject>.onQueue(
-      queue,
-      resolve: { () -> FBFuture<AnyObject> in
-        do {
-          let (channels, responseMessageIdentifier) = try availableChannels(on: connection)
-          let client = InstrumentsClient(
-            connection: connection,
-            channels: channels,
-            lastMessageIdentifier: responseMessageIdentifier,
-            queue: queue,
-            logger: logger)
-          return FBFuture<AnyObject>(result: client)
-        } catch {
-          return FBFuture<AnyObject>(error: error as NSError)
-        }
-      }
-    ).retyped(FBFuture<InstrumentsClient>.self)
-  }
-
-  private init(
-    connection: LockdownServiceConnection,
-    channels: [String: Any],
-    lastMessageIdentifier: UInt32,
-    queue: DispatchQueue,
-    logger: any ControlCoreLogger
-  ) {
+  /// Performs the handshake on `connection`, which is read and written synchronously from then on.
+  /// The client is not safe to use from more than one thread at a time.
+  init(connection: LockdownServiceConnection, logger: any ControlCoreLogger) throws {
+    let (channels, responseMessageIdentifier) = try Self.availableChannels(on: connection)
     self.connection = connection
     self.channels = channels
-    self.lastMessageIdentifier = lastMessageIdentifier
-    self.queue = queue
+    self.lastMessageIdentifier = responseMessageIdentifier
     self.logger = logger
   }
 
   // MARK: - Public
 
-  func launchApplication(_ configuration: ApplicationLaunchConfiguration) -> FBFuture<NSNumber> {
-    FBFuture<AnyObject>.onQueue(
-      queue,
-      resolve: { [self] () -> FBFuture<AnyObject> in
-        do {
-          let options: [String: Any] = [
-            "StartSuspendedKey": configuration.waitForDebugger,
-            "KillExisting": configuration.launchMode != .failIfRunning,
-          ]
-          let response = try onChannel(
-            identifier: ProcessControlChannel,
-            performSelector: "launchSuspendedProcessWithDevicePath:bundleIdentifier:environment:arguments:options:",
-            argumentsData: [
-              Self.argumentData(forArgument: ""), // devicePath:
-              Self.argumentData(forArgument: configuration.bundleID), // bundleIdentifier:
-              Self.argumentData(forArgument: configuration.environment), // environment:
-              Self.argumentData(forArgument: configuration.arguments), // arguments:
-              Self.argumentData(forArgument: options), // options:
-            ])
-          guard let processIdentifier = response.returnValue as? NSNumber else {
-            throw InstrumentsClientError.unexpectedLaunchResult(described: String(describing: response.returnValue))
-          }
-          return FBFuture<AnyObject>(result: processIdentifier)
-        } catch {
-          return FBFuture<AnyObject>(error: error as NSError)
-        }
-      }
-    ).retyped(FBFuture<NSNumber>.self)
+  func launchApplication(_ configuration: ApplicationLaunchConfiguration) throws -> NSNumber {
+    let options: [String: Any] = [
+      "StartSuspendedKey": configuration.waitForDebugger,
+      "KillExisting": configuration.launchMode != .failIfRunning,
+    ]
+    let response = try onChannel(
+      identifier: ProcessControlChannel,
+      performSelector: "launchSuspendedProcessWithDevicePath:bundleIdentifier:environment:arguments:options:",
+      argumentsData: [
+        Self.argumentData(forArgument: ""), // devicePath:
+        Self.argumentData(forArgument: configuration.bundleID), // bundleIdentifier:
+        Self.argumentData(forArgument: configuration.environment), // environment:
+        Self.argumentData(forArgument: configuration.arguments), // arguments:
+        Self.argumentData(forArgument: options), // options:
+      ])
+    guard let processIdentifier = response.returnValue as? NSNumber else {
+      throw InstrumentsClientError.unexpectedLaunchResult(described: String(describing: response.returnValue))
+    }
+    return processIdentifier
   }
 
-  func killProcess(_ processIdentifier: pid_t) -> FBFuture<NSNull> {
-    FBFuture<AnyObject>.onQueue(
-      queue,
-      resolve: { [self] () -> FBFuture<AnyObject> in
-        do {
-          _ = try onChannel(
-            identifier: ProcessControlChannel,
-            performSelector: "killPid:",
-            argumentsData: [
-              Self.argumentData(forArgument: NSNumber(value: processIdentifier)) // pid:
-            ])
-          return FBFuture<AnyObject>(result: NSNull())
-        } catch {
-          return FBFuture<AnyObject>(error: error as NSError)
-        }
-      }
-    ).retyped(FBFuture<NSNull>.self)
+  func killProcess(_ processIdentifier: pid_t) throws {
+    _ = try onChannel(
+      identifier: ProcessControlChannel,
+      performSelector: "killPid:",
+      argumentsData: [
+        Self.argumentData(forArgument: NSNumber(value: processIdentifier)) // pid:
+      ])
   }
 
   // MARK: - The wire format

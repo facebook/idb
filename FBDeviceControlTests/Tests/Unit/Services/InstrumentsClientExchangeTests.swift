@@ -73,8 +73,8 @@ struct InstrumentsClientExchangeTests {
     return (connection, service)
   }
 
-  private func makeClient(_ connection: LockdownServiceConnection) async throws -> InstrumentsClient {
-    try await bridgeFBFuture(InstrumentsClient.instrumentsClient(with: connection, logger: ControlCoreGlobalConfiguration.defaultLogger))
+  private func makeClient(_ connection: LockdownServiceConnection) throws -> InstrumentsClient {
+    try InstrumentsClient(connection: connection, logger: ControlCoreGlobalConfiguration.defaultLogger)
   }
 
   private let launchConfiguration = ApplicationLaunchConfiguration(
@@ -86,43 +86,43 @@ struct InstrumentsClientExchangeTests {
     launchMode: .failIfRunning)
 
   @Test
-  func launchingReturnsTheProcessIdentifierTheDeviceReports() async throws {
+  func launchingReturnsTheProcessIdentifierTheDeviceReports() throws {
     let (connection, service) = makeConnection(replies: [
       handshake(publishing: [ProcessControlChannel]),
       dtxMessage(identifier: 2, conversationIndex: 1),
       dtxMessage(identifier: 3, conversationIndex: 1, returnValue: NSNumber(value: 4242)),
     ])
 
-    let client = try await makeClient(connection)
-    let processIdentifier = try await bridgeFBFuture(client.launchApplication(launchConfiguration))
+    let client = try makeClient(connection)
+    let processIdentifier = try client.launchApplication(launchConfiguration)
 
     #expect(processIdentifier.int32Value == 4242)
     #expect(service.sentBytes.range(of: archived("com.example.app")) != nil)
   }
 
   @Test
-  func killingSendsTheProcessIdentifierOnTheProcessControlChannel() async throws {
+  func killingSendsTheProcessIdentifierOnTheProcessControlChannel() throws {
     let (connection, service) = makeConnection(replies: [
       handshake(publishing: [ProcessControlChannel]),
       dtxMessage(identifier: 2, conversationIndex: 1),
       dtxMessage(identifier: 3, conversationIndex: 1),
     ])
 
-    let client = try await makeClient(connection)
-    try await bridgeFBFutureVoid(client.killProcess(4242))
+    let client = try makeClient(connection)
+    try client.killProcess(4242)
 
     #expect(service.sentBytes.range(of: archived("killPid:")) != nil)
     #expect(service.sentBytes.range(of: archived(NSNumber(value: 4242))) != nil)
   }
 
   @Test
-  func launchingFailsWhenTheDeviceDoesNotPublishProcessControl() async throws {
+  func launchingFailsWhenTheDeviceDoesNotPublishProcessControl() throws {
     let (connection, _) = makeConnection(replies: [handshake(publishing: ["com.example.other"])])
 
-    let client = try await makeClient(connection)
+    let client = try makeClient(connection)
 
-    await #expect {
-      _ = try await bridgeFBFuture(client.launchApplication(launchConfiguration))
+    #expect {
+      _ = try client.launchApplication(launchConfiguration)
     } throws: { error in
       guard case let InstrumentsClientError.unknownChannel(identifier, _) = error else {
         return false
@@ -132,7 +132,7 @@ struct InstrumentsClientExchangeTests {
   }
 
   @Test
-  func launchingFailsWithTheErrorTheDeviceReturns() async throws {
+  func launchingFailsWithTheErrorTheDeviceReturns() throws {
     let deviceError = NSError(domain: "com.example.instruments", code: 7)
     let (connection, _) = makeConnection(replies: [
       handshake(publishing: [ProcessControlChannel]),
@@ -140,10 +140,10 @@ struct InstrumentsClientExchangeTests {
       dtxMessage(identifier: 3, conversationIndex: 1, returnValue: deviceError),
     ])
 
-    let client = try await makeClient(connection)
+    let client = try makeClient(connection)
 
-    await #expect {
-      _ = try await bridgeFBFuture(client.launchApplication(launchConfiguration))
+    #expect {
+      _ = try client.launchApplication(launchConfiguration)
     } throws: { error in
       (error as NSError).domain == deviceError.domain && (error as NSError).code == deviceError.code
     }

@@ -261,7 +261,7 @@ public final class DeviceApplicationCommands: ApplicationCommands {
       pid = try await devicectl.launchApplication(configuration: configuration)
     } else {
       pid = try await withRemoteInstrumentsClient { client in
-        try await bridgeFBFuture(client.launchApplication(configuration))
+        try client.launchApplication(configuration)
       }
     }
     return DeviceLaunchedApplication(
@@ -276,7 +276,7 @@ public final class DeviceApplicationCommands: ApplicationCommands {
 
   fileprivate func killApplication(withProcessIdentifier processIdentifier: pid_t) async throws {
     try await withRemoteInstrumentsClient { client in
-      try await bridgeFBFutureVoid(client.killProcess(processIdentifier))
+      try client.killProcess(processIdentifier)
     }
   }
 
@@ -306,7 +306,7 @@ public final class DeviceApplicationCommands: ApplicationCommands {
     }
   }
 
-  private func withRemoteInstrumentsClient<R>(_ body: (InstrumentsClient) async throws -> R) async throws -> R {
+  private func withRemoteInstrumentsClient<R>(_ body: (InstrumentsClient) throws -> R) async throws -> R {
     guard let device else {
       throw DeviceNilError.deviceNil
     }
@@ -314,8 +314,7 @@ public final class DeviceApplicationCommands: ApplicationCommands {
     _ = try await device.developerDiskImage.ensureMounted()
     let serviceName = usesSecureConnection ? "com.apple.instruments.remoteserver.DVTSecureSocketProxy" : "com.apple.instruments.remoteserver"
     return try await device.withServiceConnection(serviceName) { connection in
-      let client = try await bridgeFBFuture(InstrumentsClient.instrumentsClient(with: connection, logger: device.logger))
-      return try await body(client)
+      try body(InstrumentsClient(connection: connection, logger: device.logger))
     }
   }
 
