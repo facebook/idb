@@ -9,6 +9,8 @@
 import Foundation
 
 private let bundleReadyTimeout: TimeInterval = 60
+private let ideInterfaceReadyTimeout: TimeInterval = 60
+private let daemonSessionReadyTimeout: TimeInterval = 60
 private let crashCheckWaitLimit: TimeInterval = 120
 
 enum TestBundleConnectionError: Error {
@@ -36,6 +38,45 @@ extension TestBundleConnectionError: LocalizedError {
     case let .crashLogTimedOut(processIdentifier, bundleID, timeout):
       return "Timed out after \(timeout) seconds getting crash log for process with pid \(processIdentifier), bundle ID: \(bundleID)"
     }
+  }
+}
+
+/// What the test bundle and testmanagerd have done over the connection, as events to wait on.
+final class TestBundleEvents: NSObject, FBTestBundleDTXConnectionDelegate, @unchecked Sendable {
+  let proxyChannelOpened = AsyncEvent<Void>()
+  let sessionStarted = AsyncEvent<Void>()
+  let bundleReady = AsyncEvent<Void>()
+  /// Also happens when the bundle fails, which ends the test plan without it finishing.
+  let testPlanEnded = AsyncEvent<Void>()
+  let disconnected = AsyncEvent<Void>()
+
+  func testBundleConnectionDidOpenProxyChannel() {
+    proxyChannelOpened.happen()
+  }
+
+  func testBundleConnectionDidStartSessionWithError(_ error: Error?) {
+    if let error {
+      sessionStarted.fail(error)
+    } else {
+      sessionStarted.happen()
+    }
+  }
+
+  func testBundleConnectionBundleDidBecomeReady() {
+    bundleReady.happen()
+  }
+
+  func testBundleConnectionBundleDidFailWithError(_ error: Error) {
+    bundleReady.fail(error)
+    testPlanEnded.fail(error)
+  }
+
+  func testBundleConnectionDidFinishTestPlan() {
+    testPlanEnded.happen()
+  }
+
+  func testBundleConnectionDidDisconnect() {
+    disconnected.happen()
   }
 }
 
@@ -69,29 +110,46 @@ final class TestBundleConnection {
 
   func connectAndRun() async throws {
     logger.log("Connecting Test Bundle")
+    let events = TestBundleEvents()
     let core = FBTestBundleDTXConnection(
       context: context,
       work: target.workQueue,
       socket: socket,
       interface: interface,
+      delegate: events,
       request: requestQueue,
       logger: logger
     )
     try core.connect()
     defer { core.disconnect() }
     do {
-      try await bridgeFBFutureVoid(core.setupAndStartSession())
-      try await bridgeFBFutureVoid(core.waitForBundleReady())
+      core.setupAndStartSession()
+      try await Self.waitForSession(events)
+      logger.log("Waiting for test bundle to be ready..")
+      try await events.bundleReady.wait(timeout: bundleReadyTimeout, waitingFor: "Bundle Ready to be called")
     } catch {
       throw await self.diagnosedConnectionError(from: error)
     }
     core.startExecutingTestPlan()
-    try await bridgeFBFutureVoid(core.waitForBundleDisconnected())
-    if core.testPlanCompleted {
+    try await events.disconnected.wait()
+    if events.testPlanEnded.hasHappened {
       self.logger.log("Bundle disconnected, with the test plan completed. Bundle exited successfully.")
     } else {
       self.logger.log("Bundle disconnected, but test plan has not completed. This could mean a crash has occurred")
       throw await self.crashLogOrNotFoundError(description: "Lost connection to test process, but could not find a crash log")
+    }
+  }
+
+  /// Fails with whichever of the two fails first, as either holds up the session.
+  private static func waitForSession(_ events: TestBundleEvents) async throws {
+    try await withThrowingTaskGroup(of: Void.self) { group in
+      group.addTask {
+        try await events.proxyChannelOpened.wait(timeout: ideInterfaceReadyTimeout, waitingFor: "XCTestManager_IDEInterface to be ready")
+      }
+      group.addTask {
+        try await events.sessionStarted.wait(timeout: daemonSessionReadyTimeout, waitingFor: "_IDE_initiateSessionWithIdentifier:forClient:atPath:protocolVersion: to be resolved")
+      }
+      try await group.waitForAll()
     }
   }
 

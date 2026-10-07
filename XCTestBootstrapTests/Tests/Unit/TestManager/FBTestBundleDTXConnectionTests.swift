@@ -38,6 +38,7 @@ private final class RecordingIDEInterface: NSObject {
 final class FBTestBundleDTXConnectionTests: XCTestCase {
 
   private let interface = RecordingIDEInterface()
+  private let events = TestBundleEvents()
 
   private func makeConnection() throws -> FBTestBundleDTXConnection {
     let sessionIdentifier = UUID()
@@ -70,6 +71,7 @@ final class FBTestBundleDTXConnectionTests: XCTestCase {
       work: DispatchQueue(label: "com.facebook.xctestbootstrap.tests.work"),
       socket: -1,
       interface: interface,
+      delegate: events,
       request: DispatchQueue(label: "com.facebook.xctestbootstrap.tests.request"),
       logger: ControlCoreGlobalConfiguration.defaultLogger)
   }
@@ -81,9 +83,9 @@ final class FBTestBundleDTXConnectionTests: XCTestCase {
       with: NSNumber(value: minimumVersion))
   }
 
-  private func assertBundleReadyFails(_ connection: FBTestBundleDTXConnection, describing expected: String, file: StaticString = #filePath, line: UInt = #line) async {
+  private func assertBundleReadyFails(describing expected: String, file: StaticString = #filePath, line: UInt = #line) async {
     do {
-      try await bridgeFBFutureVoid(connection.waitForBundleReady())
+      try await events.bundleReady.wait()
       XCTFail("Waiting for the bundle should fail", file: file, line: line)
     } catch {
       XCTAssertTrue(
@@ -101,7 +103,7 @@ final class FBTestBundleDTXConnectionTests: XCTestCase {
 
     bundleReady(connection, protocolVersion: 36, minimumVersion: 8)
 
-    try await bridgeFBFutureVoid(connection.waitForBundleReady())
+    try await events.bundleReady.wait()
     XCTAssertEqual(interface.calls, ["bundleReady:36:8"])
   }
 
@@ -110,7 +112,7 @@ final class FBTestBundleDTXConnectionTests: XCTestCase {
 
     bundleReady(connection, protocolVersion: 40, minimumVersion: 37)
 
-    await assertBundleReadyFails(connection, describing: "test process requires at least version 37, IDE is running version 36")
+    await assertBundleReadyFails(describing: "test process requires at least version 37, IDE is running version 36")
     XCTAssertEqual(interface.calls, [])
   }
 
@@ -119,7 +121,7 @@ final class FBTestBundleDTXConnectionTests: XCTestCase {
 
     bundleReady(connection, protocolVersion: 7, minimumVersion: 1)
 
-    await assertBundleReadyFails(connection, describing: "IDE requires at least version 8, test process is running version 7")
+    await assertBundleReadyFails(describing: "IDE requires at least version 8, test process is running version 7")
     XCTAssertEqual(interface.calls, [])
   }
 
@@ -128,7 +130,7 @@ final class FBTestBundleDTXConnectionTests: XCTestCase {
 
     _ = connection.perform(NSSelectorFromString("_XCT_testRunnerReadyWithCapabilities:"), with: nil)
 
-    try await bridgeFBFutureVoid(connection.waitForBundleReady())
+    try await events.bundleReady.wait()
   }
 
   func testUITestingFailingToInitializeFailsTheWait() async throws {
@@ -138,18 +140,18 @@ final class FBTestBundleDTXConnectionTests: XCTestCase {
       NSSelectorFromString("_XCT_initializationForUITestingDidFailWithError:"),
       with: NSError(domain: "com.example.xctest", code: 3))
 
-    await assertBundleReadyFails(connection, describing: "Failed to initialize for UI testing")
+    await assertBundleReadyFails(describing: "Failed to initialize for UI testing")
   }
 
   // MARK: - Test plan
 
   func testFinishingTheTestPlanCompletesItAndIsForwarded() throws {
     let connection = try makeConnection()
-    XCTAssertFalse(connection.testPlanCompleted)
+    XCTAssertFalse(events.testPlanEnded.hasHappened)
 
     _ = connection.perform(NSSelectorFromString("_XCT_didFinishExecutingTestPlan"))
 
-    XCTAssertTrue(connection.testPlanCompleted)
+    XCTAssertTrue(events.testPlanEnded.hasHappened)
     XCTAssertEqual(interface.calls, ["didFinishExecutingTestPlan"])
   }
 
@@ -160,7 +162,7 @@ final class FBTestBundleDTXConnectionTests: XCTestCase {
       NSSelectorFromString("_XCT_initializationForUITestingDidFailWithError:"),
       with: NSError(domain: "com.example.xctest", code: 3))
 
-    XCTAssertTrue(connection.testPlanCompleted)
+    XCTAssertTrue(events.testPlanEnded.hasHappened)
   }
 
   // MARK: - Forwarding

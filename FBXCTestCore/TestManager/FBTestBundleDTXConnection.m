@@ -30,10 +30,6 @@
 static const NSInteger FBProtocolVersion = 36;
 static const NSInteger FBProtocolMinimumVersion = 0x8;
 
-static NSTimeInterval const BundleReadyTimeout = 60; // Time for `_XCT_testBundleReadyWithProtocolVersion` to be called after the 'connect'.
-static NSTimeInterval const IDEInterfaceReadyTimeout = 60; // Time for `XCTestManager_IDEInterface` to be returned.
-static NSTimeInterval const DaemonSessionReadyTimeout = 60; // Time for `_IDE_initiateSessionWithIdentifier` to be returned.
-
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wprotocol"
 #pragma clang diagnostic ignored "-Wincomplete-implementation"
@@ -44,15 +40,13 @@ static NSTimeInterval const DaemonSessionReadyTimeout = 60; // Time for `_IDE_in
 @property (nonatomic, readonly, strong) dispatch_queue_t workQueue;
 @property (nonatomic, readonly, assign) int testManagerdSocket;
 @property (nonatomic, readonly, strong) id<XCTestManager_IDEInterface, XCTMessagingChannel_RunnerToIDE, NSObject> interface;
+@property (nonatomic, readonly, strong) id<FBTestBundleDTXConnectionDelegate> delegate;
 @property (nonatomic, readonly, strong) dispatch_queue_t requestQueue;
 @property (nonatomic, readonly, strong) id<ControlCoreLogger> logger;
 
-@property (nonatomic, readonly, strong) FBMutableFuture<NSNull *> *bundleDisconnected;
-@property (nonatomic, readonly, strong) FBMutableFuture<NSNull *> *bundleReadyFuture;
-@property (nonatomic, readonly, strong) FBMutableFuture<NSNull *> *testPlanFuture;
-
 @property (nullable, nonatomic, strong) DTXConnection *testManagerdConnection;
-@property (nullable, nonatomic, strong) id<XCTestDriverInterface> testBundleProxy;
+// Set from the proxy handler's queue and read once the delegate has been told the bundle is ready.
+@property (nullable, atomic, strong) id<XCTestDriverInterface> testBundleProxy;
 
 @end
 
@@ -82,7 +76,7 @@ static NSTimeInterval const DaemonSessionReadyTimeout = 60; // Time for `_IDE_in
   return _clientProcessDisplayPath;
 }
 
-- (instancetype)initWithContext:(TestManagerContext *)context workQueue:(dispatch_queue_t)workQueue socket:(int)socket interface:(id)interface requestQueue:(dispatch_queue_t)requestQueue logger:(id<ControlCoreLogger>)logger
+- (instancetype)initWithContext:(TestManagerContext *)context workQueue:(dispatch_queue_t)workQueue socket:(int)socket interface:(id)interface delegate:(id<FBTestBundleDTXConnectionDelegate>)delegate requestQueue:(dispatch_queue_t)requestQueue logger:(id<ControlCoreLogger>)logger
 {
   self = [super init];
   if (!self) {
@@ -93,12 +87,9 @@ static NSTimeInterval const DaemonSessionReadyTimeout = 60; // Time for `_IDE_in
   _workQueue = workQueue;
   _testManagerdSocket = socket;
   _interface = interface;
+  _delegate = delegate;
   _requestQueue = requestQueue;
   _logger = logger;
-
-  _bundleDisconnected = FBMutableFuture.future;
-  _bundleReadyFuture = FBMutableFuture.future;
-  _testPlanFuture = FBMutableFuture.future;
 
   return self;
 }
@@ -147,7 +138,7 @@ static NSTimeInterval const DaemonSessionReadyTimeout = 60; // Time for `_IDE_in
   }
   [connection registerDisconnectHandler:^{
     [logger log:@"Notified that testmanagerd connection disconnected"];
-    [self.bundleDisconnected resolveWithResult:NSNull.null];
+    [self.delegate testBundleConnectionDidDisconnect];
   }];
   self.testManagerdConnection = connection;
   [logger log:[NSString stringWithFormat:@"testmanagerd socket %d wrapped in %@", socket, connection]];
@@ -169,25 +160,11 @@ static NSTimeInterval const DaemonSessionReadyTimeout = 60; // Time for `_IDE_in
   });
 }
 
-- (FBFuture<NSNull *> *)setupAndStartSession
+- (void)setupAndStartSession
 {
   DTXConnection *connection = self.testManagerdConnection;
-  return [[FBFuture
-           futureWithFutures:@[
-             [self setupTestBundleConnectionWithConnection:connection],
-             [self sendStartSessionRequestWithConnection:connection],
-           ]]
-          onQueue:self.requestQueue
-          fmap:^FBFuture *(NSArray<id> *results) {
-            self.testBundleProxy = results[0];
-            return FBFuture.empty;
-          }];
-}
-
-- (FBFuture<NSNull *> *)waitForBundleReady
-{
-  [self.logger log:@"Waiting for test bundle to be ready.."];
-  return [self.bundleReadyFuture timeout:BundleReadyTimeout waitingFor:@"Bundle Ready to be called"];
+  [self setupTestBundleConnectionWithConnection:connection];
+  [self sendStartSessionRequestWithConnection:connection];
 }
 
 - (void)startExecutingTestPlan
@@ -196,19 +173,8 @@ static NSTimeInterval const DaemonSessionReadyTimeout = 60; // Time for `_IDE_in
   [self.testBundleProxy _IDE_startExecutingTestPlanWithProtocolVersion:@(FBProtocolVersion)];
 }
 
-- (FBFuture<NSNull *> *)waitForBundleDisconnected
+- (void)setupTestBundleConnectionWithConnection:(DTXConnection *)connection
 {
-  return self.bundleDisconnected;
-}
-
-- (BOOL)testPlanCompleted
-{
-  return self.testPlanFuture.hasCompleted;
-}
-
-- (FBFuture<id<XCTestDriverInterface>> *)setupTestBundleConnectionWithConnection:(DTXConnection *)connection
-{
-  FBMutableFuture<id<XCTestDriverInterface>> *future = FBMutableFuture.future;
   [self.logger log:@"Listening for proxy connection request from the test bundle (all platforms)"];
 
   [connection
@@ -217,16 +183,14 @@ static NSTimeInterval const DaemonSessionReadyTimeout = 60; // Time for `_IDE_in
    handler:^(DTXProxyChannel *channel) {
      [self.logger log:@"Got proxy channel request from test bundle"];
      [channel setExportedObject:self queue:self.workQueue];
-     id<XCTestDriverInterface> interface = channel.remoteObjectProxy;
-     [future resolveWithResult:interface];
+     self.testBundleProxy = channel.remoteObjectProxy;
+     [self.delegate testBundleConnectionDidOpenProxyChannel];
    }];
   [self.logger log:@"Resuming the test bundle connection."];
   [connection resume];
-
-  return [future timeout:IDEInterfaceReadyTimeout waitingFor:@"XCTestManager_IDEInterface to be ready"];
 }
 
-- (FBFuture<NSNumber *> *)sendStartSessionRequestWithConnection:(DTXConnection *)connection
+- (void)sendStartSessionRequestWithConnection:(DTXConnection *)connection
 {
   [self.logger log:@"Checking test manager availability..."];
   DTXProxyChannel *proxyChannel = [connection
@@ -246,33 +210,29 @@ static NSTimeInterval const DaemonSessionReadyTimeout = 60; // Time for `_IDE_in
 
   NSString *sessionStartMethod = NSStringFromSelector(@selector(_IDE_initiateSessionWithIdentifier:forClient:atPath:protocolVersion:));
 
-  FBMutableFuture<NSNumber *> *future = FBMutableFuture.future;
   [receipt handleCompletion:^(NSNumber *version, NSError *error) {
     [proxyChannel cancel];
     if (error) {
       [self.logger log:[NSString stringWithFormat:@"testmanagerd did %@ failed: %@", sessionStartMethod, error]];
-      [future resolveWithError:error];
+      [self.delegate testBundleConnectionDidStartSessionWithError:error];
       return;
     }
     [self.logger log:[NSString stringWithFormat:@"testmanagerd handled session request using protocol version requested=%ld received=%ld", FBProtocolVersion, version.longValue]];
-    [future resolveWithResult:version];
+    [self.delegate testBundleConnectionDidStartSessionWithError:nil];
   }];
-
-  return [future timeout:DaemonSessionReadyTimeout waitingFor:[NSString stringWithFormat:@"%@ to be resolved", sessionStartMethod]];
 }
 
 - (void)concludeWithError:(NSError *)error
 {
   [self.logger log:[NSString stringWithFormat:@"Test Completed with error: %@", error]];
-  [self.bundleReadyFuture resolveWithError:error];
-  [self.testPlanFuture resolveWithError:error];
+  [self.delegate testBundleConnectionBundleDidFailWithError:error];
 }
 
 #pragma mark XCTestDriverInterface
 
 - (id)_XCT_didFinishExecutingTestPlan
 {
-  [self.testPlanFuture resolveWithResult:NSNull.null];
+  [self.delegate testBundleConnectionDidFinishTestPlan];
   return [self.interface _XCT_didFinishExecutingTestPlan];
 }
 
@@ -299,7 +259,7 @@ static NSTimeInterval const DaemonSessionReadyTimeout = 60; // Time for `_IDE_in
     return nil;
   }
   [self.logger log:@"Test Bundle is Ready"];
-  [self.bundleReadyFuture resolveWithResult:NSNull.null];
+  [self.delegate testBundleConnectionBundleDidBecomeReady];
   return [self.interface _XCT_testBundleReadyWithProtocolVersion:protocolVersion minimumVersion:minimumVersion];
 }
 
@@ -326,7 +286,7 @@ static NSTimeInterval const DaemonSessionReadyTimeout = 60; // Time for `_IDE_in
   DTXRemoteInvocationReceipt *receipt = [[objc_lookUpClass("DTXRemoteInvocationReceipt") alloc] init];
   [receipt invokeCompletionWithReturnValue:self.context.testConfiguration.xcTestConfiguration error:nil];
 
-  [self.bundleReadyFuture resolveWithResult:NSNull.null];
+  [self.delegate testBundleConnectionBundleDidBecomeReady];
   return receipt;
 }
 
