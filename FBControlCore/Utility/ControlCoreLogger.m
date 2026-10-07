@@ -12,62 +12,6 @@
 
 #import "DataConsumer.h"
 
-@interface FBControlCoreLogger_NSLog : NSObject <ControlCoreLogger>
-
-@end
-
-@implementation FBControlCoreLogger_NSLog
-
-@synthesize name = _name;
-@synthesize level = _level;
-
-- (instancetype)initWithname:(NSString *)name level:(FBControlCoreLogLevel)level
-{
-  self = [super init];
-  if (!self) {
-    return nil;
-  }
-
-  _name = name;
-  _level = level;
-
-  return self;
-}
-
-- (id<ControlCoreLogger>)log:(NSString *)message
-{
-  NSString *string = self.name ? [NSString stringWithFormat:@"[%@] %@", self.name, message] : message;
-  NSLog(@"%@", string);
-  return self;
-}
-
-- (id<ControlCoreLogger>)info
-{
-  return self;
-}
-
-- (id<ControlCoreLogger>)debug
-{
-  return self;
-}
-
-- (id<ControlCoreLogger>)error
-{
-  return self;
-}
-
-- (id<ControlCoreLogger>)withName:(NSString *)name
-{
-  return [[self.class alloc] initWithname:name level:self.level];
-}
-
-- (id<ControlCoreLogger>)withDateFormatEnabled:(BOOL)dateFormat
-{
-  return self;
-}
-
-@end
-
 @implementation FBCompositeLogger
 
 - (instancetype)initWithLoggers:(NSArray<id<ControlCoreLogger>> *)loggers
@@ -247,7 +191,7 @@
 + (id<ControlCoreLogger>)systemLoggerWritingToStderr:(BOOL)writeToStdErr withDebugLogging:(BOOL)debugLogging;
 {
   FBControlCoreLogLevel level = debugLogging ? FBControlCoreLogLevelDebug : FBControlCoreLogLevelInfo;
-  id<ControlCoreLogger> systemLogger = [self osLoggerWithLevel:level] ?: [FBControlCoreLogger_NSLog new];
+  id<ControlCoreLogger> systemLogger = [self osLoggerWithLevel:level];
 
   if (!writeToStdErr) {
     return systemLogger;

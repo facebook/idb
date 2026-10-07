@@ -62,7 +62,7 @@ typedef NS_ENUM(NSUInteger, FBControlCoreLogLevel) {
 @interface FBControlCoreLoggerFactory : NSObject
 
 /**
- A logger backed by os_log (falling back to NSLog).
+ A logger backed by os_log.
  writeToStdErr additionally mirrors output to stderr unless os_log already does so in this environment.
  debugLogging selects the debug level rather than info.
  */

@@ -15,9 +15,9 @@
 @interface FBControlCoreLoggerFactory (OSLog)
 
 /**
- An os_log-backed logger, or nil when not built with an Apple compiler.
+ An os_log-backed logger.
  */
-+ (nullable id<ControlCoreLogger>)osLoggerWithLevel:(FBControlCoreLogLevel)level;
++ (nonnull id<ControlCoreLogger>)osLoggerWithLevel:(FBControlCoreLogLevel)level;
 
 /**
  Returns YES if the system logger will log to stderr, NO otherwise.

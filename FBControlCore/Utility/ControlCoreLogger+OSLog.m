@@ -7,11 +7,9 @@
 
 #import "ControlCoreLogger+OSLog.h"
 
+#include <os/log.h>
+
 #import <FBControlCore/FBControlCore-Swift.h>
-
-#if defined(__apple_build_version__)
-
- #include <os/log.h>
 
 static const char *LoggerSubsystem = "com.facebook.fbcontrolcore";
 
@@ -88,30 +86,20 @@ static const char *LoggerSubsystem = "com.facebook.fbcontrolcore";
 
 @end
 
-#endif
-
 @implementation FBControlCoreLoggerFactory (OSLog)
 
 + (id<ControlCoreLogger>)osLoggerWithLevel:(FBControlCoreLogLevel)level
 {
-#if defined(__apple_build_version__)
   os_log_t client = os_log_create(LoggerSubsystem, "");
   return [[FBControlCoreLogger_OSLog alloc] initWithClient:client name:nil level:level];
-#else
-  return nil;
-#endif
 }
 
 + (BOOL)systemLoggerWillLogToStdErr
 {
-#if defined(__apple_build_version__)
   // rdar://36919139
   // os_log will log to stderr depending on if some environment variables are set.
   NSDictionary<NSString *, NSString *> *environment = NSProcessInfo.processInfo.environment;
   return environment[@"OS_ACTIVITY_DT_MODE"] || environment[@"ACTIVITY_LOG_STDERR"] || environment[@"CFLOG_FORCE_STDERR"];
-#else
-  return YES;
-#endif
 }
 
 @end
