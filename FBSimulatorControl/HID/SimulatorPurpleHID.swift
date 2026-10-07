@@ -83,7 +83,7 @@ final class SimulatorPurpleHID {
   }
 
   /// Writes a little-endian `UInt32` at the given byte offset (host byte order on the
-  /// x86_64 / arm64 macOS hosts that idb runs on).
+  /// arm64 macOS hosts that idb runs on).
   private static func writeUInt32(_ value: UInt32, into buf: inout [UInt8], at offset: Int) {
     buf[offset] = UInt8(value & 0xFF)
     buf[offset + 1] = UInt8((value >> 8) & 0xFF)
