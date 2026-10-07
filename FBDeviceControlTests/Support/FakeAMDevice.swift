@@ -124,6 +124,10 @@ final class FakeAMDevice: NSObject {
 
   private(set) var mountedImagePaths: [String] = []
 
+  /// The device as it appears while restoring, when a test drives one. Must be set before the
+  /// device is made, since the call table is built then.
+  var restorable: FakeRestorableDevice?
+
   private var services: [String: FakeLockdownService] = [:]
 
   /// The scripted service of this name, created empty on first use so a test can set up a reply
@@ -304,6 +308,8 @@ final class FakeAMDevice: NSObject {
     calls.CopyErrorText = { status in
       Unmanaged.passRetained("fake AMDevice error \(status)" as CFString)
     }
+
+    restorable?.install(into: &calls)
 
     return calls
   }
