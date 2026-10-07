@@ -42,7 +42,8 @@ public final class SynchronousDataConsumer: NSObject, DataConsumer, DataConsumer
 /// A consumer that passes each chunk of data to a block, in order, on a queue.
 ///
 /// End-of-file blocks its caller until every chunk already queued has been delivered, so
-/// `finishedConsuming` resolves only after the last delivery. Data consumed after end-of-file is ignored.
+/// `finishedConsuming` resolves only after the last delivery. Data consumed after end-of-file is ignored,
+/// including data a queued delivery feeds back while end-of-file waits.
 // SAFETY: `consumer` is only touched under `lock` and `pending` only under `pendingLock`;
 // `FBMutableFuture` is internally synchronized.
 public final class AsynchronousDataConsumer: NSObject, DataConsumer, DataConsumerLifecycle, DataConsumerAsync, @unchecked Sendable {
@@ -78,10 +79,11 @@ public final class AsynchronousDataConsumer: NSObject, DataConsumer, DataConsume
 
   public func consumeEndOfFile() {
     lock.withLock {
-      group.wait()
       consumer = nil
-      finishedConsumingFuture.resolve(withResult: NSNull())
     }
+    // Outside the lock: a queued delivery that feeds this consumer again takes it.
+    group.wait()
+    finishedConsumingFuture.resolve(withResult: NSNull())
   }
 
   public var finishedConsuming: FBFuture<NSNull> {

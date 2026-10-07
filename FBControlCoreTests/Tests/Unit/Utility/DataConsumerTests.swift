@@ -209,9 +209,9 @@ final class DataConsumerTests: XCTestCase {
     Thread.sleep(forTimeInterval: 0.1)
     endOfFileStarted.signal()
 
-    // BUG: end-of-file waits for the delivery while holding the lock the delivery needs to feed the consumer again, so neither returns — flipped in the following commit
-    XCTAssertEqual(XCTWaiter().wait(for: [returned], timeout: 1), .timedOut)
+    wait(for: [returned], timeout: ControlCoreGlobalConfiguration.fastTimeout)
     XCTAssertEqual("FOO".data(using: .utf8)!, actual as Data)
+    XCTAssertTrue(box.consumer?.finishedConsuming.hasCompleted ?? false)
   }
 
   func testLineBufferConsumption() {
