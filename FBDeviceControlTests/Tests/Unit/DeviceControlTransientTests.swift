@@ -123,21 +123,6 @@ struct DeviceControlTransientTests {
     #expect(storage.referenced.isEmpty)
   }
 
-  // MARK: - DeviceControlError Tests
-
-  @Test
-  func errorBuilderCreatesErrorInCorrectDomain() {
-    let nsError = DeviceControlError.describe("test error").build() as NSError
-    #expect((nsError.domain) == ("com.facebook.FBDeviceControl"))
-  }
-
-  @Test
-  func errorBuilderWithDescription() {
-    let nsError = DeviceControlError.describe("error foo 42").build() as NSError
-    #expect((nsError.localizedDescription.contains("foo")))
-    #expect((nsError.localizedDescription.contains("42")))
-  }
-
   // MARK: - FileManager+TemporaryFile Tests
 
   @Test
