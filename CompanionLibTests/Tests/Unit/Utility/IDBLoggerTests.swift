@@ -6,10 +6,13 @@
  */
 
 @preconcurrency @testable import CompanionLib
+import FBControlCore
 import Foundation
 import Testing
 
-@Suite
+// Serialized: tailing adds to the loggers every `IDBLogger` fans out to, which the logger count
+// assertions would otherwise see.
+@Suite(.serialized)
 struct IDBLoggerTests {
 
   private func userDefaults(logFilePath: String? = nil) -> UserDefaults {
@@ -103,5 +106,49 @@ struct IDBLoggerTests {
       #expect(path == directoryURL.path)
       #expect(code == EISDIR)
     }
+  }
+
+  // MARK: - Tailing
+
+  @Test
+  func tailingDeliversLinesLoggedThroughAnyLogger() async throws {
+    let consumer = FBDataBuffer.accumulatingBuffer()
+    let operation = try await IDBLogger.systemLogger(withUserDefaults: userDefaults()).tailToConsumer(consumer)
+    let line = "tailed-\(UUID().uuidString)"
+
+    IDBLogger.systemLogger(withUserDefaults: userDefaults()).log(line)
+
+    #expect(await eventually { String(decoding: consumer.data(), as: UTF8.self).contains(line) })
+    _ = try? await cancelledWait(operation)
+    try await Task.sleep(nanoseconds: 200_000_000)
+  }
+
+  @Test
+  func cancellingTheWaitThrowsCancellationAndStopsDelivery() async throws {
+    let consumer = FBDataBuffer.accumulatingBuffer()
+    let operation = try await IDBLogger.systemLogger(withUserDefaults: userDefaults()).tailToConsumer(consumer)
+
+    await #expect(throws: CancellationError.self) { try await cancelledWait(operation) }
+    try await Task.sleep(nanoseconds: 200_000_000)
+    let line = "after-cancel-\(UUID().uuidString)"
+    IDBLogger.systemLogger(withUserDefaults: userDefaults()).log(line)
+    try await Task.sleep(nanoseconds: 200_000_000)
+
+    #expect(!String(decoding: consumer.data(), as: UTF8.self).contains(line))
+  }
+
+  private func cancelledWait(_ operation: any LogOperation) async throws {
+    let waiting = Task { try await operation.waitUntilCompleted() }
+    waiting.cancel()
+    try await waiting.value
+  }
+
+  private func eventually(timeout: TimeInterval = 5, _ condition: () -> Bool) async -> Bool {
+    let deadline = Date().addingTimeInterval(timeout)
+    while Date() < deadline {
+      if condition() { return true }
+      try? await Task.sleep(nanoseconds: 20_000_000)
+    }
+    return condition()
   }
 }
