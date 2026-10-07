@@ -377,16 +377,16 @@ final class MobileDeviceTests {
   @Test
   func houseArrest_CancellingAQueuedConsumerAbandonsItsPlaceInLine() async throws {
     let device = Self.makeDevice(connectionReuseTimeout: nil, serviceReuseTimeout: nil)
-    nonisolated(unsafe) let holderHasConnection = FBMutableFuture<NSNull>()
-    nonisolated(unsafe) let gate = FBMutableFuture<NSNull>()
+    let holderHasConnection = AsyncEvent<Void>()
+    let gate = AsyncEvent<Void>()
 
     let holder = Task { @MainActor in
       try await device.withHouseArrestAFCConnection(forBundleID: "com.foo.bar", afcCalls: Self.stubbedAFCCalls) { _ in
-        holderHasConnection.resolve(withResult: NSNull())
-        try await bridgeFBFutureVoid(gate)
+        holderHasConnection.happen()
+        try await gate.wait()
       }
     }
-    try await bridgeFBFutureVoid(holderHasConnection)
+    try await holderHasConnection.wait()
 
     nonisolated(unsafe) var waiterBodyRan = false
     let waiter = Task { @MainActor in
@@ -397,7 +397,7 @@ final class MobileDeviceTests {
     // Give the waiter a chance to park behind the holder before cancelling it.
     try? await Task.sleep(nanoseconds: 50_000_000)
     waiter.cancel()
-    gate.resolve(withResult: NSNull())
+    gate.happen()
 
     await #expect(throws: CancellationError.self) {
       try await waiter.value
