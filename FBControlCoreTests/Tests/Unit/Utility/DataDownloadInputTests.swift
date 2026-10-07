@@ -153,6 +153,28 @@ final class DataDownloadInputTests: XCTestCase {
     }
   }
 
+  func testDownload_WhenCompleted_IsReleased() async throws {
+    StubURLProtocol.behaviour = .respond(statusCode: 200, body: Data("payload".utf8))
+    let configuration = URLSessionConfiguration.ephemeral
+    configuration.protocolClasses = [StubURLProtocol.self]
+    // swiftlint:disable:next force_unwrapping
+    let url = URL(string: "https://example.invalid/app.ipa")!
+    weak var released: DataDownloadInput?
+    do {
+      let download = DataDownloadInput.dataDownload(withURL: url, configuration: configuration, logger: logger)
+      released = download
+      try await download.completed()
+    }
+
+    let deadline = Date().addingTimeInterval(1)
+    while released != nil, Date() < deadline {
+      try await Task.sleep(nanoseconds: 10_000_000)
+    }
+
+    // BUG: the session is never invalidated, so it holds its delegate, the download, forever. Flipped in the following commit.
+    XCTAssertNotNil(released)
+  }
+
   // MARK: - HTTP errors
 
   func testDownload_WhenResponseIsNotFound_FailsWithTheHTTPStatus() async throws {
