@@ -85,10 +85,6 @@ open class ControlCoreError: NSObject {
     return nil
   }
 
-  @objc open func failFuture() -> FBFuture<AnyObject> {
-    return FBFuture<AnyObject>(error: build())
-  }
-
   @objc @discardableResult
   open func failPointer(_ error: NSErrorPointer) -> UnsafeMutableRawPointer? {
     error?.pointee = build()
@@ -208,10 +204,5 @@ extension ControlCoreError {
   @discardableResult
   public class func failBool(with failureCause: NSError, description: String, errorOut: NSErrorPointer) -> Bool {
     return Self.caused(by: failureCause).describe(description).failBool(errorOut)
-  }
-
-  @objc(failFutureWithError:)
-  public class func failFuture(with error: NSError) -> FBFuture<AnyObject> {
-    return FBFuture<AnyObject>(error: error)
   }
 }

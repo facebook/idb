@@ -18,7 +18,7 @@ extension FBFuture: LightweightGeneric {}
 public extension LightweightGeneric {
 
   /// Re-expresses the erased parameter of a value returned by an Objective-C API. Chaining methods that
-  /// cannot name their result type (`failFuture`, `mapReplace:` and neighbours) are declared as bare
+  /// cannot name their result type (`mapReplace:` and neighbours) are declared as bare
   /// `FBFuture *` and import as the `AnyObject` specialisation.
   /// The parameter is erased at runtime, so restoring it cannot fail.
   func retyped<U: LightweightGeneric>(_ type: U.Type = U.self) -> U {

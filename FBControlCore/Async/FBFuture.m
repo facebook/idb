@@ -143,9 +143,9 @@ dispatch_time_t FBCreateDispatchTimeFromDuration(NSTimeInterval inDuration)
 {
   NSParameterAssert(timeout > 0);
 
-  FBFuture *timeoutFuture = [[[ControlCoreError
-                               describe:[NSString stringWithFormat:@"Timed out after %f seconds waiting for %@", timeout, description]]
-                              failFuture]
+  FBFuture *timeoutFuture = [[FBFuture futureWithError:[[ControlCoreError
+                                                         describe:[NSString stringWithFormat:@"Timed out after %f seconds waiting for %@", timeout, description]]
+                                                        build]]
                              delay:timeout];
   return [FBFuture race:@[self, timeoutFuture]];
 }

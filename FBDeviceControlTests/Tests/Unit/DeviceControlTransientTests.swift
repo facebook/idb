@@ -138,18 +138,6 @@ struct DeviceControlTransientTests {
     #expect((nsError.localizedDescription.contains("42")))
   }
 
-  @Test
-  func errorFailFuture() async {
-    let future: FBFuture<AnyObject> = DeviceControlError.describe("future error").failFuture()
-    do {
-      _ = try await bridgeFBFuture(future)
-      Issue.record("Expected future to throw")
-    } catch {
-      let nsError = error as NSError
-      #expect((nsError.domain) == ("com.facebook.FBDeviceControl"))
-    }
-  }
-
   // MARK: - FileManager+TemporaryFile Tests
 
   @Test
