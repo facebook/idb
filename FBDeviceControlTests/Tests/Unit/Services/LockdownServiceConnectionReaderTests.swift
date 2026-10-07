@@ -88,9 +88,8 @@ struct LockdownServiceConnectionReaderTests {
     _ = try await bridgeFBFuture(reader.startReading())
     _ = try await bridgeFBFuture(reader.finishedReading)
 
-    // BUG: the loop sees `.notStarted` and ends without reading, then `startReading` leaves the reader `.reading` — flipped in the following commit
-    #expect(sReceiveCount == 0)
-    #expect(reader.state == .reading)
+    #expect(sReceiveCount == 1)
+    #expect(reader.state == .finishedReadingNormally)
   }
 
   @Test

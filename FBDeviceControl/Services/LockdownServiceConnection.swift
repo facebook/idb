@@ -393,6 +393,7 @@ final class LockdownServiceConnectionReader: NSObject {
       return FBFuture<NSNull>(error: LockdownServiceConnectionError.cannotStartReading(state: state.rawValue) as NSError)
     }
 
+    state = .reading
     schedule { [self] in
       let buffer = UnsafeMutableRawPointer.allocate(byteCount: ReadBufferSize, alignment: MemoryLayout<UInt8>.alignment)
       defer { buffer.deallocate() }
@@ -407,7 +408,6 @@ final class LockdownServiceConnectionReader: NSObject {
       state = .finishedReadingNormally
       finishedReadingMutable.resolve(withResult: NSNumber(value: FBFileReaderState.finishedReadingNormally.rawValue))
     }
-    state = .reading
 
     return FBFuture<NSNull>.empty()
   }
