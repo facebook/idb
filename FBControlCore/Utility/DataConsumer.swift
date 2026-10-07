@@ -51,7 +51,7 @@ public extension DataConsumerLifecycle {
 }
 
 /// A consumer that logs each received chunk, trimmed of newlines, to `logger`.
-public final class FBLoggingDataConsumer: NSObject, DataConsumer {
+public final class FBLoggingDataConsumer: DataConsumer {
   public let logger: ControlCoreLogger
 
   public init(logger: ControlCoreLogger) {
@@ -70,7 +70,7 @@ public final class FBLoggingDataConsumer: NSObject, DataConsumer {
 
 /// A consumer that forwards everything it receives to each of `consumers`, in order.
 // SAFETY: all state is immutable; `FBMutableFuture` is internally synchronized.
-public final class FBCompositeDataConsumer: NSObject, DataConsumer, DataConsumerLifecycle, @unchecked Sendable {
+public final class FBCompositeDataConsumer: DataConsumer, DataConsumerLifecycle, CustomStringConvertible, @unchecked Sendable {
   private let consumers: [DataConsumer]
   private let finishedConsumingFuture = FBMutableFuture<NSNull>()
 
@@ -78,7 +78,7 @@ public final class FBCompositeDataConsumer: NSObject, DataConsumer, DataConsumer
     self.consumers = consumers
   }
 
-  override public var description: String {
+  public var description: String {
     "Composite Consumer \(CollectionInformation.oneLineDescription(from: consumers))"
   }
 
@@ -101,7 +101,9 @@ public final class FBCompositeDataConsumer: NSObject, DataConsumer, DataConsumer
 }
 
 /// A consumer that discards everything it receives.
-public final class FBNullDataConsumer: NSObject, DataConsumer {
+public final class FBNullDataConsumer: DataConsumer {
+  public init() {}
+
   public func consumeData(_ data: Data) {}
 
   public func consumeEndOfFile() {}

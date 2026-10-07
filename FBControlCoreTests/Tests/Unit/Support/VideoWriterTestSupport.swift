@@ -12,7 +12,7 @@ import XCTest
 
 // MARK: - Test Doubles
 
-class OverflownConsumerDouble: NSObject, DataConsumer {
+final class OverflownConsumerDouble: DataConsumer, @unchecked Sendable {
   private var _unprocessedDataCount: Int = 0
 
   var consumption: DataConsumption {

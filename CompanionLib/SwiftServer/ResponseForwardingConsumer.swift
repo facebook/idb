@@ -13,7 +13,7 @@ import Foundation
 /// `stopForwarding()` is called. Data consumed after that is dropped, so a stream that has gone away
 /// is never written to again.
 // SAFETY: `stopped` is an `Atomic`; `consumer` is itself `Sendable`.
-final class ResponseForwardingConsumer: NSObject, DataConsumer, DataConsumerLifecycle, @unchecked Sendable {
+final class ResponseForwardingConsumer: DataConsumer, DataConsumerLifecycle, @unchecked Sendable {
   private let stopped: Atomic<Bool>
   private let consumer: AsynchronousDataConsumer
 

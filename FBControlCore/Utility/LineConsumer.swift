@@ -12,7 +12,7 @@ import Foundation
 /// End-of-file delivers a trailing chunk with no newline as the last line, and `finishedConsuming`
 /// resolves once every line has been delivered.
 // SAFETY: `pending` is only touched under `lock`; `FBMutableFuture` is internally synchronized.
-public final class LineConsumer: NSObject, DataConsumer, DataConsumerLifecycle, @unchecked Sendable {
+public final class LineConsumer: DataConsumer, DataConsumerLifecycle, @unchecked Sendable {
   public enum Delivery: Sendable {
     /// Lines are delivered on the thread that consumed the data.
     case synchronous
