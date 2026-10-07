@@ -55,7 +55,7 @@ public enum ZipStreamExtractor {
         }
         try created.create((relative as NSString).deletingLastPathComponent)
         var size: UInt64 = 0
-        try writer.write((root as NSString).appendingPathComponent(relative), modified: header.modified.map { timespec(tv_sec: Int(floor($0.timeIntervalSince1970)), tv_nsec: 0) }) { output in
+        try writer.write((root as NSString).appendingPathComponent(relative), modified: header.modified.map(ArchiveExtraction.fileTime)) { output in
           guard let contents = appleDoubleCandidate else {
             size = try reader.decode(header, into: output)
             return
@@ -77,7 +77,7 @@ public enum ZipStreamExtractor {
     if !overrideModificationTime {
       for (path, modified) in directories.reversed() {
         if let modified {
-          try ArchiveExtraction.setTimes(modified) { utimes(path, $0) }
+          try ArchiveExtraction.setTimes(ArchiveExtraction.fileTime(modified), on: path)
         }
       }
     }

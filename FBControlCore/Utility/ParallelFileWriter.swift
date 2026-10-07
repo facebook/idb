@@ -50,14 +50,14 @@ final class ParallelFileWriter {
     defer { inline.map { _ = close($0) } }
     try produce { buffer in
       if let fd = inline {
-        try Self.writeAll(buffer, to: fd)
+        try ArchiveExtraction.writeAll(buffer, to: fd)
         return
       }
       contents.append(contentsOf: buffer)
       if contents.count > Self.inlineThreshold {
-        let fd = try Self.create(path)
+        let fd = try ArchiveExtraction.createFile(path)
         inline = fd
-        try contents.withUnsafeBytes { try Self.writeAll($0, to: fd) }
+        try contents.withUnsafeBytes { try ArchiveExtraction.writeAll($0, to: fd) }
         contents = Data()
       }
     }
@@ -100,51 +100,15 @@ final class ParallelFileWriter {
     var extendedAttributes: [String: Data]
   }
 
-  private static func create(_ path: String) throws -> Int32 {
-    // Exclusive: an archive naming a path twice is left to an extractor with an opinion on it.
-    let fd = open(path, O_WRONLY | O_CREAT | O_EXCL | O_NOFOLLOW | O_CLOEXEC, 0o644)
-    guard fd >= 0 else {
-      throw POSIXError.current
-    }
-    return fd
-  }
-
   private static func write(_ file: File, overrideModificationTime: Bool) throws {
-    let fd = try create(file.path)
+    let fd = try ArchiveExtraction.createFile(file.path)
     defer { close(fd) }
-    try file.contents.withUnsafeBytes { try writeAll($0, to: fd) }
+    try file.contents.withUnsafeBytes { try ArchiveExtraction.writeAll($0, to: fd) }
     try finish(file, fd: fd, overrideModificationTime: overrideModificationTime)
   }
 
   private static func finish(_ file: File, fd: Int32, overrideModificationTime: Bool) throws {
-    for (name, value) in file.extendedAttributes {
-      _ = value.withUnsafeBytes { fsetxattr(fd, name, $0.baseAddress, $0.count, 0, 0) }
-    }
-    if let mode = file.mode {
-      guard fchmod(fd, mode & 0o7777) == 0 else {
-        throw POSIXError.current
-      }
-    }
-    if !overrideModificationTime, let modified = file.modified {
-      let times = [modified, modified]
-      guard futimens(fd, times) == 0 else {
-        throw POSIXError.current
-      }
-    }
-  }
-
-  private static func writeAll(_ buffer: UnsafeRawBufferPointer, to fd: Int32) throws {
-    guard let base = buffer.baseAddress else {
-      return
-    }
-    var offset = 0
-    while offset < buffer.count {
-      let written = Darwin.write(fd, base + offset, buffer.count - offset)
-      guard written > 0 else {
-        throw POSIXError.current
-      }
-      offset += written
-    }
+    try ArchiveExtraction.finishFile(fd, mode: file.mode, modified: overrideModificationTime ? nil : file.modified, extendedAttributes: file.extendedAttributes)
   }
 
   /// Hands files from the decoding thread to the writers, holding back the decoder

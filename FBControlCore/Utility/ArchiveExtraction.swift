@@ -35,13 +35,57 @@ enum ArchiveExtraction {
     }
   }
 
-  static func setTimes(_ date: Date, apply: (UnsafePointer<timeval>) -> Int32) throws {
-    let seconds = date.timeIntervalSince1970.rounded(.down)
-    let time = timeval(tv_sec: Int(seconds), tv_usec: Int32((date.timeIntervalSince1970 - seconds) * 1_000_000))
-    let times = [time, time]
-    guard apply(times) == 0 else {
+  /// Exclusive: an archive naming a path twice is left to an extractor with an opinion on it.
+  static func createFile(_ path: String) throws -> Int32 {
+    let fd = open(path, O_WRONLY | O_CREAT | O_EXCL | O_NOFOLLOW | O_CLOEXEC, 0o644)
+    guard fd >= 0 else {
       throw POSIXError.current
     }
+    return fd
+  }
+
+  static func writeAll(_ buffer: UnsafeRawBufferPointer, to fd: Int32) throws {
+    guard let base = buffer.baseAddress else {
+      return
+    }
+    var offset = 0
+    while offset < buffer.count {
+      let written = Darwin.write(fd, base + offset, buffer.count - offset)
+      guard written > 0 else {
+        throw POSIXError.current
+      }
+      offset += written
+    }
+  }
+
+  /// Gives a written file its entry's metadata. Extended attributes are best effort, as for `bsdtar`: some are the system's to set.
+  static func finishFile(_ fd: Int32, mode: mode_t?, modified: timespec?, extendedAttributes: [String: Data] = [:]) throws {
+    for (name, value) in extendedAttributes {
+      _ = value.withUnsafeBytes { fsetxattr(fd, name, $0.baseAddress, $0.count, 0, 0) }
+    }
+    if let mode {
+      guard fchmod(fd, mode & 0o7777) == 0 else {
+        throw POSIXError.current
+      }
+    }
+    if let modified {
+      let times = [modified, modified]
+      guard futimens(fd, times) == 0 else {
+        throw POSIXError.current
+      }
+    }
+  }
+
+  static func setTimes(_ modified: timespec, on path: String, flags: Int32 = 0) throws {
+    let times = [modified, modified]
+    guard utimensat(AT_FDCWD, path, times, flags) == 0 else {
+      throw POSIXError.current
+    }
+  }
+
+  static func fileTime(_ date: Date) -> timespec {
+    let seconds = date.timeIntervalSince1970.rounded(.down)
+    return timespec(tv_sec: Int(seconds), tv_nsec: Int((date.timeIntervalSince1970 - seconds) * 1_000_000_000))
   }
 
   static func isMacMetadata(_ relative: String) -> Bool {

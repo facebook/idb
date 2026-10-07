@@ -129,7 +129,7 @@ public struct ZipCentralDirectory {
       return
     }
     for (path, modified) in directoryTimes.reversed() {
-      try ArchiveExtraction.setTimes(modified) { utimes(path, $0) }
+      try ArchiveExtraction.setTimes(ArchiveExtraction.fileTime(modified), on: path)
     }
   }
 

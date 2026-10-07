@@ -72,7 +72,7 @@ public enum ZipExtractor {
     for (entry, relative) in plan.directories.sorted(by: { $0.relative.count > $1.relative.count }) {
       let path = (root as NSString).appendingPathComponent(relative)
       if !overrideModificationTime, let modified = entry.modified {
-        try ArchiveExtraction.setTimes(modified) { utimes(path, $0) }
+        try ArchiveExtraction.setTimes(ArchiveExtraction.fileTime(modified), on: path)
       }
       if let mode = entry.mode, mode != 0 {
         guard chmod(path, mode & 0o7777) == 0 else {
@@ -163,33 +163,11 @@ public enum ZipExtractor {
     overrideModificationTime: Bool,
     contents: ((UnsafeRawBufferPointer) throws -> Void) throws -> Void
   ) throws {
-    // Exclusive: a zip naming a path twice is left to an extractor with an opinion on it.
-    let fd = open(path, O_WRONLY | O_CREAT | O_EXCL | O_NOFOLLOW | O_CLOEXEC, 0o644)
-    guard fd >= 0 else {
-      throw POSIXError.current
-    }
+    let fd = try ArchiveExtraction.createFile(path)
     defer { close(fd) }
-    try contents { buffer in
-      guard let base = buffer.baseAddress else {
-        return
-      }
-      var offset = 0
-      while offset < buffer.count {
-        let written = Darwin.write(fd, base + offset, buffer.count - offset)
-        guard written > 0 else {
-          throw POSIXError.current
-        }
-        offset += written
-      }
-    }
-    if let mode = entry.mode, mode & 0o7777 != 0 {
-      guard fchmod(fd, mode & 0o7777) == 0 else {
-        throw POSIXError.current
-      }
-    }
-    if !overrideModificationTime, let modified = entry.modified {
-      try ArchiveExtraction.setTimes(modified) { futimes(fd, $0) }
-    }
+    try contents { try ArchiveExtraction.writeAll($0, to: fd) }
+    let mode = entry.mode.flatMap { $0 & 0o7777 == 0 ? nil : $0 }
+    try ArchiveExtraction.finishFile(fd, mode: mode, modified: overrideModificationTime ? nil : entry.modified.map(ArchiveExtraction.fileTime))
   }
 
   /// Calls `output` with the entry's contents in order, checking their size and CRC.

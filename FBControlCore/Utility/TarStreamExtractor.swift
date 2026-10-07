@@ -126,7 +126,7 @@ public enum TarStreamExtractor {
           }
           setExtendedAttributes(attributes, on: destination)
           if !overrideModificationTime {
-            try setTimes(modified, on: destination, flags: AT_SYMLINK_NOFOLLOW)
+            try ArchiveExtraction.setTimes(modified, on: destination, flags: AT_SYMLINK_NOFOLLOW)
           }
         case UInt8(ascii: "1"):
           try reader.skip(size)
@@ -155,7 +155,7 @@ public enum TarStreamExtractor {
     // everything else, as writing into a directory changes its time.
     for (path, mode, modified) in directories.sorted(by: { $0.path.count > $1.path.count }) {
       if !overrideModificationTime {
-        try setTimes(modified, on: path, flags: 0)
+        try ArchiveExtraction.setTimes(modified, on: path)
       }
       guard chmod(path, mode & 0o7777) == 0 else {
         throw POSIXError.current
@@ -165,13 +165,6 @@ public enum TarStreamExtractor {
   }
 
   // MARK: - Private
-
-  private static func setTimes(_ modified: timespec, on path: String, flags: Int32) throws {
-    let times = [modified, modified]
-    guard utimensat(AT_FDCWD, path, times, flags) == 0 else {
-      throw POSIXError.current
-    }
-  }
 
   /// A pax time, `<seconds>[.<fraction>]`, to the nanosecond as `bsdtar` keeps it.
   private static func time(_ value: String) -> timespec? {
