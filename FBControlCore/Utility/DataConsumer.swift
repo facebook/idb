@@ -52,8 +52,59 @@ public extension DataConsumerLifecycle {
   }
 }
 
-// MARK: - Conformance extensions for ObjC classes
+/// A consumer that logs each received chunk, trimmed of newlines, to `logger`.
+public final class FBLoggingDataConsumer: NSObject, DataConsumer {
+  public let logger: ControlCoreLogger
 
-extension FBLoggingDataConsumer: DataConsumer {}
-extension FBCompositeDataConsumer: DataConsumer, DataConsumerLifecycle {}
-extension FBNullDataConsumer: DataConsumer {}
+  public init(logger: ControlCoreLogger) {
+    self.logger = logger
+  }
+
+  public func consumeData(_ data: Data) {
+    guard let string = String(data: data, encoding: .utf8)?.trimmingCharacters(in: .newlines), !string.isEmpty else {
+      return
+    }
+    logger.log(string)
+  }
+
+  public func consumeEndOfFile() {}
+}
+
+/// A consumer that forwards everything it receives to each of `consumers`, in order.
+// SAFETY: all state is immutable; `FBMutableFuture` is internally synchronized.
+public final class FBCompositeDataConsumer: NSObject, DataConsumer, DataConsumerLifecycle, @unchecked Sendable {
+  private let consumers: [DataConsumer]
+  private let finishedConsumingFuture = FBMutableFuture<NSNull>()
+
+  public init(consumers: [DataConsumer]) {
+    self.consumers = consumers
+  }
+
+  override public var description: String {
+    "Composite Consumer \(CollectionInformation.oneLineDescription(from: consumers))"
+  }
+
+  public func consumeData(_ data: Data) {
+    for consumer in consumers {
+      consumer.consumeData(data)
+    }
+  }
+
+  public func consumeEndOfFile() {
+    for consumer in consumers {
+      consumer.consumeEndOfFile()
+    }
+    finishedConsumingFuture.resolve(withResult: NSNull())
+  }
+
+  public var finishedConsuming: FBFuture<NSNull> {
+    finishedConsumingFuture.retyped(FBFuture<NSNull>.self)
+  }
+}
+
+/// A consumer that discards everything it receives.
+public final class FBNullDataConsumer: NSObject, DataConsumer {
+  public func consumeData(_ data: Data) {}
+
+  public func consumeEndOfFile() {}
+}
