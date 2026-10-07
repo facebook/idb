@@ -103,6 +103,13 @@ final class FBTestBundleDTXConnectionTests: XCTestCase {
     return true
   }
 
+  private func isFailed(_ outcome: TestPlanOutcome, describing expected: String) -> Bool {
+    guard case let .failed(error) = outcome else {
+      return false
+    }
+    return error.localizedDescription.contains(expected)
+  }
+
   private func isUnfinished(_ outcome: TestPlanOutcome) -> Bool {
     guard case .unfinished = outcome else {
       return false
@@ -169,14 +176,14 @@ final class FBTestBundleDTXConnectionTests: XCTestCase {
     XCTAssertEqual(interface.calls, ["didFinishExecutingTestPlan"])
   }
 
-  func testUITestingFailingToInitializeAlsoCountsAsTheTestPlanCompleting() throws {
+  func testUITestingFailingToInitializeAlsoFailsTheTestPlan() throws {
     let connection = try makeConnection()
 
     _ = connection.perform(
       NSSelectorFromString("_XCT_initializationForUITestingDidFailWithError:"),
       with: NSError(domain: "com.example.xctest", code: 3))
 
-    XCTAssertTrue(isFinished(events.testPlanOutcome))
+    XCTAssertTrue(isFailed(events.testPlanOutcome, describing: "Failed to initialize for UI testing"))
   }
 
   func testUITestingFailingToInitializeAfterTheBundleIsReadyEndsTheTestPlan() async throws {
@@ -188,8 +195,7 @@ final class FBTestBundleDTXConnectionTests: XCTestCase {
       NSSelectorFromString("_XCT_initializationForUITestingDidFailWithError:"),
       with: NSError(domain: "com.example.xctest", code: 3))
 
-    // BUG: the failure reads as the test plan finishing, so the disconnect that follows is reported as success — flipped in the following commit.
-    XCTAssertTrue(isFinished(events.testPlanOutcome))
+    XCTAssertTrue(isFailed(events.testPlanOutcome, describing: "Failed to initialize for UI testing"))
   }
 
   // MARK: - Forwarding

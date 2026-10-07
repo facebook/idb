@@ -45,6 +45,8 @@ extension TestBundleConnectionError: LocalizedError {
 enum TestPlanOutcome {
   case unfinished
   case finished
+  /// The bundle reported a failure, such as UI testing failing to initialize, before finishing.
+  case failed(Error)
 }
 
 /// What the test bundle and testmanagerd have done over the connection, as events to wait on.
@@ -80,7 +82,7 @@ final class TestBundleEvents: NSObject, FBTestBundleDTXConnectionDelegate, @unch
 
   func testBundleConnectionBundleDidFailWithError(_ error: Error) {
     bundleReady.fail(error)
-    endTestPlan(.finished)
+    endTestPlan(.failed(error))
   }
 
   func testBundleConnectionDidFinishTestPlan() {
@@ -156,6 +158,9 @@ final class TestBundleConnection {
     switch events.testPlanOutcome {
     case .finished:
       self.logger.log("Bundle disconnected, with the test plan completed. Bundle exited successfully.")
+    case let .failed(error):
+      self.logger.log("Bundle disconnected, after failing before the test plan completed: \(error)")
+      throw error
     case .unfinished:
       self.logger.log("Bundle disconnected, but test plan has not completed. This could mean a crash has occurred")
       throw await self.crashLogOrNotFoundError(description: "Lost connection to test process, but could not find a crash log")
