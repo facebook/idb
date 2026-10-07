@@ -121,7 +121,7 @@ final class DataConsumerTests: XCTestCase {
 
   func testUnbufferedConsumerBlockCanReenterTheConsumer() {
     let actual = NSMutableData()
-    let box = ConsumerBox()
+    let box = ConsumerBox<SynchronousDataConsumer>()
     box.consumer = SynchronousDataConsumer { incremental in
       actual.append(incremental)
       guard incremental == "FOO".data(using: .utf8)! else { return }
@@ -186,6 +186,32 @@ final class DataConsumerTests: XCTestCase {
     XCTAssertTrue(consumer.finishedConsuming.hasCompleted)
     XCTAssertEqual(0, consumer.unprocessedDataCount())
     XCTAssertEqual(expected, actual as Data)
+  }
+
+  func testConsumerAsyncEndOfFileWithReentrantDelivery() {
+    let actual = NSMutableData()
+    let endOfFileStarted = DispatchSemaphore(value: 0)
+    let box = ConsumerBox<AsynchronousDataConsumer>()
+    box.consumer = AsynchronousDataConsumer { incremental in
+      actual.append(incremental)
+      guard incremental == "FOO".data(using: .utf8)! else { return }
+      endOfFileStarted.wait()
+      box.consumer?.consumeData("BAR".data(using: .utf8)!)
+    }
+
+    box.consumer?.consumeData("FOO".data(using: .utf8)!)
+    let returned = expectation(description: "end-of-file returned")
+    DispatchQueue.global().async {
+      box.consumer?.consumeEndOfFile()
+      returned.fulfill()
+    }
+    // Nothing signals that end-of-file is under way, so give it time to start waiting.
+    Thread.sleep(forTimeInterval: 0.1)
+    endOfFileStarted.signal()
+
+    // BUG: end-of-file waits for the delivery while holding the lock the delivery needs to feed the consumer again, so neither returns — flipped in the following commit
+    XCTAssertEqual(XCTWaiter().wait(for: [returned], timeout: 1), .timedOut)
+    XCTAssertEqual("FOO".data(using: .utf8)!, actual as Data)
   }
 
   func testLineBufferConsumption() {
@@ -316,6 +342,6 @@ private final class RecordingLogger: NSObject, ControlCoreLogger, @unchecked Sen
   func withDateFormatEnabled(_ enabled: Bool) -> any ControlCoreLogger { self }
 }
 
-private final class ConsumerBox: @unchecked Sendable {
-  var consumer: SynchronousDataConsumer?
+private final class ConsumerBox<Consumer>: @unchecked Sendable {
+  var consumer: Consumer?
 }
