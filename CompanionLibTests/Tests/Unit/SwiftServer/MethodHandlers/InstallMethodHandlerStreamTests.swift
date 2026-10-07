@@ -13,7 +13,7 @@ import Testing
 
 /// Installs streamed payloads through the handler onto the host Mac.
 @Suite
-struct InstallMethodHandlerTests {
+struct InstallMethodHandlerStreamTests {
 
   private struct StreamFailed: Error {}
 

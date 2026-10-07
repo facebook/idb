@@ -105,61 +105,6 @@ final class FBArchiveOperationsTests: XCTestCase {
     XCTAssertEqual(command.last, "-", "Last element should be stdin marker '-'")
   }
 
-  // MARK: - createGzippedTarForPath with Non-Existent Path
-
-  func testCreateGzippedTarDataForPath_WhenPathDoesNotExist_ReturnsError() async {
-    let nonExistentPath = "/tmp/this_path_definitely_does_not_exist_12345"
-
-    do {
-      _ = try await FBArchiveOperations.createGzippedTarData(forPath: nonExistentPath, logger: logger)
-      XCTFail("Expected archiving a missing path to fail")
-    } catch {
-      guard case ArchiveOperationsError.pathDoesNotExist(nonExistentPath) = error else {
-        return XCTFail("Expected the missing path to be reported, got \(error)")
-      }
-    }
-  }
-
-  func testCreateGzippedTarDataForPath_WhenAFileIsUnreadable_Fails() async throws {
-    let directory = (tempDirectory as NSString).appendingPathComponent("unreadable")
-    try FileManager.default.createDirectory(atPath: directory, withIntermediateDirectories: true)
-    let file = (directory as NSString).appendingPathComponent("file.txt")
-    try "hello".write(toFile: file, atomically: true, encoding: .utf8)
-    try FileManager.default.setAttributes([.posixPermissions: 0o000], ofItemAtPath: file)
-    defer { try? FileManager.default.setAttributes([.posixPermissions: 0o644], ofItemAtPath: file) }
-    try XCTSkipIf(FileManager.default.isReadableFile(atPath: file), "Permissions do not restrict this user")
-
-    do {
-      _ = try await FBArchiveOperations.createGzippedTarData(forPath: directory, logger: logger)
-      XCTFail("Expected archiving an unreadable file to fail")
-    } catch {
-      guard case ArchiveOperationsError.unreadable(path: file, reason: "Permission denied") = error else {
-        return XCTFail("Expected the unreadable file to be reported, got \(error)")
-      }
-    }
-  }
-
-  func testCreateGzipDataForPath_WhenPathDoesNotExist_ErrorQuotesGzip() async {
-    let nonExistentPath = "/tmp/nonexistent_path_for_gzip_error_check"
-
-    do {
-      _ = try await FBArchiveOperations.createGzipData(forPath: nonExistentPath, logger: logger)
-      XCTFail("Expected compressing a missing path to fail")
-    } catch {
-      XCTAssertTrue(error.localizedDescription.contains("No such file or directory"), error.localizedDescription)
-    }
-  }
-
-  func testGzippedTarSubprocessForPath_WhenPathDoesNotExist_Throws() {
-    let nonExistentPath = "/tmp/nonexistent_path_for_gzipped_tar_subprocess"
-
-    XCTAssertThrowsError(try FBArchiveOperations.gzippedTarSubprocess(forPath: nonExistentPath, logger: logger)) { error in
-      guard case ArchiveOperationsError.pathDoesNotExist(nonExistentPath) = error else {
-        return XCTFail("Expected the missing path to be reported, got \(error)")
-      }
-    }
-  }
-
   // MARK: - Round-trip extraction
 
   private enum ArchiveFormat {

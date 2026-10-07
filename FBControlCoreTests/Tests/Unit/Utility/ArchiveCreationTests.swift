@@ -277,4 +277,57 @@ final class ArchiveCreationTests: XCTestCase {
     XCTAssertEqual(entries.map(\.path), ["./", "./a.txt"])
     XCTAssertEqual(entries.first { $0.path == "./a.txt" }?.extendedAttributes, [])
   }
+
+  func testArchivingAMissingPathNamesIt() async {
+    let missing = tempDirectory.appendingPathComponent("absent").path
+
+    do {
+      _ = try await FBArchiveOperations.createGzippedTarData(forPath: missing, logger: logger)
+      XCTFail("archiving a missing path should fail")
+    } catch {
+      guard case ArchiveOperationsError.pathDoesNotExist(missing) = error else {
+        return XCTFail("expected the missing path to be reported, got \(error)")
+      }
+    }
+  }
+
+  func testStartingToArchiveAMissingPathNamesIt() {
+    let missing = tempDirectory.appendingPathComponent("absent").path
+
+    XCTAssertThrowsError(try FBArchiveOperations.gzippedTarSubprocess(forPath: missing, logger: logger)) { error in
+      guard case ArchiveOperationsError.pathDoesNotExist(missing) = error else {
+        return XCTFail("expected the missing path to be reported, got \(error)")
+      }
+    }
+  }
+
+  func testArchivingAnUnreadableFileNamesIt() async throws {
+    let directory = tempDirectory.appendingPathComponent("unreadable")
+    try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+    let file = directory.appendingPathComponent("file.txt").path
+    try "hello".write(toFile: file, atomically: true, encoding: .utf8)
+    try FileManager.default.setAttributes([.posixPermissions: 0o000], ofItemAtPath: file)
+    defer { try? FileManager.default.setAttributes([.posixPermissions: 0o644], ofItemAtPath: file) }
+    try XCTSkipIf(FileManager.default.isReadableFile(atPath: file), "Permissions do not restrict this user")
+
+    do {
+      _ = try await FBArchiveOperations.createGzippedTarData(forPath: directory.path, logger: logger)
+      XCTFail("archiving an unreadable file should fail")
+    } catch {
+      guard case ArchiveOperationsError.unreadable(path: file, reason: "Permission denied") = error else {
+        return XCTFail("expected the unreadable file to be reported, got \(error)")
+      }
+    }
+  }
+
+  func testCompressingAMissingPathFails() async {
+    let missing = tempDirectory.appendingPathComponent("absent").path
+
+    do {
+      _ = try await FBArchiveOperations.createGzipData(forPath: missing, logger: logger)
+      XCTFail("compressing a missing path should fail")
+    } catch {
+      XCTAssertTrue(error.localizedDescription.contains("No such file or directory"), error.localizedDescription)
+    }
+  }
 }

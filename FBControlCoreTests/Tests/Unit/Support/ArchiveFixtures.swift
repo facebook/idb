@@ -30,6 +30,26 @@ enum ArchiveFixtures {
     }
   }
 
+  /// An app with modes, symlinks, nesting, extended attributes and contents that deflate.
+  static func makeApp(in root: URL) throws -> String {
+    let fileManager = FileManager.default
+    let app = root.appendingPathComponent("A.app")
+    try fileManager.createDirectory(at: app.appendingPathComponent("Real/Deeper"), withIntermediateDirectories: true)
+    try fileManager.createDirectory(at: app.appendingPathComponent("Private"), withIntermediateDirectories: true)
+    try Data("binary".utf8).write(to: app.appendingPathComponent("A"))
+    try fileManager.setAttributes([.posixPermissions: 0o755], ofItemAtPath: app.appendingPathComponent("A").path)
+    try Data("<plist/>".utf8).write(to: app.appendingPathComponent("Info.plist"))
+    try Data(String(repeating: "compressible ", count: 200_000).utf8).write(to: app.appendingPathComponent("Real/Deeper/big.txt"))
+    try Data().write(to: app.appendingPathComponent("Real/empty"))
+    try Data("secret".utf8).write(to: app.appendingPathComponent("Private/key"))
+    try fileManager.setAttributes([.posixPermissions: 0o600], ofItemAtPath: app.appendingPathComponent("Private/key").path)
+    try fileManager.setAttributes([.posixPermissions: 0o700], ofItemAtPath: app.appendingPathComponent("Private").path)
+    try fileManager.createSymbolicLink(atPath: app.appendingPathComponent("link.plist").path, withDestinationPath: "Info.plist")
+    try fileManager.createSymbolicLink(atPath: app.appendingPathComponent("LinkDir").path, withDestinationPath: "Real")
+    try run("/usr/bin/xattr", ["-w", "com.example.tag", "value", app.appendingPathComponent("Info.plist").path], in: root)
+    return app.path
+  }
+
   /// FNV-1a over every byte, as `Data.hashValue` reads only a prefix.
   static func digest(_ contents: Data) -> String {
     String(contents.reduce(UInt64(0xcbf2_9ce4_8422_2325)) { ($0 ^ UInt64($1)) &* 0x100_0000_01b3 }, radix: 16)
