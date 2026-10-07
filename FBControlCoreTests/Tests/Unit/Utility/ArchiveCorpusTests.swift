@@ -100,7 +100,7 @@ struct ArchiveCorpusTests {
       do {
         try await extractor.extract(.stream(input), to: extracted, options: ArchiveExtractOptions(), logger: logger)
       } catch  where route.streamsAZipToBSDTar(producer) {
-        // BUG: bsdtar may stop reading a zip on its stdin early, failing the write; flipped once zips in a stream are detected and spooled.
+        // BUG: bsdtar may stop reading a zip on its stdin early, failing the write; flipped once streams are sniffed before an extractor is chosen.
         return
       }
     case .zipStream:
@@ -118,7 +118,7 @@ struct ArchiveCorpusTests {
       return
     }
     if route.streamsAZipToBSDTar(producer) {
-      // BUG: a zip read as a stream loses its modes and symlinks; flipped once zips in a stream are detected and spooled.
+      // BUG: a zip read as a stream loses its modes and symlinks; flipped once streams are sniffed before an extractor is chosen.
       #expect(ArchiveCorpus.differences(expectedTree, actual) != "", "\(producer) \(route)")
     } else {
       #expect(ArchiveCorpus.differences(expectedTree, actual) == "", "\(producer) \(route)")

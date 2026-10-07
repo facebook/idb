@@ -359,31 +359,6 @@ final class FBArchiveOperationsTests: XCTestCase {
       try FileManager.default.destinationOfSymbolicLink(atPath: link), Self.symlinkDestination)
   }
 
-  // BUG: a streamed zip silently loses Unix permissions and flattens symlinks into
-  // regular files -- both live only in the zip central directory at the end of the
-  // archive, which a sequential reader never reaches. This is the `.url` and
-  // `.data` install path, and it strips the executable bit from every binary in a
-  // real IPA. Asserted as-is here; flipped later in the stack.
-  func testExtractArchiveFromStream_Zip_LosesPermissionsAndSymlinks() async throws {
-    let archive = try makeArchive(from: try makePayloadFixture(), format: .zip)
-
-    let root = try await extractFromStream(archive)
-
-    try assertPayloadContents(extractedTo: root)
-    XCTAssertNotEqual(
-      try posixPermissions(
-        atPath: (root as NSString).appendingPathComponent("Payload/Sample.app/Sample")),
-      Self.executableMode,
-      "BUG: the executable bit is dropped when a zip is streamed")
-    let link = (root as NSString).appendingPathComponent("Payload/link")
-    XCTAssertThrowsError(
-      try FileManager.default.destinationOfSymbolicLink(atPath: link),
-      "BUG: the symlink is materialised as a regular file when a zip is streamed")
-    XCTAssertEqual(
-      try String(contentsOfFile: link, encoding: .utf8), Self.symlinkDestination,
-      "BUG: and the file's contents are the link target path, not the target's contents")
-  }
-
   // MARK: - Modification time
 
   func testExtractArchiveAtPath_PreservesModificationTimeByDefault() async throws {
