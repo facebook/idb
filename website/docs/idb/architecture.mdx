@@ -76,18 +76,30 @@ iOS Devices and Simulators behave in substantially different ways, as well as Si
 
 ## Framework Concepts
 
-There are two frameworks in `FBSimulatorControl` and `FBDeviceControl` that exist to implement the majority of the functionality used by `idb`. Additionally, there is the `FBControlCore` Framework that exists to define common interfaces for the Device and Simulator Frameworks and to provide other functionality that is common to both. These Frameworks are able to be used independently of `idb` itself. This is an overview of how these Frameworks are designed together.
+There are two frameworks in `FBSimulatorControl` and `FBDeviceControl` that exist to implement the majority of the functionality used by `idb`. Additionally, there is the `FBControlCore` Framework that exists to define common interfaces for the Device and Simulator Frameworks and to provide other functionality that is common to both. Features that not every consumer needs, such as video, accessibility and test execution, are libraries of their own built on top: an `FB…Core` library shared by every kind of target, and an `FBSimulator…` library that adds the feature to Simulators. These Frameworks are able to be used independently of `idb` itself. This is an overview of how these Frameworks are designed together.
 
 ```mermaid
 flowchart TD
     companion["idb_companion"] --> CompanionLib
-    CompanionLib --> FBSimulatorControl
+    CompanionLib --> FBSimulatorVideo
+    CompanionLib --> FBSimulatorAX
+    CompanionLib --> FBSimulatorXCTest
     CompanionLib --> FBDeviceControl
-    CompanionLib --> FBXCTestCore
-    FBSimulatorControl --> FBControlCore
-    FBDeviceControl --> FBControlCore
+    FBSimulatorVideo --> FBSimulatorControl
+    FBSimulatorVideo --> FBVideoCore
+    FBSimulatorAX --> FBSimulatorControl
+    FBSimulatorXCTest --> FBSimulatorControl
+    FBSimulatorXCTest --> FBXCTestCore
+    FBSimulatorControl --> FBAXCore
+    FBDeviceControl --> FBVideoCore
+    FBDeviceControl --> FBXCTestCore
+    FBVideoCore --> FBControlCore
+    FBAXCore --> FBControlCore
     FBXCTestCore --> FBControlCore
+    FBSimulatorControl --> FBControlCore
 ```
+
+Each library has its own page: [`FBControlCore`](fbcontrolcore.mdx), [`FBVideoCore`](fbvideocore.mdx), [`FBAXCore`](fbaxcore.mdx), [`FBXCTestCore`](fbxctestcore.mdx), [`FBSimulatorControl`](fbsimulatorcontrol.mdx), [`FBSimulatorVideo`](fbsimulatorvideo.mdx), [`FBSimulatorAX`](fbsimulatorax.mdx), [`FBSimulatorXCTest`](fbsimulatorxctest.mdx) and [`FBDeviceControl`](fbdevicecontrol.mdx).
 
 ### Targets
 
@@ -116,6 +128,12 @@ There may be some capabilities that are only supported by one or the other, depe
 Implementations across Simulators & Devices are completely separated and implemented in their respective Frameworks. As an example, `ApplicationCommands` (which provides an API for launching and listing Applications on an iOS Target), is implemented separately in `SimulatorApplicationCommands` and `DeviceApplicationCommands`.
 
 If functionality is common to both Simulators & Devices, its protocol is added to `Target` so that implementors of `Target` are required to implement it. For functionality that is not common, the relevant protocol is added to the definition of the concrete `Simulator` or `Device` class. For non-common protocols, the caller must either check for protocol conformance before calling an API, or use the concrete type directly.
+
+### Capabilities in libraries of their own
+
+A feature that lives in its own library declares a capability protocol refining `Target`, such as `VideoTarget` in `FBVideoCore` or `XCTestTarget` in `FBXCTestCore`, and the library implementing it for a kind of target adds the conformance from outside that target's framework: `FBSimulatorVideo` adds `extension Simulator: VideoTarget`. `FBControlCore` never names the feature, and a binary that does not depend on the library does not link it.
+
+The frameworks are compiled as whole modules, and Swift keeps every protocol conformance and type metadata record alive, so the linker can strip almost nothing from inside a framework. A library boundary is therefore the only way to keep a feature out of a binary. The flip side is that a conformance in a library is linked only if something references it: a caller holding `any Target` should name the concrete target types it handles rather than cast with `as? any VideoTarget`. The `idb_companion` does this once, when it chooses its target, and holds the result as a `CompanionTarget` that carries every capability its handlers use.
 
 ### Logging
 
