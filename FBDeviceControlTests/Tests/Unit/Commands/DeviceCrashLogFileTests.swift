@@ -116,6 +116,45 @@ struct DeviceCrashLogFileTests {
     #expect(afc.removedPaths == ["SomeApp-2026-01-01.ips"])
   }
 
+  // MARK: - Notifying
+
+  @Test
+  func notifyingReportsAReportIngestedFromTheDevice() async throws {
+    let device = makeDevice(remoteFiles: ["SomeApp-2026-01-01.ips": crashReport])
+
+    let crash = try await device.crashLog.notifyOfCrash(matching: NSPredicate(value: true))
+
+    #expect(crash.name == "SomeApp-2026-01-01.ips")
+  }
+
+  @Test
+  func notifyingReportsOnlyAReportMatchingThePredicate() async throws {
+    let device = makeDevice(remoteFiles: [
+      "first.ips": crashReport,
+      "second.ips": crashReport,
+    ])
+
+    let second = NSPredicate { object, _ in (object as? CrashLogInfo)?.name == "second.ips" }
+    let crash = try await device.crashLog.notifyOfCrash(matching: second)
+
+    #expect(crash.name == "second.ips")
+  }
+
+  /// A report the store already holds is not new, so it is never delivered, and the wait ends only
+  /// when it is cancelled.
+  @Test
+  func notifyingIgnoresAReportAlreadyIngestedAndEndsWhenCancelled() async throws {
+    let device = makeDevice(remoteFiles: ["SomeApp-2026-01-01.ips": crashReport])
+    _ = try await allCrashes(device)
+
+    let crashLog = device.crashLog
+    let wait = Task { try await crashLog.notifyOfCrash(matching: NSPredicate(value: true)) }
+    try await Task.sleep(nanoseconds: 200_000_000)
+    wait.cancel()
+
+    await #expect(throws: CancellationError.self) { try await wait.value }
+  }
+
   // MARK: - The service interaction
 
   @Test
