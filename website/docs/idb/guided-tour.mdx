@@ -48,10 +48,11 @@ idb ui tap 'Maps' --udid UDID
 
 The [UI Automation page](ui.mdx) covers the whole `idb ui` command group.
 
-Now let's try to run tests. From a checkout of the repository, this will install a fixture test bundle on the simulator:
+Now let's try to run tests. From the `Source` directory of a checkout of the repository, this builds the fixture test bundle and installs it on the simulator:
 
 ```
-idb xctest install Fixtures/Binaries/iOSUnitTestFixture.xctest --udid UDID
+./build.sh build fixtures
+idb xctest install Build/Products/Release-iphonesimulator/iOSUnitTestFixture.xctest --udid UDID
 ```
 
 To verify that it's been installed correctly just run

@@ -57,9 +57,6 @@ Carthage/Checkouts
 output/
 .clang-format
 
-# Files copied from Xcode
-Fixtures/Source/FBTestRunnerApp/Frameworks
-
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]

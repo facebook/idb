@@ -527,6 +527,8 @@ function regenerate_projects() {
   generate_xcodeproj "SimulatorFrameworkBridge" "SimulatorFrameworkBridge"
   echo "Generating ReplHost project..."
   generate_xcodeproj "REPLHost" "ReplHost"
+  echo "Generating Fixtures project..."
+  generate_xcodeproj "Fixtures" "Fixtures"
   generate_companion_project
 }
 
@@ -746,6 +748,28 @@ function build_shims() {
   build_shim Repl-macOS macosx Shims/Repl/Repl.xcodeproj
 }
 
+# The test fixtures, built from source: FBXCTestCore's test bundle copies the
+# macOS ones into its resources, and the docs walk through installing the iOS one.
+function build_fixture() {
+  local name=$1
+  local sdk=$2
+
+  invoke_xcodebuild \
+    ONLY_ACTIVE_ARCH=NO \
+    -project Fixtures/Fixtures.xcodeproj \
+    -scheme "$name" \
+    -sdk "$sdk" \
+    -derivedDataPath "$BUILD_DIRECTORY" \
+    -configuration Release \
+    build
+}
+
+function build_fixtures() {
+  build_fixture MacUnitTestFixture macosx
+  build_fixture MacCommonApp macosx
+  build_fixture iOSUnitTestFixture iphonesimulator
+}
+
 function build_fbsimulatorcontrol_resources() {
   build_shims
   build_simulator_framework_bridge iOS iphonesimulator
@@ -959,6 +983,8 @@ function build() {
         build_all_frameworks;;
       shims)
         build_shims;;
+      fixtures)
+        build_fixtures;;
       Shimulator-iOS)
         build_shim Shimulator-iOS iphonesimulator;;
       Shimulator-macOS)
@@ -985,7 +1011,7 @@ function build() {
         build_target "$target";;
       *)
         echo "Unknown target: $target"
-        echo "Valid targets: all, frameworks, shims, idb_companion, idb-repl, sim-video, FBControlCore, FBXCTestCore, FBSimulatorControl, FBSimulatorXCTest, FBDeviceControl, Shimulator-iOS, Shimulator-macOS, Repl-iOS, Repl-macOS, ReplHost, SimulatorFrameworkBridge-iOS, SimulatorFrameworkBridge-tvOS, distribution"
+        echo "Valid targets: all, frameworks, shims, fixtures, idb_companion, idb-repl, sim-video, FBControlCore, FBXCTestCore, FBSimulatorControl, FBSimulatorXCTest, FBDeviceControl, Shimulator-iOS, Shimulator-macOS, Repl-iOS, Repl-macOS, ReplHost, SimulatorFrameworkBridge-iOS, SimulatorFrameworkBridge-tvOS, distribution"
         exit 1;;
     esac
   fi
@@ -998,10 +1024,14 @@ function build() {
 function test_target() {
   local name=$1
   # Every FBSimulatorControl test bundle copies the generated shims and the
-  # accessibility bridge into its resources, so they have to exist first —
-  # whether the whole framework scheme is under test or one suite of it.
+  # accessibility bridge into its resources, and FBXCTestCore's copies the
+  # fixtures, so they have to exist first — whether the whole framework scheme
+  # is under test or one suite of it.
   if [[ $name == FBSimulatorControl* ]]; then
     build_fbsimulatorcontrol_resources
+  fi
+  if [[ $name == FBXCTestCore* ]]; then
+    build_fixtures
   fi
   # Per-test time allowances turn a hung test into a named failure in about a
   # minute; without them a single hang stalls the suite until the CI job's
@@ -1085,6 +1115,7 @@ Commands:
       idb-repl        Build idb-repl only
       sim-video       Build the local video recorder
       shims           Build all shim dylibs (Shimulator + Repl, iOS + macOS)
+      fixtures        Build the test fixtures (MacUnitTestFixture, MacCommonApp, iOSUnitTestFixture)
       FBControlCore   Build FBControlCore framework
       FBDeviceControl Build FBDeviceControl framework
       FBSimulatorControl Build FBSimulatorControl framework

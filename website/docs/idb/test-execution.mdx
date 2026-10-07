@@ -25,13 +25,13 @@ Since iOS Runtimes may be remote from the machine that is executing idb commands
 
 By doing so, the idb companion backend then has the test bundle binary to execute against when using `xctest run`. These bundles are also persisted, which makes caching of test bundles more feasible.
 
-The following shows the installation of a test bundle, listing the available bundles, then the test cases within a installed bundle:
+The following shows the installation of a test bundle, listing the available bundles, then the test cases within a installed bundle. The bundle is the repository's fixture, built with `./build.sh build fixtures` from the `Source` directory:
 
 ```
-$ idb xctest install Fixtures/Binaries/iOSUnitTestFixture.xctest
+$ idb xctest install Build/Products/Release-iphonesimulator/iOSUnitTestFixture.xctest
 Installed: com.facebook.iOSUnitTestFixture
 $ idb xctest list
-com.facebook.iOSUnitTestFixture | iOSUnitTestFixture | x86_64, i386
+com.facebook.iOSUnitTestFixture | iOSUnitTestFixture | arm64
 $ idb xctest list-bundle com.facebook.iOSUnitTestFixture
 iOSUnitTestFixtureTests/testHostProcessIsMobileSafari
 iOSUnitTestFixtureTests/testHostProcessIsXctest

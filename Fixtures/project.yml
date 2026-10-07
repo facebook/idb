@@ -1,0 +1,55 @@
+name: Fixtures
+
+options:
+  createIntermediateGroups: true
+
+# The test fixtures, built from source for arm64 only. Mirrors the Buck
+# `MacUnitTestFixture`, `MacCommonApp` and `iOSUnitTestFixture` targets.
+# The two test bundles contain deliberately failing tests and have no scheme
+# that runs them; they only exist to be loaded by idb's own tests.
+targets:
+  MacUnitTestFixture:
+    type: bundle.unit-test
+    platform: macOS
+    deploymentTarget: "15.0"
+    sources:
+      - path: Source/MacUnitTestFixture
+        excludes:
+          - "Info.plist"
+    settings:
+      base:
+        PRODUCT_NAME: MacUnitTestFixture
+        PRODUCT_BUNDLE_IDENTIFIER: com.facebook.MacUnitTestFixture
+        INFOPLIST_FILE: Source/MacUnitTestFixture/Info.plist
+        CODE_SIGN_IDENTITY: "-"
+
+  MacCommonApp:
+    type: application
+    platform: macOS
+    deploymentTarget: "15.0"
+    sources:
+      - path: Source/MacCommonApp
+        excludes:
+          - "Info.plist"
+    settings:
+      base:
+        PRODUCT_NAME: MacCommonApp
+        PRODUCT_BUNDLE_IDENTIFIER: com.facebook.MacCommonApp
+        INFOPLIST_FILE: Source/MacCommonApp/Info.plist
+        CODE_SIGN_IDENTITY: "-"
+
+  iOSUnitTestFixture:
+    type: bundle.unit-test
+    platform: iOS
+    deploymentTarget: "15.0"
+    sources:
+      - path: Source/iOSUnitTestFixture
+        excludes:
+          - "Info.plist"
+    settings:
+      base:
+        SDKROOT: iphonesimulator
+        PRODUCT_NAME: iOSUnitTestFixture
+        PRODUCT_BUNDLE_IDENTIFIER: com.facebook.iOSUnitTestFixture
+        INFOPLIST_FILE: Source/iOSUnitTestFixture/Info.plist
+        CODE_SIGN_IDENTITY: "-"
