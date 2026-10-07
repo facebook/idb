@@ -16,3 +16,17 @@ public enum ArchiveError: Error, Equatable {
   /// An entry that would be written outside the extraction root, or through a symlink.
   case unsafePath(String)
 }
+
+extension ArchiveError: LocalizedError {
+
+  public var errorDescription: String? {
+    switch self {
+    case .unsupported(let reason):
+      return "Unsupported archive: \(reason)"
+    case .corrupt(let reason):
+      return "Corrupt archive: \(reason)"
+    case .unsafePath(let path):
+      return "Unsafe path in archive: \(path)"
+    }
+  }
+}

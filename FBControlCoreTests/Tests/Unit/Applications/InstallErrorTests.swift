@@ -16,8 +16,7 @@ struct InstallErrorTests {
   func extractionFailed_WhenTheArchiveIsCorrupt_DescribesTheReason() {
     let error = InstallError.extractionFailed(underlying: ArchiveError.corrupt("bad CRC for Payload/App.app/App"))
 
-    // BUG: `ArchiveError` has no localized description, so the reason is replaced by a generic message. Flipped in the following commit.
-    #expect(!error.description.contains("bad CRC for Payload/App.app/App"))
-    #expect(!(error as NSError).localizedDescription.contains("bad CRC for Payload/App.app/App"))
+    #expect(error.description.contains("bad CRC for Payload/App.app/App"))
+    #expect((error as NSError).localizedDescription.contains("bad CRC for Payload/App.app/App"))
   }
 }
