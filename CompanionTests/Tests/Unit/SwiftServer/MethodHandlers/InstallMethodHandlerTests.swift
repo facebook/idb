@@ -95,56 +95,6 @@ final class InstallMethodHandlerTests: XCTestCase {
     }
   }
 
-  func testZstdZipStreamIsRecognisedByItsSkippableFrame() {
-    let marked = Data([0x5E, 0x2A, 0x4D, 0x18, 0x08, 0x00, 0x00, 0x00]) + Data("idb-zip\0".utf8) + Data([0x28, 0xB5, 0x2F, 0xFD])
-    XCTAssertTrue(InstallMethodHandler.isZstdZipStream(marked))
-  }
-
-  func testOtherStreamsAreNotZstdZipStreams() {
-    let streams: [Data] = [
-      Data([0x50, 0x4B, 0x03, 0x04]),
-      Data([0x28, 0xB5, 0x2F, 0xFD]),
-      Data([0x50, 0x2A, 0x4D, 0x18, 0x04, 0x00, 0x00, 0x00]),
-      Data([0x5E, 0x2A, 0x4D, 0x18, 0x08, 0x00, 0x00, 0x00]) + Data("idb-tar\0".utf8),
-      Data([0x5E, 0x2A, 0x4D, 0x18]),
-    ]
-    for stream in streams {
-      XCTAssertFalse(InstallMethodHandler.isZstdZipStream(stream), "\(stream as NSData)")
-    }
-  }
-
-  func testTarDeclaredZstdThatStartsWithAZstdFrameIsExtractedAsZstd() {
-    let streams: [Data] = [
-      Data([0x28, 0xB5, 0x2F, 0xFD, 0x04, 0x00]),
-      Data([0x50, 0x2A, 0x4D, 0x18, 0x04, 0x00, 0x00, 0x00]),
-      Data([0x5F, 0x2A, 0x4D, 0x18, 0x04, 0x00, 0x00, 0x00]),
-    ]
-    for stream in streams {
-      XCTAssertEqual(InstallMethodHandler.tarCompression(declared: .ZSTD, initial: stream), .ZSTD, "\(stream as NSData)")
-    }
-  }
-
-  func testTarDeclaredZstdThatDoesNotStartWithAZstdFrame() {
-    let tarHeader = Data("A.app/".utf8) + Data(count: 251) + Data("ustar\0".utf8)
-    let streams: [Data] = [
-      Data([0x1F, 0x8B, 0x08, 0x00]),
-      tarHeader,
-    ]
-    for stream in streams {
-      XCTAssertEqual(InstallMethodHandler.tarCompression(declared: .ZSTD, initial: stream), .GZIP, "\(stream as NSData)")
-    }
-  }
-
-  func testTarDeclaredZstdTooShortToTellKeepsItsDeclaration() {
-    XCTAssertEqual(InstallMethodHandler.tarCompression(declared: .ZSTD, initial: Data([0x1F, 0x8B])), .ZSTD)
-  }
-
-  func testTarDeclaredGzipIsExtractedAsDeclared() {
-    for stream in [Data([0x1F, 0x8B, 0x08, 0x00]), Data([0x28, 0xB5, 0x2F, 0xFD])] {
-      XCTAssertEqual(InstallMethodHandler.tarCompression(declared: .GZIP, initial: stream), .GZIP, "\(stream as NSData)")
-    }
-  }
-
   func testEveryKindButADylibIsStagedFromItsURL() {
     let staged: [InstallDestination] = [.application(makeDebuggable: false), .xctest(skipSigningBundles: false), .dsym(linkTo: nil), .framework]
     for destination in staged {

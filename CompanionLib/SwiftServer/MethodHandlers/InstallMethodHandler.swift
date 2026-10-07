@@ -230,10 +230,6 @@ struct InstallMethodHandler {
     return artifact
   }
 
-  static func isZstdZipStream(_ data: Data) -> Bool {
-    ArchiveFormat.detect(data) == .zstdZip
-  }
-
   /// The format of a streamed payload, from its first bytes and the compression the client declared.
   static func streamFormat(initial: Data, declared: FBCompressionFormat) -> InstallStreamFormat {
     let format = ArchiveFormat.detect(initial)
@@ -247,14 +243,10 @@ struct InstallMethodHandler {
     }
   }
 
-  /// The compression to extract a streamed tar with, given the one the client declared and the stream's first bytes.
+  /// The compression to extract a streamed tar with, given the one the client declared and the format of the stream's first bytes.
   ///
   /// A stream declared zstd that does not start with a zstd frame is extracted as if undeclared, which detects gzip
   /// and plain tars from their contents, rather than by the zstd decompressor, which would reject it.
-  static func tarCompression(declared: FBCompressionFormat, initial: Data) -> FBCompressionFormat {
-    tarCompression(declared: declared, format: ArchiveFormat.detect(initial))
-  }
-
   private static func tarCompression(declared: FBCompressionFormat, format: ArchiveFormat) -> FBCompressionFormat {
     guard declared == .ZSTD else {
       return declared

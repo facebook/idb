@@ -59,14 +59,6 @@ struct ByteSourceTests {
   }
 
   @Test
-  func onlyAGzipIsInflated() throws {
-    let plain = Data("not gzipped".utf8)
-
-    #expect(try GzipSource.ifGzipped(DataSource(plain)).readAll() == plain)
-    #expect(try GzipSource.ifGzipped(DataSource(try gzip(plain))).readAll() == plain)
-  }
-
-  @Test
   func drainingAGzipDoesNotInflateIt() throws {
     var corrupt = try gzip(Data(String(repeating: "x", count: 10_000).utf8))
     corrupt[corrupt.count / 2] ^= 0xFF

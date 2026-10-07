@@ -187,15 +187,6 @@ public final class GzipSource: ByteSource {
     state = .inflating(inflater)
   }
 
-  /// `source`, inflated if it starts as a gzip member does.
-  public static func ifGzipped(_ source: any ByteSource) throws -> any ByteSource {
-    let peekable = PeekableSource(source)
-    guard ArchiveFormat.detect(try peekable.peek(ArchiveFormat.detectableLength)) == .gzip else {
-      return peekable
-    }
-    return try GzipSource(peekable)
-  }
-
   public func read(into buffer: UnsafeMutableRawBufferPointer) throws -> Int {
     guard case .inflating(let inflater) = state else {
       return 0
