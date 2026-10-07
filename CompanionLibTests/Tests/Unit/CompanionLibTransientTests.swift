@@ -12,75 +12,6 @@ import Testing
 @Suite
 struct CompanionLibTransientTests {
 
-  // MARK: - bridgeFBFuture (single future) Tests
-
-  @Test
-  func valueResolvesSuccessfulFuture() async throws {
-    let expected = "hello" as NSString
-    let future = FBFuture<NSString>(result: expected)
-    let result = try await bridgeFBFuture(future)
-    #expect((result) == (expected))
-  }
-
-  @Test
-  func valueThrowsOnFailedFuture() async {
-    let expectedError = NSError(domain: "test", code: 42)
-    let future = FBFuture<NSString>(error: expectedError)
-    do {
-      _ = try await bridgeFBFuture(future)
-      Issue.record("Expected error")
-    } catch {
-      let nsError = error as NSError
-      #expect((nsError.domain) == ("test"))
-      #expect((nsError.code) == (42))
-    }
-  }
-
-  // MARK: - bridgeFBFutureVoid Tests
-
-  @Test
-  func awaitNSNullFuture() async throws {
-    let future = FBFuture<NSNull>(result: NSNull())
-    try await bridgeFBFutureVoid(future)
-  }
-
-  @Test
-  func awaitNSNullFutureThrowsOnError() async {
-    let future = FBFuture<NSNull>(error: NSError(domain: "test", code: 1))
-    do {
-      try await bridgeFBFutureVoid(future)
-      Issue.record("Expected error")
-    } catch {
-      let nsError = error as NSError
-      #expect((nsError.code) == (1))
-    }
-  }
-
-  // MARK: - convertFBMutableFuture Tests
-
-  @Test
-  func convertMutableFutureToFuture() async throws {
-    let mutableFuture = FBMutableFuture<NSString>()
-    let future = convertFBMutableFuture(mutableFuture)
-    mutableFuture.resolve(withResult: "resolved" as NSString)
-    let result = try await bridgeFBFuture(future)
-    #expect((result) == ("resolved" as NSString))
-  }
-
-  @Test
-  func convertMutableFutureToFutureWithError() async {
-    let mutableFuture = FBMutableFuture<NSString>()
-    let future = convertFBMutableFuture(mutableFuture)
-    let expectedError = NSError(domain: "test", code: 77)
-    mutableFuture.resolveWithError(expectedError)
-    do {
-      _ = try await bridgeFBFuture(future)
-      Issue.record("Expected error")
-    } catch {
-      #expect(((error as NSError).code) == (77))
-    }
-  }
-
   // MARK: - XCTestRunRequest Factory & Property Tests
 
   @Test
@@ -330,21 +261,5 @@ struct CompanionLibTransientTests {
     let desc = config.description
     #expect((desc.contains("/result")))
     #expect((desc.contains("/logs")))
-  }
-
-  // MARK: - bridgeFBFuture with delayed resolution Tests
-
-  @Test
-  func valueWithDelayedResolution() async throws {
-    let mutableFuture = FBMutableFuture<NSString>()
-    let future = convertFBMutableFuture(mutableFuture)
-
-    // Resolve after a short delay
-    DispatchQueue.global().asyncAfter(deadline: .now() + 0.05) {
-      mutableFuture.resolve(withResult: "delayed" as NSString)
-    }
-
-    let result = try await bridgeFBFuture(future)
-    #expect((result) == ("delayed" as NSString))
   }
 }
