@@ -10,8 +10,8 @@ import ArgumentParser
 import CoreMedia
 import CoreVideo
 import FBControlCore
+import FBSimulatorVideo
 import Foundation
-import SimulatorVideo
 
 /// Cut an independently playable clip out of a recording.
 ///

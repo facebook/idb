@@ -5,7 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-import SimulatorVideo
+import FBSimulatorVideo
 import Testing
 
 @Suite struct TerminalGridTests {

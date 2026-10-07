@@ -5,7 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-@testable import SimulatorVideo
+@testable import FBSimulatorVideo
 import XCTest
 
 final class StdinReaderTests: XCTestCase {

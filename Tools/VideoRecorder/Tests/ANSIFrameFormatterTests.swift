@@ -5,7 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-import SimulatorVideo
+import FBSimulatorVideo
 import Testing
 
 private func color(_ r: UInt8, _ g: UInt8, _ b: UInt8) -> SIMD4<UInt8> {

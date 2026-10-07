@@ -11,9 +11,9 @@ import CoreMedia
 import CoreVideo
 import FBControlCore
 import FBSimulatorControl
+import FBSimulatorVideo
 import FBVideoCore
 import Foundation
-import SimulatorVideo
 
 struct Record: AsyncParsableCommand {
   static let configuration = CommandConfiguration(abstract: "Record a playable file with overlay and chapter control")
@@ -72,11 +72,11 @@ struct Record: AsyncParsableCommand {
   }
 
   @MainActor
-  private func startRecording(framebuffer: Framebuffer, insets: VideoStreamEdgeInsets, chapters: Bool, logger: any ControlCoreLogger) async throws -> (FBSimulatorControl.SimulatorVideo, RecordingEncoding) {
+  private func startRecording(framebuffer: Framebuffer, insets: VideoStreamEdgeInsets, chapters: Bool, logger: any ControlCoreLogger) async throws -> (SimulatorVideo, RecordingEncoding) {
     let candidates: [RecordingEncoding] = encoding == .auto ? [.hevc, .mjpeg] : [encoding]
     for candidate in candidates {
       let configuration = video.configuration(format: candidate.format)
-      let recording = FBSimulatorControl.SimulatorVideo.video(withFramebuffer: framebuffer, configuration: configuration, filePath: output, fileType: (output as NSString).pathExtension.lowercased() == "mov" ? .mov : .mp4, edgeInsets: insets, chaptersEnabled: chapters, logger: logger)
+      let recording = SimulatorVideo.video(withFramebuffer: framebuffer, configuration: configuration, filePath: output, fileType: (output as NSString).pathExtension.lowercased() == "mov" ? .mov : .mp4, edgeInsets: insets, chaptersEnabled: chapters, logger: logger)
       do {
         try await recording.startRecording()
         let deadline = ContinuousClock.now + .seconds(10)

@@ -44,4 +44,4 @@ JPEG/MOV avoids requiring an H.264 or HEVC hardware encoder, using the existing 
 
 ## Shared implementation
 
-`Library/` contains stdin handling, bar configuration, and session setup. The CLI uses this library so other local clients can share the same protocol implementation. Frame composition, encoding, and file writing remain in the existing simulator control APIs.
+The CLI is a thin wrapper over the `FBSimulatorVideo` library. Its `Recorder/` directory holds the stdin handling, bar configuration, and session setup, so other local clients can share the same protocol implementation; the rest of the library is the frame composition, encoding, and file writing behind it.

@@ -9,6 +9,7 @@ import AppKit
 import CoreGraphics
 import CoreVideo
 @testable import FBSimulatorControl
+@testable import FBSimulatorVideo
 import XCTest
 
 /// Lightweight snapshot testing for OverlayRenderer output.

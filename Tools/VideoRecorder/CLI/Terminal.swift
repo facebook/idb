@@ -10,7 +10,7 @@ import FBControlCore
 import FBSimulatorControl
 import Foundation
 import IOSurface
-import SimulatorVideo
+import FBSimulatorVideo
 
 struct Terminal: AsyncParsableCommand {
   static let configuration = CommandConfiguration(abstract: "Render a live view of the simulator in this terminal")

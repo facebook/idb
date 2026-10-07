@@ -133,21 +133,22 @@ targets:
       - target: SimulatorFrameworkBridgeProtocol
       - sdk: Foundation.framework
       - sdk: XCTest.framework
-  SimulatorVideo:
+  FBSimulatorVideo:
     type: library.static
     platform: macOS
     scheme:
       testTargets:
-        - SimulatorVideoTests
+        - FBSimulatorControlUnitTests
+        - FBSimulatorVideoTests
     sources:
-      - path: Tools/VideoRecorder/Library
+      - path: FBSimulatorVideo
       - path: REPL/IDB/IDBAPI.swiftinterface
         buildPhase: resources
     settings:
       base:
-        INFOPLIST_FILE: $(SRCROOT)/SimulatorVideo/SimulatorVideo-Info.plist
-        PRODUCT_BUNDLE_IDENTIFIER: com.facebook.SimulatorVideo
-        PRODUCT_NAME: SimulatorVideo
+        INFOPLIST_FILE: $(SRCROOT)/FBSimulatorVideo/FBSimulatorVideo-Info.plist
+        PRODUCT_BUNDLE_IDENTIFIER: com.facebook.FBSimulatorVideo
+        PRODUCT_NAME: FBSimulatorVideo
         DEFINES_MODULE: "YES"
         MACH_O_TYPE: staticlib
         SWIFT_VERSION: "6.0"
@@ -175,17 +176,25 @@ targets:
         embed: false
       - target: ZstdDecompress
         embed: false
+      - sdk: AVFoundation.framework
       - sdk: CoreGraphics.framework
+      - sdk: CoreImage.framework
+      - sdk: CoreMedia.framework
+      - sdk: CoreText.framework
       - sdk: CoreVideo.framework
       - sdk: Foundation.framework
       - sdk: IOSurface.framework
+      - sdk: ImageIO.framework
       - sdk: Metal.framework
-  SimulatorVideoTests:
+      - sdk: QuartzCore.framework
+      - sdk: UniformTypeIdentifiers.framework
+      - sdk: VideoToolbox.framework
+  FBSimulatorVideoTests:
     type: bundle.unit-test
     platform: macOS
     scheme:
       testTargets:
-        - SimulatorVideoTests
+        - FBSimulatorVideoTests
     sources:
       - path: Tools/VideoRecorder/Tests
       - path: REPL/IDB/IDBAPI.swiftinterface
@@ -209,8 +218,8 @@ targets:
           - $(TARGET_BUILD_DIR)/$(UNLOCALIZED_RESOURCES_FOLDER_PATH)/libShimulator-macOS.dylib
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: com.facebook.SimulatorVideoTests
-        PRODUCT_NAME: SimulatorVideoTests
+        PRODUCT_BUNDLE_IDENTIFIER: com.facebook.FBSimulatorVideoTests
+        PRODUCT_NAME: FBSimulatorVideoTests
         SWIFT_VERSION: "5.0"
         GENERATE_INFOPLIST_FILE: "YES"
         FRAMEWORK_SEARCH_PATHS: $(inherited) $(DEVELOPER_DIR)/Library/PrivateFrameworks
@@ -226,10 +235,10 @@ targets:
       - target: CompanionUtilities
       - target: FBControlCore
       - target: FBSimulatorControl
+      - target: FBSimulatorVideo
       - target: FBVideoCore
       - target: SimulatorFrameworkBridgeProtocol
       - target: SimulatorIPC
-      - target: SimulatorVideo
       - target: ZstdDecompress
       - sdk: XCTest.framework
   ShimulatorProtocol:
@@ -544,26 +553,18 @@ targets:
         embed: false
       - target: FBControlCore
         embed: false
-      - target: FBVideoCore
-        embed: false
       - target: SimulatorFrameworkBridgeProtocol
         embed: false
       - target: SimulatorIPC
         embed: false
       - target: ZstdDecompress
         embed: false
-      - sdk: AVFoundation.framework
-      - sdk: Accelerate.framework
       - sdk: Cocoa.framework
       - sdk: CoreGraphics.framework
       - sdk: CoreImage.framework
-      - sdk: CoreMedia.framework
-      - sdk: CoreVideo.framework
       - sdk: Foundation.framework
       - sdk: IOSurface.framework
-      - sdk: Metal.framework
       - sdk: UniformTypeIdentifiers.framework
-      - sdk: VideoToolbox.framework
   SimulatorXCTest:
     type: library.static
     platform: macOS
@@ -599,8 +600,6 @@ targets:
       - target: FBControlCore
         embed: false
       - target: FBSimulatorControl
-        embed: false
-      - target: FBVideoCore
         embed: false
       - target: SimulatorFrameworkBridgeProtocol
         embed: false
@@ -686,6 +685,7 @@ targets:
       - target: CompanionUtilities
       - target: FBControlCore
       - target: FBSimulatorControl
+      - target: FBSimulatorVideo
       - target: FBVideoCore
       - target: SimulatorFrameworkBridgeProtocol
       - target: SimulatorIPC
@@ -771,6 +771,7 @@ targets:
       - target: CompanionUtilities
       - target: FBControlCore
       - target: FBSimulatorControl
+      - target: FBSimulatorVideo
       - target: FBVideoCore
       - target: SimulatorFrameworkBridgeProtocol
       - target: SimulatorIPC
@@ -856,6 +857,7 @@ targets:
       - target: CompanionUtilities
       - target: FBControlCore
       - target: FBSimulatorControl
+      - target: FBSimulatorVideo
       - target: FBVideoCore
       - target: SimulatorFrameworkBridgeProtocol
       - target: SimulatorIPC

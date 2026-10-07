@@ -7,7 +7,6 @@
 
 @preconcurrency import CoreSimulator
 @preconcurrency import FBControlCore
-import FBVideoCore
 import Foundation
 
 private let DefaultDeviceSet = "~/Library/Developer/CoreSimulator/Devices"
@@ -413,16 +412,5 @@ extension Simulator {
       details.displays = state == .booted ? try await displays.describedDisplays() : .read([])
     }
     return details
-  }
-}
-
-extension Simulator: VideoTarget {
-
-  public var videoRecording: SimulatorVideoRecordingCommands {
-    commandCache.resolve { SimulatorVideoRecordingCommands.commands(with: self) }
-  }
-
-  public var videoStream: SimulatorVideoStreamCommands {
-    SimulatorVideoStreamCommands.commands(with: self)
   }
 }

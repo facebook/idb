@@ -7,8 +7,8 @@
 
 import FBControlCore
 import FBSimulatorControl
+@testable import FBSimulatorVideo
 import Foundation
-@testable import SimulatorVideo
 import Testing
 
 /// Records every logged line, so the diagnostics a command emits are assertable. The `screenshot`

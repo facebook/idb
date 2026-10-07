@@ -17,6 +17,7 @@ const FRAMEWORKS = [
   { repoPath: 'FBControlCore', id: 'fbcontrolcore' },
   { repoPath: 'FBVideoCore', id: 'fbvideocore' },
   { repoPath: 'FBSimulatorControl', id: 'fbsimulatorcontrol' },
+  { repoPath: 'FBSimulatorVideo', id: 'fbsimulatorvideo' },
   { repoPath: 'FBDeviceControl', id: 'fbdevicecontrol' },
   { repoPath: 'XCTestBootstrap', id: 'xctestbootstrap' },
 ];

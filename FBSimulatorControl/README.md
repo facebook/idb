@@ -15,7 +15,7 @@ The trade-off is stability. The `idb` cli and its gRPC interface are the project
 - Boots iOS Simulators across a range of Xcode and iOS Versions.
 - Runs independently of Xcode and `xcodebuild` without requiring embedding in a Graphical User Interface. Uses whatever Xcode toolchain is defined by `xcode-select`.
 - Exposes a broad range of functionality that is available in `simctl` and Xcode.
-- Implements additional functionality not available in `simctl` including hardware encoded video streaming, file manipulation, accessibility fetching, direct input event injection and more.
+- Implements additional functionality not available in `simctl` including file manipulation, accessibility fetching, direct input event injection and more. Hardware-encoded video recording and streaming are in [`FBSimulatorVideo`](../FBSimulatorVideo/README.md).
 - No external dependencies.
 - A Swift framework. What Objective-C remains is an implementation detail of reaching Apple's private frameworks, not part of the API.
 
@@ -80,7 +80,7 @@ Even where the functionality overlaps with `simctl`, the framework provides it d
 
 The framework also provides functionality that has no equivalent in `simctl`, `xcodebuild` or the host app. Most of it is built on protocols and services that Apple's own tools use internally but do not expose:
 
-- **Live screen access.** A booted Simulator's screen is available to the linking process as an `IOSurface`-backed framebuffer. The framework turns this into screenshots, video files, or live streams of hardware-encoded H.264, MJPEG, or raw frames. `simctl` can only record a video file after the fact; it cannot stream, and it cannot give your process access to the GPU-resident surface.
+- **Live screen access.** A booted Simulator's screen is available to the linking process as an `IOSurface`-backed framebuffer. The framework turns this into screenshots, and [`FBSimulatorVideo`](../FBSimulatorVideo/README.md) into video files or live streams of hardware-encoded H.264, MJPEG, or raw frames. `simctl` can only record a video file after the fact; it cannot stream, and it cannot give your process access to the GPU-resident surface.
 - **Input synthesis.** Touch, keyboard and hardware-button events are delivered over the Simulator's own HID services: the reverse-engineered Indigo mach protocol, or the `dtuhidd` XPC path on newer Xcodes. Device orientation is delivered over GSEvent ("Purple"), and shake via Darwin notifications. Apple's only supported route to synthesized input is an XCUITest bundle.
 - **Accessibility reading.** The framework reads the full element hierarchy of the frontmost application without a test bundle, either through host-side translation or in-guest at XCUITest fidelity via the bundled `SimulatorFrameworkBridge` helper. This is described in [the accessibility documentation](https://www.fbidb.io/idb/accessibility).
 - **In-guest state injection.** `SimulatorFrameworkBridge` runs inside the booted Simulator and can modify state that no `simctl` verb reaches, such as overwriting the contacts database or clearing the photo library.
@@ -163,7 +163,7 @@ In order for other Applications (mainly `Simulator.app`, but also for video reco
 
 An `IOSurface` is an object that wraps a Framebuffer, with the contents of the Framebuffer being located within GPU memory. This `IOSurface` can be read and inspected across process boundaries. `Simulator.app` uses this `IOSurface` as the backing Framebuffer for its view of an iOS Simulator.
 
-`IOSurface` objects are also easily convertible to "Pixel Buffer" types that are used in video encoding, which [`SimulatorVideoStream`](https://github.com/facebook/idb/blob/main/FBSimulatorControl/Video/SimulatorVideoStream.swift) takes advantage of. This allows `FBSimulatorControl` to implement video encoding of an iOS Simulator's Framebuffer in a way that avoids large copies of bitmap framebuffers on a per-frame basis.
+`IOSurface` objects are also cheap to convert into the pixel buffers that video encoding reads, which is how [`FBSimulatorVideo`](../FBSimulatorVideo/README.md) records and streams the Simulator's screen without a per-frame copy.
 
 ### Multiple displays
 

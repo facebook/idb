@@ -8,9 +8,9 @@
 import ArgumentParser
 import FBControlCore
 import FBSimulatorControl
+import FBSimulatorVideo
 import FBVideoCore
 import Foundation
-import SimulatorVideo
 
 struct Stream: AsyncParsableCommand {
   static let configuration = CommandConfiguration(abstract: "Stream encoded frames with JSON-line overlay control")

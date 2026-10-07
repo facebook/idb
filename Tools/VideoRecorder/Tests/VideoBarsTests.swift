@@ -6,7 +6,7 @@
  */
 
 import FBControlCore
-import SimulatorVideo
+import FBSimulatorVideo
 import Testing
 
 @Suite struct VideoBarsTests {

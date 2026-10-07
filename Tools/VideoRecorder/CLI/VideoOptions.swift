@@ -8,9 +8,9 @@
 import ArgumentParser
 import FBControlCore
 import FBSimulatorControl
+import FBSimulatorVideo
 import FBVideoCore
 import Foundation
-import SimulatorVideo
 
 struct SimulatorOptions: ParsableArguments {
   @Option(help: "Simulator device set path") var set: String

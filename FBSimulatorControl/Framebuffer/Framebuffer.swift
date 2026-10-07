@@ -129,7 +129,8 @@ public final class Framebuffer: @unchecked Sendable {
     statsRecorder.snapshot()
   }
 
-  var statsStartTime: ContinuousClock.Instant? {
+  /// When the stats recorder saw its first frame, or nil before it.
+  public var statsStartTime: ContinuousClock.Instant? {
     statsRecorder.startTime
   }
 

@@ -6,7 +6,7 @@
  */
 
 import CoreGraphics
-import SimulatorVideo
+import FBSimulatorVideo
 import Testing
 
 @Suite struct ClipDimensionsTests {

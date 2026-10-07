@@ -7,7 +7,7 @@
 
 import FBControlCore
 import FBSimulatorControl
-@testable import SimulatorVideo
+@testable import FBSimulatorVideo
 import Testing
 
 @Suite struct StdinCommandHandlerTests {

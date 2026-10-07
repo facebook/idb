@@ -5,8 +5,8 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+import FBSimulatorVideo
 import Foundation
-import SimulatorVideo
 import Testing
 
 /// A file manager whose second move fails, after letting a test stand in for whatever else the
