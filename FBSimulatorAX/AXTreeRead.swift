@@ -7,6 +7,7 @@
 
 import FBAXCore
 import FBControlCore
+import FBSimulatorBridgeProtocol
 import FBSimulatorControl
 import Foundation
 

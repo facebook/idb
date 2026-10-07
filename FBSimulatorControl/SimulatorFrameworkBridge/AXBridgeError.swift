@@ -5,6 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+import FBSimulatorBridgeProtocol
 import Foundation
 
 /// Failures specific to the `axbridge` transport — getting a guest reader running and talking to it.

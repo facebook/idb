@@ -8,6 +8,7 @@
 import CoreGraphics
 import FBAXCore
 import FBControlCore
+import FBSimulatorBridgeProtocol
 import FBSimulatorControl
 
 struct AXWriteTarget: Equatable {

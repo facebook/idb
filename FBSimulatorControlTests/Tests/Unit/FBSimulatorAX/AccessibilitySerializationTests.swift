@@ -9,6 +9,7 @@ import CoreGraphics
 import FBAXCore
 import FBControlCore
 @testable import FBSimulatorAX
+import FBSimulatorBridgeProtocol
 @testable import FBSimulatorControl
 import Foundation
 import XCTest

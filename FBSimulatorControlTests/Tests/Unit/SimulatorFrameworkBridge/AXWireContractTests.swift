@@ -7,6 +7,7 @@
 
 import FBAXCore
 import FBControlCore
+import FBSimulatorBridgeProtocol
 @testable import FBSimulatorControl
 import Foundation
 import XCTest

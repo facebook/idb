@@ -6,6 +6,7 @@
  */
 
 import FBControlCore
+import FBSimulatorBridgeProtocol
 import Foundation
 
 /// Timing and transport measurements for an axbridge read.

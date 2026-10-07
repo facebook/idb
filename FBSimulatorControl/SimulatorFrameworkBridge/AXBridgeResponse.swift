@@ -6,6 +6,7 @@
  */
 
 import Darwin
+import FBSimulatorBridgeProtocol
 import Foundation
 
 /// Parses the response envelope shared by every axbridge verb and preserves the guest's typed failure.

@@ -7,6 +7,7 @@
 
 import CoreGraphics
 import FBControlCore
+import FBSimulatorBridgeProtocol
 import Foundation
 
 /// Options for fetching remote process elements (e.g., WebView content).
@@ -106,18 +107,9 @@ extension AccessibilityMatch: CustomStringConvertible {
   }
 }
 
-/// How a read traverses the application, which determines the attributes elements carry.
-/// `viewHierarchy` returns the app's view tree (deep, every container); `semantic` returns what an
-/// accessibility client sees (flat, labelled); `singleFetch` returns the same tree as `viewHierarchy`,
-/// fetched once per drawing process rather than once per node. The strategies read different child
-/// relations, so neither's element count is a baseline for the other, and a reachability verdict covers
-/// only what the strategy returned, not everything on screen.
-public enum AXTraversal: String, Sendable, CaseIterable {
-  case viewHierarchy = "view-hierarchy"
-  case semantic = "semantic"
-  /// One fetch for the application plus one per subtree another process draws (a web view, picker or
-  /// autofill sheet), which a single fetch cannot cross into.
-  case singleFetch = "single-fetch"
+public typealias AXTraversal = BridgeAXTraversal
+
+extension BridgeAXTraversal {
 
   /// Keys this traversal cannot answer for every element: `semantic` maps only identified translator roles
   /// onto an `XCUIElementType` name, so `type` may be missing.

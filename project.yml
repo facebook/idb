@@ -395,6 +395,7 @@ targets:
     dependencies:
       - target: FBAXCore
       - target: FBControlCore
+      - target: FBSimulatorBridgeProtocol
       - target: FBVideoCore
       - target: ZstdDecompress
       - sdk: XCTest.framework
@@ -427,6 +428,8 @@ targets:
           STRIP_INSTALLED_PRODUCT: "NO"
     dependencies:
       - target: FBControlCore
+        embed: false
+      - target: FBSimulatorBridgeProtocol
         embed: false
       - target: ZstdDecompress
         embed: false
