@@ -20,15 +20,6 @@ import Foundation
   func consumeEndOfFile()
 }
 
-/// A consumer of dispatch_data.
-@objc public protocol DispatchDataConsumer: NSObjectProtocol, Sendable {
-  /// Consumes the provided binary data.
-  func consumeData(_ data: __DispatchData)
-
-  /// Consumes an end-of-file.
-  func consumeEndOfFile()
-}
-
 /// Consumer which consumes the data synchronously in the same context as the caller invoking consumeData.
 @objc public protocol DataConsumerSync: NSObjectProtocol, Sendable {
 }

@@ -40,7 +40,7 @@ public class FileWriter: NSObject, @unchecked Sendable {
   }
 
   @objc public static var nullWriter: DataConsumer {
-    return FBDataConsumerAdaptor.dataConsumer(forDispatchDataConsumer: Null())
+    return Null()
   }
 
   private static func fileDescriptor(forPath filePath: String) throws -> Int32 {
@@ -51,18 +51,8 @@ public class FileWriter: NSObject, @unchecked Sendable {
     return fd
   }
 
-  @objc public static func asyncDispatchDataWriter(withFileDescriptor fileDescriptor: Int32, closeOnEndOfFile: Bool) -> FBFuture<AnyObject> {
-    let writer = Async(fileDescriptor: fileDescriptor, closeOnEndOfFile: closeOnEndOfFile, writeQueue: createWorkQueue())
-    do {
-      try writer.startWriting()
-    } catch {
-      return FBFuture(error: error)
-    }
-    return FBFuture(result: writer)
-  }
-
   @objc public static func syncWriter(withFileDescriptor fileDescriptor: Int32, closeOnEndOfFile: Bool) -> DataConsumer & DataConsumerLifecycle {
-    return FBDataConsumerAdaptor.dataConsumer(forDispatchDataConsumer: Sync(fileDescriptor: fileDescriptor, closeOnEndOfFile: closeOnEndOfFile))
+    return Sync(fileDescriptor: fileDescriptor, closeOnEndOfFile: closeOnEndOfFile)
   }
 
   @objc public static func asyncWriter(withFileDescriptor fileDescriptor: Int32, closeOnEndOfFile: Bool, queue: DispatchQueue, error: NSErrorPointer) -> (DataConsumer & DataConsumerLifecycle)? {
@@ -73,7 +63,7 @@ public class FileWriter: NSObject, @unchecked Sendable {
       error?.pointee = e as NSError
       return nil
     }
-    return FBDataConsumerAdaptor.dataConsumer(forDispatchDataConsumer: writer)
+    return writer
   }
 
   @objc public static func asyncWriter(withFileDescriptor fileDescriptor: Int32, closeOnEndOfFile: Bool, error: NSErrorPointer) -> (DataConsumer & DataConsumerLifecycle)? {
@@ -117,7 +107,7 @@ public class FileWriter: NSObject, @unchecked Sendable {
         } catch {
           return FBFuture(error: error)
         }
-        return FBFuture(result: FBDataConsumerAdaptor.dataConsumer(forDispatchDataConsumer: writer) as AnyObject)
+        return FBFuture(result: writer)
       })
   }
 
@@ -142,20 +132,20 @@ public class FileWriter: NSObject, @unchecked Sendable {
 
     fileprivate init(writer: Async) {
       self.writer = writer
-      self.consumer = FBDataConsumerAdaptor.dataConsumer(forDispatchDataConsumer: writer)
+      self.consumer = writer
     }
 
     /// Calls `completion` with 0 once all of `data` is written, or with the `errno` that stopped it.
     func write(_ data: Data, completion: @escaping @Sendable (Int32) -> Void) {
-      writer.write(data.withUnsafeBytes { DispatchData(bytes: $0) }, completion: completion)
+      writer.write(data, completion: completion)
     }
   }
 
   // MARK: - Null
 
-  private final class Null: FileWriter, DispatchDataConsumer, DataConsumerLifecycle, @unchecked Sendable {
+  private final class Null: FileWriter, DataConsumer, DataConsumerLifecycle, @unchecked Sendable {
 
-    func consumeData(_ data: __DispatchData) {
+    func consumeData(_ data: Data) {
     }
 
     func consumeEndOfFile() {
@@ -169,11 +159,10 @@ public class FileWriter: NSObject, @unchecked Sendable {
 
   // MARK: - Sync
 
-  private final class Sync: FileWriter, DispatchDataConsumer, DataConsumerLifecycle, DataConsumerSync, @unchecked Sendable {
+  private final class Sync: FileWriter, DataConsumer, DataConsumerLifecycle, DataConsumerSync, @unchecked Sendable {
 
-    func consumeData(_ data: __DispatchData) {
-      let dispatchData = data as DispatchData
-      dispatchData.enumerateBytes { buffer, _, _ in
+    func consumeData(_ data: Data) {
+      data.withUnsafeBytes { buffer in
         guard let baseAddress = buffer.baseAddress else { return }
         write(self.fileDescriptor, baseAddress, buffer.count)
       }
@@ -193,7 +182,7 @@ public class FileWriter: NSObject, @unchecked Sendable {
 
   // MARK: - Async
 
-  fileprivate final class Async: FileWriter, DispatchDataConsumer, DataConsumerLifecycle, @unchecked Sendable {
+  fileprivate final class Async: FileWriter, DataConsumer, DataConsumerLifecycle, @unchecked Sendable {
 
     let writeQueue: DispatchQueue
     var io: DispatchIO?
@@ -203,17 +192,17 @@ public class FileWriter: NSObject, @unchecked Sendable {
       super.init(fileDescriptor: fileDescriptor, closeOnEndOfFile: closeOnEndOfFile)
     }
 
-    func consumeData(_ data: __DispatchData) {
+    func consumeData(_ data: Data) {
       guard let io else { return }
-      io.write(offset: 0, data: data as DispatchData, queue: writeQueue) { _, _, _ in }
+      io.write(offset: 0, data: data.withUnsafeBytes { DispatchData(bytes: $0) }, queue: writeQueue) { _, _, _ in }
     }
 
-    func write(_ data: DispatchData, completion: @escaping @Sendable (Int32) -> Void) {
+    func write(_ data: Data, completion: @escaping @Sendable (Int32) -> Void) {
       guard let io else {
         completion(ECANCELED)
         return
       }
-      io.write(offset: 0, data: data, queue: writeQueue) { done, _, error in
+      io.write(offset: 0, data: data.withUnsafeBytes { DispatchData(bytes: $0) }, queue: writeQueue) { done, _, error in
         guard done else { return }
         completion(error)
       }

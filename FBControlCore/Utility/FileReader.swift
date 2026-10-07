@@ -17,6 +17,13 @@ public enum FBFileReaderState: UInt {
   case finishedReadingByCancellation = 89
 }
 
+/// Mapping is zero-copy when the data is already a single contiguous region, and a mapped
+/// dispatch_data bridges to `NSData` without copying.
+private func contiguousData(from data: DispatchData) -> Data {
+  let mapped: AnyObject = __dispatch_data_create_map(data as __DispatchData, nil, nil)
+  return (mapped as? Data) ?? Data(data)
+}
+
 private func stateString(from state: FBFileReaderState) -> String {
   switch state {
   case .notStarted:
@@ -59,7 +66,7 @@ public final class FileReader: CustomStringConvertible {
   // MARK: - Private Properties
 
   private let targeting: String
-  private let consumer: DispatchDataConsumer
+  private let consumer: DataConsumer
   private let readQueue: DispatchQueue
   private let ioChannelRelinquishedControl: FBMutableFuture<AnyObject>
   private let fileDescriptor: Int32
@@ -76,10 +83,6 @@ public final class FileReader: CustomStringConvertible {
   }
 
   public static func reader(withFileDescriptor fileDescriptor: Int32, closeOnEndOfFile: Bool, consumer: DataConsumer, logger: ControlCoreLogger?) -> Self {
-    dispatchDataReader(withFileDescriptor: fileDescriptor, closeOnEndOfFile: closeOnEndOfFile, consumer: FBDataConsumerAdaptor.dispatchDataConsumer(for: consumer), logger: logger)
-  }
-
-  public static func dispatchDataReader(withFileDescriptor fileDescriptor: Int32, closeOnEndOfFile: Bool, consumer: DispatchDataConsumer, logger: ControlCoreLogger?) -> Self {
     let targeting = "fd \(fileDescriptor)"
     return self.init(fileDescriptor: fileDescriptor, closeOnEndOfFile: closeOnEndOfFile, consumer: consumer, targeting: targeting, queue: createQueue(), logger: logger)
   }
@@ -97,7 +100,7 @@ public final class FileReader: CustomStringConvertible {
           result: FileReader(
             fileDescriptor: fd,
             closeOnEndOfFile: true,
-            consumer: FBDataConsumerAdaptor.dispatchDataConsumer(for: consumer),
+            consumer: consumer,
             targeting: filePath,
             queue: queue,
             logger: logger
@@ -106,7 +109,7 @@ public final class FileReader: CustomStringConvertible {
     ).retyped(FBFuture<FileReader>.self)
   }
 
-  required init(fileDescriptor: Int32, closeOnEndOfFile: Bool, consumer: DispatchDataConsumer, targeting: String, queue: DispatchQueue, logger: ControlCoreLogger?) {
+  required init(fileDescriptor: Int32, closeOnEndOfFile: Bool, consumer: DataConsumer, targeting: String, queue: DispatchQueue, logger: ControlCoreLogger?) {
     self.fileDescriptor = fileDescriptor
     self.consumer = consumer
     self.targeting = targeting
@@ -195,7 +198,7 @@ public final class FileReader: CustomStringConvertible {
     io.setLimit(lowWater: 1)
     io.read(offset: 0, length: Int.max, queue: readQueue) { done, data, errorCode in
       if let data, !data.isEmpty {
-        consumer.consumeData(data as __DispatchData)
+        consumer.consumeData(contiguousData(from: data))
       }
       if done {
         readErrorCode = Int32(errorCode)
