@@ -38,7 +38,7 @@ struct IDBCommandExecutorInstallTests {
   @Test
   func aStreamedDylibThatIsNotAGzipFailsWithGunzipsStandardError() async throws {
     let harness = try MacInstallHarness()
-    let input = FBProcessInput<NSData>(from: Data("not a gzip at all".utf8)).retyped(FBProcessInput<AnyObject>.self)
+    let input = BytePipe(Data("not a gzip at all".utf8))
 
     let error = await #expect(throws: (any Error).self) {
       try await harness.executor.install(.dylib, from: .gzippedFile(input, name: "libSample.dylib"))
@@ -53,7 +53,7 @@ struct IDBCommandExecutorInstallTests {
     let harness = try MacInstallHarness()
     let framework = try harness.makeBundle(named: "Sample", extension: "framework", identifier: "com.example.sample")
 
-    let artifact = try await harness.executor.install(.framework, from: .processInput(try await harness.gzippedTar(of: framework)))
+    let artifact = try await harness.executor.install(.framework, from: .stream(try await harness.gzippedTar(of: framework)))
 
     #expect(artifact.name == "com.example.sample")
     #expect(artifact.path.lastPathComponent == "Sample.framework")
@@ -64,7 +64,7 @@ struct IDBCommandExecutorInstallTests {
     let harness = try MacInstallHarness()
     let framework = try harness.makeBundle(named: "Sample", extension: "framework", identifier: "com.example.sample")
 
-    let artifact = try await harness.executor.install(.framework, from: .processInput(try await harness.gzippedTar(of: framework)))
+    let artifact = try await harness.executor.install(.framework, from: .stream(try await harness.gzippedTar(of: framework)))
 
     let type = try FileManager.default.attributesOfItem(atPath: artifact.path.path)[.type] as? FileAttributeType
     #expect(type == .typeDirectory)
@@ -87,7 +87,7 @@ struct IDBCommandExecutorInstallTests {
     let harness = try MacInstallHarness()
     let app = try harness.makeBundle(named: "Sample", extension: "app", identifier: "com.example.sample")
 
-    let artifact = try await harness.executor.install(.application(makeDebuggable: false), from: .processInput(try await harness.gzippedTar(of: app)))
+    let artifact = try await harness.executor.install(.application(makeDebuggable: false), from: .stream(try await harness.gzippedTar(of: app)))
 
     #expect(artifact.name == "com.example.sample")
     #expect(harness.executor.storageManager.application.persistedBundleIDs == ["com.example.sample"])
@@ -98,7 +98,7 @@ struct IDBCommandExecutorInstallTests {
     let harness = try MacInstallHarness()
     let app = try harness.makeBundle(named: "Sample", extension: "app", identifier: "com.example.sample")
 
-    let artifact = try await harness.executor.install(.application(makeDebuggable: false), from: .processInput(try await harness.gzippedTar(of: app)))
+    let artifact = try await harness.executor.install(.application(makeDebuggable: false), from: .stream(try await harness.gzippedTar(of: app)))
 
     #expect(FileManager.default.fileExists(atPath: artifact.path.path))
     #expect(try await harness.target.application.installed(bundleID: "com.example.sample").bundle.path == artifact.path.path)
@@ -109,7 +109,7 @@ struct IDBCommandExecutorInstallTests {
     let harness = try MacInstallHarness()
     let xctest = try harness.makeBundle(named: "SampleTests", extension: "xctest", identifier: "com.example.sampletests")
 
-    let artifact = try await harness.executor.install(.xctest(skipSigningBundles: true), from: .processInput(try await harness.gzippedTar(of: xctest)))
+    let artifact = try await harness.executor.install(.xctest(skipSigningBundles: true), from: .stream(try await harness.gzippedTar(of: xctest)))
 
     #expect(artifact.name == "com.example.sampletests")
     #expect(try harness.executor.storageManager.xctest.testDescriptor(withID: "com.example.sampletests").url.lastPathComponent == "SampleTests.xctest")
@@ -120,7 +120,7 @@ struct IDBCommandExecutorInstallTests {
     let harness = try MacInstallHarness()
     let framework = try harness.makeBundle(named: "Sample", extension: "framework", identifier: "com.example.sample")
 
-    let artifact = try await harness.executor.install(.framework, from: .processInput(try harness.tar(of: framework)))
+    let artifact = try await harness.executor.install(.framework, from: .stream(try harness.tar(of: framework)))
 
     #expect(artifact.name == "com.example.sample")
   }
@@ -131,7 +131,7 @@ struct IDBCommandExecutorInstallTests {
     let app = try harness.makeBundle(named: "Sample", extension: "app", identifier: "com.example.sample")
     let archive = MacInstallHarness.zstd(try harness.tarData(of: app))
 
-    let artifact = try await harness.executor.install(.application(makeDebuggable: false), from: .processInput(FBProcessInput<NSData>(from: archive).retyped(FBProcessInput<AnyObject>.self)), options: InstallOptions(compression: .ZSTD))
+    let artifact = try await harness.executor.install(.application(makeDebuggable: false), from: .stream(BytePipe(archive)), options: InstallOptions(compression: .ZSTD))
 
     #expect(artifact.name == "com.example.sample")
   }
@@ -142,7 +142,7 @@ struct IDBCommandExecutorInstallTests {
     let dsym = try harness.makeBundle(named: "Sample", extension: "dSYM", identifier: "com.example.sample")
     let archive = MacInstallHarness.zstd(try harness.tarData(of: dsym))
 
-    let artifact = try await harness.executor.install(.dsym(linkTo: nil), from: .processInput(FBProcessInput<NSData>(from: archive).retyped(FBProcessInput<AnyObject>.self)), options: InstallOptions(compression: .ZSTD))
+    let artifact = try await harness.executor.install(.dsym(linkTo: nil), from: .stream(BytePipe(archive)), options: InstallOptions(compression: .ZSTD))
 
     #expect(artifact.name == "Sample.dSYM")
     #expect(FileManager.default.fileExists(atPath: artifact.path.appendingPathComponent("Info.plist").path))
@@ -153,7 +153,7 @@ struct IDBCommandExecutorInstallTests {
     let harness = try MacInstallHarness()
     let dsym = try harness.makeBundle(named: "Sample", extension: "dSYM", identifier: "com.example.sample")
 
-    let artifact = try await harness.executor.install(.dsym(linkTo: nil), from: .processInput(try await harness.gzippedTar(of: dsym)))
+    let artifact = try await harness.executor.install(.dsym(linkTo: nil), from: .stream(try await harness.gzippedTar(of: dsym)))
 
     #expect(artifact.name == "Sample.dSYM")
     #expect(artifact.path.deletingLastPathComponent().deletingLastPathComponent().standardizedFileURL.path == harness.executor.storageManager.dsym.basePath.standardizedFileURL.path)
@@ -166,7 +166,7 @@ struct IDBCommandExecutorInstallTests {
     let dsym = try harness.makeBundle(named: "Sample", extension: "dSYM", identifier: "com.example.sample")
     try FileManager.default.copyItem(at: dsym, to: dsym.deletingLastPathComponent().appendingPathComponent("Other.dSYM"))
 
-    let artifact = try await harness.executor.install(.dsym(linkTo: nil), from: .processInput(try await harness.gzippedTar(of: dsym)))
+    let artifact = try await harness.executor.install(.dsym(linkTo: nil), from: .stream(try await harness.gzippedTar(of: dsym)))
 
     let children = try FileManager.default.contentsOfDirectory(atPath: artifact.path.path).sorted()
     #expect(children == ["Other.dSYM", "Sample.dSYM"])
@@ -176,10 +176,10 @@ struct IDBCommandExecutorInstallTests {
   func aStreamedDsymIsLinkedBesideTheAppItNames() async throws {
     let harness = try MacInstallHarness()
     let app = try harness.makeBundle(named: "Sample", extension: "app", identifier: "com.example.sample")
-    let installed = try await harness.executor.install(.application(makeDebuggable: false), from: .processInput(try await harness.gzippedTar(of: app)))
+    let installed = try await harness.executor.install(.application(makeDebuggable: false), from: .stream(try await harness.gzippedTar(of: app)))
     let dsym = try harness.makeBundle(named: "Sample", extension: "dSYM", identifier: "com.example.sample")
 
-    let artifact = try await harness.executor.install(.dsym(linkTo: DsymInstallLinkToBundle(bundleID: "com.example.sample", bundleType: .app)), from: .processInput(try await harness.gzippedTar(of: dsym)))
+    let artifact = try await harness.executor.install(.dsym(linkTo: DsymInstallLinkToBundle(bundleID: "com.example.sample", bundleType: .app)), from: .stream(try await harness.gzippedTar(of: dsym)))
 
     let link = installed.path.deletingLastPathComponent().appendingPathComponent("Sample.dSYM")
     #expect(try FileManager.default.destinationOfSymbolicLink(atPath: link.path) == artifact.path.path)
@@ -205,7 +205,7 @@ struct IDBCommandExecutorInstallTests {
     let framework = try harness.makeBundle(named: "Sample", extension: "framework", identifier: "com.example.sample")
     let progress = ProgressEvents()
 
-    let artifact = try await harness.executor.install(.framework, from: .processInput(try await harness.gzippedTar(of: framework)), onProgress: progress.append)
+    let artifact = try await harness.executor.install(.framework, from: .stream(try await harness.gzippedTar(of: framework)), onProgress: progress.append)
 
     #expect(progress.stages == ["extract.started", "extract.completed", "install.started", "install.completed"])
     guard case .installCompleted(_, let artifactPath, let name)? = progress.all.last else {

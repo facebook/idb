@@ -21,10 +21,11 @@ public enum DataDownloadEvent: Sendable {
 
 public final class DataDownloadInput: NSObject, @unchecked Sendable {
 
-  public let input: FBProcessInput<AnyObject>
+  /// The downloaded bytes, written as they arrive and finished when the transfer ends.
+  public let pipe = BytePipe()
 
   /// Waits for the transfer to finish, throwing if the server rejected the request or the connection
-  /// dropped. `input` alone cannot distinguish a failed download from a short one.
+  /// dropped. `pipe` alone cannot distinguish a failed download from a short one.
   @discardableResult
   public func completed() async throws -> DownloadReport {
     _ = try await bridgeFBFuture(completedFuture)
@@ -37,7 +38,6 @@ public final class DataDownloadInput: NSObject, @unchecked Sendable {
   private var report = DownloadReport()
   // The download starts as soon as it is made.
   private let requestStart = Date()
-  private let consumer: any DataConsumer
   private let onEvent: (@Sendable (DataDownloadEvent) -> Void)?
   private let logger: ControlCoreLogger
 
@@ -49,7 +49,7 @@ public final class DataDownloadInput: NSObject, @unchecked Sendable {
   /// caching policy and protocol handling are the caller's to decide.
   ///
   /// `onEvent` reports how many bytes have arrived, while the bytes themselves
-  /// still go only to `input`, so a caller can show progress without getting
+  /// still go only to `pipe`, so a caller can show progress without getting
   /// between the download and whatever is consuming it.
   public static func dataDownload(
     withURL url: URL,
@@ -69,9 +69,6 @@ public final class DataDownloadInput: NSObject, @unchecked Sendable {
     self.logger = logger
     self.onEvent = onEvent
     self.completedFuture = FBMutableFuture<NSNull>()
-    let rawInput = FBProcessInput<NSObject>.fromConsumer()
-    self.input = rawInput.retyped(FBProcessInput<AnyObject>.self)
-    self.consumer = rawInput.contents
     super.init()
   }
 
@@ -116,7 +113,7 @@ extension DataDownloadInput: URLSessionDataDelegate {
   }
 
   public func urlSession(_ session: URLSession, dataTask: URLSessionDataTask, didReceive data: Data) {
-    consumer.consumeData(data)
+    pipe.input.write(data)
     report.receivedBytes += Int64(data.count)
     onEvent?(.data(byteCount: data.count))
   }
@@ -137,6 +134,6 @@ extension DataDownloadInput: URLSessionDataDelegate {
     } else {
       _ = completedFuture.resolve(withResult: NSNull())
     }
-    consumer.consumeEndOfFile()
+    pipe.input.finish()
   }
 }

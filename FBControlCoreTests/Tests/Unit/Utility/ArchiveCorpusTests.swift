@@ -104,8 +104,10 @@ struct ArchiveCorpusTests {
         return
       }
     case .zipStream:
-      let input = FBProcessInput<NSData>(from: try Data(contentsOf: archive)).retyped(FBProcessInput<AnyObject>.self)
-      try await ZipStreamExtractor.extract(input, to: extracted, overrideModificationTime: false, logger: logger)
+      try await BytePipe(try Data(contentsOf: archive)).reading { source in
+        let source = HandedOver(source)
+        _ = try await offCooperativePool { try ZipStreamExtractor.extract(from: source.value, to: extracted) }.get()
+      }
       try ZipCentralDirectory(archiveAtPath: archive.path).repair(extractedAt: extracted)
     }
 
@@ -131,7 +133,7 @@ struct ArchiveCorpusTests {
   /// How an install hands `ApplicationArchive` an archive.
   enum Source: String, CaseIterable, CustomTestStringConvertible {
     case localPath
-    case processInput
+    case stream
     case remoteURL
 
     var testDescription: String { rawValue }
@@ -156,8 +158,8 @@ struct ArchiveCorpusTests {
     switch source {
     case .localPath:
       return (.localPath(archive.path), .default)
-    case .processInput:
-      return (.processInput(FBProcessInput<NSData>(from: contents).retyped(FBProcessInput<AnyObject>.self)), .default)
+    case .stream:
+      return (.stream(BytePipe(contents)), .default)
     case .remoteURL:
       return (.remoteURL(CorpusURLProtocol.serving(contents)), CorpusURLProtocol.configuration)
     }

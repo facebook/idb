@@ -17,13 +17,13 @@ public enum InstallSource {
   /// An archive to fetch over HTTP.
   case remoteURL(URL)
 
-  /// An archive arriving on a process input that the caller is writing to: a
-  /// zip or a tar, either of them compressed or not, told apart by its first bytes.
-  case processInput(FBProcessInput<AnyObject>)
+  /// An archive arriving on a pipe that the caller is writing to: a zip or a
+  /// tar, either of them compressed or not, told apart by its first bytes.
+  case stream(BytePipe)
 
-  /// A single file, gzipped, arriving on a process input that the caller is
-  /// writing to; it is staged as `name`.
-  case gzippedFile(FBProcessInput<AnyObject>, name: String)
+  /// A single file, gzipped, arriving on a pipe that the caller is writing to;
+  /// it is staged as `name`.
+  case gzippedFile(BytePipe, name: String)
 }
 
 /// How to get from a source to an installable bundle.
@@ -171,10 +171,10 @@ public enum Staging {
   ) async throws -> StagedTree {
     let extractPath = stagingDirectory.path
     switch source {
-    case .gzippedFile(let input, let name):
+    case .gzippedFile(let pipe, let name):
       let file = stagingDirectory.appendingPathComponent(name)
       try await runExtractStage(to: file.path, totalStart: totalStart, onProgress: onProgress) {
-        try await withAttached(input) { source in
+        try await pipe.reading { source in
           try await FBArchiveOperations.extractGzip(from: source, toPath: file.path, logger: logger)
         }
       }
@@ -184,13 +184,13 @@ public enum Staging {
         try await ArchiveExtractors.default.extract(
           fromFile: path, to: extractPath, options: options.extractOptions, logger: logger)
       }
-    case .processInput(let input):
+    case .stream(let pipe):
       // The caller owns the writing end, so a writer that fails partway reaches
       // the extractor as nothing more than a short archive. Only the caller holds
       // the writer's own error.
       try await temporaryDirectory.withTemporaryDirectory { spoolDirectory in
         try await runExtractStage(to: extractPath, totalStart: totalStart, onProgress: onProgress) {
-          try await withAttached(input) { source in
+          try await pipe.reading { source in
             try await extractStream(
               source, tarExtractor: ArchiveExtractors.stream(options.compression), spoolingIn: spoolDirectory,
               to: extractPath, options: options, logger: logger, onReport: onReport)
@@ -250,7 +250,7 @@ public enum Staging {
 
     try await runExtractStage(to: extractPath, totalStart: totalStart, onProgress: onProgress) {
       async let extraction: Void = extractDownload(
-        download.input, spoolingIn: spoolDirectory, to: extractPath, options: options, logger: logger, onReport: onReport)
+        download.pipe, spoolingIn: spoolDirectory, to: extractPath, options: options, logger: logger, onReport: onReport)
       // The transfer's outcome first: the extractor only sees bytes and then an
       // end of file, so a failed transfer looks to it like a short archive.
       onReport(.download(try await download.completed()))
@@ -263,14 +263,14 @@ public enum Staging {
   }
 
   private static func extractDownload(
-    _ input: FBProcessInput<AnyObject>,
+    _ pipe: BytePipe,
     spoolingIn spoolDirectory: URL,
     to extractPath: String,
     options: InstallOptions,
     logger: any ControlCoreLogger,
     onReport: @escaping @Sendable (StagingReport) -> Void
   ) async throws {
-    try await withAttached(input) { source in
+    try await pipe.reading { source in
       try await extractStream(
         source, tarExtractor: ArchiveExtractors.inProcessTar, spoolingIn: spoolDirectory,
         to: extractPath, options: options, logger: logger, onReport: onReport)

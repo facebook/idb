@@ -190,12 +190,10 @@ final class ApplicationArchiveTests: XCTestCase {
     XCTAssertEqual(events.map(\.phase), [.started, .completed])
   }
 
-  func testResolve_WhenGivenAProcessInput_ExtractsAndFindsTheBundle() async throws {
+  func testResolve_WhenGivenAStream_ExtractsAndFindsTheBundle() async throws {
     let payload = try await makePayloadArchive()
-    let input = FBProcessInput<NSData>(from: payload)
-      .retyped(FBProcessInput<AnyObject>.self)
 
-    let (identifier, _, events) = try await resolve(.processInput(input))
+    let (identifier, _, events) = try await resolve(.stream(BytePipe(payload)))
 
     XCTAssertEqual(identifier, "com.example.sample")
     XCTAssertEqual(events.map(\.stage), [.extract, .extract])
@@ -203,7 +201,7 @@ final class ApplicationArchiveTests: XCTestCase {
   }
 
   private func zipStream(_ zip: Data) -> InstallSource {
-    .processInput(FBProcessInput<NSData>(from: zip).retyped(FBProcessInput<AnyObject>.self))
+    .stream(BytePipe(zip))
   }
 
   /// A reader of the stream cannot handle a stored entry with its size after it.
@@ -225,10 +223,8 @@ final class ApplicationArchiveTests: XCTestCase {
     XCTAssertEqual(routes, [], "Only a streamed or downloaded archive is routed")
   }
 
-  func testResolve_WhenGivenAGzippedProcessInput_RoutesItToBSDTar() async throws {
-    let input = FBProcessInput<NSData>(from: try await makePayloadArchive()).retyped(FBProcessInput<AnyObject>.self)
-
-    let routes = try await routes(resolving: .processInput(input))
+  func testResolve_WhenGivenAGzippedStream_RoutesItToBSDTar() async throws {
+    let routes = try await routes(resolving: .stream(BytePipe(try await makePayloadArchive())))
 
     XCTAssertEqual(routes, [ExtractionRoute(format: .gzip, extractor: .bsdTar)])
   }

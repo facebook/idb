@@ -172,18 +172,6 @@ public struct InProcessTarExtractor: ArchiveExtractor {
   }
 }
 
-/// Calls `body` with a source reading `input`, detaching it however `body` returns.
-func withAttached(_ input: FBProcessInput<AnyObject>, _ body: (any ByteSource) async throws -> Void) async throws {
-  let fileDescriptor = try await bridgeFBFuture(input.attach()).fileDescriptor
-  do {
-    try await body(FileDescriptorSource(fileDescriptor))
-  } catch {
-    _ = try? await bridgeFBFuture(input.detach())
-    throw error
-  }
-  _ = try? await bridgeFBFuture(input.detach())
-}
-
 /// Runs `work` off the cooperative pool, for work that blocks its thread.
 ///
 /// Each call gets a thread of its own. The global queues run only a bounded number of threads at once, and blocking

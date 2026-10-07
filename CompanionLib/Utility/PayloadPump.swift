@@ -5,6 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+import FBControlCore
 import Foundation
 import GRPCCore
 
@@ -14,16 +15,16 @@ import GRPCCore
 /// starts would deadlock on anything larger than that.
 enum PayloadPump {
 
-  /// Writes `head`, then every frame of `frames`, to `output`. An error thrown by `frames` is passed to
+  /// Writes `head`, then every frame of `frames`, to `input`. An error thrown by `frames` is passed to
   /// `onClientFailure` before it is rethrown, so a caller can tell the client's failure from the extractor's.
   static func write<Frames: AsyncSequence>(
     head: Data,
     frames: Frames,
-    to output: OutputStream,
+    to input: InputSource,
     onWrite: (Data) -> Void = { _ in },
     onClientFailure: (any Error) -> Void = { _ in }
   ) async throws where Frames.Element == Data {
-    try write(head, to: output)
+    try await write(head, to: input)
     onWrite(head)
     var iterator = frames.makeAsyncIterator()
     while true {
@@ -37,15 +38,15 @@ enum PayloadPump {
       guard let frame else {
         return
       }
-      try write(frame, to: output)
+      try await write(frame, to: input)
       onWrite(frame)
     }
   }
 
   /// A failed write ends the transfer rather than being something to retry or resume from.
-  private static func write(_ data: Data, to output: OutputStream) throws {
+  private static func write(_ data: Data, to input: InputSource) async throws {
     do {
-      try output.writeAll(data)
+      try await input.writeAndWait(data)
     } catch {
       throw RPCError(code: .aborted, message: "Failed to write \(data.count) bytes to the extraction pipe: \(error.localizedDescription)")
     }

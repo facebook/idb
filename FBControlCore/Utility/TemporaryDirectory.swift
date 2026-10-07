@@ -96,15 +96,15 @@ public struct TemporaryDirectory: Equatable, Sendable {
     return try await body(tempDirectory)
   }
 
-  /// Extracts the archive in `input` into a temporary directory scoped to `body`.
+  /// Extracts the archive in `pipe` into a temporary directory scoped to `body`.
   public func withArchiveExtracted<T>(
-    fromStream input: FBProcessInput<AnyObject>,
+    fromStream pipe: BytePipe,
     compression: FBCompressionFormat,
     overrideModificationTime overrideMTime: Bool = false,
     _ body: (URL) async throws -> T
   ) async throws -> T {
     try await withTemporaryDirectory { tempDir in
-      try await withAttached(input) {
+      try await pipe.reading {
         try await ArchiveExtractors.stream(compression).extract(
           from: $0, to: tempDir.path,
           options: ArchiveExtractOptions(overrideModificationTime: overrideMTime),
@@ -116,8 +116,7 @@ public struct TemporaryDirectory: Equatable, Sendable {
 
   /// Extracts the gzipped tar in `tarData` into a temporary directory scoped to `body`.
   public func withArchiveExtracted<T>(_ tarData: Data, _ body: (URL) async throws -> T) async throws -> T {
-    let input = FBProcessInput<NSData>(from: tarData).retyped(FBProcessInput<AnyObject>.self)
-    return try await withArchiveExtracted(fromStream: input, compression: .GZIP, body)
+    try await withArchiveExtracted(fromStream: BytePipe(tarData), compression: .GZIP, body)
   }
 
   /// Extracts the archive at `filePath` into a temporary directory scoped to `body`.

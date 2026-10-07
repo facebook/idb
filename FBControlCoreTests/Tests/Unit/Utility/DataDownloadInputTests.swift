@@ -9,7 +9,7 @@
 import XCTest
 
 /// Download piped straight into extraction, as the URL install path wires it: the
-/// download's `FBProcessInput` is the extractor's stdin.
+/// download's `BytePipe` is the extractor's stdin.
 final class DataDownloadInputTests: XCTestCase {
 
   private var logger: ControlCoreLogger!
@@ -72,7 +72,7 @@ final class DataDownloadInputTests: XCTestCase {
       configuration: configuration,
       logger: logger,
       onEvent: onEvent)
-    async let extraction: Void = withAttached(download.input) {
+    async let extraction: Void = download.pipe.reading {
       try await BSDTarExtractor().extract(from: $0, to: destination, options: ArchiveExtractOptions(), logger: logger)
     }
     // A data consumer carries only bytes and an end of file, so a failed download

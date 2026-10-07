@@ -210,18 +210,3 @@ public enum ZipStreamExtractor {
     }
   }
 }
-
-extension ZipStreamExtractor {
-
-  /// Extracts the zip written to `input`, reading it as a subprocess would read its stdin.
-  public static func extract(_ input: FBProcessInput<AnyObject>, to root: String, overrideModificationTime: Bool, logger: any ControlCoreLogger) async throws {
-    let fileDescriptor = try await bridgeFBFuture(input.attach()).fileDescriptor
-    let start = Date()
-    let result = await offCooperativePool {
-      try extract(from: FileDescriptorSource(fileDescriptor), to: root, overrideModificationTime: overrideModificationTime)
-    }
-    _ = try? await bridgeFBFuture(input.detach())
-    let summary = try result.get()
-    logger.log(summary.description(from: "a zip stream", since: start))
-  }
-}

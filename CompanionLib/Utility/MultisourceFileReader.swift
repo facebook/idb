@@ -38,10 +38,9 @@ enum MultisourceFileReader {
 
     switch payload.source {
     case let .data(data):
-      let (readTaskFromStreamTask, input) = pipeToInput(initialData: data, requestStream: requestStream)
-      let mappedInput = input.retyped(FBProcessInput<AnyObject>.self)
+      let (readTaskFromStreamTask, pipe) = pipeToInput(initialData: data, requestStream: requestStream)
 
-      return try await temporaryDirectory.withArchiveExtracted(fromStream: mappedInput, compression: compression) { extractionDir in
+      return try await temporaryDirectory.withArchiveExtracted(fromStream: pipe, compression: compression) { extractionDir in
         let files: [URL]
         if extractFromSubdir {
           files = try temporaryDirectory.files(inSubdirectoriesOf: extractionDir)
@@ -78,27 +77,23 @@ enum MultisourceFileReader {
     return filePaths
   }
 
-  private static func pipeToInput<Request: PayloadExtractable>(initialData: Data, requestStream: RequestStreamReader<Request>) -> (Task<Void, Error>, FBProcessInput<OutputStream>) {
-    let input = FBProcessInput<OutputStream>.fromStream()
-    let stream = input.contents
+  private static func pipeToInput<Request: PayloadExtractable>(initialData: Data, requestStream: RequestStreamReader<Request>) -> (Task<Void, Error>, BytePipe) {
+    let pipe = BytePipe()
 
     let readFromStreamTask = Task {
-      stream.open()
-      defer { stream.close() }
-      try await writePayloads(initialData: initialData, from: requestStream, to: stream)
+      defer { pipe.input.finish() }
+      try await writePayloads(initialData: initialData, from: requestStream, to: pipe.input)
     }
 
-    return (readFromStreamTask, input)
+    return (readFromStreamTask, pipe)
   }
 
-  /// Writes `initialData` and then every payload in `requestStream` to `stream`.
-  ///
-  /// Takes the stream as a parameter rather than owning it so the loop can be exercised against a
-  /// stub sink; a real `FBProcessInput` stream cannot be opened until a process attaches to it.
+  /// Writes `initialData` and then every payload in `requestStream` to `input`, each write awaited so
+  /// the request stream is read no faster than the extractor reads the pipe.
   static func writePayloads<Request: PayloadExtractable>(
     initialData: Data,
     from requestStream: RequestStreamReader<Request>,
-    to stream: OutputStream
+    to input: InputSource
   ) async throws {
     let frames = requestStream.map { request -> Data in
       guard let payload = request.extractPayload()
@@ -109,6 +104,6 @@ enum MultisourceFileReader {
 
       return data
     }
-    try await PayloadPump.write(head: initialData, frames: frames, to: stream)
+    try await PayloadPump.write(head: initialData, frames: frames, to: input)
   }
 }

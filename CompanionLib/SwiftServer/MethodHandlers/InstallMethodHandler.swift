@@ -133,14 +133,14 @@ struct InstallMethodHandler {
     }
 
     /// A dylib arrives as a single gzipped file; everything else as an archive.
-    func installStreamed(_ dataStream: FBProcessInput<AnyObject>, compression: FBCompressionFormat) async throws -> InstalledArtifact {
+    func installStreamed(_ dataStream: BytePipe, compression: FBCompressionFormat) async throws -> InstalledArtifact {
       if case .dylib = installDestination {
         return try await install(from: .gzippedFile(dataStream, name: name))
       }
-      return try await install(from: .processInput(dataStream), compression: compression)
+      return try await install(from: .stream(dataStream), compression: compression)
     }
 
-    func installStream(_ dataStream: FBProcessInput<AnyObject>, format: InstallStreamFormat, head: Data) async throws -> InstalledArtifact {
+    func installStream(_ dataStream: BytePipe, format: InstallStreamFormat, head: Data) async throws -> InstalledArtifact {
       let tarCompression: FBCompressionFormat
       switch format {
       case .zip, .zstdZip:
@@ -163,13 +163,12 @@ struct InstallMethodHandler {
       if destination == .app {
         telemetry.streamed(format)
       }
-      let input = FBProcessInput<OutputStream>.fromStream()
-      let output = input.contents
+      let pipe = BytePipe()
       let clientFailure = OSAllocatedUnfairLock<(any Error)?>(initialState: nil)
-      async let writePayload: Void = writePayload(head: head, rest: rest, output: output, telemetry: telemetry, clientFailure: clientFailure)
+      async let writePayload: Void = writePayload(head: head, rest: rest, to: pipe.input, telemetry: telemetry, clientFailure: clientFailure)
       let artifact: InstalledArtifact
       do {
-        artifact = try await installStream(input.retyped(FBProcessInput<AnyObject>.self), format: format, head: head)
+        artifact = try await installStream(pipe, format: format, head: head)
       } catch {
         // A client stream that fails truncates the archive, so extraction fails too; the client's failure is the cause.
         try? await writePayload
@@ -184,8 +183,8 @@ struct InstallMethodHandler {
         return try await install(from: .remoteURL(url), compression: compression)
       case .gzippedFile:
         let download = DataDownloadInput.dataDownload(withURL: url, logger: targetLogger)
-        return try await Self.installDownload(download) { input in
-          try await install(from: .gzippedFile(input, name: name))
+        return try await Self.installDownload(download) { pipe in
+          try await install(from: .gzippedFile(pipe, name: name))
         }
       }
 
@@ -217,11 +216,11 @@ struct InstallMethodHandler {
   /// so its failure takes precedence over the install's outcome.
   static func installDownload(
     _ download: DataDownloadInput,
-    install: (FBProcessInput<AnyObject>) async throws -> InstalledArtifact
+    install: (BytePipe) async throws -> InstalledArtifact
   ) async throws -> InstalledArtifact {
     let artifact: InstalledArtifact
     do {
-      artifact = try await install(download.input)
+      artifact = try await install(download.pipe)
     } catch {
       try await download.completed()
       throw error
@@ -259,20 +258,19 @@ struct InstallMethodHandler {
     }
   }
 
-  /// Writes the payload to `output`, recording in `clientFailure` an error thrown by `rest` rather than by the write.
+  /// Writes the payload to `input`, recording in `clientFailure` an error thrown by `rest` rather than by the write.
   private func writePayload(
     head: Data,
     rest: AsyncThrowingStream<Data, any Error>,
-    output: OutputStream,
+    to input: InputSource,
     telemetry: InstallTelemetry,
     clientFailure: OSAllocatedUnfairLock<(any Error)?>
   ) async throws {
-    output.open()
-    defer { output.close() }
+    defer { input.finish() }
 
     try await telemetry.receive { receive in
       try await PayloadPump.write(
-        head: head, frames: rest, to: output,
+        head: head, frames: rest, to: input,
         onWrite: { receive.count($0) },
         onClientFailure: { error in clientFailure.withLock { $0 = error } })
     }
