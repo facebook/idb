@@ -173,21 +173,12 @@ public final class InstrumentsOperation {
     let running = try await Subprocess(executable: "/usr/bin/instruments", arguments: arguments)
       .launch(output: .logger(compositeLogger), error: .logger(compositeLogger), logger: logger)
 
-    let templateLoaded = convertFBMutableFuture(instrumentsConsumer.hasStartedLoadingTemplate)
-      .timeout(attemptTimeout, waitingFor: "instruments to start loading the template")
     do {
-      try await bridgeFBFutureVoid(templateLoaded.retyped(FBFuture<NSNull>.self))
-      logger.log("Waiting for \(configuration.timings.launchErrorTimeout) seconds for instruments to start properly")
-      // Instruments profiling started correctly if the timer expires before
-      // 'hasStoppedRecording' resolves. This is necessary because instruments prints
-      // nothing when profiling has begun; failure is detected by 'Instruments Trace
-      // Complete' appearing within the launch-error timeout.
-      let timerFuture = FBFuture<NSNull>.empty().delay(configuration.timings.launchErrorTimeout)
-      let raced = FBFuture<AnyObject>(race: [
-        convertFBMutableFuture(instrumentsConsumer.hasStoppedRecording).retyped(FBFuture<AnyObject>.self),
-        timerFuture.retyped(FBFuture<AnyObject>.self),
-      ])
-      _ = try await bridgeFBFuture(raced)
+      try await waitForStartup(
+        of: instrumentsConsumer,
+        templateTimeout: attemptTimeout,
+        launchErrorTimeout: configuration.timings.launchErrorTimeout,
+        logger: logger)
     } catch {
       await running.terminate(with: SIGTERM, gracePeriod: configuration.timings.terminateTimeout)
       throw error
@@ -195,6 +186,28 @@ public final class InstrumentsOperation {
 
     logger.log("Started instruments with pid \(running.processIdentifier)")
     return InstrumentsOperation(running: running, traceFile: URL(fileURLWithPath: traceFile), configuration: configuration, logger: logger)
+  }
+
+  /// Waits for instruments to start loading the template, then for the launch-error timeout to
+  /// pass without a premature "Trace Complete".
+  static func waitForStartup(
+    of consumer: InstrumentsConsumer,
+    templateTimeout: TimeInterval,
+    launchErrorTimeout: TimeInterval,
+    logger: any ControlCoreLogger
+  ) async throws {
+    let templateLoaded = convertFBMutableFuture(consumer.hasStartedLoadingTemplate)
+      .timeout(templateTimeout, waitingFor: "instruments to start loading the template")
+    try await bridgeFBFutureVoid(templateLoaded.retyped(FBFuture<NSNull>.self))
+    logger.log("Waiting for \(launchErrorTimeout) seconds for instruments to start properly")
+    // Instruments prints nothing once profiling has begun, so startup is judged a success when
+    // the launch-error timeout passes without 'Instruments Trace Complete'.
+    let timerFuture = FBFuture<NSNull>.empty().delay(launchErrorTimeout)
+    let raced = FBFuture<AnyObject>(race: [
+      convertFBMutableFuture(consumer.hasStoppedRecording).retyped(FBFuture<AnyObject>.self),
+      timerFuture.retyped(FBFuture<AnyObject>.self),
+    ])
+    _ = try await bridgeFBFuture(raced)
   }
 
   /// Stops the operation, waiting for the trace file to be written out to disk.

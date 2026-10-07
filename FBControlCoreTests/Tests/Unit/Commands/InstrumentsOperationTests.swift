@@ -47,6 +47,44 @@ final class InstrumentsOperationTests: XCTestCase {
     XCTAssertFalse(consumer.hasStoppedRecording.hasCompleted, "An unrelated line should not signal a stop")
   }
 
+  // MARK: - Startup
+
+  func testWaitForStartup_WhenTemplateLoadsAndNothingFollows_Succeeds() async throws {
+    let consumer = InstrumentsConsumer()
+    consumer.consume(line: "Loading template 'Time Profiler'")
+
+    try await InstrumentsOperation.waitForStartup(
+      of: consumer, templateTimeout: 5, launchErrorTimeout: 0.2, logger: ControlCoreGlobalConfiguration.defaultLogger)
+  }
+
+  func testWaitForStartup_WhenTraceCompletesWithinTheLaunchErrorTimeout_FailsWithTheLogs() async throws {
+    let consumer = InstrumentsConsumer()
+    consumer.consume(line: "Loading template 'Time Profiler'")
+    consumer.consume(line: "Instruments Trace Complete")
+
+    do {
+      try await InstrumentsOperation.waitForStartup(
+        of: consumer, templateTimeout: 5, launchErrorTimeout: 5, logger: ControlCoreGlobalConfiguration.defaultLogger)
+      XCTFail("A premature 'Instruments Trace Complete' should fail startup")
+    } catch InstrumentsError.startupFailed(let logs) {
+      XCTAssertEqual(logs, ["Loading template 'Time Profiler'", "Instruments Trace Complete"])
+    }
+  }
+
+  func testWaitForStartup_WhenTheTemplateNeverLoads_TimesOut() async throws {
+    let consumer = InstrumentsConsumer()
+
+    do {
+      try await InstrumentsOperation.waitForStartup(
+        of: consumer, templateTimeout: 0.2, launchErrorTimeout: 5, logger: ControlCoreGlobalConfiguration.defaultLogger)
+      XCTFail("Startup should time out when the template never loads")
+    } catch {
+      XCTAssertTrue(
+        error.localizedDescription.contains("instruments to start loading the template"),
+        "The timeout should name what it was waiting for, got: \(error.localizedDescription)")
+    }
+  }
+
   // MARK: - Post Processing
 
   func testPostProcess_WhenArgumentsAreNil_ReturnsTheInputTraceFileWithoutSpawning() async throws {
