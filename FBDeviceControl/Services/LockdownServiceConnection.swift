@@ -293,7 +293,7 @@ public final class LockdownServiceConnection: CustomStringConvertible {
     to consumer: any DataConsumer,
     on queue: DispatchQueue
   ) -> LockdownServiceConnectionReader {
-    let reader = LockdownServiceConnectionReader(connection: self, consumer: consumer, queue: queue)
+    let reader = LockdownServiceConnectionReader(connection: self, consumer: consumer) { queue.async(execute: $0) }
     activeReaderFinished = reader.finishedReading
     return reader
   }
@@ -352,10 +352,10 @@ final class LockdownServiceConnectionReader: NSObject {
 
   private let connection: LockdownServiceConnection
   private let consumer: any DataConsumer
-  private let queue: DispatchQueue
+  private let schedule: (@escaping () -> Void) -> Void
   private let finishedReadingMutable: FBMutableFuture<NSNumber>
 
-  /// Locked rather than a bare stored property: the read loop polls this from its queue while
+  /// Locked rather than a bare stored property: the read loop polls this from its own thread while
   /// `startReading` writes it from whichever thread the caller is on.
   private let stateLock = NSLock()
   private var stateStorage: FBFileReaderState
@@ -373,10 +373,11 @@ final class LockdownServiceConnectionReader: NSObject {
     }
   }
 
-  init(connection: LockdownServiceConnection, consumer: any DataConsumer, queue: DispatchQueue) {
+  /// `schedule` runs the read loop; it is a closure rather than a queue so tests can run the loop inline.
+  init(connection: LockdownServiceConnection, consumer: any DataConsumer, schedule: @escaping (@escaping () -> Void) -> Void) {
     self.connection = connection
     self.consumer = consumer
-    self.queue = queue
+    self.schedule = schedule
     self.stateStorage = .notStarted
     self.finishedReadingMutable = FBMutableFuture<NSNumber>()
     super.init()
@@ -392,7 +393,7 @@ final class LockdownServiceConnectionReader: NSObject {
       return FBFuture<NSNull>(error: LockdownServiceConnectionError.cannotStartReading(state: state.rawValue) as NSError)
     }
 
-    queue.async { [self] in
+    schedule { [self] in
       let buffer = UnsafeMutableRawPointer.allocate(byteCount: ReadBufferSize, alignment: MemoryLayout<UInt8>.alignment)
       defer { buffer.deallocate() }
       while state == .reading && finishedReadingMutable.state == .running {
