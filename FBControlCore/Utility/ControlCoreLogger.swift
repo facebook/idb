@@ -7,6 +7,15 @@
 
 import Foundation
 
+/// The Log Level.
+/// The Multiple Level exists so that composite loggers can decide whether to log individually.
+@objc public enum FBControlCoreLogLevel: UInt {
+  case error = 1
+  case info = 2
+  case debug = 3
+  case multiple = 1000
+}
+
 /// Receives log messages. Conformers must be thread-safe: loggers are shared across queues,
 /// private-framework callback threads and actors.
 @objc public protocol ControlCoreLogger: NSObjectProtocol, Sendable {
@@ -35,11 +44,3 @@ import Foundation
   /// The Current Log Level.
   var level: FBControlCoreLogLevel { get }
 }
-
-// MARK: - Conformance extensions for ObjC classes
-
-// SAFETY: FBCompositeLogger holds only an immutable array of child loggers, which are themselves
-// required to be thread-safe by the protocol contract above.
-extension FBCompositeLogger: @unchecked Sendable {}
-
-extension FBCompositeLogger: ControlCoreLogger {}

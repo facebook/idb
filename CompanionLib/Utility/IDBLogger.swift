@@ -114,17 +114,13 @@ public final class IDBLogger: FBCompositeLogger, @unchecked Sendable {
     return fileDescriptor
   }
 
-  public override init(loggers: [ControlCoreLogger]) {
-    super.init(loggers: loggers)
-  }
-
   public override var loggers: [ControlCoreLogger] {
     super.loggers + globalLoggers.all
   }
 
   /// `FBCompositeLogger`'s builder methods allocate an instance of the receiver's dynamic class, so
-  /// applying one to an `IDBLogger` always yields an `IDBLogger` — the Objective-C declarations
-  /// can only promise `ControlCoreLogger`.
+  /// applying one to an `IDBLogger` always yields an `IDBLogger` — the `ControlCoreLogger`
+  /// requirements can only promise `ControlCoreLogger`.
   public func named(_ name: String) -> IDBLogger {
     unsafeDowncast(withName(name) as AnyObject, to: IDBLogger.self)
   }

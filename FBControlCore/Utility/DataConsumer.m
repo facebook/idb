@@ -9,7 +9,6 @@
 
 #import <stdatomic.h>
 
-#import "ControlCoreLogger.h"
 #import "FBControlCore-Swift.h"
 #import "FBControlCore-SwiftImport.h"
 #import "FBDataBuffer.h"

@@ -7,7 +7,6 @@
 
 #import "FBFuture+Sync.h"
 
-#import "ControlCoreLogger.h"
 #import "FBControlCore-Swift.h"
 #import "FBControlCore-SwiftImport.h"
 #import "FBFuture.h"

@@ -5,8 +5,6 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#import <FBControlCore/ControlCoreLogger.h>
-#import <FBControlCore/ControlCoreLogger+OSLog.h>
 #import <FBControlCore/DataConsumer.h>
 #import <FBControlCore/FBDataBuffer.h>
 #import <FBControlCore/FBFuture.h>
