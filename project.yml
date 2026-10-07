@@ -176,6 +176,8 @@ targets:
       - sdk: CoreGraphics.framework
       - sdk: CoreVideo.framework
       - sdk: Foundation.framework
+      - sdk: IOSurface.framework
+      - sdk: Metal.framework
   SimulatorVideoTests:
     type: bundle.unit-test
     platform: macOS
