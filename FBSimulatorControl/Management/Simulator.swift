@@ -13,8 +13,8 @@ private let DefaultDeviceSet = "~/Library/Developer/CoreSimulator/Devices"
 
 /// An implementation of `Target` for iOS Simulators.
 ///
-/// The async commands serialize their work onto `FBFuture`'s internal queues, so instances are
-/// safe to pass across Swift concurrency domains.
+/// Instances are safe to pass across Swift concurrency domains: apart from immutable properties,
+/// the only state is the temporary directory and `commandCache`, each behind its own lock.
 public final class Simulator: Target, Hashable, CustomStringConvertible, @unchecked Sendable {
 
   // MARK: - Properties

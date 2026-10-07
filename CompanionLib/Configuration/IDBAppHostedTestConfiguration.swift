@@ -8,8 +8,6 @@
 import Foundation
 import XCTestBootstrap
 
-/// Remains a class rather than a struct because it is carried through `FBFuture`, which is
-/// constrained to class types.
 public final class IDBAppHostedTestConfiguration {
 
   public let testLaunchConfiguration: TestLaunchConfiguration
