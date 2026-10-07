@@ -179,6 +179,19 @@ final class FBTestBundleDTXConnectionTests: XCTestCase {
     XCTAssertTrue(isFinished(events.testPlanOutcome))
   }
 
+  func testUITestingFailingToInitializeAfterTheBundleIsReadyEndsTheTestPlan() async throws {
+    let connection = try makeConnection()
+    bundleReady(connection, protocolVersion: 36, minimumVersion: 8)
+    try await events.bundleReady.wait()
+
+    _ = connection.perform(
+      NSSelectorFromString("_XCT_initializationForUITestingDidFailWithError:"),
+      with: NSError(domain: "com.example.xctest", code: 3))
+
+    // BUG: the failure reads as the test plan finishing, so the disconnect that follows is reported as success — flipped in the following commit.
+    XCTAssertTrue(isFinished(events.testPlanOutcome))
+  }
+
   // MARK: - Forwarding
 
   func testOtherCallbacksAreForwardedToTheInterface() throws {
