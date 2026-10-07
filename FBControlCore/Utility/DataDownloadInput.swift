@@ -25,13 +25,18 @@ public final class DataDownloadInput: NSObject, @unchecked Sendable {
 
   /// Waits for the transfer to finish, throwing if the server rejected the request or the connection
   /// dropped. `input` alone cannot distinguish a failed download from a short one.
-  public func completed() async throws {
+  @discardableResult
+  public func completed() async throws -> DownloadReport {
     _ = try await bridgeFBFuture(completedFuture)
+    // The future resolves on the delegate queue after the last write to `report`.
+    return report
   }
 
   private let completedFuture: FBMutableFuture<NSNull>
   // Written only from the session's delegate queue, which is serial.
   private var report = DownloadReport()
+  // The download starts as soon as it is made.
+  private let requestStart = Date()
   private let consumer: any DataConsumer
   private let onEvent: (@Sendable (DataDownloadEvent) -> Void)?
   private let logger: ControlCoreLogger
@@ -88,6 +93,7 @@ public final class DataDownloadInput: NSObject, @unchecked Sendable {
 extension DataDownloadInput: URLSessionDataDelegate {
 
   public func urlSession(_ session: URLSession, dataTask: URLSessionDataTask, didReceive response: URLResponse, completionHandler: @escaping (URLSession.ResponseDisposition) -> Void) {
+    report.timeToFirstByte = Date().timeIntervalSince(requestStart)
     guard let httpResponse = response as? HTTPURLResponse else {
       completionHandler(.allow)
       return

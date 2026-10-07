@@ -37,14 +37,19 @@ public struct DownloadReport: Sendable, Equatable {
   }
 
   public var receivedBytes: Int64
+  /// From starting the request to its final response arriving, redirects included. Nil when no response arrived.
+  public var timeToFirstByte: TimeInterval?
   /// The address of the server, or of the proxy when `proxied`.
   public var remoteAddress: String?
   /// Nil when the download never got as far as a transaction.
   public var proxied: Bool?
   public var trust: Trust?
 
-  public init(receivedBytes: Int64 = 0, remoteAddress: String? = nil, proxied: Bool? = nil, trust: Trust? = nil) {
+  public init(
+    receivedBytes: Int64 = 0, timeToFirstByte: TimeInterval? = nil, remoteAddress: String? = nil, proxied: Bool? = nil, trust: Trust? = nil
+  ) {
     self.receivedBytes = receivedBytes
+    self.timeToFirstByte = timeToFirstByte
     self.remoteAddress = remoteAddress
     self.proxied = proxied
     self.trust = trust

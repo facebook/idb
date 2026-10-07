@@ -100,6 +100,8 @@ public struct ExtractionRoute: Equatable, Sendable {
 /// What staging learned about how it fetched and unpacked a source, beyond the progress of its stages.
 public enum StagingReport: Equatable, Sendable {
   case route(ExtractionRoute)
+  /// A download that completed. One that failed carries its report in its `InstallError.transferFailed`.
+  case download(DownloadReport)
 }
 
 /// Gets an install source onto disk for every kind of artifact: fetching,
@@ -251,7 +253,7 @@ public enum Staging {
         download.input, spoolingIn: spoolDirectory, to: extractPath, options: options, logger: logger, onReport: onReport)
       // The transfer's outcome first: the extractor only sees bytes and then an
       // end of file, so a failed transfer looks to it like a short archive.
-      try await download.completed()
+      onReport(.download(try await download.completed()))
       onProgress(
         .downloadCompleted(
           timing: .measure(stageStart: downloadStart, totalStart: totalStart),

@@ -56,9 +56,10 @@ final class DataDownloadInputTests: XCTestCase {
     return try await FBArchiveOperations.createGzippedTarData(forPath: source, logger: logger)
   }
 
+  @discardableResult
   private func downloadAndExtract(
     onEvent: (@Sendable (DataDownloadEvent) -> Void)? = nil
-  ) async throws -> String {
+  ) async throws -> (destination: String, report: DownloadReport) {
     let destination = (tempDirectory as NSString).appendingPathComponent(UUID().uuidString)
     try FileManager.default.createDirectory(
       atPath: destination, withIntermediateDirectories: true)
@@ -76,14 +77,14 @@ final class DataDownloadInputTests: XCTestCase {
     // A data consumer carries only bytes and an end of file, so a failed download
     // reaches the extractor as nothing more than a short stream. Its outcome has
     // to be consulted alongside the extraction's.
-    try await download.completed()
+    let report = try await download.completed()
     try await extraction
-    return destination
+    return (destination, report)
   }
 
   private func assertThrows(_ inspect: (Error) -> Void) async {
     do {
-      _ = try await downloadAndExtract()
+      try await downloadAndExtract()
       XCTFail("Expected the download to fail")
     } catch {
       inspect(error)
@@ -95,7 +96,7 @@ final class DataDownloadInputTests: XCTestCase {
   func testDownload_WhenResponseIsOK_ExtractsTheDownloadedArchive() async throws {
     StubURLProtocol.behaviour = .respond(statusCode: 200, body: try await makeArchiveData())
 
-    let destination = try await downloadAndExtract()
+    let destination = try await downloadAndExtract().destination
 
     XCTAssertEqual(
       try String(
@@ -109,7 +110,7 @@ final class DataDownloadInputTests: XCTestCase {
     StubURLProtocol.behaviour = .respond(statusCode: 200, body: archive)
     let recorder = DownloadEventRecorder()
 
-    _ = try await downloadAndExtract(onEvent: recorder.record)
+    try await downloadAndExtract(onEvent: recorder.record)
 
     let events = recorder.events
     guard case .response(let expectedContentLength)? = events.first else {
@@ -127,12 +128,25 @@ final class DataDownloadInputTests: XCTestCase {
     XCTAssertEqual(chunks.reduce(0, +), archive.count)
   }
 
+  func testDownload_WhenResponseIsOK_ReportsEveryByteAndWhenTheResponseArrived() async throws {
+    let archive = try await makeArchiveData()
+    StubURLProtocol.behaviour = .respond(statusCode: 200, body: archive)
+    let start = Date()
+
+    let report = try await downloadAndExtract().report
+
+    XCTAssertEqual(report.receivedBytes, Int64(archive.count))
+    let timeToFirstByte = try XCTUnwrap(report.timeToFirstByte)
+    XCTAssertGreaterThanOrEqual(timeToFirstByte, 0)
+    XCTAssertLessThanOrEqual(timeToFirstByte, Date().timeIntervalSince(start))
+  }
+
   func testDownload_WhenResponseIsNotFound_ReportsNoEvents() async throws {
     StubURLProtocol.behaviour = .respond(statusCode: 404, body: Data("not found".utf8))
     let recorder = DownloadEventRecorder()
 
     do {
-      _ = try await downloadAndExtract(onEvent: recorder.record)
+      try await downloadAndExtract(onEvent: recorder.record)
       XCTFail("Expected the download to fail")
     } catch {
       XCTAssertEqual(recorder.events.count, 0, "Got: \(recorder.events)")

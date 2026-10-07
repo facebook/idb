@@ -89,6 +89,7 @@ final class InstallTelemetry: Sendable {
   private struct State {
     var streamFormat: InstallStreamFormat?
     var route: ExtractionRoute?
+    var timeToFirstByte: TimeInterval?
     var receivedBytes: Int64?
     var receiveMs: Int64?
     var receiving = false
@@ -114,6 +115,8 @@ final class InstallTelemetry: Sendable {
       switch report {
       case .route(let route):
         state.route = route
+      case .download(let report):
+        state.timeToFirstByte = report.timeToFirstByte
       }
     }
   }
@@ -177,6 +180,7 @@ final class InstallTelemetry: Sendable {
       if case .transferFailed(_, let underlying, let report) = error as? InstallError {
         // A download that fails never completes, so what it received is only known from here.
         state.receivedBytes = report.receivedBytes
+        state.timeToFirstByte = report.timeToFirstByte
         state.downloadFailure = DownloadFailureDetail(underlying: underlying, report: report)
       }
     }
@@ -200,6 +204,9 @@ final class InstallTelemetry: Sendable {
     }
     if let receivedBytes = state.receivedBytes {
       call.setSize(receivedBytes)
+    }
+    if let timeToFirstByte = state.timeToFirstByte {
+      call.setInt(Int((timeToFirstByte * 1000).rounded()), forKey: "ttfb_ms")
     }
     if let receiveMs = state.receiveMs {
       call.setInt(Int(receiveMs), forKey: "receive_ms")

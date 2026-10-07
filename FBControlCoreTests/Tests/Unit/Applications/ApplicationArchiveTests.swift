@@ -111,11 +111,11 @@ final class ApplicationArchiveTests: XCTestCase {
     return (result.0, result.1, collected.events)
   }
 
-  /// Resolves `source` and returns every extraction route it reported.
-  private func routes(
+  /// Resolves `source` and returns everything staging reported about it.
+  private func reports(
     resolving source: InstallSource,
     downloadConfiguration: URLSessionConfiguration = .default
-  ) async throws -> [ExtractionRoute] {
+  ) async throws -> [StagingReport] {
     let collected = Collector<StagingReport>()
     try await ApplicationArchive.withResolvedBundle(
       from: source,
@@ -124,18 +124,22 @@ final class ApplicationArchiveTests: XCTestCase {
       logger: logger,
       onReport: collected.append
     ) { _ in }
-    return collected.values.map { report in
-      switch report {
-      case .route(let route): route
-      }
-    }
+    return collected.values
   }
 
-  private func routesOverStubbedNetwork(serving body: Data) async throws -> [ExtractionRoute] {
+  private func reportsOverStubbedNetwork(serving body: Data) async throws -> [StagingReport] {
     StubURLProtocol.behaviour = .respond(statusCode: 200, body: body)
     let configuration = URLSessionConfiguration.ephemeral
     configuration.protocolClasses = [StubURLProtocol.self]
-    return try await routes(resolving: .remoteURL(Self.stubbedURL), downloadConfiguration: configuration)
+    return try await reports(resolving: .remoteURL(Self.stubbedURL), downloadConfiguration: configuration)
+  }
+
+  private func routes(resolving source: InstallSource) async throws -> [ExtractionRoute] {
+    try await reports(resolving: source).compactMap(\.route)
+  }
+
+  private func routesOverStubbedNetwork(serving body: Data) async throws -> [ExtractionRoute] {
+    try await reportsOverStubbedNetwork(serving: body).compactMap(\.route)
   }
 
   private func resolveOverStubbedNetwork() async throws -> (identifier: String, path: String, events: [InstallProgressEvent]) {
@@ -272,6 +276,15 @@ final class ApplicationArchiveTests: XCTestCase {
       serving: ArchiveFormat.zstdZipMarker + Self.zstd(try makeZippedPayloadWithSymlink()))
 
     XCTAssertEqual(routes, [ExtractionRoute(format: .zstdZip, extractor: .zipStream)])
+  }
+
+  func testResolve_WhenGivenAURL_ReportsTheCompletedDownload() async throws {
+    let archive = try await makePayloadArchive()
+
+    let downloads = try await reportsOverStubbedNetwork(serving: archive).compactMap(\.download)
+
+    XCTAssertEqual(downloads.map(\.receivedBytes), [Int64(archive.count)])
+    XCTAssertNotNil(downloads.first?.timeToFirstByte)
   }
 
   // MARK: - Remote sources
@@ -564,5 +577,17 @@ private final class Collector<Value: Sendable>: @unchecked Sendable {
 
   @Sendable func append(_ value: Value) {
     lock.withLock { storage.append(value) }
+  }
+}
+
+extension StagingReport {
+  fileprivate var route: ExtractionRoute? {
+    guard case .route(let route) = self else { return nil }
+    return route
+  }
+
+  fileprivate var download: DownloadReport? {
+    guard case .download(let download) = self else { return nil }
+    return download
   }
 }

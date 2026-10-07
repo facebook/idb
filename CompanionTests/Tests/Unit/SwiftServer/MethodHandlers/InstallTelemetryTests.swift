@@ -89,6 +89,13 @@ private struct Refused: Error {}
     #expect(columns(of: telemetry) == ["extractor=tar_inprocess", "payload_kind=data", "stream_format=tar_zstd"])
   }
 
+  @Test func aCompletedDownloadReportsTheTimeToItsFirstByte() {
+    let telemetry = InstallTelemetry(payloadKind: .url)
+    telemetry.staged(.download(DownloadReport(receivedBytes: 4096, timeToFirstByte: 0.25)))
+
+    #expect(columns(of: telemetry) == ["payload_kind=url", "ttfb_ms=250"])
+  }
+
   @Test func aLocalPathReportsOnlyItsKindAndStages() {
     let telemetry = InstallTelemetry(payloadKind: .filePath)
     telemetry.observe(.installStarted(timing: timing(seconds: 0), artifactPath: "/a/A.app"))
@@ -227,11 +234,12 @@ private struct Refused: Error {}
     let telemetry = InstallTelemetry(payloadKind: .url)
     telemetry.observe(.downloadStarted(timing: timing(seconds: 0), url: url))
     telemetry.failed(
-      InstallError.transferFailed(url: url, underlying: URLError(.networkConnectionLost), report: DownloadReport(receivedBytes: 4096, proxied: true)))
+      InstallError.transferFailed(url: url, underlying: URLError(.networkConnectionLost), report: DownloadReport(receivedBytes: 4096, timeToFirstByte: 0.5, proxied: true)))
 
     let call = CallTelemetry()
     telemetry.record(into: call)
     #expect(call.size == 4096)
+    #expect(call.ints["ttfb_ms"] == 500)
     #expect(call.ints["proxy_used"] == 1)
     #expect(call.normals["tls_chain"] == nil)
   }
