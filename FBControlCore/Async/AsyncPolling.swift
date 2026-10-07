@@ -50,8 +50,7 @@ public extension PollDeadline {
   }
 }
 
-/// Async equivalent of `FBFuture.onQueue(_:resolveWhen:)`: evaluates `condition` on `queue` every `interval`
-/// until it returns true. `deadline` is checked only after an unsatisfied poll, so a timeout surfaces up to
+/// Evaluates `condition` on `queue` every `interval` until it returns true. `deadline` is checked only after an unsatisfied poll, so a timeout surfaces up to
 /// `interval` late; `nil` polls forever. Throws `PollTimeoutError` on deadline, `CancellationError` if cancelled.
 public func pollUntilTrue(
   on queue: DispatchQueue,
@@ -75,8 +74,7 @@ public func pollUntilTrue(
   }
 }
 
-/// Async equivalent of `FBFuture.onQueue(_:resolveUntil:)`: retries `operation` every `interval` until it
-/// returns; only `CancellationError` is rethrown.
+/// Retries `operation` every `interval` until it returns; only `CancellationError` is rethrown.
 func retryUntilSuccess<T>(
   interval: TimeInterval = 0.1,
   operation: @escaping @Sendable () async throws -> T

@@ -40,31 +40,6 @@ dispatch_time_t FBCreateDispatchTimeFromDuration(NSTimeInterval inDuration)
   return dispatch_time(DISPATCH_TIME_NOW, (int64_t)(inDuration * NSEC_PER_SEC));
 }
 
-static void final_resolveUntil(FBMutableFuture *final, dispatch_queue_t queue, FBFuture *(^resolveUntil)(void))
-{
-  if (final.hasCompleted) {
-    return;
-  }
-  FBFuture<id> *future = resolveUntil();
-  [future onQueue:queue
-   notifyOfCompletion:^(FBFuture<id> *resolved) {
-     switch (resolved.state) {
-       case FBFutureStateCancelled:
-         [final cancel];
-         return;
-       case FBFutureStateDone:
-         [final resolveWithResult:resolved.result];
-         return;
-       case FBFutureStateFailed:
-         final_resolveUntil(final, queue, resolveUntil);
-         return;
-       case FBFutureStateRunning:
-       default:
-         return;
-     }
-   }];
-}
-
 @interface FBFuture_Handler : NSObject
 
 @property (nonatomic, readonly, strong) dispatch_queue_t queue;
@@ -154,33 +129,6 @@ static void final_resolveUntil(FBMutableFuture *final, dispatch_queue_t queue, F
           }];
 }
 
-+ (instancetype)resolveValue:(id (^)(NSError **) )resolve
-{
-  NSError *error = nil;
-  id result = resolve(&error);
-  if (result) {
-    return [FBFuture futureWithResult:result];
-  } else {
-    return [FBFuture futureWithError:error];
-  }
-}
-
-+ (instancetype)onQueue:(dispatch_queue_t)queue resolveValue:(id (^)(NSError **))resolve;
-{
-  FBMutableFuture *future = FBMutableFuture.future;
-  dispatch_async(queue, ^{
-    NSError *error = nil;
-    id result = resolve(&error);
-    if (!result) {
-      NSCAssert(error, @"Error must be set on nil return");
-      [future resolveWithError:error];
-    } else {
-      [future resolveWithResult:result];
-    }
-  });
-  return future;
-}
-
 + (instancetype)onQueue:(dispatch_queue_t)queue resolve:(FBFuture *(^)(void) )resolve
 {
   FBMutableFuture *future = FBMutableFuture.future;
@@ -189,69 +137,6 @@ static void final_resolveUntil(FBMutableFuture *final, dispatch_queue_t queue, F
     [future resolveFromFuture:resolved];
   });
   return future;
-}
-
-+ (FBFuture<NSNull *> *)onQueue:(dispatch_queue_t)queue resolveWhen:(BOOL (^)(void))resolveWhen
-{
-  return [self onQueue:queue
-          resolveOrFailWhen:^FBFutureLoopState (NSError **errorOut) {
-            if (resolveWhen()) {
-              return FBFutureLoopFinished;
-            } else {
-              return FBFutureLoopContinue;
-            }
-          }];
-}
-
-+ (FBFuture<NSNull *> *)onQueue:(dispatch_queue_t)queue resolveOrFailWhen:(FBFutureLoopState (^)(NSError **errorOut))resolveOrFailWhen
-{
-  FBMutableFuture *future = FBMutableFuture.future;
-
-  dispatch_async(queue, ^{
-    const NSTimeInterval interval = 0.1;
-    const dispatch_source_t timer = dispatch_source_create(DISPATCH_SOURCE_TYPE_TIMER, 0, 0, queue);
-
-    dispatch_source_set_timer(timer, FBCreateDispatchTimeFromDuration(interval), (uint64_t)(interval * NSEC_PER_SEC), (uint64_t)(interval * NSEC_PER_SEC / 10));
-    __weak typeof(future) weakFuture = future;
-    dispatch_source_set_event_handler(timer, ^{
-      __strong typeof(weakFuture) strongFuture = weakFuture;
-      if (!strongFuture || strongFuture.state != FBFutureStateRunning) {
-        dispatch_cancel(timer);
-        return;
-      }
-      NSError *error = nil;
-      FBFutureLoopState resolveOrFailWhenResult = resolveOrFailWhen(&error);
-      switch (resolveOrFailWhenResult) {
-        case FBFutureLoopContinue:
-          break;
-        case FBFutureLoopFailed:
-          dispatch_cancel(timer);
-          NSCAssert(error != nil, @"Expected error to be set when returning FBFutureLoopFailed");
-          [strongFuture resolveWithError:error];
-          break;
-        case FBFutureLoopFinished:
-          dispatch_cancel(timer);
-          NSCAssert(error == nil, @"Error must be nil when returning FBFutureLoopFinished");
-          [strongFuture resolveWithResult:NSNull.null];
-          break;
-        default:
-          NSCAssert(NO, @"Unexpected loop state: %ld", (long)resolveOrFailWhenResult);
-          break;
-      }
-    });
-    dispatch_resume(timer);
-  });
-
-  return future;
-}
-
-+ (FBFuture<id> *)onQueue:(dispatch_queue_t)queue resolveUntil:(FBFuture<id> *(^)(void))resolveUntil
-{
-  FBMutableFuture *final = FBMutableFuture.future;
-  dispatch_async(queue, ^{
-    final_resolveUntil(final, queue, resolveUntil);
-  });
-  return final;
 }
 
 - (instancetype)timeout:(NSTimeInterval)timeout waitingFor:(NSString *)description
@@ -484,15 +369,6 @@ static void final_resolveUntil(FBMutableFuture *final, dispatch_queue_t queue, F
   return self;
 }
 
-- (instancetype)onQueue:(dispatch_queue_t)queue doOnResolved:(void (^)(id))handler
-{
-  return [self onQueue:queue
-                   map:^(id result) {
-                     handler(result);
-                     return result;
-                   }];
-}
-
 #pragma mark Deriving new Futures
 
 - (FBFuture *)onQueue:(dispatch_queue_t)queue chain:(FBFuture *(^)(FBFuture *))chain
@@ -593,14 +469,6 @@ static void final_resolveUntil(FBMutableFuture *final, dispatch_queue_t queue, F
                    }];
 }
 
-- (FBFuture *)chainReplace:(FBFuture *)replacement
-{
-  return [self onQueue:FBFuture.internalQueue
-                 chain:^FBFuture *(FBFuture *_) {
-                   return replacement;
-                 }];
-}
-
 - (FBFuture *)fallback:(id)replacement
 {
   return [self onQueue:FBFuture.internalQueue
@@ -614,35 +482,12 @@ static void final_resolveUntil(FBMutableFuture *final, dispatch_queue_t queue, F
   return [FBFuture futureWithDelay:delay future:self];
 }
 
-- (FBFuture *)rephraseFailure:(NSString *)description
-{
-  return [self onQueue:FBFuture.internalQueue
-                 chain:^(FBFuture *future) {
-                   NSError *error = future.error;
-                   if (!error) {
-                     return future;
-                   }
-                   return (FBFuture *)[[[ControlCoreError
-                                         describe:description]
-                                        causedBy:error]
-                                       failFuture];
-                 }];
-}
-
 #pragma mark Metadata
 
 - (FBFuture *)named:(NSString *)name
 {
   self.name = name;
   return self;
-}
-
-- (FBFuture *)logCompletion:(id<ControlCoreLogger>)logger withPurpose:(NSString *)purpose
-{
-  return [self onQueue:FBFuture.internalQueue
-          notifyOfCompletion:^(FBFuture *resolved) {
-            [logger log:[NSString stringWithFormat:@"Completed %@ with state '%@'", purpose, resolved]];
-          }];
 }
 
 #pragma mark - Properties

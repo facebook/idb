@@ -10,6 +10,7 @@
 #import <FBControlCore/FBControlCore.h>
 
 @class TestManagerContext;
+@protocol ControlCoreLogger;
 
 /**
  Told what the test bundle and testmanagerd do over the connection. Called on arbitrary queues.

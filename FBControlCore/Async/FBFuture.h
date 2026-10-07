@@ -7,8 +7,6 @@
 
 #import <Foundation/Foundation.h>
 
-@protocol ControlCoreLogger;
-
 /**
  A State for the Future.
  */
@@ -17,15 +15,6 @@ typedef NS_ENUM(NSUInteger, FBFutureState) {
   FBFutureStateDone = 2,  /* The Future has resolved successfully */
   FBFutureStateFailed = 3,  /* The Future has resolved in error */
   FBFutureStateCancelled = 4,  /* The Future has been cancelled */
-};
-
-/**
- Loop status for onQueue:resolveOrFailWhen:
- */
-typedef NS_ENUM(NSUInteger, FBFutureLoopState) {
-  FBFutureLoopContinue = 1,  /* FBFuture resolveOrFailWhen will continue */
-  FBFutureLoopFinished = 2,  /* FBFuture resolveOrFailWhen has finished */
-  FBFutureLoopFailed = 3,  /* FBFuture resolveOrFailWhen has failed */
 };
 
 extern dispatch_time_t FBCreateDispatchTimeFromDuration(NSTimeInterval inDuration);
@@ -61,57 +50,6 @@ extern dispatch_time_t FBCreateDispatchTimeFromDuration(NSTimeInterval inDuratio
  @return the Future wrapped in a delay.
  */
 + (nonnull FBFuture<T> *)futureWithDelay:(NSTimeInterval)delay future:(nonnull FBFuture<T> *)future;
-
-/**
- Constructs a Future that resolves successfully when the resolveWhen block returns YES.
- onQueue:resolveWhen: is a shortcut to onQueue:resolveOrFailWhen:
-
- @param queue to resolve on.
- @param resolveWhen a block determining when the future should resolve.
- @return a new Future that resolves when the resolution block returns YES.
- */
-+ (nonnull FBFuture<NSNull *> *)onQueue:(nonnull dispatch_queue_t)queue resolveWhen:(nonnull BOOL (^)(void))resolveWhen;
-
-/**
- Constructs a Future that resolves when the resolveOrFailWhen block returns FBFutureLoopState.
- resolveOrFailWhen block will be executed every 100ms to determine when the future should be resolved:
-
-  * If resolveOrFailWhen block returns FBFutureLoopContinue, the future will continue in Running state
-  * If resolveOrFailWhen block returns FBFutureLoopFinished and errorOut is not set, the future will resolve successfully
-  * If resolveOrFailWhen block returns FBFutureLoopFailed and error out is set, the future will resolve on a failure.
-
- @param queue to resolve on.
- @param resolveOrFailWhen a block determining when the future should resolve. Future will resolve into a failure if `errorOut` is not nil.
- @return a new Future that resolves when the resolution block returns FBFutureLoopFinished or FBFutureLoopFailed.
- */
-+ (nonnull FBFuture<NSNull *> *)onQueue:(nonnull dispatch_queue_t)queue resolveOrFailWhen:(nonnull FBFutureLoopState (^)(NSError * _Nullable * _Nullable errorOut))resolveOrFailWhen;
-
-/**
- Constructs a Future that resolves successfully when the resolveUntil block resolves a Future that resolves a value.
- Each resolution will occur one-after-another.
-
- @param queue to resolve on.
- @param resolveUntil a block that returns a future to resolve.
- @return a new Future that resolves when the future returned by the block resolves a value.
- */
-+ (nonnull FBFuture<T> *)onQueue:(nonnull dispatch_queue_t)queue resolveUntil:(nonnull FBFuture<T> * _Nonnull (^)(void))resolveUntil;
-
-/**
- Resolve a future synchronously, by value.
-
- @param resolve the block to resolve the future.
- @return a new Future.
- */
-+ (nonnull instancetype)resolveValue:(nonnull T _Nullable (^)(NSError * _Nullable * _Nullable))resolve;
-
-/**
- Resolve a future asynchronously, by value.
-
- @param queue to resolve on.
- @param resolve the block to resolve the future.
- @return a new Future.
- */
-+ (nonnull instancetype)onQueue:(nonnull dispatch_queue_t)queue resolveValue:(nonnull T _Nullable (^)(NSError * _Nullable * _Nullable))resolve;
 
 /**
  Resolve a future asynchronously, by returning a future.
@@ -190,16 +128,6 @@ extern dispatch_time_t FBCreateDispatchTimeFromDuration(NSTimeInterval inDuratio
  */
 - (nonnull instancetype)onQueue:(nonnull dispatch_queue_t)queue notifyOfCompletion:(nonnull void (^)(FBFuture * _Nonnull))handler;
 
-/**
- Notifies of the successful resolution of the Future.
- The handler will resolve before the chained Future.
-
- @param queue the queue to notify on.
- @param handler the block to invoke.
- @return the Receiver, for chaining.
- */
-- (nonnull instancetype)onQueue:(nonnull dispatch_queue_t)queue doOnResolved:(nonnull void (^)(T _Nonnull))handler;
-
 #pragma mark Deriving new Futures
 
 /**
@@ -276,15 +204,6 @@ extern dispatch_time_t FBCreateDispatchTimeFromDuration(NSTimeInterval inDuratio
 - (nonnull FBFuture *)mapReplace:(nonnull id)replacement;
 
 /**
- Once the receiver has resolved in any state, chains to another Future.
- This is un-conditional, if the receiver resolves in error the replacement will still be used.
-
- @param replacement the replacement
- @return a future with the replacement.
- */
-- (nonnull FBFuture *)chainReplace:(nonnull FBFuture *)replacement;
-
-/**
  Shields the future from failure, replacing it with the provided value.
 
  @param replacement the replacement
@@ -301,14 +220,6 @@ extern dispatch_time_t FBCreateDispatchTimeFromDuration(NSTimeInterval inDuratio
  */
 - (nonnull FBFuture<T> *)delay:(NSTimeInterval)delay;
 
-/**
- Replaces the error message in the event of a failure.
-
- @param description the description to re-phrase the failure message.
- @return a future with the replacement.
- */
-- (nonnull FBFuture<T> *)rephraseFailure:(nonnull NSString *)description;
-
 #pragma mark Creating Context
 
 #pragma mark Metadata
@@ -320,15 +231,6 @@ extern dispatch_time_t FBCreateDispatchTimeFromDuration(NSTimeInterval inDuratio
  @return the receiver, for chaining.
  */
 - (nonnull FBFuture<T> *)named:(nonnull NSString *)name;
-
-/**
- A helper to log completion of the future.
-
- @param logger the logger to log to.
- @param purpose a description of the future.
- @return the receiver, for chaining
- */
-- (nonnull FBFuture<T> *)logCompletion:(nonnull id<ControlCoreLogger>)logger withPurpose:(nonnull NSString *)purpose;
 
 #pragma mark Properties
 
