@@ -7,6 +7,7 @@
 
 import AVFoundation
 import FBControlCore
+import FBVideoCore
 import Foundation
 
 /// Records simulator video in-process. Drives the framebuffer through the shared

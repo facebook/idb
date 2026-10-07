@@ -6,6 +6,7 @@
  */
 
 @testable import FBSimulatorControl
+import FBVideoCore
 import XCTest
 
 final class PeriodicStatsTimerTests: XCTestCase {

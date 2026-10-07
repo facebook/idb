@@ -5,6 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+import FBControlCore
 import Foundation
 
 /// A handle to a running video recording. It is returned already recording; call `stop()` to finalize

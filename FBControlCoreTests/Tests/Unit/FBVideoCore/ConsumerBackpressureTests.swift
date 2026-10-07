@@ -7,6 +7,7 @@
 
 import CoreMedia
 @testable import FBControlCore
+@testable import FBVideoCore
 import XCTest
 
 /// `DataConsumer.hasCapacityForFrame`: async consumers report overflow, sync consumers never do.

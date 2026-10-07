@@ -7,6 +7,7 @@
 
 @preconcurrency import CoreSimulator
 @preconcurrency import FBControlCore
+import FBVideoCore
 import Foundation
 
 private let DefaultDeviceSet = "~/Library/Developer/CoreSimulator/Devices"

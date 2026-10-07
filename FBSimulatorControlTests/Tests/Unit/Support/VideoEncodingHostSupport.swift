@@ -9,6 +9,7 @@ import CoreMedia
 import CoreVideo
 import FBControlCore
 @testable import FBSimulatorControl
+import FBVideoCore
 import Foundation
 import XCTest
 

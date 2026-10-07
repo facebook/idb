@@ -7,6 +7,7 @@
 
 import FBControlCore
 @testable import FBSimulatorControl
+import FBVideoCore
 import XCTest
 
 /// Who owns the transport frame writer across the frame pushers a stream creates — one per mounted

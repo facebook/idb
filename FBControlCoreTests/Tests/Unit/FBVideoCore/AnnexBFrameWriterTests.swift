@@ -7,6 +7,7 @@
 
 import CoreMedia
 @testable import FBControlCore
+@testable import FBVideoCore
 import XCTest
 
 /// Annex-B framing: start codes, parameter sets ahead of keyframes, one write per frame.

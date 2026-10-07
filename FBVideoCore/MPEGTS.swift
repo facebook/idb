@@ -6,6 +6,7 @@
  */
 
 import CoreMedia
+import FBControlCore
 import Foundation
 import os
 

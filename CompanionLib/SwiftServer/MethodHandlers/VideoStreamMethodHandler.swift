@@ -8,6 +8,7 @@
 import CompanionUtilities
 import FBControlCore
 import FBSimulatorControl
+import FBVideoCore
 import GRPCCore
 import IDBGRPCSwift
 

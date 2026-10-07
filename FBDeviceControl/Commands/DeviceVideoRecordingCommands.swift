@@ -7,6 +7,7 @@
 
 import AVFoundation
 @preconcurrency import FBControlCore
+import FBVideoCore
 import Foundation
 
 private enum DeviceVideoRecordingCommandError: Error {

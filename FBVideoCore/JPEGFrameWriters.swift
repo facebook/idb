@@ -7,6 +7,7 @@
 
 import CoreMedia
 import CoreVideo
+import FBControlCore
 import Foundation
 
 /// Raw JPEG frames back to back; consumers split on the JPEG markers.

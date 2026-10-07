@@ -8,6 +8,7 @@
 import FBControlCore
 import FBDeviceControl
 import FBSimulatorControl
+import FBVideoCore
 import Foundation
 import XCTestBootstrap
 

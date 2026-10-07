@@ -8,6 +8,7 @@
 import CoreGraphics
 import FBControlCore
 import FBSimulatorControl
+import FBVideoCore
 import Foundation
 import ReplProtocol
 

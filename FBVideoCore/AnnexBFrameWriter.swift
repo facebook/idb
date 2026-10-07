@@ -6,6 +6,7 @@
  */
 
 import CoreMedia
+import FBControlCore
 import Foundation
 
 /// Annex-B byte stream: start-code-delimited NAL units, with the parameter sets repeated ahead of

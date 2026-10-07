@@ -9,6 +9,7 @@ import AVFoundation
 import CoreMedia
 import FBControlCore
 @testable import FBSimulatorControl
+import FBVideoCore
 import XCTest
 
 final class SimulatorVideoFileWriterTests: XCTestCase {

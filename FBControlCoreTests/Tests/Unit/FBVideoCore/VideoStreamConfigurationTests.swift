@@ -6,6 +6,7 @@
  */
 
 @testable import FBControlCore
+@testable import FBVideoCore
 import XCTest
 
 final class VideoStreamConfigurationTests: XCTestCase {

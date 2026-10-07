@@ -8,6 +8,7 @@
 import CoreMedia
 import CoreVideo
 import FBControlCore
+import FBVideoCore
 import Foundation
 import IOSurface
 import VideoToolbox

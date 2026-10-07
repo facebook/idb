@@ -9,6 +9,7 @@ import CoreGraphics
 import FBControlCore
 import FBDeviceControl
 import FBSimulatorControl
+import FBVideoCore
 import Foundation
 import SimulatorXCTest
 import XCTestBootstrap

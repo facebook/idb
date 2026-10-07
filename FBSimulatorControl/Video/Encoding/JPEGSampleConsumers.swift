@@ -7,6 +7,7 @@
 
 import CoreMedia
 import FBControlCore
+import FBVideoCore
 import Foundation
 
 /// MJPEG streaming: each encoded JPEG's bytes go to the consumer as they are, back to back.

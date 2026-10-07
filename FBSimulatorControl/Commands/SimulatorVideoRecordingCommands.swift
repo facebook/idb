@@ -6,6 +6,7 @@
  */
 
 import FBControlCore
+import FBVideoCore
 import Foundation
 
 private enum SimulatorVideoRecordingCommandError: Error {

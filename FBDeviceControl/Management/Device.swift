@@ -6,6 +6,7 @@
  */
 
 @preconcurrency import FBControlCore
+import FBVideoCore
 import Foundation
 
 /// Backed by a `MobileDevice`, a `RestorableDevice`, or both, caching the target

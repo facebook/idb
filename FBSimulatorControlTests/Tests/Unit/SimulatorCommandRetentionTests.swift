@@ -7,6 +7,7 @@
 
 import FBControlCore
 @testable import FBSimulatorControl
+import FBVideoCore
 import Foundation
 import SimulatorXCTest
 import Testing

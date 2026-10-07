@@ -7,8 +7,9 @@
 
 @testable import CompanionLib
 @preconcurrency import FBControlCore
-import Foundation
 // ast-grep-ignore: swift-testing/swift/no-new-xctest
+import FBVideoCore
+import Foundation
 import XCTest
 
 /// A recording double that records only whether it was stopped, returning a fixed

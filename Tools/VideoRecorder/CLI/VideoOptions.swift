@@ -8,6 +8,7 @@
 import ArgumentParser
 import FBControlCore
 import FBSimulatorControl
+import FBVideoCore
 import Foundation
 import SimulatorVideo
 

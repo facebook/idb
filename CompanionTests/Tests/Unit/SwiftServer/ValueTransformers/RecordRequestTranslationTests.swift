@@ -7,6 +7,7 @@
 
 @testable import CompanionLib
 @preconcurrency import FBControlCore
+import FBVideoCore
 import Foundation
 import GRPCCore
 import IDBGRPCSwift

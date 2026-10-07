@@ -8,6 +8,7 @@
 import CoreVideo
 import FBControlCore
 @testable import FBSimulatorControl
+import FBVideoCore
 import IOSurface
 import XCTest
 

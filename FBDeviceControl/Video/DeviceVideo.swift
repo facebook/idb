@@ -8,6 +8,7 @@
 import AVFoundation
 import CoreMediaIO
 import FBControlCore
+import FBVideoCore
 import Foundation
 
 private enum DeviceVideoError: Error {

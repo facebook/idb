@@ -10,6 +10,7 @@ import CoreMedia
 import CoreVideo
 import FBControlCore
 @testable import FBDeviceControl
+import FBVideoCore
 import Testing
 
 /// Format → capture format and writer, and each format's byte contract through the stream. The

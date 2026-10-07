@@ -6,6 +6,7 @@
  */
 
 import CoreMedia
+import FBControlCore
 import Foundation
 
 /// Frames an encoded H.264/HEVC sample for a transport and hands it to a consumer.

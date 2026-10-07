@@ -5,6 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+import FBControlCore
 import Foundation
 
 /// Streams encoded video frames to a data consumer. `Sendable` because the async lifecycle methods

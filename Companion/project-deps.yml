@@ -21,6 +21,8 @@ targets:
         embed: false
       - framework: ../Build/Products/Release/libFBSimulatorControl.a
         embed: false
+      - framework: ../Build/Products/Release/libFBVideoCore.a
+        embed: false
       - framework: ../Build/Products/Release/libSimulatorFrameworkBridgeProtocol.a
         embed: false
       - framework: ../Build/Products/Release/libSimulatorIPC.a
@@ -42,6 +44,8 @@ targets:
       - framework: ../Build/Products/Release/FBControlCore.framework
         embed: false
       - framework: ../Build/Products/Release/libFBSimulatorControl.a
+        embed: false
+      - framework: ../Build/Products/Release/libFBVideoCore.a
         embed: false
       - framework: ../Build/Products/Release/libSimulatorFrameworkBridgeProtocol.a
         embed: false

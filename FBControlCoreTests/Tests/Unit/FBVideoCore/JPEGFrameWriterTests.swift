@@ -7,6 +7,7 @@
 
 import CoreMedia
 @testable import FBControlCore
+@testable import FBVideoCore
 import XCTest
 
 /// The MJPEG and Minicap byte contracts.

@@ -6,6 +6,7 @@
  */
 
 import AVFoundation
+import FBControlCore
 import Foundation
 
 private enum VideoFileWriterError: Error {

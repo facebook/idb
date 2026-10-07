@@ -7,6 +7,7 @@
 
 import CoreMedia
 @testable import FBControlCore
+@testable import FBVideoCore
 import XCTest
 
 /// MPEG-TS packetisation (`MPEGTS`) and the frame writer built on it.

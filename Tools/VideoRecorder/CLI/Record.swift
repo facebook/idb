@@ -11,6 +11,7 @@ import CoreMedia
 import CoreVideo
 import FBControlCore
 import FBSimulatorControl
+import FBVideoCore
 import Foundation
 import SimulatorVideo
 

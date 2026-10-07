@@ -6,6 +6,7 @@
  */
 
 import FBControlCore
+import FBVideoCore
 import Foundation
 
 /// Coordinates the single in-progress REPL screen recording for a target.

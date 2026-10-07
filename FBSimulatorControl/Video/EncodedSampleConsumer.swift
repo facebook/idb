@@ -7,6 +7,7 @@
 
 import CoreMedia
 import FBControlCore
+import FBVideoCore
 import Foundation
 
 // MARK: - EncodedSampleConsumer

@@ -6,6 +6,7 @@
  */
 
 import CoreMedia
+import FBControlCore
 import Foundation
 
 /// Fragmented MP4 (ISO 14496-12) box construction for a single video track: an init segment

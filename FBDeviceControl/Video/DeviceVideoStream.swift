@@ -8,6 +8,7 @@
 import AVFoundation
 import CoreMedia
 import FBControlCore
+import FBVideoCore
 import Foundation
 import os
 

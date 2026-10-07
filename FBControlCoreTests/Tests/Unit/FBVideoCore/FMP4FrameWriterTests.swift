@@ -7,6 +7,7 @@
 
 import CoreMedia
 @testable import FBControlCore
+@testable import FBVideoCore
 import XCTest
 
 /// fMP4 box construction (`FMP4`) and the frame writer built on it.
