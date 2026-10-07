@@ -14,97 +14,6 @@ private let APICallbackTimeout: TimeInterval = 15
 private let OfflineTimeout: TimeInterval = 20
 private let OnlineTimeout: TimeInterval = 300
 
-// MARK: - EraseEvent
-
-/// Something the erase waits for, which may happen before it is waited on. Only the first
-/// occurrence counts.
-private final class EraseEvent<Value: Sendable>: @unchecked Sendable {
-  private enum State {
-    case pending
-    case waiting(CheckedContinuation<Value, Error>)
-    case happened(Value)
-  }
-
-  private let lock = NSLock()
-  private var state = State.pending
-
-  var hasHappened: Bool {
-    lock.lock()
-    defer { lock.unlock() }
-    switch state {
-    case .happened:
-      return true
-    case .pending, .waiting:
-      return false
-    }
-  }
-
-  func happen(_ value: Value) {
-    lock.lock()
-    switch state {
-    case .pending:
-      state = .happened(value)
-      lock.unlock()
-    case let .waiting(continuation):
-      state = .happened(value)
-      lock.unlock()
-      continuation.resume(returning: value)
-    case .happened:
-      lock.unlock()
-    }
-  }
-
-  /// Returns once the event has happened. Cancelling throws `CancellationError` and leaves the event
-  /// to be waited on again.
-  func wait() async throws -> Value {
-    try await withTaskCancellationHandler {
-      try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Value, Error>) in
-        lock.lock()
-        switch state {
-        case let .happened(value):
-          lock.unlock()
-          continuation.resume(returning: value)
-        case .pending where Task.isCancelled:
-          lock.unlock()
-          continuation.resume(throwing: CancellationError())
-        case .pending:
-          state = .waiting(continuation)
-          lock.unlock()
-        case .waiting:
-          lock.unlock()
-          preconditionFailure("An EraseEvent has one waiter at a time")
-        }
-      }
-    } onCancel: {
-      lock.lock()
-      guard case let .waiting(continuation) = state else {
-        lock.unlock()
-        return
-      }
-      state = .pending
-      lock.unlock()
-      continuation.resume(throwing: CancellationError())
-    }
-  }
-
-  func wait(timeout: TimeInterval, waitingFor description: String) async throws -> Value {
-    try await withThrowingTaskGroup(of: Value.self) { group in
-      group.addTask {
-        try await self.wait()
-      }
-      group.addTask {
-        try await Task.sleep(nanoseconds: UInt64(timeout * 1_000_000_000))
-        throw ControlCoreError.describe("Timed out after \(String(format: "%f", timeout)) seconds waiting for \(description)").build()
-      }
-      defer { group.cancelAll() }
-      guard let first = try await group.next() else {
-        preconditionFailure("The task group has two children; next() cannot be empty")
-      }
-      return first
-    }
-  }
-}
-
 // MARK: - DeviceEraseOperation
 
 private final class DeviceEraseOperation: NSObject, TargetSetDelegate, @unchecked Sendable {
@@ -114,10 +23,10 @@ private final class DeviceEraseOperation: NSObject, TargetSetDelegate, @unchecke
   private let logger: any ControlCoreLogger
   private let queue: DispatchQueue
   private let deviceManager: AMRestorableDeviceManager
-  private let deviceDetected = EraseEvent<Void>()
-  private let deviceWentAway = EraseEvent<Void>()
-  private let deviceCameBack = EraseEvent<Void>()
-  private let eraseCallbackResult = EraseEvent<Int32>()
+  private let deviceDetected = AsyncEvent<Void>()
+  private let deviceWentAway = AsyncEvent<Void>()
+  private let deviceCameBack = AsyncEvent<Void>()
+  private let eraseCallbackResult = AsyncEvent<Int32>()
 
   init(device: Device, logger: any ControlCoreLogger) {
     let queue = DispatchQueue(label: "com.facebook.fbdeviceerase")
@@ -182,16 +91,16 @@ private final class DeviceEraseOperation: NSObject, TargetSetDelegate, @unchecke
   func targetAdded(_ targetInfo: any TargetInfo, in targetSet: any TargetSet) {
     if !deviceDetected.hasHappened {
       logger.log("Got target \(targetInfo) added for the first time")
-      deviceDetected.happen(())
+      deviceDetected.happen()
     } else {
       logger.log("Got target \(targetInfo) added")
-      deviceCameBack.happen(())
+      deviceCameBack.happen()
     }
   }
 
   func targetRemoved(_ targetInfo: any TargetInfo, in targetSet: any TargetSet) {
     logger.log("Got target \(targetInfo) removed")
-    deviceWentAway.happen(())
+    deviceWentAway.happen()
   }
 
   func targetUpdated(_ targetInfo: any TargetInfo, in targetSet: any TargetSet) {}
