@@ -21,6 +21,13 @@ private func endOfFileReceive(_ connection: CFTypeRef?, _ buffer: UnsafeMutableR
   0
 }
 
+private var sReceiveCount = 0
+
+private func countingEndOfFileReceive(_ connection: CFTypeRef?, _ buffer: UnsafeMutableRawPointer?, _ bytes: Int) -> Int32 {
+  sReceiveCount += 1
+  return 0
+}
+
 private func blockingReceive(_ connection: CFTypeRef?, _ buffer: UnsafeMutableRawPointer?, _ bytes: Int) -> Int32 {
   sReceiveGate.wait()
   return 0
@@ -65,6 +72,25 @@ struct LockdownServiceConnectionReaderTests {
 
     let finished = try await bridgeFBFuture(reader.finishedReading)
     #expect(finished == NSNumber(value: FBFileReaderState.finishedReadingNormally.rawValue))
+  }
+
+  @Test
+  func readerReadsWhenItsLoopRunsBeforeStartReadingReturns() async throws {
+    sReceiveCount = 0
+    var calls = CreateZeroedAMDCalls()
+    calls.ServiceConnectionGetSecureIOContext = { _ in nil }
+    calls.ServiceConnectionReceive = countingEndOfFileReceive
+    let connection = makeConnection(calls: calls)
+    let consumer = FBDataBuffer.accumulatingBuffer()
+    // Running the loop inline is the worst case of the loop's thread winning the race against the rest of `startReading`.
+    let reader = LockdownServiceConnectionReader(connection: connection, consumer: consumer) { $0() }
+
+    _ = try await bridgeFBFuture(reader.startReading())
+    _ = try await bridgeFBFuture(reader.finishedReading)
+
+    // BUG: the loop sees `.notStarted` and ends without reading, then `startReading` leaves the reader `.reading` — flipped in the following commit
+    #expect(sReceiveCount == 0)
+    #expect(reader.state == .reading)
   }
 
   @Test
