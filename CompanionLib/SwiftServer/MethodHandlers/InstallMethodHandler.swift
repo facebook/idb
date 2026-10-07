@@ -125,10 +125,13 @@ struct InstallMethodHandler {
       case .xctest, .framework, .dylib:
         options = InstallOptions()
       }
-      return try await commandExecutor.install(installDestination, from: source, options: options) { event in
-        telemetry.observe(event)
-        onProgress(event)
-      }
+      return try await commandExecutor.install(
+        installDestination, from: source, options: options,
+        onProgress: { event in
+          telemetry.observe(event)
+          onProgress(event)
+        },
+        onReport: telemetry.staged)
     }
 
     /// A dylib arrives as a single gzipped file; everything else as an archive.

@@ -75,6 +75,33 @@ public enum StagedTree: Sendable {
   }
 }
 
+/// How staging unpacked an archive that arrived as a stream: what its first bytes
+/// said it was, and what extracted it.
+public struct ExtractionRoute: Equatable, Sendable {
+
+  public enum Extractor: String, Sendable {
+    case inProcessTar = "tar_inprocess"
+    case bsdTar = "bsdtar"
+    /// A zip extracted as it arrived.
+    case zipStream = "zip_stream"
+    /// A zip extracted from its spooled copy, after extracting it as it arrived failed.
+    case zipSpool = "zip_spool"
+  }
+
+  public let format: ArchiveFormat
+  public let extractor: Extractor
+
+  public init(format: ArchiveFormat, extractor: Extractor) {
+    self.format = format
+    self.extractor = extractor
+  }
+}
+
+/// What staging learned about how it fetched and unpacked a source, beyond the progress of its stages.
+public enum StagingReport: Equatable, Sendable {
+  case route(ExtractionRoute)
+}
+
 /// Gets an install source onto disk for every kind of artifact: fetching,
 /// decompressing and extracting it into a directory that lives as long as the
 /// caller's body, and reporting the extract stage as it goes.
@@ -84,6 +111,9 @@ public enum Staging {
   ///
   /// `onProgress` reports stages that start and stages that finish. A stage that
   /// fails reports no terminal event; the failure is the thrown error.
+  ///
+  /// `onReport` reports how a streamed or downloaded archive is unpacked once that is
+  /// decided, so a failed extraction has reported it too, and again if it changes.
   public static func withMaterialized<T>(
     _ source: InstallSource,
     as kind: ArtifactKind,
@@ -93,6 +123,7 @@ public enum Staging {
     temporaryDirectory: TemporaryDirectory,
     logger: any ControlCoreLogger,
     onProgress: @escaping @Sendable (InstallProgressEvent) -> Void = { _ in },
+    onReport: @escaping @Sendable (StagingReport) -> Void = { _ in },
     _ body: (StagedTree) async throws -> T
   ) async throws -> T {
     if case .localPath(let path) = source, !unpacks(source, as: kind) {
@@ -102,7 +133,7 @@ public enum Staging {
       let tree = try await stage(
         source, in: stagingDirectory, options: options, totalStart: totalStart,
         downloadConfiguration: downloadConfiguration, temporaryDirectory: temporaryDirectory,
-        logger: logger, onProgress: onProgress)
+        logger: logger, onProgress: onProgress, onReport: onReport)
       return try await body(tree)
     }
   }
@@ -133,7 +164,8 @@ public enum Staging {
     downloadConfiguration: URLSessionConfiguration,
     temporaryDirectory: TemporaryDirectory,
     logger: any ControlCoreLogger,
-    onProgress: @escaping @Sendable (InstallProgressEvent) -> Void
+    onProgress: @escaping @Sendable (InstallProgressEvent) -> Void,
+    onReport: @escaping @Sendable (StagingReport) -> Void
   ) async throws -> StagedTree {
     let extractPath = stagingDirectory.path
     switch source {
@@ -159,7 +191,7 @@ public enum Staging {
           try await withAttached(input) { source in
             try await extractStream(
               source, tarExtractor: ArchiveExtractors.stream(options.compression), spoolingIn: spoolDirectory,
-              to: extractPath, options: options, logger: logger)
+              to: extractPath, options: options, logger: logger, onReport: onReport)
           }
         }
       }
@@ -168,7 +200,7 @@ public enum Staging {
         try await downloadAndExtract(
           url, to: extractPath, options: options, totalStart: totalStart,
           configuration: downloadConfiguration, spoolDirectory: spoolDirectory,
-          logger: logger, onProgress: onProgress)
+          logger: logger, onProgress: onProgress, onReport: onReport)
       }
     }
     return .extracted(stagingDirectory)
@@ -187,7 +219,8 @@ public enum Staging {
     configuration: URLSessionConfiguration,
     spoolDirectory: URL,
     logger: any ControlCoreLogger,
-    onProgress: @escaping @Sendable (InstallProgressEvent) -> Void
+    onProgress: @escaping @Sendable (InstallProgressEvent) -> Void,
+    onReport: @escaping @Sendable (StagingReport) -> Void
   ) async throws {
     let downloadStart = Date()
     onProgress(.downloadStarted(timing: .measure(stageStart: downloadStart, totalStart: totalStart), url: url))
@@ -214,7 +247,8 @@ public enum Staging {
     }
 
     try await runExtractStage(to: extractPath, totalStart: totalStart, onProgress: onProgress) {
-      async let extraction: Void = extractDownload(download.input, spoolingIn: spoolDirectory, to: extractPath, options: options, logger: logger)
+      async let extraction: Void = extractDownload(
+        download.input, spoolingIn: spoolDirectory, to: extractPath, options: options, logger: logger, onReport: onReport)
       // The transfer's outcome first: the extractor only sees bytes and then an
       // end of file, so a failed transfer looks to it like a short archive.
       try await download.completed()
@@ -231,12 +265,13 @@ public enum Staging {
     spoolingIn spoolDirectory: URL,
     to extractPath: String,
     options: InstallOptions,
-    logger: any ControlCoreLogger
+    logger: any ControlCoreLogger,
+    onReport: @escaping @Sendable (StagingReport) -> Void
   ) async throws {
     try await withAttached(input) { source in
       try await extractStream(
         source, tarExtractor: ArchiveExtractors.inProcessTar, spoolingIn: spoolDirectory,
-        to: extractPath, options: options, logger: logger)
+        to: extractPath, options: options, logger: logger, onReport: onReport)
     }
   }
 
@@ -247,14 +282,20 @@ public enum Staging {
     spoolingIn spoolDirectory: URL,
     to extractPath: String,
     options: InstallOptions,
-    logger: any ControlCoreLogger
+    logger: any ControlCoreLogger,
+    onReport: @escaping @Sendable (StagingReport) -> Void
   ) async throws {
     let peekable = HandedOver(PeekableSource(source))
     let head = try await offCooperativePool { try peekable.value.peek(ArchiveFormat.sniffLength) }.get()
-    switch ArchiveFormat.detect(head) {
+    let format = ArchiveFormat.detect(head)
+    switch format {
     case .zip, .zstdZip:
-      try await extractZipStream(peekable.value, spoolingIn: spoolDirectory, to: extractPath, options: options, logger: logger)
+      onReport(.route(ExtractionRoute(format: format, extractor: .zipStream)))
+      try await extractZipStream(peekable.value, spoolingIn: spoolDirectory, to: extractPath, options: options, logger: logger) {
+        onReport(.route(ExtractionRoute(format: format, extractor: .zipSpool)))
+      }
     case .zstd, .gzip, .other, .undetermined:
+      onReport(.route(ExtractionRoute(format: format, extractor: tarExtractor is BSDTarExtractor ? .bsdTar : .inProcessTar)))
       try await tarExtractor.extract(from: peekable.value, to: extractPath, options: options.extractOptions, logger: logger)
     }
   }
@@ -263,13 +304,14 @@ public enum Staging {
   /// `spoolDirectory` as it is read, since symlinks and permissions are recorded
   /// only in the central directory at its end, which a reader of the stream never
   /// reaches. A zip the stream reader cannot handle is extracted again from the
-  /// spooled copy.
+  /// spooled copy, after calling `onSpoolFallback`.
   private static func extractZipStream(
     _ source: any ByteSource,
     spoolingIn spoolDirectory: URL,
     to extractPath: String,
     options: InstallOptions,
-    logger: any ControlCoreLogger
+    logger: any ControlCoreLogger,
+    onSpoolFallback: () -> Void
   ) async throws {
     let spoolPath = spoolDirectory.appendingPathComponent("archive.zip").path
     let source = HandedOver(source)
@@ -285,6 +327,7 @@ public enum Staging {
     } catch {
       logger.log("Extracting the spooled zip at \(spoolPath), as extracting it as it arrived failed: \(error)")
     }
+    onSpoolFallback()
     ArchiveExtraction.removeContents(of: extractPath)
     try await ArchiveExtractors.default.extract(
       .filePath(spoolPath), to: extractPath, options: options.extractOptions, logger: logger)

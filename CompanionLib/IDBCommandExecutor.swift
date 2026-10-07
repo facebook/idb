@@ -107,16 +107,18 @@ public final class IDBCommandExecutor {
     return listing
   }
 
-  /// Stages `source`, finds the artifact `destination` names in it and installs that, reporting each stage through `onProgress`.
+  /// Stages `source`, finds the artifact `destination` names in it and installs that, reporting each stage through `onProgress`
+  /// and how an archive was unpacked through `onReport`.
   public func install(
     _ destination: InstallDestination,
     from source: InstallSource,
     options: InstallOptions = InstallOptions(),
-    onProgress: @escaping @Sendable (InstallProgressEvent) -> Void = { _ in }
+    onProgress: @escaping @Sendable (InstallProgressEvent) -> Void = { _ in },
+    onReport: @escaping @Sendable (StagingReport) -> Void = { _ in }
   ) async throws -> InstalledArtifact {
     let totalStart = Date()
     let kind = destination.kind
-    return try await Staging.withMaterialized(source, as: kind, options: options, totalStart: totalStart, temporaryDirectory: temporaryDirectory, logger: target.logger, onProgress: onProgress) { tree in
+    return try await Staging.withMaterialized(source, as: kind, options: options, totalStart: totalStart, temporaryDirectory: temporaryDirectory, logger: target.logger, onProgress: onProgress, onReport: onReport) { tree in
       let artifact = try kind.identify(in: tree, logger: target.logger)
       let installStart = Date()
       onProgress(.installStarted(timing: .measure(stageStart: installStart, totalStart: totalStart), artifactPath: artifact.url.path))

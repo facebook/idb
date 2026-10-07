@@ -28,11 +28,13 @@ public enum ApplicationArchive {
     temporaryDirectory: TemporaryDirectory,
     logger: any ControlCoreLogger,
     onProgress: @escaping @Sendable (InstallProgressEvent) -> Void = { _ in },
+    onReport: @escaping @Sendable (StagingReport) -> Void = { _ in },
     perform: (BundleDescriptor) async throws -> T
   ) async throws -> T {
     try await Staging.withMaterialized(
       source, as: .application, options: options, totalStart: totalStart, downloadConfiguration: downloadConfiguration,
-      temporaryDirectory: temporaryDirectory, logger: logger, onProgress: onProgress
+      temporaryDirectory: temporaryDirectory, logger: logger, onProgress: onProgress,
+      onReport: onReport
     ) { tree in
       return try await perform(try Artifact.applicationBundle(in: tree, logger: logger))
     }

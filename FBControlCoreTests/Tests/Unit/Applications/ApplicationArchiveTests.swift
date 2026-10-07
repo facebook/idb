@@ -111,6 +111,33 @@ final class ApplicationArchiveTests: XCTestCase {
     return (result.0, result.1, collected.events)
   }
 
+  /// Resolves `source` and returns every extraction route it reported.
+  private func routes(
+    resolving source: InstallSource,
+    downloadConfiguration: URLSessionConfiguration = .default
+  ) async throws -> [ExtractionRoute] {
+    let collected = Collector<StagingReport>()
+    try await ApplicationArchive.withResolvedBundle(
+      from: source,
+      downloadConfiguration: downloadConfiguration,
+      temporaryDirectory: temporaryDirectory,
+      logger: logger,
+      onReport: collected.append
+    ) { _ in }
+    return collected.values.map { report in
+      switch report {
+      case .route(let route): route
+      }
+    }
+  }
+
+  private func routesOverStubbedNetwork(serving body: Data) async throws -> [ExtractionRoute] {
+    StubURLProtocol.behaviour = .respond(statusCode: 200, body: body)
+    let configuration = URLSessionConfiguration.ephemeral
+    configuration.protocolClasses = [StubURLProtocol.self]
+    return try await routes(resolving: .remoteURL(Self.stubbedURL), downloadConfiguration: configuration)
+  }
+
   private func resolveOverStubbedNetwork() async throws -> (identifier: String, path: String, events: [InstallProgressEvent]) {
     let configuration = URLSessionConfiguration.ephemeral
     configuration.protocolClasses = [StubURLProtocol.self]
@@ -203,6 +230,48 @@ final class ApplicationArchiveTests: XCTestCase {
     XCTAssertEqual(identifier, "com.example.sample")
     XCTAssertEqual(events.map(\.phase), [.started, .completed], "The fallback is part of the one extract stage")
     XCTAssertEqual(leftBehind, [], "The spooled zip is removed with what it unpacked")
+  }
+
+  // MARK: - Extraction routes
+
+  func testResolve_WhenGivenAnArchiveFile_ReportsNoRoute() async throws {
+    let routes = try await routes(resolving: .localPath(try await makeArchiveFile()))
+
+    XCTAssertEqual(routes, [], "Only a streamed or downloaded archive is routed")
+  }
+
+  func testResolve_WhenGivenAGzippedProcessInput_RoutesItToBSDTar() async throws {
+    let input = FBProcessInput<NSData>(from: try await makePayloadArchive()).retyped(FBProcessInput<AnyObject>.self)
+
+    let routes = try await routes(resolving: .processInput(input))
+
+    XCTAssertEqual(routes, [ExtractionRoute(format: .gzip, extractor: .bsdTar)])
+  }
+
+  func testResolve_WhenGivenAZipStream_RoutesItToTheStreamReader() async throws {
+    let routes = try await routes(resolving: zipStream(try makeZippedPayloadWithSymlink()))
+
+    XCTAssertEqual(routes, [ExtractionRoute(format: .zip, extractor: .zipStream)])
+  }
+
+  func testResolve_WhenAZipStreamCannotBeExtractedAsItArrives_ReportsTheSpoolFallback() async throws {
+    let routes = try await routes(resolving: zipStream(try makeZippedPayloadWithSymlink(firstEntryStoredWithSizeAfter: true)))
+
+    XCTAssertEqual(
+      routes, [ExtractionRoute(format: .zip, extractor: .zipStream), ExtractionRoute(format: .zip, extractor: .zipSpool)])
+  }
+
+  func testResolve_WhenGivenAGzippedTarURL_RoutesItToTheInProcessExtractor() async throws {
+    let routes = try await routesOverStubbedNetwork(serving: try await makePayloadArchive())
+
+    XCTAssertEqual(routes, [ExtractionRoute(format: .gzip, extractor: .inProcessTar)])
+  }
+
+  func testResolve_WhenGivenAZstdZipURL_RoutesItToTheStreamReader() async throws {
+    let routes = try await routesOverStubbedNetwork(
+      serving: ArchiveFormat.zstdZipMarker + Self.zstd(try makeZippedPayloadWithSymlink()))
+
+    XCTAssertEqual(routes, [ExtractionRoute(format: .zstdZip, extractor: .zipStream)])
   }
 
   // MARK: - Remote sources
@@ -482,5 +551,18 @@ private final class EventCollector: @unchecked Sendable {
 
   @Sendable func append(_ event: InstallProgressEvent) {
     lock.withLock { storage.append(event) }
+  }
+}
+
+private final class Collector<Value: Sendable>: @unchecked Sendable {
+  private let lock = NSLock()
+  private var storage: [Value] = []
+
+  var values: [Value] {
+    lock.withLock { storage }
+  }
+
+  @Sendable func append(_ value: Value) {
+    lock.withLock { storage.append(value) }
   }
 }

@@ -36,6 +36,27 @@ enum InstallStreamFormat: String {
   }
 }
 
+extension ArchiveFormat {
+
+  /// Named as `InstallStreamFormat` names what a client streams, for an archive told apart by its first bytes.
+  fileprivate var streamFormatName: String {
+    switch self {
+    case .zip:
+      InstallStreamFormat.zip.rawValue
+    case .zstdZip:
+      InstallStreamFormat.zstdZip.rawValue
+    case .gzip:
+      InstallStreamFormat.gzipTar.rawValue
+    case .zstd:
+      InstallStreamFormat.zstdTar.rawValue
+    case .other:
+      "tar"
+    case .undetermined:
+      "undetermined"
+    }
+  }
+}
+
 /// Where an install was when it failed: in one of its stages, or receiving a streamed payload before
 /// any stage began.
 enum InstallFailureStage: Equatable {
@@ -67,6 +88,7 @@ final class InstallTelemetry: Sendable {
 
   private struct State {
     var streamFormat: InstallStreamFormat?
+    var route: ExtractionRoute?
     var receivedBytes: Int64?
     var receiveMs: Int64?
     var receiving = false
@@ -85,6 +107,15 @@ final class InstallTelemetry: Sendable {
 
   func streamed(_ format: InstallStreamFormat) {
     state.withLock { $0.streamFormat = format }
+  }
+
+  func staged(_ report: StagingReport) {
+    state.withLock { state in
+      switch report {
+      case .route(let route):
+        state.route = route
+      }
+    }
   }
 
   /// Measures `body` receiving the streamed payload, reporting what it received whether or not it
@@ -154,8 +185,18 @@ final class InstallTelemetry: Sendable {
   func record(into call: CallTelemetry) {
     let state = self.state.withLock { $0 }
     call.setNormal(payloadKind.rawValue, forKey: "payload_kind")
-    if let streamFormat = state.streamFormat {
-      call.setNormal(streamFormat.rawValue, forKey: "stream_format")
+    // What a client declared it streamed is kept over what the first bytes said, as rows have always reported it.
+    if let streamFormat = state.streamFormat?.rawValue ?? state.route?.format.streamFormatName {
+      call.setNormal(streamFormat, forKey: "stream_format")
+    }
+    if let route = state.route {
+      call.setNormal(route.extractor.rawValue, forKey: "extractor")
+      switch route.extractor {
+      case .zipStream, .zipSpool:
+        call.setInt(route.extractor == .zipSpool ? 1 : 0, forKey: "zip_spool_fallback")
+      case .inProcessTar, .bsdTar:
+        break
+      }
     }
     if let receivedBytes = state.receivedBytes {
       call.setSize(receivedBytes)

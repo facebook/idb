@@ -68,6 +68,27 @@ private struct Refused: Error {}
     #expect(columns(of: telemetry) == ["payload_kind=data", "stream_format=\(column)"])
   }
 
+  @Test(arguments: [
+    (ExtractionRoute(format: .gzip, extractor: .inProcessTar), ["extractor=tar_inprocess", "stream_format=tar_gzip"]),
+    (ExtractionRoute(format: .other, extractor: .inProcessTar), ["extractor=tar_inprocess", "stream_format=tar"]),
+    (ExtractionRoute(format: .zip, extractor: .zipStream), ["extractor=zip_stream", "stream_format=zip", "zip_spool_fallback=0"]),
+    (ExtractionRoute(format: .zstdZip, extractor: .zipSpool), ["extractor=zip_spool", "stream_format=zip_zstd", "zip_spool_fallback=1"]),
+  ])
+  func aDownloadedAppReportsTheFormatItsFirstBytesNamedAndItsExtractor(route: ExtractionRoute, routeColumns: [String]) {
+    let telemetry = InstallTelemetry(payloadKind: .url)
+    telemetry.staged(.route(route))
+
+    #expect(columns(of: telemetry) == (routeColumns + ["payload_kind=url"]).sorted())
+  }
+
+  @Test func aStreamedAppKeepsTheFormatItsClientDeclared() {
+    let telemetry = InstallTelemetry(payloadKind: .data)
+    telemetry.streamed(InstallStreamFormat(tarCompression: .ZSTD))
+    telemetry.staged(.route(ExtractionRoute(format: .undetermined, extractor: .inProcessTar)))
+
+    #expect(columns(of: telemetry) == ["extractor=tar_inprocess", "payload_kind=data", "stream_format=tar_zstd"])
+  }
+
   @Test func aLocalPathReportsOnlyItsKindAndStages() {
     let telemetry = InstallTelemetry(payloadKind: .filePath)
     telemetry.observe(.installStarted(timing: timing(seconds: 0), artifactPath: "/a/A.app"))
