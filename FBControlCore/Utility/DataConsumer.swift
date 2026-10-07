@@ -18,16 +18,23 @@ public protocol DataConsumer: AnyObject, Sendable {
 
   /// Consumes an end-of-file.
   func consumeEndOfFile()
+
+  /// When this consumer is done with the data it is handed.
+  var consumption: DataConsumption { get }
 }
 
-/// Consumer which consumes the data synchronously in the same context as the caller invoking consumeData.
-public protocol DataConsumerSync: Sendable {
+public extension DataConsumer {
+  var consumption: DataConsumption { .unspecified }
 }
 
-/// Consumer which consumes the data asynchronously.
-public protocol DataConsumerAsync: Sendable {
-  /// Number of submitted data that has not been consumed yet.
-  func unprocessedDataCount() -> Int
+/// When a consumer is done with the data it is handed.
+public enum DataConsumption: Equatable, Sendable {
+  /// Each chunk is consumed before `consumeData` returns, so the caller may hand over bytes it does not own.
+  case synchronous
+  /// Chunks are consumed later, and `unprocessed` are still waiting.
+  case queued(unprocessed: Int)
+  /// No promise either way, so the caller must hand over bytes it owns.
+  case unspecified
 }
 
 /// Observation of a Data Consumer's lifecycle.

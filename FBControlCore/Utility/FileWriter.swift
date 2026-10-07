@@ -158,7 +158,9 @@ public class FileWriter: NSObject, @unchecked Sendable {
 
   // MARK: - Sync
 
-  private final class Sync: FileWriter, DataConsumer, DataConsumerLifecycle, DataConsumerSync, @unchecked Sendable {
+  private final class Sync: FileWriter, DataConsumer, DataConsumerLifecycle, @unchecked Sendable {
+
+    var consumption: DataConsumption { .synchronous }
 
     func consumeData(_ data: Data) {
       data.withUnsafeBytes { buffer in

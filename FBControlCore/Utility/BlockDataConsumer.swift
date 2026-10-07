@@ -11,7 +11,7 @@ import Foundation
 ///
 /// Deliveries are serialized, and data consumed after end-of-file is ignored.
 // SAFETY: `consumer` is only touched under `lock`; `FBMutableFuture` is internally synchronized.
-public final class SynchronousDataConsumer: NSObject, DataConsumer, DataConsumerLifecycle, DataConsumerSync, @unchecked Sendable {
+public final class SynchronousDataConsumer: NSObject, DataConsumer, DataConsumerLifecycle, @unchecked Sendable {
   // Recursive because the block runs under the lock, and a block may feed this consumer again.
   private let lock = NSRecursiveLock()
   private var consumer: ((Data) -> Void)?
@@ -37,6 +37,8 @@ public final class SynchronousDataConsumer: NSObject, DataConsumer, DataConsumer
   public var finishedConsuming: FBFuture<NSNull> {
     finishedConsumingFuture.retyped(FBFuture<NSNull>.self)
   }
+
+  public var consumption: DataConsumption { .synchronous }
 }
 
 /// A consumer that passes each chunk of data to a block, in order, on a queue.
@@ -46,7 +48,7 @@ public final class SynchronousDataConsumer: NSObject, DataConsumer, DataConsumer
 /// including data a queued delivery feeds back while end-of-file waits.
 // SAFETY: `consumer` is only touched under `lock` and `pending` only under `pendingLock`;
 // `FBMutableFuture` is internally synchronized.
-public final class AsynchronousDataConsumer: NSObject, DataConsumer, DataConsumerLifecycle, DataConsumerAsync, @unchecked Sendable {
+public final class AsynchronousDataConsumer: NSObject, DataConsumer, DataConsumerLifecycle, @unchecked Sendable {
   private let queue: DispatchQueue
   private let group = DispatchGroup()
   private let lock = NSRecursiveLock()
@@ -89,6 +91,8 @@ public final class AsynchronousDataConsumer: NSObject, DataConsumer, DataConsume
   public var finishedConsuming: FBFuture<NSNull> {
     finishedConsumingFuture.retyped(FBFuture<NSNull>.self)
   }
+
+  public var consumption: DataConsumption { .queued(unprocessed: unprocessedDataCount()) }
 
   public func unprocessedDataCount() -> Int {
     pendingLock.withLock { pending }

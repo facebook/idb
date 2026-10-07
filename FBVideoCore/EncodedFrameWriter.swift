@@ -236,7 +236,7 @@ extension CMBlockBuffer {
   /// zero-copy `Data` backed by the block buffer; async consumers receive a copy.
   func write(to consumer: any DataConsumer) throws {
     let dataLength = CMBlockBufferGetDataLength(self)
-    let isSyncConsumer = consumer is DataConsumerSync
+    let isSyncConsumer = consumer.consumption == .synchronous
     var offset = 0
     while offset < dataLength {
       var dataPointer: UnsafeMutablePointer<CChar>?

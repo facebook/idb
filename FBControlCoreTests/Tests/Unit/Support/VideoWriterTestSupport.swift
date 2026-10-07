@@ -12,11 +12,11 @@ import XCTest
 
 // MARK: - Test Doubles
 
-class OverflownConsumerDouble: NSObject, DataConsumer, DataConsumerAsync {
+class OverflownConsumerDouble: NSObject, DataConsumer {
   private var _unprocessedDataCount: Int = 0
 
-  func unprocessedDataCount() -> Int {
-    return _unprocessedDataCount
+  var consumption: DataConsumption {
+    .queued(unprocessed: _unprocessedDataCount)
   }
 
   func setUnprocessedDataCount(_ value: Int) {

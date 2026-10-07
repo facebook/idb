@@ -17,8 +17,7 @@ final class ConsumerBackpressureTests: XCTestCase {
     let consumer = FBDataBuffer.accumulatingBuffer()
     let logger = ControlCoreLoggerDouble()
 
-    // AccumulatingBuffer does not conform to DataConsumerAsync,
-    // so it always has capacity.
+    // AccumulatingBuffer does not queue, so it always has capacity.
     XCTAssertTrue(consumer.hasCapacityForFrame(logger: logger))
   }
 

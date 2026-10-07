@@ -101,7 +101,7 @@ public struct BGRAFrameWriter: EncodedFrameWriter {
       throw EncodedFrameWriterError.failedToGetDataBuffer
     }
     let size = CVPixelBufferGetDataSize(pixelBuffer)
-    if consumer is DataConsumerSync {
+    if consumer.consumption == .synchronous {
       consumer.consumeData(Data(bytesNoCopy: baseAddress, count: size, deallocator: .none))
     } else {
       consumer.consumeData(Data(bytes: baseAddress, count: size))
