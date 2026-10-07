@@ -347,14 +347,14 @@ final class SimulatorVideoFileWriterTests: XCTestCase {
 
 /// Lifecycle tests for `SimulatorVideo`, the in-process recorder wrapping the stream + file
 /// writer, driven end-to-end over a fake display surface with a real VideoToolbox encode.
-final class SimulatorVideoTests: XCTestCase {
+final class FBSimulatorVideoTests: XCTestCase {
 
   /// A recorder over a fake display surface writing to a temp path removed at teardown. The eager
   /// cadence (positive framesPerSecond) pushes frames on the clock from the mounted surface without
   /// needing frame-rendered events from the fake.
   private func makeRecordingFixture(immediateSurface: IOSurface?, format: VideoStreamFormat = .compressedVideo(withCodec: .h264, transport: .fmp4), fileType: AVFileType = .mp4, chaptersEnabled: Bool = false, framesPerSecond: Int? = 30) -> (video: SimulatorVideo, path: String) {
     let extensionName = fileType == .mov ? "mov" : "mp4"
-    let path = (NSTemporaryDirectory() as NSString).appendingPathComponent("SimulatorVideoTests-\(UUID().uuidString).\(extensionName)")
+    let path = (NSTemporaryDirectory() as NSString).appendingPathComponent("FBSimulatorVideoTests-\(UUID().uuidString).\(extensionName)")
     addTeardownBlock { try? FileManager.default.removeItem(atPath: path) }
     let surface = FakeFramebufferSurface()
     surface.immediateSurface = immediateSurface

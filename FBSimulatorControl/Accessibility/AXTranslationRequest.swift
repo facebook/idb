@@ -7,6 +7,7 @@
 
 internal import AccessibilityPlatformTranslation
 import CoreSimulator
+import FBAXCore
 import FBControlCore
 import Foundation
 

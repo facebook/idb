@@ -15,6 +15,8 @@ targets:
     dependencies:
       - framework: ../Build/Products/Release/libCompanionUtilities.a
         embed: false
+      - framework: ../Build/Products/Release/libFBAXCore.a
+        embed: false
       - framework: ../Build/Products/Release/FBControlCore.framework
         embed: false
       - framework: ../Build/Products/Release/libFBDeviceControl.a
@@ -42,6 +44,8 @@ targets:
   sim-video:
     dependencies:
       - framework: ../Build/Products/Release/libCompanionUtilities.a
+        embed: false
+      - framework: ../Build/Products/Release/libFBAXCore.a
         embed: false
       - framework: ../Build/Products/Release/FBControlCore.framework
         embed: false

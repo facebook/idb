@@ -6,6 +6,7 @@
  */
 
 import AXRuntime
+@testable import FBAXCore
 @testable import FBControlCore
 import XCTest
 

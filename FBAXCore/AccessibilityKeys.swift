@@ -5,6 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+import FBControlCore
 import Foundation
 
 /// Keys for accessibility element dictionaries. The raw values are the on-the-wire JSON keys and the

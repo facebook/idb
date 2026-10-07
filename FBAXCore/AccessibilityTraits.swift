@@ -6,6 +6,7 @@
  */
 
 internal import AXRuntime
+import FBControlCore
 import Foundation
 
 // Each trait paired with the name AXRuntime gives it - the constant minus its

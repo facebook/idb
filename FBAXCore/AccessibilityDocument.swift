@@ -6,6 +6,7 @@
  */
 
 import CoreGraphics
+import FBControlCore
 import Foundation
 
 /// The canonical name of the backend that served a UI-automation request.

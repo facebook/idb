@@ -6,6 +6,7 @@
  */
 
 import Darwin
+import FBAXCore
 import FBControlCore
 import Foundation
 import SimulatorFrameworkBridgeProtocol

@@ -16,6 +16,7 @@ const path = require('path');
 const FRAMEWORKS = [
   { repoPath: 'FBControlCore', id: 'fbcontrolcore' },
   { repoPath: 'FBVideoCore', id: 'fbvideocore' },
+  { repoPath: 'FBAXCore', id: 'fbaxcore' },
   { repoPath: 'FBSimulatorControl', id: 'fbsimulatorcontrol' },
   { repoPath: 'FBSimulatorVideo', id: 'fbsimulatorvideo' },
   { repoPath: 'FBDeviceControl', id: 'fbdevicecontrol' },

@@ -6,6 +6,7 @@
  */
 
 import CoreGraphics
+import FBAXCore
 import FBControlCore
 import Foundation
 

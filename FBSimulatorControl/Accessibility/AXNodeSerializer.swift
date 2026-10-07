@@ -6,6 +6,7 @@
  */
 
 import AppKit
+import FBAXCore
 import FBControlCore
 import Foundation
 

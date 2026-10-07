@@ -6,6 +6,7 @@
  */
 
 import CoreGraphics
+import FBAXCore
 import FBControlCore
 @testable import FBSimulatorControl
 import Foundation

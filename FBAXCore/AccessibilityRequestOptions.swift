@@ -6,6 +6,7 @@
  */
 
 import CoreGraphics
+import FBControlCore
 import Foundation
 
 /// Options for fetching remote process elements (e.g., WebView content).
