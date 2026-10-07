@@ -13,8 +13,8 @@ import Foundation
 struct VideoCommand: AsyncParsableCommand {
   static let configuration = CommandConfiguration(
     commandName: "sim-video",
-    abstract: "Record or stream a simulator with JSON-line overlay control",
-    subcommands: [Clip.self, Record.self, Stream.self])
+    abstract: "Record, stream, or view a simulator with JSON-line overlay control",
+    subcommands: [Clip.self, Record.self, Stream.self, Terminal.self])
 }
 
 func waitForStopSignal() async {
