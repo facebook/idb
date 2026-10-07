@@ -348,7 +348,7 @@ public final class LockdownServiceConnection: CustomStringConvertible {
 }
 
 /// Reads a service connection until it is exhausted, feeding a consumer.
-final class LockdownServiceConnectionReader: NSObject {
+final class LockdownServiceConnectionReader {
 
   private let connection: LockdownServiceConnection
   private let consumer: any DataConsumer
@@ -380,7 +380,6 @@ final class LockdownServiceConnectionReader: NSObject {
     self.schedule = schedule
     self.stateStorage = .notStarted
     self.finishedReadingMutable = FBMutableFuture<NSNumber>()
-    super.init()
   }
 
   var finishedReading: FBFuture<NSNumber> {
