@@ -8,7 +8,7 @@
 import CompanionUtilities
 import GRPCCore
 
-extension RPCWriter: @retroactive AsyncStreamWriter {
+extension RPCWriter: AsyncStreamWriter {
   public typealias Value = Element
 
   @inlinable

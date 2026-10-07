@@ -8,8 +8,8 @@
 import FBControlCore
 import FBSimulatorControl
 
-extension ControlCoreError: @retroactive Error {
+extension ControlCoreError: Error {
 }
 
-extension ControlCoreError: @retroactive @unchecked Sendable {
+extension ControlCoreError: @unchecked Sendable {
 }

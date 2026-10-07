@@ -24,6 +24,9 @@ settings:
     # FBControlCore is built without library evolution, so even its internal
     # import of ZstdDecompress has to resolve in every module that imports it.
     SWIFT_INCLUDE_PATHS: $(inherited) $(SRCROOT)/../ZstdDecompress/include
+    # The generated project's libraries and Source/Package.swift compile into the Swift package
+    # `idb` too, so a conformance this project declares on one of their types is not retroactive.
+    SWIFT_PACKAGE_NAME: idb
 
 packages:
   grpc-swift-2:

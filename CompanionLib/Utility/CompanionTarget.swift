@@ -37,7 +37,7 @@ extension TargetProvider {
 }
 
 /// The local Mac has no screen to record; its video commands fail the way its other unsupported commands do.
-extension MacDevice: @retroactive VideoTarget {
+extension MacDevice: VideoTarget {
 
   public var videoRecording: MacUnsupportedVideoCommands { MacUnsupportedVideoCommands() }
 

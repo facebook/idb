@@ -12,7 +12,7 @@ import Foundation
 
 // The simulator's video capability, added onto `Simulator` from outside `FBSimulatorControl` so that
 // consumers with no interest in video do not link the encode pipeline.
-extension Simulator: @retroactive VideoTarget {
+extension Simulator: VideoTarget {
 
   public var videoRecording: SimulatorVideoRecordingCommands {
     commandCache.resolve { SimulatorVideoRecordingCommands.commands(with: self) }
