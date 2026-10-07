@@ -76,4 +76,20 @@ struct ByteSourceTests {
 
     #expect(try raw.readAll().isEmpty)
   }
+
+  @Test
+  func whatATeeReadsReachesItsFileAndDrainingReadsTheRest() throws {
+    let contents = Data("everything read".utf8)
+    let path = root.appendingPathComponent("tee").path
+    #expect(FileManager.default.createFile(atPath: path, contents: nil))
+    let file = try FileHandle(forWritingTo: URL(fileURLWithPath: path))
+    let source = TeeSource(DataSource(contents, pieceSize: 3), to: file)
+    var buffer = [UInt8](repeating: 0, count: 4)
+
+    #expect(try buffer.withUnsafeMutableBytes { try source.read(into: $0) } == 3)
+    try source.drain()
+    try file.close()
+
+    #expect(try Data(contentsOf: URL(fileURLWithPath: path)) == contents)
+  }
 }

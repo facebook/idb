@@ -128,4 +128,19 @@ struct ZipStreamExtractorTests {
       try extractAsStream(archive, to: root.appendingPathComponent("stream").path)
     }
   }
+
+  @Test
+  func extractStream_WithOverrideModificationTime_StampsTheCurrentTime() throws {
+    let app = try ArchiveFixtures.makeApp(in: root)
+    try fileManager.setAttributes([.modificationDate: Date(timeIntervalSince1970: 1_000_000_000)], ofItemAtPath: "\(app)/Info.plist")
+    let archive = root.appendingPathComponent("a.ipa").path
+    try run("/usr/bin/zip", ["-qry", archive, "A.app"])
+    let extracted = root.appendingPathComponent("stream").path
+    try fileManager.createDirectory(atPath: extracted, withIntermediateDirectories: true)
+
+    try ZipStreamExtractor.extract(from: DataSource(try Data(contentsOf: URL(fileURLWithPath: archive))), to: extracted, overrideModificationTime: true)
+
+    let modified = try #require(fileManager.attributesOfItem(atPath: "\(extracted)/A.app/Info.plist")[.modificationDate] as? Date)
+    #expect(Date().timeIntervalSince(modified) < 60)
+  }
 }
