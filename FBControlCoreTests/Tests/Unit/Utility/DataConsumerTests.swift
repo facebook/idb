@@ -97,7 +97,7 @@ final class DataConsumerTests: XCTestCase {
   func testUnbufferedConsumer() {
     let expected = "FOOBARBAZ".data(using: .utf8)!
     let actual = NSMutableData()
-    let consumer = FBBlockDataConsumer.synchronousDataConsumer { incremental in
+    let consumer = SynchronousDataConsumer { incremental in
       actual.append(incremental)
     }
 
@@ -119,11 +119,31 @@ final class DataConsumerTests: XCTestCase {
     XCTAssertEqual(expected, actual as Data)
   }
 
+  func testUnbufferedConsumerBlockCanReenterTheConsumer() {
+    let actual = NSMutableData()
+    let box = ConsumerBox()
+    box.consumer = SynchronousDataConsumer { incremental in
+      actual.append(incremental)
+      guard incremental == "FOO".data(using: .utf8)! else { return }
+      box.consumer?.consumeData("BAR".data(using: .utf8)!)
+      box.consumer?.consumeEndOfFile()
+    }
+
+    let returned = expectation(description: "the re-entrant delivery returned")
+    DispatchQueue.global().async {
+      box.consumer?.consumeData("FOO".data(using: .utf8)!)
+      returned.fulfill()
+    }
+    wait(for: [returned], timeout: ControlCoreGlobalConfiguration.fastTimeout)
+    XCTAssertEqual("FOOBAR".data(using: .utf8)!, actual as Data)
+    XCTAssertTrue(box.consumer?.finishedConsuming.hasCompleted ?? false)
+  }
+
   func testUnbufferedConsumerAsync() {
     let expected = "FOOBARBAZ".data(using: .utf8)!
     let actual = NSMutableData()
     let allChunks = expectation(description: "all three chunks delivered to the consumer")
-    let consumer = FBBlockDataConsumer.asynchronousDataConsumer { incremental in
+    let consumer = AsynchronousDataConsumer { incremental in
       actual.append(incremental)
       if actual.length == expected.count { allChunks.fulfill() }
     }
@@ -151,7 +171,7 @@ final class DataConsumerTests: XCTestCase {
     let actual = NSMutableData()
     let consumeStarted = DispatchSemaphore(value: 0)
     let continueConsume = DispatchSemaphore(value: 0)
-    let consumer = FBBlockDataConsumer.asynchronousDataConsumer { incremental in
+    let consumer = AsynchronousDataConsumer { incremental in
       consumeStarted.signal()
       continueConsume.wait()
       actual.append(incremental)
@@ -294,4 +314,8 @@ private final class RecordingLogger: NSObject, ControlCoreLogger, @unchecked Sen
   func error() -> any ControlCoreLogger { self }
   func withName(_ name: String) -> any ControlCoreLogger { self }
   func withDateFormatEnabled(_ enabled: Bool) -> any ControlCoreLogger { self }
+}
+
+private final class ConsumerBox: @unchecked Sendable {
+  var consumer: SynchronousDataConsumer?
 }

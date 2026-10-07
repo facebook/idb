@@ -69,7 +69,7 @@ struct DapMethodHandler: @unchecked Sendable {
   private func createDataConsumer(to responseStream: RPCWriter<Idb_DapResponse>) -> DataConsumer {
     let responseWriter = FIFOStreamWriter(stream: responseStream)
 
-    return FBBlockDataConsumer.synchronousDataConsumer { data in
+    return SynchronousDataConsumer { data in
       let response = Idb_DapResponse.with {
         $0.event = .stdout(
           .with { $0.data = data }

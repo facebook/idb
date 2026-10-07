@@ -86,7 +86,7 @@ struct XctraceRecordMethodHandler {
     let config = xcTraceRecordConfiguration(from: start)
 
     let responseWriter = FIFOStreamWriter(stream: responseStream)
-    let consumer = FBBlockDataConsumer.asynchronousDataConsumer { data in
+    let consumer = AsynchronousDataConsumer { data in
       guard !finishedWriting.wrappedValue else { return }
 
       let response = Idb_XctraceRecordResponse.with {

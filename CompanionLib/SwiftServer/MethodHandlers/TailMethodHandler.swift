@@ -46,7 +46,7 @@ struct TailMethodHandler {
   ) async throws {
     @Atomic var finished = false
 
-    let consumer = FBBlockDataConsumer.asynchronousDataConsumer { data in
+    let consumer = AsynchronousDataConsumer { data in
       guard !finished else { return }
       let response = Idb_TailResponse.with {
         $0.data = data

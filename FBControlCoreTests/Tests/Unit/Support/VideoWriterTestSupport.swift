@@ -328,7 +328,7 @@ func makeBlockBuffer(_ bytes: [UInt8]) -> CMBlockBuffer {
 final class CountingConsumer {
   private(set) var writes = 0
   private(set) var bytes = Data()
-  private(set) lazy var consumer: any DataConsumer = FBBlockDataConsumer.synchronousDataConsumer { [weak self] data in
+  private(set) lazy var consumer: any DataConsumer = SynchronousDataConsumer { [weak self] data in
     self?.writes += 1
     self?.bytes.append(data)
   }

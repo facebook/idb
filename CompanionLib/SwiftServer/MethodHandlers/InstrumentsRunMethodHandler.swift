@@ -36,7 +36,7 @@ struct InstrumentsRunMethodHandler {
     let configuration = instrumentsConfiguration(from: request, storageManager: commandExecutor.storageManager)
 
     let responseWriter = FIFOStreamWriter(stream: responseStream)
-    let consumer = FBBlockDataConsumer.asynchronousDataConsumer { data in
+    let consumer = AsynchronousDataConsumer { data in
       guard !finishedWriting.wrappedValue else { return }
 
       do {

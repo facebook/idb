@@ -87,7 +87,7 @@ struct LaunchMethodHandler: @unchecked Sendable {
   }
 
   private func pipeOutput(interface: Idb_ProcessOutput.Interface, responseWriter: FIFOStreamWriter<RPCWriter<Idb_LaunchResponse>>) -> (DataConsumer & DataConsumerLifecycle) {
-    return FBBlockDataConsumer.asynchronousDataConsumer { data in
+    return AsynchronousDataConsumer { data in
       let response = Idb_LaunchResponse.with {
         $0.output.data = data
         $0.output.interface = interface

@@ -44,7 +44,7 @@ struct LogMethodHandler: @unchecked Sendable {
   ) async throws {
     let writingDone = AsyncPromise<Void>()
 
-    let consumer = FBBlockDataConsumer.synchronousDataConsumer { data in
+    let consumer = SynchronousDataConsumer { data in
       if writingDone.isResolved {
         return
       }

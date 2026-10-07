@@ -299,7 +299,7 @@ public final class LockdownServiceConnection: CustomStringConvertible {
   }
 
   func writeWithConsumerWriting(on queue: DispatchQueue) -> any DataConsumer & DataConsumerLifecycle {
-    FBBlockDataConsumer.asynchronousDataConsumer(on: queue) { [weak self] data in
+    AsynchronousDataConsumer(queue: queue) { [weak self] data in
       try? self?.send(data)
     }
   }

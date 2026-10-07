@@ -52,7 +52,7 @@ enum VideoEncodingHostSupport {
       return .unavailable(reason: "CVPixelBufferCreate failed with \(status)")
     }
     let firstSample = DispatchSemaphore(value: 0)
-    let consumer = FBBlockDataConsumer.synchronousDataConsumer { _ in firstSample.signal() }
+    let consumer = SynchronousDataConsumer { _ in firstSample.signal() }
     let configuration = VideoStreamConfiguration(
       format: .compressedVideo(withCodec: .h264, transport: .annexB),
       framesPerSecond: nil,

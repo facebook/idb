@@ -71,7 +71,7 @@ struct VideoStreamMethodHandler {
     if start.filePath.isEmpty {
       let responseWriter = FIFOStreamWriter(stream: responseStream)
 
-      consumer = FBBlockDataConsumer.asynchronousDataConsumer { data in
+      consumer = AsynchronousDataConsumer { data in
         guard !finished.wrappedValue else { return }
         let response = Idb_VideoStreamResponse.with {
           $0.payload.data = data

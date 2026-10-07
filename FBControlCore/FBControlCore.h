@@ -5,6 +5,5 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#import <FBControlCore/DataConsumer.h>
 #import <FBControlCore/FBFuture.h>
 #import <FBControlCore/FBObjCExceptionGuard.h>

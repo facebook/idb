@@ -135,7 +135,7 @@ final class SimulatorProcessSpawnStrategyTests: XCTestCase {
     let device = ExitingSpawnDevice(stdOutPayload: payload)
     let launcher = SimulatorSubprocessLauncher(simulator: SimulatorTestSupport.testableSimulator(withDevice: device))
     let received = Received()
-    let consumer = FBBlockDataConsumer.synchronousDataConsumer { data in
+    let consumer = SynchronousDataConsumer { data in
       Thread.sleep(forTimeInterval: 0.05)
       received.append(data)
     }
