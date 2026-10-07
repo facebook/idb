@@ -43,6 +43,10 @@ struct ZipCentralDirectoryTests {
     try run("/bin/sh", ["-c", "/bin/cat \"$0\" | /usr/bin/bsdtar -xp --no-mac-metadata -C \"$1\" -f -", archive, directory])
   }
 
+  private func modified(_ path: String) throws -> Date {
+    try #require(fileManager.attributesOfItem(atPath: path)[.modificationDate] as? Date)
+  }
+
   private func permissions(_ path: String) throws -> Int {
     try #require(fileManager.attributesOfItem(atPath: path)[.posixPermissions] as? Int)
   }
@@ -63,6 +67,26 @@ struct ZipCentralDirectoryTests {
     #expect(try permissions("\(extracted)/A.app/Real") == 0o755)
     #expect(try fileManager.destinationOfSymbolicLink(atPath: "\(extracted)/A.app/link.plist") == "Info.plist")
     #expect(try fileManager.destinationOfSymbolicLink(atPath: "\(extracted)/A.app/LinkDir") == "Real")
+  }
+
+  @Test
+  func repair_KeepsTheDirectoryTimesTheStreamExtractorSet() throws {
+    let app = try makeApp()
+    let archived = Date(timeIntervalSince1970: 1_600_000_000)
+    try fileManager.setAttributes([.modificationDate: archived], ofItemAtPath: app)
+    let archive = root.appendingPathComponent("a.ipa").path
+    try run("/usr/bin/ditto", ["-c", "-k", "--keepParent", app, archive])
+    let extracted = root.appendingPathComponent("stream").path
+    try fileManager.createDirectory(atPath: extracted, withIntermediateDirectories: true)
+    let handle = try FileHandle(forReadingFrom: URL(fileURLWithPath: archive))
+    defer { try? handle.close() }
+    try ZipStreamExtractor.extract(from: FileDescriptorSource(handle.fileDescriptor), to: extracted)
+    #expect(try modified("\(extracted)/A.app") == archived)
+
+    try ZipCentralDirectory(archiveAtPath: archive).repair(extractedAt: extracted)
+
+    // BUG: replacing files with symlinks touches the directory after its time was set. Flipped in the following commit.
+    #expect(try modified("\(extracted)/A.app") != archived)
   }
 
   @Test
