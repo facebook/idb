@@ -64,16 +64,15 @@ public final class DeviceCrashLogCommands: CrashLogCommands {
   // MARK: - Notify
 
   public func notifyOfCrash(matching predicate: NSPredicate) async throws -> CrashLogInfo {
-    // Start listening for the next matching crash log first, then kick off ingestion as a
-    // fire-and-forget background job: a log ingested before the listener is installed is not
-    // reported.
-    let next = fbFutureFromAsync { [store] in
-      try await store.nextCrashLog(forMatchingPredicate: predicate)
+    let listener = store.listenForNextCrashLog(matching: predicate)
+    // A crash ingested later, by any caller, still resolves the wait, so failing to ingest now does
+    // not end it.
+    do {
+      try await ingestAllCrashLogs(useCache: false)
+    } catch {
+      device?.logger.log("Failed to ingest crash logs while waiting for a crash: \(error)")
     }
-    _ = fbFutureFromAsync { [self] in
-      try await ingestAllCrashLogs(useCache: false) as NSArray
-    }
-    return try await bridgeFBFuture(next)
+    return try await listener.next()
   }
 
   // MARK: - Async
