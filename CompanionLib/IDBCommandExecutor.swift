@@ -11,10 +11,10 @@ import FBControlCore
 import FBDeviceControl
 import FBSimulatorAX
 import FBSimulatorControl
+import FBSimulatorXCTest
 import FBVideoCore
 import FBXCTestCore
 import Foundation
-import SimulatorXCTest
 
 public enum IDBCommandError: Error {
   case simulatorOnlyOperation(operation: String, targetDescription: String)

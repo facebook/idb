@@ -7,8 +7,8 @@
 
 import FBControlCore
 @testable import FBSimulatorControl
+@testable import FBSimulatorXCTest
 import Foundation
-@testable import SimulatorXCTest
 import XCTest
 
 /// A `SimDevice` stand-in that returns canned `getenv` values keyed by name.

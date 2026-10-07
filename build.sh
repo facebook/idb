@@ -981,11 +981,11 @@ function build() {
         build_sim_video;;
       distribution)
         build_distribution;;
-      FBControlCore|FBXCTestCore|FBSimulatorControl|SimulatorXCTest|FBDeviceControl)
+      FBControlCore|FBXCTestCore|FBSimulatorControl|FBSimulatorXCTest|FBDeviceControl)
         build_target "$target";;
       *)
         echo "Unknown target: $target"
-        echo "Valid targets: all, frameworks, shims, idb_companion, idb-repl, sim-video, FBControlCore, FBXCTestCore, FBSimulatorControl, SimulatorXCTest, FBDeviceControl, Shimulator-iOS, Shimulator-macOS, Repl-iOS, Repl-macOS, ReplHost, SimulatorFrameworkBridge-iOS, SimulatorFrameworkBridge-tvOS, distribution"
+        echo "Valid targets: all, frameworks, shims, idb_companion, idb-repl, sim-video, FBControlCore, FBXCTestCore, FBSimulatorControl, FBSimulatorXCTest, FBDeviceControl, Shimulator-iOS, Shimulator-macOS, Repl-iOS, Repl-macOS, ReplHost, SimulatorFrameworkBridge-iOS, SimulatorFrameworkBridge-tvOS, distribution"
         exit 1;;
     esac
   fi
@@ -1088,7 +1088,7 @@ Commands:
       FBControlCore   Build FBControlCore framework
       FBDeviceControl Build FBDeviceControl framework
       FBSimulatorControl Build FBSimulatorControl framework
-      SimulatorXCTest Build the SimulatorXCTest static library
+      FBSimulatorXCTest Build the FBSimulatorXCTest static library
       Repl-iOS        Build Repl-iOS dylib (iOS simulator)
       Repl-macOS      Build Repl-macOS dylib (macOS)
       ReplHost        Build the ReplHost.app host app (iOS simulator)

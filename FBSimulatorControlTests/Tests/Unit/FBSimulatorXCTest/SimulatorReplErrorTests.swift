@@ -6,8 +6,8 @@
  */
 
 @testable import FBSimulatorControl
+@testable import FBSimulatorXCTest
 import Foundation
-@testable import SimulatorXCTest
 import Testing
 
 /// Coverage of the REPL error descriptions. These strings are the only thing a

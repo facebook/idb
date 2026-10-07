@@ -661,7 +661,7 @@ targets:
       - sdk: AppKit.framework
       - sdk: CoreGraphics.framework
       - sdk: Foundation.framework
-  SimulatorXCTest:
+  FBSimulatorXCTest:
     type: library.static
     platform: macOS
     deploymentTarget: "15.0"
@@ -669,14 +669,14 @@ targets:
       testTargets:
         - FBSimulatorControlUnitTests
     sources:
-      - path: SimulatorXCTest
+      - path: FBSimulatorXCTest
       - path: REPL/IDB/IDBAPI.swiftinterface
         buildPhase: resources
     settings:
       base:
         MACOSX_DEPLOYMENT_TARGET: "15.0"
-        PRODUCT_BUNDLE_IDENTIFIER: com.facebook.SimulatorXCTest
-        PRODUCT_NAME: SimulatorXCTest
+        PRODUCT_BUNDLE_IDENTIFIER: com.facebook.FBSimulatorXCTest
+        PRODUCT_NAME: FBSimulatorXCTest
         DEFINES_MODULE: "YES"
         MACH_O_TYPE: staticlib
         SWIFT_VERSION: "6.0"
@@ -788,11 +788,11 @@ targets:
       - target: FBSimulatorAX
       - target: FBSimulatorControl
       - target: FBSimulatorVideo
+      - target: FBSimulatorXCTest
       - target: FBVideoCore
       - target: FBXCTestCore
       - target: SimulatorFrameworkBridgeProtocol
       - target: SimulatorIPC
-      - target: SimulatorXCTest
       - target: ZstdDecompress
       - sdk: AVFoundation.framework
       - sdk: Cocoa.framework
@@ -877,11 +877,11 @@ targets:
       - target: FBSimulatorAX
       - target: FBSimulatorControl
       - target: FBSimulatorVideo
+      - target: FBSimulatorXCTest
       - target: FBVideoCore
       - target: FBXCTestCore
       - target: SimulatorFrameworkBridgeProtocol
       - target: SimulatorIPC
-      - target: SimulatorXCTest
       - target: ZstdDecompress
       - sdk: AVFoundation.framework
       - sdk: Cocoa.framework
@@ -966,11 +966,11 @@ targets:
       - target: FBSimulatorAX
       - target: FBSimulatorControl
       - target: FBSimulatorVideo
+      - target: FBSimulatorXCTest
       - target: FBVideoCore
       - target: FBXCTestCore
       - target: SimulatorFrameworkBridgeProtocol
       - target: SimulatorIPC
-      - target: SimulatorXCTest
       - target: ZstdDecompress
       - sdk: AVFoundation.framework
       - sdk: Cocoa.framework

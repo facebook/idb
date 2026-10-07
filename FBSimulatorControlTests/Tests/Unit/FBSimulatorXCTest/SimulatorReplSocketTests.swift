@@ -6,8 +6,8 @@
  */
 
 @testable import FBSimulatorControl
+@testable import FBSimulatorXCTest
 import Foundation
-@testable import SimulatorXCTest
 // Matches the existing XCTest-based FBSimulatorControl unit suite.
 // ast-grep-ignore: swift-testing/swift/no-new-xctest
 import XCTest

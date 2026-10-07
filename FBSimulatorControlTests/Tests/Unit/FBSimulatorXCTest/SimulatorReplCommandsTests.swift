@@ -7,7 +7,7 @@
 
 import FBControlCore
 @testable import FBSimulatorControl
-@testable import SimulatorXCTest
+@testable import FBSimulatorXCTest
 import XCTest
 
 /// What the simulator-context REPL spawns inside the simulator, and when its session is over.
