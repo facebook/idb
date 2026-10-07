@@ -100,6 +100,9 @@ public final class LogicTestRunStrategy {
   // them does not wait for those dispatches, so the end of the plan is reported from the same
   // serial queue to land behind them.
   private func afterQueuedOutput(_ report: @escaping () -> Void) async {
+    // The reporter is not Sendable, but every call to it, this one included, runs on that one
+    // serial queue.
+    nonisolated(unsafe) let report = report
     await withCheckedContinuation { (continuation: CheckedContinuation<Void, Never>) in
       target.workQueue.async {
         report()
