@@ -104,10 +104,12 @@ public struct TemporaryDirectory: Equatable, Sendable {
     _ body: (URL) async throws -> T
   ) async throws -> T {
     try await withTemporaryDirectory { tempDir in
-      try await ArchiveExtractors.stream(compression).extract(
-        .stream(input), to: tempDir.path,
-        options: ArchiveExtractOptions(overrideModificationTime: overrideMTime),
-        logger: logger)
+      try await withAttached(input) {
+        try await ArchiveExtractors.stream(compression).extract(
+          from: $0, to: tempDir.path,
+          options: ArchiveExtractOptions(overrideModificationTime: overrideMTime),
+          logger: logger)
+      }
       return try await body(tempDir)
     }
   }
@@ -126,7 +128,7 @@ public struct TemporaryDirectory: Equatable, Sendable {
   ) async throws -> T {
     try await withTemporaryDirectory { tempDir in
       try await ArchiveExtractors.default.extract(
-        .filePath(filePath), to: tempDir.path,
+        fromFile: filePath, to: tempDir.path,
         options: ArchiveExtractOptions(overrideModificationTime: overrideMTime),
         logger: logger)
       return try await body(tempDir)

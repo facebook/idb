@@ -114,11 +114,10 @@ final class RecordingExtractor: ArchiveExtractor {
     !extractions.isEmpty
   }
 
-  func extract(_ source: ArchiveSource, to extractPath: String, options: ArchiveExtractOptions, logger: any ControlCoreLogger) async throws {
-    let path: String? = if case .filePath(let path) = source { path } else { nil }
+  func extract(fromFile path: String, to extractPath: String, options: ArchiveExtractOptions, logger: any ControlCoreLogger) async throws {
     let existing = try FileManager.default.contentsOfDirectory(atPath: extractPath)
     recorded.withLock { $0.append((path, existing)) }
-    try await wrapped?.extract(source, to: extractPath, options: options, logger: logger)
+    try await wrapped?.extract(fromFile: path, to: extractPath, options: options, logger: logger)
   }
 
   func extract(from source: any ByteSource, to extractPath: String, options: ArchiveExtractOptions, logger: any ControlCoreLogger) async throws {

@@ -23,7 +23,7 @@ struct ZipExtractorTests {
   private func expectParityWithBSDTar(_ archive: String) async throws {
     let expected = root.appendingPathComponent("bsdtar").path
     try fileManager.createDirectory(atPath: expected, withIntermediateDirectories: true)
-    try await BSDTarExtractor().extract(.filePath(archive), to: expected, options: ArchiveExtractOptions(), logger: logger)
+    try await BSDTarExtractor().extract(fromFile: archive, to: expected, options: ArchiveExtractOptions(), logger: logger)
     let extracted = root.appendingPathComponent("inprocess").path
     try fileManager.createDirectory(atPath: extracted, withIntermediateDirectories: true)
 
@@ -134,7 +134,7 @@ struct ZipExtractorTests {
     try fileManager.createDirectory(atPath: extracted, withIntermediateDirectories: true)
     let fallback = RecordingExtractor()
 
-    try await InProcessZipExtractor(fallback: fallback).extract(.filePath(archive), to: extracted, options: ArchiveExtractOptions(), logger: logger)
+    try await InProcessZipExtractor(fallback: fallback).extract(fromFile: archive, to: extracted, options: ArchiveExtractOptions(), logger: logger)
 
     #expect(!fallback.wasReached)
     #expect(fileManager.fileExists(atPath: "\(extracted)/A.app/Info.plist"))
@@ -149,7 +149,7 @@ struct ZipExtractorTests {
     try fileManager.createDirectory(atPath: extracted, withIntermediateDirectories: true)
     let fallback = RecordingExtractor()
 
-    try await InProcessZipExtractor(fallback: fallback).extract(.filePath(archive), to: extracted, options: ArchiveExtractOptions(), logger: logger)
+    try await InProcessZipExtractor(fallback: fallback).extract(fromFile: archive, to: extracted, options: ArchiveExtractOptions(), logger: logger)
 
     #expect(fallback.extractions.map(\.path) == [archive])
   }
@@ -164,7 +164,7 @@ struct ZipExtractorTests {
     try fileManager.createDirectory(atPath: extracted, withIntermediateDirectories: true)
     let fallback = RecordingExtractor()
 
-    try await InProcessZipExtractor(fallback: fallback).extract(.filePath(archive), to: extracted, options: ArchiveExtractOptions(), logger: logger)
+    try await InProcessZipExtractor(fallback: fallback).extract(fromFile: archive, to: extracted, options: ArchiveExtractOptions(), logger: logger)
 
     let extractions = fallback.extractions
     #expect(extractions.map(\.path) == [archive])

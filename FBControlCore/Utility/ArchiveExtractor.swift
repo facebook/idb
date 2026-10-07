@@ -7,16 +7,6 @@
 
 import Foundation
 
-/// Where an archive is read from.
-///
-/// The distinction matters to the extractor rather than to the caller: a file can
-/// be seeked, so a format that keeps its index at the end of the archive can be
-/// read in full, whereas a stream can only be read forwards.
-public enum ArchiveSource {
-  case filePath(String)
-  case stream(FBProcessInput<AnyObject>)
-}
-
 /// How to unpack, as opposed to what to unpack.
 public struct ArchiveExtractOptions: Sendable {
 
@@ -32,11 +22,13 @@ public struct ArchiveExtractOptions: Sendable {
 /// Unpacks an archive into a directory.
 ///
 /// Extraction is behind a protocol so the mechanism can be replaced without any
-/// caller changing.
+/// caller changing. A file and a stream are distinct because a file can be seeked,
+/// so a format that keeps its index at the end of the archive can be read in full,
+/// whereas a stream can only be read forwards.
 public protocol ArchiveExtractor: Sendable {
 
   func extract(
-    _ source: ArchiveSource,
+    fromFile path: String,
     to extractPath: String,
     options: ArchiveExtractOptions,
     logger: any ControlCoreLogger
@@ -58,23 +50,16 @@ public struct BSDTarExtractor: ArchiveExtractor {
   public init() {}
 
   public func extract(
-    _ source: ArchiveSource,
+    fromFile path: String,
     to extractPath: String,
     options: ArchiveExtractOptions,
     logger: any ControlCoreLogger
   ) async throws {
-    switch source {
-    case .filePath(let path):
-      _ = try await FBArchiveOperations.extractArchive(
-        atPath: path,
-        toPath: extractPath,
-        overrideModificationTime: options.overrideModificationTime,
-        logger: logger)
-    case .stream(let input):
-      try await withAttached(input) { source in
-        try await extract(from: source, to: extractPath, options: options, logger: logger)
-      }
-    }
+    _ = try await FBArchiveOperations.extractArchive(
+      atPath: path,
+      toPath: extractPath,
+      overrideModificationTime: options.overrideModificationTime,
+      logger: logger)
   }
 
   public func extract(
@@ -103,13 +88,13 @@ public struct InProcessZipExtractor: ArchiveExtractor {
   }
 
   public func extract(
-    _ source: ArchiveSource,
+    fromFile path: String,
     to extractPath: String,
     options: ArchiveExtractOptions,
     logger: any ControlCoreLogger
   ) async throws {
-    guard case .filePath(let path) = source, Self.isZip(atPath: path) else {
-      return try await fallback.extract(source, to: extractPath, options: options, logger: logger)
+    guard Self.isZip(atPath: path) else {
+      return try await fallback.extract(fromFile: path, to: extractPath, options: options, logger: logger)
     }
     let start = Date()
     do {
@@ -122,7 +107,7 @@ public struct InProcessZipExtractor: ArchiveExtractor {
       logger.log("Extracting \(path) again with \(type(of: fallback)), as extracting it in-process failed: \(error)")
     }
     ArchiveExtraction.removeContents(of: extractPath)
-    try await fallback.extract(source, to: extractPath, options: options, logger: logger)
+    try await fallback.extract(fromFile: path, to: extractPath, options: options, logger: logger)
   }
 
   /// A zip is read in-process only from a complete file, so a stream goes to `fallback`.
@@ -156,17 +141,12 @@ public struct InProcessTarExtractor: ArchiveExtractor {
   }
 
   public func extract(
-    _ source: ArchiveSource,
+    fromFile path: String,
     to extractPath: String,
     options: ArchiveExtractOptions,
     logger: any ControlCoreLogger
   ) async throws {
-    guard case .stream(let input) = source else {
-      return try await fallback.extract(source, to: extractPath, options: options, logger: logger)
-    }
-    try await withAttached(input) { source in
-      try await extract(from: source, to: extractPath, options: options, logger: logger)
-    }
+    try await fallback.extract(fromFile: path, to: extractPath, options: options, logger: logger)
   }
 
   public func extract(

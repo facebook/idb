@@ -179,7 +179,7 @@ final class FBArchiveOperationsTests: XCTestCase {
   ) async throws -> String {
     let destination = try makeExtractionDirectory()
     try await ArchiveExtractors.default.extract(
-      .filePath(archive),
+      fromFile: archive,
       to: destination,
       options: ArchiveExtractOptions(overrideModificationTime: overrideModificationTime),
       logger: logger)
@@ -191,12 +191,13 @@ final class FBArchiveOperationsTests: XCTestCase {
   ) async throws -> String {
     let destination = try makeExtractionDirectory()
     let data = try Data(contentsOf: URL(fileURLWithPath: archive))
-    let input = FBProcessInput<NSData>(from: data).retyped(FBProcessInput<AnyObject>.self)
-    try await ArchiveExtractors.default.extract(
-      .stream(input),
-      to: destination,
-      options: ArchiveExtractOptions(overrideModificationTime: overrideModificationTime),
-      logger: logger)
+    try await BytePipe(data).reading {
+      try await ArchiveExtractors.default.extract(
+        from: $0,
+        to: destination,
+        options: ArchiveExtractOptions(overrideModificationTime: overrideModificationTime),
+        logger: logger)
+    }
     return destination
   }
 
@@ -336,10 +337,11 @@ final class FBArchiveOperationsTests: XCTestCase {
   }
 
   func testBSDTarExtractingAStream_WhenItIsCorrupt_FailsWithBSDTarsStandardError() async throws {
-    let input = FBProcessInput<NSData>(from: Data("not an archive at all".utf8)).retyped(FBProcessInput<AnyObject>.self)
+    let input = BytePipe(Data("not an archive at all".utf8))
+    let root = try makeExtractionDirectory()
 
     do {
-      try await BSDTarExtractor().extract(.stream(input), to: try makeExtractionDirectory(), options: ArchiveExtractOptions(), logger: logger)
+      try await input.reading { try await BSDTarExtractor().extract(from: $0, to: root, options: ArchiveExtractOptions(), logger: logger) }
       XCTFail("Expected the extraction to fail")
     } catch {
       XCTAssertTrue(error.localizedDescription.hasPrefix("Exit Code 1 is not acceptable [0]: "), error.localizedDescription)
@@ -348,10 +350,11 @@ final class FBArchiveOperationsTests: XCTestCase {
   }
 
   func testBSDTarExtractingAStream_WhenItStopsReadingEarly_FailsRatherThanWaiting() async throws {
-    let input = FBProcessInput<NSData>(from: Self.randomData(count: 8 << 20)).retyped(FBProcessInput<AnyObject>.self)
+    let input = BytePipe(Self.randomData(count: 8 << 20))
+    let root = try makeExtractionDirectory()
 
     do {
-      try await BSDTarExtractor().extract(.stream(input), to: try makeExtractionDirectory(), options: ArchiveExtractOptions(), logger: logger)
+      try await input.reading { try await BSDTarExtractor().extract(from: $0, to: root, options: ArchiveExtractOptions(), logger: logger) }
       XCTFail("Expected the extraction to fail")
     } catch {
       XCTAssertTrue(error.localizedDescription.hasPrefix("Exit Code 1 is not acceptable [0]"), error.localizedDescription)
@@ -365,10 +368,10 @@ final class FBArchiveOperationsTests: XCTestCase {
     let contents = Self.randomData(count: 8 << 20)
     try contents.write(to: URL(fileURLWithPath: (source as NSString).appendingPathComponent("Payload/Sample.app/Large")))
     let archive = try makeArchive(from: source, format: .gzippedTar)
-    let input = FBProcessInput<NSData>(from: try Data(contentsOf: URL(fileURLWithPath: archive))).retyped(FBProcessInput<AnyObject>.self)
+    let input = BytePipe(try Data(contentsOf: URL(fileURLWithPath: archive)))
     let root = try makeExtractionDirectory()
 
-    try await BSDTarExtractor().extract(.stream(input), to: root, options: ArchiveExtractOptions(), logger: logger)
+    try await input.reading { try await BSDTarExtractor().extract(from: $0, to: root, options: ArchiveExtractOptions(), logger: logger) }
 
     try assertPayloadContents(extractedTo: root)
     XCTAssertEqual(try Data(contentsOf: URL(fileURLWithPath: (root as NSString).appendingPathComponent("Payload/Sample.app/Large"))), contents)

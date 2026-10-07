@@ -84,7 +84,7 @@ struct TarStreamExtractorTests {
   private func expectParityWithBSDTar(_ archive: String, streaming streamed: Data? = nil) async throws {
     let expected = root.appendingPathComponent("bsdtar").path
     try fileManager.createDirectory(atPath: expected, withIntermediateDirectories: true)
-    try await BSDTarExtractor().extract(.filePath(archive), to: expected, options: ArchiveExtractOptions(), logger: logger)
+    try await BSDTarExtractor().extract(fromFile: archive, to: expected, options: ArchiveExtractOptions(), logger: logger)
     let extracted = root.appendingPathComponent("inprocess").path
 
     let outcome = try extractFromPipe(try streamed ?? Data(contentsOf: URL(fileURLWithPath: archive)), to: extracted)
@@ -248,12 +248,14 @@ struct TarStreamExtractorTests {
     let expected = root.appendingPathComponent("bsdtar").path
     try fileManager.createDirectory(atPath: expected, withIntermediateDirectories: true)
     // Streamed, as a zip read without its central directory extracts differently.
-    let stream = { FBProcessInput<NSData>(from: try Data(contentsOf: URL(fileURLWithPath: archive))).retyped(FBProcessInput<AnyObject>.self) }
-    try await BSDTarExtractor().extract(.stream(try stream()), to: expected, options: ArchiveExtractOptions(), logger: logger)
+    let data = try Data(contentsOf: URL(fileURLWithPath: archive))
+    try await BytePipe(data).reading { try await BSDTarExtractor().extract(from: $0, to: expected, options: ArchiveExtractOptions(), logger: logger) }
     let extracted = root.appendingPathComponent("inprocess").path
     try fileManager.createDirectory(atPath: extracted, withIntermediateDirectories: true)
 
-    try await InProcessTarExtractor(fallback: BSDTarExtractor()).extract(.stream(try stream()), to: extracted, options: ArchiveExtractOptions(), logger: logger)
+    try await BytePipe(data).reading {
+      try await InProcessTarExtractor(fallback: BSDTarExtractor()).extract(from: $0, to: extracted, options: ArchiveExtractOptions(), logger: logger)
+    }
 
     let expectedTree = try tree(at: expected)
     let extractedTree = try tree(at: extracted)
@@ -267,9 +269,10 @@ struct TarStreamExtractorTests {
     let (outcomes, outcome) = AsyncStream<Result<Void, Error>>.makeStream()
     Task {
       do {
-        let input = FBProcessInput<NSData>(from: Data(repeating: 0x41, count: 4096)).retyped(FBProcessInput<AnyObject>.self)
-        try await InProcessTarExtractor(fallback: FailingBeforeReading()).extract(
-          .stream(input), to: extracted, options: ArchiveExtractOptions(), logger: ControlCoreGlobalConfiguration.defaultLogger)
+        try await BytePipe(Data(repeating: 0x41, count: 4096)).reading {
+          try await InProcessTarExtractor(fallback: FailingBeforeReading()).extract(
+            from: $0, to: extracted, options: ArchiveExtractOptions(), logger: ControlCoreGlobalConfiguration.defaultLogger)
+        }
         outcome.yield(.success(()))
       } catch {
         outcome.yield(.failure(error))
@@ -287,7 +290,7 @@ struct TarStreamExtractorTests {
   }
 
   private struct RefusingExtractor: ArchiveExtractor {
-    func extract(_ source: ArchiveSource, to extractPath: String, options: ArchiveExtractOptions, logger: any ControlCoreLogger) async throws {
+    func extract(fromFile path: String, to extractPath: String, options: ArchiveExtractOptions, logger: any ControlCoreLogger) async throws {
       throw ArchiveError.corrupt("passed on to the fallback")
     }
 
@@ -303,23 +306,25 @@ struct TarStreamExtractorTests {
     try run("/usr/bin/tar", ["-cf", archive.path, "-C", root.path, "A.app"])
     let expected = root.appendingPathComponent("bsdtar").path
     try fileManager.createDirectory(atPath: expected, withIntermediateDirectories: true)
-    try await BSDTarExtractor().extract(.filePath(archive.path), to: expected, options: ArchiveExtractOptions(), logger: logger)
+    try await BSDTarExtractor().extract(fromFile: archive.path, to: expected, options: ArchiveExtractOptions(), logger: logger)
     let extracted = root.appendingPathComponent("inprocess").path
     try fileManager.createDirectory(atPath: extracted, withIntermediateDirectories: true)
-    let stream = FBProcessInput<NSData>(from: ZstdFrame.stored(try Data(contentsOf: archive))).retyped(FBProcessInput<AnyObject>.self)
+    let stream = BytePipe(ZstdFrame.stored(try Data(contentsOf: archive)))
 
-    try await InProcessTarExtractor(fallback: RefusingExtractor()).extract(.stream(stream), to: extracted, options: ArchiveExtractOptions(), logger: logger)
+    try await stream.reading {
+      try await InProcessTarExtractor(fallback: RefusingExtractor()).extract(from: $0, to: extracted, options: ArchiveExtractOptions(), logger: logger)
+    }
 
     #expect(try tree(at: extracted) == tree(at: expected))
   }
 }
 
-/// Fails without attaching its input, as a fallback cancelled before it starts does.
+/// Fails without reading its input, as a fallback cancelled before it starts does.
 private struct FailingBeforeReading: ArchiveExtractor {
 
   struct Failure: Error, Equatable {}
 
-  func extract(_ source: ArchiveSource, to extractPath: String, options: ArchiveExtractOptions, logger: any ControlCoreLogger) async throws {
+  func extract(fromFile path: String, to extractPath: String, options: ArchiveExtractOptions, logger: any ControlCoreLogger) async throws {
     throw Failure()
   }
 

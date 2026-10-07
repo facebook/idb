@@ -64,7 +64,7 @@ struct ArchiveCorpusTests {
     let expected = root.appendingPathComponent("bsdtar-\(UUID().uuidString)").path
     do {
       try FileManager.default.createDirectory(atPath: expected, withIntermediateDirectories: true)
-      try await BSDTarExtractor().extract(.filePath(archive.path), to: expected, options: ArchiveExtractOptions(), logger: logger)
+      try await BSDTarExtractor().extract(fromFile: archive.path, to: expected, options: ArchiveExtractOptions(), logger: logger)
       let tree = try ArchiveFixtures.bsdtarTree(at: expected, keepHardLinks: keepHardLinks, directoryTimes: directoryTimes)
       // An empty archive is no app, which an install rightly refuses.
       return tree.isEmpty ? .failed("nothing extracted") : .extracted(tree)
@@ -94,11 +94,11 @@ struct ArchiveCorpusTests {
 
     switch route {
     case .file:
-      try await extractor.extract(.filePath(archive.path), to: extracted, options: ArchiveExtractOptions(), logger: logger)
+      try await extractor.extract(fromFile: archive.path, to: extracted, options: ArchiveExtractOptions(), logger: logger)
     case .stream:
-      let input = FBProcessInput<NSData>(from: try Data(contentsOf: archive)).retyped(FBProcessInput<AnyObject>.self)
+      let input = BytePipe(try Data(contentsOf: archive))
       do {
-        try await extractor.extract(.stream(input), to: extracted, options: ArchiveExtractOptions(), logger: logger)
+        try await input.reading { try await extractor.extract(from: $0, to: extracted, options: ArchiveExtractOptions(), logger: logger) }
       } catch  where route.streamsAZipToBSDTar(producer) {
         // BUG: bsdtar may stop reading a zip on its stdin early, failing the write; flipped once streams are sniffed before an extractor is chosen.
         return

@@ -182,7 +182,7 @@ public enum Staging {
     case .localPath(let path):
       try await runExtractStage(to: extractPath, totalStart: totalStart, onProgress: onProgress) {
         try await ArchiveExtractors.default.extract(
-          .filePath(path), to: extractPath, options: options.extractOptions, logger: logger)
+          fromFile: path, to: extractPath, options: options.extractOptions, logger: logger)
       }
     case .processInput(let input):
       // The caller owns the writing end, so a writer that fails partway reaches
@@ -332,7 +332,7 @@ public enum Staging {
     onSpoolFallback()
     ArchiveExtraction.removeContents(of: extractPath)
     try await ArchiveExtractors.default.extract(
-      .filePath(spoolPath), to: extractPath, options: options.extractOptions, logger: logger)
+      fromFile: spoolPath, to: extractPath, options: options.extractOptions, logger: logger)
   }
 
   /// Reads `source` to its end, extracting it as it goes and writing it,
