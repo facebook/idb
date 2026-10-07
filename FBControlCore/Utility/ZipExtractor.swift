@@ -7,7 +7,6 @@
 
 import Foundation
 import os
-import zlib
 
 /// Extracts a complete zip file from its central directory, writing several
 /// files at once: an app bundle is tens of thousands of small files, and
@@ -177,64 +176,13 @@ public enum ZipExtractor {
       throw ArchiveError.corrupt("no local header for \(entry.path)")
     }
     let dataOffset = entry.localHeaderOffset + 30 + UInt64(Data(header).uint16(at: 26)) + UInt64(Data(header).uint16(at: 28))
-    var crc = crc32(0, nil, 0)
-    var size: UInt64 = 0
-    func emit(_ buffer: UnsafeRawBufferPointer) throws {
-      crc = crc32(crc, buffer.bindMemory(to: Bytef.self).baseAddress, uInt(buffer.count))
-      size += UInt64(buffer.count)
-      try output(buffer)
+    var decoded: (crc32: UInt32, size: UInt64) = (0, 0)
+    if entry.compressedSize > 0 {
+      let input = PeekableSource(FileRangeSource(archive, offset: dataOffset, length: entry.compressedSize), capacity: 1 << 20)
+      decoded = try ZipEntryData.decode(entry.path, method: entry.method, compressedSize: entry.compressedSize, from: input, into: output)
     }
-    switch entry.method {
-    case 0:
-      try readCompressed(entry, at: dataOffset, from: archive, into: emit)
-    case 8:
-      try inflate(entry, at: dataOffset, from: archive, into: emit)
-    default:
-      throw ArchiveError.unsupported("compression method \(entry.method)")
-    }
-    guard size == entry.size, UInt32(crc) == entry.crc32 else {
+    guard decoded.size == entry.size, decoded.crc32 == entry.crc32 else {
       throw ArchiveError.corrupt("\(entry.path) does not match its size or CRC")
-    }
-  }
-
-  private static let chunkSize = 1 << 20
-
-  private static func readCompressed(_ entry: ZipCentralDirectory.Entry, at offset: UInt64, from archive: Int32, into output: (UnsafeRawBufferPointer) throws -> Void) throws {
-    var buffer = [UInt8](repeating: 0, count: min(chunkSize, max(Int(entry.compressedSize), 1)))
-    var remaining = entry.compressedSize
-    var position = offset
-    while remaining > 0 {
-      let count = pread(archive, &buffer, Int(min(UInt64(buffer.count), remaining)), off_t(position))
-      guard count > 0 else {
-        throw ArchiveError.corrupt("\(entry.path) is truncated")
-      }
-      try buffer.withUnsafeBytes { try output(UnsafeRawBufferPointer(rebasing: $0[0..<count])) }
-      remaining -= UInt64(count)
-      position += UInt64(count)
-    }
-  }
-
-  private static func inflate(_ entry: ZipCentralDirectory.Entry, at offset: UInt64, from archive: Int32, into output: (UnsafeRawBufferPointer) throws -> Void) throws {
-    guard let inflater = Inflater(.deflate) else {
-      throw ArchiveError.corrupt("cannot inflate \(entry.path)")
-    }
-    var decompressed = [UInt8](repeating: 0, count: chunkSize)
-    var finished = false
-    try readCompressed(entry, at: offset, from: archive) { compressed in
-      var remaining = compressed
-      var filled: Bool
-      repeat {
-        guard let step = decompressed.withUnsafeMutableBytes({ inflater.inflate(remaining, into: $0) }) else {
-          throw ArchiveError.corrupt("\(entry.path) does not inflate")
-        }
-        remaining = UnsafeRawBufferPointer(rebasing: remaining[step.consumed...])
-        try decompressed.withUnsafeBytes { try output(UnsafeRawBufferPointer(rebasing: $0[0..<step.produced])) }
-        finished = step.ended
-        filled = step.produced == decompressed.count
-      } while filled && !finished
-    }
-    guard finished || entry.size == 0 else {
-      throw ArchiveError.corrupt("\(entry.path) is truncated")
     }
   }
 }

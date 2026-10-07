@@ -6,7 +6,6 @@
  */
 
 import Foundation
-import zlib
 
 /// Extracts a zip read forwards as it arrives, from each entry's local header,
 /// decoding on the calling thread and writing several files at once.
@@ -194,25 +193,7 @@ public enum ZipStreamExtractor {
     /// CRC, and returns their size.
     @discardableResult
     mutating func decode(_ header: LocalHeader, into output: (UnsafeRawBufferPointer) throws -> Void) throws -> UInt64 {
-      var crc = zlib.crc32(0, nil, 0)
-      var size: UInt64 = 0
-      func emit(_ chunk: UnsafeRawBufferPointer) throws {
-        crc = zlib.crc32(crc, chunk.bindMemory(to: Bytef.self).baseAddress, uInt(chunk.count))
-        size += UInt64(chunk.count)
-        try output(chunk)
-      }
-      if header.method == 0 {
-        var remaining = header.compressedSize
-        while remaining > 0 {
-          try ensure(1)
-          let count = Int(min(UInt64(input.available), remaining))
-          try input.withAvailable { try emit(UnsafeRawBufferPointer(rebasing: $0[0..<count])) }
-          input.consume(count)
-          remaining -= UInt64(count)
-        }
-      } else {
-        try inflate(header.path, into: emit)
-      }
+      let decoded = try ZipEntryData.decode(header.path, method: header.method, compressedSize: header.compressedSize, from: input, into: output)
       var expected = (crc32: header.crc32, size: header.size)
       if header.flags & 8 != 0 {
         if try peekSignature() == ZipSignature.dataDescriptor {
@@ -222,31 +203,10 @@ public enum ZipStreamExtractor {
         let descriptor = try read(4 + 2 * width)
         expected = (descriptor.uint32(at: 0), header.zip64 ? descriptor.uint64(at: 12) : UInt64(descriptor.uint32(at: 8)))
       }
-      guard size == expected.size, UInt32(crc) == expected.crc32 else {
+      guard decoded.size == expected.size, decoded.crc32 == expected.crc32 else {
         throw ArchiveError.corrupt("\(header.path) does not match its size or CRC")
       }
-      return size
-    }
-
-    private mutating func inflate(_ path: String, into output: (UnsafeRawBufferPointer) throws -> Void) throws {
-      guard let inflater = Inflater(.deflate) else {
-        throw ArchiveError.corrupt("cannot inflate \(path)")
-      }
-      var decompressed = [UInt8](repeating: 0, count: 1 << 18)
-      while true {
-        try ensure(1)
-        let step = input.withAvailable { compressed in
-          decompressed.withUnsafeMutableBytes { inflater.inflate(compressed, into: $0) }
-        }
-        guard let step else {
-          throw ArchiveError.corrupt("\(path) does not inflate")
-        }
-        input.consume(step.consumed)
-        try decompressed.withUnsafeBytes { try output(UnsafeRawBufferPointer(rebasing: $0[0..<step.produced])) }
-        if step.ended {
-          return
-        }
-      }
+      return decoded.size
     }
   }
 }

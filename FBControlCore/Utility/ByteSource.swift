@@ -54,6 +54,38 @@ public final class FileDescriptorSource: ByteSource {
   }
 }
 
+/// Reads `length` bytes of a file descriptor from `offset`, which the caller owns, leaving its file offset alone so that
+/// several can read one file at once. Ends early if the file does.
+final class FileRangeSource: ByteSource {
+
+  private let fileDescriptor: Int32
+  private var offset: UInt64
+  private var remaining: UInt64
+
+  init(_ fileDescriptor: Int32, offset: UInt64, length: UInt64) {
+    self.fileDescriptor = fileDescriptor
+    self.offset = offset
+    remaining = length
+  }
+
+  func read(into buffer: UnsafeMutableRawBufferPointer) throws -> Int {
+    guard remaining > 0, !buffer.isEmpty else {
+      return 0
+    }
+    while true {
+      let count = pread(fileDescriptor, buffer.baseAddress, Int(min(UInt64(buffer.count), remaining)), off_t(offset))
+      if count >= 0 {
+        offset += UInt64(count)
+        remaining = count == 0 ? 0 : remaining - UInt64(count)
+        return count
+      }
+      guard errno == EINTR else {
+        throw POSIXError.current
+      }
+    }
+  }
+}
+
 /// Reads another source, writing everything read to a file as well. Draining reads
 /// to the end through the file, so what a reader stops short of still reaches it.
 final class TeeSource: ByteSource {
