@@ -78,9 +78,6 @@ enum MultisourceFileReader {
     return filePaths
   }
 
-  // The producer has to run concurrently with the extractor reading the other end: the pipe
-  // holds only a buffer's worth, so filling it sequentially before the reader starts would
-  // deadlock on anything larger than that.
   private static func pipeToInput<Request: PayloadExtractable>(initialData: Data, requestStream: RequestStreamReader<Request>) -> (Task<Void, Error>, FBProcessInput<OutputStream>) {
     let input = FBProcessInput<OutputStream>.fromStream()
     let stream = input.contents
@@ -103,27 +100,15 @@ enum MultisourceFileReader {
     from requestStream: RequestStreamReader<Request>,
     to stream: OutputStream
   ) async throws {
-    try write(initialData, to: stream)
-
-    for try await request in requestStream {
+    let frames = requestStream.map { request -> Data in
       guard let payload = request.extractPayload()
       else { throw RPCError(code: .invalidArgument, message: "Unrecognized buffer frame. Expect payload, got \(request)") }
 
       guard case .data(let data) = payload.source
       else { throw RPCError(code: .invalidArgument, message: "Unrecognized buffer frame. Expect file path, got \(payload.source as Any)") }
 
-      try write(data, to: stream)
+      return data
     }
-  }
-
-  /// The stream writes every byte or none: it loops internally until the whole buffer is gone and
-  /// reports `-1` only on a real failure, so a negative result ends the transfer rather than
-  /// being something to retry or resume from.
-  private static func write(_ data: Data, to stream: OutputStream) throws {
-    var buffer = [UInt8](data)
-    guard stream.write(&buffer, maxLength: buffer.count) >= 0 else {
-      let reason = stream.streamError?.localizedDescription ?? "Unknown"
-      throw RPCError(code: .aborted, message: "Failed to write \(buffer.count) bytes to the extraction pipe: \(reason)")
-    }
+    try await PayloadPump.write(head: initialData, frames: frames, to: stream)
   }
 }

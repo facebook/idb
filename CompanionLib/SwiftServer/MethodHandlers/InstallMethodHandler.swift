@@ -271,23 +271,10 @@ struct InstallMethodHandler {
     defer { output.close() }
 
     try await telemetry.receive { receive in
-      try output.writeAll(head)
-      receive.count(head)
-      var frames = rest.makeAsyncIterator()
-      while true {
-        let frame: Data?
-        do {
-          frame = try await frames.next()
-        } catch {
-          clientFailure.withLock { $0 = error }
-          throw error
-        }
-        guard let data = frame else {
-          return
-        }
-        try output.writeAll(data)
-        receive.count(data)
-      }
+      try await PayloadPump.write(
+        head: head, frames: rest, to: output,
+        onWrite: { receive.count($0) },
+        onClientFailure: { error in clientFailure.withLock { $0 = error } })
     }
   }
 
