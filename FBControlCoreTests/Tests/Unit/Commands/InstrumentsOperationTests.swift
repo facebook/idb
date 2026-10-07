@@ -53,7 +53,7 @@ final class InstrumentsOperationTests: XCTestCase {
     let traceFile = URL(fileURLWithPath: "/tmp/does-not-need-to-exist.trace")
 
     let result = try await InstrumentsOperation.postProcess(
-      arguments: nil, traceFile: traceFile, queue: .main, logger: nil)
+      arguments: nil, traceFile: traceFile, logger: nil)
 
     XCTAssertEqual(result, traceFile, "Absent post-processing arguments should pass the trace file straight through")
   }
@@ -62,7 +62,7 @@ final class InstrumentsOperationTests: XCTestCase {
     let traceFile = URL(fileURLWithPath: "/tmp/does-not-need-to-exist.trace")
 
     let result = try await InstrumentsOperation.postProcess(
-      arguments: [], traceFile: traceFile, queue: .main, logger: nil)
+      arguments: [], traceFile: traceFile, logger: nil)
 
     XCTAssertEqual(result, traceFile, "Empty post-processing arguments should pass the trace file straight through")
   }
@@ -80,7 +80,7 @@ final class InstrumentsOperationTests: XCTestCase {
 
     let result = try await InstrumentsOperation.postProcess(
       arguments: ["/bin/bash", scriptFile.path, "processed.trace"] + extraArguments,
-      traceFile: traceFile, queue: .main, logger: logger)
+      traceFile: traceFile, logger: logger)
     return (traceFile, result)
   }
 

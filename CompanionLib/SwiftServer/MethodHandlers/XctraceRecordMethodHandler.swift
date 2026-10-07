@@ -123,7 +123,6 @@ struct XctraceRecordMethodHandler {
     let processed = try await InstrumentsOperation.postProcess(
       arguments: stop.args,
       traceFile: operation.traceDir,
-      queue: BridgeQueues.miscEventReaderQueue,
       logger: logger)
     finishedWriting.set(true)
 

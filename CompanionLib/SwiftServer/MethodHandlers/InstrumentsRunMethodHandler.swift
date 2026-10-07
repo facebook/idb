@@ -75,7 +75,6 @@ struct InstrumentsRunMethodHandler {
     let processed = try await InstrumentsOperation.postProcess(
       arguments: postProcessArguments,
       traceFile: traceFile,
-      queue: BridgeQueues.futureSerialFullfillmentQueue,
       logger: logger)
     let processedPath = processed.path
     finishedWriting.set(true)

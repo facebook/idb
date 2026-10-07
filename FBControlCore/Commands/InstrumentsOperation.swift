@@ -219,7 +219,6 @@ public final class InstrumentsOperation {
   public class func postProcess(
     arguments: [String]?,
     traceFile: URL,
-    queue: DispatchQueue,
     logger: (any ControlCoreLogger)?
   ) async throws -> URL {
     guard let arguments, !arguments.isEmpty else {
