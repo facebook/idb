@@ -41,14 +41,26 @@ extension TestBundleConnectionError: LocalizedError {
   }
 }
 
+/// How far the test bundle got through its test plan.
+enum TestPlanOutcome {
+  case unfinished
+  case finished
+}
+
 /// What the test bundle and testmanagerd have done over the connection, as events to wait on.
 final class TestBundleEvents: NSObject, FBTestBundleDTXConnectionDelegate, @unchecked Sendable {
   let proxyChannelOpened = AsyncEvent<Void>()
   let sessionStarted = AsyncEvent<Void>()
   let bundleReady = AsyncEvent<Void>()
-  /// Also happens when the bundle fails, which ends the test plan without it finishing.
-  let testPlanEnded = AsyncEvent<Void>()
   let disconnected = AsyncEvent<Void>()
+
+  private let lock = NSLock()
+  private var outcome = TestPlanOutcome.unfinished
+
+  /// Read once the connection has gone away.
+  var testPlanOutcome: TestPlanOutcome {
+    lock.withLock { outcome }
+  }
 
   func testBundleConnectionDidOpenProxyChannel() {
     proxyChannelOpened.happen()
@@ -68,15 +80,24 @@ final class TestBundleEvents: NSObject, FBTestBundleDTXConnectionDelegate, @unch
 
   func testBundleConnectionBundleDidFailWithError(_ error: Error) {
     bundleReady.fail(error)
-    testPlanEnded.fail(error)
+    endTestPlan(.finished)
   }
 
   func testBundleConnectionDidFinishTestPlan() {
-    testPlanEnded.happen()
+    endTestPlan(.finished)
   }
 
   func testBundleConnectionDidDisconnect() {
     disconnected.happen()
+  }
+
+  private func endTestPlan(_ ending: TestPlanOutcome) {
+    lock.withLock {
+      guard case .unfinished = outcome else {
+        return
+      }
+      outcome = ending
+    }
   }
 }
 
@@ -132,9 +153,10 @@ final class TestBundleConnection {
     }
     core.startExecutingTestPlan()
     try await events.disconnected.wait()
-    if events.testPlanEnded.hasHappened {
+    switch events.testPlanOutcome {
+    case .finished:
       self.logger.log("Bundle disconnected, with the test plan completed. Bundle exited successfully.")
-    } else {
+    case .unfinished:
       self.logger.log("Bundle disconnected, but test plan has not completed. This could mean a crash has occurred")
       throw await self.crashLogOrNotFoundError(description: "Lost connection to test process, but could not find a crash log")
     }

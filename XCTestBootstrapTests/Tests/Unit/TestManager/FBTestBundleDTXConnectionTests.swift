@@ -96,6 +96,20 @@ final class FBTestBundleDTXConnectionTests: XCTestCase {
     }
   }
 
+  private func isFinished(_ outcome: TestPlanOutcome) -> Bool {
+    guard case .finished = outcome else {
+      return false
+    }
+    return true
+  }
+
+  private func isUnfinished(_ outcome: TestPlanOutcome) -> Bool {
+    guard case .unfinished = outcome else {
+      return false
+    }
+    return true
+  }
+
   // MARK: - Bundle readiness
 
   func testABundleOnACompatibleProtocolIsReadyAndForwarded() async throws {
@@ -147,11 +161,11 @@ final class FBTestBundleDTXConnectionTests: XCTestCase {
 
   func testFinishingTheTestPlanCompletesItAndIsForwarded() throws {
     let connection = try makeConnection()
-    XCTAssertFalse(events.testPlanEnded.hasHappened)
+    XCTAssertTrue(isUnfinished(events.testPlanOutcome))
 
     _ = connection.perform(NSSelectorFromString("_XCT_didFinishExecutingTestPlan"))
 
-    XCTAssertTrue(events.testPlanEnded.hasHappened)
+    XCTAssertTrue(isFinished(events.testPlanOutcome))
     XCTAssertEqual(interface.calls, ["didFinishExecutingTestPlan"])
   }
 
@@ -162,7 +176,7 @@ final class FBTestBundleDTXConnectionTests: XCTestCase {
       NSSelectorFromString("_XCT_initializationForUITestingDidFailWithError:"),
       with: NSError(domain: "com.example.xctest", code: 3))
 
-    XCTAssertTrue(events.testPlanEnded.hasHappened)
+    XCTAssertTrue(isFinished(events.testPlanOutcome))
   }
 
   // MARK: - Forwarding
