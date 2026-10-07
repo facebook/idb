@@ -98,6 +98,71 @@ final class CrashLogStoreTests: XCTestCase {
     await fulfillment(of: [returned], timeout: 1)
   }
 
+  // MARK: - Listening
+
+  func testListener_WhenMatchingCrashLogIsIngestedBeforeAwaiting_DeliversIt() async throws {
+    let store = makeStore()
+    let listener = store.listenForNextCrashLog(matching: CrashLogInfo.predicate(forIdentifier: "assetsd"))
+
+    XCTAssertNotNil(store.ingestCrashLogData(try assetsdCrashData(), name: "assetsd.crash"))
+    let delivered = try await listener.next()
+
+    XCTAssertEqual(delivered.identifier, "assetsd", "A crash log ingested after listening started should be delivered")
+  }
+
+  func testListener_WhenNonMatchingCrashLogIsIngestedFirst_DeliversTheMatchingOne() async throws {
+    let store = makeStore()
+    let listener = store.listenForNextCrashLog(matching: CrashLogInfo.predicate(forIdentifier: "assetsd"))
+
+    XCTAssertNotNil(store.ingestCrashLogData(try tableSearchCrashData(), name: "tablesearch.crash"))
+    XCTAssertNotNil(store.ingestCrashLogData(try assetsdCrashData(), name: "assetsd.crash"))
+    let delivered = try await listener.next()
+
+    XCTAssertEqual(delivered.identifier, "assetsd", "A crash log not matching the predicate should not be held")
+  }
+
+  func testListener_WhenSeveralMatchingCrashLogsAreIngested_DeliversTheFirst() async throws {
+    let store = makeStore()
+    let listener = store.listenForNextCrashLog(matching: CrashLogInfo.predicate(forIdentifier: "assetsd"))
+    let data = try assetsdCrashData()
+
+    XCTAssertNotNil(store.ingestCrashLogData(data, name: "first.crash"))
+    XCTAssertNotNil(store.ingestCrashLogData(data, name: "second.crash"))
+    let delivered = try await listener.next()
+
+    XCTAssertEqual(delivered.name, "first.crash")
+  }
+
+  func testListener_WhenCrashLogWasIngestedBeforeListening_DoesNotDeliverIt() async throws {
+    let store = makeStore()
+    XCTAssertNotNil(store.ingestCrashLogData(try assetsdCrashData(), name: "assetsd.crash"))
+    let listener = store.listenForNextCrashLog(matching: CrashLogInfo.predicate(forIdentifier: "assetsd"))
+
+    let next = Task { try await listener.next() }
+    try await Task.sleep(nanoseconds: 200_000_000)
+    next.cancel()
+
+    do {
+      _ = try await next.value
+      XCTFail("A crash log ingested before listening started should not be delivered")
+    } catch is CancellationError {}
+  }
+
+  func testListener_WhenCancelledBeforeAwaiting_ThrowsCancellation() async throws {
+    let store = makeStore()
+    let listener = store.listenForNextCrashLog(matching: CrashLogInfo.predicate(forIdentifier: "assetsd"))
+
+    let next = Task {
+      withUnsafeCurrentTask { $0?.cancel() }
+      return try await listener.next()
+    }
+
+    do {
+      _ = try await next.value
+      XCTFail("A wait cancelled before it starts should not deliver")
+    } catch is CancellationError {}
+  }
+
   /// Ingests `data` repeatedly under distinct names until cancelled. The store registers its
   /// notification observer asynchronously, so a single ingest can be posted before the observer
   /// exists and be missed; identical names are deduplicated and post nothing, so each retry
