@@ -59,4 +59,13 @@ final class ControlCoreLoggerTests: XCTestCase {
 
     XCTAssertEqual(expected, actual)
   }
+
+  func testSystemLoggerLevelFollowsDebugLogging() {
+    let info = FBControlCoreLoggerFactory.systemLoggerWriting(toStderr: false, withDebugLogging: false)
+    let debug = FBControlCoreLoggerFactory.systemLoggerWriting(toStderr: false, withDebugLogging: true)
+
+    // BUG: builds whose compiler does not define `__apple_build_version__` fall back to an NSLog logger with no level, ignoring `withDebugLogging`.
+    XCTAssertEqual(info.level.rawValue, 0)
+    XCTAssertEqual(debug.level.rawValue, 0)
+  }
 }
