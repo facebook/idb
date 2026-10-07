@@ -150,19 +150,16 @@ class DependencyLockTest(unittest.TestCase):
 
         prepare_codegen(self.expected, destination)
 
-        # BUG: grpc-swift-2 vends no protoc plugin and the manifest declares no
-        # targets, so SwiftPM warns that nothing uses it -- flipped in the following
-        # commit.
         self.assertEqual(
             self.declared_codegen_packages(destination),
-            ["grpc-swift-2", "grpc-swift-protobuf", "swift-protobuf"],
+            ["grpc-swift-protobuf", "swift-protobuf"],
         )
 
     def test_codegen_updates_the_manifest_and_lock_after_a_bump(self) -> None:
         destination = self.root / "codegen"
         prepare_codegen(self.expected, destination)
         first = (destination / "Package.swift").read_text()
-        self.entries[0]["state"] = {"version": "2.4.6", "revision": "b" * 40}
+        self.entries[1]["state"] = {"version": "2.4.6", "revision": "b" * 40}
         self.write(self.expected, self.entries)
 
         prepare_codegen(self.expected, destination)

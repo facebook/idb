@@ -76,16 +76,21 @@ def verify_resolved(expected_path: Path, actual_path: Path) -> None:
 
 
 def prepare_codegen(lock_path: Path, destination: Path) -> None:
+    # grpc-swift-2 is the runtime the plugins generate against and vends no plugin of
+    # its own, so the manifest -- which declares no targets -- must not name it. It
+    # still has to be pinned: grpc-swift-protobuf pulls it into the resolved graph,
+    # which is checked against this lockfile once the plugins are built.
+    pinned = ("grpc-swift-2", "grpc-swift-protobuf", "swift-protobuf")
+    declared = ("grpc-swift-protobuf", "swift-protobuf")
     pins = load_pins(lock_path)
-    dependencies = []
-    for identity in ("grpc-swift-2", "grpc-swift-protobuf", "swift-protobuf"):
+    for identity in pinned:
         if identity not in pins:
             raise ValueError(f"{lock_path}: missing codegen dependency {identity}")
-        pin = pins[identity]
-        dependencies.append(
-            f"    .package(url: {json.dumps(pin.location + '.git')}, "
-            f"exact: {json.dumps(pin.version)}),"
-        )
+    dependencies = [
+        f"    .package(url: {json.dumps(pins[identity].location + '.git')}, "
+        f"exact: {json.dumps(pins[identity].version)}),"
+        for identity in declared
+    ]
     # The normal idb manifest needs generated sources before SwiftPM can load it.
     manifest = (
         "// swift-tools-version:6.1\nimport PackageDescription\n"
