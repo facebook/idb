@@ -66,6 +66,17 @@ struct InstallMethodHandlerTests {
   }
 
   @Test
+  func aZstdTarFrameworkStreamIsInstalled() async throws {
+    let framework = try harness.makeBundle(named: "Sample", extension: "framework", identifier: "com.example.framework")
+    let payload = MacInstallHarness.zstd(try harness.tarData(of: framework))
+
+    // BUG: a framework is installed without the declared compression, so its zstd tar goes to bsdtar, which cannot decompress it. Flipped in the following commit.
+    await #expect(throws: (any Error).self) {
+      _ = try await handler.install(Self.request(.framework, streaming: payload, compression: .ZSTD))
+    }
+  }
+
+  @Test
   func whenTheClientStreamFailsPartwayThroughATar() async throws {
     let framework = try harness.makeBundle(named: "Sample", extension: "framework", identifier: "com.example.framework")
     let archive = try await harness.gzippedTarData(of: framework)
