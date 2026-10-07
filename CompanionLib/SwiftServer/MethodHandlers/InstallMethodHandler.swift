@@ -120,10 +120,8 @@ struct InstallMethodHandler {
       switch installDestination {
       case .application:
         options = InstallOptions(overrideModificationTime: overrideModificationTime, compression: compression)
-      case .dsym:
+      case .dsym, .xctest, .framework, .dylib:
         options = InstallOptions(compression: compression)
-      case .xctest, .framework, .dylib:
-        options = InstallOptions()
       }
       return try await commandExecutor.install(
         installDestination, from: source, options: options,
