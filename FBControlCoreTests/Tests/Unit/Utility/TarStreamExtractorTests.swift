@@ -306,7 +306,7 @@ struct TarStreamExtractorTests {
   }
 
   @Test
-  func inProcessTarExtractor_WhenTheFallbackFailsBeforeReading_Hangs() async throws {
+  func inProcessTarExtractor_WhenTheFallbackFailsBeforeReading_FailsWithItsError() async throws {
     let extracted = root.appendingPathComponent("extracted").path
     try fileManager.createDirectory(atPath: extracted, withIntermediateDirectories: true)
     let (outcomes, outcome) = AsyncStream<Result<Void, Error>>.makeStream()
@@ -320,19 +320,23 @@ struct TarStreamExtractorTests {
         outcome.yield(.failure(error))
       }
     }
+    // Generous, as only a hang reaches it, and a full suite can keep the extraction waiting tens of seconds for a thread.
     Task {
-      try? await Task.sleep(for: .seconds(5))
+      try? await Task.sleep(for: .seconds(120))
       outcome.finish()
     }
 
     let first = await outcomes.first { _ in true }
 
-    // BUG: the replay waits forever for the fallback to open its input, so extraction never returns — flipped in the following commit.
-    #expect(first == nil)
+    #expect(throws: FailingBeforeReading.Failure.self) { try first?.get() }
   }
 
   private struct RefusingExtractor: ArchiveExtractor {
     func extract(_ source: ArchiveSource, to extractPath: String, options: ArchiveExtractOptions, logger: any ControlCoreLogger) async throws {
+      throw ArchiveError.corrupt("passed on to the fallback")
+    }
+
+    func extract(from source: any ByteSource, to extractPath: String, options: ArchiveExtractOptions, logger: any ControlCoreLogger) async throws {
       throw ArchiveError.corrupt("passed on to the fallback")
     }
   }
@@ -361,6 +365,10 @@ private struct FailingBeforeReading: ArchiveExtractor {
   struct Failure: Error, Equatable {}
 
   func extract(_ source: ArchiveSource, to extractPath: String, options: ArchiveExtractOptions, logger: any ControlCoreLogger) async throws {
+    throw Failure()
+  }
+
+  func extract(from source: any ByteSource, to extractPath: String, options: ArchiveExtractOptions, logger: any ControlCoreLogger) async throws {
     throw Failure()
   }
 }

@@ -51,40 +51,6 @@ public protocol ArchiveExtractor: Sendable {
   ) async throws
 }
 
-// MARK: - Extracting a source
-
-extension ArchiveExtractor {
-
-  /// Writes what `source` reads into a stream this extractor reads.
-  public func extract(
-    from source: any ByteSource,
-    to extractPath: String,
-    options: ArchiveExtractOptions,
-    logger: any ControlCoreLogger
-  ) async throws {
-    let replayed = FBProcessInput<OutputStream>.fromStream()
-    let input = HandedOver(replayed.retyped(FBProcessInput<AnyObject>.self))
-    async let extraction: Void = extract(.stream(input.value), to: extractPath, options: options, logger: logger)
-    let output = replayed.contents
-    let source = HandedOver(source)
-    let written = await offCooperativePool {
-      output.open()
-      defer { output.close() }
-      var chunk = [UInt8](repeating: 0, count: 1 << 16)
-      while true {
-        let count = try chunk.withUnsafeMutableBytes { try source.value.read(into: $0) }
-        guard count > 0 else {
-          return
-        }
-        try chunk.withUnsafeBytes { try output.writeAll(UnsafeRawBufferPointer(rebasing: $0[..<count])) }
-      }
-    }
-    // The extractor's error first: it is why writing to it would fail.
-    try await extraction
-    try written.get()
-  }
-}
-
 /// Unpacks by running `bsdtar` as a subprocess, reading either a file it is
 /// pointed at or its own stdin.
 public struct BSDTarExtractor: ArchiveExtractor {
@@ -157,6 +123,16 @@ public struct InProcessZipExtractor: ArchiveExtractor {
     }
     ArchiveExtraction.removeContents(of: extractPath)
     try await fallback.extract(source, to: extractPath, options: options, logger: logger)
+  }
+
+  /// A zip is read in-process only from a complete file, so a stream goes to `fallback`.
+  public func extract(
+    from source: any ByteSource,
+    to extractPath: String,
+    options: ArchiveExtractOptions,
+    logger: any ControlCoreLogger
+  ) async throws {
+    try await fallback.extract(from: source, to: extractPath, options: options, logger: logger)
   }
 
   private static func isZip(atPath path: String) -> Bool {

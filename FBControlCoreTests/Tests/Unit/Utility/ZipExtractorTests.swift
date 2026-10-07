@@ -378,6 +378,8 @@ struct ZipExtractorTests {
       let existing = try FileManager.default.contentsOfDirectory(atPath: extractPath)
       extractions.withLock { $0.append((path, existing)) }
     }
+
+    func extract(from source: any ByteSource, to extractPath: String, options: ArchiveExtractOptions, logger: any ControlCoreLogger) async throws {}
   }
 
   @Test

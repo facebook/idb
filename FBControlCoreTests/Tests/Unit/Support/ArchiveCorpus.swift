@@ -215,6 +215,11 @@ final class RecordingExtractor: ArchiveExtractor {
     reached.withLock { $0 = true }
     try await wrapped.extract(source, to: extractPath, options: options, logger: logger)
   }
+
+  func extract(from source: any ByteSource, to extractPath: String, options: ArchiveExtractOptions, logger: any ControlCoreLogger) async throws {
+    reached.withLock { $0 = true }
+    try await wrapped.extract(from: source, to: extractPath, options: options, logger: logger)
+  }
 }
 
 /// A seeded generator, so that random contents and mutation offsets are the same on every run.
