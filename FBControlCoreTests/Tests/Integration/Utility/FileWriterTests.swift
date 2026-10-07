@@ -18,7 +18,7 @@ final class FileWriterTests: XCTestCase {
     try super.setUpWithError()
   }
 
-  func testNonBlockingCloseOfPipe() throws {
+  func testNonBlockingCloseOfPipe() async throws {
     let pipe = Pipe()
     var writeError: NSError?
     guard let writer = FileWriter.asyncWriter(withFileDescriptor: pipe.fileHandleForWriting.fileDescriptor, closeOnEndOfFile: true, error: &writeError) else {
@@ -32,13 +32,13 @@ final class FileWriterTests: XCTestCase {
     XCTAssertEqual(expected, actual)
 
     writer.consumeEndOfFile()
-    try writer.finishedConsuming.`await`()
+    try await bridgeFBFutureVoid(writer.finishedConsuming)
 
     pipe.fileHandleForWriting.closeFile()
     pipe.fileHandleForReading.closeFile()
   }
 
-  func testNonBlockingClose() throws {
+  func testNonBlockingClose() async throws {
     let filePath = (NSTemporaryDirectory() as NSString).appendingPathComponent(UUID().uuidString)
     XCTAssertTrue(FileManager.default.createFile(atPath: filePath, contents: nil, attributes: nil))
     let fileHandle = FileHandle(forWritingAtPath: filePath)
@@ -53,7 +53,7 @@ final class FileWriterTests: XCTestCase {
     writer.consumeEndOfFile()
   }
 
-  func testNonBlockingFlagAfterTeardownOfDuplicatedSocketWriter() throws {
+  func testNonBlockingFlagAfterTeardownOfDuplicatedSocketWriter() async throws {
     var descriptors: [Int32] = [0, 0]
     XCTAssertEqual(socketpair(AF_UNIX, SOCK_STREAM, 0, &descriptors), 0)
     let localSocket = descriptors[0]
@@ -76,7 +76,7 @@ final class FileWriterTests: XCTestCase {
     // original (blocking) flags and forces O_NONBLOCK onto it.
     writer.consumeData("ping".data(using: .utf8)!)
     writer.consumeEndOfFile()
-    _ = try writer.finishedConsuming.`await`(withTimeout: 10)
+    try await bridgeFBFutureVoid(writer.finishedConsuming.timeout(10, waitingFor: "the writer to finish consuming"))
 
     var buffer = [UInt8](repeating: 0, count: 4)
     XCTAssertEqual(recv(remoteSocket, &buffer, 4, MSG_DONTWAIT), 4)
@@ -87,7 +87,7 @@ final class FileWriterTests: XCTestCase {
     XCTAssertNotEqual(fcntl(localSocket, F_GETFL) & O_NONBLOCK, 0)
   }
 
-  func testNonBlockingFlagAfterTeardownOfUnownedSocketWriter() throws {
+  func testNonBlockingFlagAfterTeardownOfUnownedSocketWriter() async throws {
     var descriptors: [Int32] = [0, 0]
     XCTAssertEqual(socketpair(AF_UNIX, SOCK_STREAM, 0, &descriptors), 0)
     let localSocket = descriptors[0]
@@ -106,7 +106,7 @@ final class FileWriterTests: XCTestCase {
     // original (blocking) flags and forces O_NONBLOCK onto it.
     writer.consumeData("ping".data(using: .utf8)!)
     writer.consumeEndOfFile()
-    _ = try writer.finishedConsuming.`await`(withTimeout: 10)
+    try await bridgeFBFutureVoid(writer.finishedConsuming.timeout(10, waitingFor: "the writer to finish consuming"))
 
     var buffer = [UInt8](repeating: 0, count: 4)
     XCTAssertEqual(recv(remoteSocket, &buffer, 4, MSG_DONTWAIT), 4)
@@ -116,7 +116,7 @@ final class FileWriterTests: XCTestCase {
     XCTAssertNotEqual(fcntl(localSocket, F_GETFL) & O_NONBLOCK, 0)
   }
 
-  func testPipeIsClosedWhenTheWriterIsReleasedBeforeTeardown() throws {
+  func testPipeIsClosedWhenTheWriterIsReleasedBeforeTeardown() async throws {
     var descriptors: [Int32] = [0, 0]
     XCTAssertEqual(pipe(&descriptors), 0)
     let readEnd = descriptors[0]
@@ -138,7 +138,7 @@ final class FileWriterTests: XCTestCase {
       writer.consumeEndOfFile()
       return writer.finishedConsuming
     }
-    _ = try finishedConsuming.`await`(withTimeout: 10)
+    try await bridgeFBFutureVoid(finishedConsuming.timeout(10, waitingFor: "the writer to finish consuming"))
 
     var buffer = [UInt8](repeating: 0, count: 16)
     XCTAssertEqual(read(readEnd, &buffer, buffer.count), 4)
@@ -146,7 +146,7 @@ final class FileWriterTests: XCTestCase {
     XCTAssertEqual(read(readEnd, &buffer, buffer.count), 0)
   }
 
-  func testStopThenCloseTeardownOfSocketReaderAndDuplicatedWriter() throws {
+  func testStopThenCloseTeardownOfSocketReaderAndDuplicatedWriter() async throws {
     var descriptors: [Int32] = [0, 0]
     XCTAssertEqual(socketpair(AF_UNIX, SOCK_STREAM, 0, &descriptors), 0)
     let localSocket = descriptors[0]
@@ -165,7 +165,7 @@ final class FileWriterTests: XCTestCase {
       throw writeError!
     }
     let reader = FileReader.reader(withFileDescriptor: localSocket, closeOnEndOfFile: false, consumer: FileWriter.nullWriter, logger: nil)
-    _ = try reader.startReading().`await`(withTimeout: 10)
+    try await bridgeFBFutureVoid(reader.startReading().timeout(10, waitingFor: "the reader to start"))
 
     // Traffic in both directions, so teardown runs against live channels.
     writer.consumeData("ping".data(using: .utf8)!)
@@ -176,9 +176,9 @@ final class FileWriterTests: XCTestCase {
 
     // All waits are bounded so a teardown wedge fails this test alone rather than timing out the whole target.
     writer.consumeEndOfFile()
-    _ = try writer.finishedConsuming.`await`(withTimeout: 10)
+    try await bridgeFBFutureVoid(writer.finishedConsuming.timeout(10, waitingFor: "the writer to finish consuming"))
     XCTAssertEqual(fcntl(writerDescriptor, F_GETFD), -1)
-    _ = try reader.finishedReading(withTimeout: 4).`await`(withTimeout: 10)
+    try await bridgeFBFutureVoid(reader.finishedReading(withTimeout: 4).timeout(10, waitingFor: "the reader to finish"))
 
     XCTAssertEqual(close(localSocket), 0)
     XCTAssertEqual(close(remoteSocket), 0)

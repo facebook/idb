@@ -276,63 +276,6 @@ final class FBFutureTests: XCTestCase {
     XCTAssertEqual(chainFuture.error as NSError?, error)
   }
 
-  func testAsyncTimeout() {
-    let future = FBMutableFuture<NSNumber>()
-
-    do {
-      let value = try future.await(withTimeout: 1)
-      XCTAssertNil(value)
-      XCTFail("Expected error to be thrown")
-    } catch {
-      XCTAssertNotNil(error)
-    }
-  }
-
-  func testAsyncResolution() {
-    let future = FBMutableFuture<NSNumber>()
-    queue.async {
-      future.resolve(withResult: NSNumber(value: true))
-    }
-
-    do {
-      let value = try future.await(withTimeout: 1)
-      XCTAssertEqual(value as? NSNumber, NSNumber(value: true))
-    } catch {
-      XCTFail("Unexpected error: \(error)")
-    }
-  }
-
-  func testAsyncErrorPropogation() {
-    let expected = NSError(domain: "foo", code: 0, userInfo: nil)
-    let future = FBMutableFuture<NSNumber>()
-    queue.async {
-      future.perform(NSSelectorFromString("resolveWithError:"), with: expected)
-    }
-
-    do {
-      let value = try future.await(withTimeout: 1)
-      XCTAssertNil(value)
-      XCTFail("Expected error to be thrown")
-    } catch {
-      XCTAssertEqual(error as NSError, expected)
-    }
-  }
-
-  func testAsyncCancellation() {
-    let future = FBMutableFuture<NSNumber>()
-    queue.async {
-      future.cancel()
-    }
-
-    do {
-      let value = try future.await(withTimeout: 1)
-      XCTAssertNil(value)
-      XCTFail("Expected error to be thrown")
-    } catch {
-      XCTAssertNotNil(error.localizedDescription)
-    }
-  }
-
   func testChainValueThenError() {
     let step1 = XCTestExpectation(description: "chain1 is called")
     let step2 = XCTestExpectation(description: "chain2 is called")

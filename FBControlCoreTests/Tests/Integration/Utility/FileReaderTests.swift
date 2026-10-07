@@ -17,13 +17,13 @@ final class FileReaderTests: XCTestCase, DataConsumer {
     didRecieveEOF = false
   }
 
-  func testConsumesData() throws {
+  func testConsumesData() async throws {
     let pipe = Pipe()
     let consumer = FBDataBuffer.accumulatingBuffer()
     let reader = FileReader.reader(withFileDescriptor: pipe.fileHandleForReading.fileDescriptor, closeOnEndOfFile: false, consumer: consumer, logger: nil)
     XCTAssertEqual(reader.state, FBFileReaderState.notStarted)
 
-    try reader.startReading().`await`()
+    try await bridgeFBFutureVoid(reader.startReading())
     XCTAssertEqual(reader.state, FBFileReaderState.reading)
 
     let expected = "Foo Bar Baz".data(using: .utf8)!
@@ -33,26 +33,26 @@ final class FileReaderTests: XCTestCase, DataConsumer {
       expected == consumer.data()
     }
     let expectation = self.expectation(for: predicate, evaluatedWith: self, handler: nil)
-    wait(for: [expectation], timeout: ControlCoreGlobalConfiguration.fastTimeout)
+    await fulfillment(of: [expectation], timeout: ControlCoreGlobalConfiguration.fastTimeout)
 
-    let result: NSNumber = try reader.stopReading().`await`()
+    let result: NSNumber = try await bridgeFBFuture(reader.stopReading())
     XCTAssertEqual(result, 0)
     XCTAssertEqual(reader.finishedReading.result, 0)
     XCTAssertEqual(reader.state, FBFileReaderState.finishedReadingNormally)
   }
 
-  func testConsumesEOFAfterStoppedReading() throws {
+  func testConsumesEOFAfterStoppedReading() async throws {
     let pipe = Pipe()
     let reader = FileReader.reader(withFileDescriptor: pipe.fileHandleForReading.fileDescriptor, closeOnEndOfFile: false, consumer: self, logger: nil)
     XCTAssertEqual(reader.state, FBFileReaderState.notStarted)
 
-    try reader.startReading().`await`()
+    try await bridgeFBFutureVoid(reader.startReading())
     XCTAssertEqual(reader.state, FBFileReaderState.reading)
 
     let expected = "Foo Bar Baz".data(using: .utf8)!
     pipe.fileHandleForWriting.write(expected)
 
-    let result: NSNumber = try reader.stopReading().`await`()
+    let result: NSNumber = try await bridgeFBFuture(reader.stopReading())
     XCTAssertEqual(result, NSNumber(value: ECANCELED))
     XCTAssertEqual(reader.finishedReading.result, NSNumber(value: ECANCELED))
     XCTAssertEqual(reader.state, FBFileReaderState.finishedReadingByCancellation)
@@ -60,14 +60,14 @@ final class FileReaderTests: XCTestCase, DataConsumer {
     XCTAssertTrue(didRecieveEOF)
   }
 
-  func testConsumesEOFAfterStoppedReadingEvenIfOtherEndOfFifoDoesNotClose() throws {
+  func testConsumesEOFAfterStoppedReadingEvenIfOtherEndOfFifoDoesNotClose() async throws {
     let fifoPath = (NSTemporaryDirectory() as NSString).appendingPathComponent(UUID().uuidString)
     let status = mkfifo(fifoPath, S_IWUSR | S_IRUSR)
     XCTAssertEqual(status, 0)
 
     let writerFuture = FileWriter.asyncWriter(forFilePath: fifoPath)
     let readerFuture = FileReader.reader(withFilePath: fifoPath, consumer: self, logger: nil)
-    let writerAndReader = try FBFuture<AnyObject>.combine([writerFuture, readerFuture as! FBFuture<AnyObject>]).`await`() as NSArray?
+    let writerAndReader: NSArray? = try await bridgeFBFuture(FBFuture<AnyObject>.combine([writerFuture, readerFuture as! FBFuture<AnyObject>]))
     XCTAssertNotNil(writerAndReader)
 
     // swiftlint:disable force_cast
@@ -75,28 +75,28 @@ final class FileReaderTests: XCTestCase, DataConsumer {
     let reader = writerAndReader![1] as! FileReader
     // swiftlint:enable force_cast
 
-    try reader.startReading().`await`()
+    try await bridgeFBFutureVoid(reader.startReading())
 
     writer.consumeData("HELLO\n".data(using: .utf8)!)
     writer.consumeData("THERE\n".data(using: .utf8)!)
     writer.consumeEndOfFile()
 
-    try reader.stopReading().`await`()
+    _ = try await bridgeFBFuture(reader.stopReading())
 
     XCTAssertTrue(didRecieveEOF)
 
     // Drain the writer's asynchronous channel teardown before the test ends,
     // so its deferred fd close cannot race into later tests' fd lifecycles.
-    try writer.finishedConsuming.`await`()
+    try await bridgeFBFutureVoid(writer.finishedConsuming)
   }
 
-  func testCanStopReadingBeforeEOFResolvesWhenPipeCloses() throws {
+  func testCanStopReadingBeforeEOFResolvesWhenPipeCloses() async throws {
     let pipe = Pipe()
     let consumer = FBDataBuffer.accumulatingBuffer()
     let reader = FileReader.reader(withFileDescriptor: pipe.fileHandleForReading.fileDescriptor, closeOnEndOfFile: false, consumer: consumer, logger: nil)
     XCTAssertEqual(reader.state, FBFileReaderState.notStarted)
 
-    try reader.startReading().`await`()
+    try await bridgeFBFutureVoid(reader.startReading())
     XCTAssertEqual(reader.state, FBFileReaderState.reading)
 
     let expected = "Foo Bar Baz".data(using: .utf8)!
@@ -105,9 +105,9 @@ final class FileReaderTests: XCTestCase, DataConsumer {
       expected == consumer.data()
     }
     let expectation = self.expectation(for: predicate, evaluatedWith: self, handler: nil)
-    wait(for: [expectation], timeout: ControlCoreGlobalConfiguration.fastTimeout)
+    await fulfillment(of: [expectation], timeout: ControlCoreGlobalConfiguration.fastTimeout)
 
-    let result: NSNumber = try reader.stopReading().`await`()
+    let result: NSNumber = try await bridgeFBFuture(reader.stopReading())
     XCTAssertEqual(result, NSNumber(value: ECANCELED))
     XCTAssertEqual(reader.finishedReading.result, NSNumber(value: ECANCELED))
     XCTAssertEqual(reader.state, FBFileReaderState.finishedReadingByCancellation)
@@ -115,55 +115,61 @@ final class FileReaderTests: XCTestCase, DataConsumer {
     pipe.fileHandleForWriting.closeFile()
   }
 
-  func testReadingTwiceFails() throws {
-    let reader: FileReader = try FileReader.reader(withFilePath: "/dev/urandom", consumer: self, logger: nil).`await`()
+  func testReadingTwiceFails() async throws {
+    let reader: FileReader = try await bridgeFBFuture(FileReader.reader(withFilePath: "/dev/urandom", consumer: self, logger: nil))
     XCTAssertEqual(reader.state, FBFileReaderState.notStarted)
 
-    try reader.startReading().`await`()
+    try await bridgeFBFutureVoid(reader.startReading())
     XCTAssertEqual(reader.state, FBFileReaderState.reading)
 
-    XCTAssertThrowsError(try reader.startReading().`await`())
+    var secondStartError: Error?
+    do {
+      try await bridgeFBFutureVoid(reader.startReading())
+    } catch {
+      secondStartError = error
+    }
+    XCTAssertNotNil(secondStartError)
     XCTAssertEqual(reader.state, FBFileReaderState.reading)
 
-    let result: NSNumber = try reader.stopReading().`await`()
+    let result: NSNumber = try await bridgeFBFuture(reader.stopReading())
     XCTAssertEqual(result, NSNumber(value: ECANCELED))
     XCTAssertEqual(reader.finishedReading.result, NSNumber(value: ECANCELED))
     XCTAssertEqual(reader.state, FBFileReaderState.finishedReadingByCancellation)
   }
 
-  func testStoppingTwiceDoesNotError() throws {
-    let reader: FileReader = try FileReader.reader(withFilePath: "/dev/urandom", consumer: self, logger: nil).`await`()
+  func testStoppingTwiceDoesNotError() async throws {
+    let reader: FileReader = try await bridgeFBFuture(FileReader.reader(withFilePath: "/dev/urandom", consumer: self, logger: nil))
     XCTAssertEqual(reader.state, FBFileReaderState.notStarted)
 
-    try reader.startReading().`await`()
+    try await bridgeFBFutureVoid(reader.startReading())
     XCTAssertEqual(reader.state, FBFileReaderState.reading)
 
-    var result: NSNumber = try reader.stopReading().`await`()
+    var result: NSNumber = try await bridgeFBFuture(reader.stopReading())
     XCTAssertEqual(reader.state, FBFileReaderState.finishedReadingByCancellation)
     XCTAssertEqual(result, NSNumber(value: ECANCELED))
 
-    result = try reader.stopReading().`await`()
+    result = try await bridgeFBFuture(reader.stopReading())
     XCTAssertEqual(result, NSNumber(value: ECANCELED))
     XCTAssertEqual(reader.finishedReading.result, NSNumber(value: ECANCELED))
     XCTAssertEqual(reader.state, FBFileReaderState.finishedReadingByCancellation)
   }
 
-  func testCancellationOnFinishedReading() throws {
-    let reader: FileReader = try FileReader.reader(withFilePath: "/dev/urandom", consumer: self, logger: nil).`await`()
+  func testCancellationOnFinishedReading() async throws {
+    let reader: FileReader = try await bridgeFBFuture(FileReader.reader(withFilePath: "/dev/urandom", consumer: self, logger: nil))
     XCTAssertEqual(reader.state, FBFileReaderState.notStarted)
 
-    try reader.startReading().`await`()
+    try await bridgeFBFutureVoid(reader.startReading())
     XCTAssertEqual(reader.state, FBFileReaderState.reading)
 
     let finished = reader.finishedReading
     XCTAssertEqual(finished.state, FBFutureState.running)
-    try finished.cancel().`await`()
+    try await bridgeFBFutureVoid(finished.cancel().retyped(FBFuture<AnyObject>.self))
     XCTAssertEqual(finished.state, FBFutureState.cancelled)
     XCTAssertEqual(reader.state, FBFileReaderState.finishedReadingByCancellation)
   }
 
-  func testConcurrentAttachmentIsProhibited() throws {
-    let reader: FileReader = try FileReader.reader(withFilePath: "/dev/urandom", consumer: self, logger: nil).`await`()
+  func testConcurrentAttachmentIsProhibited() async throws {
+    let reader: FileReader = try await bridgeFBFuture(FileReader.reader(withFilePath: "/dev/urandom", consumer: self, logger: nil))
     XCTAssertEqual(reader.state, FBFileReaderState.notStarted)
 
     let concurrentQueue = DispatchQueue.global(qos: .userInitiated)
@@ -189,9 +195,9 @@ final class FileReaderTests: XCTestCase, DataConsumer {
     }
     group.wait()
 
-    _ = try? firstAttempt.`await`()
-    _ = try? secondAttempt.`await`()
-    _ = try? thirdAttempt.`await`()
+    try? await bridgeFBFutureVoid(firstAttempt)
+    try? await bridgeFBFutureVoid(secondAttempt)
+    try? await bridgeFBFutureVoid(thirdAttempt)
     XCTAssertEqual(reader.state, FBFileReaderState.reading)
 
     var successes: UInt = 0
@@ -208,7 +214,7 @@ final class FileReaderTests: XCTestCase, DataConsumer {
     XCTAssertEqual(successes, 1)
   }
 
-  func testNonBlockingFlagAfterTeardownOfUnownedSocketReader() throws {
+  func testNonBlockingFlagAfterTeardownOfUnownedSocketReader() async throws {
     var descriptors: [Int32] = [0, 0]
     XCTAssertEqual(socketpair(AF_UNIX, SOCK_STREAM, 0, &descriptors), 0)
     let localSocket = descriptors[0]
@@ -220,7 +226,7 @@ final class FileReaderTests: XCTestCase, DataConsumer {
 
     let consumer = FBDataBuffer.accumulatingBuffer()
     let reader = FileReader.reader(withFileDescriptor: localSocket, closeOnEndOfFile: false, consumer: consumer, logger: nil)
-    try reader.startReading().`await`()
+    try await bridgeFBFutureVoid(reader.startReading())
 
     // Traffic through the channel guarantees libdispatch has armed the
     // descriptor: its per-descriptor entry exists, the original (blocking)
@@ -232,23 +238,23 @@ final class FileReaderTests: XCTestCase, DataConsumer {
     let consumed = NSPredicate { _, _ in
       expected == consumer.data()
     }
-    wait(for: [expectation(for: consumed, evaluatedWith: self, handler: nil)], timeout: ControlCoreGlobalConfiguration.fastTimeout)
+    await fulfillment(of: [expectation(for: consumed, evaluatedWith: self, handler: nil)], timeout: ControlCoreGlobalConfiguration.fastTimeout)
     XCTAssertNotEqual(fcntl(localSocket, F_GETFL) & O_NONBLOCK, 0)
 
-    _ = try reader.stopReading().`await`()
+    _ = try await bridgeFBFuture(reader.stopReading())
 
     // Teardown must not restore blocking flags on a descriptor the channel never owned: the restore is
     // asynchronous and could land on a recycled fd number belonging to an unrelated live channel.
     XCTAssertNotEqual(fcntl(localSocket, F_GETFL) & O_NONBLOCK, 0)
   }
 
-  func testAttemptingToReadAGarbageFileDescriptor() throws {
+  func testAttemptingToReadAGarbageFileDescriptor() async throws {
     let reader = FileReader.reader(withFileDescriptor: 92123, closeOnEndOfFile: false, consumer: self, logger: nil)
     XCTAssertEqual(reader.state, FBFileReaderState.notStarted)
 
-    try reader.startReading().`await`()
+    try await bridgeFBFutureVoid(reader.startReading())
 
-    let result: NSNumber = try reader.stopReading().`await`()
+    let result: NSNumber = try await bridgeFBFuture(reader.stopReading())
     XCTAssertEqual(result, NSNumber(value: EBADF))
     XCTAssertEqual(reader.finishedReading.result, NSNumber(value: EBADF))
     XCTAssertEqual(reader.state, FBFileReaderState.finishedReadingInError)
