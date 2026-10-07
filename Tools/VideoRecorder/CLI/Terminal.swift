@@ -8,9 +8,9 @@
 import ArgumentParser
 import FBControlCore
 import FBSimulatorControl
+import FBSimulatorVideo
 import Foundation
 import IOSurface
-import FBSimulatorVideo
 
 struct Terminal: AsyncParsableCommand {
   static let configuration = CommandConfiguration(abstract: "Render a live view of the simulator in this terminal")
@@ -93,7 +93,10 @@ struct Terminal: AsyncParsableCommand {
   }
 }
 
-extension TerminalRenderMode: @retroactive ExpressibleByArgument {}
+// Buck builds this tool outside the `idb` package its libraries share, so the conformance is retroactive
+// there but not in the open-source build, where `@retroactive` is an error. Module-qualified names say
+// the conformance is intended in both.
+extension FBSimulatorVideo.TerminalRenderMode: ArgumentParser.ExpressibleByArgument {}
 
 /// The framebuffer's current surface, written by the event pump and read by the renderer. Kept out
 /// of the trigger stream so that coalescing triggers can never drop a surface change.
