@@ -12,11 +12,12 @@ private let connectionReadSizeLimit: size_t = 1024
 
 public final class DeviceDebugServer: SocketServerDelegate, DebugServer {
   private let serviceConnection: LockdownServiceConnection
-  private lazy var tcpServer: SocketServer = SocketServer(onPort: self.port, delegate: self)
+  private lazy var teardown = Teardown(
+    tcpServer: SocketServer(onPort: self.port, delegate: self),
+    connection: serviceConnection,
+    logger: logger)
   private let port: in_port_t
   private let logger: any ControlCoreLogger
-  private let teardown: FBMutableFuture<NSNull>
-  private var twistedPair: TwistedPairFiles?
 
   public let lldbBootstrapCommands: [String]
 
@@ -65,7 +66,6 @@ public final class DeviceDebugServer: SocketServerDelegate, DebugServer {
     self.lldbBootstrapCommands = lldbBootstrapCommands
     self.queue = queue
     self.logger = logger
-    self.teardown = FBMutableFuture<NSNull>(name: "Debug server for \(serviceConnection.name)")
   }
 
   // MARK: - SocketServerDelegate
@@ -75,7 +75,8 @@ public final class DeviceDebugServer: SocketServerDelegate, DebugServer {
     clientConnected address: in6_addr,
     fileDescriptor: Int32
   ) {
-    if twistedPair != nil {
+    let teardown = self.teardown
+    guard teardown.claimClient() else {
       logger.log("Rejecting connection, we have an existing pair")
       if let data = "$NEUnspecified#00".data(using: .ascii) {
         data.withUnsafeBytes { bufferPointer in
@@ -87,70 +88,74 @@ public final class DeviceDebugServer: SocketServerDelegate, DebugServer {
       return
     }
     logger.log("Client connected, connecting all file handles")
-    let pair = TwistedPairFiles(
+    TwistedPairFiles(
       socket: fileDescriptor,
       connection: serviceConnection,
       logger: logger
     )
-    guard let completed = pair.start() else {
-      logger.log("Failed to start connection")
-      return
+    .start(notifying: queue) {
+      Task { await teardown.clientDisconnected() }
     }
-    completed.onQueue(
-      queue,
-      doOnResolved: { [weak self] _ in
-        self?.logger.log("Client Disconnected")
-        self?.twistedPair = nil
-      })
-    teardown.resolve(from: completed.retyped(FBFuture<AnyObject>.self))
-    self.twistedPair = pair
   }
 
   // MARK: - DebugServer
 
   public func cancel() async throws {
-    try await bridgeFBFutureVoid(self.completed.cancel())
+    await teardown.stop()
   }
 
-  private var completed: FBFuture<NSNull> {
-    convertFBMutableFuture(teardown)
-  }
-
+  /// Creates `teardown`, and with it the socket server, before any client can connect.
   private func startListening() async throws {
-    try tcpServer.startListening()
+    try teardown.tcpServer.startListening()
     logger.log("TCP Server now running, bootstrap commands for lldb are \(lldbBootstrapCommands.joined(separator: "\n"))")
-    let tcpServer = self.tcpServer
-    let connection = serviceConnection
-    let logger = self.logger
-    // Both endings arrive on the same future: the client disconnecting resolves it, `cancel()`
-    // cancels it, and only one of the two can win.
-    teardown.onQueue(
-      queue,
-      respondToCancellation: {
-        fbFutureFromAsync {
-          await Self.stop(tcpServer: tcpServer, connection: connection, logger: logger)
-          return NSNull()
-        }
-      })
-    teardown.onQueue(
-      queue,
-      doOnResolved: { _ in
-        _ = fbFutureFromAsync {
-          await Self.stop(tcpServer: tcpServer, connection: connection, logger: logger)
-          return NSNull()
-        }
-      })
   }
 
-  /// Innermost first: the socket a client would reach the connection through goes before the
-  /// connection itself.
-  private static func stop(
-    tcpServer: SocketServer,
-    connection: LockdownServiceConnection,
-    logger: any ControlCoreLogger
-  ) async {
-    try? tcpServer.stopListening()
-    await MobileDevice.invalidateServiceConnection(connection, service: connection.name, logger: logger)
+  /// What the client disconnecting and `cancel()` share. Either can stop the server, from any
+  /// thread, and only the first does: the socket server and connection are touched by that one alone.
+  private final class Teardown: @unchecked Sendable {
+    let tcpServer: SocketServer
+    private let connection: LockdownServiceConnection
+    private let logger: any ControlCoreLogger
+    private let lock = NSLock()
+    private var hasClient = false
+    private var stopped = false
+
+    init(tcpServer: SocketServer, connection: LockdownServiceConnection, logger: any ControlCoreLogger) {
+      self.tcpServer = tcpServer
+      self.connection = connection
+      self.logger = logger
+    }
+
+    /// The server proxies one client at a time.
+    func claimClient() -> Bool {
+      lock.lock()
+      defer { lock.unlock() }
+      if hasClient {
+        return false
+      }
+      hasClient = true
+      return true
+    }
+
+    func clientDisconnected() async {
+      lock.withLock { hasClient = false }
+      logger.log("Client Disconnected")
+      await stop()
+    }
+
+    /// Innermost first: the socket a client would reach the connection through goes before the
+    /// connection itself.
+    func stop() async {
+      let alreadyStopped = lock.withLock {
+        defer { stopped = true }
+        return stopped
+      }
+      if alreadyStopped {
+        return
+      }
+      try? tcpServer.stopListening()
+      await MobileDevice.invalidateServiceConnection(connection, service: connection.name, logger: logger)
+    }
   }
 
   private class TwistedPairFiles {
@@ -172,17 +177,19 @@ public final class DeviceDebugServer: SocketServerDelegate, DebugServer {
       self.connectionToSocketQueue = DispatchQueue(label: "com.facebook.fbdevicecontrol.debugserver.connection_to_socket")
     }
 
-    func start() -> FBFuture<NSNull>? {
-      // FBMutableFuture is a thread-safe ObjC type that isn't Sendable.
+    /// Pumps bytes both ways until either side ends, then closes the socket and calls `completion`
+    /// on `queue`.
+    func start(notifying queue: DispatchQueue, completion: @escaping @Sendable () -> Void) {
       let logger = self.logger
       let socket = self.socket
       let socketReadHandle = FileHandle(fileDescriptor: socket)
       nonisolated(unsafe) let connection = self.connection
-      nonisolated(unsafe) let socketReadCompleted = FBMutableFuture<NSNull>()
-      nonisolated(unsafe) let connectionReadCompleted = FBMutableFuture<NSNull>()
+      let ended = PumpEnded()
+      let pumps = DispatchGroup()
 
+      pumps.enter()
       socketToConnectionQueue.async {
-        while socketReadCompleted.state == .running && connectionReadCompleted.state == .running {
+        while !ended.value {
           let data = socketReadHandle.availableData
           if data.isEmpty {
             logger.log("Socket read reached end of file")
@@ -196,11 +203,13 @@ public final class DeviceDebugServer: SocketServerDelegate, DebugServer {
           }
         }
         logger.log("Exiting socket \(socket) read loop")
-        socketReadCompleted.resolve(withResult: NSNull())
+        ended.end()
+        pumps.leave()
       }
 
+      pumps.enter()
       connectionToSocketQueue.async {
-        while socketReadCompleted.state == .running && connectionReadCompleted.state == .running {
+        while !ended.value {
           do {
             let data = try connection.receiveUp(to: connectionReadSizeLimit)
             if data.isEmpty {
@@ -225,21 +234,33 @@ public final class DeviceDebugServer: SocketServerDelegate, DebugServer {
           }
         }
         logger.log("Exiting connection \(connection) read loop")
-        connectionReadCompleted.resolve(withResult: NSNull())
+        ended.end()
+        pumps.leave()
       }
 
-      let combinedFuture = FBFuture<AnyObject>.combine([
-        socketReadCompleted,
-        connectionReadCompleted,
-      ])
-      .onQueue(
-        connectionToSocketQueue,
-        doOnResolved: { _ in
-          logger.log("Closing socket file descriptor \(socket)")
-          close(socket)
-        }
-      )
-      return combinedFuture.retyped(FBFuture<NSNull>.self)
+      pumps.notify(queue: queue) {
+        logger.log("Closing socket file descriptor \(socket)")
+        close(socket)
+        completion()
+      }
+    }
+  }
+
+  /// Set once either pump loop exits, so the other stops at its next iteration.
+  private final class PumpEnded: @unchecked Sendable {
+    private let lock = NSLock()
+    private var ended = false
+
+    var value: Bool {
+      lock.lock()
+      defer { lock.unlock() }
+      return ended
+    }
+
+    func end() {
+      lock.lock()
+      ended = true
+      lock.unlock()
     }
   }
 }
