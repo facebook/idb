@@ -127,7 +127,7 @@ final class SimulatorDisplayInteractionTests: XCTestCase {
     XCTAssertThrowsError(try AXBridgeDisplayInventory.decode(Data(#"{"ok":false,"error_kind":"reader_unavailable","error":"failed"}"#.utf8))) {
       guard case AXBridgeError.readerUnavailable = $0 else { return XCTFail("\($0)") }
     }
-    XCTAssertEqual(try AXBridgeRequest.displays.command, .accessibility(["verb": .string("displays")]))
+    XCTAssertEqual(AXBridgeRequest.displays.command, .accessibility(.displays))
     XCTAssertEqual(AXBridgeRequest.displays.payload as NSDictionary, ["verb": "displays"])
     XCTAssertTrue(AXBridgeRequest.displays.mayRetry)
   }

@@ -71,12 +71,7 @@ extension BridgeCommand {
       case .approve: "health approve"
       case .revoke: "health revoke"
       }
-    case let .accessibility(parameters):
-      if case let .string(verb) = parameters[BridgeAXWire.Request.verb.key] {
-        "accessibility \(verb)"
-      } else {
-        "accessibility"
-      }
+    case let .accessibility(request): "accessibility \(request.verb.rawValue)"
     case .ping: "ping"
     case .shutdown: "shutdown"
     }

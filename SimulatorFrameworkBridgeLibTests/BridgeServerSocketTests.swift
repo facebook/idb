@@ -108,6 +108,18 @@ final class BridgeServerSocketTests: XCTestCase {
     return frame
   }
 
+  /// An accessibility request with these parameters, sent as they are whether or not they decode.
+  func frame(accessibility parameters: [String: BridgeJSONValue]) throws -> Data {
+    let request = BridgeJSONValue.object([
+      "version": .integer(Int64(BridgeRequest.currentVersion)), "id": .string(UUID().uuidString),
+      "command": .object(["accessibility": .object(["_0": .object(parameters)])]),
+    ])
+    let bytes = try JSONEncoder().encode(request)
+    var frame = try IPCFrame.header(forSize: bytes.count)
+    frame.append(bytes)
+    return frame
+  }
+
   func exitCode(of response: NSDictionary?) -> Int? {
     (response?["result"] as? NSDictionary)?["exitCode"] as? Int
   }
@@ -194,7 +206,7 @@ final class BridgeServerSocketTests: XCTestCase {
     defer { close(client) }
     sendData(data: frame(payload: "malformed"), to: client)
     XCTAssertEqual((readResponse(fd: client)?["result"] as? NSDictionary)?["exitCode"] as? Int, 1)
-    let commands: [BridgeCommand] = [.dns(.list), .proxy(.clear), .health(.list(bundleID: "app")), .notifications(.delivered(bundleID: "app")), .clearContacts, .clearPhotos, .accessibility(["verb": .string("describe")]), .shutdown]
+    let commands: [BridgeCommand] = [.dns(.list), .proxy(.clear), .health(.list(bundleID: "app")), .notifications(.delivered(bundleID: "app")), .clearContacts, .clearPhotos, .accessibility(.displays), .shutdown]
     for command in commands {
       let request = BridgeRequest(command: command)
       let bytes = try request.encoded()

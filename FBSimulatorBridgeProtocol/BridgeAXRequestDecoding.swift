@@ -29,6 +29,23 @@ public enum BridgeAXRequestError: Error, Equatable, Sendable {
   case negativeTunable(BridgeAXWire.Request, Int)
 }
 
+/// A request travels as the JSON object `payload` builds, so a frame carries the same bytes it always has.
+extension BridgeAXRequest: Codable {
+  public init(from decoder: Decoder) throws {
+    let parameters = try decoder.singleValueContainer().decode([String: BridgeJSONValue].self)
+    do {
+      try self.init(payload: parameters)
+    } catch {
+      throw DecodingError.dataCorrupted(DecodingError.Context(codingPath: decoder.codingPath, debugDescription: "\(error)", underlyingError: error))
+    }
+  }
+
+  public func encode(to encoder: Encoder) throws {
+    var container = encoder.singleValueContainer()
+    try container.encode(try payload.mapValues(BridgeJSONValue.init(foundationValue:)))
+  }
+}
+
 extension BridgeAXRequest {
   /// Decodes the payload `payload` produces. Fields a verb does not use are ignored, and an absent optional field
   /// takes the value a caller that omitted it gets.

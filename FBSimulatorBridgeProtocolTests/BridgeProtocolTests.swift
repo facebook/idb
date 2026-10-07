@@ -10,6 +10,10 @@ import Foundation
 import XCTest
 
 final class BridgeProtocolTests: XCTestCase {
+  private static func readOptions(maxDepth: Int = 1, maxNodes: Int = 2, automationMode: Bool? = nil) -> BridgeAXReadOptions {
+    BridgeAXReadOptions(maxDepth: maxDepth, maxNodes: maxNodes, attributes: nil, explainUnreachable: false, traversal: .viewHierarchy, automationMode: automationMode)
+  }
+
   func testEveryServiceUsesTheSameRequestForArgumentsAndFrames() throws {
     let commands: [BridgeCommand] = [
       .clearContacts, .clearPhotos,
@@ -23,7 +27,7 @@ final class BridgeProtocolTests: XCTestCase {
       .health(.list(bundleID: "com.example.app")), .health(.clear(bundleID: "com.example.app")),
       .health(.approve(bundleID: "com.example.app", typeIDs: ["step"])),
       .health(.revoke(bundleID: "com.example.app", typeIDs: [])),
-      .accessibility(["verb": .string("describe"), "pid": .integer(42), "automationMode": .bool(false)]),
+      .accessibility(.read(pid: 42, options: Self.readOptions(automationMode: false))),
       .ping, .shutdown,
     ]
     for command in commands {
@@ -45,17 +49,20 @@ final class BridgeProtocolTests: XCTestCase {
       .notifications(.clearDelivered(bundleID: "app")),
       .health(.approve(bundleID: "app", typeIDs: [])), .health(.revoke(bundleID: "app", typeIDs: [])),
       .health(.clear(bundleID: "app")), .shutdown, .dynamicStore(.restore(key: "dns", snapshot: Data())),
-      .accessibility(["verb": .string("perform")]), .accessibility(["verb": .string("setvalue")]),
-      .accessibility(["verb": .string("settings-set")]), .accessibility(["verb": .string("unknown")]),
-      .accessibility([:]),
+      .accessibility(.write(BridgeAXWriteRequest(kind: .perform(.press), x: 1, y: 2, pid: nil, assertion: nil))),
+      .accessibility(.write(BridgeAXWriteRequest(kind: .setValue("v"), x: 1, y: 2, pid: nil, assertion: nil))),
+      .accessibility(.deviceSettingWrite("voiceover", enabled: true)),
+      .accessibility(.quiescence(pid: nil, busyThresholdMs: nil, quietWindowMs: nil)),
     ]
     for command in commands { XCTAssertFalse(command.mayRetry, "\(command)") }
-    for mode: BridgeJSONValue in [.bool(true), .bool(false), .null] {
-      XCTAssertTrue(BridgeCommand.accessibility(["verb": .string("describe"), "automationMode": mode]).mayRetry)
-      XCTAssertTrue(BridgeCommand.accessibility(["verb": .string("hittest"), "automationMode": mode]).mayRetry)
-      XCTAssertFalse(BridgeCommand.accessibility(["verb": .string("perform"), "automationMode": mode]).mayRetry)
+    for mode: Bool? in [true, false, nil] {
+      XCTAssertTrue(BridgeCommand.accessibility(.read(pid: 1, options: Self.readOptions(automationMode: mode))).mayRetry)
+      XCTAssertTrue(BridgeCommand.accessibility(.readFrontmost(x: 1, y: 2, method: .windowServer, options: Self.readOptions(automationMode: mode))).mayRetry)
     }
-    let reads: [BridgeCommand] = [.dynamicStore(.snapshot(key: "dns")), .ping, .dns(.list), .proxy(.list), .notifications(.list(bundleID: nil)), .notifications(.delivered(bundleID: "app")), .health(.list(bundleID: "app")), .accessibility(["verb": .string("describe")])]
+    let reads: [BridgeCommand] = [
+      .dynamicStore(.snapshot(key: "dns")), .ping, .dns(.list), .proxy(.list), .notifications(.list(bundleID: nil)), .notifications(.delivered(bundleID: "app")),
+      .health(.list(bundleID: "app")), .accessibility(.hitTest(x: 1, y: 2, attributes: nil)), .accessibility(.deviceSettingRead("voiceover")), .accessibility(.displays),
+    ]
     for command in reads {
       XCTAssertTrue(command.mayRetry, "\(command)")
     }
@@ -119,7 +126,8 @@ final class BridgeProtocolTests: XCTestCase {
       (#"{"notifications":{"_0":{"delivered":{"bundleID":"app"}}}}"#, .notifications(.delivered(bundleID: "app"))),
       (#"{"notifications":{"_0":{"clearDelivered":{"bundleID":"app"}}}}"#, .notifications(.clearDelivered(bundleID: "app"))),
       (#"{"health":{"_0":{"approve":{"bundleID":"app","typeIDs":["step"]}}}}"#, .health(.approve(bundleID: "app", typeIDs: ["step"]))),
-      (#"{"accessibility":{"_0":{"pid":42,"verb":"describe"}}}"#, .accessibility(["verb": .string("describe"), "pid": .integer(42)])),
+      (#"{"accessibility":{"_0":{"maxDepth":5,"maxNodes":10,"pid":42,"verb":"describe"}}}"#, .accessibility(.read(pid: 42, options: Self.readOptions(maxDepth: 5, maxNodes: 10)))),
+      (#"{"accessibility":{"_0":{"verb":"hittest","x":1.5,"y":2}}}"#, .accessibility(.hitTest(x: 1.5, y: 2, attributes: nil))),
       (#"{"ping":{}}"#, .ping),
       (#"{"shutdown":{}}"#, .shutdown),
     ]

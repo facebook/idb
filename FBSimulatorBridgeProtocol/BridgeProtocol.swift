@@ -50,6 +50,12 @@ public struct BridgeRequest: Codable, Equatable, Sendable {
     (try? JSONDecoder().decode(Identity.self, from: data))?.id
   }
 
+  /// The parameters of an accessibility request as sent, without decoding them into a `BridgeAXRequest`, so the guest
+  /// can say what is wrong with a malformed one in an accessibility response rather than failing the frame.
+  public static func accessibilityParameters(of data: Data) -> [String: BridgeJSONValue]? {
+    (try? JSONDecoder().decode(UndecodedAccessibility.self, from: data))?.command.accessibility._0
+  }
+
   private struct Envelope: Decodable {
     let version: Int
     let id: String
@@ -57,6 +63,16 @@ public struct BridgeRequest: Codable, Equatable, Sendable {
 
   private struct Identity: Decodable {
     let id: String?
+  }
+
+  private struct UndecodedAccessibility: Decodable {
+    struct Command: Decodable {
+      struct Parameters: Decodable {
+        let _0: [String: BridgeJSONValue]
+      }
+      let accessibility: Parameters
+    }
+    let command: Command
   }
 }
 

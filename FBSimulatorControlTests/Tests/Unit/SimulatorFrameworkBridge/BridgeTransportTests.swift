@@ -15,12 +15,9 @@ func decodedBridgeAXArguments(_ request: AXBridgeRequest) throws -> [String: Any
   let arguments = try request.arguments
   XCTAssertEqual(arguments.count, 2)
   XCTAssertEqual(arguments.first, "rpc")
-  let decoded = try BridgeRequest.decode(Data(arguments[1].utf8))
-  guard case let .accessibility(parameters) = decoded.command else {
-    XCTFail("expected accessibility command")
-    return [:]
-  }
-  return parameters.mapValues(\.foundationValue)
+  let frame = Data(arguments[1].utf8)
+  XCTAssertEqual(try BridgeRequest.decode(frame).command, .accessibility(request))
+  return try XCTUnwrap(BridgeRequest.accessibilityParameters(of: frame)).mapValues(\.foundationValue)
 }
 
 final class BridgeTransportTests: XCTestCase {
@@ -186,7 +183,7 @@ final class BridgeTransportTests: XCTestCase {
   }
 
   func testMutationIsNeverReplayedAfterAnAmbiguousFailure() async throws {
-    for command: BridgeCommand in [.clearContacts, .dns(.clear), .accessibility(["verb": .string("perform"), "automationMode": .bool(true)])] {
+    for command: BridgeCommand in [.clearContacts, .dns(.clear), .accessibility(.write(AXBridgeWriteRequest(kind: .perform(.press), x: 1, y: 2, pid: nil, assertion: nil)))] {
       let connection = RecordingBridgeConnection(failures: 1)
       let factory = RecordingBridgeFactory([connection])
       let transport = SimulatorFrameworkBridgePersistentTransport(connector: factory)

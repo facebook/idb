@@ -41,7 +41,11 @@ public enum BridgeRPC {
     do {
       request = try BridgeRequest.decode(data)
     } catch {
-      return failure(id: BridgeRequest.identity(of: data), message: String(describing: error))
+      let id = BridgeRequest.identity(of: data)
+      if let parameters = BridgeRequest.accessibilityParameters(of: data) {
+        return reply(id: id, result: BridgeServices.undecodedAccessibility(parameters))
+      }
+      return failure(id: id, message: String(describing: error))
     }
     let result = execute(request.command)
     do {
@@ -51,6 +55,13 @@ public enum BridgeRPC {
     } catch {
       return failure(id: request.id, message: "response serialization failed or exceeded the frame limit")
     }
+  }
+
+  private static func reply(id: String?, result: BridgeResult) -> BridgeRPCReply {
+    guard let data = try? BridgeResponse(id: id, result: result).encoded(), data.count <= IPCFrame.maximumSize else {
+      return failure(id: id, message: "response serialization failed or exceeded the frame limit")
+    }
+    return BridgeRPCReply(data: data, exitCode: result.exitCode, shutdown: false)
   }
 
   private static func failure(id: String?, message: String) -> BridgeRPCReply {

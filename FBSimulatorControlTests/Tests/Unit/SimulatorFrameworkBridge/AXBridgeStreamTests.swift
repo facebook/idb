@@ -17,7 +17,7 @@ final class AXBridgeStreamTests: XCTestCase {
   private var host: Int32 = -1
   private var guest: Int32 = -1
   private var connection: SimulatorFrameworkBridgeConnection?
-  private let request = BridgeRequest(command: .accessibility(["verb": .string("quiet")]))
+  private let request = BridgeRequest(command: .accessibility(.quiescence(pid: nil, busyThresholdMs: nil, quietWindowMs: nil)))
 
   override func setUpWithError() throws {
     var pair: [Int32] = [-1, -1]
@@ -131,7 +131,7 @@ final class AXBridgeStreamTests: XCTestCase {
     let transport = SimulatorFrameworkBridgePersistentTransport(connector: StreamOnlyConnector(stream: connection))
     let stream = try await transport.stream(.quiescence(pid: 42, busyThresholdMs: nil, quietWindowMs: nil))
     let sent = try readGuestRequest()
-    XCTAssertEqual(sent.command, .accessibility(["verb": .string("quiet"), "pid": .integer(42)]))
+    XCTAssertEqual(sent.command, .accessibility(.quiescence(pid: 42, busyThresholdMs: nil, quietWindowMs: nil)))
     try SimulatorFrameworkBridgeConnection.writeFrame(guest, BridgeResponse(request: sent, result: event("one")).encoded())
     closeGuest()
 

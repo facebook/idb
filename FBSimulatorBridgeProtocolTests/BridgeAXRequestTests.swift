@@ -35,10 +35,9 @@ final class BridgeAXRequestTests: XCTestCase {
     ]
     for request in requests {
       let frame = try BridgeRequest(command: request.command).encoded()
-      guard case let .accessibility(payload) = try BridgeRequest.decode(frame).command else {
-        return XCTFail("\(request) did not encode as an accessibility command")
-      }
-      XCTAssertEqual(try BridgeAXRequest(payload: payload), request)
+      XCTAssertEqual(try BridgeRequest.decode(frame).command, .accessibility(request))
+      let parameters = try XCTUnwrap(BridgeRequest.accessibilityParameters(of: frame))
+      XCTAssertEqual(try BridgeAXRequest(payload: parameters), request)
     }
   }
 
@@ -99,5 +98,13 @@ final class BridgeAXRequestTests: XCTestCase {
         XCTAssertEqual(error as? BridgeAXRequestError, expected, "\(payload)")
       }
     }
+  }
+
+  func testAnUndecodableRequestFailsTheFrameButKeepsItsParameters() throws {
+    let frame = Data(#"{"command":{"accessibility":{"_0":{"verb":"quiet","quietWindowMs":-1}}},"id":"bad","version":1}"#.utf8)
+    XCTAssertThrowsError(try BridgeRequest.decode(frame))
+    XCTAssertEqual(BridgeRequest.identity(of: frame), "bad")
+    XCTAssertEqual(BridgeRequest.accessibilityParameters(of: frame), ["verb": .string("quiet"), "quietWindowMs": .integer(-1)])
+    XCTAssertNil(BridgeRequest.accessibilityParameters(of: try BridgeRequest(command: .ping).encoded()))
   }
 }

@@ -17,7 +17,7 @@ final class BridgeExecutionTests: XCTestCase {
       .clearContacts, .clearPhotos, .dns(.list), .proxy(.clear),
       .health(.approve(bundleID: "app", typeIDs: ["step"])),
       .notifications(.delivered(bundleID: "app")), .notifications(.clearDelivered(bundleID: "app")),
-      .accessibility(["verb": .string("describe")]), .ping,
+      .accessibility(.displays), .ping,
     ]
     let expected = BridgeResult(exitCode: 23, values: [.object(["identifier": .string("first")]), .object(["identifier": .string("second")])], error: "The remaining records could not be read")
     var received: [BridgeCommand] = []
@@ -133,7 +133,7 @@ final class BridgeExecutionTests: XCTestCase {
   }
 
   func testMalformedSerializedOutputReportsFailureInBothAdaptersAndAllowsRecovery() throws {
-    let request = BridgeRequest(command: .accessibility(["verb": .string("describe")]), id: "decode")
+    let request = BridgeRequest(command: .accessibility(.displays), id: "decode")
     for text in ["{", "", #"{"ok":true,"value":1e999}"#] {
       let output = BridgeOutput()
       XCTAssertNil(output.write(json: Data(text.utf8)))
@@ -304,7 +304,7 @@ final class BridgeExecutionTests: XCTestCase {
   }
 
   func testAStreamingCommandAnswersEveryResultAsAResponseToItsRequest() throws {
-    let request = BridgeRequest(command: .accessibility(["verb": .string("quiet")]), id: "stream")
+    let request = BridgeRequest(command: .accessibility(.quiescence(pid: nil, busyThresholdMs: nil, quietWindowMs: nil)), id: "stream")
     let results = [BridgeResult(exitCode: 0, values: [.object(["quiet": .bool(false)])]), BridgeResult(exitCode: 1, error: "gone")]
     let source = ScriptedResultStream(results: results)
     var executed = 0
@@ -331,7 +331,7 @@ final class BridgeExecutionTests: XCTestCase {
   }
 
   func testAStreamStopsOnceAFrameCannotBeWritten() throws {
-    let request = BridgeRequest(command: .accessibility(["verb": .string("quiet")]))
+    let request = BridgeRequest(command: .accessibility(.quiescence(pid: nil, busyThresholdMs: nil, quietWindowMs: nil)))
     let source = ScriptedResultStream(results: [BridgeResult(exitCode: 0), BridgeResult(exitCode: 0)])
     let response = BridgeRPC.handle(try request.encoded(), stream: { _ in .stream(source) })
     guard case let .stream(stream) = response else { return XCTFail("expected a stream, got \(response)") }
@@ -344,8 +344,19 @@ final class BridgeExecutionTests: XCTestCase {
     XCTAssertEqual(source.delivered, [false])
   }
 
+  func testAnAccessibilityRequestThatDoesNotDecodeIsAnsweredAsABadRequest() throws {
+    let frame = Data(#"{"command":{"accessibility":{"_0":{"verb":"hittest","x":"left","y":2}}},"id":"malformed","version":1}"#.utf8)
+    for data in [BridgeRPC.process(frame).data, try XCTUnwrap(BridgeRPC.handle(frame).frame).data] {
+      let response = try JSONDecoder().decode(BridgeResponse.self, from: data)
+      XCTAssertEqual(response.id, "malformed")
+      XCTAssertEqual(response.result.exitCode, 1)
+      XCTAssertEqual(
+        response.result.values, [.object(["ok": .bool(false), "error_kind": .string("bad_request"), "error": .string("hittest requires numeric x and y")])])
+    }
+  }
+
   func testAStreamThatCannotStartAnswersWithOneFrame() throws {
-    let request = BridgeRequest(command: .accessibility(["verb": .string("quiet")]), id: "refused")
+    let request = BridgeRequest(command: .accessibility(.quiescence(pid: nil, busyThresholdMs: nil, quietWindowMs: nil)), id: "refused")
     let refusal = BridgeResult(exitCode: 1, values: [.object(["ok": .bool(false)])])
     let response = BridgeRPC.handle(try request.encoded(), execute: { _ in BridgeResult(exitCode: 0) }) { _ in .result(refusal) }
     let frame = try XCTUnwrap(response.frame)

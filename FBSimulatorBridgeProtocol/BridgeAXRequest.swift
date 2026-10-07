@@ -166,11 +166,28 @@ public enum BridgeAXRequest: Sendable, Equatable {
     method: BridgeAXFrontmostMethod = .windowServer, x: Double = 0, y: Double = 0)
   case displays
 
-  public var command: BridgeCommand {
-    get throws { .accessibility(try payload.mapValues(BridgeJSONValue.init(foundationValue:))) }
+  public var command: BridgeCommand { .accessibility(self) }
+
+  public var verb: BridgeAXWire.Verb {
+    switch self {
+    case .read, .readFrontmost: .describe
+    case .hitTest: .hitTest
+    case let .write(request): request.verb
+    case .deviceSettingRead: .settingsGet
+    case .deviceSettingWrite: .settingsSet
+    case .quiescence: .quiet
+    case .displays: .displays
+    }
   }
 
-  public var mayRetry: Bool { (try? command.mayRetry) ?? false }
+  /// Only reads can be replayed after a connection failure with an uncertain outcome. Asserting automation mode
+  /// beside a read is idempotent, so the read stays replayable.
+  public var mayRetry: Bool {
+    switch self {
+    case .read, .readFrontmost, .hitTest, .deviceSettingRead, .displays: true
+    case .write, .deviceSettingWrite, .quiescence: false
+    }
+  }
 
   public var arguments: [String] {
     get throws { try BridgeRequest(command: command).arguments }

@@ -1692,15 +1692,16 @@ public enum FBAccessibilityService {
 
   /// Decodes `parameters` into a request and answers it.
   static func handleRequest(parameters: [String: BridgeJSONValue]) -> [String: Any] {
-    let service = AccessibilityRequest()
-    let request: BridgeAXRequest
     do {
-      request = try BridgeAXRequest(payload: parameters)
+      return handleRequest(try BridgeAXRequest(payload: parameters))
     } catch {
-      return service.FBAXBridgeDecodeFailureResponse(error)
+      return AccessibilityRequest().FBAXBridgeDecodeFailureResponse(error)
     }
+  }
+
+  static func handleRequest(_ request: BridgeAXRequest) -> [String: Any] {
     do {
-      return try service.FBAXBridgeDispatchRequest(request: request)
+      return try AccessibilityRequest().FBAXBridgeDispatchRequest(request: request)
     } catch AXDisplayScopeError.missingWindowIdentity {
       return [responseOk: false, responseError: "Cannot scope accessibility: a window has no valid display identity", responseErrorKind: "capability_unavailable"]
     } catch {
@@ -1711,18 +1712,17 @@ public enum FBAccessibilityService {
   /// The stream `quiet` answers with, or nil for every other verb.
   static func quiescence(_ parameters: [String: BridgeJSONValue]) -> QuiescenceStart? {
     guard parameters[requestVerb] == .string(AccessibilityVerb.quiet.rawValue) else { return nil }
-    let service = AccessibilityRequest()
-    let request: BridgeAXRequest
     do {
-      request = try BridgeAXRequest(payload: parameters)
+      return quiescence(try BridgeAXRequest(payload: parameters))
     } catch {
-      return .failure(service.FBAXBridgeDecodeFailureResponse(error))
+      return .failure(AccessibilityRequest().FBAXBridgeDecodeFailureResponse(error))
     }
-    guard case let .quiescence(pid, busyThresholdMs, quietWindowMs, displayID, method, x, y) = request else {
-      return .failure(service.FBAXBridgeErrorResponse(message: "quiet decoded as \(request)"))
-    }
+  }
+
+  static func quiescence(_ request: BridgeAXRequest) -> QuiescenceStart? {
+    guard case let .quiescence(pid, busyThresholdMs, quietWindowMs, displayID, method, x, y) = request else { return nil }
     return .stream(
-      service.FBAXBridgeQuiescenceStream(
+      AccessibilityRequest().FBAXBridgeQuiescenceStream(
         pid: pid, busyThresholdMs: busyThresholdMs, quietWindowMs: quietWindowMs, displayID: displayID, method: method,
         anchor: CGPoint(x: x, y: y)))
   }

@@ -26,7 +26,7 @@ extension BridgeServerSocketTests {
     let client = connectClient()
     var payload = request
     payload["verb"] = .string("quiet")
-    sendData(data: try frame(command: .accessibility(payload)), to: client)
+    sendData(data: try frame(accessibility: payload), to: client)
     return client
   }
 

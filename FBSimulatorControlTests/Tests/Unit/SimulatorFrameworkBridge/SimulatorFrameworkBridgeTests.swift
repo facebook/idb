@@ -93,7 +93,7 @@ final class SimulatorFrameworkBridgeTests: XCTestCase {
   }
 
   func testCommandsWithoutAnIdentityUseThePersistentGuest() {
-    for command: BridgeCommand in [.notifications(.list(bundleID: "com.apple.news")), .notifications(.delivered(bundleID: "../news")), .clearPhotos, .accessibility([:])] {
+    for command: BridgeCommand in [.notifications(.list(bundleID: "com.apple.news")), .notifications(.delivered(bundleID: "../news")), .clearPhotos, .accessibility(.displays)] {
       XCTAssertEqual(command.route, .persistent, "\(command)")
     }
   }
@@ -102,7 +102,7 @@ final class SimulatorFrameworkBridgeTests: XCTestCase {
     XCTAssertEqual(BridgeCommand.dns(.set(servers: ["1.1.1.1"])).serviceAndAction, "dns set")
     XCTAssertEqual(BridgeCommand.notifications(.clearDelivered(bundleID: "com.apple.news")).serviceAndAction, "notifications clear-delivered")
     XCTAssertEqual(BridgeCommand.health(.approve(bundleID: "com.apple.news", typeIDs: [])).serviceAndAction, "health approve")
-    XCTAssertEqual(BridgeCommand.accessibility(["verb": .string("describe")]).serviceAndAction, "accessibility describe")
+    XCTAssertEqual(BridgeCommand.accessibility(.hitTest(x: 1, y: 2, attributes: nil)).serviceAndAction, "accessibility hittest")
   }
 
   func testFailuresNameTheCommandRatherThanTheAccessibilityReader() {

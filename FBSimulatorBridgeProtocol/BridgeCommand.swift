@@ -49,7 +49,7 @@ public enum BridgeCommand: Codable, Equatable, Sendable {
   case proxy(Proxy)
   case notifications(Notifications)
   case health(Health)
-  case accessibility([String: BridgeJSONValue])
+  case accessibility(BridgeAXRequest)
   case ping
   case shutdown
 
@@ -82,13 +82,7 @@ public enum BridgeCommand: Codable, Equatable, Sendable {
       case .list: true
       case .clear, .approve, .revoke: false
       }
-    case let .accessibility(parameters):
-      // Asserting automation mode beside a read is idempotent, so the read stays replayable.
-      if case let .string(verb) = parameters[BridgeAXWire.Request.verb.key] {
-        [BridgeAXWire.Verb.displays, .describe, .hitTest, .settingsGet].contains { $0.rawValue == verb }
-      } else {
-        false
-      }
+    case let .accessibility(request): request.mayRetry
     case .ping: true
     }
   }
