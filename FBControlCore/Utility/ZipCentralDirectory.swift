@@ -66,13 +66,15 @@ public struct ZipCentralDirectory {
   /// Makes a tree extracted from the zip as a stream what extracting the complete
   /// file would have made: permissions and symlinks are applied, and AppleDouble
   /// entries for another entry, which only a complete-file extraction folds away,
-  /// are removed.
-  public func repair(extractedAt root: String) throws {
+  /// are removed. Directories get their archived times back afterwards, unless
+  /// `overrideModificationTime` is set, as changing their contents touches them.
+  public func repair(extractedAt root: String, overrideModificationTime: Bool = false) throws {
     let paths = Set(entries.map { ArchiveExtraction.trimmingTrailingSlash($0.path) })
     var verifiedDirectories: Set<String> = [""]
     var symlinks: [String] = []
     var files: [(path: String, mode: mode_t)] = []
     var directories: [(path: String, mode: mode_t)] = []
+    var directoryTimes: [(path: String, modified: Date)] = []
     var sequestered = false
     for entry in entries {
       let relative = try Self.safeRelativePath(entry.path)
@@ -84,6 +86,9 @@ public struct ZipCentralDirectory {
       // extracted, so nothing here may be reached through a symlink.
       try Self.verifyNoSymlinkAncestors(of: relative, in: root, verified: &verifiedDirectories)
       let path = (root as NSString).appendingPathComponent(relative)
+      if entry.path.hasSuffix("/"), !relative.isEmpty, let modified = entry.modified {
+        directoryTimes.append((path, modified))
+      }
       if ArchiveExtraction.isAppleDouble(relative, alongside: paths) {
         if Self.hasAppleDoubleHeader(atPath: path) {
           try FileManager.default.removeItem(atPath: path)
@@ -119,6 +124,12 @@ public struct ZipCentralDirectory {
     // Last and deepest first, as a directory's mode may deny writing into it.
     for (path, mode) in directories.sorted(by: { $0.path.count > $1.path.count }) {
       try Self.setPermissions(mode, atPath: path)
+    }
+    if overrideModificationTime {
+      return
+    }
+    for (path, modified) in directoryTimes.reversed() {
+      try ArchiveExtraction.setTimes(modified) { utimes(path, $0) }
     }
   }
 

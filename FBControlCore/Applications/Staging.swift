@@ -323,7 +323,7 @@ public enum Staging {
     }.get()
     do {
       let summary = try streamed.get()
-      try ZipCentralDirectory(archiveAtPath: spoolPath).repair(extractedAt: extractPath)
+      try ZipCentralDirectory(archiveAtPath: spoolPath).repair(extractedAt: extractPath, overrideModificationTime: options.overrideModificationTime)
       logger.log(summary.description(from: "a zip stream", since: start))
       return
     } catch {

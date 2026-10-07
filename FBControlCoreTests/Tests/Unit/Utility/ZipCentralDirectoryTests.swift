@@ -85,8 +85,7 @@ struct ZipCentralDirectoryTests {
 
     try ZipCentralDirectory(archiveAtPath: archive).repair(extractedAt: extracted)
 
-    // BUG: replacing files with symlinks touches the directory after its time was set. Flipped in the following commit.
-    #expect(try modified("\(extracted)/A.app") != archived)
+    #expect(try modified("\(extracted)/A.app") == archived)
   }
 
   @Test
