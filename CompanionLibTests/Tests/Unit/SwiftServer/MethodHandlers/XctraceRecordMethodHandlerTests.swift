@@ -73,6 +73,17 @@ private func gzipMembers(in data: Data) -> Int {
   }.count
 }
 
+/// Extracts a gzipped tar with the system `tar`, as a client does.
+private func extract(_ archive: Data, into destination: URL) throws {
+  try FileManager.default.createDirectory(at: destination, withIntermediateDirectories: true)
+  let file = destination.appendingPathExtension("tar.gz")
+  try archive.write(to: file)
+  defer { try? FileManager.default.removeItem(at: file) }
+  let tar = try Process.run(URL(fileURLWithPath: "/usr/bin/tar"), arguments: ["-xzf", file.path, "-C", destination.path])
+  tar.waitUntilExit()
+  #expect(tar.terminationStatus == 0)
+}
+
 private enum Outcome {
   case returned(Idb_XctraceRecordRequest.Stop)
   case threw(any Error)
@@ -199,5 +210,24 @@ struct XctraceRecordMethodHandlerTests {
 
     #expect(error?.message.hasPrefix("Draining operation failed with exit code 1: ") == true)
     #expect(error?.message.contains("Permission denied") == true)
+  }
+
+  @Test
+  func theTraceArchiveExtractsToTheTrace() async throws {
+    let scratch = URL(fileURLWithPath: NSTemporaryDirectory()).appendingPathComponent("xctrace-extract-\(UUID().uuidString)")
+    defer { try? FileManager.default.removeItem(at: scratch) }
+    let trace = scratch.appendingPathComponent("recording.trace")
+    try FileManager.default.createDirectory(at: trace.appendingPathComponent("corespace/run1"), withIntermediateDirectories: true)
+    let sample = Data((0..<(256 * 1024)).map { UInt8(truncatingIfNeeded: $0 &* 7) })
+    try sample.write(to: trace.appendingPathComponent("corespace/run1/store"))
+    try Data("form".utf8).write(to: trace.appendingPathComponent("form.template"))
+    let collector = CollectingWriter<Idb_XctraceRecordResponse>()
+
+    try await XctraceRecordMethodHandler.sendTrace(atPath: trace.path, responseStream: RPCWriter(wrapping: collector), logger: logger)
+
+    let extracted = scratch.appendingPathComponent("extracted")
+    try extract(collector.elements.reduce(into: Data()) { $0.append($1.payload.data) }, into: extracted)
+    #expect(FileManager.default.contents(atPath: extracted.appendingPathComponent("corespace/run1/store").path) == sample)
+    #expect(FileManager.default.contents(atPath: extracted.appendingPathComponent("form.template").path) == Data("form".utf8))
   }
 }

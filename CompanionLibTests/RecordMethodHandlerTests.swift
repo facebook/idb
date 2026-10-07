@@ -80,6 +80,23 @@ private final class CollectingWriter<Element: Sendable>: RPCWriterProtocol, @unc
   }
 }
 
+/// Decompresses with the system `gzip`, as a client does.
+private func gunzip(_ data: Data) throws -> Data {
+  let file = URL(fileURLWithPath: NSTemporaryDirectory()).appendingPathComponent("record-gunzip-\(UUID().uuidString).gz")
+  try data.write(to: file)
+  defer { try? FileManager.default.removeItem(at: file) }
+  let gzip = Process()
+  gzip.executableURL = URL(fileURLWithPath: "/usr/bin/gzip")
+  gzip.arguments = ["-dc", file.path]
+  let output = Pipe()
+  gzip.standardOutput = output
+  try gzip.run()
+  let decompressed = output.fileHandleForReading.readDataToEndOfFile()
+  gzip.waitUntilExit()
+  #expect(gzip.terminationStatus == 0)
+  return decompressed
+}
+
 @Suite
 struct RecordMethodHandlerTests {
 
@@ -206,7 +223,7 @@ struct RecordMethodHandlerTests {
     #expect(collector.elements.isEmpty)
   }
 
-  /// The ordinary path is untouched: a clean finalize delivers and returns without throwing.
+  /// The ordinary path is untouched: a clean finalize delivers the recording, gzipped, and returns without throwing.
   @Test
   func aCleanFinalizeDeliversAndDoesNotThrow() async throws {
     let directory = URL(fileURLWithPath: NSTemporaryDirectory())
@@ -226,8 +243,8 @@ struct RecordMethodHandlerTests {
       responseStream: RPCWriter(wrapping: collector),
       logger: RecordingLogger())
 
-    let delivered = collector.elements.reduce(0) { $0 + $1.payload.data.count }
-    #expect(delivered > 0)
+    let delivered = collector.elements.reduce(into: Data()) { $0.append($1.payload.data) }
+    #expect(try gunzip(delivered) == Data(contentsOf: recorded))
   }
 
   @Test(.enabled(if: getuid() != 0, "root reads a file whatever its mode"))

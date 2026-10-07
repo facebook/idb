@@ -16,19 +16,30 @@ private let logger = FBControlCoreLoggerFactory.systemLoggerWriting(toStderr: fa
 private final class ScriptedFilePuller: FilePulling, @unchecked Sendable {
   let temporaryDirectory = TemporaryDirectory(logger: logger)
   let holdsOpen: Bool
+  let land: @Sendable (String) throws -> Void
   let onStart: @Sendable () -> Void
   let onStop: @Sendable () -> Void
 
-  /// A pull lands at its destination at once, or with `holdsOpen` runs until it is cancelled.
-  init(holdsOpen: Bool = false, onStart: @escaping @Sendable () -> Void = {}, onStop: @escaping @Sendable () -> Void = {}) {
+  /// A pull lands at its destination at once, writing whatever `land` puts there, or with `holdsOpen` runs until it
+  /// is cancelled.
+  init(
+    holdsOpen: Bool = false,
+    land: @escaping @Sendable (String) throws -> Void = { _ in },
+    onStart: @escaping @Sendable () -> Void = {},
+    onStop: @escaping @Sendable () -> Void = {}
+  ) {
     self.holdsOpen = holdsOpen
+    self.land = land
     self.onStart = onStart
     self.onStop = onStop
   }
 
   func pull_file_path(_ path: String, destination_path destinationPath: String, containerType: String?) async throws -> String {
     onStart()
-    guard holdsOpen else { return destinationPath }
+    guard holdsOpen else {
+      try land(destinationPath)
+      return destinationPath
+    }
     do {
       try await Task.sleep(nanoseconds: 60_000_000_000)
     } catch {
@@ -70,6 +81,19 @@ private final class LocalFilePuller: FilePulling, @unchecked Sendable {
   }
 }
 
+/// Extracts a gzipped tar with the system `tar`, as a client does.
+private func extract(_ archive: Data) throws -> URL {
+  let scratch = URL(fileURLWithPath: NSTemporaryDirectory()).appendingPathComponent("pull-extract-\(UUID().uuidString)")
+  let destination = scratch.appendingPathComponent("extracted")
+  try FileManager.default.createDirectory(at: destination, withIntermediateDirectories: true)
+  let file = scratch.appendingPathComponent("archive.tar.gz")
+  try archive.write(to: file)
+  let tar = try Process.run(URL(fileURLWithPath: "/usr/bin/tar"), arguments: ["-xzf", file.path, "-C", destination.path])
+  tar.waitUntilExit()
+  XCTAssertEqual(tar.terminationStatus, 0)
+  return destination
+}
+
 final class PullMethodHandlerTests: XCTestCase {
 
   private let request = Idb_PullRequest.with {
@@ -105,6 +129,25 @@ final class PullMethodHandlerTests: XCTestCase {
       XCTAssertTrue(error.message.hasPrefix("Draining operation failed with exit code 1: "), error.message)
       XCTAssertTrue(error.message.contains("Permission denied"), error.message)
     }
+  }
+
+  func testAPullWithoutADestinationStreamsAnArchiveOfWhatLanded() async throws {
+    let puller = ScriptedFilePuller(land: { destination in
+      try FileManager.default.createDirectory(atPath: "\(destination)/nested", withIntermediateDirectories: true)
+      try Data("top".utf8).write(to: URL(fileURLWithPath: "\(destination)/top.txt"))
+      try Data("deep".utf8).write(to: URL(fileURLWithPath: "\(destination)/nested/deep.txt"))
+    })
+    let request = Idb_PullRequest.with { $0.srcPath = "Documents/folder" }
+    let sent = SentResponses()
+
+    try await PullMethodHandler.pull(request, using: puller, logger: logger, cancellation: ServerContext.RPCCancellationHandle()) {
+      sent.append($0)
+    }
+
+    let extracted = try extract(sent.all.reduce(into: Data()) { $0.append($1.payload.data) })
+    defer { try? FileManager.default.removeItem(at: extracted.deletingLastPathComponent()) }
+    XCTAssertEqual(FileManager.default.contents(atPath: extracted.appendingPathComponent("top.txt").path), Data("top".utf8))
+    XCTAssertEqual(FileManager.default.contents(atPath: extracted.appendingPathComponent("nested/deep.txt").path), Data("deep".utf8))
   }
 
   // gRPC reports a client going away through the RPC's cancellation handle, not by cancelling the
