@@ -138,7 +138,6 @@ OnlyFilter = Union[TargetType, ECIDFilter]
 
 class Architecture(Enum):
     ANY = "any"
-    X86 = "x86_64"
     ARM64 = "arm64"
 
 
