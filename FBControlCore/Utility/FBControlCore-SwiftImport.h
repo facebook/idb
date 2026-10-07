@@ -15,6 +15,5 @@
 #import <Foundation/Foundation.h>
 
 #import <FBControlCore/FBFuture.h>
-#import <FBControlCore/FileReader.h>
 
 #import "FBControlCore-Swift.h"

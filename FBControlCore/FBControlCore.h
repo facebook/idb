@@ -13,4 +13,3 @@
 #import <FBControlCore/FBFuture+Sync.h>
 #import <FBControlCore/FBObjCExceptionGuard.h>
 #import <FBControlCore/FBProcessStream.h>
-#import <FBControlCore/FileReader.h>
