@@ -295,7 +295,7 @@ public final class LockdownServiceConnection: CustomStringConvertible {
   func readFromConnectionWriting(
     to consumer: any DataConsumer,
     on queue: DispatchQueue
-  ) -> any FileReaderProtocol {
+  ) -> LockdownServiceConnectionReader {
     let reader = LockdownServiceConnectionReader(connection: self, consumer: consumer, queue: queue)
     activeReaderFinished = reader.finishedReading
     return reader
@@ -351,7 +351,7 @@ public final class LockdownServiceConnection: CustomStringConvertible {
 }
 
 /// Reads a service connection until it is exhausted, feeding a consumer.
-private final class LockdownServiceConnectionReader: NSObject, FileReaderProtocol {
+final class LockdownServiceConnectionReader: NSObject {
 
   private let connection: LockdownServiceConnection
   private let consumer: any DataConsumer
@@ -389,6 +389,7 @@ private final class LockdownServiceConnectionReader: NSObject, FileReaderProtoco
     finishedReadingMutable.retyped(FBFuture<NSNumber>.self)
   }
 
+  @discardableResult
   func startReading() -> FBFuture<NSNull> {
     guard state == .notStarted else {
       return FBFuture<NSNull>(error: LockdownServiceConnectionError.cannotStartReading(state: state.rawValue) as NSError)

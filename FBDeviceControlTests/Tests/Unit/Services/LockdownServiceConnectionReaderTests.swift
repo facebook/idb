@@ -99,7 +99,7 @@ struct LockdownServiceConnectionReaderTests {
     calls.ServiceConnectionReceive = blockingReceive
     calls.ServiceConnectionInvalidate = invalidateLeavingReceiveBlocked
     weak var leaked: ConnectionReference?
-    let reader: any FileReaderProtocol
+    let reader: LockdownServiceConnectionReader
     do {
       let connectionRef = ConnectionReference()
       leaked = connectionRef

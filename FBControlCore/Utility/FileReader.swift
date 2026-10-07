@@ -7,6 +7,16 @@
 
 import Foundation
 
+/// The File Reader States
+@objc public enum FBFileReaderState: UInt {
+  case notStarted = 0
+  case reading = 1
+  case finishedReadingNormally = 2
+  case finishedReadingInError = 3
+  // `ECANCELED`, which a raw value cannot reference. The state crosses futures as its raw value.
+  case finishedReadingByCancellation = 89
+}
+
 private func stateString(from state: FBFileReaderState) -> String {
   switch state {
   case .notStarted:
@@ -45,7 +55,7 @@ enum FileReaderError: Error, LocalizedError {
 }
 
 @objc
-public final class FileReader: NSObject, FileReaderProtocol {
+public final class FileReader: NSObject {
 
   // MARK: - Private Properties
 
