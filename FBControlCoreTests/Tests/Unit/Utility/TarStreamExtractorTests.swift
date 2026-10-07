@@ -18,13 +18,7 @@ struct TarStreamExtractorTests {
   private let logger = ControlCoreGlobalConfiguration.defaultLogger
 
   private func run(_ launchPath: String, _ arguments: [String]) throws {
-    let process = Process()
-    process.executableURL = URL(fileURLWithPath: launchPath)
-    process.arguments = arguments
-    process.currentDirectoryURL = root
-    try process.run()
-    process.waitUntilExit()
-    #expect(process.terminationStatus == 0, "\(launchPath) \(arguments)")
+    try ArchiveFixtures.run(launchPath, arguments, in: root)
   }
 
   /// An app with modes, symlinks, a hard link, long and non-ASCII names, and an
@@ -51,27 +45,8 @@ struct TarStreamExtractorTests {
     return app.path
   }
 
-  /// Every item under `path`, as the properties an install depends on.
   private func tree(at path: String) throws -> [String: String] {
-    var tree: [String: String] = [:]
-    for relative in try fileManager.subpathsOfDirectory(atPath: path) {
-      let item = (path as NSString).appendingPathComponent(relative)
-      let attributes = try fileManager.attributesOfItem(atPath: item)
-      let type = try #require(attributes[.type] as? FileAttributeType)
-      let mode = String(try #require(attributes[.posixPermissions] as? Int), radix: 8)
-      let modified = try #require(attributes[.modificationDate] as? Date).timeIntervalSince1970
-      switch type {
-      case .typeSymbolicLink:
-        tree[relative] = "link \(try fileManager.destinationOfSymbolicLink(atPath: item)) \(modified)"
-      case .typeDirectory:
-        tree[relative] = "dir \(mode) \(modified)"
-      default:
-        let contents = try Data(contentsOf: URL(fileURLWithPath: item))
-        let links = try #require(attributes[.referenceCount] as? Int)
-        tree[relative] = "file \(mode) \(modified) \(links) \(contents.count) \(contents.hashValue)"
-      }
-    }
-    return tree
+    try ArchiveFixtures.tree(at: path, linkTimes: true)
   }
 
   /// Writes `contents` to a pipe in small pieces, as an archive arrives, and
@@ -116,8 +91,7 @@ struct TarStreamExtractorTests {
 
     let expectedTree = try tree(at: expected)
     let extractedTree = try tree(at: extracted)
-    let differences = Set(expectedTree.keys).union(extractedTree.keys).sorted().filter { expectedTree[$0] != extractedTree[$0] }
-    #expect(differences.map { "\($0): \(expectedTree[$0] ?? "-") vs \(extractedTree[$0] ?? "-")" } == [])
+    #expect(ArchiveFixtures.differences(expectedTree, extractedTree) == "")
     guard case .extracted(let summary, _) = outcome else {
       Issue.record("\(archive) was not read as a tar")
       return

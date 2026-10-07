@@ -431,13 +431,9 @@ final class ApplicationArchiveTests: XCTestCase {
       atPath: (staged as NSString).appendingPathComponent("Link.plist"),
       withDestinationPath: "Info.plist")
     let archive = path("symlink-\(UUID().uuidString).ipa")
-    let zip = Process()
-    zip.executableURL = URL(fileURLWithPath: "/usr/bin/zip")
-    zip.currentDirectoryURL = URL(fileURLWithPath: root)
-    zip.arguments = [firstEntryStoredWithSizeAfter ? "-qry0" : "-qry", archive, "Payload"]
-    try zip.run()
-    zip.waitUntilExit()
-    XCTAssertEqual(zip.terminationStatus, 0)
+    try ArchiveFixtures.run(
+      "/usr/bin/zip", [firstEntryStoredWithSizeAfter ? "-qry0" : "-qry", archive, "Payload"],
+      in: URL(fileURLWithPath: root))
     var data = try Data(contentsOf: URL(fileURLWithPath: archive))
     if firstEntryStoredWithSizeAfter {
       // Bit 3 of the general purpose flags, at offset 6 of the local header.

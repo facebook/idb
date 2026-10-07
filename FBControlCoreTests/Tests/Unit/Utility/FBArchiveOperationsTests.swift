@@ -247,13 +247,9 @@ final class FBArchiveOperationsTests: XCTestCase {
   private func makeArchive(from source: String, format: ArchiveFormat) throws -> String {
     let archive = (tempDirectory as NSString)
       .appendingPathComponent("fixture.\(format.fileExtension)")
-    let process = Process()
-    process.executableURL = URL(fileURLWithPath: BSDTarPath)
-    process.arguments = format.creationFlags + ["-c", "-f", archive, "-C", source, "Payload"]
-    try process.run()
-    process.waitUntilExit()
-    XCTAssertEqual(
-      process.terminationStatus, 0, "Failed to build the \(format.fileExtension) fixture")
+    try ArchiveFixtures.run(
+      BSDTarPath, format.creationFlags + ["-c", "-f", archive, "-C", source, "Payload"],
+      in: URL(fileURLWithPath: tempDirectory))
     return archive
   }
 

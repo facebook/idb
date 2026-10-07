@@ -18,13 +18,7 @@ struct ZipExtractorTests {
   private let logger = ControlCoreGlobalConfiguration.defaultLogger
 
   private func run(_ launchPath: String, _ arguments: [String]) throws {
-    let process = Process()
-    process.executableURL = URL(fileURLWithPath: launchPath)
-    process.arguments = arguments
-    process.currentDirectoryURL = root
-    try process.run()
-    process.waitUntilExit()
-    #expect(process.terminationStatus == 0, "\(launchPath) \(arguments)")
+    try ArchiveFixtures.run(launchPath, arguments, in: root)
   }
 
   /// An app with modes, symlinks, nesting, extended attributes and contents that deflate.
@@ -46,37 +40,6 @@ struct ZipExtractorTests {
     return app.path
   }
 
-  /// Every item under `path`, as the properties an install depends on.
-  private func tree(at path: String) throws -> [String: String] {
-    var tree: [String: String] = [:]
-    for relative in try fileManager.subpathsOfDirectory(atPath: path) {
-      let item = (path as NSString).appendingPathComponent(relative)
-      let attributes = try fileManager.attributesOfItem(atPath: item)
-      let type = try #require(attributes[.type] as? FileAttributeType)
-      let mode = String(try #require(attributes[.posixPermissions] as? Int), radix: 8)
-      switch type {
-      case .typeSymbolicLink:
-        tree[relative] = "link \(try fileManager.destinationOfSymbolicLink(atPath: item))"
-      case .typeDirectory:
-        tree[relative] = "dir \(mode) \(try #require(attributes[.modificationDate] as? Date).timeIntervalSince1970)"
-      default:
-        let contents = try Data(contentsOf: URL(fileURLWithPath: item))
-        tree[relative] = "file \(mode) \(try #require(attributes[.modificationDate] as? Date).timeIntervalSince1970) \(contents.count) \(contents.hashValue)"
-      }
-    }
-    return tree
-  }
-
-  /// What `bsdtar` extracted, less the AppleDouble entries for symlinks: `bsdtar`
-  /// cannot apply metadata to a symlink, so it writes those entries out as files.
-  private func bsdtarTree(at expected: String) throws -> [String: String] {
-    try tree(at: expected).filter { relative, _ in
-      let name = (relative as NSString).lastPathComponent
-      let sibling = ((relative as NSString).deletingLastPathComponent as NSString).appendingPathComponent(String(name.dropFirst(2)))
-      return !(name.hasPrefix("._") && (try? fileManager.destinationOfSymbolicLink(atPath: "\(expected)/\(sibling)")) != nil)
-    }
-  }
-
   private func expectParityWithBSDTar(_ archive: String) async throws {
     let expected = root.appendingPathComponent("bsdtar").path
     try fileManager.createDirectory(atPath: expected, withIntermediateDirectories: true)
@@ -86,10 +49,9 @@ struct ZipExtractorTests {
 
     let summary = try ZipExtractor.extract(archiveAtPath: archive, to: extracted)
 
-    let expectedTree = try bsdtarTree(at: expected)
-    let extractedTree = try tree(at: extracted)
-    let differences = Set(expectedTree.keys).union(extractedTree.keys).sorted().filter { expectedTree[$0] != extractedTree[$0] }
-    #expect(differences.map { "\($0): \(expectedTree[$0] ?? "-") vs \(extractedTree[$0] ?? "-")" } == [])
+    let expectedTree = try ArchiveFixtures.bsdtarTree(at: expected, keepHardLinks: false)
+    let extractedTree = try ArchiveFixtures.tree(at: extracted, keepHardLinks: false)
+    #expect(ArchiveFixtures.differences(expectedTree, extractedTree) == "")
     #expect(summary.files == expectedTree.values.filter { $0.hasPrefix("file") }.count)
   }
 
@@ -252,13 +214,9 @@ struct ZipExtractorTests {
     try extractAsStream(archive, to: extracted)
 
     // The repair removes AppleDouble files after the fact, which moves their directories' times.
-    func withoutDirectoryTimes(_ tree: [String: String]) -> [String: String] {
-      tree.mapValues { $0.hasPrefix("dir") ? String($0.split(separator: " ").prefix(2).joined(separator: " ")) : $0 }
-    }
-    let expectedTree = withoutDirectoryTimes(try bsdtarTree(at: expected))
-    let extractedTree = withoutDirectoryTimes(try tree(at: extracted))
-    let differences = Set(expectedTree.keys).union(extractedTree.keys).sorted().filter { expectedTree[$0] != extractedTree[$0] }
-    #expect(differences.map { "\($0): \(expectedTree[$0] ?? "-") vs \(extractedTree[$0] ?? "-")" } == [])
+    let expectedTree = try ArchiveFixtures.bsdtarTree(at: expected, keepHardLinks: false, directoryTimes: false)
+    let extractedTree = try ArchiveFixtures.tree(at: extracted, keepHardLinks: false, directoryTimes: false)
+    #expect(ArchiveFixtures.differences(expectedTree, extractedTree) == "")
   }
 
   @Test
@@ -368,20 +326,6 @@ struct ZipExtractorTests {
 
   // MARK: - InProcessZipExtractor
 
-  private final class RecordingExtractor: ArchiveExtractor {
-    let extractions = OSAllocatedUnfairLock<[(path: String, existing: [String])]>(initialState: [])
-
-    func extract(_ source: ArchiveSource, to extractPath: String, options: ArchiveExtractOptions, logger: any ControlCoreLogger) async throws {
-      guard case .filePath(let path) = source else {
-        return
-      }
-      let existing = try FileManager.default.contentsOfDirectory(atPath: extractPath)
-      extractions.withLock { $0.append((path, existing)) }
-    }
-
-    func extract(from source: any ByteSource, to extractPath: String, options: ArchiveExtractOptions, logger: any ControlCoreLogger) async throws {}
-  }
-
   @Test
   func inProcessZipExtractor_ExtractsAZipItself() async throws {
     let app = try makeApp()
@@ -393,7 +337,7 @@ struct ZipExtractorTests {
 
     try await InProcessZipExtractor(fallback: fallback).extract(.filePath(archive), to: extracted, options: ArchiveExtractOptions(), logger: logger)
 
-    #expect(fallback.extractions.withLock { $0.isEmpty })
+    #expect(!fallback.wasReached)
     #expect(fileManager.fileExists(atPath: "\(extracted)/A.app/Info.plist"))
   }
 
@@ -408,7 +352,7 @@ struct ZipExtractorTests {
 
     try await InProcessZipExtractor(fallback: fallback).extract(.filePath(archive), to: extracted, options: ArchiveExtractOptions(), logger: logger)
 
-    #expect(fallback.extractions.withLock { $0.map(\.path) } == [archive])
+    #expect(fallback.extractions.map(\.path) == [archive])
   }
 
   @Test
@@ -423,7 +367,7 @@ struct ZipExtractorTests {
 
     try await InProcessZipExtractor(fallback: fallback).extract(.filePath(archive), to: extracted, options: ArchiveExtractOptions(), logger: logger)
 
-    let extractions = fallback.extractions.withLock { $0 }
+    let extractions = fallback.extractions
     #expect(extractions.map(\.path) == [archive])
     #expect(extractions.first?.existing == [])
   }

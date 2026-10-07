@@ -65,7 +65,7 @@ struct ArchiveCorpusTests {
     do {
       try FileManager.default.createDirectory(atPath: expected, withIntermediateDirectories: true)
       try await BSDTarExtractor().extract(.filePath(archive.path), to: expected, options: ArchiveExtractOptions(), logger: logger)
-      let tree = try corpus.bsdtarTree(at: expected, keepHardLinks: keepHardLinks, directoryTimes: directoryTimes)
+      let tree = try ArchiveFixtures.bsdtarTree(at: expected, keepHardLinks: keepHardLinks, directoryTimes: directoryTimes)
       // An empty archive is no app, which an install rightly refuses.
       return tree.isEmpty ? .failed("nothing extracted") : .extracted(tree)
     } catch {
@@ -112,16 +112,16 @@ struct ArchiveCorpusTests {
     // The repair removes AppleDouble files after the fact, which moves their directories' times.
     let directoryTimes = route != .zipStream
     let expected = await bsdtarOutcome(archive, keepHardLinks: producer.keepsHardLinks, directoryTimes: directoryTimes)
-    let actual = try corpus.tree(at: extracted, keepHardLinks: producer.keepsHardLinks, directoryTimes: directoryTimes)
+    let actual = try ArchiveFixtures.tree(at: extracted, keepHardLinks: producer.keepsHardLinks, directoryTimes: directoryTimes)
     guard case .extracted(let expectedTree) = expected else {
       Issue.record("bsdtar could not extract \(producer)")
       return
     }
     if route.streamsAZipToBSDTar(producer) {
       // BUG: a zip read as a stream loses its modes and symlinks; flipped once streams are sniffed before an extractor is chosen.
-      #expect(ArchiveCorpus.differences(expectedTree, actual) != "", "\(producer) \(route)")
+      #expect(ArchiveFixtures.differences(expectedTree, actual) != "", "\(producer) \(route)")
     } else {
-      #expect(ArchiveCorpus.differences(expectedTree, actual) == "", "\(producer) \(route)")
+      #expect(ArchiveFixtures.differences(expectedTree, actual) == "", "\(producer) \(route)")
     }
     #expect(fallback.wasReached != route.extractsInProcess(producer), "\(producer) \(route) fell back: \(fallback.wasReached)")
   }
@@ -170,7 +170,7 @@ struct ArchiveCorpusTests {
       return try await ApplicationArchive.withResolvedBundle(
         from: installSource, downloadConfiguration: configuration, temporaryDirectory: temporaryDirectory, logger: logger
       ) { bundle in
-        .extracted(try corpus.tree(at: (bundle.path as NSString).deletingLastPathComponent, keepHardLinks: keepHardLinks, directoryTimes: directoryTimes))
+        .extracted(try ArchiveFixtures.tree(at: (bundle.path as NSString).deletingLastPathComponent, keepHardLinks: keepHardLinks, directoryTimes: directoryTimes))
       }
     } catch InstallError.extractionFailed(let underlying) {
       return .failed("\(underlying)")
@@ -196,7 +196,7 @@ struct ArchiveCorpusTests {
       Issue.record("\(producer): bsdtar \(expected), \(source) \(actual)")
       return
     }
-    #expect(ArchiveCorpus.differences(expectedTree, actualTree) == "", "\(producer) \(source)")
+    #expect(ArchiveFixtures.differences(expectedTree, actualTree) == "", "\(producer) \(source)")
   }
 
   // MARK: - Damaged archives
@@ -265,7 +265,7 @@ struct ArchiveCorpusTests {
       switch (expected, actual) {
       case (.extracted(let expectedTree), .extracted(let actualTree)):
         let compared = producer.isZip ? (Self.withoutTimes(expectedTree), Self.withoutTimes(actualTree)) : (expectedTree, actualTree)
-        #expect(ArchiveCorpus.differences(compared.0, compared.1) == "", "\(producer) \(damage) \(source)")
+        #expect(ArchiveFixtures.differences(compared.0, compared.1) == "", "\(producer) \(damage) \(source)")
       case (.failed, .failed):
         break
       case (.extracted, .failed(let reason)):

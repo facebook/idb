@@ -16,13 +16,7 @@ struct ZipCentralDirectoryTests {
   private let fileManager = FileManager.default
 
   private func run(_ launchPath: String, _ arguments: [String]) throws {
-    let process = Process()
-    process.executableURL = URL(fileURLWithPath: launchPath)
-    process.arguments = arguments
-    process.currentDirectoryURL = root
-    try process.run()
-    process.waitUntilExit()
-    #expect(process.terminationStatus == 0, "\(launchPath) \(arguments)")
+    try ArchiveFixtures.run(launchPath, arguments, in: root)
   }
 
   /// An app with the things a zip records only in its central directory.

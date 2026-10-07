@@ -52,13 +52,7 @@ struct ArchiveCorpus {
   }
 
   func run(_ launchPath: String, _ arguments: [String]) throws {
-    let process = Process()
-    process.executableURL = URL(fileURLWithPath: launchPath)
-    process.arguments = arguments
-    process.currentDirectoryURL = root
-    try process.run()
-    process.waitUntilExit()
-    #expect(process.terminationStatus == 0, "\(launchPath) \(arguments)")
+    try ArchiveFixtures.run(launchPath, arguments, in: root)
   }
 
   /// An app with what installs meet: modes, file and directory symlinks, a framework with a `Versions/Current` link, a hard link, long, spaced and non-ASCII names, an extended attribute, empty files and directories, and contents that do and do not compress across many read buffers.
@@ -153,72 +147,6 @@ struct ArchiveCorpus {
     try data.write(to: input)
     try run("/usr/bin/gzip", ["-nf", input.path])
     return try Data(contentsOf: root.appendingPathComponent("member.gz"))
-  }
-
-  /// Every item under `path`, as the properties an install depends on.
-  /// FNV-1a over every byte, as `Data.hashValue` reads only a prefix.
-  static func digest(_ contents: Data) -> String {
-    String(contents.reduce(UInt64(0xcbf2_9ce4_8422_2325)) { ($0 ^ UInt64($1)) &* 0x100_0000_01b3 }, radix: 16)
-  }
-
-  func tree(at path: String, keepHardLinks: Bool, directoryTimes: Bool = true) throws -> [String: String] {
-    var tree: [String: String] = [:]
-    for relative in try fileManager.subpathsOfDirectory(atPath: path) {
-      let item = (path as NSString).appendingPathComponent(relative)
-      let attributes = try fileManager.attributesOfItem(atPath: item)
-      let type = try #require(attributes[.type] as? FileAttributeType)
-      let mode = String(try #require(attributes[.posixPermissions] as? Int), radix: 8)
-      let modified = try #require(attributes[.modificationDate] as? Date).timeIntervalSince1970
-      switch type {
-      case .typeSymbolicLink:
-        tree[relative] = "link \(try fileManager.destinationOfSymbolicLink(atPath: item))"
-      case .typeDirectory:
-        tree[relative] = directoryTimes ? "dir \(mode) \(modified)" : "dir \(mode)"
-      default:
-        let contents = try Data(contentsOf: URL(fileURLWithPath: item))
-        let links = keepHardLinks ? " \(try #require(attributes[.referenceCount] as? Int))" : ""
-        tree[relative] = "file \(mode) \(modified)\(links) \(contents.count) \(Self.digest(contents))"
-      }
-    }
-    return tree
-  }
-
-  /// What `bsdtar` extracts, less the AppleDouble entries for symlinks: `bsdtar` cannot apply metadata to a symlink, so it writes those entries out as files.
-  func bsdtarTree(at path: String, keepHardLinks: Bool, directoryTimes: Bool = true) throws -> [String: String] {
-    try tree(at: path, keepHardLinks: keepHardLinks, directoryTimes: directoryTimes).filter { relative, _ in
-      let name = (relative as NSString).lastPathComponent
-      let sibling = ((relative as NSString).deletingLastPathComponent as NSString).appendingPathComponent(String(name.dropFirst(2)))
-      return !(name.hasPrefix("._") && (try? fileManager.destinationOfSymbolicLink(atPath: "\(path)/\(sibling)")) != nil)
-    }
-  }
-
-  static func differences(_ expected: [String: String], _ actual: [String: String]) -> String {
-    Set(expected.keys).union(actual.keys).sorted().filter { expected[$0] != actual[$0] }.map { "\($0): \(expected[$0] ?? "-") vs \(actual[$0] ?? "-")" }.joined(separator: "\n")
-  }
-}
-
-/// An extractor that records being reached, so a test can tell an in-process extraction from a fallback.
-final class RecordingExtractor: ArchiveExtractor {
-
-  private let wrapped: any ArchiveExtractor
-  private let reached = OSAllocatedUnfairLock(initialState: false)
-
-  init(_ wrapped: any ArchiveExtractor) {
-    self.wrapped = wrapped
-  }
-
-  var wasReached: Bool {
-    reached.withLock { $0 }
-  }
-
-  func extract(_ source: ArchiveSource, to extractPath: String, options: ArchiveExtractOptions, logger: any ControlCoreLogger) async throws {
-    reached.withLock { $0 = true }
-    try await wrapped.extract(source, to: extractPath, options: options, logger: logger)
-  }
-
-  func extract(from source: any ByteSource, to extractPath: String, options: ArchiveExtractOptions, logger: any ControlCoreLogger) async throws {
-    reached.withLock { $0 = true }
-    try await wrapped.extract(from: source, to: extractPath, options: options, logger: logger)
   }
 }
 
