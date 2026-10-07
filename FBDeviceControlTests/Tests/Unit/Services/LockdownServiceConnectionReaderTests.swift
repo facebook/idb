@@ -31,6 +31,13 @@ private func invalidateUnblockingReceive(_ connection: CFTypeRef?) -> Int32 {
   return 0
 }
 
+private func invalidateLeavingReceiveBlocked(_ connection: CFTypeRef?) -> Int32 {
+  0
+}
+
+/// A connection reference that can be observed weakly, unlike a constant string.
+private final class ConnectionReference {}
+
 @Suite(.serialized)
 struct LockdownServiceConnectionReaderTests {
 
@@ -82,5 +89,37 @@ struct LockdownServiceConnectionReaderTests {
     // exited.
     try connection.invalidate()
     #expect(reader.finishedReading.state == .done)
+  }
+
+  @Test
+  func invalidationLeaksTheConnectionWhenTheReadDoesNotFinish() async throws {
+    sReceiveGate = DispatchSemaphore(value: 0)
+    var calls = CreateZeroedAMDCalls()
+    calls.ServiceConnectionGetSecureIOContext = { _ in nil }
+    calls.ServiceConnectionReceive = blockingReceive
+    calls.ServiceConnectionInvalidate = invalidateLeavingReceiveBlocked
+    weak var leaked: ConnectionReference?
+    let reader: any FileReaderProtocol
+    do {
+      let connectionRef = ConnectionReference()
+      leaked = connectionRef
+      let connection = makeConnection(calls: calls, connection: connectionRef)
+      connection.readerDrainTimeout = 0.1
+      _ = Unmanaged.passRetained(connectionRef)
+      let queue = DispatchQueue(label: "com.facebook.fbdevicecontrol.tests.stuck-reader")
+      reader = connection.readFromConnectionWriting(to: FBDataBuffer.accumulatingBuffer(), on: queue)
+      _ = try await bridgeFBFuture(reader.startReading())
+
+      try connection.invalidate()
+    }
+
+    // The blocked read holds the reference while it is inside receive, so whether invalidate
+    // released it is only observable once the read has returned.
+    sReceiveGate.signal()
+    _ = try await bridgeFBFuture(reader.finishedReading)
+    #expect(leaked != nil, "a connection whose read did not drain must be leaked rather than released")
+    if let leaked {
+      Unmanaged.passUnretained(leaked).release()
+    }
   }
 }

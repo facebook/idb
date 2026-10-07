@@ -84,6 +84,8 @@ public final class LockdownServiceConnection: CustomStringConvertible {
 
   private var activeReaderFinished: FBFuture<NSNumber>?
 
+  var readerDrainTimeout = ReaderDrainTimeout
+
   public var connection: AMDServiceConnection? {
     connectionRef?.takeUnretainedValue()
   }
@@ -157,14 +159,14 @@ public final class LockdownServiceConnection: CustomStringConvertible {
     // mid-read reads freed memory inside the SSL layer.
     var drained = true
     if let activeReaderFinished {
-      drained = (try? activeReaderFinished.await(withTimeout: ReaderDrainTimeout)) != nil
+      drained = (try? activeReaderFinished.await(withTimeout: readerDrainTimeout)) != nil
     }
     // AMDServiceConnectionInvalidate does not release the connection. If the reader did not
     // drain, leak rather than release: releasing under a still-blocked read is a use-after-free.
     if drained {
       connectionRef.release()
     } else {
-      logger?.log("Reader did not drain within \(ReaderDrainTimeout)s; leaking the connection rather than freeing it under an active read")
+      logger?.log("Reader did not drain within \(readerDrainTimeout)s; leaking the connection rather than freeing it under an active read")
     }
     self.connectionRef = nil
   }
