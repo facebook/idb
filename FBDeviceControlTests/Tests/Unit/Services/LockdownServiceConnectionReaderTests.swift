@@ -87,7 +87,7 @@ struct LockdownServiceConnectionReaderTests {
 
     // Invalidation unblocks the (gated) receive and must not return until the read loop has
     // exited.
-    try connection.invalidate()
+    try await connection.invalidate()
     #expect(reader.finishedReading.state == .done)
   }
 
@@ -110,7 +110,7 @@ struct LockdownServiceConnectionReaderTests {
       reader = connection.readFromConnectionWriting(to: FBDataBuffer.accumulatingBuffer(), on: queue)
       _ = try await bridgeFBFuture(reader.startReading())
 
-      try connection.invalidate()
+      try await connection.invalidate()
     }
 
     // The blocked read holds the reference while it is inside receive, so whether invalidate

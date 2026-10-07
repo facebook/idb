@@ -233,8 +233,14 @@ extension MobileDevice {
     _ body: (LockdownServiceConnection) async throws -> T
   ) async throws -> T {
     let connection = try await openServiceConnection(service)
-    defer { Self.invalidateServiceConnection(connection, service: service, logger: logger) }
-    return try await body(connection)
+    do {
+      let result = try await body(connection)
+      await Self.invalidateServiceConnection(connection, service: service, logger: logger)
+      return result
+    } catch {
+      await Self.invalidateServiceConnection(connection, service: service, logger: logger)
+      throw error
+    }
   }
 
   /// Starts a device link service, invalidating the connection once `body` returns or throws.
@@ -285,13 +291,13 @@ extension MobileDevice {
     _ connection: LockdownServiceConnection?,
     service: String,
     logger: any ControlCoreLogger
-  ) {
+  ) async {
     guard let connection else {
       return
     }
     logger.log("Invalidating service \(service)")
     do {
-      try connection.invalidate()
+      try await connection.invalidate()
       logger.log("Invalidated service \(service)")
     } catch {
       logger.log("Failed to invalidate service \(service) with error \(error)")

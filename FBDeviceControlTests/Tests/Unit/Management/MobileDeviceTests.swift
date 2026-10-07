@@ -225,7 +225,7 @@ final class MobileDeviceTests {
     #expect((connection.name) == ("com.apple.testservice"))
     await waitForDeviceEvents(Array(startServiceEvents.dropLast()))
 
-    MobileDevice.invalidateServiceConnection(
+    await MobileDevice.invalidateServiceConnection(
       connection, service: connection.name, logger: ControlCoreGlobalConfiguration.defaultLogger)
 
     await waitForDeviceEvents(startServiceEvents)

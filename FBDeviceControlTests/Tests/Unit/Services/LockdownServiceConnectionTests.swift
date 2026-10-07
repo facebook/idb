@@ -176,11 +176,11 @@ struct LockdownServiceConnectionTests {
   // MARK: - Lifecycle
 
   @Test
-  func invalidateInvalidatesTheUnderlyingConnection() throws {
+  func invalidateInvalidatesTheUnderlyingConnection() async throws {
     let (connection, service) = makeConnection()
     _ = Unmanaged.passRetained(service)
 
-    try connection.invalidate()
+    try await connection.invalidate()
 
     #expect(service.isInvalidated)
   }
@@ -191,7 +191,7 @@ struct LockdownServiceConnectionTests {
   /// detects it. The service is built here rather than through the fake device, which would hold
   /// its own reference and mask the result.
   @Test
-  func invalidateReleasesTheConnection() throws {
+  func invalidateReleasesTheConnection() async throws {
     weak var released: FakeLockdownService?
     do {
       let service = FakeLockdownService(serviceName: "com.apple.test")
@@ -203,7 +203,7 @@ struct LockdownServiceConnectionTests {
         calls: amDevice.calls,
         logger: ControlCoreGlobalConfiguration.defaultLogger)
       _ = Unmanaged.passRetained(service)
-      try connection.invalidate()
+      try await connection.invalidate()
       #expect(released != nil, "the local reference is still in scope here")
     }
 
@@ -211,13 +211,13 @@ struct LockdownServiceConnectionTests {
   }
 
   @Test
-  func invalidateFailsOnceTheConnectionIsGone() throws {
+  func invalidateFailsOnceTheConnectionIsGone() async throws {
     let (connection, service) = makeConnection()
     _ = Unmanaged.passRetained(service)
-    try connection.invalidate()
+    try await connection.invalidate()
 
-    let error = #expect(throws: (any Error).self) {
-      try connection.invalidate()
+    let error = await #expect(throws: (any Error).self) {
+      try await connection.invalidate()
     }
 
     #expect((error as? NSError)?.localizedDescription == "No connection to invalidate")

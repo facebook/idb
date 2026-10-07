@@ -47,7 +47,7 @@ public final class DeviceDebugServer: SocketServerDelegate, DebugServer {
     do {
       try await server.startListening()
     } catch {
-      MobileDevice.invalidateServiceConnection(serviceConnection, service: serviceConnection.name, logger: logger)
+      await MobileDevice.invalidateServiceConnection(serviceConnection, service: serviceConnection.name, logger: logger)
       throw error
     }
     return server
@@ -127,13 +127,18 @@ public final class DeviceDebugServer: SocketServerDelegate, DebugServer {
     teardown.onQueue(
       queue,
       respondToCancellation: {
-        Self.stop(tcpServer: tcpServer, connection: connection, logger: logger)
-        return FBFuture<NSNull>.empty()
+        fbFutureFromAsync {
+          await Self.stop(tcpServer: tcpServer, connection: connection, logger: logger)
+          return NSNull()
+        }
       })
     teardown.onQueue(
       queue,
       doOnResolved: { _ in
-        Self.stop(tcpServer: tcpServer, connection: connection, logger: logger)
+        _ = fbFutureFromAsync {
+          await Self.stop(tcpServer: tcpServer, connection: connection, logger: logger)
+          return NSNull()
+        }
       })
   }
 
@@ -143,9 +148,9 @@ public final class DeviceDebugServer: SocketServerDelegate, DebugServer {
     tcpServer: SocketServer,
     connection: LockdownServiceConnection,
     logger: any ControlCoreLogger
-  ) {
+  ) async {
     try? tcpServer.stopListening()
-    MobileDevice.invalidateServiceConnection(connection, service: connection.name, logger: logger)
+    await MobileDevice.invalidateServiceConnection(connection, service: connection.name, logger: logger)
   }
 
   private class TwistedPairFiles {

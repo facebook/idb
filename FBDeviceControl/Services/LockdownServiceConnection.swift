@@ -7,6 +7,7 @@
 
 @preconcurrency import FBControlCore
 import Foundation
+import os
 
 private typealias HeaderIntType = UInt32
 private let HeaderLength = MemoryLayout<HeaderIntType>.size
@@ -141,7 +142,7 @@ public final class LockdownServiceConnection: CustomStringConvertible {
 
   // MARK: - Lifecycle
 
-  func invalidate() throws {
+  func invalidate() async throws {
     guard let connectionRef else {
       throw LockdownServiceConnectionError.noConnectionToInvalidate
     }
@@ -159,7 +160,7 @@ public final class LockdownServiceConnection: CustomStringConvertible {
     // mid-read reads freed memory inside the SSL layer.
     var drained = true
     if let activeReaderFinished {
-      drained = (try? activeReaderFinished.await(withTimeout: readerDrainTimeout)) != nil
+      drained = await Self.resolves(activeReaderFinished, within: readerDrainTimeout)
     }
     // AMDServiceConnectionInvalidate does not release the connection. If the reader did not
     // drain, leak rather than release: releasing under a still-blocked read is a use-after-free.
@@ -169,6 +170,23 @@ public final class LockdownServiceConnection: CustomStringConvertible {
       logger?.log("Reader did not drain within \(readerDrainTimeout)s; leaking the connection rather than freeing it under an active read")
     }
     self.connectionRef = nil
+  }
+
+  /// Whether `future` resolves successfully within `timeout`. Giving up leaves `future` running,
+  /// unlike `FBFuture.timeout(_:waitingFor:)`, which cancels it.
+  private static func resolves(_ future: FBFuture<NSNumber>, within timeout: TimeInterval) async -> Bool {
+    await withCheckedContinuation { (continuation: CheckedContinuation<Bool, Never>) in
+      let pending = OSAllocatedUnfairLock<CheckedContinuation<Bool, Never>?>(initialState: continuation)
+      let resume: @Sendable (Bool) -> Void = { resolved in
+        pending.withLock { pending in
+          pending?.resume(returning: resolved)
+          pending = nil
+        }
+      }
+      let queue = DispatchQueue.global(qos: .userInitiated)
+      future.onQueue(queue, notifyOfCompletion: { completed in resume(completed.state == .done) })
+      queue.asyncAfter(deadline: .now() + timeout) { resume(false) }
+    }
   }
 
   // MARK: - AFC

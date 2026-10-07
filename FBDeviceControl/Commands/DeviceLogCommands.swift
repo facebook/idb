@@ -32,8 +32,10 @@ public final class DeviceLogOperation: LogOperation {
       tailing.onQueue(
         queue,
         respondToCancellation: {
-          MobileDevice.invalidateServiceConnection(connection, service: service, logger: logger)
-          return FBFuture<NSNull>.empty()
+          fbFutureFromAsync {
+            await MobileDevice.invalidateServiceConnection(connection, service: service, logger: logger)
+            return NSNull()
+          }
         }
       ))
   }
