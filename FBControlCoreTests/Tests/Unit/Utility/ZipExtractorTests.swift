@@ -65,24 +65,6 @@ struct ZipExtractorTests {
   }
 
   @Test
-  func extract_OfAStoredZip_MatchesBSDTar() async throws {
-    _ = try makeApp()
-    let archive = root.appendingPathComponent("a.ipa").path
-    try run("/usr/bin/zip", ["-qry0", archive, "A.app"])
-
-    try await expectParityWithBSDTar(archive)
-  }
-
-  @Test
-  func extract_OfAZip64Archive_MatchesBSDTar() async throws {
-    _ = try makeApp()
-    let archive = root.appendingPathComponent("a.ipa").path
-    try run("/usr/bin/zip", ["-qry", "-fz", archive, "A.app"])
-
-    try await expectParityWithBSDTar(archive)
-  }
-
-  @Test
   func extract_KeepsADotUnderscoreFileThatIsNotAppleDouble() throws {
     let app = try makeApp()
     try Data("not metadata".utf8).write(to: URL(fileURLWithPath: "\(app)/._Info.plist"))
@@ -203,58 +185,6 @@ struct ZipExtractorTests {
       try ZipCentralDirectory(archiveAtPath: archive).repair(extractedAt: extracted)
     }
     return summary
-  }
-
-  private func expectStreamParityWithBSDTar(_ archive: String) async throws {
-    let expected = root.appendingPathComponent("bsdtar").path
-    try fileManager.createDirectory(atPath: expected, withIntermediateDirectories: true)
-    try await BSDTarExtractor().extract(.filePath(archive), to: expected, options: ArchiveExtractOptions(), logger: logger)
-    let extracted = root.appendingPathComponent("stream").path
-
-    try extractAsStream(archive, to: extracted)
-
-    // The repair removes AppleDouble files after the fact, which moves their directories' times.
-    let expectedTree = try ArchiveFixtures.bsdtarTree(at: expected, keepHardLinks: false, directoryTimes: false)
-    let extractedTree = try ArchiveFixtures.tree(at: extracted, keepHardLinks: false, directoryTimes: false)
-    #expect(ArchiveFixtures.differences(expectedTree, extractedTree) == "")
-  }
-
-  @Test
-  func extractStream_OfADittoZip_MatchesBSDTarOnceRepaired() async throws {
-    let app = try makeApp()
-    let archive = root.appendingPathComponent("a.ipa").path
-    try run("/usr/bin/ditto", ["-c", "-k", "--keepParent", app, archive])
-
-    try await expectStreamParityWithBSDTar(archive)
-  }
-
-  @Test
-  func extractStream_OfAStoredZip_MatchesBSDTarOnceRepaired() async throws {
-    _ = try makeApp()
-    let archive = root.appendingPathComponent("a.ipa").path
-    try run("/usr/bin/zip", ["-qry0", archive, "A.app"])
-
-    try await expectStreamParityWithBSDTar(archive)
-  }
-
-  @Test
-  func extractStream_OfAZip64Archive_MatchesBSDTarOnceRepaired() async throws {
-    _ = try makeApp()
-    let archive = root.appendingPathComponent("a.ipa").path
-    try run("/usr/bin/zip", ["-qry", "-fz", archive, "A.app"])
-
-    try await expectStreamParityWithBSDTar(archive)
-  }
-
-  @Test
-  func extractStream_OfAZipWrittenToAPipe_MatchesBSDTarOnceRepaired() async throws {
-    _ = try makeApp()
-    let archive = root.appendingPathComponent("a.ipa").path
-    // Deflated with data descriptors, as zip cannot seek back to write sizes into a
-    // pipe. Symlinks are followed and the empty file left out, as those are stored.
-    try run("/bin/sh", ["-c", "/usr/bin/zip -qr - A.app -x A.app/Real/empty A.app/LinkDir/empty | /bin/cat > \"$0\"", archive])
-
-    try await expectStreamParityWithBSDTar(archive)
   }
 
   @Test

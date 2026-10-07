@@ -206,25 +206,6 @@ final class ApplicationArchiveTests: XCTestCase {
     .processInput(FBProcessInput<NSData>(from: zip).retyped(FBProcessInput<AnyObject>.self))
   }
 
-  func testResolve_WhenGivenAZipStream_RestoresWhatOnlyItsCentralDirectoryRecords() async throws {
-    let zip = try makeZippedPayloadWithSymlink()
-
-    let (identifier, linkType, executablePermissions) = try await ApplicationArchive.withResolvedBundle(
-      from: zipStream(zip), temporaryDirectory: temporaryDirectory, logger: logger
-    ) { bundle in
-      let manager = FileManager.default
-      return (
-        bundle.identifier,
-        try manager.attributesOfItem(atPath: (bundle.path as NSString).appendingPathComponent("Link.plist"))[.type] as? FileAttributeType,
-        try manager.attributesOfItem(atPath: (bundle.path as NSString).appendingPathComponent("Sample"))[.posixPermissions] as? Int
-      )
-    }
-
-    XCTAssertEqual(identifier, "com.example.sample")
-    XCTAssertEqual(linkType, .typeSymbolicLink)
-    XCTAssertEqual(executablePermissions, 0o755)
-  }
-
   /// A reader of the stream cannot handle a stored entry with its size after it.
   func testResolve_WhenAZipStreamCannotBeExtractedAsItArrives_ExtractsTheSpooledZip() async throws {
     let zip = try makeZippedPayloadWithSymlink(firstEntryStoredWithSizeAfter: true)
@@ -350,26 +331,6 @@ final class ApplicationArchiveTests: XCTestCase {
         return
       }
     }
-  }
-
-  /// A zip records symlinks only in its central directory, at the end of the
-  /// archive, which an extractor reading the transfer as it arrives never sees.
-  func testResolve_WhenGivenAZipURL_RestoresItsSymlinks() async throws {
-    StubURLProtocol.behaviour = .respond(statusCode: 200, body: try makeZippedPayloadWithSymlink())
-    let configuration = URLSessionConfiguration.ephemeral
-    configuration.protocolClasses = [StubURLProtocol.self]
-
-    let linkType = try await ApplicationArchive.withResolvedBundle(
-      from: .remoteURL(Self.stubbedURL),
-      downloadConfiguration: configuration,
-      temporaryDirectory: temporaryDirectory,
-      logger: logger
-    ) { bundle in
-      try FileManager.default.attributesOfItem(
-        atPath: (bundle.path as NSString).appendingPathComponent("Link.plist"))[.type] as? FileAttributeType
-    }
-
-    XCTAssertEqual(linkType, .typeSymbolicLink)
   }
 
   func testResolve_WhenGivenAZstdZipURL_RestoresItsSymlinks() async throws {

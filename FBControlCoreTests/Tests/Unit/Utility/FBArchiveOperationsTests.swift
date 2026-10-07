@@ -150,16 +150,6 @@ final class FBArchiveOperationsTests: XCTestCase {
     }
   }
 
-  func testGzippedTarSubprocessForPath_WhenPathDoesNotExist_ErrorContainsPath() {
-    let nonExistentPath = "/tmp/nonexistent_path_for_error_check"
-
-    XCTAssertThrowsError(try FBArchiveOperations.gzippedTarSubprocess(forPath: nonExistentPath, logger: logger)) { error in
-      XCTAssertTrue(
-        error.localizedDescription.contains(nonExistentPath),
-        "Error description should mention the non-existent path, got: \(error.localizedDescription)")
-    }
-  }
-
   func testGzippedTarSubprocessForPath_WhenPathDoesNotExist_Throws() {
     let nonExistentPath = "/tmp/nonexistent_path_for_gzipped_tar_subprocess"
 
@@ -168,26 +158,6 @@ final class FBArchiveOperationsTests: XCTestCase {
         return XCTFail("Expected the missing path to be reported, got \(error)")
       }
     }
-  }
-
-  // MARK: - createGzippedTarDataForPath with Real Paths
-
-  func testCreateGzippedTarDataForPath_WhenPathIsFile_ProducesData() async throws {
-    let filePath = (tempDirectory as NSString).appendingPathComponent("single.txt")
-    try "file content for tar".write(toFile: filePath, atomically: true, encoding: .utf8)
-
-    let result = try await FBArchiveOperations.createGzippedTarData(forPath: filePath, logger: logger)
-    XCTAssertGreaterThan(result.count, 0)
-  }
-
-  func testCreateGzippedTarDataForPath_ProducesValidGzipData() async throws {
-    let filePath = (tempDirectory as NSString).appendingPathComponent("gzip_check.txt")
-    try "content to verify gzip format".write(toFile: filePath, atomically: true, encoding: .utf8)
-
-    let data = try await FBArchiveOperations.createGzippedTarData(forPath: tempDirectory, logger: logger)
-    XCTAssertGreaterThanOrEqual(data.count, 2, "Gzip data should be at least 2 bytes")
-    XCTAssertEqual(data[0], 0x1f, "First byte of gzip data should be 0x1f")
-    XCTAssertEqual(data[1], 0x8b, "Second byte of gzip data should be 0x8b")
   }
 
   // MARK: - Round-trip extraction

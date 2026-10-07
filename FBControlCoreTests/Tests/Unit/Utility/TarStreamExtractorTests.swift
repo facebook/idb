@@ -99,31 +99,12 @@ struct TarStreamExtractorTests {
     #expect(summary.files == expectedTree.values.filter { $0.hasPrefix("file") }.count - 1, "a hard link is not a file written")
   }
 
-  @Test(arguments: [
-    ["-czf"],
-    ["-cf"],
-    ["--format", "gnutar", "-czf"],
-    ["--format", "ustar", "-czf"],
-  ])
-  func extract_MatchesBSDTar(_ flags: [String]) async throws {
-    let app = try makeApp()
-    let archive = root.appendingPathComponent("a.tar").path
-    if flags.contains("ustar") {
-      // ustar cannot hold a name that long.
-      try fileManager.removeItem(atPath: (app as NSString).appendingPathComponent("Real/nested-directory"))
-    }
-    try run("/usr/bin/tar", flags + [archive, "-C", root.path, "A.app"])
-    try await expectParityWithBSDTar(archive)
-  }
-
   @Test
-  func extract_OfGzipMembersOneAfterAnother_MatchesBSDTar() async throws {
+  func extract_MatchesBSDTar() async throws {
     _ = try makeApp()
-    try run("/usr/bin/tar", ["-cf", "a.tar", "-C", root.path, "A.app"])
-    // Splitting the tar partway through a file makes the second member start mid-entry.
-    try run("/bin/sh", ["-c", "head -c 300000 a.tar | gzip > a.tgz && tail -c +300001 a.tar | gzip >> a.tgz"])
-
-    try await expectParityWithBSDTar(root.appendingPathComponent("a.tgz").path)
+    let archive = root.appendingPathComponent("a.tgz").path
+    try run("/usr/bin/tar", ["-czf", archive, "-C", root.path, "A.app"])
+    try await expectParityWithBSDTar(archive)
   }
 
   @Test

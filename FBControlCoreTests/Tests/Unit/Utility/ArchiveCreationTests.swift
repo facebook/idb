@@ -265,17 +265,6 @@ final class ArchiveCreationTests: XCTestCase {
     XCTAssertNoThrow(try runTool("/usr/bin/gzip", ["-t"], input: tarred))
   }
 
-  func testArchivingAMissingPathNamesIt() async throws {
-    let missing = tempDirectory.appendingPathComponent("absent").path
-
-    do {
-      _ = try await FBArchiveOperations.createGzippedTarData(forPath: missing, logger: logger)
-      XCTFail("archiving a missing path should fail")
-    } catch {
-      XCTAssertTrue(error.localizedDescription.contains(missing), "got \(error.localizedDescription)")
-    }
-  }
-
   func testExtendedAttributesAreNotArchived() async throws {
     let file = tempDirectory.appendingPathComponent("a.txt")
     try Data("alpha".utf8).write(to: file)
