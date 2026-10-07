@@ -171,8 +171,7 @@ final class DataDownloadInputTests: XCTestCase {
       try await Task.sleep(nanoseconds: 10_000_000)
     }
 
-    // BUG: the session is never invalidated, so it holds its delegate, the download, forever. Flipped in the following commit.
-    XCTAssertNotNil(released)
+    XCTAssertNil(released)
   }
 
   // MARK: - HTTP errors

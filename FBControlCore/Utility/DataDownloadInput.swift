@@ -76,6 +76,7 @@ public final class DataDownloadInput: NSObject, @unchecked Sendable {
   }
 
   // The session holds both the delegate and the resumed task for the lifetime of the download, so neither needs storing here.
+  // It lets go of the delegate only once invalidated, which `finishTasksAndInvalidate` defers until the task completes.
   private func startDownload(from url: URL, configuration: URLSessionConfiguration) {
     let delegateQueue = OperationQueue()
     delegateQueue.name = "FBControlCore.DataDownloadInput.urlSessionDelegate"
@@ -85,6 +86,7 @@ public final class DataDownloadInput: NSObject, @unchecked Sendable {
     delegateQueue.maxConcurrentOperationCount = 1
     let session = URLSession(configuration: configuration, delegate: self, delegateQueue: delegateQueue)
     session.dataTask(with: url).resume()
+    session.finishTasksAndInvalidate()
   }
 }
 
