@@ -231,14 +231,6 @@ extension Simulator {
     SimulatorLogCommands.commands(with: self)
   }
 
-  public var videoRecording: SimulatorVideoRecordingCommands {
-    commandCache.resolve { SimulatorVideoRecordingCommands.commands(with: self) }
-  }
-
-  public var videoStream: SimulatorVideoStreamCommands {
-    SimulatorVideoStreamCommands.commands(with: self)
-  }
-
   public var launchCtl: SimulatorLaunchCtlCommands {
     SimulatorLaunchCtlCommands.commands(with: self)
   }
@@ -420,5 +412,16 @@ extension Simulator {
       details.displays = state == .booted ? try await displays.describedDisplays() : .read([])
     }
     return details
+  }
+}
+
+extension Simulator: VideoTarget {
+
+  public var videoRecording: SimulatorVideoRecordingCommands {
+    commandCache.resolve { SimulatorVideoRecordingCommands.commands(with: self) }
+  }
+
+  public var videoStream: SimulatorVideoStreamCommands {
+    SimulatorVideoStreamCommands.commands(with: self)
   }
 }

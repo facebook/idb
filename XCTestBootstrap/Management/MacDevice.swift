@@ -13,7 +13,7 @@ import IOKit
   func _XCT_requestConnectedSocketForTransport(_ arg1: @escaping (FileHandle?, Error?) -> Void)
 }
 
-enum MacDeviceError: Error {
+public enum MacDeviceError: Error {
   case testManagerProxyNonConformant(proxyDescription: String)
   case transportUnavailable
   case applicationNotLaunched(bundleID: String)
@@ -524,22 +524,9 @@ extension MacDevice {
 
   public var screenshot: MacDevice { self }
 
-  public var videoRecording: MacDevice { self }
-
-  public var videoStream: MacDevice { self }
-
   public var xctest: MacDevice { self }
 
   public var xctraceRecord: MacDevice { self }
-}
-
-// MARK: - MacDevice+VideoStreamCommands
-
-extension MacDevice: VideoStreamCommands {
-
-  public func create(configuration: VideoStreamConfiguration, to consumer: any DataConsumer) async throws -> any VideoStreamOperation {
-    throw macUnsupported("create")
-  }
 }
 
 // MARK: - MacDevice+DebugServerCommands
@@ -547,7 +534,7 @@ extension MacDevice: VideoStreamCommands {
 extension MacDevice: DebugServerCommands {
 
   // Qualified: `Target`'s `DebugServer` associated type resolves to `MacDevice` inside this scope
-  // and shadows the protocol of the same name, exactly as it does for `VideoRecording` above.
+  // and shadows the protocol of the same name.
   public func launch(forHostApplication application: BundleDescriptor, port: in_port_t) async throws -> any FBControlCore.DebugServer {
     throw macUnsupported("launch")
   }
@@ -639,17 +626,6 @@ extension MacDevice: ScreenshotCommands {
 
   public func take(configuration: ScreenshotConfiguration) async throws -> ScreenshotResult {
     throw macUnsupported("take")
-  }
-}
-
-// MARK: - MacDevice+VideoRecordingCommands
-
-extension MacDevice: VideoRecordingCommands {
-
-  // Module-qualified because `Target.VideoRecording` is an associated type whose witness here is
-  // `MacDevice` itself, which shadows the protocol of the same name inside any `MacDevice` extension.
-  public func start(toFile filePath: String) async throws -> any FBControlCore.VideoRecording {
-    throw macUnsupported("start")
   }
 }
 

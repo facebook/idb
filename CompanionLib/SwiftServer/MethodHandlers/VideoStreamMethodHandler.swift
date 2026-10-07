@@ -26,7 +26,7 @@ extension VideoStreamMethodHandlerError: LocalizedError {
 
 struct VideoStreamMethodHandler {
 
-  let target: any Target
+  let target: CompanionTarget
   let targetLogger: ControlCoreLogger
   let commandExecutor: IDBCommandExecutor
 

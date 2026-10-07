@@ -64,8 +64,6 @@ final class ScriptedLogicTestTarget: NSObject, LogicTestTarget {
   var log: MacDevice { device }
   var power: MacDevice { device }
   var screenshot: MacDevice { device }
-  var videoRecording: MacDevice { device }
-  var videoStream: MacDevice { device }
   var xctraceRecord: MacDevice { device }
 
   func erase() async throws { try await device.erase() }

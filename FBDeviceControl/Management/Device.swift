@@ -295,14 +295,6 @@ extension Device {
     DeviceLogCommands.commands(with: self)
   }
 
-  public var videoRecording: DeviceVideoRecordingCommands {
-    commandCache.resolve { DeviceVideoRecordingCommands.commands(with: self) }
-  }
-
-  public var videoStream: DeviceVideoStreamCommands {
-    DeviceVideoStreamCommands.commands(with: self)
-  }
-
   public var xctest: DeviceXCTestCommands {
     commandCache.resolve { DeviceXCTestCommands.commands(with: self) }
   }
@@ -423,5 +415,16 @@ extension Device {
       throw AMDeviceServiceError.notAMDeviceBacked(service: service)
     }
     return try await amDevice.withAFCConnection(service, calls: afcCalls, body)
+  }
+}
+
+extension Device: VideoTarget {
+
+  public var videoRecording: DeviceVideoRecordingCommands {
+    commandCache.resolve { DeviceVideoRecordingCommands.commands(with: self) }
+  }
+
+  public var videoStream: DeviceVideoStreamCommands {
+    DeviceVideoStreamCommands.commands(with: self)
   }
 }

@@ -138,12 +138,6 @@ public protocol Target: TargetInfo, TargetCommand {
   associatedtype Screenshot: ScreenshotCommands
   var screenshot: Screenshot { get }
 
-  associatedtype VideoRecording: VideoRecordingCommands
-  var videoRecording: VideoRecording { get }
-
-  associatedtype VideoStream: VideoStreamCommands
-  var videoStream: VideoStream { get }
-
   associatedtype XCTraceRecord: XCTraceRecordCommands
   var xctraceRecord: XCTraceRecord { get }
 

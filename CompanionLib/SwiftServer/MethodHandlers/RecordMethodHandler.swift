@@ -11,7 +11,7 @@ import IDBGRPCSwift
 
 struct RecordMethodHandler {
 
-  let target: any Target
+  let target: CompanionTarget
   let targetLogger: ControlCoreLogger
 
   /// Stops `recording`, returning the file to deliver and the failure to report once it has been.
@@ -45,10 +45,11 @@ struct RecordMethodHandler {
       ? URL(fileURLWithPath: target.auxillaryDirectory).appendingPathComponent("idb_encode").appendingPathExtension("mp4").path
       : start.filePath
 
+    let videoRecording = target.videoRecording
     let recording: any VideoRecording
     if let encodeOptions = try RecordRequestTranslation.encodeOptions(from: start) {
-      try RecordRequestTranslation.requireHonoredConfiguration(target.videoRecording, describing: "\(target)")
-      recording = try await target.videoRecording.start(
+      try RecordRequestTranslation.requireHonoredConfiguration(videoRecording, describing: "\(target)")
+      recording = try await videoRecording.start(
         toFile: filePath,
         configuration: RecordRequestTranslation.configuration(for: encodeOptions))
       do {
@@ -63,7 +64,7 @@ struct RecordMethodHandler {
         throw error
       }
     } else {
-      recording = try await target.videoRecording.start(toFile: filePath)
+      recording = try await videoRecording.start(toFile: filePath)
     }
 
     _ = try await requestStream.requiredNext()

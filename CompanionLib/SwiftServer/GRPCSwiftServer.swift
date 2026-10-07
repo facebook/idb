@@ -53,7 +53,7 @@ public final class GRPCSwiftServer: @unchecked Sendable {
   private let onShutdownStarted: (@Sendable () -> Void)?
 
   public init(
-    target: any Target,
+    target: CompanionTarget,
     commandExecutor: IDBCommandExecutor,
     reporter: EventReporter,
     logger: IDBLogger,

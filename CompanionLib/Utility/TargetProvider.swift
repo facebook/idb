@@ -41,7 +41,7 @@ extension TargetProviderError: LocalizedError {
 
 public final class TargetProvider {
 
-  public static func target(withUDID udid: String, targetSets: [TargetSet], warmUp: Bool, logger: ControlCoreLogger) throws -> any Target {
+  public static func target(withUDID udid: String, targetSets: [TargetSet], warmUp: Bool, logger: ControlCoreLogger) throws -> CompanionTarget {
     switch udid.lowercased() {
     case "only":
       return try fetchSoleTarget(forTargetSets: targetSets, logger: logger)
@@ -52,7 +52,7 @@ public final class TargetProvider {
     }
   }
 
-  private static func fetchTarget(withUDID udid: String, targetSets: [TargetSet], logger: ControlCoreLogger) throws -> any Target {
+  private static func fetchTarget(withUDID udid: String, targetSets: [TargetSet], logger: ControlCoreLogger) throws -> CompanionTarget {
     if udid.lowercased() == "mac" {
       return MacDevice(logger: logger)
     }
@@ -60,7 +60,7 @@ public final class TargetProvider {
       guard let targetInfo = targetSet.target(withUDID: udid) else {
         continue
       }
-      guard let target = targetInfo as? any Target else {
+      guard let target = companionTarget(targetInfo) else {
         throw TargetProviderError.targetNotUsable(udid: udid, targetDescription: String(describing: targetInfo))
       }
       return target
@@ -69,11 +69,11 @@ public final class TargetProvider {
     throw TargetProviderError.targetNotFound(udid: udid, targetSetsDescription: String(describing: targetSets))
   }
 
-  private static func fetchSoleTarget(forTargetSets targetSets: [TargetSet], logger: ControlCoreLogger) throws -> any Target {
-    var targets: [any Target] = []
+  private static func fetchSoleTarget(forTargetSets targetSets: [TargetSet], logger: ControlCoreLogger) throws -> CompanionTarget {
+    var targets: [CompanionTarget] = []
     for targetSet in targetSets {
       for info in targetSet.allTargetInfos {
-        if let target = info as? any Target {
+        if let target = companionTarget(info) {
           targets.append(target)
         }
       }
@@ -87,11 +87,11 @@ public final class TargetProvider {
     return target
   }
 
-  private static func fetchSoleBootedTarget(forTargetSets targetSets: [TargetSet], logger: ControlCoreLogger) throws -> any Target {
-    var bootedTargets: [any Target] = []
+  private static func fetchSoleBootedTarget(forTargetSets targetSets: [TargetSet], logger: ControlCoreLogger) throws -> CompanionTarget {
+    var bootedTargets: [CompanionTarget] = []
     for targetSet in targetSets {
       for info in targetSet.allTargetInfos {
-        guard let target = info as? any Target, target.state == .booted else {
+        guard let target = companionTarget(info), target.state == .booted else {
           continue
         }
         bootedTargets.append(target)
