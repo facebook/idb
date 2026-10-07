@@ -1,5 +1,5 @@
 // Adding 'Versioning' to the Framework will ensure that Duplicate Symbol Scenarios do not arise when the Frameworks are independently distributed
-// Since FBSimulatorControl/FBDeviceControl both embed XCTestBootstrap & FBControlCore, the versioning of these Frameworks will ensure that dyld
+// Since FBSimulatorControl/FBDeviceControl both embed FBXCTestCore & FBControlCore, the versioning of these Frameworks will ensure that dyld
 // is aware of the embedded Frameworks in these Targets being identical and won't attempt to load them twice.
 
 CURRENT_PROJECT_VERSION = 1

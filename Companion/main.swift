@@ -10,8 +10,8 @@ import CompanionUtilities
 import FBControlCore
 import FBDeviceControl
 import FBSimulatorControl
+import FBXCTestCore
 import Foundation
-import XCTestBootstrap
 
 // @oss-disable
   // @oss-disable

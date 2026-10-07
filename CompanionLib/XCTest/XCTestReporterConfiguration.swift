@@ -6,8 +6,8 @@
  */
 
 import FBControlCore
+import FBXCTestCore
 import Foundation
-import XCTestBootstrap
 
 public struct XCTestReporterConfiguration {
 

@@ -26,7 +26,7 @@ yarn-error.log*
 /docs/idb/fbsimulatorvideo.mdx
 /docs/idb/fbsimulatorax.mdx
 /docs/idb/fbdevicecontrol.mdx
-/docs/idb/xctestbootstrap.mdx
+/docs/idb/fbxctestcore.mdx
 
 # generated from an end-to-end run by scripts/generate-demos.js
 /docs/idb/demos.mdx

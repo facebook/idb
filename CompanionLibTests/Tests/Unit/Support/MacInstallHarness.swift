@@ -7,8 +7,8 @@
 
 @testable import CompanionLib
 @preconcurrency import FBControlCore
+import FBXCTestCore
 import Foundation
-import XCTestBootstrap
 
 /// An `IDBCommandExecutor` driving the host Mac, so installs run end to end through the companion's
 /// storage without a simulator. Bundles are built under a scratch directory the harness owns.

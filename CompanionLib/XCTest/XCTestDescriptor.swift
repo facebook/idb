@@ -7,8 +7,8 @@
 
 import CompanionUtilities
 import FBControlCore
+import FBXCTestCore
 import Foundation
-import XCTestBootstrap
 
 public protocol XCTestDescriptor: AnyObject {
   var url: URL { get }

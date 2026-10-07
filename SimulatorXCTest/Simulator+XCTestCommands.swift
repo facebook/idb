@@ -7,11 +7,11 @@
 
 import FBControlCore
 @preconcurrency import FBSimulatorControl
+import FBXCTestCore
 import Foundation
-import XCTestBootstrap
 
 // The simulator's test capability, added onto `Simulator` from outside `FBSimulatorControl` so
-// that consumers with no interest in running tests do not link XCTestBootstrap. `repl` is here for
+// that consumers with no interest in running tests do not link FBXCTestCore. `repl` is here for
 // the same reason and not because the REPL is about testing: it hosts its control socket by running
 // the shim's single test under the logic-test runner.
 extension Simulator: LogicTestTarget {

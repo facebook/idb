@@ -279,7 +279,7 @@ targets:
         # The linked static archives ship loose .swiftmodule directories next
         # to the .a files; resolve them independently of -F framework semantics.
         SWIFT_INCLUDE_PATHS: $(inherited) $(SRCROOT)/../Build/Products/Release
-        # FBControlCore and XCTestBootstrap contain category-only Objective-C
+        # FBControlCore and FBXCTestCore contain category-only Objective-C
         # object files. Keep -ObjC so those members survive the final link, but
         # do not force-load the same archives that project-deps.yml already links.
         #

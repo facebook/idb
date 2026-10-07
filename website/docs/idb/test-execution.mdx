@@ -97,7 +97,7 @@ Application Tests are similar to Logic Tests, but they run inside an iOS App Hos
 
 These tests can manipulate the UI within an Application, depend certain behaviours of `UIKit`, or interact with the Application Delegate. They require a little more work to bootstrap, because of the arbitration between idb and the host process.
 
-idb uses `XCTestBootstrap` which understands how to perform this arbitration and translate delegate callbacks into machine-readable output.
+idb uses `FBXCTestCore` which understands how to perform this arbitration and translate delegate callbacks into machine-readable output.
 
 ### UI Tests: `idb xctest run ui`
 

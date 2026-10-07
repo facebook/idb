@@ -683,13 +683,13 @@ function build_idb_deps() {
   fi
 }
 
-# Only the two remaining .framework products (FBControlCore, XCTestBootstrap)
-# can nest: XCTestBootstrap re-embeds FBControlCore, and the duplicate is
+# Only the two remaining .framework products (FBControlCore, FBXCTestCore)
+# can nest: FBXCTestCore re-embeds FBControlCore, and the duplicate is
 # deleted here. Pure-Swift targets build as static libraries, which never
 # nest. This last entry goes away with the last ObjC file (which lets those
 # targets become static libraries too).
 function strip_embedded_frameworks() {
-  local FRAMEWORK_PATH="$BUILD_DIRECTORY/Products/Release/XCTestBootstrap.framework/Versions/Current/Frameworks/FBControlCore.framework"
+  local FRAMEWORK_PATH="$BUILD_DIRECTORY/Products/Release/FBXCTestCore.framework/Versions/Current/Frameworks/FBControlCore.framework"
   if [ -d "$FRAMEWORK_PATH" ]; then
     echo "Stripping Framework $FRAMEWORK_PATH"
     rm -r "$FRAMEWORK_PATH"
@@ -716,7 +716,7 @@ function build_target() {
 
 function build_all_frameworks() {
   build_target FBControlCore
-  build_target XCTestBootstrap
+  build_target FBXCTestCore
   build_target FBSimulatorControl
   build_target FBDeviceControl
 }
@@ -981,11 +981,11 @@ function build() {
         build_sim_video;;
       distribution)
         build_distribution;;
-      FBControlCore|XCTestBootstrap|FBSimulatorControl|SimulatorXCTest|FBDeviceControl)
+      FBControlCore|FBXCTestCore|FBSimulatorControl|SimulatorXCTest|FBDeviceControl)
         build_target "$target";;
       *)
         echo "Unknown target: $target"
-        echo "Valid targets: all, frameworks, shims, idb_companion, idb-repl, sim-video, FBControlCore, XCTestBootstrap, FBSimulatorControl, SimulatorXCTest, FBDeviceControl, Shimulator-iOS, Shimulator-macOS, Repl-iOS, Repl-macOS, ReplHost, SimulatorFrameworkBridge-iOS, SimulatorFrameworkBridge-tvOS, distribution"
+        echo "Valid targets: all, frameworks, shims, idb_companion, idb-repl, sim-video, FBControlCore, FBXCTestCore, FBSimulatorControl, SimulatorXCTest, FBDeviceControl, Shimulator-iOS, Shimulator-macOS, Repl-iOS, Repl-macOS, ReplHost, SimulatorFrameworkBridge-iOS, SimulatorFrameworkBridge-tvOS, distribution"
         exit 1;;
     esac
   fi
@@ -1023,7 +1023,7 @@ function test_target() {
 
 function test_all() {
   test_target FBControlCore
-  test_target XCTestBootstrap
+  test_target FBXCTestCore
   test_target FBSimulatorControl
   test_target FBDeviceControl
 }
@@ -1038,13 +1038,13 @@ function run_tests() {
     case $target in
       all)
         test_all;;
-      FBControlCore|XCTestBootstrap|FBSimulatorControl|FBDeviceControl)
+      FBControlCore|FBXCTestCore|FBSimulatorControl|FBDeviceControl)
         test_target "$target";;
       FBSimulatorControlUnitTests|FBSimulatorControlBootTests|FBSimulatorControlSmokeTests)
         test_target "$target";;
       *)
         echo "Unknown test target: $target"
-        echo "Valid targets: all, FBControlCore, XCTestBootstrap, FBSimulatorControl,"
+        echo "Valid targets: all, FBControlCore, FBXCTestCore, FBSimulatorControl,"
         echo "  FBSimulatorControlUnitTests, FBSimulatorControlBootTests,"
         echo "  FBSimulatorControlSmokeTests, FBDeviceControl"
         exit 1;;
@@ -1096,7 +1096,7 @@ Commands:
       Shimulator-macOS Build Shimulator-macOS dylib (macOS)
       SimulatorFrameworkBridge-iOS Build the iOS-simulator guest executable
       SimulatorFrameworkBridge-tvOS Build the tvOS-simulator guest executable
-      XCTestBootstrap Build XCTestBootstrap framework
+      FBXCTestCore Build FBXCTestCore framework
 
   test [<target>]
     Run tests. If no target specified, runs all tests.
@@ -1104,7 +1104,7 @@ Commands:
       (none)          Run all tests
       all             Run all tests
       FBControlCore   Test FBControlCore
-      XCTestBootstrap Test XCTestBootstrap
+      FBXCTestCore Test FBXCTestCore
       FBSimulatorControl Test FBSimulatorControl (every suite)
       FBSimulatorControlUnitTests   Test the Unit suite: needs no simulator
       FBSimulatorControlBootTests   Test the Boot suite: creates and boots one

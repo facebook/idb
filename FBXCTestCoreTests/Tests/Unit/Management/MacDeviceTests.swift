@@ -1,0 +1,155 @@
+/*
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ */
+
+import FBControlCore
+@testable import FBXCTestCore
+import XCTest
+
+final class MacDeviceTests: XCTestCase {
+
+  var device: MacDevice!
+  var installedApp: InstalledApplication!
+  var tempInstallDir: String?
+
+  override func setUpWithError() throws {
+    try XCTSkipIf(
+      ProcessInfo.processInfo.environment["GITHUB_ACTIONS"] == "true",
+      "MacDevice install/launch is not supported on hosted CI runners")
+  }
+
+  override func setUp() {
+    super.setUp()
+    device = MacDevice()
+
+    let descriptor: BundleDescriptor
+    do {
+      descriptor = try MacDeviceTests.macCommonApplication()
+    } catch {
+      preconditionFailure("Failed to load MacCommonApp fixture: \(error)")
+    }
+
+    // Copy the .app to a temporary directory so that a test which deletes the
+    // installed path does not destroy the fixture inside the test bundle.
+    tempInstallDir = NSTemporaryDirectory().appendingFormat("%@", UUID().uuidString)
+    let tempDir = tempInstallDir!
+    do {
+      try FileManager.default.createDirectory(atPath: tempDir, withIntermediateDirectories: true, attributes: nil)
+    } catch {
+      preconditionFailure("Failed to create temp dir: \(error)")
+    }
+    let destPath = (tempDir as NSString).appendingPathComponent((descriptor.path as NSString).lastPathComponent)
+    do {
+      try FileManager.default.copyItem(atPath: descriptor.path, toPath: destPath)
+    } catch {
+      preconditionFailure("Failed to copy fixture app: \(error)")
+    }
+
+    do {
+      installedApp = try device.installApplication(withPath: destPath)
+    } catch {
+      preconditionFailure("Failed to install dummy app: \(error)")
+    }
+  }
+
+  override func tearDownWithError() throws {
+    var teardownError: Error?
+    do {
+      try device.restorePrimaryDeviceState()
+    } catch {
+      teardownError = error
+      NSLog("Failed to tearDown test gracefully %@. Further tests may be affected", error.localizedDescription)
+    }
+    if let tempDir = tempInstallDir {
+      try? FileManager.default.removeItem(atPath: tempDir)
+      tempInstallDir = nil
+    }
+    if let err = teardownError {
+      throw err
+    }
+  }
+
+  func testMacComparsion() {
+    let anotherDevice = MacDevice()
+    let comparsionResult = device.compare(anotherDevice)
+
+    XCTAssertEqual(
+      comparsionResult,
+      .orderedSame,
+      "We should have only one exemplar of MacDevice, so this is same"
+    )
+  }
+
+  func testMacStateRestorationWithEmptyTasks() {
+    XCTAssertNoThrow(try device.restorePrimaryDeviceState(), "State restoration without launched tasks should succeed")
+  }
+
+  func testInstallNotExistedApplicationAtPath() {
+    XCTAssertThrowsError(
+      try device.installApplication(withPath: "/not/existed/path"),
+      "Installing an application from a path that does not exist should throw"
+    )
+  }
+
+  func testInstallExistedApplicationAtPath() {
+    XCTAssertTrue(
+      installedApp.bundle.identifier == "com.facebook.MacCommonApp",
+      "Dummy application should install properly"
+    )
+  }
+
+  func testUninstallApplicationByIncorrectBundleID() {
+    XCTAssertThrowsError(try device.uninstallApplication(withBundleID: "not.existed"))
+  }
+
+  func testInstallReportsAMacInstallType() {
+    XCTAssertEqual(installedApp.installType, .mac)
+  }
+
+  func testUninstallKeepsTheCallersBundle() throws {
+    try device.uninstallApplication(withBundleID: installedApp.bundle.identifier)
+
+    XCTAssertTrue(FileManager.default.fileExists(atPath: installedApp.bundle.path))
+  }
+
+  func testUninstallForgetsAnAppWhoseBundleIsMissing() throws {
+    try FileManager.default.removeItem(atPath: installedApp.bundle.path)
+
+    try device.uninstallApplication(withBundleID: installedApp.bundle.identifier)
+
+    XCTAssertThrowsError(try device.uninstallApplication(withBundleID: installedApp.bundle.identifier))
+  }
+
+  func testLaunchingNotInstalledAppByBuntleID() async {
+    let config = ApplicationLaunchConfiguration(
+      bundleID: "not.existed",
+      bundleName: "not.existed",
+      arguments: [],
+      environment: [:],
+      waitForDebugger: false,
+      launchMode: .relaunchIfRunning
+    )
+    do {
+      _ = try await device.launch(config)
+      XCTFail("Launching a nonexistent app should fail")
+    } catch {
+      // Expected.
+    }
+  }
+
+  func testLaunchingExistedApp() async throws {
+    let config = ApplicationLaunchConfiguration(
+      bundleID: installedApp.bundle.identifier,
+      bundleName: installedApp.bundle.name,
+      arguments: [],
+      environment: [:],
+      waitForDebugger: false,
+      launchMode: .relaunchIfRunning
+    )
+
+    _ = try await device.launch(config)
+  }
+}

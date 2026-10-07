@@ -7,8 +7,8 @@
 
 import FBControlCore
 import FBDeviceControl
+import FBXCTestCore
 import Testing
-import XCTestBootstrap
 
 @Suite
 struct DeviceXCTestCommandsTests {

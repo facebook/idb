@@ -10,8 +10,8 @@ import FBDeviceControl
 import FBSimulatorControl
 import FBSimulatorVideo
 import FBVideoCore
+import FBXCTestCore
 import Foundation
-import XCTestBootstrap
 
 /// The target the companion serves, with every capability its handlers reach. Resolved once, when the
 /// target is chosen, so a handler never asks whether the target has a capability.

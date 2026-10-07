@@ -6,8 +6,8 @@
  */
 
 import FBControlCore
+import FBXCTestCore
 import Foundation
-import XCTestBootstrap
 
 enum XCTestRunFileError: Error {
   case fileMissing(url: URL)

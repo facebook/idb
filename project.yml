@@ -466,17 +466,17 @@ targets:
       - sdk: CoreMedia.framework
       - sdk: CoreVideo.framework
       - sdk: Foundation.framework
-  XCTestBootstrap:
+  FBXCTestCore:
     type: framework
     platform: macOS
     scheme:
       testTargets:
-        - XCTestBootstrapTests
+        - FBXCTestCoreTests
     configFiles:
-      Debug: XCTestBootstrap/XCTestBootstrap.xcconfig
-      Release: XCTestBootstrap/XCTestBootstrap.xcconfig
+      Debug: FBXCTestCore/FBXCTestCore.xcconfig
+      Release: FBXCTestCore/FBXCTestCore.xcconfig
     sources:
-      - path: XCTestBootstrap
+      - path: FBXCTestCore
         excludes:
           - "**/*-Info.plist"
           - "**/*.xcconfig"
@@ -486,14 +486,14 @@ targets:
         headerVisibility: project
     settings:
       base:
-        INFOPLIST_FILE: $(SRCROOT)/XCTestBootstrap/XCTestBootstrap-Info.plist
-        PRODUCT_BUNDLE_IDENTIFIER: com.facebook.XCTestBootstrap
-        PRODUCT_NAME: XCTestBootstrap
+        INFOPLIST_FILE: $(SRCROOT)/FBXCTestCore/FBXCTestCore-Info.plist
+        PRODUCT_BUNDLE_IDENTIFIER: com.facebook.FBXCTestCore
+        PRODUCT_NAME: FBXCTestCore
         DEFINES_MODULE: "YES"
         MACH_O_TYPE: staticlib
         SWIFT_VERSION: "6.0"
         SWIFT_PACKAGE_NAME: idb
-        MODULEMAP_FILE: $(SRCROOT)/XCTestBootstrap/module.modulemap
+        MODULEMAP_FILE: $(SRCROOT)/FBXCTestCore/module.modulemap
         HEADER_SEARCH_PATHS: $(inherited) $(SRCROOT)/Shims/Shimulator/Tools
         FRAMEWORK_SEARCH_PATHS: $(inherited) $(DEVELOPER_DIR)/Library/PrivateFrameworks
         CLANG_ENABLE_OBJC_ARC: "YES"
@@ -511,14 +511,14 @@ targets:
       - sdk: Cocoa.framework
       - sdk: Foundation.framework
       - sdk: IOKit.framework
-  XCTestBootstrapTests:
+  FBXCTestCoreTests:
     type: bundle.unit-test
     platform: macOS
     configFiles:
-      Debug: XCTestBootstrapTests/XCTestBootstrapTests.xcconfig
-      Release: XCTestBootstrapTests/XCTestBootstrapTests.xcconfig
+      Debug: FBXCTestCoreTests/FBXCTestCoreTests.xcconfig
+      Release: FBXCTestCoreTests/FBXCTestCoreTests.xcconfig
     sources:
-      - path: XCTestBootstrapTests
+      - path: FBXCTestCoreTests
         excludes:
           - "**/*-Info.plist"
           - "**/*.xcconfig"
@@ -530,9 +530,9 @@ targets:
         buildPhase: resources
     settings:
       base:
-        INFOPLIST_FILE: $(SRCROOT)/XCTestBootstrapTests/XCTestBootstrapTests-Info.plist
-        PRODUCT_BUNDLE_IDENTIFIER: com.facebook.XCTestBootstrapTests
-        PRODUCT_NAME: XCTestBootstrapTests
+        INFOPLIST_FILE: $(SRCROOT)/FBXCTestCoreTests/FBXCTestCoreTests-Info.plist
+        PRODUCT_BUNDLE_IDENTIFIER: com.facebook.FBXCTestCoreTests
+        PRODUCT_NAME: FBXCTestCoreTests
         SWIFT_VERSION: "5.0"
         SWIFT_PACKAGE_NAME: idb
         FRAMEWORK_SEARCH_PATHS: $(inherited) $(DEVELOPER_DIR)/Library/PrivateFrameworks
@@ -546,7 +546,7 @@ targets:
           STRIP_INSTALLED_PRODUCT: "YES"
     dependencies:
       - target: FBControlCore
-      - target: XCTestBootstrap
+      - target: FBXCTestCore
       - target: ZstdDecompress
       - sdk: Cocoa.framework
       - sdk: XCTest.framework
@@ -700,11 +700,11 @@ targets:
         embed: false
       - target: FBSimulatorControl
         embed: false
+      - target: FBXCTestCore
+        embed: false
       - target: SimulatorFrameworkBridgeProtocol
         embed: false
       - target: SimulatorIPC
-        embed: false
-      - target: XCTestBootstrap
         embed: false
       - target: ZstdDecompress
         embed: false
@@ -789,10 +789,10 @@ targets:
       - target: FBSimulatorControl
       - target: FBSimulatorVideo
       - target: FBVideoCore
+      - target: FBXCTestCore
       - target: SimulatorFrameworkBridgeProtocol
       - target: SimulatorIPC
       - target: SimulatorXCTest
-      - target: XCTestBootstrap
       - target: ZstdDecompress
       - sdk: AVFoundation.framework
       - sdk: Cocoa.framework
@@ -878,10 +878,10 @@ targets:
       - target: FBSimulatorControl
       - target: FBSimulatorVideo
       - target: FBVideoCore
+      - target: FBXCTestCore
       - target: SimulatorFrameworkBridgeProtocol
       - target: SimulatorIPC
       - target: SimulatorXCTest
-      - target: XCTestBootstrap
       - target: ZstdDecompress
       - sdk: AVFoundation.framework
       - sdk: Cocoa.framework
@@ -967,10 +967,10 @@ targets:
       - target: FBSimulatorControl
       - target: FBSimulatorVideo
       - target: FBVideoCore
+      - target: FBXCTestCore
       - target: SimulatorFrameworkBridgeProtocol
       - target: SimulatorIPC
       - target: SimulatorXCTest
-      - target: XCTestBootstrap
       - target: ZstdDecompress
       - sdk: AVFoundation.framework
       - sdk: Cocoa.framework
@@ -1014,7 +1014,7 @@ targets:
         embed: false
       - target: FBVideoCore
         embed: false
-      - target: XCTestBootstrap
+      - target: FBXCTestCore
         embed: false
       - target: ZstdDecompress
         embed: false
@@ -1057,7 +1057,7 @@ targets:
       - target: FBControlCore
       - target: FBDeviceControl
       - target: FBVideoCore
-      - target: XCTestBootstrap
+      - target: FBXCTestCore
       - target: ZstdDecompress
       - sdk: Cocoa.framework
       - sdk: XCTest.framework

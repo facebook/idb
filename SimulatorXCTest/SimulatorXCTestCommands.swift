@@ -8,8 +8,8 @@
 @preconcurrency import CoreSimulator
 @preconcurrency import FBControlCore
 @preconcurrency import FBSimulatorControl
+@preconcurrency import FBXCTestCore
 import Foundation
-@preconcurrency import XCTestBootstrap
 
 private let testmanagerdSimSockTimeout: TimeInterval = 5
 private let simSockEnvKey = "TESTMANAGERD_SIM_SOCK"
@@ -126,7 +126,7 @@ public final class SimulatorXCTestCommands: XCTestExtendedCommands {
     guard let simulator = self.simulator else {
       throw WeakTargetError.simulator
     }
-    // `XCTestCommands` lives in FBControlCore, which cannot see `XCTestReporter` in XCTestBootstrap,
+    // `XCTestCommands` lives in FBControlCore, which cannot see `XCTestReporter` in FBXCTestCore,
     // so the reporter arrives type-erased and has to be recovered here.
     guard let typedReporter = reporter as? any XCTestReporter else {
       throw SimulatorXCTestError.unexpectedReporter(reporterDescription: String(describing: reporter))

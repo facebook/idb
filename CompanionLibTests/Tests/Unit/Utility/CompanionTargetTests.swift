@@ -8,9 +8,9 @@
 @testable import CompanionLib
 @preconcurrency import FBControlCore
 import FBVideoCore
+import FBXCTestCore
 import Foundation
 import Testing
-import XCTestBootstrap
 
 @Suite("CompanionTarget")
 struct CompanionTargetTests {

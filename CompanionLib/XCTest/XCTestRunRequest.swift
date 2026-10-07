@@ -6,8 +6,8 @@
  */
 
 import FBControlCore
+import FBXCTestCore
 import Foundation
-import XCTestBootstrap
 
 private let FBLogicTestTimeout: TimeInterval = 60 * 60
 

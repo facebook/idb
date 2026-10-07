@@ -6,9 +6,9 @@
  */
 
 @testable import CompanionLib
+import FBXCTestCore
 import GRPCCore
 import XCTest
-import XCTestBootstrap
 
 private final class ScriptedTestRun: XCTestRunCompletion, @unchecked Sendable {
   enum Outcome {

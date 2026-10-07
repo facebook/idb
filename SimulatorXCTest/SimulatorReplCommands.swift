@@ -7,8 +7,8 @@
 
 import FBControlCore
 @preconcurrency import FBSimulatorControl
+@preconcurrency import FBXCTestCore
 import Foundation
-@preconcurrency import XCTestBootstrap
 
 public enum SimulatorReplError: Error {
   case bundledResourceMissing(item: String)

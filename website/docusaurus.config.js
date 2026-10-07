@@ -119,6 +119,7 @@ module.exports = {
           { from: '/docs/test-execution', to: '/idb/test-execution' },
           { from: '/docs/file-containers', to: '/idb/file-containers' },
           { from: '/docs/accessibility', to: '/idb/accessibility' },
+          { from: '/idb/xctestbootstrap', to: '/idb/fbxctestcore' },
         ],
         // The docs were served under /docs/ until they became the site itself.
         createRedirects(existingPath) {

@@ -6,8 +6,8 @@
  */
 
 @preconcurrency import FBControlCore
+import FBXCTestCore
 import Foundation
-import XCTestBootstrap
 
 public enum DeviceXCTestError: Error {
   case testManagerAlreadyRunning(configurationDescription: String)

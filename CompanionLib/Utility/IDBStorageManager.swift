@@ -6,8 +6,8 @@
  */
 
 import FBControlCore
+import FBXCTestCore
 import Foundation
-import XCTestBootstrap
 
 let IdbTestBundlesFolder: String = "idb-test-bundles"
 let IdbApplicationsFolder: String = "idb-applications"

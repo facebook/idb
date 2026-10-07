@@ -21,7 +21,7 @@ const FRAMEWORKS = [
   { repoPath: 'FBSimulatorVideo', id: 'fbsimulatorvideo' },
   { repoPath: 'FBSimulatorAX', id: 'fbsimulatorax' },
   { repoPath: 'FBDeviceControl', id: 'fbdevicecontrol' },
-  { repoPath: 'XCTestBootstrap', id: 'xctestbootstrap' },
+  { repoPath: 'FBXCTestCore', id: 'fbxctestcore' },
 ];
 
 const websiteDir = path.join(__dirname, '..');

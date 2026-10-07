@@ -7,7 +7,7 @@
 
 import Foundation
 
-/// `reporter` is typed as `AnyObject` to avoid a circular module dependency on `XCTestBootstrap`.
+/// `reporter` is typed as `AnyObject` to avoid a circular module dependency on `FBXCTestCore`.
 public protocol XCTestCommands {
 
   func runTest(

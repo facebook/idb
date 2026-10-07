@@ -7,10 +7,10 @@
 
 @testable import CompanionLib
 import FBControlCore
+import FBXCTestCore
 import GRPCCore
 import IDBGRPCSwift
 import XCTest
-import XCTestBootstrap
 
 private struct RunFailed: Error {}
 

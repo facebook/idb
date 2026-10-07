@@ -55,7 +55,7 @@ The `idb` cli will, by default operate in one of two modes:
 `idb` is transitioning to a pure Swift codebase. This is an ongoing migration, and the current state is:
 
 - **The `idb_companion` is Swift.** The companion executable, its gRPC server and all of its request handling are implemented in Swift, replacing the previous Objective-C++ implementation that was built against the C++ gRPC library. The server is built on [`grpc-swift`](https://github.com/grpc/grpc-swift) and SwiftNIO.
-- **The Frameworks are migrating.** `FBControlCore`, `FBSimulatorControl`, `FBDeviceControl` and `XCTestBootstrap` are a mix of Objective-C and Swift. New functionality is written in Swift, and existing functionality is progressively rewritten. Objective-C remains concentrated where `idb` binds C or Objective-C system API directly: the `MobileDevice.framework` layer in `FBDeviceControl`, the `DTX` protocol layer in `XCTestBootstrap`, process spawning and `FBFuture` itself.
+- **The Frameworks are migrating.** `FBControlCore`, `FBSimulatorControl`, `FBDeviceControl` and `FBXCTestCore` are a mix of Objective-C and Swift. New functionality is written in Swift, and existing functionality is progressively rewritten. Objective-C remains concentrated where `idb` binds C or Objective-C system API directly: the `MobileDevice.framework` layer in `FBDeviceControl`, the `DTX` protocol layer in `FBXCTestCore`, process spawning and `FBFuture` itself.
 - **New components are Swift-only.** `idb-repl` and the companion's supporting libraries are pure Swift. `idb-repl`'s whole dependency closure contains no Objective-C, which is what allows it to be built with the Swift Package Manager and cross-compiled for Linux.
 
 For consumers of the Frameworks this means that newer APIs are exposed as Swift protocols with `async` methods, while older APIs return an `FBFuture`. The two interoperate: Swift code awaits `FBFuture`-based APIs through bridging described in [`FBFuture` and Swift Concurrency](#fbfuture-and-swift-concurrency) below.
@@ -83,10 +83,10 @@ flowchart TD
     companion["idb_companion"] --> CompanionLib
     CompanionLib --> FBSimulatorControl
     CompanionLib --> FBDeviceControl
-    CompanionLib --> XCTestBootstrap
+    CompanionLib --> FBXCTestCore
     FBSimulatorControl --> FBControlCore
     FBDeviceControl --> FBControlCore
-    XCTestBootstrap --> FBControlCore
+    FBXCTestCore --> FBControlCore
 ```
 
 ### Targets

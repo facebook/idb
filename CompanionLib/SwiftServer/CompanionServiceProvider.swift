@@ -7,11 +7,11 @@
 
 import CompanionUtilities
 @preconcurrency import FBControlCore
+import FBXCTestCore
 import Foundation
 import GRPCCore
 import IDBGRPCSwift
 import SwiftProtobuf
-import XCTestBootstrap
 
 final class CompanionServiceProvider: Idb_CompanionService.SimpleServiceProtocol, @unchecked Sendable {
 

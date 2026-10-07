@@ -12,9 +12,9 @@ import FBDeviceControl
 import FBSimulatorAX
 import FBSimulatorControl
 import FBVideoCore
+import FBXCTestCore
 import Foundation
 import SimulatorXCTest
-import XCTestBootstrap
 
 public enum IDBCommandError: Error {
   case simulatorOnlyOperation(operation: String, targetDescription: String)

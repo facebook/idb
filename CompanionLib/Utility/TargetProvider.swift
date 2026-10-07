@@ -8,8 +8,8 @@
 import FBControlCore
 import FBDeviceControl
 import FBSimulatorControl
+import FBXCTestCore
 import Foundation
-import XCTestBootstrap
 
 enum TargetProviderError: Error {
   case targetNotUsable(udid: String, targetDescription: String)

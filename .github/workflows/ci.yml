@@ -115,7 +115,7 @@ jobs:
       matrix:
         target:
           - FBControlCore
-          - XCTestBootstrap
+          - FBXCTestCore
           # One job per FBSimulatorControl suite, so a Unit regression, a broken
           # boot and a broken guest read are three signals rather than one.
           - FBSimulatorControlUnitTests
