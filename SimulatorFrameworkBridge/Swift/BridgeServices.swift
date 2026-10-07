@@ -118,14 +118,14 @@ public enum BridgeServices {
       return Int32(FBHealthSettingsService.handleHealthSettingsAction(action: action, bundleID: bundleID, typeIdentifiers: types, output: output))
       #endif
     case let .accessibility(parameters):
-      let response = FBAccessibilityService.handleRequest(parameters.mapValues(\.foundationValue))
+      let response = FBAccessibilityService.handleRequest(parameters: parameters)
       return accessibility(FBAccessibilityService.serializeResponse(response), output: output)
     }
   }
 
   /// Commands that answer with a stream of results rather than one; nil for every other command.
   public static func stream(_ command: BridgeCommand) -> BridgeStreamStart? {
-    guard case let .accessibility(parameters) = command, let start = FBAccessibilityService.quiescence(parameters.mapValues(\.foundationValue)) else { return nil }
+    guard case let .accessibility(parameters) = command, let start = FBAccessibilityService.quiescence(parameters) else { return nil }
     switch start {
     case let .stream(events):
       return .stream(AccessibilityResultStream(events: events))

@@ -2519,17 +2519,13 @@ final class AccessibilityRuntimeTests: XCTestCase {
     }
   }
 
-  func testMalformedTraversalFlagsReturnPlainErrorsAndRecover() {
+  func testMalformedTraversalFlagsAreRefusedAndRecover() {
     runtime.applicationElements[NSNumber(value: kAppPid)] = FBAXFakeElement.readable("root")
     for flag in ["snapshotTree", "translatorVocabulary", "explainUnreachable"] {
       for value in [NSNull(), [], [:]] as [Any] {
         let response = FBAccessibilityService.handleRequest(["verb": "describe", "pid": kAppPid, flag: value])
 
-        assertEqualObjects(response["ok"], false)
-        XCTAssertNil(response["error_kind"])
-        XCTAssertNil(response["tree"])
-        XCTAssertTrue((response["error"] as? String)?.hasPrefix("the reader raised while answering:") == true)
-        XCTAssertTrue((response["error"] as? String)?.contains("boolValue") == true)
+        assertEqualObjects(response, ["ok": false, "error_kind": "bad_request", "error": "\(flag) must be a boolean"])
         assertEqualObjects(FBAccessibilityService.handleRequest(["verb": "describe", "pid": kAppPid])["ok"], true)
       }
     }

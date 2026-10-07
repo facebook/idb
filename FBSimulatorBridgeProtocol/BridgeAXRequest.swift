@@ -50,14 +50,17 @@ public struct BridgeAXWriteRequest: Sendable, Equatable {
   public let pid: Int32?
   public let assertion: BridgeAXWriteAssertion?
   public var displayID: UInt32?
+  /// Attributes the guest fetches for the hit element beyond its default list, so an assertion can name one.
+  public let attributes: [String]?
 
-  public init(kind: Kind, x: Double, y: Double, pid: Int32?, assertion: BridgeAXWriteAssertion?, displayID: UInt32? = nil) {
+  public init(kind: Kind, x: Double, y: Double, pid: Int32?, assertion: BridgeAXWriteAssertion?, displayID: UInt32? = nil, attributes: [String]? = nil) {
     self.kind = kind
     self.x = x
     self.y = y
     self.pid = pid
     self.assertion = assertion
     self.displayID = displayID
+    self.attributes = attributes
   }
 
   /// Whether sending this write twice leaves the same state as sending it once.
@@ -97,11 +100,18 @@ public struct BridgeAXWriteRequest: Sendable, Equatable {
       payload[BridgeAXWire.Request.assertKey.key] = assertion.key.rawValue
       payload[BridgeAXWire.Request.assertValue.key] = assertion.value
     }
+    if let attributes, !attributes.isEmpty {
+      payload[BridgeAXWire.Request.attributes.key] = attributes
+    }
     return payload
   }
 }
 
 public struct BridgeAXReadOptions: Sendable, Equatable {
+  /// The bounds a request that names none is read with.
+  public static let defaultMaxDepth = 100
+  public static let defaultMaxNodes = 5000
+
   public let maxDepth: Int
   public let maxNodes: Int
   public let attributes: [String]?
@@ -141,15 +151,19 @@ public struct BridgeAXReadOptions: Sendable, Equatable {
   }
 }
 
-public enum BridgeAXRequest: Sendable {
+public enum BridgeAXRequest: Sendable, Equatable {
   case read(pid: Int32, options: BridgeAXReadOptions, displayID: UInt32? = nil)
   case readFrontmost(x: Double, y: Double, method: BridgeAXFrontmostMethod, options: BridgeAXReadOptions, displayID: UInt32? = nil)
-  case hitTest(x: Double, y: Double, attributes: [String]?, displayID: UInt32? = nil)
+  /// Display-wide when `pid` is nil: the guest names the application that owns the point.
+  case hitTest(x: Double, y: Double, attributes: [String]?, displayID: UInt32? = nil, pid: Int32? = nil)
   case write(BridgeAXWriteRequest)
   case deviceSettingRead(String)
   case deviceSettingWrite(String, enabled: Bool)
-  /// Streamed: follows the frontmost application on `displayID` when `pid` is nil. A nil tunable takes the guest's default.
-  case quiescence(pid: Int32?, busyThresholdMs: Int?, quietWindowMs: Int?, displayID: UInt32? = nil)
+  /// Streamed: follows the frontmost application on `displayID`, resolved by `method` at (`x`, `y`), when `pid` is
+  /// nil. A nil tunable takes the guest's default.
+  case quiescence(
+    pid: Int32?, busyThresholdMs: Int?, quietWindowMs: Int?, displayID: UInt32? = nil,
+    method: BridgeAXFrontmostMethod = .windowServer, x: Double = 0, y: Double = 0)
   case displays
 
   public var command: BridgeCommand {
@@ -182,12 +196,15 @@ public enum BridgeAXRequest: Sendable {
         payload[BridgeAXWire.Request.displayID.key] = displayID
       }
       return options.appendingPayload(to: payload)
-    case let .hitTest(x, y, attributes, displayID):
+    case let .hitTest(x, y, attributes, displayID, pid):
       var payload: [String: Any] = [
         BridgeAXWire.Request.verb.key: BridgeAXWire.Verb.hitTest.rawValue,
         BridgeAXWire.Request.x.key: x,
         BridgeAXWire.Request.y.key: y,
       ]
+      if let pid {
+        payload[BridgeAXWire.Request.pid.key] = Int(pid)
+      }
       if let displayID {
         payload[BridgeAXWire.Request.displayID.key] = displayID
       }
@@ -208,12 +225,19 @@ public enum BridgeAXRequest: Sendable {
         BridgeAXWire.Request.setting.key: setting,
         BridgeAXWire.Request.enabled.key: enabled,
       ]
-    case let .quiescence(pid, busyThresholdMs, quietWindowMs, displayID):
+    case let .quiescence(pid, busyThresholdMs, quietWindowMs, displayID, method, x, y):
       var payload: [String: Any] = [BridgeAXWire.Request.verb.key: BridgeAXWire.Verb.quiet.rawValue]
       payload[BridgeAXWire.Request.pid.key] = pid.map { Int($0) }
       payload[BridgeAXWire.Request.busyThresholdMs.key] = busyThresholdMs
       payload[BridgeAXWire.Request.quietWindowMs.key] = quietWindowMs
       payload[BridgeAXWire.Request.displayID.key] = displayID
+      if method != .windowServer {
+        payload[BridgeAXWire.Request.method.key] = method.rawValue
+      }
+      if x != 0 || y != 0 {
+        payload[BridgeAXWire.Request.x.key] = x
+        payload[BridgeAXWire.Request.y.key] = y
+      }
       return payload
     case .displays:
       return [BridgeAXWire.Request.verb.key: BridgeAXWire.Verb.displays.rawValue]
