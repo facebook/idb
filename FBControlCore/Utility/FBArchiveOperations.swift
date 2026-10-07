@@ -20,7 +20,11 @@ public enum ArchiveOperationsError: Error, LocalizedError {
   case pathDoesNotExist(path: String)
   /// The tool reading a stream exited unsuccessfully, with the tail of its standard error.
   case unacceptableExitCode(Int32, standardError: String)
-  case compressionFailed(path: String, exitCode: Int32, stderr: String)
+  /// A file became shorter than its size when archiving began.
+  case fileChangedWhileArchiving(path: String)
+  /// A file could not be opened or examined, with the system's reason.
+  case unreadable(path: String, reason: String)
+  case compressionFailed
 
   public var errorDescription: String? {
     switch self {
@@ -29,9 +33,18 @@ public enum ArchiveOperationsError: Error, LocalizedError {
     case let .unacceptableExitCode(code, standardError):
       let description = "Exit Code \(code) is not acceptable [0]"
       return standardError.isEmpty ? description : "\(description): \(standardError)"
-    case let .compressionFailed(path, exitCode, stderr):
-      return "Compressing \(path) failed with exit code \(exitCode): \(stderr)"
+    case let .fileChangedWhileArchiving(path):
+      return "\(path) changed while it was being archived"
+    case let .unreadable(path, reason):
+      return "\(path) could not be read: \(reason)"
+    case .compressionFailed:
+      return "The archive could not be compressed"
     }
+  }
+
+  /// The failure `errno` describes for the call that just failed on `path`.
+  static func unreadable(atPath path: String) -> Self {
+    .unreadable(path: path, reason: String(cString: strerror(errno)))
   }
 }
 
@@ -146,10 +159,14 @@ public enum FBArchiveOperations {
     forPath path: String,
     logger: any ControlCoreLogger
   ) async throws -> Data {
-    let gzip = try await Subprocess(executable: "/usr/bin/gzip", arguments: ["--to-stdout", path])
-      .run(output: .data, error: .loggerCapturingErrorMessage(logger), exitPolicy: .any, logger: logger)
-    try gzip.checkExitedCleanly { ArchiveOperationsError.compressionFailed(path: path, exitCode: $0, stderr: gzip.standardError) }
-    return gzip.standardOutput
+    try await readToEnd {
+      let descriptor = open(path, O_RDONLY | O_CLOEXEC)
+      guard descriptor >= 0 else {
+        throw ArchiveOperationsError.unreadable(atPath: path)
+      }
+      let file = FileHandle(fileDescriptor: descriptor, closeOnDealloc: true)
+      return (try GzippingSource(FileDescriptorSource(descriptor)), file)
+    }
   }
 
   /// A gzip that writes the compressed file at `path` to its stdout, for the caller to launch and stream.
@@ -170,10 +187,32 @@ public enum FBArchiveOperations {
     forPath path: String,
     logger: any ControlCoreLogger
   ) async throws -> Data {
-    let arguments = try gzippedTarArguments(forPath: path, logger: logger)
-    return try await Subprocess(executable: BSDTarPath, arguments: arguments)
-      .run(output: .data, error: .loggerCapturingErrorMessage(logger), logger: logger)
-      .standardOutput
+    try await readToEnd { (try gzippedTar(forPath: path, logger: logger), nil) }
+  }
+
+  /// A gzipped tar of a file or directory, laid out as `createGzippedTar` lays it out, written as it is read.
+  public static func gzippedTar(forPath path: String, logger: any ControlCoreLogger) throws -> any ByteSource {
+    _ = try archiveRoot(forPath: path, logger: logger)
+    return try GzippingSource(TarSource(path: path))
+  }
+
+  /// Reads a source to its end off the cooperative pool. `owner` is whatever must outlive the reads, such as the
+  /// handle whose descriptor the source reads.
+  private static func readToEnd(_ makeSource: @escaping () throws -> (any ByteSource, AnyObject?)) async throws -> Data {
+    try await offCooperativePool {
+      let (source, owner) = try makeSource()
+      var data = Data()
+      var chunk = [UInt8](repeating: 0, count: 1 << 16)
+      while true {
+        let count = try chunk.withUnsafeMutableBytes { try source.read(into: $0) }
+        guard count > 0 else {
+          break
+        }
+        data.append(contentsOf: chunk[..<count])
+      }
+      withExtendedLifetime(owner) {}
+      return data
+    }.get()
   }
 
   private static func flagStringForExtraction(overrideModificationTime overrideMTime: Bool, debugLogging: Bool) -> String {
@@ -189,6 +228,11 @@ public enum FBArchiveOperations {
 
   /// A directory is tarred with itself as the root; a file is tarred relative to its parent.
   private static func gzippedTarArguments(forPath path: String, logger: any ControlCoreLogger) throws -> [String] {
+    let (directory, fileName) = try archiveRoot(forPath: path, logger: logger)
+    return ["-zvc", "-f", "-", "-C", directory, fileName]
+  }
+
+  private static func archiveRoot(forPath path: String, logger: any ControlCoreLogger) throws -> (directory: String, fileName: String) {
     var isDirectory: ObjCBool = false
     guard FileManager.default.fileExists(atPath: path, isDirectory: &isDirectory) else {
       throw ArchiveOperationsError.pathDoesNotExist(path: path)
@@ -212,7 +256,7 @@ public enum FBArchiveOperations {
         logger.info().log("Attempting to tar file at path \(path), but it has no content")
       }
     }
-    return ["-zvc", "-f", "-", "-C", directory, fileName]
+    return (directory, fileName)
   }
 }
 

@@ -229,6 +229,52 @@ public final class GzipSource: ByteSource {
   }
 }
 
+/// Gzips another source as a single member.
+public final class GzippingSource: ByteSource {
+
+  private let source: any ByteSource
+  private let deflater: Deflater
+  private var input = [UInt8](repeating: 0, count: 1 << 16)
+  private var start = 0
+  private var end = 0
+  private var inputEnded = false
+  private var finished = false
+
+  public init(_ source: any ByteSource) throws {
+    guard let deflater = Deflater() else {
+      throw ArchiveOperationsError.compressionFailed
+    }
+    self.source = source
+    self.deflater = deflater
+  }
+
+  public func read(into buffer: UnsafeMutableRawBufferPointer) throws -> Int {
+    guard !finished else {
+      return 0
+    }
+    while true {
+      if start == end && !inputEnded {
+        let count = try input.withUnsafeMutableBytes { try source.read(into: $0) }
+        (start, end, inputEnded) = (0, count, count == 0)
+      }
+      let (from, to, finish) = (start, end, inputEnded)
+      guard let step = input.withUnsafeBytes({ deflater.deflate(UnsafeRawBufferPointer(rebasing: $0[from..<to]), into: buffer, finish: finish) }) else {
+        throw ArchiveOperationsError.compressionFailed
+      }
+      start += step.consumed
+      finished = step.ended
+      if step.produced > 0 || finished {
+        return step.produced
+      }
+    }
+  }
+
+  public func drain() throws {
+    finished = true
+    try source.drain()
+  }
+}
+
 /// Decompresses zstd frames, one after another, skipping skippable frames; anything else is corrupt.
 public final class ZstdSource: ByteSource {
 

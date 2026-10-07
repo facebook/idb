@@ -133,10 +133,9 @@ final class FBArchiveOperationsTests: XCTestCase {
       _ = try await FBArchiveOperations.createGzippedTarData(forPath: directory, logger: logger)
       XCTFail("Expected archiving an unreadable file to fail")
     } catch {
-      guard case SubprocessError.unacceptableTermination = error else {
-        return XCTFail("Expected bsdtar to fail, got \(error)")
+      guard case ArchiveOperationsError.unreadable(path: file, reason: "Permission denied") = error else {
+        return XCTFail("Expected the unreadable file to be reported, got \(error)")
       }
-      XCTAssertTrue(error.localizedDescription.contains("Permission denied"), error.localizedDescription)
     }
   }
 

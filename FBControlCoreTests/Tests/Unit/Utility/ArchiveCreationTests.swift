@@ -256,16 +256,13 @@ final class ArchiveCreationTests: XCTestCase {
     XCTAssertEqual(try runTool("/usr/bin/gzip", ["-dc"], input: gzipped), try Data(contentsOf: file))
   }
 
-  // Pins bsdtar padding the compressed stream with zeros to a whole 10240-byte record, which gzip reports as trailing
-  // garbage. Flipped when archives are written in process, which ends at the gzip trailer.
-  func testATarArchiveIsPaddedToARecordAfterTheGzipStream() async throws {
+  func testATarArchiveEndsAtTheGzipTrailer() async throws {
     let file = tempDirectory.appendingPathComponent("payload")
     try Data("padded".utf8).write(to: file)
 
     let tarred = try await FBArchiveOperations.createGzippedTarData(forPath: file.path, logger: logger)
 
-    XCTAssertEqual(tarred.count % 10240, 0)
-    XCTAssertEqual(tarred.last, 0)
+    XCTAssertNoThrow(try runTool("/usr/bin/gzip", ["-t"], input: tarred))
   }
 
   func testArchivingAMissingPathNamesIt() async throws {
@@ -279,9 +276,7 @@ final class ArchiveCreationTests: XCTestCase {
     }
   }
 
-  // Pins bsdtar carrying macOS metadata, which install extraction discards with `--no-mac-metadata`. Flipped when
-  // archives are written in process, which writes neither.
-  func testExtendedAttributesTravelAsAppleDoubleAndPaxRecords() async throws {
+  func testExtendedAttributesAreNotArchived() async throws {
     let file = tempDirectory.appendingPathComponent("a.txt")
     try Data("alpha".utf8).write(to: file)
     let value = Data("pinned".utf8)
@@ -290,7 +285,7 @@ final class ArchiveCreationTests: XCTestCase {
 
     let entries = try tarEntries(try await FBArchiveOperations.createGzippedTarData(forPath: tempDirectory.path, logger: logger))
 
-    XCTAssertTrue(entries.contains { $0.path == "./._a.txt" }, "got \(entries.map(\.path))")
-    XCTAssertTrue(entries.first { $0.path == "./a.txt" }?.extendedAttributes.contains("com.example.pin") == true)
+    XCTAssertEqual(entries.map(\.path), ["./", "./a.txt"])
+    XCTAssertEqual(entries.first { $0.path == "./a.txt" }?.extendedAttributes, [])
   }
 }
