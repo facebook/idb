@@ -32,15 +32,10 @@ struct VideoStreamMethodHandler {
   let commandExecutor: IDBCommandExecutor
 
   func handle(requestStream: RequestStreamReader<Idb_VideoStreamRequest>, responseStream: RPCWriter<Idb_VideoStreamResponse>, context: ServerContext) async throws {
-    @Atomic var finished = false
-
     guard case let .start(start) = try await requestStream.requiredNext().control
     else { throw RPCError(code: .failedPrecondition, message: "Expected start control") }
 
-    let videoStream = try await startVideoStream(
-      request: start,
-      responseStream: responseStream,
-      finished: _finished)
+    let videoStream = try await startVideoStream(request: start, responseStream: responseStream)
 
     let observeClientCancelStreaming = Task<Void, Error> {
       for try await request in requestStream {
@@ -65,22 +60,14 @@ struct VideoStreamMethodHandler {
     targetLogger.log("The video stream is terminated")
   }
 
-  private func startVideoStream(request start: Idb_VideoStreamRequest.Start, responseStream: RPCWriter<Idb_VideoStreamResponse>, finished: Atomic<Bool>) async throws -> VideoStreamOperation {
+  private func startVideoStream(request start: Idb_VideoStreamRequest.Start, responseStream: RPCWriter<Idb_VideoStreamResponse>) async throws -> VideoStreamOperation {
     let consumer: DataConsumer
 
     if start.filePath.isEmpty {
       let responseWriter = FIFOStreamWriter(stream: responseStream)
 
-      consumer = AsynchronousDataConsumer { data in
-        guard !finished.wrappedValue else { return }
-        let response = Idb_VideoStreamResponse.with {
-          $0.payload.data = data
-        }
-        do {
-          try responseWriter.send(response)
-        } catch {
-          finished.set(true)
-        }
+      consumer = ResponseForwardingConsumer { data in
+        try responseWriter.send(Idb_VideoStreamResponse.with { $0.payload.data = data })
       }
     } else {
       var writeError: NSError?

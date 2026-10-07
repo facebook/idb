@@ -1,0 +1,52 @@
+/*
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ */
+
+import CompanionUtilities
+import FBControlCore
+import Foundation
+
+/// Forwards each chunk of data it consumes, in order on a private queue, until a send fails or
+/// `stopForwarding()` is called. Data consumed after that is dropped, so a stream that has gone away
+/// is never written to again.
+// SAFETY: `stopped` is an `Atomic`; `consumer` is itself `Sendable`.
+final class ResponseForwardingConsumer: NSObject, DataConsumer, DataConsumerLifecycle, DataConsumerAsync, @unchecked Sendable {
+  private let stopped: Atomic<Bool>
+  private let consumer: AsynchronousDataConsumer
+
+  init(send: @escaping (Data) throws -> Void) {
+    let stopped = Atomic(wrappedValue: false)
+    self.stopped = stopped
+    self.consumer = AsynchronousDataConsumer { data in
+      guard !stopped.wrappedValue else { return }
+      do {
+        try send(data)
+      } catch {
+        stopped.set(true)
+      }
+    }
+  }
+
+  func stopForwarding() {
+    stopped.set(true)
+  }
+
+  func consumeData(_ data: Data) {
+    consumer.consumeData(data)
+  }
+
+  func consumeEndOfFile() {
+    consumer.consumeEndOfFile()
+  }
+
+  var finishedConsuming: FBFuture<NSNull> {
+    consumer.finishedConsuming
+  }
+
+  func unprocessedDataCount() -> Int {
+    consumer.unprocessedDataCount()
+  }
+}

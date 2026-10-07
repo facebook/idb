@@ -44,18 +44,8 @@ struct TailMethodHandler {
     awaitStop: () async throws -> Void,
     start: (any DataConsumer) async throws -> any TailOperation
   ) async throws {
-    @Atomic var finished = false
-
-    let consumer = AsynchronousDataConsumer { data in
-      guard !finished else { return }
-      let response = Idb_TailResponse.with {
-        $0.data = data
-      }
-      do {
-        try send(response)
-      } catch {
-        _finished.set(true)
-      }
+    let consumer = ResponseForwardingConsumer { data in
+      try send(Idb_TailResponse.with { $0.data = data })
     }
 
     let tail = try await start(consumer)
@@ -63,11 +53,11 @@ struct TailMethodHandler {
       try await awaitStop()
     } catch {
       // A client that goes away without a stop ends the stream here, and nothing else would stop the tail.
-      _finished.set(true)
+      consumer.stopForwarding()
       try? await tail.cancel()
       throw error
     }
     try await tail.cancel()
-    _finished.set(true)
+    consumer.stopForwarding()
   }
 }

@@ -19,34 +19,23 @@ struct InstrumentsRunMethodHandler {
   let logger: ControlCoreLogger
 
   func handle(requestStream: RequestStreamReader<Idb_InstrumentsRunRequest>, responseStream: RPCWriter<Idb_InstrumentsRunResponse>, context: ServerContext) async throws {
-    @Atomic var finishedWriting = false
-
     guard case let .start(start) = try await requestStream.requiredNext().control
     else { throw RPCError(code: .failedPrecondition, message: "Expected start control") }
 
-    let operation = try await startInstrumentsOperation(request: start, responseStream: responseStream, finishedWriting: _finishedWriting)
+    let (operation, output) = try await startInstrumentsOperation(request: start, responseStream: responseStream)
 
     guard case let .stop(stop) = try await requestStream.requiredNext().control
     else { throw RPCError(code: .failedPrecondition, message: "Expected end control") }
 
-    try await stopInstruments(operation: operation, request: stop, responseStream: responseStream, finishedWriting: _finishedWriting)
+    try await stopInstruments(operation: operation, request: stop, responseStream: responseStream, output: output)
   }
 
-  private func startInstrumentsOperation(request: Idb_InstrumentsRunRequest.Start, responseStream: RPCWriter<Idb_InstrumentsRunResponse>, finishedWriting: Atomic<Bool>) async throws -> InstrumentsOperation {
+  private func startInstrumentsOperation(request: Idb_InstrumentsRunRequest.Start, responseStream: RPCWriter<Idb_InstrumentsRunResponse>) async throws -> (InstrumentsOperation, ResponseForwardingConsumer) {
     let configuration = instrumentsConfiguration(from: request, storageManager: commandExecutor.storageManager)
 
     let responseWriter = FIFOStreamWriter(stream: responseStream)
-    let consumer = AsynchronousDataConsumer { data in
-      guard !finishedWriting.wrappedValue else { return }
-
-      do {
-        let response = Idb_InstrumentsRunResponse.with {
-          $0.logOutput = data
-        }
-        try responseWriter.send(response)
-      } catch {
-        finishedWriting.set(true)
-      }
+    let consumer = ResponseForwardingConsumer { data in
+      try responseWriter.send(Idb_InstrumentsRunResponse.with { $0.logOutput = data })
     }
     let logger = FBControlCoreLoggerFactory.compositeLogger(
       with: [
@@ -61,10 +50,10 @@ struct InstrumentsRunMethodHandler {
     }
     try await responseStream.send(runningStateResponse)
 
-    return operation
+    return (operation, consumer)
   }
 
-  private func stopInstruments(operation: InstrumentsOperation, request: Idb_InstrumentsRunRequest.Stop, responseStream: RPCWriter<Idb_InstrumentsRunResponse>, finishedWriting: Atomic<Bool>) async throws {
+  private func stopInstruments(operation: InstrumentsOperation, request: Idb_InstrumentsRunRequest.Stop, responseStream: RPCWriter<Idb_InstrumentsRunResponse>, output: ResponseForwardingConsumer) async throws {
     let traceFile = try await operation.stop()
     let response = Idb_InstrumentsRunResponse.with {
       $0.state = .postProcessing
@@ -77,7 +66,7 @@ struct InstrumentsRunMethodHandler {
       traceFile: traceFile,
       logger: logger)
     let processedPath = processed.path
-    finishedWriting.set(true)
+    output.stopForwarding()
 
     let archive = try FBArchiveOperations.gzippedTarSubprocess(forPath: processedPath, logger: logger)
 

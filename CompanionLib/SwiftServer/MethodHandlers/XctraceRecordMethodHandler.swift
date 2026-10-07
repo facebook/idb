@@ -39,16 +39,13 @@ struct XctraceRecordMethodHandler {
   let target: any Target
 
   func handle(requestStream: RequestStreamReader<Idb_XctraceRecordRequest>, responseStream: RPCWriter<Idb_XctraceRecordResponse>, context: ServerContext) async throws {
-
-    @Atomic var finishedWriting = false
-    defer { _finishedWriting.set(true) }
-
     guard case let .start(start) = try await requestStream.requiredNext().control
     else { throw RPCError(code: .failedPrecondition, message: "Expected start control") }
-    let operation = try await startXCTraceOperation(request: start, responseStream: responseStream, finishedWriting: _finishedWriting)
+    let (operation, output) = try await startXCTraceOperation(request: start, responseStream: responseStream)
+    defer { output.stopForwarding() }
 
     let stop = try await Self.recordUntilStopped(requestStream: requestStream, recording: operation)
-    try await finishXCTrace(operation: operation, request: stop, responseStream: responseStream, finishedWriting: _finishedWriting)
+    try await finishXCTrace(operation: operation, request: stop, responseStream: responseStream, output: output)
   }
 
   /// Records until the client sends Stop, then stops xctrace. Fails as soon as xctrace exits with a failure,
@@ -82,21 +79,12 @@ struct XctraceRecordMethodHandler {
     return stop
   }
 
-  private func startXCTraceOperation(request start: Idb_XctraceRecordRequest.Start, responseStream: RPCWriter<Idb_XctraceRecordResponse>, finishedWriting: Atomic<Bool>) async throws -> XCTraceRecordOperation {
+  private func startXCTraceOperation(request start: Idb_XctraceRecordRequest.Start, responseStream: RPCWriter<Idb_XctraceRecordResponse>) async throws -> (XCTraceRecordOperation, ResponseForwardingConsumer) {
     let config = xcTraceRecordConfiguration(from: start)
 
     let responseWriter = FIFOStreamWriter(stream: responseStream)
-    let consumer = AsynchronousDataConsumer { data in
-      guard !finishedWriting.wrappedValue else { return }
-
-      let response = Idb_XctraceRecordResponse.with {
-        $0.log = data
-      }
-      do {
-        try responseWriter.send(response)
-      } catch {
-        finishedWriting.set(true)
-      }
+    let consumer = ResponseForwardingConsumer { data in
+      try responseWriter.send(Idb_XctraceRecordResponse.with { $0.log = data })
     }
 
     let logger = FBControlCoreLoggerFactory.compositeLogger(
@@ -111,10 +99,10 @@ struct XctraceRecordMethodHandler {
     }
     try await responseStream.send(response)
 
-    return operation
+    return (operation, consumer)
   }
 
-  private func finishXCTrace(operation: XCTraceRecordOperation, request stop: Idb_XctraceRecordRequest.Stop, responseStream: RPCWriter<Idb_XctraceRecordResponse>, finishedWriting: Atomic<Bool>) async throws {
+  private func finishXCTrace(operation: XCTraceRecordOperation, request stop: Idb_XctraceRecordRequest.Stop, responseStream: RPCWriter<Idb_XctraceRecordResponse>, output: ResponseForwardingConsumer) async throws {
     let response = Idb_XctraceRecordResponse.with {
       $0.state = .processing
     }
@@ -124,7 +112,7 @@ struct XctraceRecordMethodHandler {
       arguments: stop.args,
       traceFile: operation.traceDir,
       logger: logger)
-    finishedWriting.set(true)
+    output.stopForwarding()
 
     try await Self.sendTrace(atPath: processed.path, responseStream: responseStream, logger: logger)
   }
