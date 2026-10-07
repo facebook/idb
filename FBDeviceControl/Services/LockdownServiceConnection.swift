@@ -33,7 +33,6 @@ public enum LockdownServiceConnectionError: Error {
   case receiveIncomplete(requested: Int, remaining: Int)
   case receiveUpToFailed(size: Int, reason: String)
   case cannotStartReading(state: UInt)
-  case cannotStopBeforeStarting
 }
 
 extension LockdownServiceConnectionError: LocalizedError {
@@ -63,8 +62,6 @@ extension LockdownServiceConnectionError: LocalizedError {
       return "Failure in receive of up to \(size) bytes: \(reason)"
     case let .cannotStartReading(state):
       return "Cannot start reading in state \(state)"
-    case .cannotStopBeforeStarting:
-      return "Cannot stop reading when reading has not started"
     }
   }
 }
@@ -359,7 +356,7 @@ final class LockdownServiceConnectionReader: NSObject {
   private let finishedReadingMutable: FBMutableFuture<NSNumber>
 
   /// Locked rather than a bare stored property: the read loop polls this from its queue while
-  /// `stopReading` writes it from whichever thread the caller is on.
+  /// `startReading` writes it from whichever thread the caller is on.
   private let stateLock = NSLock()
   private var stateStorage: FBFileReaderState
 
@@ -407,32 +404,10 @@ final class LockdownServiceConnectionReader: NSObject {
       }
       consumer.consumeEndOfFile()
       state = .finishedReadingNormally
-      // Resolution is tolerant of stopReading having resolved first; without this, waiters on
-      // natural end-of-file hang forever.
       finishedReadingMutable.resolve(withResult: NSNumber(value: FBFileReaderState.finishedReadingNormally.rawValue))
     }
     state = .reading
 
     return FBFuture<NSNull>.empty()
-  }
-
-  func stopReading() -> FBFuture<NSNumber> {
-    if state == .notStarted {
-      return FBFuture<NSNumber>(error: LockdownServiceConnectionError.cannotStopBeforeStarting as NSError)
-    }
-    if state != .reading {
-      return finishedReading
-    }
-    state = .finishedReadingByCancellation
-    finishedReadingMutable.resolve(
-      withResult: NSNumber(value: FBFileReaderState.finishedReadingByCancellation.rawValue))
-    return finishedReading
-  }
-
-  func finishedReading(withTimeout timeout: TimeInterval) -> FBFuture<NSNumber> {
-    finishedReading
-      .timeout(timeout, waitingFor: "Process Reading to Finish")
-      .onQueue(queue, handleError: { _ in self.stopReading().retyped(FBFuture<AnyObject>.self) })
-      .retyped(FBFuture<NSNumber>.self)
   }
 }
