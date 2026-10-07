@@ -6,6 +6,7 @@
 from __future__ import annotations
 
 import json
+import re
 import tempfile
 import unittest
 from pathlib import Path
@@ -139,6 +140,23 @@ class DependencyLockTest(unittest.TestCase):
                     ValueError, "grpc-swift-2: expected a state object"
                 ):
                     load_pins(self.expected)
+
+    def declared_codegen_packages(self, destination: Path) -> list[str]:
+        manifest = (destination / "Package.swift").read_text()
+        return re.findall(r'url: "https://github\.com/example/(.+?)\.git"', manifest)
+
+    def test_codegen_manifest_declares_the_packages_the_build_resolves(self) -> None:
+        destination = self.root / "codegen"
+
+        prepare_codegen(self.expected, destination)
+
+        # BUG: grpc-swift-2 vends no protoc plugin and the manifest declares no
+        # targets, so SwiftPM warns that nothing uses it -- flipped in the following
+        # commit.
+        self.assertEqual(
+            self.declared_codegen_packages(destination),
+            ["grpc-swift-2", "grpc-swift-protobuf", "swift-protobuf"],
+        )
 
     def test_codegen_updates_the_manifest_and_lock_after_a_bump(self) -> None:
         destination = self.root / "codegen"
