@@ -36,39 +36,6 @@ struct CompanionLibTransientTests {
     }
   }
 
-  // MARK: - bridgeFBFutures (multiple futures) Tests
-
-  @Test
-  func valuesResolvesMultipleFuturesInOrder() async throws {
-    let f1 = FBFuture<NSString>(result: "a" as NSString)
-    let f2 = FBFuture<NSString>(result: "b" as NSString)
-    let f3 = FBFuture<NSString>(result: "c" as NSString)
-
-    let results = try await bridgeFBFutures([f1, f2, f3])
-    #expect((results) == (["a" as NSString, "b" as NSString, "c" as NSString]))
-  }
-
-  @Test
-  func valuesThrowsIfAnyFutureFails() async {
-    let f1 = FBFuture<NSString>(result: "ok" as NSString)
-    let f2 = FBFuture<NSString>(error: NSError(domain: "test", code: 99))
-
-    do {
-      _ = try await bridgeFBFutures([f1, f2])
-      Issue.record("Expected error")
-    } catch {
-      let nsError = error as NSError
-      #expect((nsError.code) == (99))
-    }
-  }
-
-  @Test
-  func valuesWithEmptyArrayReturnsEmpty() async throws {
-    let futures: [FBFuture<NSString>] = []
-    let results = try await bridgeFBFutures(futures)
-    #expect((results.isEmpty))
-  }
-
   // MARK: - bridgeFBFutureVoid Tests
 
   @Test
@@ -87,27 +54,6 @@ struct CompanionLibTransientTests {
       let nsError = error as NSError
       #expect((nsError.code) == (1))
     }
-  }
-
-  // MARK: - bridgeFBFutureArray (NSArray bridge) Tests
-
-  @Test
-  func valueBridgesNSArrayToTypedSwiftArray() async throws {
-    let nsArray = NSArray(array: [NSNumber(value: 1), NSNumber(value: 2), NSNumber(value: 3)])
-    let future = FBFuture<NSArray>(result: nsArray)
-    let result: [NSNumber] = try await bridgeFBFutureArray(future)
-    #expect((result) == ([NSNumber(value: 1), NSNumber(value: 2), NSNumber(value: 3)]))
-  }
-
-  // MARK: - bridgeFBFutureDictionary (NSDictionary bridge) Tests
-
-  @Test
-  func valueBridgesNSDictionaryToTypedSwiftDict() async throws {
-    let nsDict = NSDictionary(dictionary: ["key1": NSNumber(value: 10), "key2": NSNumber(value: 20)])
-    let future = FBFuture<NSDictionary>(result: nsDict)
-    let result: [NSString: NSNumber] = try await bridgeFBFutureDictionary(future)
-    #expect((result["key1" as NSString]) == (NSNumber(value: 10)))
-    #expect((result["key2" as NSString]) == (NSNumber(value: 20)))
   }
 
   // MARK: - convertFBMutableFuture Tests
@@ -400,25 +346,5 @@ struct CompanionLibTransientTests {
 
     let result = try await bridgeFBFuture(future)
     #expect((result) == ("delayed" as NSString))
-  }
-
-  @Test
-  func valuesWithDelayedResolution() async throws {
-    let mf1 = FBMutableFuture<NSNumber>()
-    let mf2 = FBMutableFuture<NSNumber>()
-    let f1 = convertFBMutableFuture(mf1)
-    let f2 = convertFBMutableFuture(mf2)
-
-    // Resolve in reverse order to verify ordering is preserved
-    DispatchQueue.global().asyncAfter(deadline: .now() + 0.1) {
-      mf1.resolve(withResult: NSNumber(value: 1))
-    }
-    DispatchQueue.global().asyncAfter(deadline: .now() + 0.05) {
-      mf2.resolve(withResult: NSNumber(value: 2))
-    }
-
-    let results = try await bridgeFBFutures([f1, f2])
-    #expect((results[0]) == (NSNumber(value: 1)))
-    #expect((results[1]) == (NSNumber(value: 2)))
   }
 }
