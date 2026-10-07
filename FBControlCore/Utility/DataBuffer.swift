@@ -8,7 +8,7 @@
 import Foundation
 
 /// The non-mutating methods of a buffer.
-@objc public protocol AccumulatingBuffer: DataConsumer, DataConsumerLifecycle {
+public protocol AccumulatingBuffer: DataConsumer, DataConsumerLifecycle {
   /// Obtains a copy of the current output data.
   func data() -> Data
 
@@ -17,7 +17,7 @@ import Foundation
 }
 
 /// The mutating methods of a buffer. All methods are fully synchronized.
-@objc public protocol ConsumableBuffer: AccumulatingBuffer {
+public protocol ConsumableBuffer: AccumulatingBuffer {
   /// Consume the remainder of the buffer available, returning it as Data.
   func consumeCurrentData() -> Data
 
@@ -28,7 +28,6 @@ import Foundation
   func consumeLength(_ length: UInt) -> Data?
 
   /// Removes and returns the bytes before the first `terminal` (dropping the terminal), or nil if absent.
-  @objc(consumeUntil:)
   func consume(until terminal: Data) -> Data?
 
   /// Consume a line if one is available, returning it as Data.

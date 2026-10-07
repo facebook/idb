@@ -24,7 +24,6 @@ enum FileWriterError: Error, LocalizedError {
 /// @unchecked Sendable: the descriptor and the flag are immutable; `finishedConsumingMutable` is an
 /// `FBMutableFuture`, which is internally synchronised and resolved once. The async subclass keeps
 /// its `DispatchIO` channel confined to its write queue.
-@objc
 public class FileWriter: NSObject, @unchecked Sendable {
 
   // MARK: - Properties
@@ -39,7 +38,7 @@ public class FileWriter: NSObject, @unchecked Sendable {
     return DispatchQueue(label: "com.facebook.fbcontrolcore.fbfilewriter")
   }
 
-  @objc public static var nullWriter: DataConsumer {
+  public static var nullWriter: DataConsumer {
     return Null()
   }
 
@@ -51,11 +50,11 @@ public class FileWriter: NSObject, @unchecked Sendable {
     return fd
   }
 
-  @objc public static func syncWriter(withFileDescriptor fileDescriptor: Int32, closeOnEndOfFile: Bool) -> DataConsumer & DataConsumerLifecycle {
+  public static func syncWriter(withFileDescriptor fileDescriptor: Int32, closeOnEndOfFile: Bool) -> DataConsumer & DataConsumerLifecycle {
     return Sync(fileDescriptor: fileDescriptor, closeOnEndOfFile: closeOnEndOfFile)
   }
 
-  @objc public static func asyncWriter(withFileDescriptor fileDescriptor: Int32, closeOnEndOfFile: Bool, queue: DispatchQueue, error: NSErrorPointer) -> (DataConsumer & DataConsumerLifecycle)? {
+  public static func asyncWriter(withFileDescriptor fileDescriptor: Int32, closeOnEndOfFile: Bool, queue: DispatchQueue, error: NSErrorPointer) -> (DataConsumer & DataConsumerLifecycle)? {
     let writer = Async(fileDescriptor: fileDescriptor, closeOnEndOfFile: closeOnEndOfFile, writeQueue: queue)
     do {
       try writer.startWriting()
@@ -66,7 +65,7 @@ public class FileWriter: NSObject, @unchecked Sendable {
     return writer
   }
 
-  @objc public static func asyncWriter(withFileDescriptor fileDescriptor: Int32, closeOnEndOfFile: Bool, error: NSErrorPointer) -> (DataConsumer & DataConsumerLifecycle)? {
+  public static func asyncWriter(withFileDescriptor fileDescriptor: Int32, closeOnEndOfFile: Bool, error: NSErrorPointer) -> (DataConsumer & DataConsumerLifecycle)? {
     let queue = createWorkQueue()
     return asyncWriter(withFileDescriptor: fileDescriptor, closeOnEndOfFile: closeOnEndOfFile, queue: queue, error: error)
   }
@@ -79,7 +78,7 @@ public class FileWriter: NSObject, @unchecked Sendable {
     return Draining(writer: writer)
   }
 
-  @objc public static func syncWriter(forFilePath filePath: String, error: NSErrorPointer) -> (DataConsumer & DataConsumerLifecycle)? {
+  public static func syncWriter(forFilePath filePath: String, error: NSErrorPointer) -> (DataConsumer & DataConsumerLifecycle)? {
     let fd: Int32
     do {
       fd = try fileDescriptor(forPath: filePath)
@@ -90,7 +89,7 @@ public class FileWriter: NSObject, @unchecked Sendable {
     return FileWriter.syncWriter(withFileDescriptor: fd, closeOnEndOfFile: true)
   }
 
-  @objc public static func asyncWriter(forFilePath filePath: String) -> FBFuture<AnyObject> {
+  public static func asyncWriter(forFilePath filePath: String) -> FBFuture<AnyObject> {
     let queue = createWorkQueue()
     return FBFuture<AnyObject>.onQueue(
       queue,
