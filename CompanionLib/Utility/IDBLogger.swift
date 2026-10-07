@@ -34,40 +34,31 @@ private final class GlobalLoggers: @unchecked Sendable {
 private let globalLoggers = GlobalLoggers()
 
 // @unchecked Sendable: all stored properties are immutable lets wrapping
-// thread-safe ObjC objects, so instances are safe to hand back through the
-// continuation in tailToConsumer.
+// thread-safe ObjC objects.
 private final class IDBLoggerOperation: NSObject, LogOperation, @unchecked Sendable {
   let consumer: DataConsumer
   let logger: ControlCoreLogger
-  let queue: DispatchQueue
 
-  init(consumer: DataConsumer, logger: ControlCoreLogger, queue: DispatchQueue) {
+  init(consumer: DataConsumer, logger: ControlCoreLogger) {
     self.consumer = consumer
     self.logger = logger
-    self.queue = queue
     super.init()
   }
 
-  var completed: FBFuture<NSNull> {
-    let logger = self.logger
-    return convertFBMutableFuture(FBMutableFuture<NSNull>()).onQueue(
-      self.queue,
-      respondToCancellation: {
-        globalLoggers.remove(logger)
-        return FBFuture<NSNull>.empty()
-      })
-  }
-
+  /// Tails until cancelled, then stops delivering to the consumer.
   func waitUntilCompleted() async throws {
-    try await bridgeFBFutureVoid(completed)
+    do {
+      try await Task.sleep(nanoseconds: .max)
+    } catch {
+      globalLoggers.remove(logger)
+      throw error
+    }
   }
 }
 
-// Restates the base class's @unchecked Sendable, as required for subclasses; all added state is
-// immutable or confined to `loggerQueue`.
+// Restates the base class's @unchecked Sendable, as required for subclasses; it adds no stored
+// state.
 public final class IDBLogger: FBCompositeLogger, @unchecked Sendable {
-
-  private static let loggerQueue: DispatchQueue = DispatchQueue(label: "com.facebook.idb.logger")
 
   /// The logger the companion writes to, which is the stderr logger plus, when
   /// `-log-file-path` is given, a logger appending to that file.
@@ -130,14 +121,8 @@ public final class IDBLogger: FBCompositeLogger, @unchecked Sendable {
   }
 
   func tailToConsumer(_ consumer: DataConsumer) async throws -> any LogOperation {
-    let queue = IDBLogger.loggerQueue
-    return await withCheckedContinuation { (continuation: CheckedContinuation<any LogOperation, Never>) in
-      queue.async {
-        let logger = FBControlCoreLoggerFactory.logger(to: consumer)
-        let operation = IDBLoggerOperation(consumer: consumer, logger: logger, queue: queue)
-        globalLoggers.add(logger)
-        continuation.resume(returning: operation)
-      }
-    }
+    let logger = FBControlCoreLoggerFactory.logger(to: consumer)
+    globalLoggers.add(logger)
+    return IDBLoggerOperation(consumer: consumer, logger: logger)
   }
 }
