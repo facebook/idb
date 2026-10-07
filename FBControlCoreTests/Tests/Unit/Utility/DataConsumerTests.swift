@@ -94,6 +94,36 @@ final class DataConsumerTests: XCTestCase {
     XCTAssertTrue(consumer.finishedConsuming.hasCompleted)
   }
 
+  func testLineBufferedConsumerTrailingLine() {
+    var lines: [String] = []
+    let consumer = LineConsumer(delivery: .synchronous) { line in
+      lines.append(line)
+    }
+
+    consumer.consumeData("FOO\nBAR".data(using: .utf8)!)
+    consumer.consumeEndOfFile()
+    // BUG: the last line is dropped because it has no trailing newline — flipped in the following commit
+    XCTAssertEqual(lines, ["FOO"])
+  }
+
+  func testLineBufferedConsumerAsyncFinishesAfterQueuedLines() {
+    let queue = DispatchQueue(label: "testLineBufferedConsumerAsyncFinishesAfterQueuedLines")
+    let releaseQueue = DispatchSemaphore(value: 0)
+    queue.async { releaseQueue.wait() }
+    var lines: [String] = []
+    let consumer = LineConsumer(delivery: .queue(queue)) { line in
+      lines.append(line)
+    }
+
+    consumer.consumeData("FOO\n".data(using: .utf8)!)
+    consumer.consumeEndOfFile()
+    // BUG: finishedConsuming resolves while the line is still queued for delivery — flipped in the following commit
+    XCTAssertTrue(consumer.finishedConsuming.hasCompleted)
+
+    releaseQueue.signal()
+    queue.sync { XCTAssertEqual(lines, ["FOO"]) }
+  }
+
   func testUnbufferedConsumer() {
     let expected = "FOOBARBAZ".data(using: .utf8)!
     let actual = NSMutableData()
