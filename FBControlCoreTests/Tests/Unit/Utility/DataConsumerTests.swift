@@ -85,8 +85,9 @@ final class DataConsumerTests: XCTestCase {
     XCTAssertFalse(consumer.finishedConsuming.hasCompleted)
 
     consumer.consumeEndOfFile()
+    let finished = expectation(for: NSPredicate { _, _ in consumer.finishedConsuming.hasCompleted }, evaluatedWith: nil)
+    wait(for: [finished], timeout: ControlCoreGlobalConfiguration.fastTimeout)
     queue.sync { XCTAssertEqual(lines, ["FOO", "BAR"]) }
-    XCTAssertTrue(consumer.finishedConsuming.hasCompleted)
 
     consumer.consumeData("NOPE".data(using: .utf8)!)
     consumer.consumeData("NOPE".data(using: .utf8)!)
@@ -102,8 +103,7 @@ final class DataConsumerTests: XCTestCase {
 
     consumer.consumeData("FOO\nBAR".data(using: .utf8)!)
     consumer.consumeEndOfFile()
-    // BUG: the last line is dropped because it has no trailing newline — flipped in the following commit
-    XCTAssertEqual(lines, ["FOO"])
+    XCTAssertEqual(lines, ["FOO", "BAR"])
   }
 
   func testLineBufferedConsumerAsyncFinishesAfterQueuedLines() {
@@ -117,11 +117,11 @@ final class DataConsumerTests: XCTestCase {
 
     consumer.consumeData("FOO\n".data(using: .utf8)!)
     consumer.consumeEndOfFile()
-    // BUG: finishedConsuming resolves while the line is still queued for delivery — flipped in the following commit
-    XCTAssertTrue(consumer.finishedConsuming.hasCompleted)
+    XCTAssertFalse(consumer.finishedConsuming.hasCompleted)
 
     releaseQueue.signal()
     queue.sync { XCTAssertEqual(lines, ["FOO"]) }
+    XCTAssertTrue(consumer.finishedConsuming.hasCompleted)
   }
 
   func testUnbufferedConsumer() {

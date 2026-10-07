@@ -9,21 +9,22 @@ import Foundation
 
 /// A consumer that splits what it receives on newlines and delivers each line, without its newline.
 ///
-/// A trailing chunk with no newline is never delivered, and `finishedConsuming` resolves on end-of-file
-/// without waiting for lines still queued for delivery.
+/// End-of-file delivers a trailing chunk with no newline as the last line, and `finishedConsuming`
+/// resolves once every line has been delivered.
 // SAFETY: `pending` is only touched under `lock`; `FBMutableFuture` is internally synchronized.
 public final class LineConsumer: NSObject, DataConsumer, DataConsumerLifecycle, @unchecked Sendable {
   public enum Delivery: Sendable {
     /// Lines are delivered on the thread that consumed the data.
     case synchronous
-    /// Lines are delivered in order on `queue`.
+    /// Lines are delivered in order on `queue`, which must be serial.
     case queue(DispatchQueue)
   }
 
   private let delivery: Delivery
   private let consumer: (Data) -> Void
   private let lock = NSLock()
-  private var pending = Data()
+  /// `nil` once end-of-file has been consumed.
+  private var pending: Data? = Data()
   private let finishedConsumingFuture = FBMutableFuture<NSNull>()
 
   /// Delivers each line as data.
@@ -45,24 +46,36 @@ public final class LineConsumer: NSObject, DataConsumer, DataConsumerLifecycle, 
 
   public func consumeData(_ data: Data) {
     lock.withLock {
-      guard !finishedConsumingFuture.hasCompleted else {
+      guard var buffer = pending else {
         return
       }
-      pending.append(data)
-      while let newline = pending.firstIndex(of: UInt8(ascii: "\n")) {
-        let line = Data(pending[pending.startIndex..<newline])
-        pending.removeSubrange(pending.startIndex...newline)
-        deliver(line)
+      buffer.append(data)
+      while let newline = buffer.firstIndex(of: UInt8(ascii: "\n")) {
+        deliver(Data(buffer[buffer.startIndex..<newline]))
+        buffer.removeSubrange(buffer.startIndex...newline)
       }
+      pending = buffer
     }
   }
 
   public func consumeEndOfFile() {
     lock.withLock {
-      guard !finishedConsumingFuture.hasCompleted else {
+      guard let buffer = pending else {
         return
       }
-      finishedConsumingFuture.resolve(withResult: NSNull())
+      pending = nil
+      if !buffer.isEmpty {
+        deliver(buffer)
+      }
+      let finished = finishedConsumingFuture
+      switch delivery {
+      case .synchronous:
+        finished.resolve(withResult: NSNull())
+      case let .queue(queue):
+        queue.async {
+          finished.resolve(withResult: NSNull())
+        }
+      }
     }
   }
 
