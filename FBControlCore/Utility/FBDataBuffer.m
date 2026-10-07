@@ -145,62 +145,9 @@
 
 @end
 
-@interface FBDataBuffer_Header_Forwarder : NSObject <BufferForwarder>
+@interface FBDataBuffer_Consumable : FBDataBuffer_Accumilating <ConsumableBuffer>
 
-@property (nonatomic, readonly, assign) NSUInteger headerLength;
-@property (nonatomic, readonly, strong) NSUInteger (^derivedLength)(NSData *);
-@property (nonatomic, readonly, strong) dispatch_queue_t queue;
-@property (nullable, nonatomic, readwrite, copy) NSNumber *knownderivedLength;
-
-@end
-
-@implementation FBDataBuffer_Header_Forwarder
-
-@synthesize consumer = _consumer;
-
-- (instancetype)initWithHeaderLength:(NSUInteger)headerLength derivedLength:(NSUInteger (^)(NSData *))derivedLength consumer:(id<DataConsumer>)consumer queue:(dispatch_queue_t)queue
-{
-  self = [super init];
-  if (!self) {
-    return nil;
-  }
-
-  _headerLength = headerLength;
-  _derivedLength = derivedLength;
-  _consumer = consumer;
-  _queue = queue;
-
-  return self;
-}
-
-- (void)run:(id<ConsumableBuffer>)buffer
-{
-  if (!self.knownderivedLength) {
-    NSData *header = [buffer consumeLength:self.headerLength];
-    if (!header) {
-      return;
-    }
-    self.knownderivedLength = @(self.derivedLength(header));
-  }
-  NSData *data = [buffer consumeLength:self.knownderivedLength.unsignedIntegerValue];
-  dispatch_queue_t queue = self.queue;
-  id<DataConsumer> consumer = self.consumer;
-  if (data) {
-    if (queue) {
-      dispatch_async(queue, ^{
-        [consumer consumeData:data];
-      });
-    } else {
-      [consumer consumeData:data];
-    }
-  }
-}
-
-@end
-
-@interface FBDataBuffer_Consumable : FBDataBuffer_Accumilating <ConsumableBuffer, NotifyingBuffer>
-
-@property (nullable, nonatomic, readwrite, strong) id<BufferForwarder> forwarder;
+@property (nullable, nonatomic, readonly, strong) id<BufferForwarder> forwarder;
 
 @end
 
@@ -292,43 +239,6 @@
   return [[NSString alloc] initWithData:lineData encoding:NSUTF8StringEncoding];
 }
 
-- (BOOL)consume:(id<DataConsumer>)consumer onQueue:(dispatch_queue_t)queue untilTerminal:(NSData *)terminal error:(NSError **)error
-{
-  id<BufferForwarder> forwarder = [[FBDataBuffer_Terminal_Forwarder alloc] initWithTerminal:terminal consumer:consumer queue:queue];
-  return [self attachForwardingConsumer:forwarder error:error];
-}
-
-- (FBFuture<NSData *> *)consumeAndNotifyWhen:(NSData *)terminal
-{
-  FBMutableFuture<NSData *> *future = FBMutableFuture.future;
-  id<DataConsumer> consumer = [FBBlockDataConsumer synchronousDataConsumerWithBlock:^(NSData *data) {
-    [self removeForwardingConsumer];
-    [future resolveWithResult:data];
-  }];
-
-  NSError *error = nil;
-  if (![self consume:consumer untilTerminal:terminal error:&error]) {
-    return [FBFuture futureWithError:error];
-  }
-  return future;
-}
-
-- (FBFuture<NSData *> *)consumeHeaderLength:(NSUInteger)headerLength derivedLength:(NSUInteger (^)(NSData *))derivedLength
-{
-  FBMutableFuture<NSData *> *future = FBMutableFuture.future;
-  id<DataConsumer> consumer = [FBBlockDataConsumer synchronousDataConsumerWithBlock:^(NSData *data) {
-    [self removeForwardingConsumer];
-    [future resolveWithResult:data];
-  }];
-
-  id<BufferForwarder> forwarder = [[FBDataBuffer_Header_Forwarder alloc] initWithHeaderLength:headerLength derivedLength:derivedLength consumer:consumer queue:nil];
-  NSError *error = nil;
-  if (![self attachForwardingConsumer:forwarder error:&error]) {
-    return [FBFuture futureWithError:error];
-  }
-  return future;
-}
-
 #pragma mark DataConsumer
 
 - (void)consumeData:(NSData *)data
@@ -337,34 +247,6 @@
   @synchronized(self) {
     [self.forwarder run:self];
   }
-}
-
-#pragma mark Private
-
-- (BOOL)attachForwardingConsumer:(id<BufferForwarder>)forwarder error:(NSError **)error
-{
-  @synchronized(self) {
-    if (self.forwarder) {
-      return [[ControlCoreError
-               describe:@"Cannot listen for the two terminals at the same time"]
-              failBool:error];
-    }
-    self.forwarder = forwarder;
-    [self.forwarder run:self];
-  }
-  return YES;
-}
-
-- (nullable id<DataConsumer>)removeForwardingConsumer
-{
-  id<BufferForwarder> forwarder = self.forwarder;
-  self.forwarder = nil;
-  return forwarder.consumer;
-}
-
-- (BOOL)consume:(id<DataConsumer>)consumer untilTerminal:(NSData *)terminal error:(NSError **)error
-{
-  return [self consume:consumer onQueue:nil untilTerminal:terminal error:error];
 }
 
 @end
@@ -394,12 +276,7 @@
   return [self consumableBufferForwardingToConsumer:nil onQueue:nil terminal:nil];
 }
 
-+ (id<NotifyingBuffer>)notifyingBuffer
-{
-  return [self consumableBufferForwardingToConsumer:nil onQueue:nil terminal:nil];
-}
-
-+ (id<NotifyingBuffer>)consumableBufferForwardingToConsumer:(id<DataConsumer>)consumer onQueue:(nullable dispatch_queue_t)queue terminal:(NSData *)terminal
++ (id<ConsumableBuffer>)consumableBufferForwardingToConsumer:(id<DataConsumer>)consumer onQueue:(nullable dispatch_queue_t)queue terminal:(NSData *)terminal
 {
   FBDataBuffer_Terminal_Forwarder *forwarder = nil;
   if (consumer) {

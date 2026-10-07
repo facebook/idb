@@ -38,19 +38,6 @@ import Foundation
   func consumeLineString() -> String?
 }
 
-/// A Consumable buffer that also allows forwarding and notifying.
-@objc public protocol NotifyingBuffer: ConsumableBuffer {
-  /// Forwards to another data consumer, notifying every time a terminal is passed.
-  func consume(_ consumer: DataConsumer, onQueue queue: DispatchQueue?, untilTerminal terminal: Data, error: NSErrorPointer) -> Bool
-
-  /// Notifies when there has been consumption to a terminal.
-  @objc(consumeAndNotifyWhen:)
-  func consumeAndNotify(when terminal: Data) -> FBFuture<NSData>
-
-  /// Consumes based upon a fixed-length header, that can be parsed.
-  func consumeHeaderLength(_ headerLength: UInt, derivedLength: @escaping (Data) -> UInt) -> FBFuture<NSData>
-}
-
 /// Internal forwarding protocol used by FBDataBuffer implementations.
 @objc public protocol BufferForwarder: NSObjectProtocol {
   func run(_ buffer: ConsumableBuffer)

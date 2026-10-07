@@ -12,7 +12,6 @@
 // Protocols defined in Swift (FBDataBufferProtocols.swift)
 @protocol AccumulatingBuffer;
 @protocol ConsumableBuffer;
-@protocol NotifyingBuffer;
 
 /**
  Implementations of data buffers.
@@ -51,13 +50,6 @@
 + (nonnull id<ConsumableBuffer>)consumableBuffer;
 
 /**
- A data buffer that can forward and notify.
-
- @return a NotifyingBuffer implementation.
- */
-+ (nonnull id<NotifyingBuffer>)notifyingBuffer;
-
-/**
  A line buffer that is appended to by consuming data that will be automatically drained by forwarding to another consumer.
 
  @param consumer the consumer to forward chunks to
@@ -65,7 +57,7 @@
  @param terminal the terminal separator.
  @return a ConsumableBuffer implementation.
  */
-+ (nonnull id<NotifyingBuffer>)consumableBufferForwardingToConsumer:(nullable id<DataConsumer>)consumer onQueue:(nullable dispatch_queue_t)queue terminal:(nullable NSData *)terminal;
++ (nonnull id<ConsumableBuffer>)consumableBufferForwardingToConsumer:(nullable id<DataConsumer>)consumer onQueue:(nullable dispatch_queue_t)queue terminal:(nullable NSData *)terminal;
 
 /**
  NSData for a newline.
