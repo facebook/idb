@@ -8,30 +8,30 @@
 import Foundation
 
 /// Implementations of data buffers. Writes and reads are fully synchronized.
-@objc public final class FBDataBuffer: NSObject {
+public enum FBDataBuffer {
   /// A data buffer that is only mutated through consuming data.
-  @objc public static func accumulatingBuffer() -> AccumulatingBuffer {
+  public static func accumulatingBuffer() -> AccumulatingBuffer {
     AccumulatingDataBuffer(backing: NSMutableData(), capacity: 0)
   }
 
   /// A data buffer that drops bytes from its beginning once `capacity` bytes are exceeded.
-  @objc public static func accumulatingBuffer(withCapacity capacity: Int) -> AccumulatingBuffer {
+  public static func accumulatingBuffer(withCapacity capacity: Int) -> AccumulatingBuffer {
     precondition(capacity > 0)
     return AccumulatingDataBuffer(backing: NSMutableData(), capacity: capacity)
   }
 
   /// A data buffer that appends into the provided data.
-  @objc public static func accumulatingBuffer(for data: NSMutableData) -> AccumulatingBuffer {
+  public static func accumulatingBuffer(for data: NSMutableData) -> AccumulatingBuffer {
     AccumulatingDataBuffer(backing: data, capacity: 0)
   }
 
   /// A data buffer that is appended to by consuming data and can be drained.
-  @objc public static func consumableBuffer() -> ConsumableBuffer {
+  public static func consumableBuffer() -> ConsumableBuffer {
     ConsumableDataBuffer()
   }
 
   /// Data for a newline.
-  @objc public static func newlineTerminal() -> Data {
+  public static func newlineTerminal() -> Data {
     newline
   }
 
