@@ -7,17 +7,26 @@
 
 import FBControlCore
 import Foundation
-import GRPCCore
+
+/// A payload that could not be written to the pipe an extractor reads.
+public struct PayloadWriteError: Error, CustomStringConvertible {
+  public let byteCount: Int
+  public let underlying: any Error
+
+  public var description: String {
+    "Failed to write \(byteCount) bytes to the extraction pipe: \(underlying.localizedDescription)"
+  }
+}
 
 /// Writes an uploaded payload into the pipe an extractor reads, as it arrives.
 ///
 /// Has to run concurrently with the extractor: the pipe holds only a buffer's worth, so filling it before the reader
 /// starts would deadlock on anything larger than that.
-enum PayloadPump {
+public enum PayloadPump {
 
   /// Writes `head`, then every frame of `frames`, to `input`. An error thrown by `frames` is passed to
   /// `onClientFailure` before it is rethrown, so a caller can tell the client's failure from the extractor's.
-  static func write<Frames: AsyncSequence>(
+  public static func write<Frames: AsyncSequence>(
     head: Data,
     frames: Frames,
     to input: InputSource,
@@ -48,7 +57,7 @@ enum PayloadPump {
     do {
       try await input.writeAndWait(data)
     } catch {
-      throw RPCError(code: .aborted, message: "Failed to write \(data.count) bytes to the extraction pipe: \(error.localizedDescription)")
+      throw PayloadWriteError(byteCount: data.count, underlying: error)
     }
   }
 }

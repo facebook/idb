@@ -5,6 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+import FBArtifactStaging
 import FBSimulatorAX
 import FBSimulatorControl
 import Foundation
@@ -16,7 +17,8 @@ import GRPCProtobuf
 /// gRPC Swift 2 maps every thrown error that is not an `RPCError` to a bare `unknown` status
 /// with no message, which would discard the `NSError` descriptions the Objective-C frameworks
 /// produce. This keeps `RPCError`s as thrown and gives everything else an `internalError`
-/// carrying the error's description, unwrapping legacy `NSError` `userInfo` for detail.
+/// carrying the error's description, unwrapping legacy `NSError` `userInfo` for detail. An
+/// upload that could not be written to its extractor is `aborted` instead: the transfer ended.
 ///
 /// A UI automation failure also carries whether it is safe to retry, as an `ErrorInfo` in the
 /// status details. Its code and message stay as they were, so clients that match on either are
@@ -31,6 +33,9 @@ enum ErrorMapping {
   static func rpcError(from error: any Error) -> RPCError {
     if let rpcError = error as? RPCError {
       return rpcError
+    }
+    if let writeError = error as? PayloadWriteError {
+      return RPCError(code: .aborted, message: writeError.description)
     }
 
     var message = error.localizedDescription

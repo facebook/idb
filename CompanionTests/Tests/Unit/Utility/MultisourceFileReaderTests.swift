@@ -27,9 +27,10 @@ final class MultisourceFileReaderTests: XCTestCase {
         from: Self.requestStream(chunkCount: 4, pulled: pulled),
         to: pipe.input)
       XCTFail("Expected the failed write to end the transfer")
-    } catch let error as RPCError {
-      XCTAssertEqual(error.code, .aborted)
-      XCTAssertTrue(error.message.hasPrefix("Failed to write 1 bytes to the extraction pipe"), error.message)
+    } catch {
+      let status = ErrorMapping.rpcError(from: error)
+      XCTAssertEqual(status.code, .aborted)
+      XCTAssertTrue(status.message.hasPrefix("Failed to write 1 bytes to the extraction pipe"), status.message)
     }
 
     XCTAssertEqual(pulled.withLock { $0 }, 0)
