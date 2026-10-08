@@ -51,10 +51,10 @@ public struct DeviceScreenshotCommands: ScreenshotCommands {
   private func capture(from device: Device) async throws -> Data {
     try await device.withDeviceLinkClient("com.apple.mobile.screenshotr") { client in
       let response = try await client.processMessage(["MessageType": "ScreenShotRequest"])
-      guard let screenshotData = response[ScreenShotDataKey] as? NSData else {
+      guard let screenshotData = response[ScreenShotDataKey] as? Data else {
         throw DeviceScreenshotError.notImageData(response: String(describing: response), key: ScreenShotDataKey)
       }
-      return screenshotData as Data
+      return screenshotData
     }
   }
 }

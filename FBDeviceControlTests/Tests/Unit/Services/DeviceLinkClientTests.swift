@@ -24,7 +24,7 @@ struct DeviceLinkClientTests {
     amDevice.service(Self.serviceName)
   }
 
-  private func process(_ message: Any, replies: [Any]) async throws -> NSDictionary {
+  private func process(_ message: Any, replies: [Any]) async throws -> [String: Any] {
     let device = amDevice.makeDevice()
     service.messageReplies = [["DLMessageVersionExchange", 300, 0], ["DLMessageDeviceReady"]] + replies
     return try await device.withDeviceLinkClient(Self.serviceName) { client in

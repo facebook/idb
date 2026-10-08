@@ -79,14 +79,14 @@ public final class DeviceLinkClient {
     self.queue = queue
   }
 
-  func processMessage(_ message: Any) async throws -> NSDictionary {
+  func processMessage(_ message: Any) async throws -> [String: Any] {
     let connectionBox = ConnectionBox(connection)
     let messageBox = AnyBox(message)
-    return try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<NSDictionary, Error>) in
+    return try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<[String: Any], Error>) in
       queue.async {
         do {
           let result = try connectionBox.connection.sendAndReceiveMessage([ProcessMessage, messageBox.value])
-          guard let resultArray = result as? NSArray else {
+          guard let resultArray = result as? [Any] else {
             continuation.resume(throwing: DeviceLinkError.resultNotAnArray(result: String(describing: result)))
             return
           }
@@ -103,7 +103,7 @@ public final class DeviceLinkClient {
             continuation.resume(throwing: DeviceLinkError.unexpectedResponseType(responseType: responseString, expected: ProcessMessage))
             return
           }
-          guard let response = resultArray[1] as? NSDictionary else {
+          guard let response = resultArray[1] as? [String: Any] else {
             continuation.resume(throwing: DeviceLinkError.responseBodyNotADictionary(body: String(describing: resultArray[1])))
             return
           }
@@ -121,7 +121,7 @@ public final class DeviceLinkClient {
       queue.async {
         do {
           let plist = try connectionBox.connection.receiveMessage()
-          guard let plistArray = plist as? NSArray else {
+          guard let plistArray = plist as? [Any] else {
             continuation.resume(throwing: DeviceLinkError.versionExchangeNotAnArray(plist: String(describing: plist)))
             return
           }
@@ -136,11 +136,11 @@ public final class DeviceLinkClient {
           }
           let response: [Any] = ["DLMessageVersionExchange", "DLVersionsOk", versionNumber]
           let reply = try connectionBox.connection.sendAndReceiveMessage(response)
-          guard let replyArray = reply as? NSArray else {
+          guard let replyArray = reply as? [Any] else {
             continuation.resume(throwing: DeviceLinkError.versionExchangeNotAnArray(plist: String(describing: reply)))
             return
           }
-          guard let message = replyArray.firstObject else {
+          guard let message = replyArray.first else {
             continuation.resume(throwing: DeviceLinkError.replyTooShort(reply: String(describing: replyArray), expectedCount: 1))
             return
           }
