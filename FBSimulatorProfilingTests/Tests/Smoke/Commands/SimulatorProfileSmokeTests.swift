@@ -8,6 +8,7 @@
 import FBControlCore
 import FBProfilingCore
 @testable import FBSimulatorControl
+import FBSimulatorProfiling
 import XCTest
 
 /// Profiles a system application, so nothing has to be installed. A system application isn't debuggable, which is

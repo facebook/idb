@@ -60,6 +60,16 @@
     "FBSimulatorControlUnitTests": [
       "FBSimulatorControlUnitTests"
     ],
+    "FBSimulatorProfiling": [
+      "FBSimulatorProfilingSmokeTests",
+      "FBSimulatorProfilingTests"
+    ],
+    "FBSimulatorProfilingSmokeTests": [
+      "FBSimulatorProfilingSmokeTests"
+    ],
+    "FBSimulatorProfilingTests": [
+      "FBSimulatorProfilingTests"
+    ],
     "FBSimulatorVideo": [
       "FBSimulatorVideoTests"
     ],
@@ -156,6 +166,20 @@
         "fbsimulatorcontrol_resources"
       ],
       "runner": "large"
+    },
+    "FBSimulatorProfilingSmokeTests": {
+      "bootedSimulator": true,
+      "prerequisites": [
+        "fbsimulatorcontrol_resources"
+      ],
+      "runner": "large"
+    },
+    "FBSimulatorProfilingTests": {
+      "bootedSimulator": false,
+      "prerequisites": [
+        "fbsimulatorcontrol_resources"
+      ],
+      "runner": "standard"
     },
     "FBSimulatorVideoTests": {
       "bootedSimulator": false,
