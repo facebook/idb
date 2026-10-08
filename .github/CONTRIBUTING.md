@@ -8,7 +8,7 @@ There's a number of goals that we had in mind when building this out:
 - The companion is not optimized for APIs that are convenient for users to use, we're optimizing for making it as easy as possible to use with an RPC framework.
 - As much of the core functionality of dealing with Simulators and Devices is pushed down into the `FBSimulatorControl` and `FBDeviceControl` projects. This means that the companion is as simple as possible and that we build sane and easy-to-use framework APIs.
 - `FBSimulatorControl` and `FBDeviceControl` are Swift. What Objective-C remains is an implementation detail of binding Apple's private C and Objective-C API, not part of the framework surface.
-- `FBSimulatorControl` and `FBDeviceControl` projects vend their public API via protocols on `Simulator` and `Device` instances. New APIs should be `async` and `throws` so that they can operate asynchronously and propagate errors; older Objective-C APIs expose an `FBFuture` instead.
+- `FBSimulatorControl` and `FBDeviceControl` projects vend their public API via protocols on `Simulator` and `Device` instances. New APIs should be `async` and `throws` so that they can operate asynchronously and propagate errors.
 - The companion server calls into the APIs of the above and performs the necessary coercions between the frameworks' data models and gRPC's Protocol Buffers.
 - Any rpc that is:
   * Long Lived (e.g. `instruments`)

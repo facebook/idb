@@ -55,10 +55,10 @@ The `idb` cli will, by default operate in one of two modes:
 `idb` is transitioning to a pure Swift codebase. This is an ongoing migration, and the current state is:
 
 - **The `idb_companion` is Swift.** The companion executable, its gRPC server and all of its request handling are implemented in Swift, replacing the previous Objective-C++ implementation that was built against the C++ gRPC library. The server is built on [`grpc-swift`](https://github.com/grpc/grpc-swift) and SwiftNIO.
-- **The Frameworks are migrating.** `FBControlCore`, `FBSimulatorControl`, `FBDeviceControl` and `FBXCTestCore` are a mix of Objective-C and Swift. New functionality is written in Swift, and existing functionality is progressively rewritten. Objective-C remains concentrated where `idb` binds C or Objective-C system API directly: the `MobileDevice.framework` layer in `FBDeviceControl`, the `DTX` protocol layer in `FBXCTestCore`, process spawning and `FBFuture` itself.
+- **The Frameworks are migrating.** `FBControlCore`, `FBSimulatorControl`, `FBDeviceControl` and `FBXCTestCore` are a mix of Objective-C and Swift. New functionality is written in Swift, and existing functionality is progressively rewritten. Objective-C remains concentrated where `idb` binds C or Objective-C system API directly: the `MobileDevice.framework` layer in `FBDeviceControl`, the `DTX` protocol layer in `FBXCTestCore` and process spawning.
 - **New components are Swift-only.** `idb-repl` and the companion's supporting libraries are pure Swift. `idb-repl`'s whole dependency closure contains no Objective-C, which is what allows it to be built with the Swift Package Manager and cross-compiled for Linux.
 
-For consumers of the Frameworks this means that newer APIs are exposed as Swift protocols with `async` methods, while older APIs return an `FBFuture`. The two interoperate: Swift code awaits `FBFuture`-based APIs through bridging described in [`FBFuture` and Swift Concurrency](#fbfuture-and-swift-concurrency) below.
+For consumers of the Frameworks this means that their APIs are Swift protocols with `async` methods, as described in [Swift Concurrency](#swift-concurrency) below.
 
 ## Differences between Devices, Simulators & Emulators
 
@@ -125,7 +125,7 @@ These types exist so that APIs do not require extremely long and cumbersome argu
 
 ### Command Protocols & Implementations
 
-In order to keep a common API between Simulators and Devices, `idb` has a set of protocols that define an interface for separate implementations across iOS Simulators & Devices. This does encourage the creation of well thought-out APIs. The `idb_companion` can be agnostic to the underlying iOS target, instead interacting with these protocols. Older protocols are defined in Objective-C and expose their asynchronous work as an `FBFuture`; newer protocols are defined in Swift with `async` methods.
+In order to keep a common API between Simulators and Devices, `idb` has a set of protocols that define an interface for separate implementations across iOS Simulators & Devices. This does encourage the creation of well thought-out APIs. The `idb_companion` can be agnostic to the underlying iOS target, instead interacting with these protocols. The protocols are defined in Swift with `async` methods.
 
 There may be some capabilities that are only supported by one or the other, depending on the target. For instance there is no concept of "Activation" on an iOS Simulator, so `activate()` is only declared on `Device`. Where a target does not support a given protocol, `idb` will fail when these APIs are called, giving an error message that explains what functionality is missing.
 
@@ -151,18 +151,11 @@ Due to the nature of the functionality that is offered in the Frameworks, IO is 
 
 All of this is backed by `libdispatch`, due to its affordance for asynchronous IO, where file reading and writing is managed in an efficient manner without the user having to build their own IO multiplexer.
 
-### `FBFuture` and Swift Concurrency
+### Swift Concurrency
 
 A huge amount of the "work" that is done inside the Frameworks is based on IO and calling out to other APIs that perform IO. This work is very asynchronous, which means that there is a strong case for a consistent API for performing and waiting on this work.
 
-The Objective-C parts of the Frameworks predate `async`/`await` in Swift, so they encapsulate asynchronous work in the `FBFuture` class:
-
-- **Error conditions**. Nearly all of the asynchronous operations represented by a `FBFuture` are fallible in some way, so an `FBFuture` can be resolved to an error state with a full `NSError`.
-- **Chaining**. A single high-level API may be formed of a sequence of asynchronous calls that occur one after another. The `FBFuture` syntax provides a way of threading these all together in a quasi-imperative way.
-- **Queues must be always defined**. In order to prevent unintended behaviour, where an async callback is called on an arbitrary or private queue, any consumer of an `FBFuture` must provide the queue that the callback will be called on. This is also true of chaining, which promotes the separation of queues that are used for serializing calls to other APIs or queues that are used for background behaviour that can be performed on any thread. For example, all calls to `CoreSimulator` must be serialized on the same thread but work in a Future that performs pure data transformation with no side-effects can be performed on an arbitrary background queue.
-- **No waiter thread**. All resolution of Futures is performed asynchronously, there does not need to be a thread or queue waiting on the resolution of a Future. This means that if multiple Futures are running concurrently there is not a danger of thread exhaustion.
-
-Swift code in `idb` uses Swift Concurrency (`async`/`await`) instead. The two worlds are bridged: [`FBControlCore`'s async bridge](https://github.com/facebook/idb/blob/main/FBControlCore/Async/AsyncFBFutureBridge.swift) awaits `FBFuture`-based Framework APIs from Swift `async` contexts, so the companion's Swift request handling composes with the Objective-C core. As the migration to Swift progresses, `FBFuture` recedes towards the Objective-C code that remains; a consumer of `idb` need not be aware of these details, as they are internal to the implementation of the `idb_companion`.
+That API is Swift Concurrency. Framework APIs are `async` and `throws`, so a failure carries a full error and a sequence of dependent calls reads as straight-line code. Where one task has to tell another that something has happened, such as a process reaching a state or a reader reaching the end of its input, `FBControlCore` provides `AsyncEvent`, for a single waiter, and `AsyncLatch`, which any number of tasks can await. IO itself stays on `libdispatch`, as described above, and reaches callers as `async` calls.
 
 ## `idb_companion` concepts
 
@@ -186,4 +179,4 @@ Each RPC in the `idb.proto` interface is implemented by its own Swift method han
 
 ### [`IDBCommandExecutor`](https://github.com/facebook/idb/blob/main/CompanionLib/IDBCommandExecutor.swift)
 
-This provides a facade over the many APIs in the underlying Frameworks, so that the method handlers do not need to be aware of how they operate. It lives in `CompanionLib`, which also contains the storage management for installed artifacts and the bridging between `FBFuture` and Swift Concurrency.
+This provides a facade over the many APIs in the underlying Frameworks, so that the method handlers do not need to be aware of how they operate. It lives in `CompanionLib`, which also contains the storage management for installed artifacts.
