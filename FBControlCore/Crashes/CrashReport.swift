@@ -192,29 +192,16 @@ public final class CrashLogInfo: CustomStringConvertible {
 
   public class func crashInfo(afterDate date: Date, logger: ControlCoreLogger?) -> [CrashLogInfo] {
     var allCrashInfos: [CrashLogInfo] = []
-
     for basePath in diagnosticReportsPaths {
       let fileNames = (try? FileManager.default.contentsOfDirectory(atPath: basePath)) ?? []
-      let predicate = predicateForFiles(withBasePath: basePath, afterDate: date, withExtensions: ["crash", "ips"])
-      let crashInfos = ConcurrentCollectionOperations.filterMap(
-        fileNames as [Any],
-        predicate: predicate,
-        map: { item -> Any in
-          guard let fileName = item as? String else {
-            return NSNull()
-          }
-          let path = (basePath as NSString).appendingPathComponent(fileName)
-          do {
-            return try CrashLogInfo.fromCrashLog(atPath: path)
-          } catch {
-            logger?.log("Error parsing log \(error)")
-            return NSNull()
-          }
+      for fileName in fileNames where isCrashLog(fileName, inDirectory: basePath, modifiedOnOrAfter: date) {
+        do {
+          allCrashInfos.append(try CrashLogInfo.fromCrashLog(atPath: (basePath as NSString).appendingPathComponent(fileName)))
+        } catch {
+          logger?.log("Error parsing log \(error)")
         }
-      )
-      allCrashInfos.append(contentsOf: crashInfos.compactMap { $0 as? CrashLogInfo })
+      }
     }
-
     return allCrashInfos
   }
 
@@ -384,22 +371,14 @@ public final class CrashLogInfo: CustomStringConvertible {
     return .custom
   }
 
-  private class func predicateForFiles(withBasePath basePath: String, afterDate date: Date, withExtensions extensions: [String]) -> NSPredicate {
-    let fileManager = FileManager.default
-    let datePredicate: NSPredicate
-    datePredicate = NSPredicate { evaluatedObject, _ in
-      guard let fileName = evaluatedObject as? String else { return false }
-      let path = (basePath as NSString).appendingPathComponent(fileName)
-      guard let attributes = try? fileManager.attributesOfItem(atPath: path),
-        let modDate = attributes[.modificationDate] as? Date
-      else {
-        return false
-      }
-      return modDate.compare(date) != .orderedAscending
+  private class func isCrashLog(_ fileName: String, inDirectory basePath: String, modifiedOnOrAfter date: Date) -> Bool {
+    guard ["crash", "ips"].contains((fileName as NSString).pathExtension) else {
+      return false
     }
-    return NSCompoundPredicate(andPredicateWithSubpredicates: [
-      NSPredicate(format: "pathExtension in %@", extensions),
-      datePredicate,
-    ])
+    let path = (basePath as NSString).appendingPathComponent(fileName)
+    guard let modificationDate = (try? FileManager.default.attributesOfItem(atPath: path))?[.modificationDate] as? Date else {
+      return false
+    }
+    return modificationDate >= date
   }
 }
