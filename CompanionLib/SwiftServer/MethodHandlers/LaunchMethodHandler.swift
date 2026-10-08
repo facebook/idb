@@ -87,12 +87,12 @@ struct LaunchMethodHandler: @unchecked Sendable {
   }
 
   static func pipeOutput(interface: Idb_ProcessOutput.Interface, send: @escaping (Idb_LaunchResponse) throws -> Void) -> (DataConsumer & DataConsumerLifecycle) {
-    return AsynchronousDataConsumer { data in
+    return ResponseForwardingConsumer { data in
       let response = Idb_LaunchResponse.with {
         $0.output.data = data
         $0.output.interface = interface
       }
-      try? send(response)
+      try send(response)
     }
   }
 }

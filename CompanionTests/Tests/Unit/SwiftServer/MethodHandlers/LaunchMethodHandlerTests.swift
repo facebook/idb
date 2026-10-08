@@ -54,7 +54,7 @@ final class LaunchMethodHandlerTests: XCTestCase {
     XCTAssertEqual(sender.attempted.map(\.output.interface), [.stderr, .stderr])
   }
 
-  func testAFailedSendDoesNotStopLaterSends() async throws {
+  func testAFailedSendStopsLaterSends() async throws {
     let sender = RecordingSender(failingFirst: 1)
     let consumer = LaunchMethodHandler.pipeOutput(interface: .stdout) { try sender.send($0) }
 
@@ -63,7 +63,6 @@ final class LaunchMethodHandlerTests: XCTestCase {
     consumer.consumeEndOfFile()
     try await consumer.awaitFinishedConsuming()
 
-    // BUG: output keeps being written to a stream whose send has already failed — flipped in the following commit.
-    XCTAssertEqual(sender.attempted.map(\.output.data), [Data("one".utf8), Data("two".utf8)])
+    XCTAssertEqual(sender.attempted.map(\.output.data), [Data("one".utf8)])
   }
 }
