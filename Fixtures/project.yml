@@ -53,3 +53,21 @@ targets:
         PRODUCT_BUNDLE_IDENTIFIER: com.facebook.iOSUnitTestFixture
         INFOPLIST_FILE: Source/iOSUnitTestFixture/Info.plist
         CODE_SIGN_IDENTITY: "-"
+
+# `build.sh` builds each fixture by scheme. Without these, xcodebuild falls back
+# to an autocreated scheme, which puts a test bundle only in its test action,
+# so building it finds nothing to build. Each scheme builds its target and
+# runs nothing.
+schemes:
+  MacUnitTestFixture:
+    build:
+      targets:
+        MacUnitTestFixture: all
+  MacCommonApp:
+    build:
+      targets:
+        MacCommonApp: all
+  iOSUnitTestFixture:
+    build:
+      targets:
+        iOSUnitTestFixture: all
