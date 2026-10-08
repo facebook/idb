@@ -73,6 +73,13 @@ struct DeviceLinkClientTests {
   }
 
   @Test
+  func aReplyWithoutABodyIsRejected() async {
+    let error = await error(processing: [:], replies: [["DLMessageProcessMessage"]])
+
+    #expect(error?.hasSuffix("has fewer than 2 elements") == true)
+  }
+
+  @Test
   func aDeviceThatIsNotReadyIsRejected() async {
     let device = amDevice.makeDevice()
     service.messageReplies = [["DLMessageVersionExchange", 300, 0], ["DLMessageDisconnect"]]
