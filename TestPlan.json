@@ -1,11 +1,5 @@
 {
   "schemes": {
-    "CompanionUtilities": [
-      "CompanionUtilitiesTests"
-    ],
-    "CompanionUtilitiesTests": [
-      "CompanionUtilitiesTests"
-    ],
     "FBAXCore": [
       "FBAXCoreTests"
     ],
@@ -94,6 +88,18 @@
     "FBXCTestCoreTests": [
       "FBXCTestCoreTests"
     ],
+    "IDBConcurrency": [
+      "IDBConcurrencyTests"
+    ],
+    "IDBConcurrencyTests": [
+      "IDBConcurrencyTests"
+    ],
+    "IDBTelemetry": [
+      "IDBTelemetryTests"
+    ],
+    "IDBTelemetryTests": [
+      "IDBTelemetryTests"
+    ],
     "ShimulatorProtocolTests": [
       "ShimulatorProtocolTests"
     ],
@@ -102,11 +108,6 @@
     ]
   },
   "testTargets": {
-    "CompanionUtilitiesTests": {
-      "bootedSimulator": false,
-      "prerequisites": [],
-      "runner": "standard"
-    },
     "FBAXCoreTests": {
       "bootedSimulator": false,
       "prerequisites": [],
@@ -205,6 +206,16 @@
       "prerequisites": [
         "fixtures"
       ],
+      "runner": "standard"
+    },
+    "IDBConcurrencyTests": {
+      "bootedSimulator": false,
+      "prerequisites": [],
+      "runner": "standard"
+    },
+    "IDBTelemetryTests": {
+      "bootedSimulator": false,
+      "prerequisites": [],
       "runner": "standard"
     },
     "ShimulatorProtocolTests": {

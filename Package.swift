@@ -11,7 +11,7 @@ import PackageDescription
 // A Swift Package Manager build for the `idb-repl` CLI. This is an ADDITIONAL,
 // standalone way to build idb-repl (`swift build --product idb-repl`); it does not
 // replace or affect the xcodebuild (`build.sh`) or Buck builds. It is possible
-// because idb-repl and its entire dependency closure -- CompanionUtilities,
+// because idb-repl and its entire dependency closure -- IDBTelemetry,
 // CompanionDiscovery and the generated IDBGRPCSwift -- are pure Swift, so none of
 // the Objective-C simulator/device frameworks are involved.
 //
@@ -49,8 +49,8 @@ let package = Package(
   ],
   targets: [
     .target(
-      name: "CompanionUtilities",
-      path: "CompanionUtilities"
+      name: "IDBTelemetry",
+      path: "IDBTelemetry"
     ),
     .target(
       name: "CompanionDiscovery",
@@ -77,7 +77,7 @@ let package = Package(
     .executableTarget(
       name: "idb-repl",
       dependencies: [
-        "CompanionUtilities",
+        "IDBTelemetry",
         "CompanionDiscovery",
         "IDBGRPCSwift",
         "ReplCompiler",

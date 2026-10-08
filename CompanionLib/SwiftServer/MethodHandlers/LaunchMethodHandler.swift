@@ -5,10 +5,10 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-import CompanionUtilities
 import FBControlCore
 import Foundation
 import GRPCCore
+import IDBConcurrency
 import IDBGRPCSwift
 
 struct LaunchMethodHandler: @unchecked Sendable {
