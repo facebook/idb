@@ -39,19 +39,18 @@ final class XCTestResultToolOperationTests: XCTestCase {
 
   // MARK: - Decoding
 
-  func testAJSONObjectDecodesToItsFields() {
-    XCTAssertEqual(XCTestResultToolOperation.json(from: #"{"actions": {"_values": []}}"#)["actions"] as? NSDictionary, ["_values": []])
+  func testAJSONObjectDecodesToItsFields() throws {
+    XCTAssertEqual(try XCTestResultToolOperation.json(from: #"{"actions": {"_values": []}}"#)["actions"] as? NSDictionary, ["_values": []])
   }
 
-  func testOutputThatIsNotJSONDecodesToAnEmptyRecord() {
-    // BUG: garbled output is indistinguishable from a record with no fields, so the parser later
-    // fails with a misleading "no actions" — flipped in the following commit.
-    XCTAssertEqual(XCTestResultToolOperation.json(from: "xcresulttool: error: something went wrong"), [:])
+  func testOutputThatIsNotJSONIsRejected() {
+    XCTAssertThrowsError(try XCTestResultToolOperation.json(from: "xcresulttool: error: something went wrong")) { error in
+      XCTAssertTrue(error.localizedDescription.contains("something went wrong"), error.localizedDescription)
+    }
   }
 
-  func testAJSONArrayDecodesToAnEmptyRecord() {
-    // BUG: as above, for valid JSON that is not an object — flipped in the following commit.
-    XCTAssertEqual(XCTestResultToolOperation.json(from: "[1, 2]"), [:])
+  func testAJSONArrayIsRejected() {
+    XCTAssertThrowsError(try XCTestResultToolOperation.json(from: "[1, 2]"))
   }
 
   // MARK: - Exit code policy

@@ -15,11 +15,14 @@ private let JPEG = "public.jpeg"
 
 enum XCTestResultToolError: Error, LocalizedError {
   case unrecognizedScreenshotEncoding(encoding: String)
+  case outputIsNotAJSONObject(output: String)
 
   public var errorDescription: String? {
     switch self {
     case let .unrecognizedScreenshotEncoding(encoding):
       return "Unrecognized XCTest screenshot encoding: \(encoding)"
+    case let .outputIsNotAJSONObject(output):
+      return "xcresulttool output is not a JSON object: \(output.prefix(200))"
     }
   }
 }
@@ -32,7 +35,7 @@ final class XCTestResultToolOperation {
     if let bundleObjectId, !bundleObjectId.isEmpty {
       arguments.append(contentsOf: ["--id", bundleObjectId])
     }
-    return json(from: try await xcresulttool(arguments: arguments, logger: logger, timeout: timeout))
+    return try json(from: try await xcresulttool(arguments: arguments, logger: logger, timeout: timeout))
   }
 
   public static func exportFile(from path: String, to destination: String, forId bundleObjectId: String, logger: ControlCoreLogger?, timeout: TimeInterval? = nil) async throws {
@@ -62,7 +65,7 @@ final class XCTestResultToolOperation {
   }
 
   public static func describeFormat(logger: ControlCoreLogger?) async throws -> NSDictionary {
-    json(from: try await xcresulttool(arguments: ["formatDescription"], logger: logger))
+    try json(from: try await xcresulttool(arguments: ["formatDescription"], logger: logger))
   }
 
   private static func xcresulttool(arguments: [String], logger: ControlCoreLogger?, timeout: TimeInterval? = nil) async throws -> String {
@@ -77,10 +80,10 @@ final class XCTestResultToolOperation {
     return try await subprocess.run(output: .string, error: .logger(logger), timeout: timeout, logger: logger).standardOutput
   }
 
-  static func json(from output: String) -> NSDictionary {
-    guard let data = output.data(using: .utf8) else {
-      return NSDictionary()
+  static func json(from output: String) throws -> NSDictionary {
+    guard let json = (try? JSONSerialization.jsonObject(with: Data(output.utf8))) as? NSDictionary else {
+      throw XCTestResultToolError.outputIsNotAJSONObject(output: output)
     }
-    return (try? JSONSerialization.jsonObject(with: data, options: [])) as? NSDictionary ?? NSDictionary()
+    return json
   }
 }
