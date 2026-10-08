@@ -6,6 +6,7 @@
  */
 
 import FBControlCore
+import FBProfilingCore
 @testable import FBSimulatorControl
 import XCTest
 

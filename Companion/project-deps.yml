@@ -23,6 +23,8 @@ targets:
         embed: false
       - framework: ../Build/Products/Release/libFBDeviceControl.a
         embed: false
+      - framework: ../Build/Products/Release/libFBProfilingCore.a
+        embed: false
       - framework: ../Build/Products/Release/libFBSimulatorAX.a
         embed: false
       - framework: ../Build/Products/Release/libFBSimulatorBridgeProtocol.a
@@ -50,6 +52,8 @@ targets:
       - framework: ../Build/Products/Release/libCompanionUtilities.a
         embed: false
       - framework: ../Build/Products/Release/FBControlCore.framework
+        embed: false
+      - framework: ../Build/Products/Release/libFBProfilingCore.a
         embed: false
       - framework: ../Build/Products/Release/libFBSimulatorBridgeProtocol.a
         embed: false

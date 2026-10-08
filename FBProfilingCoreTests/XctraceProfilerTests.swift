@@ -6,6 +6,7 @@
  */
 
 @testable import FBControlCore
+@testable import FBProfilingCore
 import Foundation
 import Testing
 

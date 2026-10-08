@@ -6,6 +6,7 @@
  */
 
 import Darwin
+import FBControlCore
 import Foundation
 
 private let machTimebase: mach_timebase_info_data_t = {
