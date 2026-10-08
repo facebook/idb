@@ -43,8 +43,7 @@ final class SimulatorInflationStrategy {
     var result = simulators
 
     if !simulatorsToCull.isEmpty {
-      let culled = TargetPredicateForUDIDs(Array(simulatorsToCull))
-      result = result.filter { !culled.evaluate(with: $0) }
+      result = result.filter { !simulatorsToCull.contains($0.udid) }
     }
 
     let inflated = inflateSimulators(Array(simulatorsToInflate), availableDevices: availableDevices)

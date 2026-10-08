@@ -309,22 +309,6 @@ extension ProductFamily {
   }
 }
 
-/// Constructs an NSPredicate matching the specified UDID.
-public func TargetPredicateForUDID(_ udid: String) -> NSPredicate {
-  return TargetPredicateForUDIDs([udid])
-}
-
-/// Constructs an NSPredicate matching the specified UDIDs.
-public func TargetPredicateForUDIDs(_ udids: [String]) -> NSPredicate {
-  let udidsSet = Set(udids)
-  return NSPredicate { (evaluatedObject, _) -> Bool in
-    guard let candidate = evaluatedObject as? TargetInfo else {
-      return false
-    }
-    return udidsSet.contains(candidate.udid)
-  }
-}
-
 /// Waits until the target resolves to a provided state.
 ///
 /// - Parameter deadline: How long to wait for. Waits indefinitely when `nil`.

@@ -56,7 +56,7 @@ public final class SimulatorSet: TargetSet {
   }
 
   public func simulator(withUDID udid: String) -> Simulator? {
-    return allSimulators.filter { TargetPredicateForUDID(udid).evaluate(with: $0) }.first
+    return allSimulators.first { $0.udid == udid }
   }
 
   // MARK: - Creation

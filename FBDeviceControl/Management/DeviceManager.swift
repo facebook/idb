@@ -132,7 +132,7 @@ class DeviceManager<PublicDevice: AnyObject>: NSObject, TargetSet {
   }
 
   func target(withUDID udid: String) -> (any TargetInfo)? {
-    allTargetInfos.first { TargetPredicateForUDID(udid).evaluate(with: $0) }
+    allTargetInfos.first { $0.udid == udid }
   }
 
   override var description: String {
