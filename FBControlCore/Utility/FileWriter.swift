@@ -84,25 +84,20 @@ public class FileWriter: NSObject, @unchecked Sendable {
     return FileWriter.syncWriter(withFileDescriptor: fd, closeOnEndOfFile: true)
   }
 
-  public static func asyncWriter(forFilePath filePath: String) -> FBFuture<AnyObject> {
+  public static func asyncWriter(forFilePath filePath: String) async throws -> DataConsumer & DataConsumerLifecycle {
     let queue = createWorkQueue()
-    return FBFuture<AnyObject>.onQueue(
-      queue,
-      resolve: {
-        let fd: Int32
-        do {
-          fd = try fileDescriptor(forPath: filePath)
-        } catch {
-          return FBFuture(error: error)
-        }
-        let writer = Async(fileDescriptor: fd, closeOnEndOfFile: true, writeQueue: queue)
-        do {
-          try writer.startWriting()
-        } catch {
-          return FBFuture(error: error)
-        }
-        return FBFuture(result: writer)
-      })
+    // Opening a FIFO for writing blocks until something opens it for reading, so the open must not
+    // hold a Swift concurrency thread.
+    return try await withCheckedThrowingContinuation { continuation in
+      queue.async {
+        continuation.resume(
+          with: Result<DataConsumer & DataConsumerLifecycle, Error> {
+            let writer = Async(fileDescriptor: try fileDescriptor(forPath: filePath), closeOnEndOfFile: true, writeQueue: queue)
+            try writer.startWriting()
+            return writer
+          })
+      }
+    }
   }
 
   fileprivate init(fileDescriptor: Int32, closeOnEndOfFile: Bool) {

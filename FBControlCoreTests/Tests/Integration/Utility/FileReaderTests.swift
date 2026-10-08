@@ -65,15 +65,10 @@ final class FileReaderTests: XCTestCase, DataConsumer {
     let status = mkfifo(fifoPath, S_IWUSR | S_IRUSR)
     XCTAssertEqual(status, 0)
 
-    let writerFuture = FileWriter.asyncWriter(forFilePath: fifoPath)
-    let readerFuture = FileReader.reader(withFilePath: fifoPath, consumer: self, logger: nil)
-    let writerAndReader: NSArray? = try await bridgeFBFuture(FBFuture<AnyObject>.combine([writerFuture, readerFuture as! FBFuture<AnyObject>]))
-    XCTAssertNotNil(writerAndReader)
-
-    // swiftlint:disable force_cast
-    let writer = writerAndReader![0] as! DataConsumer & DataConsumerLifecycle
-    let reader = writerAndReader![1] as! FileReader
-    // swiftlint:enable force_cast
+    // Each end's open blocks until the other end is opened.
+    async let opening = FileWriter.asyncWriter(forFilePath: fifoPath)
+    let reader = try await bridgeFBFuture(FileReader.reader(withFilePath: fifoPath, consumer: self, logger: nil))
+    let writer = try await opening
 
     try await bridgeFBFutureVoid(reader.startReading())
 

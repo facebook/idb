@@ -11,17 +11,6 @@ import Foundation
 private let fbxctestOutputLogDirectoryEnv = "FBXCTEST_LOG_DIRECTORY"
 private let xctoolOutputLogDirectoryEnv = "XCTOOL_TEST_ENV_FB_LOG_DIRECTORY"
 
-enum XCTestLoggerError: Error, LocalizedError {
-  case notADataConsumer(path: String, writer: String)
-
-  public var errorDescription: String? {
-    switch self {
-    case let .notADataConsumer(path, writer):
-      return "Expected a data consumer writing to \(path), got \(writer)"
-    }
-  }
-}
-
 // @unchecked Sendable: all stored state is immutable and ControlCoreLogger implementations are required to be thread-safe.
 public final class XCTestLogger: NSObject, ControlCoreLogger, @unchecked Sendable {
 
@@ -131,10 +120,7 @@ public final class XCTestLogger: NSObject, ControlCoreLogger, @unchecked Sendabl
 
   public func logConsumption(of consumer: DataConsumer, toFileNamed fileName: String, logger: ControlCoreLogger) async throws -> FBCompositeDataConsumer {
     let filePath = (logDirectory as NSString).appendingPathComponent(fileName)
-    let writer = try await bridgeFBFuture(FileWriter.asyncWriter(forFilePath: filePath))
-    guard let writer = writer as? DataConsumer else {
-      throw XCTestLoggerError.notADataConsumer(path: filePath, writer: String(describing: writer))
-    }
+    let writer = try await FileWriter.asyncWriter(forFilePath: filePath)
     logger.info().log("Mirroring output to \(filePath)")
     return FBCompositeDataConsumer(consumers: [
       consumer,
