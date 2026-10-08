@@ -115,10 +115,13 @@ jobs:
       - id: plan
         run: python3 -m CI.test_plan matrix >> "$GITHUB_OUTPUT"
 
+  # Each job runs on the runner its plan entry names: a larger one for a suite
+  # that encodes with the hardware video encoder or drives a simulator, as the
+  # end-to-end shards do, and the standard one otherwise.
   mac-tests:
     name: Test ${{ matrix.name }} (macOS)
     needs: mac-test-plan
-    runs-on: macos-26
+    runs-on: ${{ matrix.runsOn }}
     timeout-minutes: 60
     env:
       # xcodebuild only forwards TEST_RUNNER_-prefixed variables into the test

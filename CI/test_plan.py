@@ -20,12 +20,16 @@ from pathlib import Path
 
 DEFAULT_PLAN = Path("TestPlan.json")
 
+# The GitHub-hosted runner each runner class in the plan runs on.
+RUNNER_LABELS: Mapping[str, str] = {"standard": "macos-26", "large": "macos-26-xlarge"}
+
 
 @dataclass(frozen=True)
 class TestTarget:
     name: str
     booted_simulator: bool
     prerequisites: tuple[str, ...]
+    runner: str
 
 
 @dataclass(frozen=True)
@@ -45,6 +49,7 @@ class TestPlan:
                     name=name,
                     booted_simulator=fields["bootedSimulator"],
                     prerequisites=tuple(fields["prerequisites"]),
+                    runner=fields["runner"],
                 )
                 for name, fields in document["testTargets"].items()
             },
@@ -86,6 +91,7 @@ class TestPlan:
                 "name": self.display_name(target.name),
                 "target": target.name,
                 "bootedSimulator": target.booted_simulator,
+                "runsOn": RUNNER_LABELS[target.runner],
             }
             for target in sorted(self.test_targets.values(), key=lambda t: t.name)
         ]

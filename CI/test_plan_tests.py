@@ -26,14 +26,20 @@ PLAN = {
         "FBSimulatorControlUnitTests": ["FBSimulatorControlUnitTests"],
     },
     "testTargets": {
-        "FBControlCoreTests": {"bootedSimulator": False, "prerequisites": []},
+        "FBControlCoreTests": {
+            "bootedSimulator": False,
+            "prerequisites": [],
+            "runner": "standard",
+        },
         "FBSimulatorControlSmokeTests": {
             "bootedSimulator": True,
             "prerequisites": ["fbsimulatorcontrol_resources"],
+            "runner": "large",
         },
         "FBSimulatorControlUnitTests": {
             "bootedSimulator": False,
             "prerequisites": ["fbsimulatorcontrol_resources", "fixtures"],
+            "runner": "standard",
         },
     },
 }
@@ -74,16 +80,19 @@ class TestPlanTest(unittest.TestCase):
                     "name": "FBControlCore",
                     "target": "FBControlCoreTests",
                     "bootedSimulator": False,
+                    "runsOn": "macos-26",
                 },
                 {
                     "name": "FBSimulatorControl Smoke",
                     "target": "FBSimulatorControlSmokeTests",
                     "bootedSimulator": True,
+                    "runsOn": "macos-26-xlarge",
                 },
                 {
                     "name": "FBSimulatorControl Unit",
                     "target": "FBSimulatorControlUnitTests",
                     "bootedSimulator": False,
+                    "runsOn": "macos-26",
                 },
             ],
         )
@@ -92,7 +101,9 @@ class TestPlanTest(unittest.TestCase):
         plan = TestPlan(
             schemes={"SimulatorIPCTests": ("SimulatorIPCTests",)},
             test_targets={
-                "SimulatorIPCTests": TestTarget("SimulatorIPCTests", False, ())
+                "SimulatorIPCTests": TestTarget(
+                    "SimulatorIPCTests", False, (), "standard"
+                )
             },
         )
         self.assertEqual(plan.display_name("SimulatorIPCTests"), "SimulatorIPC")

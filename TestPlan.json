@@ -88,83 +88,99 @@
   "testTargets": {
     "CompanionUtilitiesTests": {
       "bootedSimulator": false,
-      "prerequisites": []
+      "prerequisites": [],
+      "runner": "standard"
     },
     "FBAXCoreTests": {
       "bootedSimulator": false,
-      "prerequisites": []
+      "prerequisites": [],
+      "runner": "standard"
     },
     "FBControlCoreTests": {
       "bootedSimulator": false,
-      "prerequisites": []
+      "prerequisites": [],
+      "runner": "standard"
     },
     "FBDeviceControlTests": {
       "bootedSimulator": false,
-      "prerequisites": []
+      "prerequisites": [],
+      "runner": "standard"
     },
     "FBSimulatorAXSmokeTests": {
       "bootedSimulator": true,
       "prerequisites": [
         "fbsimulatorcontrol_resources"
-      ]
+      ],
+      "runner": "large"
     },
     "FBSimulatorAXTests": {
       "bootedSimulator": false,
       "prerequisites": [
         "fbsimulatorcontrol_resources"
-      ]
+      ],
+      "runner": "standard"
     },
     "FBSimulatorBridgeProtocolTests": {
       "bootedSimulator": false,
-      "prerequisites": []
+      "prerequisites": [],
+      "runner": "standard"
     },
     "FBSimulatorControlBootTests": {
       "bootedSimulator": false,
       "prerequisites": [
         "fbsimulatorcontrol_resources"
-      ]
+      ],
+      "runner": "large"
     },
     "FBSimulatorControlSmokeTests": {
       "bootedSimulator": true,
       "prerequisites": [
         "fbsimulatorcontrol_resources"
-      ]
+      ],
+      "runner": "large"
     },
     "FBSimulatorControlUnitTests": {
       "bootedSimulator": false,
       "prerequisites": [
         "fbsimulatorcontrol_resources"
-      ]
+      ],
+      "runner": "standard"
     },
     "FBSimulatorVideoTests": {
       "bootedSimulator": false,
       "prerequisites": [
         "fbsimulatorcontrol_resources"
-      ]
+      ],
+      "runner": "large"
     },
     "FBSimulatorXCTestTests": {
       "bootedSimulator": false,
       "prerequisites": [
         "fbsimulatorcontrol_resources"
-      ]
+      ],
+      "runner": "standard"
     },
     "FBVideoCoreTests": {
       "bootedSimulator": false,
-      "prerequisites": []
+      "prerequisites": [],
+      "runner": "standard"
     },
     "FBXCTestCoreTests": {
       "bootedSimulator": false,
       "prerequisites": [
         "fixtures"
-      ]
+      ],
+      "runner": "standard"
     },
     "ShimulatorProtocolTests": {
       "bootedSimulator": false,
-      "prerequisites": []
+      "prerequisites": [],
+      "runner": "standard"
     },
     "SimulatorIPCTests": {
       "bootedSimulator": false,
-      "prerequisites": []
+      "prerequisites": [],
+      "runner": "standard"
     }
   }
 }
