@@ -1,0 +1,127 @@
+{
+  "schemes": {
+    "CompanionUtilities": [
+      "CompanionUtilitiesTests"
+    ],
+    "CompanionUtilitiesTests": [
+      "CompanionUtilitiesTests"
+    ],
+    "FBAXCore": [
+      "FBControlCoreTests"
+    ],
+    "FBControlCore": [
+      "FBControlCoreTests"
+    ],
+    "FBControlCoreTests": [
+      "FBControlCoreTests"
+    ],
+    "FBDeviceControl": [
+      "FBDeviceControlTests"
+    ],
+    "FBDeviceControlTests": [
+      "FBDeviceControlTests"
+    ],
+    "FBSimulatorAX": [
+      "FBSimulatorControlSmokeTests",
+      "FBSimulatorControlUnitTests"
+    ],
+    "FBSimulatorBridgeProtocolTests": [
+      "FBSimulatorBridgeProtocolTests"
+    ],
+    "FBSimulatorControl": [
+      "FBSimulatorControlBootTests",
+      "FBSimulatorControlSmokeTests",
+      "FBSimulatorControlUnitTests"
+    ],
+    "FBSimulatorControlBootTests": [
+      "FBSimulatorControlBootTests"
+    ],
+    "FBSimulatorControlSmokeTests": [
+      "FBSimulatorControlSmokeTests"
+    ],
+    "FBSimulatorControlUnitTests": [
+      "FBSimulatorControlUnitTests"
+    ],
+    "FBSimulatorVideo": [
+      "FBSimulatorControlUnitTests",
+      "FBSimulatorVideoTests"
+    ],
+    "FBSimulatorVideoTests": [
+      "FBSimulatorVideoTests"
+    ],
+    "FBSimulatorXCTest": [
+      "FBSimulatorControlUnitTests"
+    ],
+    "FBVideoCore": [
+      "FBControlCoreTests"
+    ],
+    "FBXCTestCore": [
+      "FBXCTestCoreTests"
+    ],
+    "FBXCTestCoreTests": [
+      "FBXCTestCoreTests"
+    ],
+    "ShimulatorProtocolTests": [
+      "ShimulatorProtocolTests"
+    ],
+    "SimulatorIPCTests": [
+      "SimulatorIPCTests"
+    ]
+  },
+  "testTargets": {
+    "CompanionUtilitiesTests": {
+      "bootedSimulator": false,
+      "prerequisites": []
+    },
+    "FBControlCoreTests": {
+      "bootedSimulator": false,
+      "prerequisites": []
+    },
+    "FBDeviceControlTests": {
+      "bootedSimulator": false,
+      "prerequisites": []
+    },
+    "FBSimulatorBridgeProtocolTests": {
+      "bootedSimulator": false,
+      "prerequisites": []
+    },
+    "FBSimulatorControlBootTests": {
+      "bootedSimulator": false,
+      "prerequisites": [
+        "fbsimulatorcontrol_resources"
+      ]
+    },
+    "FBSimulatorControlSmokeTests": {
+      "bootedSimulator": true,
+      "prerequisites": [
+        "fbsimulatorcontrol_resources"
+      ]
+    },
+    "FBSimulatorControlUnitTests": {
+      "bootedSimulator": false,
+      "prerequisites": [
+        "fbsimulatorcontrol_resources"
+      ]
+    },
+    "FBSimulatorVideoTests": {
+      "bootedSimulator": false,
+      "prerequisites": [
+        "fbsimulatorcontrol_resources"
+      ]
+    },
+    "FBXCTestCoreTests": {
+      "bootedSimulator": false,
+      "prerequisites": [
+        "fixtures"
+      ]
+    },
+    "ShimulatorProtocolTests": {
+      "bootedSimulator": false,
+      "prerequisites": []
+    },
+    "SimulatorIPCTests": {
+      "bootedSimulator": false,
+      "prerequisites": []
+    }
+  }
+}

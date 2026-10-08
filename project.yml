@@ -365,6 +365,9 @@ targets:
   FBControlCoreTests:
     type: bundle.unit-test
     platform: macOS
+    scheme:
+      testTargets:
+        - FBControlCoreTests
     configFiles:
       Debug: FBControlCoreTests/FBControlCoreTests.xcconfig
       Release: FBControlCoreTests/FBControlCoreTests.xcconfig
@@ -514,6 +517,9 @@ targets:
   FBXCTestCoreTests:
     type: bundle.unit-test
     platform: macOS
+    scheme:
+      testTargets:
+        - FBXCTestCoreTests
     configFiles:
       Debug: FBXCTestCoreTests/FBXCTestCoreTests.xcconfig
       Release: FBXCTestCoreTests/FBXCTestCoreTests.xcconfig
@@ -1027,6 +1033,9 @@ targets:
   FBDeviceControlTests:
     type: bundle.unit-test
     platform: macOS
+    scheme:
+      testTargets:
+        - FBDeviceControlTests
     configFiles:
       Debug: FBDeviceControlTests/FBDeviceControlTests.xcconfig
       Release: FBDeviceControlTests/FBDeviceControlTests.xcconfig
@@ -1096,6 +1105,9 @@ targets:
     type: bundle.unit-test
     platform: macOS
     deploymentTarget: "15.0"
+    scheme:
+      testTargets:
+        - CompanionUtilitiesTests
     sources:
       - path: CompanionUtilitiesTests
     settings:

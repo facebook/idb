@@ -101,8 +101,23 @@ jobs:
           if-no-files-found: ignore
           retention-days: 14
 
+  # One job per test target, each a signal of its own, so a Unit regression,
+  # a broken boot and a broken guest read are three signals rather than one.
+  # `TestPlan.json` is generated from the Buck graph, so a new test target
+  # joins the matrix without being named here.
+  mac-test-plan:
+    name: Plan macOS tests
+    runs-on: ubuntu-latest
+    outputs:
+      targets: ${{ steps.plan.outputs.targets }}
+    steps:
+      - uses: actions/checkout@v5
+      - id: plan
+        run: python3 -m CI.test_plan matrix >> "$GITHUB_OUTPUT"
+
   mac-tests:
-    name: Test ${{ matrix.target }} (macOS)
+    name: Test ${{ matrix.name }} (macOS)
+    needs: mac-test-plan
     runs-on: macos-26
     timeout-minutes: 60
     env:
@@ -113,15 +128,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        target:
-          - FBControlCore
-          - FBXCTestCore
-          # One job per FBSimulatorControl suite, so a Unit regression, a broken
-          # boot and a broken guest read are three signals rather than one.
-          - FBSimulatorControlUnitTests
-          - FBSimulatorControlBootTests
-          - FBSimulatorControlSmokeTests
-          - FBDeviceControl
+        include: ${{ fromJSON(needs.mac-test-plan.outputs.targets) }}
     steps:
       - uses: actions/checkout@v5
       # The runner image leaves Spotlight on. Nothing here searches with it,
@@ -130,13 +137,11 @@ jobs:
         run: sudo mdutil -a -i off || true
       - name: Install tools
         run: brew install xcodegen xcbeautify
-      # The smoke suite takes a booted simulator from its environment and does
-      # not boot one itself, so this job is the harness that supplies it, named
-      # by DEVICE_UDID (forwarded through xcodebuild's TEST_RUNNER_ prefix).
-      # The boot suite creates its own and needs no provisioning; the unit suite
-      # needs no simulator at all.
-      - name: Provision a simulator for the smoke suite
-        if: matrix.target == 'FBSimulatorControlSmokeTests'
+      # A suite that takes a booted simulator from its environment does not
+      # boot one itself, so this job is the harness that supplies it, named by
+      # DEVICE_UDID (forwarded through xcodebuild's TEST_RUNNER_ prefix).
+      - name: Provision a simulator
+        if: matrix.bootedSimulator
         run: python3 -m CI.provision_simulator --name smoke-test-provided --env-prefix TEST_RUNNER_ >> "$GITHUB_ENV"
       - name: Test ${{ matrix.target }}
         run: ./build.sh test ${{ matrix.target }}

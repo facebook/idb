@@ -1021,18 +1021,21 @@ function build() {
 # Test Functions
 # =============================================================================
 
+# The schemes `test` accepts, and the steps each needs run first, come from
+# TestPlan.json, which the project generator writes beside project.yml.
+function test_plan() {
+  python3 CI/test_plan.py "$@"
+}
+
 function test_target() {
   local name=$1
-  # Every FBSimulatorControl test bundle copies the generated shims and the
-  # accessibility bridge into its resources, and FBXCTestCore's copies the
-  # fixtures, so they have to exist first — whether the whole framework scheme
-  # is under test or one suite of it.
-  if [[ $name == FBSimulatorControl* ]]; then
-    build_fbsimulatorcontrol_resources
-  fi
-  if [[ $name == FBXCTestCore* ]]; then
-    build_fixtures
-  fi
+  # Bundles copy products other projects build -- the shims and guest binaries,
+  # the test fixtures -- so the steps that build them run first, whether the
+  # whole framework scheme is under test or one suite of it.
+  local step
+  for step in $(test_plan prerequisites "$name"); do
+    "build_$step"
+  done
   # Per-test time allowances turn a hung test into a named failure in about a
   # minute; without them a single hang stalls the suite until the CI job's
   # 60-minute timeout cancels it with no indication of which test hung. Most
@@ -1052,10 +1055,10 @@ function test_target() {
 }
 
 function test_all() {
-  test_target FBControlCore
-  test_target FBXCTestCore
-  test_target FBSimulatorControl
-  test_target FBDeviceControl
+  local target
+  for target in $(test_plan test-targets); do
+    test_target "$target"
+  done
 }
 
 function run_tests() {
@@ -1065,20 +1068,16 @@ function run_tests() {
     echo "Running all tests..."
     test_all
   else
-    case $target in
-      all)
-        test_all;;
-      FBControlCore|FBXCTestCore|FBSimulatorControl|FBDeviceControl)
-        test_target "$target";;
-      FBSimulatorControlUnitTests|FBSimulatorControlBootTests|FBSimulatorControlSmokeTests)
-        test_target "$target";;
-      *)
-        echo "Unknown test target: $target"
-        echo "Valid targets: all, FBControlCore, FBXCTestCore, FBSimulatorControl,"
-        echo "  FBSimulatorControlUnitTests, FBSimulatorControlBootTests,"
-        echo "  FBSimulatorControlSmokeTests, FBDeviceControl"
-        exit 1;;
-    esac
+    if [[ $target == all ]]; then
+      test_all
+    elif test_plan schemes | grep -qx "$target"; then
+      test_target "$target"
+    else
+      echo "Unknown test target: $target"
+      echo "Valid targets: all, or one of these schemes:"
+      test_plan schemes | sed 's/^/  /'
+      exit 1
+    fi
   fi
 }
 
@@ -1132,16 +1131,14 @@ Commands:
   test [<target>]
     Run tests. If no target specified, runs all tests.
     Targets:
-      (none)          Run all tests
-      all             Run all tests
-      FBControlCore   Test FBControlCore
-      FBXCTestCore Test FBXCTestCore
-      FBSimulatorControl Test FBSimulatorControl (every suite)
-      FBSimulatorControlUnitTests   Test the Unit suite: needs no simulator
-      FBSimulatorControlBootTests   Test the Boot suite: creates and boots one
-      FBSimulatorControlSmokeTests  Test the Smoke suite: takes a booted one
-                                    from the environment
-      FBDeviceControl Test FBDeviceControl
+      (none)          Run every test target
+      all             Run every test target
+      <scheme>        Run one scheme from TestPlan.json: a test target on its
+                      own, or a library with every test target that covers it.
+                      For example FBControlCore, FBSimulatorControlUnitTests
+                      (needs no simulator), FBSimulatorControlBootTests (creates
+                      and boots one) or FBSimulatorControlSmokeTests (takes a
+                      booted one from the environment)
 
 Examples:
   ./build.sh generate                 # Regenerate Xcode projects
