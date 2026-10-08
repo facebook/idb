@@ -158,8 +158,8 @@ final class MobileDeviceTests {
     return device
   }
 
-  /// The context teardown (`stop_session`, `disconnect`) is enqueued on the main queue when the
-  /// popped future resolves, so it can still be pending when the await resumes.
+  /// A pooled session is torn down (`stop_session`, `disconnect`) by an idle task rather than on
+  /// release, so its events can still be pending when the await resumes.
   private func waitForDeviceEvents(
     _ expected: [String],
     timeout: TimeInterval = 5,

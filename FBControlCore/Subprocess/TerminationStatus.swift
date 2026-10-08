@@ -9,9 +9,7 @@ import Foundation
 
 /// How a process ended: a normal exit with a code, or death by signal.
 ///
-/// Exactly one case holds for any finished process. This replaces the
-/// `statLoc`/`exitCode`/`signal` future triple, where the two specific
-/// futures resolved such that awaiting the one that did not happen threw.
+/// Exactly one case holds for any finished process.
 public enum TerminationStatus: Sendable, Equatable {
   case exited(Int32)
   case signalled(Int32)

@@ -168,8 +168,6 @@ public final class XcodeBuildOperation {
   }
 
   public static func confirmExit(ofXcodebuildOperation running: RunningSubprocess, configuration: TestLaunchConfiguration, reporter: XCTestReporter, target: any Target, logger: ControlCoreLogger) async throws {
-    // Cancellation terminates xcodebuild with the same one-second SIGTERM
-    // grace the future's cancellation handler applied.
     let status = try await withTaskCancellationHandler {
       try await running.terminationStatus
     } onCancel: {

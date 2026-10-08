@@ -12,7 +12,7 @@ import XCTest
 // MARK: - Capturing Wrapper
 
 /// Synthetic error used to unwind production after capturing the launch
-/// configuration; tests inspect the capture, not the future result.
+/// configuration; tests inspect the capture, not the launch result.
 private struct LaunchCaptureStop: Error {}
 
 /// A stand-in launcher that records the configuration production supplies.

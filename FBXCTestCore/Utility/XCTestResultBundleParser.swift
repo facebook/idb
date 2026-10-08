@@ -438,8 +438,8 @@ final class XCTestResultBundleParser {
 
     let summaryRef = testMethod["summaryRef"] as? NSDictionary
     if let summaryRef, let summaryRefId = accessAndUnwrapValue(summaryRef, "id", logger) as? String {
-      // A tool failure abandons this method's summary, exactly as the failed
-      // future did: the case has started and never finishes.
+      // A tool failure abandons this method's summary: the case has started
+      // and never finishes.
       guard let actionTestSummary = try? await XCTestResultToolOperation.getJSON(from: resultBundlePath, forId: summaryRefId, logger: logger, timeout: XCTestOperationTimeoutSecs) else {
         return
       }
