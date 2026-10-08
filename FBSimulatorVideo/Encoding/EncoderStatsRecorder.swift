@@ -50,6 +50,8 @@ final class EncoderStatsRecorder: Sendable {
     var consecutiveNotReadyFrameCount: UInt = 0
     var warmupComplete = false
     var starvationWarningLogged = false
+    /// When the first frame was submitted, so the first callback can report the encoder's start-up latency.
+    var firstSubmission: ContinuousClock.Instant?
   }
 
   /// Frames the encoder may take to produce its first output before that is worth a warning.
@@ -96,10 +98,10 @@ final class EncoderStatsRecorder: Sendable {
   /// One encoder callback's outcome. Counts it, tracks warmup and starvation, and logs the periodic
   /// stats line when the interval has elapsed. Logging happens outside the lock.
   func record(_ outcome: Outcome) {
-    var (lines, tick) = log.updateAndTick { state in Self.record(outcome, in: &state) }
+    var ((lines, firstSubmission), tick) = log.updateAndTick { state in (Self.record(outcome, in: &state), state.firstSubmission) }
     switch tick {
     case .started:
-      lines.insert(.info("First encode callback received"), at: 0)
+      lines.insert(.info(Self.firstCallbackLine(since: firstSubmission)), at: 0)
     case .pending:
       break
     case let .elapsed(current, last, interval, total):
@@ -118,6 +120,19 @@ final class EncoderStatsRecorder: Sendable {
   /// How long an encode submission took, converter included.
   func recordEncodeSubmission(_ duration: Duration) {
     log.update { $0.stats.totalEncodeSubmitSeconds += duration.seconds }
+  }
+
+  /// A frame is about to be submitted. Recorded before the submission, as VideoToolbox may call back before
+  /// the submission returns.
+  func recordSubmissionStarting(at instant: ContinuousClock.Instant) {
+    log.update { state in
+      if state.firstSubmission == nil { state.firstSubmission = instant }
+    }
+  }
+
+  private static func firstCallbackLine(since firstSubmission: ContinuousClock.Instant?) -> String {
+    guard let firstSubmission else { return "First encode callback received" }
+    return String(format: "First encode callback received %.1f ms after its frame was submitted", (ContinuousClock.now - firstSubmission).seconds * 1000)
   }
 
   /// The source surface changed while a frame was being read.

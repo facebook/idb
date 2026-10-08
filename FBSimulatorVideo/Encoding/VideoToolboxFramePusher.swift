@@ -189,6 +189,7 @@ final class VideoToolboxFramePusher: FramePusher, @unchecked Sendable {
     var bufferToWrite = pixelBuffer
 
     let encodeStart = ContinuousClock.now
+    statsRecorder.recordSubmissionStarting(at: encodeStart)
 
     // BGRA→NV12 (and scale, since the pool is destination-sized) in one pass; on failure the encoder
     // takes the BGRA frame and converts internally.
