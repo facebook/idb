@@ -31,7 +31,7 @@ public struct SimulatorBootstrapPortCommands {
   /// - Returns: the looked-up Mach port.
   /// - Throws: the device's own error if the lookup failed, or `SimulatorPortLookupError` when
   ///   the daemon reported no port without reporting an error.
-  public func lookup(named name: String) throws -> NSNumber {
+  public func lookup(named name: String) throws -> mach_port_t {
     var error: NSError?
     let port = simulator.device.lookup(name, error: &error)
     // The port is checked before the error: CoreSimulator is unannotated private API, and a
@@ -39,7 +39,7 @@ public struct SimulatorBootstrapPortCommands {
     guard port != mach_port_t(MACH_PORT_NULL) else {
       throw error ?? SimulatorPortLookupError.portNotFound(name: name)
     }
-    return NSNumber(value: port)
+    return port
   }
 }
 

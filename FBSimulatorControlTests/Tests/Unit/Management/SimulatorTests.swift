@@ -191,7 +191,7 @@ final class SimulatorTests: XCTestCase {
 
     let port = try sim.bootstrapPorts.lookup(named: "com.apple.testservice")
 
-    XCTAssertEqual(try XCTUnwrap(port).uint32Value, 12345, "Returned port number should match the looked-up port")
+    XCTAssertEqual(port, 12345, "Returned port number should match the looked-up port")
   }
 
   // Both no-port paths throw: the device's own error when it reported one, and a synthesized
