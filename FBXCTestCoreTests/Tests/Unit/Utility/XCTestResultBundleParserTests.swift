@@ -156,6 +156,34 @@ struct XCTestResultBundleParserTests {
     #expect(logs.last == "Test Case '-[MyTests.MyTestClass testSkipped]' failed in 0.000 seconds")
   }
 
+  @Test
+  func aLegacyTestWithoutADurationFailsTheParse() async throws {
+    try writeTestSummaries(methods: [
+      ["TestIdentifier": "testNoDuration", "TestStatus": "Success", "ActivitySummaries": []]
+    ])
+
+    await #expect {
+      _ = try await parse()
+    } throws: { error in
+      guard case XCTestResultBundleError.missingKey("Duration") = error else { return false }
+      return true
+    }
+  }
+
+  @Test
+  func aLegacyTestWhoseStatusIsNotAStringFailsTheParse() async throws {
+    try writeTestSummaries(methods: [
+      ["TestIdentifier": "testOddStatus", "TestStatus": 1, "Duration": 0.1, "ActivitySummaries": []]
+    ])
+
+    await #expect {
+      _ = try await parse()
+    } throws: { error in
+      guard case XCTestResultBundleError.unexpectedType(key: "TestStatus", expected: _) = error else { return false }
+      return true
+    }
+  }
+
   // MARK: - No Results
 
   @Test
