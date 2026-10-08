@@ -269,15 +269,13 @@ struct XCTestResultBundleParserTests {
     #expect(
       try await parse(xcresult: xcresult) == [
         .started(testClass: "MyTestClass", method: "testPasses"),
-        // BUG: xcresulttool's duration "0.5" is a string, which is read as an NSNumber and falls
-        // back to 0 — flipped in the following commit.
         .finished(
-          testClass: "MyTestClass", method: "testPasses", status: .passed, duration: 0,
+          testClass: "MyTestClass", method: "testPasses", status: .passed, duration: 0.5,
           logs: [
             "Test Case '-[MyTests.MyTestClass testPasses]' started.",
             "    t =     0.00s Start Test",
             "    t =     0.25s     Set Up",
-            "Test Case '-[MyTests.MyTestClass testPasses]' passed in 0.000 seconds",
+            "Test Case '-[MyTests.MyTestClass testPasses]' passed in 0.500 seconds",
           ]),
       ])
   }
@@ -344,9 +342,7 @@ struct XCTestResultBundleParserTests {
     #expect(metrics[0]["name"] as? String == "Clock Monotonic Time")
     #expect(metrics[0]["unit"] as? String == "s")
     #expect(metrics[0]["identifier"] as? String == "com.apple.dt.XCTMetric_Clock.time.monotonic")
-    // BUG: the measurements are strings, which are read as NSNumbers and dropped — flipped in the
-    // following commit.
-    #expect((metrics[0]["measurements"] as? [Double]) == [])
+    #expect((metrics[0]["measurements"] as? [Double]) == [0.1, 0.2])
   }
 
   @Test

@@ -112,6 +112,14 @@ private func accessAndUnwrapValue(_ dict: NSDictionary, _ key: String, _ logger:
   return unwrapped
 }
 
+/// xcresulttool writes numbers as strings; accept either.
+private func number(from value: Any?) -> Double? {
+  if let number = value as? NSNumber {
+    return number.doubleValue
+  }
+  return (value as? String).flatMap(Double.init)
+}
+
 private let FBXCTestResultBundleParser_dateFormatter: DateFormatter = {
   let formatter = DateFormatter()
   formatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ss.SSSZ"
@@ -416,7 +424,7 @@ final class XCTestResultBundleParser {
   private static func reportTestMethod(_ testMethod: NSDictionary, testBundleName: String, testClassName: String, reporter: XCTestReporter, resultBundlePath: String, tool: any XCResultReading, logger: ControlCoreLogger, extractScreenshots: Bool) async {
     let testStatus = accessAndUnwrapValue(testMethod, "testStatus", logger) as? String ?? ""
     let testMethodIdentifier = accessAndUnwrapValue(testMethod, "identifier", logger) as? String ?? ""
-    let duration = accessAndUnwrapValue(testMethod, "duration", logger) as? NSNumber ?? 0
+    let duration = number(from: accessAndUnwrapValue(testMethod, "duration", logger)) ?? 0
 
     var status = FBTestReportStatus.unknown
     if testStatus == "Success" {
@@ -459,8 +467,8 @@ final class XCTestResultBundleParser {
         await extractScreenshotsFromActivities(activitySummaries, resultBundlePath: resultBundlePath, tool: tool, logger: logger)
       }
 
-      let logs = buildTestLog(accessAndUnwrapValues(actionTestSummary, "activitySummaries", logger) as? [NSDictionary], testBundleName: testBundleName, testClassName: testClassName, testMethodName: testMethodIdentifier, testPassed: status == .passed, duration: duration.doubleValue, logger: logger)
-      reporter.testCaseDidFinish(forTestClass: testClassName, method: testMethodIdentifier, with: status, duration: duration.doubleValue, logs: logs)
+      let logs = buildTestLog(accessAndUnwrapValues(actionTestSummary, "activitySummaries", logger) as? [NSDictionary], testBundleName: testBundleName, testClassName: testClassName, testMethodName: testMethodIdentifier, testPassed: status == .passed, duration: duration, logger: logger)
+      reporter.testCaseDidFinish(forTestClass: testClassName, method: testMethodIdentifier, with: status, duration: duration, logs: logs)
     }
   }
 
@@ -567,12 +575,7 @@ final class XCTestResultBundleParser {
       let metricUnit = accessAndUnwrapValue(performanceMetric, "unitOfMeasurement", logger) as? String ?? ""
       let metricIdentifier = accessAndUnwrapValue(performanceMetric, "identifier", logger) as? String ?? ""
       let metricMeasurements = accessAndUnwrapValues(performanceMetric, "measurements", logger) as? [NSDictionary] ?? []
-      var measurements: [NSNumber] = []
-      for metricMeasurement in metricMeasurements {
-        if let value = unwrapValue(metricMeasurement) as? NSNumber {
-          measurements.append(value)
-        }
-      }
+      let measurements = metricMeasurements.compactMap { number(from: unwrapValue($0)) }
       let metric: [String: Any] = [
         "name": metricName,
         "unit": metricUnit,
