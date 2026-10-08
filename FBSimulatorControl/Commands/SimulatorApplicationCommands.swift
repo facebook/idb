@@ -146,7 +146,7 @@ public struct SimulatorApplicationCommands: ApplicationCommands {
     do {
       outputs.append(try Self.fileBackedOutput(configuration.stdOut))
       outputs.append(try Self.fileBackedOutput(configuration.stdErr))
-      let processIdentifier = try await launch(configuration, stdOutPath: outputs[0].path, stdErrPath: outputs[1].path).int32Value
+      let processIdentifier = try await launch(configuration, stdOutPath: outputs[0].path, stdErrPath: outputs[1].path)
       return SimulatorLaunchedApplication.application(withSimulator: simulator, configuration: configuration, outputs: outputs, processIdentifier: processIdentifier)
     } catch {
       for output in outputs {
@@ -386,7 +386,7 @@ public struct SimulatorApplicationCommands: ApplicationCommands {
     }
   }
 
-  private func launch(_ configuration: ApplicationLaunchConfiguration, stdOutPath: String?, stdErrPath: String?) async throws -> NSNumber {
+  private func launch(_ configuration: ApplicationLaunchConfiguration, stdOutPath: String?, stdErrPath: String?) async throws -> pid_t {
     guard let dataDirectory = simulator.dataDirectory else {
       throw SimulatorApplicationLaunchError.noDataDirectory(bundleID: configuration.bundleID)
     }
@@ -399,7 +399,7 @@ public struct SimulatorApplicationCommands: ApplicationCommands {
     let bundleID = configuration.bundleID
     logger.log("Launching Application \(bundleID) with \(CollectionInformation.oneLineDescription(from: configuration.arguments)) \(CollectionInformation.oneLineDescription(from: configuration.environment))")
 
-    let pid = try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<pid_t, Error>) in
+    return try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<pid_t, Error>) in
       simulator.device.launchApplicationAsync(withID: bundleID, options: options, completionQueue: simulator.workQueue) { error, pid in
         if let error {
           logger.log("Failed to launch Application \(bundleID) \(error)")
@@ -410,7 +410,6 @@ public struct SimulatorApplicationCommands: ApplicationCommands {
         }
       }
     }
-    return NSNumber(value: pid)
   }
 
   private func translateAbsolutePath(_ absolutePath: String?, toPathRelativeTo referencePath: String) -> String? {
