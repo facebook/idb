@@ -5,6 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+import FBControlCore
 import Foundation
 
 /// A pipe within the process: a producer writes to `input` as its bytes arrive, and one reader

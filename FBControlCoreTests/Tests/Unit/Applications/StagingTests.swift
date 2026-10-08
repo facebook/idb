@@ -5,6 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+@preconcurrency @testable import FBArtifactStaging
 @preconcurrency @testable import FBControlCore
 import XCTest
 import os

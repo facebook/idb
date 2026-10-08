@@ -6,6 +6,7 @@
  */
 
 @testable import CompanionLib
+import FBArtifactStaging
 @preconcurrency import FBControlCore
 import Foundation
 import GRPCCore

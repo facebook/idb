@@ -6,6 +6,7 @@
  */
 
 import CompanionUtilities
+import FBArtifactStaging
 import FBControlCore
 import FBSimulatorControl
 import GRPCCore

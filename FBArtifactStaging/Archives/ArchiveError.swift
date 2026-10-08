@@ -5,6 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+import FBControlCore
 import Foundation
 
 /// Why an extractor stopped. Failures of the file system it writes to are thrown as `POSIXError`.

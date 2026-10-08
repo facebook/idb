@@ -12,6 +12,9 @@
     "FBAXCoreTests": [
       "FBAXCoreTests"
     ],
+    "FBArtifactStaging": [
+      "FBControlCoreTests"
+    ],
     "FBControlCore": [
       "FBControlCoreTests"
     ],

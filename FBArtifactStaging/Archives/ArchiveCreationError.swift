@@ -5,6 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+import FBControlCore
 import Foundation
 
 /// Why an archive of files on disk could not be made.

@@ -19,7 +19,7 @@ public final class AsyncLatch: @unchecked Sendable {
   private let lock = NSLock()
   private var state = State.closed(waiters: [:])
 
-  init() {}
+  public init() {}
 
   public var isOpen: Bool {
     lock.withLock {
@@ -33,7 +33,7 @@ public final class AsyncLatch: @unchecked Sendable {
   }
 
   /// Releases every waiter, and every later one. Opening an open latch does nothing.
-  func open() {
+  public func open() {
     let waiters: [UUID: CheckedContinuation<Void, Error>] = lock.withLock {
       guard case let .closed(waiters) = state else {
         return [:]

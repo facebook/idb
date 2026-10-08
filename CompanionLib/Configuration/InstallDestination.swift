@@ -5,6 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+import FBArtifactStaging
 import FBControlCore
 
 /// What to install an artifact as, with the options only that kind takes.

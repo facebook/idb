@@ -130,7 +130,7 @@ public final class InputSource: @unchecked Sendable {
 
   /// Builds the pipe, flushes everything written so far, and returns the read
   /// end for the child. The write end is closed by the writer on end-of-file.
-  func attach() throws -> Int32 {
+  public func attach() throws -> Int32 {
     var descriptors: [Int32] = [0, 0]
     guard pipe(&descriptors) == 0 else {
       throw SubprocessError.inputUnavailable(message: String(cString: strerror(errno)))

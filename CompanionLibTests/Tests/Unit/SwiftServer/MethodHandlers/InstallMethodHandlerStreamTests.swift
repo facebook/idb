@@ -6,6 +6,7 @@
  */
 
 @testable import CompanionLib
+@preconcurrency import FBArtifactStaging
 @preconcurrency import FBControlCore
 import Foundation
 import IDBGRPCSwift

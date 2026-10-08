@@ -5,6 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+import FBControlCore
 import Foundation
 
 /// A tar of a file or a directory tree, read as it is written so no more than a header and a buffer are ever held.
