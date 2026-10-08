@@ -19,7 +19,7 @@ iOS Development Bridge (`idb`) is a versatile tool for automating iOS Simulators
 - **The `idb_companion`** — a server, written in Swift, that runs on macOS next to the Simulators and Devices it automates. The cli talks to it over gRPC. It is built on the `FBSimulatorControl` and `FBDeviceControl` frameworks, which live in the same repository and can also be used on their own.
 - **`idb-repl`** — an interactive REPL that compiles Swift code and runs it inside a live process on an iOS Simulator, built on the same companion. It has [its own section of this site](../idb-repl/overview.mdx).
 
-The [Architecture page](architecture.mdx) describes how these fit together. `idb` is in the middle of a transition to a pure Swift codebase: the companion is already Swift, and the frameworks are progressively migrating from Objective-C — the same page describes [where that migration stands](architecture.mdx#the-transition-to-pure-swift).
+The [Architecture page](architecture.mdx) describes how these fit together. `idb` is nearly a pure Swift codebase: the companion and the frameworks are Swift, apart from the XCTest `DTX` layer — the same page describes [where that migration stands](architecture.mdx#the-transition-to-pure-swift).
 
 To get going, [install idb](installation.mdx) and take the [guided tour](guided-tour.mdx); the [Commands page](commands.mdx) lists the full command surface.
 

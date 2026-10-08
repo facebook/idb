@@ -2,7 +2,7 @@
 
 The base framework of the idb project: `FBSimulatorControl`, `FBDeviceControl` and `FBXCTestCore` are all built on it. It defines the interfaces that make an iOS Simulator and an iOS Device interchangeable to callers, and provides the machinery those frameworks share.
 
-Like the rest of the project, it is a mix of Objective-C and Swift, transitioning to pure Swift, and is usable from both languages.
+It is written in Swift, apart from a small Objective-C guard that catches exceptions thrown by Apple's private Objective-C API.
 
 ## What it provides
 

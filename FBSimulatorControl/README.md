@@ -17,7 +17,7 @@ The trade-off is stability. The `idb` cli and its gRPC interface are the project
 - Exposes a broad range of functionality that is available in `simctl` and Xcode.
 - Implements additional functionality not available in `simctl` including file manipulation, direct input event injection and more. Hardware-encoded video recording and streaming are in [`FBSimulatorVideo`](../FBSimulatorVideo/README.md), and accessibility reading in [`FBSimulatorAX`](../FBSimulatorAX/README.md).
 - No external dependencies.
-- A Swift framework. What Objective-C remains is an implementation detail of reaching Apple's private frameworks, not part of the API.
+- A Swift framework. Apple's private frameworks are reached through header-only declarations, not part of the API.
 
 ## About
 

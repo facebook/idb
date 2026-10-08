@@ -11,7 +11,7 @@ The "iOS Development Bridge" or `idb`, is a command line interface for automatin
 
 `idb` is built on top of the `FBSimulatorControl` and `FBDeviceControl` macOS Frameworks, contained within this repository. These Frameworks can be used independently of `idb`, however `idb` is likely to provide the simplest install and the most sensible defaults for most users.
 
-`idb` is transitioning to a pure Swift codebase: the companion is written in Swift, and the Frameworks are migrating from Objective-C. [The architecture documentation](https://www.fbidb.io/idb/architecture) describes where the migration stands.
+`idb` is nearly a pure Swift codebase: the companion and the Frameworks are written in Swift, apart from the XCTest `DTX` layer in `FBXCTestCore`. [The architecture documentation](https://www.fbidb.io/idb/architecture) describes where the migration stands.
 
 A talk from F8 2019 covers the original motivation for `idb`; a [recording is available here](https://developers.facebook.com/videos/2019/reliable-code-at-scale/).
 
