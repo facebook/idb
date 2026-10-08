@@ -76,7 +76,7 @@ iOS Devices and Simulators behave in substantially different ways, as well as Si
 
 ## Framework Concepts
 
-There are two frameworks in `FBSimulatorControl` and `FBDeviceControl` that exist to implement the majority of the functionality used by `idb`. Additionally, there is the `FBControlCore` Framework that exists to define common interfaces for the Device and Simulator Frameworks and to provide other functionality that is common to both. Features that not every consumer needs, such as video, accessibility and test execution, are libraries of their own built on top: an `FB…Core` library shared by every kind of target, and an `FBSimulator…` library that adds the feature to Simulators. These Frameworks are able to be used independently of `idb` itself. This is an overview of how these Frameworks are designed together.
+There are two frameworks in `FBSimulatorControl` and `FBDeviceControl` that exist to implement the majority of the functionality used by `idb`. Additionally, there is the `FBControlCore` Framework that exists to define common interfaces for the Device and Simulator Frameworks and to provide other functionality that is common to both. Features that not every consumer needs, such as video, accessibility and test execution, are libraries of their own built on top: an `FB…Core` library shared by every kind of target, and an `FBSimulator…` library that adds the feature to Simulators. Installing is one too: `FBArtifactStaging` turns the archives and URLs that clients install from into bundles on disk, on top of `FBControlCore` alone. These Frameworks are able to be used independently of `idb` itself. This is an overview of how these Frameworks are designed together.
 
 ```mermaid
 flowchart TD
@@ -85,6 +85,7 @@ flowchart TD
     CompanionLib --> FBSimulatorAX
     CompanionLib --> FBSimulatorXCTest
     CompanionLib --> FBDeviceControl
+    CompanionLib --> FBArtifactStaging
     FBSimulatorVideo --> FBSimulatorControl
     FBSimulatorVideo --> FBVideoCore
     FBSimulatorAX --> FBSimulatorControl
@@ -98,10 +99,11 @@ flowchart TD
     FBAXCore --> FBControlCore
     FBAXCore --> FBSimulatorBridgeProtocol
     FBXCTestCore --> FBControlCore
+    FBArtifactStaging --> FBControlCore
     FBSimulatorControl --> FBControlCore
 ```
 
-Each library has its own page: [`FBControlCore`](fbcontrolcore.mdx), [`FBVideoCore`](fbvideocore.mdx), [`FBAXCore`](fbaxcore.mdx), [`FBXCTestCore`](fbxctestcore.mdx), [`FBSimulatorBridgeProtocol`](fbsimulatorbridgeprotocol.mdx), [`FBSimulatorControl`](fbsimulatorcontrol.mdx), [`FBSimulatorVideo`](fbsimulatorvideo.mdx), [`FBSimulatorAX`](fbsimulatorax.mdx), [`FBSimulatorXCTest`](fbsimulatorxctest.mdx) and [`FBDeviceControl`](fbdevicecontrol.mdx).
+Each library has its own page: [`FBControlCore`](fbcontrolcore.mdx), [`FBVideoCore`](fbvideocore.mdx), [`FBAXCore`](fbaxcore.mdx), [`FBArtifactStaging`](fbartifactstaging.mdx), [`FBXCTestCore`](fbxctestcore.mdx), [`FBSimulatorBridgeProtocol`](fbsimulatorbridgeprotocol.mdx), [`FBSimulatorControl`](fbsimulatorcontrol.mdx), [`FBSimulatorVideo`](fbsimulatorvideo.mdx), [`FBSimulatorAX`](fbsimulatorax.mdx), [`FBSimulatorXCTest`](fbsimulatorxctest.mdx) and [`FBDeviceControl`](fbdevicecontrol.mdx).
 
 ### Targets
 

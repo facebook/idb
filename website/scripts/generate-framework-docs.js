@@ -17,6 +17,7 @@ const FRAMEWORKS = [
   { repoPath: 'FBControlCore', id: 'fbcontrolcore' },
   { repoPath: 'FBVideoCore', id: 'fbvideocore' },
   { repoPath: 'FBAXCore', id: 'fbaxcore' },
+  { repoPath: 'FBArtifactStaging', id: 'fbartifactstaging' },
   { repoPath: 'FBSimulatorBridgeProtocol', id: 'fbsimulatorbridgeprotocol' },
   { repoPath: 'FBSimulatorControl', id: 'fbsimulatorcontrol' },
   { repoPath: 'FBSimulatorVideo', id: 'fbsimulatorvideo' },
