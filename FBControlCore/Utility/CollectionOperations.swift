@@ -10,15 +10,6 @@ import Foundation
 @objc
 public final class CollectionOperations: NSObject {
 
-  @objc(arrayFromIndices:)
-  public class func array(from indices: IndexSet) -> [NSNumber] {
-    var array: [NSNumber] = []
-    for index in indices {
-      array.append(NSNumber(value: index))
-    }
-    return array
-  }
-
   @objc(recursiveFilteredJSONSerializableRepresentationOfDictionary:)
   public class func recursiveFilteredJSONSerializableRepresentation(of input: [String: Any]) -> [String: Any] {
     var output: [String: Any] = [:]
@@ -39,29 +30,6 @@ public final class CollectionOperations: NSObject {
       }
     }
     return output
-  }
-
-  @objc(indicesFromArray:)
-  public class func indices(from array: [NSNumber]) -> IndexSet {
-    var indexSet = IndexSet()
-    for number in array {
-      indexSet.insert(number.intValue)
-    }
-    return indexSet
-  }
-
-  @objc(nullableValueForDictionary:key:)
-  public class func nullableValue(for dictionary: [AnyHashable: Any], key: NSCopying) -> Any? {
-    let value = (dictionary as NSDictionary).object(forKey: key)
-    if value is NSNull {
-      return nil
-    }
-    return value
-  }
-
-  @objc(arrayWithObject:count:)
-  public class func array(with object: Any, count: UInt) -> [Any] {
-    return Array(repeating: object, count: Int(count))
   }
 
   private class func jsonSerializableValueOrNil(_ value: Any) -> Any? {

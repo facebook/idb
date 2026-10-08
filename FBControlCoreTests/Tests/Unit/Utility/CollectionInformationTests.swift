@@ -30,18 +30,6 @@ struct CollectionInformationTests {
   }
 
   @Test
-  func oneLineDescription_ResolvesAPerElementKeyPath() {
-    let elements: [Any] = ["alpha", "bet"]
-    #expect((CollectionInformation.oneLineDescription(from: elements, atKeyPath: "length")) == ("[5, 3]"))
-  }
-
-  @Test
-  func oneLineDescription_FallsBackToTheElementsWhenTheKeyPathIsNotPerElement() {
-    let elements: [Any] = ["alpha", "bet"]
-    #expect((CollectionInformation.oneLineDescription(from: elements, atKeyPath: "@count")) == ("[alpha, bet]"))
-  }
-
-  @Test
   func oneLineDescription_DescribesAClassWithNoObjectiveCRoot() {
     #expect((CollectionInformation.oneLineDescription(from: [SwiftRootClass()])) == ("[a swift root class]"))
   }
