@@ -92,7 +92,9 @@ struct ResourceSamplerTests {
   @Test func sampleReturnsWhenTheTargetExits() async throws {
     let process = Process()
     process.executableURL = URL(fileURLWithPath: "/bin/sleep")
-    process.arguments = ["60"]
+    // Well inside the per-test time limit: a target that is never sampled outlives the sampler by
+    // ending on its own, and the test fails on the missing samples rather than on the limit.
+    process.arguments = ["10"]
     try process.run()
     let pid = process.processIdentifier
     let samples = Samples()
@@ -105,7 +107,7 @@ struct ResourceSamplerTests {
     process.waitUntilExit()
 
     let taken = samples.all
-    #expect(!taken.isEmpty)
+    #expect(!taken.isEmpty, "The sampler never sampled the target before it exited on its own")
     #expect(taken.allSatisfy { $0.pid == pid })
     #expect(taken.first?.cpuPct == nil)
   }
