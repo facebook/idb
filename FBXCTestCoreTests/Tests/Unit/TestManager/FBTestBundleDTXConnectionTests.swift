@@ -83,6 +83,17 @@ final class FBTestBundleDTXConnectionTests: XCTestCase {
       with: NSNumber(value: minimumVersion))
   }
 
+  private struct BundleBecameReady: Error {}
+
+  private func bundleReadyError() async throws -> NSError {
+    do {
+      try await events.bundleReady.wait()
+    } catch {
+      return error as NSError
+    }
+    throw BundleBecameReady()
+  }
+
   private func assertBundleReadyFails(describing expected: String, file: StaticString = #filePath, line: UInt = #line) async {
     do {
       try await events.bundleReady.wait()
@@ -146,6 +157,16 @@ final class FBTestBundleDTXConnectionTests: XCTestCase {
     XCTAssertEqual(interface.calls, [])
   }
 
+  func testAProtocolMismatchIsAStartupFailure() async throws {
+    let connection = try makeConnection()
+
+    bundleReady(connection, protocolVersion: 40, minimumVersion: 37)
+
+    let error = try await bundleReadyError()
+    XCTAssertEqual(error.domain, XCTestBootstrapErrorDomain)
+    XCTAssertEqual(error.code, XCTestBootstrapErrorCode.startupFailure.rawValue)
+  }
+
   func testARunnerReportingReadyMakesTheBundleReady() async throws {
     let connection = try makeConnection()
 
@@ -162,6 +183,32 @@ final class FBTestBundleDTXConnectionTests: XCTestCase {
       with: NSError(domain: "com.example.xctest", code: 3))
 
     await assertBundleReadyFails(describing: "Failed to initialize for UI testing")
+  }
+
+  func testUITestingFailingToInitializeIsAStartupFailureCausedByTheRunnersError() async throws {
+    let connection = try makeConnection()
+
+    _ = connection.perform(
+      NSSelectorFromString("_XCT_initializationForUITestingDidFailWithError:"),
+      with: NSError(domain: "com.example.xctest", code: 3))
+
+    let error = try await bundleReadyError()
+    XCTAssertEqual(error.domain, XCTestBootstrapErrorDomain)
+    XCTAssertEqual(error.code, XCTestBootstrapErrorCode.startupFailure.rawValue)
+    let cause = try XCTUnwrap(error.userInfo[NSUnderlyingErrorKey] as? NSError)
+    XCTAssertEqual(cause.domain, "com.example.xctest")
+    XCTAssertEqual(cause.code, 3)
+  }
+
+  // MARK: - Connection
+
+  /// `XCTestRunMethodHandler` treats `FBTestErrorDomain` as the test process failing, not idb.
+  func testWrappingADeadSocketFailsInTheTestErrorDomain() throws {
+    let connection = try makeConnection()
+
+    XCTAssertThrowsError(try connection.connect()) { error in
+      XCTAssertEqual((error as NSError).domain, FBTestErrorDomain)
+    }
   }
 
   // MARK: - Test plan
