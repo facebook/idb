@@ -37,6 +37,23 @@ final class XCTestResultToolOperationTests: XCTestCase {
     temporaryDirectory.appendingPathComponent("Absent.xcresult").path
   }
 
+  // MARK: - Decoding
+
+  func testAJSONObjectDecodesToItsFields() {
+    XCTAssertEqual(XCTestResultToolOperation.json(from: #"{"actions": {"_values": []}}"#)["actions"] as? NSDictionary, ["_values": []])
+  }
+
+  func testOutputThatIsNotJSONDecodesToAnEmptyRecord() {
+    // BUG: garbled output is indistinguishable from a record with no fields, so the parser later
+    // fails with a misleading "no actions" — flipped in the following commit.
+    XCTAssertEqual(XCTestResultToolOperation.json(from: "xcresulttool: error: something went wrong"), [:])
+  }
+
+  func testAJSONArrayDecodesToAnEmptyRecord() {
+    // BUG: as above, for valid JSON that is not an object — flipped in the following commit.
+    XCTAssertEqual(XCTestResultToolOperation.json(from: "[1, 2]"), [:])
+  }
+
   // MARK: - Exit code policy
 
   func testGettingJSONFailsWhenTheToolExitsNonZero() async throws {

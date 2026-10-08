@@ -77,7 +77,7 @@ final class XCTestResultToolOperation {
     return try await subprocess.run(output: .string, error: .logger(logger), timeout: timeout, logger: logger).standardOutput
   }
 
-  private static func json(from output: String) -> NSDictionary {
+  static func json(from output: String) -> NSDictionary {
     guard let data = output.data(using: .utf8) else {
       return NSDictionary()
     }
