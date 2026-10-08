@@ -9,8 +9,8 @@
 //
 // It walks a target image's Swift metadata and symbol table to reconstruct a
 // best-effort `.swiftinterface` for each module the image contains, and writes
-// one `<Module>.swiftinterface` file per module. It lives ONLY in the `libRepl`
-// shim, never in the shared `ReplExecutor`.
+// one `<Module>.swiftinterface` file per module. It lives only in the `libRepl`
+// shim.
 //
 // Sources used:
 //   - `__TEXT,__swift5_types` type context descriptors  -> type kind, name,

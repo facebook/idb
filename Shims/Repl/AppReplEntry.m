@@ -9,7 +9,7 @@
 
 #import <Foundation/Foundation.h>
 
-#import <ReplExecutor/ReplSocketServer.h>
+#import "ReplSocketServer.h"
 
 // The `app` REPL context: `libRepl` is injected into a launched app via
 // DYLD_INSERT_LIBRARIES, and this constructor starts the control-socket server

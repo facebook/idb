@@ -15,17 +15,6 @@ targets:
           - "**/*.xcodeproj"
           - "project.yml"
           - "Build"
-      - path: ../../REPL/Executor
-    preBuildScripts:
-      - name: Stage ReplExecutor headers
-        # TestRepl.m imports <ReplExecutor/ReplSocketServer.h>. The headers live
-        # in REPL/Executor; stage them under a `ReplExecutor` directory on
-        # HEADER_SEARCH_PATHS so the angle-bracket import resolves.
-        script: |
-          set -e
-          DEST="$TARGET_TEMP_DIR/ReplExecutorHeaders/ReplExecutor"
-          mkdir -p "$DEST"
-          cp "$SRCROOT/../../REPL/Executor/"*.h "$DEST/"
     settings:
       base:
         SDKROOT: iphonesimulator
@@ -38,7 +27,6 @@ targets:
         COPY_PHASE_STRIP: NO
         CODE_SIGN_IDENTITY: "-"
         CLANG_ENABLE_OBJC_ARC: NO
-        HEADER_SEARCH_PATHS: $(inherited) $(TARGET_TEMP_DIR)/ReplExecutorHeaders
         GCC_PREPROCESSOR_DEFINITIONS: $(inherited) SENTEST_IGNORE_DEPRECATION_WARNING=1
         OTHER_CFLAGS: $(inherited) -Wno-deprecated-declarations
         # TestRepl subclasses XCTestCase (forward-declared in XCTestPrivate.h, not
@@ -61,15 +49,6 @@ targets:
           - "**/*.xcodeproj"
           - "project.yml"
           - "Build"
-      - path: ../../REPL/Executor
-    preBuildScripts:
-      - name: Stage ReplExecutor headers
-        # See Repl-iOS above.
-        script: |
-          set -e
-          DEST="$TARGET_TEMP_DIR/ReplExecutorHeaders/ReplExecutor"
-          mkdir -p "$DEST"
-          cp "$SRCROOT/../../REPL/Executor/"*.h "$DEST/"
     settings:
       base:
         SDKROOT: macosx
@@ -82,7 +61,6 @@ targets:
         COPY_PHASE_STRIP: NO
         CODE_SIGN_IDENTITY: "-"
         CLANG_ENABLE_OBJC_ARC: NO
-        HEADER_SEARCH_PATHS: $(inherited) $(TARGET_TEMP_DIR)/ReplExecutorHeaders
         GCC_PREPROCESSOR_DEFINITIONS: $(inherited) SENTEST_IGNORE_DEPRECATION_WARNING=1
         OTHER_CFLAGS: $(inherited) -Wno-deprecated-declarations
         # See Repl-iOS: XCTestCase is provided by the injected xctest host, and

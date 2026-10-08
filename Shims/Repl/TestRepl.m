@@ -7,7 +7,7 @@
 
 #import "TestRepl.h"
 
-#import <ReplExecutor/ReplSocketServer.h>
+#import "ReplSocketServer.h"
 
 // Walks the target image's Swift metadata and writes <Module>.swiftinterface
 // file(s); returns the written paths joined by newlines in a malloc'd string
@@ -34,7 +34,7 @@ extern const char *FBReplGenerateSwiftInterface(const char *outDir, const char *
     }
   }
 
-  // Start the shared ReplExecutor with the requested socket path. The test host
+  // Start the socket server with the requested socket path. The test host
   // exits when the session ends, so serve a single connection (keepListening: NO).
   NSString *socketPath = environment[@"IDB_REPL_SOCKET_PATH"];
   FBReplServeSocket(socketPath, generatedInterfaces, NO);
