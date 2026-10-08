@@ -50,6 +50,40 @@ private final class RecordingReporter: NSObject, XCTestReporter, @unchecked Send
   func didCrashDuringTest(_ error: Error) {}
 }
 
+/// Serves xcresult records from memory, keyed by id with `nil` for the root, and records exports.
+private final class FakeXCResult: XCResultReading, @unchecked Sendable {
+
+  var root: [String: Any] = [:]
+  var records: [String: [String: Any]] = [:]
+  private(set) var exports: [(destination: String, id: String, type: String)] = []
+
+  struct Missing: Error {}
+
+  func record(forId bundleObjectId: String?, timeout: TimeInterval?) async throws -> NSDictionary {
+    guard let bundleObjectId else {
+      return root as NSDictionary
+    }
+    guard let record = records[bundleObjectId] else {
+      throw Missing()
+    }
+    return record as NSDictionary
+  }
+
+  func exportJPEG(to destination: String, forId bundleObjectId: String, type encodeType: String, timeout: TimeInterval?) async throws {
+    exports.append((destination, bundleObjectId, encodeType))
+  }
+}
+
+/// xcresulttool's JSON wraps every scalar as `{"_value": "…"}`, with the value as a string, and
+/// every array as `{"_values": […]}`.
+private func value(_ value: String) -> [String: Any] {
+  ["_value": value]
+}
+
+private func values(_ values: [[String: Any]]) -> [String: Any] {
+  ["_values": values]
+}
+
 @Suite
 struct XCTestResultBundleParserTests {
 
@@ -60,9 +94,9 @@ struct XCTestResultBundleParserTests {
     try FileManager.default.createDirectory(at: resultBundle, withIntermediateDirectories: true)
   }
 
-  private func parse() async throws -> [RecordingReporter.Event] {
+  private func parse(xcresult: FakeXCResult = FakeXCResult(), extractScreenshots: Bool = false) async throws -> [RecordingReporter.Event] {
     let reporter = RecordingReporter()
-    try await XCTestResultBundleParser.parse(resultBundle.path, reporter: reporter, logger: ControlCoreGlobalConfiguration.defaultLogger, extractScreenshots: false)
+    try await XCTestResultBundleParser.parse(resultBundle.path, reporter: reporter, logger: ControlCoreGlobalConfiguration.defaultLogger, extractScreenshots: extractScreenshots, tool: xcresult)
     return reporter.events
   }
 
@@ -180,6 +214,179 @@ struct XCTestResultBundleParserTests {
       _ = try await parse()
     } throws: { error in
       guard case XCTestResultBundleError.unexpectedType(key: "TestStatus", expected: _) = error else { return false }
+      return true
+    }
+  }
+
+  // MARK: - xcresult
+
+  private func xcresult(methods: [[String: Any]], summaries: [String: [String: Any]] = [:]) throws -> FakeXCResult {
+    (["version": ["major": 3, "minor": 39]] as NSDictionary).write(to: resultBundle.appendingPathComponent("Info.plist"), atomically: true)
+    let xcresult = FakeXCResult()
+    xcresult.root = ["actions": values([["actionResult": ["testsRef": ["id": value("TESTS")]]]])]
+    xcresult.records["TESTS"] = [
+      "summaries": values([
+        [
+          "testableSummaries": values([
+            [
+              "targetName": value("MyTests"),
+              "tests": values([["subtests": values([["subtests": values([["identifier": value("MyTestClass"), "subtests": values(methods)]])]])]]),
+            ]
+          ])
+        ]
+      ])
+    ]
+    xcresult.records.merge(summaries) { $1 }
+    return xcresult
+  }
+
+  private func method(_ identifier: String, status: String, duration: String = "0.5", summaryRef: String? = nil) -> [String: Any] {
+    var method: [String: Any] = [
+      "identifier": value(identifier),
+      "name": value("\(identifier)()"),
+      "testStatus": value(status),
+      "duration": value(duration),
+    ]
+    if let summaryRef {
+      method["summaryRef"] = ["id": value(summaryRef)]
+    }
+    return method
+  }
+
+  private let startTest: [String: Any] = [
+    "activityType": value("com.apple.dt.xctest.activity-type.internal"),
+    "title": value("Start Test"),
+    "start": value("2023-01-01T10:00:00.000+0000"),
+    "subactivities": values([["title": value("Set Up"), "start": value("2023-01-01T10:00:00.250+0000")]]),
+  ]
+
+  @Test
+  func aPassingTestIsReportedWithItsInternalActivitiesAsLogs() async throws {
+    let xcresult = try xcresult(
+      methods: [method("testPasses", status: "Success", summaryRef: "SUMMARY")],
+      summaries: ["SUMMARY": ["activitySummaries": values([startTest])]])
+
+    #expect(
+      try await parse(xcresult: xcresult) == [
+        .started(testClass: "MyTestClass", method: "testPasses"),
+        // BUG: xcresulttool's duration "0.5" is a string, which is read as an NSNumber and falls
+        // back to 0 — flipped in the following commit.
+        .finished(
+          testClass: "MyTestClass", method: "testPasses", status: .passed, duration: 0,
+          logs: [
+            "Test Case '-[MyTests.MyTestClass testPasses]' started.",
+            "    t =     0.00s Start Test",
+            "    t =     0.25s     Set Up",
+            "Test Case '-[MyTests.MyTestClass testPasses]' passed in 0.000 seconds",
+          ]),
+      ])
+  }
+
+  @Test
+  func aFailingTestReportsItsFailureMessages() async throws {
+    let xcresult = try xcresult(
+      methods: [method("testFails", status: "Failure", summaryRef: "SUMMARY")],
+      summaries: ["SUMMARY": ["failureSummaries": values([["message": value("first")], ["message": value("second")]])]])
+
+    let events = try await parse(xcresult: xcresult)
+    #expect(events.count == 3)
+    #expect(events[1] == .failed(testClass: "MyTestClass", method: "testFails", messages: ["first\nsecond"]))
+  }
+
+  @Test
+  func aTestWithoutASummaryStartsButNeverFinishes() async throws {
+    let xcresult = try xcresult(methods: [method("testNoSummary", status: "Success")])
+
+    #expect(try await parse(xcresult: xcresult) == [.started(testClass: "MyTestClass", method: "testNoSummary")])
+  }
+
+  @Test
+  func aTestWhoseSummaryCannotBeReadStartsButNeverFinishes() async throws {
+    let xcresult = try xcresult(methods: [method("testUnreadable", status: "Success", summaryRef: "MISSING")])
+
+    #expect(try await parse(xcresult: xcresult) == [.started(testClass: "MyTestClass", method: "testUnreadable")])
+  }
+
+  @Test
+  func aTargetWithoutTestsReportsItsFailuresAgainstNoTest() async throws {
+    let xcresult = try xcresult(methods: [])
+    xcresult.records["TESTS"] = [
+      "summaries": values([
+        ["testableSummaries": values([["targetName": value("MyTests"), "failureSummaries": values([["message": value("launch failed")]])]])]
+      ])
+    ]
+
+    #expect(try await parse(xcresult: xcresult) == [.failed(testClass: "", method: "", messages: ["launch failed"])])
+  }
+
+  @Test
+  func performanceMetricsAreSavedBesideTheBundle() async throws {
+    let xcresult = try xcresult(
+      methods: [method("testMeasures", status: "Success", summaryRef: "SUMMARY")],
+      summaries: [
+        "SUMMARY": [
+          "performanceMetrics": values([
+            [
+              "displayName": value("Clock Monotonic Time"),
+              "unitOfMeasurement": value("s"),
+              "identifier": value("com.apple.dt.XCTMetric_Clock.time.monotonic"),
+              "measurements": values([value("0.1"), value("0.2")]),
+            ]
+          ])
+        ]
+      ])
+
+    _ = try await parse(xcresult: xcresult)
+
+    let metricsFile = resultBundle.appendingPathComponent("Metrics/MyTests_MyTestClass_testMeasures.json")
+    let metrics = try #require(try JSONSerialization.jsonObject(with: Data(contentsOf: metricsFile)) as? [[String: Any]])
+    #expect(metrics.count == 1)
+    #expect(metrics[0]["name"] as? String == "Clock Monotonic Time")
+    #expect(metrics[0]["unit"] as? String == "s")
+    #expect(metrics[0]["identifier"] as? String == "com.apple.dt.XCTMetric_Clock.time.monotonic")
+    // BUG: the measurements are strings, which are read as NSNumbers and dropped — flipped in the
+    // following commit.
+    #expect((metrics[0]["measurements"] as? [Double]) == [])
+  }
+
+  @Test
+  func screenshotsAreExportedOnlyWhenAsked() async throws {
+    let screenshotActivity: [String: Any] = [
+      "activityType": value("com.apple.dt.xctest.activity-type.userCreated"),
+      "title": value("Take Screenshot"),
+      "start": value("2023-01-01T10:00:00.000+0000"),
+      "attachments": values([
+        [
+          "filename": value("Screenshot_1.heic"),
+          "payloadRef": ["id": value("PAYLOAD")],
+          "uniformTypeIdentifier": value("public.heic"),
+          "timestamp": value("TIME"),
+        ],
+        ["filename": value("log.txt"), "payloadRef": ["id": value("LOG")], "uniformTypeIdentifier": value("public.plain-text")],
+      ]),
+    ]
+    let summaries = ["SUMMARY": ["activitySummaries": values([screenshotActivity])]]
+
+    let notAsked = try xcresult(methods: [method("testScreens", status: "Success", summaryRef: "SUMMARY")], summaries: summaries)
+    _ = try await parse(xcresult: notAsked, extractScreenshots: false)
+    #expect(notAsked.exports.isEmpty)
+
+    let asked = try xcresult(methods: [method("testScreens", status: "Success", summaryRef: "SUMMARY")], summaries: summaries)
+    _ = try await parse(xcresult: asked, extractScreenshots: true)
+    #expect(asked.exports.map(\.id) == ["PAYLOAD"])
+    #expect(asked.exports.first?.type == "public.heic")
+    #expect(asked.exports.first?.destination == resultBundle.appendingPathComponent("Attachments/TIME_Screenshot_1.jpg").path)
+  }
+
+  @Test
+  func aRootRecordWithoutActionsFailsTheParse() async throws {
+    let xcresult = try xcresult(methods: [])
+    xcresult.root = [:]
+
+    await #expect {
+      _ = try await parse(xcresult: xcresult)
+    } throws: { error in
+      guard case XCTestResultBundleError.noActions = error else { return false }
       return true
     }
   }
