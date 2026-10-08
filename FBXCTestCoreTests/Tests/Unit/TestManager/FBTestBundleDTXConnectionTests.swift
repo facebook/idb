@@ -6,8 +6,8 @@
  */
 
 import FBControlCore
+@testable import FBXCTestCore
 import XCTest
-@testable import XCTestBootstrap
 
 /// Records the bundle callbacks the connection forwards to the IDE interface.
 private final class RecordingIDEInterface: NSObject {
