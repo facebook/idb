@@ -26,7 +26,7 @@ public enum FBArchiveOperations {
   private static let NoMacMetadataFlag = "--no-mac-metadata"
 
   /// Builds a command to extract from a file on disk.
-  public static func commandToExtractArchive(
+  static func commandToExtractArchive(
     atPath path: String,
     toPath extractPath: String,
     overrideModificationTime overrideMTime: Bool,
@@ -38,7 +38,7 @@ public enum FBArchiveOperations {
 
   /// Extracts a tar or zip file archive to a directory. The file can be an uncompressed tar, a
   /// gzipped tar, or a zip.
-  public static func extractArchive(
+  static func extractArchive(
     atPath path: String,
     toPath extractPath: String,
     overrideModificationTime overrideMTime: Bool,
@@ -55,7 +55,7 @@ public enum FBArchiveOperations {
   }
 
   /// Builds a command to extract via stdin.
-  public static func commandToExtractFromStdIn(
+  static func commandToExtractFromStdIn(
     withExtractPath extractPath: String,
     overrideModificationTime overrideMTime: Bool,
     debugLogging: Bool
@@ -66,7 +66,7 @@ public enum FBArchiveOperations {
 
   /// Extracts a tar or zip read from `source` to a directory. The stream can be an uncompressed tar, a
   /// gzipped tar, or a zip.
-  public static func extractArchive(
+  static func extractArchive(
     from source: any ByteSource,
     toPath extractPath: String,
     overrideModificationTime overrideMTime: Bool,
@@ -81,7 +81,7 @@ public enum FBArchiveOperations {
 
   /// Decompresses a gzip read from `source` to a single file. A plain gzip wrapping a single file is
   /// preferred when there's only a single file to transfer.
-  public static func extractGzip(
+  static func extractGzip(
     from source: any ByteSource,
     toPath extractPath: String
   ) async throws {

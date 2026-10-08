@@ -162,10 +162,11 @@ struct ArchiveCorpusTests {
   private func resolve(_ source: Source, archive: URL, contents: Data, keepHardLinks: Bool, directoryTimes: Bool) async throws -> Outcome {
     let (installSource, configuration) = installSource(source, archive: archive, contents: contents)
     do {
-      return try await ApplicationArchive.withResolvedBundle(
-        from: installSource, downloadConfiguration: configuration, temporaryDirectory: temporaryDirectory, logger: logger
-      ) { bundle in
-        .extracted(try ArchiveFixtures.tree(at: (bundle.path as NSString).deletingLastPathComponent, keepHardLinks: keepHardLinks, directoryTimes: directoryTimes))
+      return try await Staging.withMaterialized(
+        installSource, as: .application, downloadConfiguration: configuration, temporaryDirectory: temporaryDirectory, logger: logger
+      ) { tree in
+        let bundle = try Artifact.applicationBundle(in: tree, logger: logger)
+        return .extracted(try ArchiveFixtures.tree(at: (bundle.path as NSString).deletingLastPathComponent, keepHardLinks: keepHardLinks, directoryTimes: directoryTimes))
       }
     } catch InstallError.extractionFailed(let underlying) {
       return .failed("\(underlying)")

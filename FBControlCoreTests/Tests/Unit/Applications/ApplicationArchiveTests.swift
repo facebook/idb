@@ -100,14 +100,15 @@ final class ApplicationArchiveTests: XCTestCase {
     downloadConfiguration: URLSessionConfiguration = .default
   ) async throws -> (identifier: String, path: String, events: [InstallProgressEvent]) {
     let collected = EventCollector()
-    let result = try await ApplicationArchive.withResolvedBundle(
-      from: source,
+    let result = try await Staging.withMaterialized(
+      source, as: .application,
       downloadConfiguration: downloadConfiguration,
       temporaryDirectory: temporaryDirectory,
       logger: logger,
       onProgress: collected.append
-    ) { bundle in
-      (bundle.identifier, bundle.path)
+    ) { tree in
+      let bundle = try Artifact.applicationBundle(in: tree, logger: logger)
+      return (bundle.identifier, bundle.path)
     }
     return (result.0, result.1, collected.events)
   }
@@ -118,13 +119,15 @@ final class ApplicationArchiveTests: XCTestCase {
     downloadConfiguration: URLSessionConfiguration = .default
   ) async throws -> [StagingReport] {
     let collected = Collector<StagingReport>()
-    try await ApplicationArchive.withResolvedBundle(
-      from: source,
+    try await Staging.withMaterialized(
+      source, as: .application,
       downloadConfiguration: downloadConfiguration,
       temporaryDirectory: temporaryDirectory,
       logger: logger,
       onReport: collected.append
-    ) { _ in }
+    ) { tree in
+      _ = try Artifact.applicationBundle(in: tree, logger: logger)
+    }
     return collected.values
   }
 
@@ -335,13 +338,14 @@ final class ApplicationArchiveTests: XCTestCase {
     let configuration = URLSessionConfiguration.ephemeral
     configuration.protocolClasses = [StubURLProtocol.self]
 
-    let linkType = try await ApplicationArchive.withResolvedBundle(
-      from: .remoteURL(Self.stubbedURL),
+    let linkType = try await Staging.withMaterialized(
+      .remoteURL(Self.stubbedURL), as: .application,
       downloadConfiguration: configuration,
       temporaryDirectory: temporaryDirectory,
       logger: logger
-    ) { bundle in
-      try FileManager.default.attributesOfItem(
+    ) { tree in
+      let bundle = try Artifact.applicationBundle(in: tree, logger: logger)
+      return try FileManager.default.attributesOfItem(
         atPath: (bundle.path as NSString).appendingPathComponent("Link.plist"))[.type] as? FileAttributeType
     }
 
@@ -406,9 +410,10 @@ final class ApplicationArchiveTests: XCTestCase {
     let archive = try await makeArchiveFile()
     let before = leftBehind
 
-    _ = try await ApplicationArchive.withResolvedBundle(
-      from: .localPath(archive), temporaryDirectory: temporaryDirectory, logger: logger
-    ) { bundle in
+    _ = try await Staging.withMaterialized(
+      .localPath(archive), as: .application, temporaryDirectory: temporaryDirectory, logger: logger
+    ) { tree in
+      let bundle = try Artifact.applicationBundle(in: tree, logger: logger)
       XCTAssertTrue(
         URL(fileURLWithPath: bundle.path).resolvingSymlinksInPath().path
           .hasPrefix(scratchRoot.resolvingSymlinksInPath().path),
@@ -425,8 +430,8 @@ final class ApplicationArchiveTests: XCTestCase {
     let archive = try await makeArchiveFile()
 
     do {
-      _ = try await ApplicationArchive.withResolvedBundle(
-        from: .localPath(archive), temporaryDirectory: temporaryDirectory, logger: logger
+      _ = try await Staging.withMaterialized(
+        .localPath(archive), as: .application, temporaryDirectory: temporaryDirectory, logger: logger
       ) { _ in
         throw CallerFailure()
       }
