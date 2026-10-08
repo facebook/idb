@@ -643,6 +643,18 @@ final class FBFutureTests: XCTestCase {
       ], timeout: ControlCoreGlobalConfiguration.fastTimeout)
   }
 
+  func testTimeoutFailsInTheControlCoreDomainNamingWhatItWaitedFor() async throws {
+    do {
+      try await bridgeFBFutureVoid(FBMutableFuture<NSNull>().timeout(0.05, waitingFor: "the thing"))
+      XCTFail("A future that never resolves should time out")
+    } catch {
+      let error = error as NSError
+      XCTAssertEqual(error.domain, "com.facebook.FBControlCore")
+      XCTAssertEqual(error.code, 0)
+      XCTAssertEqual(error.localizedDescription, "Timed out after 0.050000 seconds waiting for the thing")
+    }
+  }
+
   func testFallback() {
     let error = NSError(domain: "foo", code: 0, userInfo: nil)
     let future = FBFuture<AnyObject>(error: error).fallback(NSNumber(value: true)).delay(0.1)
