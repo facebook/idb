@@ -83,6 +83,40 @@ final class SimulatorLaunchedApplicationTests: XCTestCase {
     XCTAssertTrue(output.finishedConsuming.isOpen)
   }
 
+  /// Fails the test, with `state()`, if `operation` is still running after `seconds`, rather than
+  /// letting it run into the bundle's time allowance, which restarts the bundle and says nothing about
+  /// what hung. An operation that overruns is left running.
+  private func expectFinish(
+    _ what: String,
+    within seconds: TimeInterval = 15,
+    state: @escaping @Sendable () -> String,
+    _ operation: @escaping @Sendable () async throws -> Void
+  ) async throws {
+    let finished = try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Bool, Error>) in
+      let once = ResumeOnce(continuation)
+      Task {
+        do {
+          try await operation()
+          once.resume(with: .success(true))
+        } catch {
+          once.resume(with: .failure(error))
+        }
+      }
+      Task {
+        try? await Task.sleep(for: .seconds(seconds))
+        once.resume(with: .success(false))
+      }
+    }
+    if !finished {
+      XCTFail("\(what) did not finish within \(seconds) seconds: \(state())")
+    }
+  }
+
+  private static func describe(_ application: SimulatorLaunchedApplication, _ process: Process) -> String {
+    let signalable = kill(process.processIdentifier, 0) == 0 ? "signalable" : "gone (\(String(cString: strerror(errno))))"
+    return "\(application); Process.isRunning \(process.isRunning); pid \(signalable)"
+  }
+
   /// The output is finished after the termination, which lands on the simulator's work queue after
   /// the waiter has been woken.
   private func waitForOutputToFinish(timeout: TimeInterval = 5) async {
@@ -95,10 +129,14 @@ final class SimulatorLaunchedApplicationTests: XCTestCase {
   func testTerminateKillsTheProcess() async throws {
     let process = try spawnBlockedProcess()
     let application = try await launchedApplication(forProcess: process)
+    let state = { @Sendable in Self.describe(application, process) }
 
-    try await application.terminate()
-
-    process.waitUntilExit()
+    try await expectFinish("terminate()", state: state) {
+      try await application.terminate()
+    }
+    try await expectFinish("The process's exit", state: state) {
+      await Task.detached { process.waitUntilExit() }.value
+    }
     XCTAssertFalse(process.isRunning)
   }
 
@@ -124,5 +162,24 @@ final class SimulatorLaunchedApplicationTests: XCTestCase {
 
     await waitForOutputToFinish()
     XCTAssertTrue(output.finishedConsuming.isOpen)
+  }
+}
+
+/// Resumes a continuation with whichever result arrives first.
+// SAFETY: `continuation` is only read and cleared while holding `lock`.
+private final class ResumeOnce: @unchecked Sendable {
+  private let lock = NSLock()
+  private var continuation: CheckedContinuation<Bool, Error>?
+
+  init(_ continuation: CheckedContinuation<Bool, Error>) {
+    self.continuation = continuation
+  }
+
+  func resume(with result: Result<Bool, Error>) {
+    lock.lock()
+    let continuation = self.continuation
+    self.continuation = nil
+    lock.unlock()
+    continuation?.resume(with: result)
   }
 }
