@@ -69,9 +69,7 @@ struct DeviceLinkClientTests {
   func aReplyThatIsNotAnArrayIsRejected() async {
     let error = await error(processing: [:], replies: ["nope"])
 
-    // BUG: the received message comes back as an `Optional` inside `Any`, so the reply is described
-    // as "Optional(nope)" — flipped in a following commit.
-    #expect(error == "Result is not an NSArray: Optional(nope)")
+    #expect(error == "Result is not an NSArray: nope")
   }
 
   @Test

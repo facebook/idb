@@ -22,6 +22,7 @@ private let ReaderDrainTimeout: TimeInterval = 5
 public enum LockdownServiceConnectionError: Error {
   case sendMessageFailed(errorText: String, message: String, code: Int32)
   case receiveMessageFailed(errorText: String, code: Int32)
+  case receivedNoMessage
   case noConnectionToInvalidate
   case invalidateFailed(connection: String, errorText: String)
   case sendFailed(bytes: Int, reason: String)
@@ -41,6 +42,8 @@ extension LockdownServiceConnectionError: LocalizedError {
       return "Failed to send message \(errorText) (\(message) code \(code))"
     case let .receiveMessageFailed(errorText, code):
       return "Failed to receive message (\(errorText)): code \(code)"
+    case .receivedNoMessage:
+      return "Receiving a message succeeded without a message"
     case .noConnectionToInvalidate:
       return "No connection to invalidate"
     case let .invalidateFailed(connection, errorText):
@@ -128,7 +131,10 @@ public final class LockdownServiceConnection: CustomStringConvertible {
     guard result == 0 else {
       throw LockdownServiceConnectionError.receiveMessageFailed(errorText: errorText(result), code: result)
     }
-    return message?.takeRetainedValue() as Any
+    guard let message else {
+      throw LockdownServiceConnectionError.receivedNoMessage
+    }
+    return message.takeRetainedValue()
   }
 
   func sendAndReceiveMessage(_ message: Any) throws -> Any {
