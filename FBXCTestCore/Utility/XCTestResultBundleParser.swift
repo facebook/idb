@@ -30,20 +30,54 @@ private func readNumberFromDict(_ dict: NSDictionary, _ key: String) throws -> N
   try read(dict, key, as: NSNumber.self)
 }
 
-private func readDoubleFromDict(_ dict: NSDictionary, _ key: String) throws -> Double {
-  try readNumberFromDict(dict, key).doubleValue
-}
-
-private func readStringFromDict(_ dict: NSDictionary, _ key: String) throws -> String {
-  try read(dict, key, as: String.self)
-}
-
 private func readDictionaryFromDict(_ dict: NSDictionary, _ key: String) throws -> NSDictionary {
   try read(dict, key, as: NSDictionary.self)
 }
 
-private func readDictionaryArrayFromDict(_ dict: NSDictionary, _ key: String) throws -> [NSDictionary] {
-  try read(dict, key, as: [NSDictionary].self)
+/// A decoded plist or JSON object, read through accessors that fail with the field they expected.
+struct ResultRecord {
+  let fields: [String: Any]
+
+  init(_ fields: [String: Any]) {
+    self.fields = fields
+  }
+
+  /// Reads a property list file, or returns nil when there is none to read.
+  init?(contentsOfPropertyList path: String) {
+    guard let data = FileManager.default.contents(atPath: path),
+      let fields = (try? PropertyListSerialization.propertyList(from: data, format: nil)) as? [String: Any]
+    else {
+      return nil
+    }
+    self.init(fields)
+  }
+
+  func value<T>(_ key: String, as type: T.Type) throws -> T {
+    guard let value = fields[key] else {
+      throw XCTestResultBundleError.missingKey(key)
+    }
+    guard let typed = value as? T else {
+      throw XCTestResultBundleError.unexpectedType(key: key, expected: String(describing: type))
+    }
+    return typed
+  }
+
+  func string(_ key: String) throws -> String {
+    try value(key, as: String.self)
+  }
+
+  func double(_ key: String) throws -> Double {
+    try value(key, as: Double.self)
+  }
+
+  func records(_ key: String) throws -> [ResultRecord] {
+    try value(key, as: [[String: Any]].self).map(ResultRecord.init)
+  }
+
+  /// The records under `key`, or nil when the key is absent or holds something else.
+  func optionalRecords(_ key: String) -> [ResultRecord]? {
+    (fields[key] as? [[String: Any]])?.map(ResultRecord.init)
+  }
 }
 
 private func unwrapValues(_ wrapped: NSDictionary) -> NSArray? {
@@ -118,7 +152,7 @@ final class XCTestResultBundleParser {
     logger.log("Parsing the result bundle \(resultBundlePath)")
 
     let testSummariesPath = (resultBundlePath as NSString).appendingPathComponent("TestSummaries.plist")
-    let results = NSDictionary(contentsOfFile: testSummariesPath)
+    let results = ResultRecord(contentsOfPropertyList: testSummariesPath)
     let resultBundleInfoPath = (resultBundlePath as NSString).appendingPathComponent("Info.plist")
     let bundleInfo = NSDictionary(contentsOfFile: resultBundleInfoPath)
     let bundleFormatVersion = bundleInfo?["version"]
@@ -151,72 +185,26 @@ final class XCTestResultBundleParser {
 
   // MARK: - Private: Legacy XCTest Result Parsing
 
-  private static func reportResultsLegacy(_ results: NSDictionary, reporter: XCTestReporter) throws {
-    let testTargets = results["TestableSummaries"] as? [NSDictionary]
-    try reportTargetTestsLegacy(testTargets, reporter: reporter)
-  }
-
-  private static func reportTargetTestsLegacy(_ targetTests: [NSDictionary]?, reporter: XCTestReporter) throws {
-    guard let targetTests else { return }
-    for targetTest in targetTests {
-      try reportTargetTestLegacy(targetTest, reporter: reporter)
+  private static func reportResultsLegacy(_ results: ResultRecord, reporter: XCTestReporter) throws {
+    for targetTest in results.optionalRecords("TestableSummaries") ?? [] {
+      let testBundleName = try targetTest.string("TestName")
+      for selectedTest in targetTest.optionalRecords("Tests") ?? [] {
+        for testTargetXctest in selectedTest.optionalRecords("Subtests") ?? [] {
+          for testClass in testTargetXctest.optionalRecords("Subtests") ?? [] {
+            let testClassName = try testClass.string("TestIdentifier")
+            for testMethod in testClass.optionalRecords("Subtests") ?? [] {
+              try reportTestMethodLegacy(testMethod, testBundleName: testBundleName, testClassName: testClassName, reporter: reporter)
+            }
+          }
+        }
+      }
     }
   }
 
-  private static func reportTargetTestLegacy(_ targetTest: NSDictionary, reporter: XCTestReporter) throws {
-    let testBundleName = try readStringFromDict(targetTest, "TestName")
-    let selectedTests = targetTest["Tests"] as? [NSDictionary]
-    try reportSelectedTestsLegacy(selectedTests, testBundleName: testBundleName, reporter: reporter)
-  }
-
-  private static func reportSelectedTestsLegacy(_ selectedTests: [NSDictionary]?, testBundleName: String, reporter: XCTestReporter) throws {
-    guard let selectedTests else { return }
-    for selectedTest in selectedTests {
-      try reportSelectedTestLegacy(selectedTest, testBundleName: testBundleName, reporter: reporter)
-    }
-  }
-
-  private static func reportSelectedTestLegacy(_ selectedTest: NSDictionary, testBundleName: String, reporter: XCTestReporter) throws {
-    let testTargetXctests = selectedTest["Subtests"] as? [NSDictionary]
-    try reportTestTargetXctestsLegacy(testTargetXctests, testBundleName: testBundleName, reporter: reporter)
-  }
-
-  private static func reportTestTargetXctestsLegacy(_ testTargetXctests: [NSDictionary]?, testBundleName: String, reporter: XCTestReporter) throws {
-    guard let testTargetXctests else { return }
-    for testTargetXctest in testTargetXctests {
-      try reportTestTargetXctestLegacy(testTargetXctest, testBundleName: testBundleName, reporter: reporter)
-    }
-  }
-
-  private static func reportTestTargetXctestLegacy(_ testTargetXctest: NSDictionary, testBundleName: String, reporter: XCTestReporter) throws {
-    let testClasses = testTargetXctest["Subtests"] as? [NSDictionary]
-    try reportTestClassesLegacy(testClasses, testBundleName: testBundleName, reporter: reporter)
-  }
-
-  private static func reportTestClassesLegacy(_ testClasses: [NSDictionary]?, testBundleName: String, reporter: XCTestReporter) throws {
-    guard let testClasses else { return }
-    for testClass in testClasses {
-      try reportTestClassLegacy(testClass, testBundleName: testBundleName, reporter: reporter)
-    }
-  }
-
-  private static func reportTestClassLegacy(_ testClass: NSDictionary, testBundleName: String, reporter: XCTestReporter) throws {
-    let testClassName = try readStringFromDict(testClass, "TestIdentifier")
-    let testMethods = testClass["Subtests"] as? [NSDictionary]
-    try reportTestMethodsLegacy(testMethods, testBundleName: testBundleName, testClassName: testClassName, reporter: reporter)
-  }
-
-  private static func reportTestMethodsLegacy(_ testMethods: [NSDictionary]?, testBundleName: String, testClassName: String, reporter: XCTestReporter) throws {
-    guard let testMethods else { return }
-    for testMethod in testMethods {
-      try reportTestMethodLegacy(testMethod, testBundleName: testBundleName, testClassName: testClassName, reporter: reporter)
-    }
-  }
-
-  private static func reportTestMethodLegacy(_ testMethod: NSDictionary, testBundleName: String, testClassName: String, reporter: XCTestReporter) throws {
-    let testStatus = try readStringFromDict(testMethod, "TestStatus")
-    let testMethodName = try readStringFromDict(testMethod, "TestIdentifier")
-    let duration = try readNumberFromDict(testMethod, "Duration")
+  private static func reportTestMethodLegacy(_ testMethod: ResultRecord, testBundleName: String, testClassName: String, reporter: XCTestReporter) throws {
+    let testStatus = try testMethod.string("TestStatus")
+    let testMethodName = try testMethod.string("TestIdentifier")
+    let duration = try testMethod.double("Duration")
 
     var status = FBTestReportStatus.unknown
     if testStatus == "Success" {
@@ -226,37 +214,32 @@ final class XCTestResultBundleParser {
       status = .failed
     }
 
-    let activitySummaries = try readDictionaryArrayFromDict(testMethod, "ActivitySummaries")
-    let logs = try buildTestLogLegacy(activitySummaries, testBundleName: testBundleName, testClassName: testClassName, testMethodName: testMethodName, testPassed: status == .passed, duration: duration.doubleValue)
+    let activitySummaries = try testMethod.records("ActivitySummaries")
+    let logs = try buildTestLogLegacy(activitySummaries, testBundleName: testBundleName, testClassName: testClassName, testMethodName: testMethodName, testPassed: status == .passed, duration: duration)
 
     reporter.testCaseDidStart(forTestClass: testClassName, method: testMethodName)
     if status == .failed {
-      let failureSummaries = try readDictionaryArrayFromDict(testMethod, "FailureSummaries")
+      let failureMessages = try testMethod.records("FailureSummaries").map { try $0.string("Message") }
       reporter.testCaseDidFail(
         forTestClass: testClassName, method: testMethodName,
         exceptions: [
-          TestExceptionInfo(message: try buildErrorMessageLegacy(failureSummaries))
+          TestExceptionInfo(message: failureMessages.joined(separator: "\n"))
         ])
     }
-    reporter.testCaseDidFinish(forTestClass: testClassName, method: testMethodName, with: status, duration: duration.doubleValue, logs: logs)
+    reporter.testCaseDidFinish(forTestClass: testClassName, method: testMethodName, with: status, duration: duration, logs: logs)
   }
 
-  private static func buildTestLogLegacy(_ activitySummaries: [NSDictionary], testBundleName: String, testClassName: String, testMethodName: String, testPassed: Bool, duration: Double) throws -> [String] {
+  private static func buildTestLogLegacy(_ activitySummaries: [ResultRecord], testBundleName: String, testClassName: String, testMethodName: String, testPassed: Bool, duration: Double) throws -> [String] {
     var logs: [String] = []
     let testCaseFullName = "-[\(testBundleName).\(testClassName) \(testMethodName)]"
     logs.append("Test Case '\(testCaseFullName)' started.")
 
-    var testStartTimeInterval: Double = 0
-    var startTimeSet = false
+    var testStartTimeInterval: Double?
     for activitySummary in activitySummaries {
-      if !startTimeSet {
-        testStartTimeInterval = try readDoubleFromDict(activitySummary, "StartTimeInterval")
-        startTimeSet = true
-      }
-
-      let activityType = try readStringFromDict(activitySummary, "ActivityType")
-      if activityType == "com.apple.dt.xctest.activity-type.internal" {
-        try addTestLogsFromLegacyActivitySummary(activitySummary, logs: &logs, testStartTimeInterval: testStartTimeInterval, indent: 0)
+      let startTimeInterval = try testStartTimeInterval ?? activitySummary.double("StartTimeInterval")
+      testStartTimeInterval = startTimeInterval
+      if try activitySummary.string("ActivityType") == "com.apple.dt.xctest.activity-type.internal" {
+        try addTestLogsFromLegacyActivitySummary(activitySummary, logs: &logs, testStartTimeInterval: startTimeInterval, indent: 0)
       }
     }
 
@@ -264,28 +247,15 @@ final class XCTestResultBundleParser {
     return logs
   }
 
-  private static func addTestLogsFromLegacyActivitySummary(_ activitySummary: NSDictionary, logs: inout [String], testStartTimeInterval: Double, indent: UInt) throws {
-    let message = try readStringFromDict(activitySummary, "Title")
-    let startTimeInterval = try readDoubleFromDict(activitySummary, "StartTimeInterval")
-    let elapsed = startTimeInterval - testStartTimeInterval
+  private static func addTestLogsFromLegacyActivitySummary(_ activitySummary: ResultRecord, logs: inout [String], testStartTimeInterval: Double, indent: UInt) throws {
+    let message = try activitySummary.string("Title")
+    let elapsed = try activitySummary.double("StartTimeInterval") - testStartTimeInterval
     let indentString = "".padding(toLength: 1 + Int(indent) * 4, withPad: " ", startingAt: 0)
-    let log = String(format: "    t = %8.2fs%@%@", elapsed, indentString, message)
-    logs.append(log)
+    logs.append(String(format: "    t = %8.2fs%@%@", elapsed, indentString, message))
 
-    guard let subActivities = activitySummary["SubActivities"] as? [NSDictionary] else {
-      return
-    }
-    for subActivity in subActivities {
+    for subActivity in activitySummary.optionalRecords("SubActivities") ?? [] {
       try addTestLogsFromLegacyActivitySummary(subActivity, logs: &logs, testStartTimeInterval: testStartTimeInterval, indent: indent + 1)
     }
-  }
-
-  private static func buildErrorMessageLegacy(_ failureSummaries: [NSDictionary]) throws -> String {
-    var messages: [String] = []
-    for failureSummary in failureSummaries {
-      messages.append(try readStringFromDict(failureSummary, "Message"))
-    }
-    return messages.joined(separator: "\n")
   }
 
   // MARK: - Private: Xcode 11+ XCTest Result Parsing
