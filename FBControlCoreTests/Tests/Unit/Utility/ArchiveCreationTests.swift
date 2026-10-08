@@ -285,7 +285,7 @@ final class ArchiveCreationTests: XCTestCase {
       _ = try await FBArchiveOperations.createGzippedTarData(forPath: missing, logger: logger)
       XCTFail("archiving a missing path should fail")
     } catch {
-      guard case ArchiveOperationsError.pathDoesNotExist(missing) = error else {
+      guard case ArchiveCreationError.pathDoesNotExist(missing) = error else {
         return XCTFail("expected the missing path to be reported, got \(error)")
       }
     }
@@ -295,7 +295,7 @@ final class ArchiveCreationTests: XCTestCase {
     let missing = tempDirectory.appendingPathComponent("absent").path
 
     XCTAssertThrowsError(try FBArchiveOperations.gzippedTarSubprocess(forPath: missing, logger: logger)) { error in
-      guard case ArchiveOperationsError.pathDoesNotExist(missing) = error else {
+      guard case ArchiveCreationError.pathDoesNotExist(missing) = error else {
         return XCTFail("expected the missing path to be reported, got \(error)")
       }
     }
@@ -314,7 +314,7 @@ final class ArchiveCreationTests: XCTestCase {
       _ = try await FBArchiveOperations.createGzippedTarData(forPath: directory.path, logger: logger)
       XCTFail("archiving an unreadable file should fail")
     } catch {
-      guard case ArchiveOperationsError.unreadable(path: file, reason: "Permission denied") = error else {
+      guard case ArchiveCreationError.unreadable(path: file, reason: "Permission denied") = error else {
         return XCTFail("expected the unreadable file to be reported, got \(error)")
       }
     }

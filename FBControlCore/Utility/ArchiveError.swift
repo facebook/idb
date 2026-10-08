@@ -7,7 +7,7 @@
 
 import Foundation
 
-/// Why an in-process extractor stopped. Failures of the file system it writes to are thrown as `POSIXError`.
+/// Why an extractor stopped. Failures of the file system it writes to are thrown as `POSIXError`.
 public enum ArchiveError: Error, Equatable {
   /// An archive this extractor does not read, though another extractor may.
   case unsupported(String)
@@ -15,6 +15,8 @@ public enum ArchiveError: Error, Equatable {
   case corrupt(String)
   /// An entry that would be written outside the extraction root, or through a symlink.
   case unsafePath(String)
+  /// The tool extracting a stream exited unsuccessfully, with the tail of its standard error.
+  case extractorFailed(exitCode: Int32, standardError: String)
 }
 
 extension ArchiveError: LocalizedError {
@@ -27,6 +29,9 @@ extension ArchiveError: LocalizedError {
       return "Corrupt archive: \(reason)"
     case .unsafePath(let path):
       return "Unsafe path in archive: \(path)"
+    case .extractorFailed(let exitCode, let standardError):
+      let description = "Exit Code \(exitCode) is not acceptable [0]"
+      return standardError.isEmpty ? description : "\(description): \(standardError)"
     }
   }
 }

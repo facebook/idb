@@ -16,38 +16,6 @@ public enum FBCompressionFormat: UInt, Sendable {
   case ZSTD = 2
 }
 
-public enum ArchiveOperationsError: Error, LocalizedError {
-  case pathDoesNotExist(path: String)
-  /// The tool reading a stream exited unsuccessfully, with the tail of its standard error.
-  case unacceptableExitCode(Int32, standardError: String)
-  /// A file became shorter than its size when archiving began.
-  case fileChangedWhileArchiving(path: String)
-  /// A file could not be opened or examined, with the system's reason.
-  case unreadable(path: String, reason: String)
-  case compressionFailed
-
-  public var errorDescription: String? {
-    switch self {
-    case let .pathDoesNotExist(path):
-      return "Path for tarring \(path) doesn't exist"
-    case let .unacceptableExitCode(code, standardError):
-      let description = "Exit Code \(code) is not acceptable [0]"
-      return standardError.isEmpty ? description : "\(description): \(standardError)"
-    case let .fileChangedWhileArchiving(path):
-      return "\(path) changed while it was being archived"
-    case let .unreadable(path, reason):
-      return "\(path) could not be read: \(reason)"
-    case .compressionFailed:
-      return "The archive could not be compressed"
-    }
-  }
-
-  /// The failure `errno` describes for the call that just failed on `path`.
-  static func unreadable(atPath path: String) -> Self {
-    .unreadable(path: path, reason: String(cString: strerror(errno)))
-  }
-}
-
 /// Operations on zip/tar archives.
 public enum FBArchiveOperations {
 
@@ -159,8 +127,8 @@ public enum FBArchiveOperations {
         exitPolicy: .any,
         logger: logger)
       try completed.checkExitedCleanly { code in
-        ArchiveOperationsError.unacceptableExitCode(
-          code, standardError: String(decoding: standardError.data(), as: UTF8.self).trimmingCharacters(in: .whitespacesAndNewlines))
+        ArchiveError.extractorFailed(
+          exitCode: code, standardError: String(decoding: standardError.data(), as: UTF8.self).trimmingCharacters(in: .whitespacesAndNewlines))
       }
     } catch {
       // The writer reads `source`, which the caller may close once this returns.
@@ -179,7 +147,7 @@ public enum FBArchiveOperations {
     try await readToEnd {
       let descriptor = open(path, O_RDONLY | O_CLOEXEC)
       guard descriptor >= 0 else {
-        throw ArchiveOperationsError.unreadable(atPath: path)
+        throw ArchiveCreationError.unreadable(atPath: path)
       }
       let file = FileHandle(fileDescriptor: descriptor, closeOnDealloc: true)
       return (try GzippingSource(FileDescriptorSource(descriptor)), file)
@@ -252,7 +220,7 @@ public enum FBArchiveOperations {
   private static func archiveRoot(forPath path: String, logger: any ControlCoreLogger) throws -> (directory: String, fileName: String) {
     var isDirectory: ObjCBool = false
     guard FileManager.default.fileExists(atPath: path, isDirectory: &isDirectory) else {
-      throw ArchiveOperationsError.pathDoesNotExist(path: path)
+      throw ArchiveCreationError.pathDoesNotExist(path: path)
     }
 
     let directory: String

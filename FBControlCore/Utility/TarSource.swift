@@ -106,7 +106,7 @@ final class TarSource: ByteSource {
     rootPending = false
     // The root directory is followed through a symlink, as `-C <directory> .` follows it; everything beneath is not.
     guard (isRoot ? stat(node.path, &status) : lstat(node.path, &status)) == 0 else {
-      throw ArchiveOperationsError.unreadable(atPath: node.path)
+      throw ArchiveCreationError.unreadable(atPath: node.path)
     }
     let mode = Int(status.st_mode) & 0o7777
     let modificationTime = max(0, Int(status.st_mtimespec.tv_sec))
@@ -135,7 +135,7 @@ final class TarSource: ByteSource {
       }
       let descriptor = open(node.path, O_RDONLY | O_CLOEXEC)
       guard descriptor >= 0 else {
-        throw ArchiveOperationsError.unreadable(atPath: node.path)
+        throw ArchiveCreationError.unreadable(atPath: node.path)
       }
       file = OpenFile(descriptor: descriptor, path: node.path, remaining: size, padding: Self.padding(size))
     case S_IFIFO:
@@ -148,7 +148,7 @@ final class TarSource: ByteSource {
 
   private static func children(ofDirectory path: String) throws -> [String] {
     guard let directory = opendir(path) else {
-      throw ArchiveOperationsError.unreadable(atPath: path)
+      throw ArchiveCreationError.unreadable(atPath: path)
     }
     defer { closedir(directory) }
     var children: [String] = []
@@ -157,7 +157,7 @@ final class TarSource: ByteSource {
       errno = 0
       guard let entry = readdir(directory) else {
         guard errno == 0 else {
-          throw ArchiveOperationsError.unreadable(atPath: path)
+          throw ArchiveCreationError.unreadable(atPath: path)
         }
         return children.sorted()
       }
@@ -178,10 +178,10 @@ final class TarSource: ByteSource {
       }
       if count == 0 {
         // The header already carries the size, so a file that shrinks while it is read cannot be archived.
-        throw ArchiveOperationsError.fileChangedWhileArchiving(path: file.path)
+        throw ArchiveCreationError.fileChangedWhileArchiving(path: file.path)
       }
       guard errno == EINTR else {
-        throw POSIXError.current
+        throw ArchiveCreationError.unreadable(atPath: file.path)
       }
     }
   }

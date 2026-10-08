@@ -78,7 +78,7 @@ struct TarSourceTests {
     do {
       _ = try source.readAll()
       Issue.record("archiving a file that shrank should fail")
-    } catch ArchiveOperationsError.fileChangedWhileArchiving(let path) {
+    } catch ArchiveCreationError.fileChangedWhileArchiving(let path) {
       #expect(path == file.path)
     }
   }
@@ -97,7 +97,7 @@ struct TarSourceTests {
     do {
       _ = try TarSource(path: root.appendingPathComponent("tree").path).readAll()
       Issue.record("archiving an unreadable directory should fail")
-    } catch ArchiveOperationsError.unreadable(let path, let reason) {
+    } catch ArchiveCreationError.unreadable(let path, let reason) {
       #expect(path == directory.path)
       #expect(reason == "Permission denied")
     }

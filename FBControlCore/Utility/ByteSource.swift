@@ -265,7 +265,7 @@ public final class GzippingSource: ByteSource {
 
   public init(_ source: any ByteSource) throws {
     guard let deflater = Deflater() else {
-      throw ArchiveOperationsError.compressionFailed
+      throw ArchiveCreationError.compressionFailed
     }
     self.source = source
     self.deflater = deflater
@@ -282,7 +282,7 @@ public final class GzippingSource: ByteSource {
       }
       let (from, to, finish) = (start, end, inputEnded)
       guard let step = input.withUnsafeBytes({ deflater.deflate(UnsafeRawBufferPointer(rebasing: $0[from..<to]), into: buffer, finish: finish) }) else {
-        throw ArchiveOperationsError.compressionFailed
+        throw ArchiveCreationError.compressionFailed
       }
       start += step.consumed
       finished = step.ended
