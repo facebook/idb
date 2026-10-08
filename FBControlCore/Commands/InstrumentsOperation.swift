@@ -42,15 +42,13 @@ extension InstrumentsError: LocalizedError {
 
 /// Watches the instruments output for the two lifecycle markers: template loading has
 /// begun, and the premature "Trace Complete" that signals a failed startup.
-///
-/// @unchecked Sendable: the two events are `Sendable`; the line consumer is itself a `DataConsumer`.
-final class InstrumentsConsumer: NSObject, DataConsumer, @unchecked Sendable {
+struct InstrumentsConsumer: DataConsumer {
 
   let hasStoppedRecording = AsyncEvent<Void>()
   let hasStartedLoadingTemplate = AsyncEvent<Void>()
   private let lineConsumer: any DataConsumer
 
-  override init() {
+  init() {
     // Lines arrive serially on the consumer's queue, so `logs` needs no synchronization. Captured
     // locals avoid a consumer -> block -> self cycle.
     final class Logs {
@@ -70,7 +68,6 @@ final class InstrumentsConsumer: NSObject, DataConsumer, @unchecked Sendable {
         hasStoppedRecording.fail(InstrumentsError.startupFailed(logs: logs.lines))
       }
     }
-    super.init()
   }
 
   func consumeData(_ data: Data) {
