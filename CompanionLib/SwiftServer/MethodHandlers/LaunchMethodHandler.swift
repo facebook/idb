@@ -27,11 +27,11 @@ struct LaunchMethodHandler: @unchecked Sendable {
 
     let responseWriter = FIFOStreamWriter(stream: responseStream)
     if start.waitFor {
-      let stdOutConsumer = pipeOutput(interface: .stdout, responseWriter: responseWriter)
+      let stdOutConsumer = Self.pipeOutput(interface: .stdout) { try responseWriter.send($0) }
       consumers.append(stdOutConsumer)
       stdOut = .consumer(stdOutConsumer)
 
-      let stdErrConsumer = pipeOutput(interface: .stderr, responseWriter: responseWriter)
+      let stdErrConsumer = Self.pipeOutput(interface: .stderr) { try responseWriter.send($0) }
       consumers.append(stdErrConsumer)
       stdErr = .consumer(stdErrConsumer)
     }
@@ -86,13 +86,13 @@ struct LaunchMethodHandler: @unchecked Sendable {
     }
   }
 
-  private func pipeOutput(interface: Idb_ProcessOutput.Interface, responseWriter: FIFOStreamWriter<RPCWriter<Idb_LaunchResponse>>) -> (DataConsumer & DataConsumerLifecycle) {
+  static func pipeOutput(interface: Idb_ProcessOutput.Interface, send: @escaping (Idb_LaunchResponse) throws -> Void) -> (DataConsumer & DataConsumerLifecycle) {
     return AsynchronousDataConsumer { data in
       let response = Idb_LaunchResponse.with {
         $0.output.data = data
         $0.output.interface = interface
       }
-      try? responseWriter.send(response)
+      try? send(response)
     }
   }
 }
