@@ -1469,6 +1469,18 @@ NOT_READY = Completed(
     b"specified a point onscreen that is invalid or invisible due to a fullscreen "
     b"dialog\n",
 )
+
+
+def with_verdict(completed: Completed, line: bytes) -> Completed:
+    return Completed(completed.returncode, completed.stdout, completed.stderr + line)
+
+
+UNANSWERED_NOTHING_WRITTEN = with_verdict(
+    UNANSWERED, b"retry: safe (nothing_written)\n"
+)
+UNANSWERED_OUTCOME_UNKNOWN = with_verdict(
+    UNANSWERED, b"retry: unsafe (outcome_unknown)\n"
+)
 SUCCEEDED = Completed(0, b"", b"")
 DESCRIBE_ALL = ("ui", "describe-all", "--api", "ax", "--format", "complete")
 SET_VALUE = ("ui", "set-value", "200", "822", "--value", "idb-first")
@@ -1539,12 +1551,48 @@ class TransientAccessibilityAnswerTests(unittest.IsolatedAsyncioTestCase):
     async def test_a_tap_the_application_did_not_answer_is_not_repeated(
         self,
     ) -> None:
-        # The tap may have landed, and a second one would tap twice.
-        outcome, run, _ = await self.attempt(TAP, [UNANSWERED, SUCCEEDED])
+        # The tap may have landed, and a second one would tap twice. A verdict
+        # this harness does not know says no more than no verdict.
+        for answer in (
+            UNANSWERED,
+            with_verdict(UNANSWERED, b"retry: maybe (written_partially)\n"),
+        ):
+            with self.subTest(answer=answer):
+                outcome, run, _ = await self.attempt(TAP, [answer, SUCCEEDED])
 
-        self.assertIsInstance(outcome, Failed)
-        self.assertIn("did not answer in time", str(outcome))
-        self.assertEqual(run.await_count, 1)
+                self.assertIsInstance(outcome, Failed)
+                self.assertIn("did not answer in time", str(outcome))
+                self.assertEqual(run.await_count, 1)
+
+    async def test_a_tap_that_idb_says_wrote_nothing_is_repeated(self) -> None:
+        # The application did not answer while the tap was finding its target.
+        outcome, run, _ = await self.attempt(
+            TAP, [UNANSWERED_NOTHING_WRITTEN, SUCCEEDED]
+        )
+
+        self.assertEqual(outcome, SUCCEEDED)
+        self.assertEqual(run.await_count, 2)
+
+    async def test_a_verdict_given_as_json_is_read(self) -> None:
+        answer = with_verdict(
+            UNANSWERED, b'{"retry": "safe", "retry_reason": "nothing_written"}\n'
+        )
+        outcome, run, _ = await self.attempt(TAP, [answer, SUCCEEDED])
+
+        self.assertEqual(outcome, SUCCEEDED)
+        self.assertEqual(run.await_count, 2)
+
+    async def test_a_command_idb_says_is_unsafe_to_repeat_is_not_repeated(
+        self,
+    ) -> None:
+        for args in (TAP, SET_VALUE):
+            with self.subTest(args=args):
+                outcome, run, _ = await self.attempt(
+                    args, [UNANSWERED_OUTCOME_UNKNOWN, SUCCEEDED]
+                )
+
+                self.assertIsInstance(outcome, Failed)
+                self.assertEqual(run.await_count, 1)
 
     async def test_a_read_before_the_tree_was_ready(self) -> None:
         outcome, run, _ = await self.attempt(DESCRIBE_ALL, [NOT_READY, SUCCEEDED])

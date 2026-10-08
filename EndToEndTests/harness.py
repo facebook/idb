@@ -91,6 +91,17 @@ UNANSWERED = re.compile(
     r"which did not answer in time"
 )
 NOTHING_WRITTEN_MARKER = "nothing was written. Read the tree again and retry"
+# The line idb prints after a failure's message saying whether the command is
+# safe to send again, in its text and `--json` forms. Clients and companions
+# that predate it print no such line.
+# Every command reads the tree afresh, so repeating one is the reread that
+# `safe_after_reread` asks for. A verdict not listed here, from a newer idb,
+# is treated as no verdict at all.
+REPEATABLE_VERDICTS = frozenset({"safe", "safe_after_reread"})
+RETRY_VERDICT = re.compile(r"^retry: (\S+) \(\S+\)$", re.MULTILINE)
+RETRY_VERDICT_JSON = re.compile(
+    r'^\{"retry": "([^"]+)", "retry_reason": "[^"]+"\}$', re.MULTILINE
+)
 ELEMENT_NOT_FOUND_MARKER = "found no element whose"
 # SpringBoard's permission prompts vary their buttons by service and by app --
 # Photos offers "Limit Access…" and "Allow Full Access" where camera offers a
@@ -270,13 +281,22 @@ def classify_failure(completed: Completed) -> FailureKind:
     return FailureKind.COMMAND
 
 
+def retry_verdict(completed: Completed) -> str | None:
+    """The `retry` verdict idb gave a failed command, or None if it gave none."""
+    match = RETRY_VERDICT.search(completed.error_text) or RETRY_VERDICT_JSON.search(
+        completed.error_text
+    )
+    return match[1] if match else None
+
+
 def worth_repeating(args: Sequence[str], completed: Completed) -> bool:
     """Whether a failed idb command is a transient answer it is safe to repeat.
 
     Nothing was written, so anything can be repeated. An application that did
-    not answer leaves a write's outcome unknown, so only a command that does
-    the same thing when run twice can be. A tree that was not ready yet is
-    repeated only for a read, since a write's target may not be where it was.
+    not answer is repeated when idb's retry verdict allows; without one it
+    knows, a write's outcome is taken as unknown, so only a command that does the same
+    thing when run twice is. A tree that was not ready yet is repeated only
+    for a read, since a write's target may not be where it was.
     """
     if completed.returncode == 0:
         return False
@@ -284,10 +304,14 @@ def worth_repeating(args: Sequence[str], completed: Completed) -> bool:
         return True
     if ACCESSIBILITY_NOT_READY_MARKER in completed.error_text:
         return tuple(args[:2]) in READ_COMMANDS
-    return (
-        UNANSWERED.search(completed.error_text) is not None
-        and tuple(args[:2]) in REPEATABLE_COMMANDS
-    )
+    if UNANSWERED.search(completed.error_text) is None:
+        return False
+    verdict = retry_verdict(completed)
+    if verdict in REPEATABLE_VERDICTS:
+        return True
+    if verdict == "unsafe":
+        return False
+    return tuple(args[:2]) in REPEATABLE_COMMANDS
 
 
 def strict() -> bool:
