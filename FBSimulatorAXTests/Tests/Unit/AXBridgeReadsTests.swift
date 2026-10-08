@@ -452,7 +452,7 @@ final class AXBridgeReadsTests: XCTestCase {
     (
       "guestFailure",
       AXBridgeError.guestFailure("the guest reported a failure with nothing further to say"),
-      "The axbridge guest reader failed: the guest reported a failure with nothing further to say"
+      "The axbridge guest failed: the guest reported a failure with nothing further to say"
     ),
     (
       "applicationUnavailable",
@@ -1056,7 +1056,7 @@ final class AXBridgeReadsTests: XCTestCase {
         "ax_error": -25200, "pid": 42, "effect": "unknown",
       ])
     XCTAssertEqual(UIAutomationRetry(for: error), .idempotent)
-    XCTAssertEqual(error.localizedDescription, "The axbridge guest reader failed: the accessibility runtime rejected the write (-25200)")
+    XCTAssertEqual(error.localizedDescription, "The axbridge guest failed: the accessibility runtime rejected the write (-25200)")
   }
 
   // An older guest sends no `effect`; that can only mean it may have sent the write.

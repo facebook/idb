@@ -258,7 +258,7 @@ final class AccessibilityRuntimeTests: XCTestCase {
 
     let systemWide = FBAccessibilityService.handleRequest(["verb": "hittest", "x": NSNumber(value: 1), "y": NSNumber(value: 2)])
     assertEqualObjects(axValue(systemWide, "error_kind"), "application_unavailable")
-    assertEqualObjects(axValue(systemWide, "error"), "no accessibility server answered the system-wide hit-test")
+    assertEqualObjects(axValue(systemWide, "error"), "no accessibility server responded to the system-wide hit-test")
     XCTAssertNil(axValue(systemWide, "pid"), "a display-wide hit-test nothing answered has no process to name")
   }
 
@@ -1273,7 +1273,7 @@ final class AccessibilityRuntimeTests: XCTestCase {
     let unhit = FBAccessibilityService.handleRequest(FBAXTestsPress())
     assertEqualObjects(axValue(unhit, "ok"), NSNumber(value: false))
     assertEqualObjects(axValue(unhit, "error_kind"), "application_unavailable")
-    assertEqualObjects(axValue(unhit, "error"), "no accessibility server answered the write")
+    assertEqualObjects(axValue(unhit, "error"), "no accessibility server responded to the write")
     assertEqualObjects(axValue(unhit, "effect"), "none")
 
     self.seedHitElement(withAttributes: [:])
@@ -2437,7 +2437,7 @@ final class AccessibilityRuntimeTests: XCTestCase {
     let unavailable = FBAccessibilityService.handleRequest(
       ["verb": "describe", "x": NSNumber(value: 5), "y": NSNumber(value: 6), "method": "center-point"]
     )
-    assertEqualObjects(axValue(unavailable, "error"), "no accessibility server answered the system-wide hit-test at (5.0, 6.0)")
+    assertEqualObjects(axValue(unavailable, "error"), "no accessibility server responded to the system-wide hit-test at (5.0, 6.0)")
     assertEqualObjects(axValue(unavailable, "error_kind"), "application_unavailable")
     XCTAssertNil(axValue(unavailable, "pid"), "a frontmost query that resolved nothing has no process to name")
 

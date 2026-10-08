@@ -792,7 +792,7 @@ private final class AccessibilityRequest {
     case FBAXHitTestStatus.empty:
       return FBAXFrontmostOutcome.unresolved(String(format: "system-wide hit-test at (%.1f, %.1f) found no element", anchor.x, anchor.y))
     case FBAXHitTestStatus.applicationUnavailable:
-      return FBAXFrontmostOutcome.applicationUnavailable(String(format: "no accessibility server answered the system-wide hit-test at (%.1f, %.1f)", anchor.x, anchor.y))
+      return FBAXFrontmostOutcome.applicationUnavailable(String(format: "no accessibility server responded to the system-wide hit-test at (%.1f, %.1f)", anchor.x, anchor.y))
     case FBAXHitTestStatus.applicationNotResponding:
       return FBAXFrontmostOutcome.applicationNotResponding(String(format: "the application at (%.1f, %.1f) did not respond to the system-wide hit-test before it timed out", anchor.x, anchor.y))
     case FBAXHitTestStatus.failed:
@@ -993,7 +993,7 @@ private final class AccessibilityRequest {
       break
     case FBAXHitTestStatus.applicationUnavailable:
       return FBAXBridgeTaggedErrorResponse(
-        message: pidNumber != nil ? "pid \((pidNumber?.int32Value ?? 0)) has no accessibility server to hit-test" : "no accessibility server answered the system-wide hit-test",
+        message: pidNumber != nil ? "pid \((pidNumber?.int32Value ?? 0)) has no accessibility server to hit-test" : "no accessibility server responded to the system-wide hit-test",
         kind: errorKindApplicationUnavailable,
         pid: pidNumber
       )
@@ -1168,7 +1168,7 @@ private final class AccessibilityRequest {
       return [responseOk: false, responseError: outcome.failureReason ?? "the element at the point is not the one named", responseErrorKind: errorKindAssertionFailed]
     case FBAXWriteStatus.applicationUnavailable:
       return FBAXBridgeTaggedErrorResponse(
-        message: pid > 0 ? "pid \(pid) has no accessibility server to accept the write" : "no accessibility server answered the write",
+        message: pid > 0 ? "pid \(pid) has no accessibility server to accept the write" : "no accessibility server responded to the write",
         kind: errorKindApplicationUnavailable,
         pid: pid > 0 ? pid as NSNumber : nil
       )

@@ -64,7 +64,7 @@ public enum AXBridgeError: LocalizedError, Sendable {
     case let .guestDiedBeforeBinding(pid, signal, exitCode, path):
       return "The axbridge guest (pid \(pid)) \(Self.exitPhrase(signal: signal, exitCode: exitCode)) before binding its serve socket at \(path)"
     case let .guestFailure(message):
-      return "The axbridge guest reader failed: \(message)"
+      return "The axbridge guest failed: \(message)"
     }
   }
 
