@@ -153,7 +153,7 @@ public enum Staging {
       let file = stagingDirectory.appendingPathComponent(name)
       try await runExtractStage(to: file.path, totalStart: totalStart, onProgress: onProgress) {
         try await pipe.reading { source in
-          try await FBArchiveOperations.extractGzip(from: source, toPath: file.path, logger: logger)
+          try await FBArchiveOperations.extractGzip(from: source, toPath: file.path)
         }
       }
       return .file(file)

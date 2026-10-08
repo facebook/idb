@@ -114,12 +114,29 @@ public enum FBArchiveOperations {
   /// preferred when there's only a single file to transfer.
   public static func extractGzip(
     from source: any ByteSource,
-    toPath extractPath: String,
-    logger: any ControlCoreLogger
+    toPath extractPath: String
   ) async throws {
-    try await run(
-      Subprocess(executable: "/usr/bin/gunzip", arguments: ["--to-stdout"]),
-      output: .file(URL(fileURLWithPath: extractPath)), reading: source, logger: logger)
+    let source = HandedOver(source)
+    try await offCooperativePool {
+      do {
+        let file = try ArchiveExtraction.createFile(extractPath)
+        defer { close(file) }
+        let gzip = try GzipSource(source.value)
+        var buffer = [UInt8](repeating: 0, count: 1 << 20)
+        while true {
+          let count = try buffer.withUnsafeMutableBytes { try gzip.read(into: $0) }
+          guard count > 0 else {
+            break
+          }
+          try buffer.withUnsafeBytes { try ArchiveExtraction.writeAll(UnsafeRawBufferPointer(rebasing: $0[0..<count]), to: file) }
+        }
+        try gzip.drain()
+      } catch {
+        // Leaves nothing writing to the input blocked on it.
+        try? source.value.drain()
+        throw error
+      }
+    }.get()
   }
 
   /// Runs `subprocess` reading `source` on its standard input. Fails on an unsuccessful exit, and

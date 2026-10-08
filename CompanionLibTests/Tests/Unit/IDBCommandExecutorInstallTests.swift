@@ -36,7 +36,7 @@ struct IDBCommandExecutorInstallTests {
   }
 
   @Test
-  func aStreamedDylibThatIsNotAGzipFailsWithGunzipsStandardError() async throws {
+  func aStreamedDylibThatIsNotAGzipFailsAsCorrupt() async throws {
     let harness = try MacInstallHarness()
     let input = BytePipe(Data("not a gzip at all".utf8))
 
@@ -45,7 +45,7 @@ struct IDBCommandExecutorInstallTests {
     }
 
     let description = error?.localizedDescription
-    #expect(description == "Could not extract the archive: Exit Code 1 is not acceptable [0]: gunzip: unknown compression format")
+    #expect(description == "Could not extract the archive: Corrupt archive: the gzip does not inflate")
   }
 
   @Test
