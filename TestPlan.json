@@ -7,7 +7,10 @@
       "CompanionUtilitiesTests"
     ],
     "FBAXCore": [
-      "FBControlCoreTests"
+      "FBAXCoreTests"
+    ],
+    "FBAXCoreTests": [
+      "FBAXCoreTests"
     ],
     "FBControlCore": [
       "FBControlCoreTests"
@@ -53,7 +56,10 @@
       "FBSimulatorControlUnitTests"
     ],
     "FBVideoCore": [
-      "FBControlCoreTests"
+      "FBVideoCoreTests"
+    ],
+    "FBVideoCoreTests": [
+      "FBVideoCoreTests"
     ],
     "FBXCTestCore": [
       "FBXCTestCoreTests"
@@ -70,6 +76,10 @@
   },
   "testTargets": {
     "CompanionUtilitiesTests": {
+      "bootedSimulator": false,
+      "prerequisites": []
+    },
+    "FBAXCoreTests": {
       "bootedSimulator": false,
       "prerequisites": []
     },
@@ -108,6 +118,10 @@
       "prerequisites": [
         "fbsimulatorcontrol_resources"
       ]
+    },
+    "FBVideoCoreTests": {
+      "bootedSimulator": false,
+      "prerequisites": []
     },
     "FBXCTestCoreTests": {
       "bootedSimulator": false,
