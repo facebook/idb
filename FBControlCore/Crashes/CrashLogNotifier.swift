@@ -36,15 +36,13 @@ public final class CrashLogNotifier {
   }
 
   /// Polls until a crash log matching `predicate` appears; callers impose their own timeouts and task
-  /// cancellation stops the poll. Each pass is a synchronous `concurrentPerform` scan that blocks the
-  /// calling thread, so the sleep between passes is what keeps a cooperative-pool worker from being
-  /// held continuously.
+  /// cancellation stops the poll.
   public func nextCrashLog(forPredicate predicate: NSPredicate) async throws -> CrashLogInfo {
     _ = startListening(true)
     while true {
       try Task.checkCancellation()
       let crashInfo =
-        (CrashLogInfo.crashInfo(afterDate: sinceDate, logger: nil) as NSArray)
+        (await CrashLogInfo.crashInfo(afterDate: sinceDate, logger: nil) as NSArray)
         .filtered(using: predicate)
         .first as? CrashLogInfo
       if let crashInfo {

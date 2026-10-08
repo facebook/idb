@@ -151,14 +151,29 @@ public final class CrashLogInfo: CustomStringConvertible {
     } catch {
       throw CrashLogError.dataReadFailed(path: crashPath, underlying: error)
     }
+    return try fromCrashLogData(crashFileData, crashPath: crashPath)
+  }
+
+  /// Reads the log without blocking the calling thread on the file's contents.
+  static func readCrashLog(atPath crashPath: String) async throws -> CrashLogInfo {
+    var crashFileData = Data()
+    do {
+      for try await byte in URL(fileURLWithPath: crashPath).resourceBytes {
+        crashFileData.append(byte)
+      }
+    } catch {
+      throw CrashLogError.dataReadFailed(path: crashPath, underlying: error)
+    }
+    return try fromCrashLogData(crashFileData, crashPath: crashPath)
+  }
+
+  private class func fromCrashLogData(_ crashFileData: Data, crashPath: String) throws -> CrashLogInfo {
     if crashFileData.isEmpty {
       throw CrashLogError.fileEmpty(path: crashPath)
     }
-
     guard let crashString = String(data: crashFileData, encoding: .utf8) else {
       throw CrashLogError.stringExtractionFailed(path: crashPath)
     }
-
     let parser = getPreferredCrashLogParser(forCrashString: crashString)
     return try fromCrashLogString(crashString, crashPath: crashPath, parser: parser)
   }
@@ -190,13 +205,15 @@ public final class CrashLogInfo: CustomStringConvertible {
 
   // MARK: - Bulk Collection
 
-  public class func crashInfo(afterDate date: Date, logger: ControlCoreLogger?) -> [CrashLogInfo] {
+  /// Directory listings and modification dates are read synchronously: Foundation has no async
+  /// form of either, and both are metadata lookups rather than reads of a log's contents.
+  public class func crashInfo(afterDate date: Date, logger: ControlCoreLogger?) async -> [CrashLogInfo] {
     var allCrashInfos: [CrashLogInfo] = []
     for basePath in diagnosticReportsPaths {
       let fileNames = (try? FileManager.default.contentsOfDirectory(atPath: basePath)) ?? []
       for fileName in fileNames where isCrashLog(fileName, inDirectory: basePath, modifiedOnOrAfter: date) {
         do {
-          allCrashInfos.append(try CrashLogInfo.fromCrashLog(atPath: (basePath as NSString).appendingPathComponent(fileName)))
+          allCrashInfos.append(try await readCrashLog(atPath: (basePath as NSString).appendingPathComponent(fileName)))
         } catch {
           logger?.log("Error parsing log \(error)")
         }

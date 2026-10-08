@@ -96,6 +96,32 @@ final class CrashLogInfoTests: XCTestCase {
     XCTAssertEqual(info.processType, .application)
   }
 
+  func testReadingAsynchronouslyParsesTheSameFieldsAsReadingSynchronously() async throws {
+    for path in [
+      TestFixtures.assetsdCrashPathWithCustomDeviceSet,
+      TestFixtures.appCrashPathWithDefaultDeviceSet,
+      TestFixtures.appCrashWithJSONFormat,
+      TestFixtures.simulatorAppCrashWithJSONFormat,
+    ] {
+      let synchronous = try CrashLogInfo.fromCrashLog(atPath: path)
+      let asynchronous = try await CrashLogInfo.readCrashLog(atPath: path)
+      XCTAssertEqual(asynchronous.identifier, synchronous.identifier, path)
+      XCTAssertEqual(asynchronous.processIdentifier, synchronous.processIdentifier, path)
+      XCTAssertEqual(asynchronous.parentProcessName, synchronous.parentProcessName, path)
+      XCTAssertEqual(asynchronous.executablePath, synchronous.executablePath, path)
+      XCTAssertEqual(asynchronous.date, synchronous.date, path)
+      XCTAssertEqual(asynchronous.exceptionDescription, synchronous.exceptionDescription, path)
+      XCTAssertEqual(asynchronous.crashedThreadDescription, synchronous.crashedThreadDescription, path)
+    }
+  }
+
+  func testReadingAMissingLogAsynchronouslyFails() async {
+    do {
+      _ = try await CrashLogInfo.readCrashLog(atPath: "/nonexistent/crash.ips")
+      XCTFail("Expected reading a missing log to fail")
+    } catch {}
+  }
+
   private var allCrashLogs: NSArray {
     get throws {
       return try [
