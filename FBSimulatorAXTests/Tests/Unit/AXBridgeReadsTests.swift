@@ -324,11 +324,11 @@ final class AXBridgeReadsTests: XCTestCase {
 
     let empty = UIAutomationError.noElementAtPoint(backend: Self.axBridge, x: 2000, y: 2000)
     XCTAssertFalse(empty.description.contains("ApplicationAccessibilityEnabled"), "got: \(empty.description)")
-    XCTAssertTrue(empty.description.contains("the point is empty"), "an empty point must say so: \(empty.description)")
+    XCTAssertTrue(empty.description.contains("found no element at (2000.0, 2000.0)"), "an empty point must say so: \(empty.description)")
 
     let timedOut = UIAutomationError.timedOut(backend: Self.axBridge, key: "AXLabel", value: "General", timeout: 5)
     XCTAssertFalse(timedOut.description.contains("ApplicationAccessibilityEnabled"), "got: \(timedOut.description)")
-    XCTAssertTrue(timedOut.description.contains("never appeared"), "a timeout must say what did not happen: \(timedOut.description)")
+    XCTAssertTrue(timedOut.description.contains("timed out after 5.0s waiting for an element whose AXLabel contains \"General\""), "a timeout must say what did not happen: \(timedOut.description)")
   }
 
   // A display-wide read that resolved nothing has no pid, so the message says where it looked instead of
@@ -347,7 +347,7 @@ final class AXBridgeReadsTests: XCTestCase {
       (AXBridgeError.frontmostUnresolved(method: .runningBoard, reason: "Client not entitled"), "runningboard strategy"),
       (UIAutomationError.applicationNotResponding(backend: Self.axBridge, pid: 8865), "did not respond to an accessibility request before it timed out"),
       (UIAutomationError.applicationUnavailable(backend: Self.axBridge, pid: 8865), "accessibility server has not started"),
-      (UIAutomationError.noElementAtPoint(backend: Self.axBridge, x: 1, y: 2), "the point is empty"),
+      (UIAutomationError.noElementAtPoint(backend: Self.axBridge, x: 1, y: 2), "found no element at (1.0, 2.0)"),
     ]
     var descriptions: Set<String> = []
     for (error, expected) in cases {

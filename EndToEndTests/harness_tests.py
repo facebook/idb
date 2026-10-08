@@ -1468,6 +1468,12 @@ ELEMENT_MOVED = Completed(
     b"the element had moved by the time the write reached it; nothing was "
     b"written. Read the tree again and retry\n",
 )
+ELEMENT_MOVED_REWORDED = Completed(
+    1,
+    b"",
+    b'The axbridge backend found an element whose AXUniqueId contains "TabBarItemTitle", '
+    b"but it moved before the write, so nothing was written\n",
+)
 NOT_READY = Completed(
     1,
     b"",
@@ -1551,10 +1557,12 @@ class TransientAccessibilityAnswerTests(unittest.IsolatedAsyncioTestCase):
                 self.assertEqual(run.await_count, 2)
 
     async def test_a_tap_whose_element_moved(self) -> None:
-        outcome, run, _ = await self.attempt(TAP, [ELEMENT_MOVED, SUCCEEDED])
+        for failure in (ELEMENT_MOVED, ELEMENT_MOVED_REWORDED):
+            with self.subTest(failure=failure.stderr):
+                outcome, run, _ = await self.attempt(TAP, [failure, SUCCEEDED])
 
-        self.assertEqual(outcome, SUCCEEDED)
-        self.assertEqual(run.await_count, 2)
+                self.assertEqual(outcome, SUCCEEDED)
+                self.assertEqual(run.await_count, 2)
 
     async def test_a_tap_the_application_did_not_answer_is_not_repeated(
         self,

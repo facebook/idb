@@ -167,7 +167,7 @@ final class AccessibilityActionRequestTranslationTests: XCTestCase {
       XCTAssertEqual(response.wait.diagnostics.readError, diagnostics.readError ?? "")
       XCTAssertEqual(
         response.wait.message,
-        "The accessibility backend timed out after 1.0s waiting for AXLabel containing \"missing\"; it never appeared.")
+        "The accessibility backend timed out after 1.0s waiting for an element whose AXLabel contains \"missing\"")
     }
   }
 

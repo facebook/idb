@@ -93,7 +93,11 @@ UNANSWERED = re.compile(
     r"|The application (?:with pid \d+|at that point) did not respond to an "
     r"accessibility request before it timed out"
 )
-NOTHING_WRITTEN_MARKER = "nothing was written. Read the tree again and retry"
+# Older companions print the first marker.
+NOTHING_WRITTEN_MARKERS = (
+    "nothing was written. Read the tree again and retry",
+    "moved before the write, so nothing was written",
+)
 # The line idb prints after a failure's message saying whether the command is
 # safe to send again, in its text and `--json` forms. Clients and companions
 # that predate it print no such line.
@@ -303,7 +307,7 @@ def worth_repeating(args: Sequence[str], completed: Completed) -> bool:
     """
     if completed.returncode == 0:
         return False
-    if NOTHING_WRITTEN_MARKER in completed.error_text:
+    if any(marker in completed.error_text for marker in NOTHING_WRITTEN_MARKERS):
         return True
     if ACCESSIBILITY_NOT_READY_MARKER in completed.error_text:
         return tuple(args[:2]) in READ_COMMANDS

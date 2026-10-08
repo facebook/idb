@@ -78,13 +78,13 @@ public enum UIAutomationError: LocalizedError, CustomStringConvertible, Sendable
     case let .elementNotFound(backend, key, value):
       return "\(backend.displayName) found no element whose \(key) contains \"\(value)\""
     case let .elementNotOnScreen(backend, key, value):
-      return "\(backend.displayName) matched an element whose \(key) contains \"\(value)\", but it is off-screen and has no frame to interact with"
+      return "\(backend.displayName) matched an element whose \(key) contains \"\(value)\", but it is off-screen"
     case let .frameUnavailable(backend, query):
-      return "\(backend.displayName) read \(query), but the read carried no frame to report"
+      return "\(backend.displayName) read \(query), but the result had no frame"
     case let .noElementAtPoint(backend, x, y):
-      return "\(backend.displayName) found no element at (\(x), \(y)); the point is empty"
+      return "\(backend.displayName) found no element at (\(x), \(y))"
     case let .timedOut(backend, key, value, timeout, _):
-      return "\(backend.displayName) timed out after \(timeout)s waiting for \(key) containing \"\(value)\"; it never appeared."
+      return "\(backend.displayName) timed out after \(timeout)s waiting for an element whose \(key) contains \"\(value)\""
     case let .markerRequired(_, operation):
       return "\(operation) requires a marker target, not a point or a whole-tree query"
     case let .pointOrMarkerRequired(_, operation):
@@ -100,11 +100,11 @@ public enum UIAutomationError: LocalizedError, CustomStringConvertible, Sendable
     case let .valueMismatch(backend, key, expected, actual):
       return "\(backend.displayName) expected \(key) to equal \"\(expected)\" before tapping, but it was \"\(actual)\""
     case let .elementMoved(backend, key, value):
-      return "\(backend.displayName) resolved \(key) containing \"\(value)\" and the element had moved by the time the write reached it; nothing was written. Read the tree again and retry"
+      return "\(backend.displayName) found an element whose \(key) contains \"\(value)\", but it moved before the write, so nothing was written"
     case let .writeUnconfirmed(_, _, underlying):
       return underlying.localizedDescription
     case let .traversalCannotAnswer(_, traversal, keys):
-      return "the \(traversal) traversal cannot answer \(keys.joined(separator: ", ")); drop --traversal to let the backend choose, or name view-hierarchy"
+      return "the \(traversal) traversal cannot read \(keys.joined(separator: ", ")); drop --traversal to let the backend choose, or name view-hierarchy"
     }
   }
 

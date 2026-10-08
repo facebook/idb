@@ -537,8 +537,8 @@ class AccessibilityTests(AccessibilityFixtureTestCase):
                 backend_name = "accessibility" if backend == "ax" else backend
                 self.assertEqual(
                     result["error"],
-                    f"The {backend_name} backend timed out after 1.0s waiting for "
-                    'AXLabel containing "idb-e2e-no-such-element"; it never appeared.',
+                    f"The {backend_name} backend timed out after 1.0s waiting for an "
+                    'element whose AXLabel contains "idb-e2e-no-such-element"',
                 )
                 diagnostics = result["diagnostics"]
                 self.assertIsNone(diagnostics["read_error"])
