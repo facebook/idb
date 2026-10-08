@@ -36,6 +36,7 @@ public enum DeviceLinkError: Error {
   case handshakeVersionNotANumber(version: String)
   case deviceReadyMessageNotAString(message: String)
   case deviceNotReady(message: String, expected: String)
+  case replyTooShort(reply: String, expectedCount: Int)
 }
 
 extension DeviceLinkError: LocalizedError {
@@ -57,6 +58,8 @@ extension DeviceLinkError: LocalizedError {
       return "\(message) is not an NSString for the device ready call"
     case let .deviceNotReady(message, expected):
       return "\(message) is not equal to \(expected)"
+    case let .replyTooShort(reply, expectedCount):
+      return "\(reply) has fewer than \(expectedCount) elements"
     }
   }
 }
@@ -85,6 +88,10 @@ public final class DeviceLinkClient {
           let result = try connectionBox.connection.sendAndReceiveMessage([ProcessMessage, messageBox.value])
           guard let resultArray = result as? NSArray else {
             continuation.resume(throwing: DeviceLinkError.resultNotAnArray(result: String(describing: result)))
+            return
+          }
+          guard resultArray.count >= 2 else {
+            continuation.resume(throwing: DeviceLinkError.replyTooShort(reply: String(describing: resultArray), expectedCount: 2))
             return
           }
           let responseType = resultArray[0]
@@ -118,6 +125,10 @@ public final class DeviceLinkClient {
             continuation.resume(throwing: DeviceLinkError.versionExchangeNotAnArray(plist: String(describing: plist)))
             return
           }
+          guard plistArray.count >= 2 else {
+            continuation.resume(throwing: DeviceLinkError.replyTooShort(reply: String(describing: plistArray), expectedCount: 2))
+            return
+          }
           let versionNumber = plistArray[1]
           guard versionNumber is NSNumber else {
             continuation.resume(throwing: DeviceLinkError.handshakeVersionNotANumber(version: String(describing: versionNumber)))
@@ -129,7 +140,10 @@ public final class DeviceLinkClient {
             continuation.resume(throwing: DeviceLinkError.versionExchangeNotAnArray(plist: String(describing: reply)))
             return
           }
-          let message = replyArray[0]
+          guard let message = replyArray.firstObject else {
+            continuation.resume(throwing: DeviceLinkError.replyTooShort(reply: String(describing: replyArray), expectedCount: 1))
+            return
+          }
           guard let messageString = message as? String else {
             continuation.resume(throwing: DeviceLinkError.deviceReadyMessageNotAString(message: String(describing: message)))
             return
