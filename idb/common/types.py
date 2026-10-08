@@ -84,8 +84,24 @@ QuiescenceEvent = Union[
 ]
 
 
+@dataclass(frozen=True)
+class RetryVerdict:
+    """Whether a failed operation can be sent again as it was, and why, as the
+    companion judged it. `verdict` is `safe`, `safe_after_reread` or `unsafe`;
+    `reason` is `nothing_written`, `idempotent`, `outcome_unknown` or
+    `will_not_change`. A newer companion may send values not listed here."""
+
+    verdict: str
+    reason: str
+
+
 class IdbException(Exception):
-    pass
+    """`retry` is None when the companion gave no verdict, which means
+    unknown, never safe."""
+
+    def __init__(self, *args: object, retry: RetryVerdict | None = None) -> None:
+        super().__init__(*args)
+        self.retry = retry
 
 
 class IdbConnectionException(Exception):

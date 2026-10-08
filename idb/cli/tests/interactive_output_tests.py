@@ -27,6 +27,7 @@ from idb.common.types import (
     IdbException,
     InstalledArtifact,
     InstalledTestInfo,
+    RetryVerdict,
     TestRunFailureInfo,
     TestRunInfo,
 )
@@ -96,6 +97,11 @@ class _ShellClient:
         self.urls.append(url)
         if url == "bad":
             raise IdbException("boom")
+        if url == "unsafe":
+            raise IdbException(
+                "did not answer",
+                retry=RetryVerdict(verdict="unsafe", reason="outcome_unknown"),
+            )
 
 
 class _DiscoveryClient:
@@ -297,6 +303,31 @@ class InteractiveOutputTests(TestCase):
                 "SUCCESS=1\n",
                 "",
                 ["good"],
+            ),
+            (
+                "retry_verdict_for_the_shell",
+                ["--retry-verdict", "shell", "--no-prompt"],
+                ["open unsafe", "exit"],
+                "SUCCESS=0\n",
+                "did not answer\nretry: unsafe (outcome_unknown)\n",
+                ["unsafe"],
+            ),
+            (
+                "retry_verdict_as_json_for_the_shell",
+                ["--retry-verdict", "shell", "--no-prompt", "--json"],
+                ["open unsafe", "exit"],
+                "SUCCESS=0\n",
+                'did not answer\n{"retry": "unsafe", "retry_reason": "outcome_unknown"}\n',
+                ["unsafe"],
+            ),
+            (
+                "retry_verdict_for_one_command",
+                ["shell", "--no-prompt"],
+                ["--retry-verdict open --json unsafe", "open unsafe", "exit"],
+                "SUCCESS=0\nSUCCESS=0\n",
+                'did not answer\n{"retry": "unsafe", "retry_reason": "outcome_unknown"}\n'
+                "did not answer\n",
+                ["unsafe", "unsafe"],
             ),
         ]
         for name, argv, lines, expected_stdout, expected_stderr, expected_urls in cases:

@@ -58,6 +58,7 @@ from idb.common.types import (
     QuiescenceTargetChanged,
     QuiescenceTargetExited,
     QuiescenceTouchesCompleted,
+    RetryVerdict,
     Screenshot,
     ScreenshotCrop,
     ScreenshotFormat,
@@ -864,6 +865,7 @@ class TestParser(TestCase):
         namespace.companion = None
         namespace.compression = None
         namespace.prune_dead_companion = True
+        namespace.retry_verdict = False
         namespace.log_level = "WARNING"
         namespace.log_level_deprecated = None
         namespace.root_command = "xctest"
@@ -1040,6 +1042,7 @@ class TestParser(TestCase):
             namespace.companion = None
             namespace.compression = None
             namespace.prune_dead_companion = True
+            namespace.retry_verdict = False
             namespace.log_level = "WARNING"
             namespace.log_level_deprecated = None
             namespace.root_command = "log"
@@ -1059,6 +1062,7 @@ class TestParser(TestCase):
             namespace.companion = None
             namespace.compression = None
             namespace.prune_dead_companion = True
+            namespace.retry_verdict = False
             namespace.log_level = "WARNING"
             namespace.log_level_deprecated = None
             namespace.root_command = "log"
@@ -1231,6 +1235,7 @@ class TestParser(TestCase):
             namespace.companion = None
             namespace.compression = None
             namespace.prune_dead_companion = True
+            namespace.retry_verdict = False
             namespace.log_level = "WARNING"
             namespace.log_level_deprecated = None
             namespace.root_command = "record-video"
@@ -1280,6 +1285,7 @@ class TestParser(TestCase):
                     companion_path=COMPANION_PATH,
                     compression=None,
                     prune_dead_companion=True,
+                    retry_verdict=False,
                     log_level="WARNING",
                     format="h264",
                     fps=None,
@@ -1342,6 +1348,59 @@ class TestParser(TestCase):
             ignore_case=False,
             backend=AccessibilityBackend.AX,
         )
+
+    async def _failing_tap(self, *argv: str) -> tuple[int, str]:
+        self.client_mock.accessibility_tap = AsyncMock(
+            side_effect=IdbException(
+                "The application did not answer",
+                retry=RetryVerdict(verdict="unsafe", reason="outcome_unknown"),
+            )
+        )
+        err = StringIO()
+        with redirect_stderr(err):
+            exit_code = await cli_main(cmd_input=list(argv))
+        return int(exit_code or 0), err.getvalue()
+
+    async def test_a_failure_with_a_verdict_prints_only_its_message_by_default(
+        self,
+    ) -> None:
+        exit_code, stderr = await self._failing_tap("ui", "tap", "Login")
+        self.assertEqual(exit_code, 1)
+        self.assertEqual(stderr, "The application did not answer\n")
+
+    async def test_a_failure_with_a_verdict_prints_it_after_the_message(
+        self,
+    ) -> None:
+        exit_code, stderr = await self._failing_tap(
+            "--retry-verdict", "ui", "tap", "Login"
+        )
+        self.assertEqual(exit_code, 1)
+        self.assertEqual(
+            stderr, "The application did not answer\nretry: unsafe (outcome_unknown)\n"
+        )
+
+    async def test_a_failure_with_a_verdict_prints_it_as_json_with_json(
+        self,
+    ) -> None:
+        exit_code, stderr = await self._failing_tap(
+            "--retry-verdict", "ui", "tap", "Login", "--json"
+        )
+        self.assertEqual(exit_code, 1)
+        message, verdict = stderr.splitlines()
+        self.assertEqual(message, "The application did not answer")
+        self.assertEqual(
+            json.loads(verdict), {"retry": "unsafe", "retry_reason": "outcome_unknown"}
+        )
+
+    async def test_a_failure_without_a_verdict_prints_only_its_message(self) -> None:
+        self.client_mock.accessibility_tap = AsyncMock(
+            side_effect=IdbException("The application did not answer")
+        )
+        err = StringIO()
+        with redirect_stderr(err):
+            exit_code = await cli_main(cmd_input=["ui", "tap", "Login"])
+        self.assertEqual(exit_code, 1)
+        self.assertEqual(err.getvalue(), "The application did not answer\n")
 
     async def test_tap_marker(self) -> None:
         self.client_mock.accessibility_tap = AsyncMock(return_value=[])

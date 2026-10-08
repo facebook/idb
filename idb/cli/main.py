@@ -27,6 +27,7 @@ warnings.filterwarnings(
 logging.getLogger("scuba_logger").setLevel(logging.CRITICAL)
 
 import idb.common.plugin as plugin
+from idb.cli import format_retry
 from idb.cli.command_tree import build_command_graph, get_default_companion_path
 from idb.cli.commands.target import ConnectCommandException
 from idb.common.command import Command
@@ -70,6 +71,7 @@ async def gen_main(cmd_input: list[str] | None = None) -> SysExitArg:
     # Parse input and run
     cmd_input = cmd_input or sys.argv[1:]
 
+    args = None
     try:
         args = parser.parse_args(cmd_input)
         plugin.on_launch(logger, subcommands=root_command.resolve_subcommand_path(args))
@@ -80,6 +82,11 @@ async def gen_main(cmd_input: list[str] | None = None) -> SysExitArg:
         return 1
     except IdbException as e:
         print(e.args[0], file=sys.stderr)
+        if e.retry is not None and getattr(args, "retry_verdict", False):
+            print(
+                format_retry(e.retry, as_json=getattr(args, "json", False)),
+                file=sys.stderr,
+            )
         return 1
     except SystemExit as e:
         return e.code

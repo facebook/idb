@@ -98,6 +98,7 @@ from idb.common.types import (
     QuiescenceTargetChanged,
     QuiescenceTargetExited,
     QuiescenceTouchesCompleted,
+    RetryVerdict,
     Screenshot,
     ScreenshotOptions,
     TargetDescription,
@@ -190,6 +191,7 @@ from idb.grpc.instruments import (
 )
 from idb.grpc.launch import drain_launch_stream, end_launch_stream
 from idb.grpc.screenshot import screenshot_from_grpc, screenshot_to_grpc
+from idb.grpc.status_details import RetryVerdictCodec
 from idb.grpc.stream import (
     cancel_wrapper,
     drain_to_stream,
@@ -278,6 +280,11 @@ def _quiescence_event_from_grpc(
     )
 
 
+def _idb_exception(error: GRPCError) -> IdbException:
+    retry = error.details if isinstance(error.details, RetryVerdict) else None
+    return IdbException(error.message, retry=retry)  # noqa B306
+
+
 def log_and_handle_exceptions(grpc_method_name: str):  # pyre-ignore
     metadata: LoggingMetadata = {
         "grpc_method_name": grpc_method_name,
@@ -290,7 +297,7 @@ def log_and_handle_exceptions(grpc_method_name: str):  # pyre-ignore
             try:
                 return await func(*args, **kwargs)
             except GRPCError as e:
-                raise IdbException(e.message) from e  # noqa B306
+                raise _idb_exception(e) from e
             except (ProtocolError, StreamTerminatedError) as e:
                 raise IdbException(e.args) from e
             except OSError as e:
@@ -303,7 +310,7 @@ def log_and_handle_exceptions(grpc_method_name: str):  # pyre-ignore
                 async for item in func(*args, **kwargs):
                     yield item
             except GRPCError as e:
-                raise IdbException(e.message) from e  # noqa B306
+                raise _idb_exception(e) from e
             except (ProtocolError, StreamTerminatedError) as e:
                 raise IdbException(e.args) from e
             except OSError as e:
@@ -373,9 +380,14 @@ class Client(ClientBase):
                 port=address.port,
                 loop=asyncio.get_running_loop(),
                 ssl=ssl_context,
+                status_details_codec=RetryVerdictCodec(),
             )
             if isinstance(address, TCPAddress)
-            else Channel(path=address.path, loop=asyncio.get_running_loop())
+            else Channel(
+                path=address.path,
+                loop=asyncio.get_running_loop(),
+                status_details_codec=RetryVerdictCodec(),
+            )
         ) as channel:
             stub = CompanionServiceStub(channel=channel)
             with tempfile.NamedTemporaryFile(mode="w+b") as f:

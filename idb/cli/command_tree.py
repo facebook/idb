@@ -216,6 +216,12 @@ def add_root_arguments(parser: argparse.ArgumentParser) -> None:
         default=True,
         help="If flagged will not modify local state when a companion is known to be unresponsive",
     )
+    parser.add_argument(
+        "--retry-verdict",
+        action="store_true",
+        default=False,
+        help="When a command fails, print whether it is safe to send again, and why, on the line after the error",
+    )
 
 
 def build_builtin_commands(shell_command: ShellCommand) -> list[Command]:

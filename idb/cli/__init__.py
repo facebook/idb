@@ -5,6 +5,7 @@
 # LICENSE file in the root directory of this source tree.
 
 
+import json
 import logging
 import os
 import sys
@@ -25,6 +26,7 @@ from idb.common.types import (
     IdbConnectionException,
     IdbException,
     LoggingMetadata,
+    RetryVerdict,
     TCPAddress,
 )
 from idb.grpc.client import Client as GrpcClient
@@ -35,6 +37,15 @@ from idb.utils.contextlib import asynccontextmanager
 def print_upload_progress(line: str) -> None:
     """Prints install upload progress to stderr, which keeps stdout and `--json` output unchanged."""
     print(line, file=sys.stderr, flush=True)
+
+
+def format_retry(retry: RetryVerdict, as_json: bool) -> str:
+    """The line after an error's message saying whether the failed operation
+    is safe to send again. Opt-in, because callers match the whole of
+    stderr."""
+    if as_json:
+        return json.dumps({"retry": retry.verdict, "retry_reason": retry.reason})
+    return f"retry: {retry.verdict} ({retry.reason})"
 
 
 def _parse_address(value: str) -> Address:
