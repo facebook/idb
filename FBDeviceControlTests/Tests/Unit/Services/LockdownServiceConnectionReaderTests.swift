@@ -93,6 +93,23 @@ struct LockdownServiceConnectionReaderTests {
   }
 
   @Test
+  func startingAReaderTwiceFailsNamingItsState() async throws {
+    var calls = CreateZeroedAMDCalls()
+    calls.ServiceConnectionGetSecureIOContext = { _ in nil }
+    calls.ServiceConnectionReceive = endOfFileReceive
+    let connection = makeConnection(calls: calls)
+    let reader = LockdownServiceConnectionReader(connection: connection, consumer: FBDataBuffer.accumulatingBuffer()) { $0() }
+    _ = try await bridgeFBFuture(reader.startReading())
+
+    do {
+      _ = try await bridgeFBFuture(reader.startReading())
+      Issue.record("A reader that has already started should refuse to start again")
+    } catch {
+      #expect(error.localizedDescription == "Cannot start reading in state 2")
+    }
+  }
+
+  @Test
   func invalidationWaitsForInFlightReadToFinish() async throws {
     sReceiveGate = DispatchSemaphore(value: 0)
     var calls = CreateZeroedAMDCalls()
