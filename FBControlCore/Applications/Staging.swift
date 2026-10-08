@@ -75,28 +75,6 @@ public enum StagedTree: Sendable {
   }
 }
 
-/// How staging unpacked an archive that arrived as a stream: what its first bytes
-/// said it was, and what extracted it.
-public struct ExtractionRoute: Equatable, Sendable {
-
-  public enum Extractor: String, Sendable {
-    case inProcessTar = "tar_inprocess"
-    case bsdTar = "bsdtar"
-    /// A zip extracted as it arrived.
-    case zipStream = "zip_stream"
-    /// A zip extracted from its spooled copy, after extracting it as it arrived failed.
-    case zipSpool = "zip_spool"
-  }
-
-  public let format: ArchiveFormat
-  public let extractor: Extractor
-
-  public init(format: ArchiveFormat, extractor: Extractor) {
-    self.format = format
-    self.extractor = extractor
-  }
-}
-
 /// What staging learned about how it fetched and unpacked a source, beyond the progress of its stages.
 public enum StagingReport: Equatable, Sendable {
   case route(ExtractionRoute)
@@ -191,9 +169,9 @@ public enum Staging {
       try await temporaryDirectory.withTemporaryDirectory { spoolDirectory in
         try await runExtractStage(to: extractPath, totalStart: totalStart, onProgress: onProgress) {
           try await pipe.reading { source in
-            try await extractStream(
-              source, tarExtractor: ArchiveExtractors.stream(options.compression), spoolingIn: spoolDirectory,
-              to: extractPath, options: options, logger: logger, onReport: onReport)
+            try await ArchiveExtractors.stream(options.compression).extract(
+              from: source, spoolingIn: spoolDirectory, to: extractPath, options: options.extractOptions, logger: logger
+            ) { onReport(.route($0)) }
           }
         }
       }
@@ -271,95 +249,9 @@ public enum Staging {
     onReport: @escaping @Sendable (StagingReport) -> Void
   ) async throws {
     try await pipe.reading { source in
-      try await extractStream(
-        source, tarExtractor: ArchiveExtractors.inProcessTar, spoolingIn: spoolDirectory,
-        to: extractPath, options: options, logger: logger, onReport: onReport)
-    }
-  }
-
-  /// Decides on the first bytes, so that only a zip is spooled; anything else goes to `tarExtractor`.
-  private static func extractStream(
-    _ source: any ByteSource,
-    tarExtractor: any ArchiveExtractor,
-    spoolingIn spoolDirectory: URL,
-    to extractPath: String,
-    options: InstallOptions,
-    logger: any ControlCoreLogger,
-    onReport: @escaping @Sendable (StagingReport) -> Void
-  ) async throws {
-    let peekable = HandedOver(PeekableSource(source))
-    let head = try await offCooperativePool { try peekable.value.peek(ArchiveFormat.sniffLength) }.get()
-    let format = ArchiveFormat.detect(head)
-    switch format {
-    case .zip, .zstdZip:
-      onReport(.route(ExtractionRoute(format: format, extractor: .zipStream)))
-      try await extractZipStream(peekable.value, spoolingIn: spoolDirectory, to: extractPath, options: options, logger: logger) {
-        onReport(.route(ExtractionRoute(format: format, extractor: .zipSpool)))
-      }
-    case .zstd, .gzip, .other, .undetermined:
-      onReport(.route(ExtractionRoute(format: format, extractor: tarExtractor is BSDTarExtractor ? .bsdTar : .inProcessTar)))
-      try await tarExtractor.extract(from: peekable.value, to: extractPath, options: options.extractOptions, logger: logger)
-    }
-  }
-
-  /// Extracts a zip, or a zstd-compressed zip, as it arrives, spooling it into
-  /// `spoolDirectory` as it is read, since symlinks and permissions are recorded
-  /// only in the central directory at its end, which a reader of the stream never
-  /// reaches. A zip the stream reader cannot handle is extracted again from the
-  /// spooled copy, after calling `onSpoolFallback`.
-  private static func extractZipStream(
-    _ source: any ByteSource,
-    spoolingIn spoolDirectory: URL,
-    to extractPath: String,
-    options: InstallOptions,
-    logger: any ControlCoreLogger,
-    onSpoolFallback: () -> Void
-  ) async throws {
-    let spoolPath = spoolDirectory.appendingPathComponent("archive.zip").path
-    let source = HandedOver(source)
-    let start = Date()
-    let streamed = try await offCooperativePool {
-      try spool(source.value, to: spoolPath, extractingTo: extractPath, overrideModificationTime: options.overrideModificationTime)
-    }.get()
-    do {
-      let summary = try streamed.get()
-      try ZipCentralDirectory(archiveAtPath: spoolPath).repair(extractedAt: extractPath, overrideModificationTime: options.overrideModificationTime)
-      logger.log(summary.description(from: "a zip stream", since: start))
-      return
-    } catch {
-      logger.log("Extracting the spooled zip at \(spoolPath), as extracting it as it arrived failed: \(error)")
-    }
-    onSpoolFallback()
-    ArchiveExtraction.removeContents(of: extractPath)
-    try await ArchiveExtractors.default.extract(
-      fromFile: spoolPath, to: extractPath, options: options.extractOptions, logger: logger)
-  }
-
-  /// Reads `source` to its end, extracting it as it goes and writing it,
-  /// decompressed, to `spoolPath`. Throws if the spooled zip is incomplete;
-  /// whether extracting it as it arrived worked is the result.
-  private static func spool(
-    _ source: any ByteSource,
-    to spoolPath: String,
-    extractingTo extractPath: String,
-    overrideModificationTime: Bool
-  ) throws -> Result<ArchiveExtractionSummary, Error> {
-    do {
-      guard FileManager.default.createFile(atPath: spoolPath, contents: nil) else {
-        throw CocoaError(.fileWriteUnknown, userInfo: [NSFilePathErrorKey: spoolPath])
-      }
-      let file = try FileHandle(forWritingTo: URL(fileURLWithPath: spoolPath))
-      defer { try? file.close() }
-      let tee = TeeSource(try ZstdSource.ifZstd(source), to: file)
-      let streamed = Result {
-        try ZipStreamExtractor.extract(from: tee, to: extractPath, overrideModificationTime: overrideModificationTime)
-      }
-      try tee.drain()
-      return streamed
-    } catch {
-      // Leaves nothing writing to the input blocked on it.
-      try? source.drain()
-      throw error
+      try await ArchiveExtractors.inProcess.extract(
+        from: source, spoolingIn: spoolDirectory, to: extractPath, options: options.extractOptions, logger: logger
+      ) { onReport(.route($0)) }
     }
   }
 

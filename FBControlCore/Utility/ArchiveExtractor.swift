@@ -206,18 +206,21 @@ public enum ArchiveExtractors {
 
   public static let inProcessZip: any ArchiveExtractor = InProcessZipExtractor(fallback: inProcessTar)
 
+  /// A zip file and every stream in-process, with `bsdtar` for anything they cannot read.
+  public static let inProcess = SniffingExtractor(files: inProcessZip, tars: inProcessTar)
+
   /// The extractor every extraction goes through unless a caller names another.
-  public static var `default`: any ArchiveExtractor { inProcessZip }
+  public static var `default`: any ArchiveExtractor { inProcess }
 
   /// The extractor for a stream that a client compresses as it sends. `bsdtar`
-  /// reads a gzip twice as fast as an in-process reader starved of input, but
-  /// macOS has no zstd decompressor for it to run.
-  public static func stream(_ compression: FBCompressionFormat) -> any ArchiveExtractor {
+  /// reads a gzipped tar twice as fast as an in-process reader starved of input,
+  /// but macOS has no zstd decompressor for it to run.
+  public static func stream(_ compression: FBCompressionFormat) -> SniffingExtractor {
     switch compression {
     case .GZIP:
-      return bsdTar
+      return SniffingExtractor(files: inProcessZip, tars: bsdTar)
     case .ZSTD:
-      return inProcessTar
+      return inProcess
     }
   }
 }

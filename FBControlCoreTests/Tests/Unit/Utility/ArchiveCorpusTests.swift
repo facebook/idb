@@ -40,9 +40,9 @@ struct ArchiveCorpusTests {
       }
     }
 
-    /// Whether `bsdtar` is handed a zip on its stdin, where it never reaches the central directory that records modes and symlinks.
-    func streamsAZipToBSDTar(_ producer: Producer) -> Bool {
-      self == .stream && producer.isZip
+    /// Whether a zip is read as it arrives, then repaired from the complete file.
+    func repairsAZip(_ producer: Producer) -> Bool {
+      self != .file && producer.isZip
     }
 
     /// Whether the archive is extracted in-process, rather than handed on to `bsdtar`.
@@ -51,7 +51,7 @@ struct ArchiveCorpusTests {
       case .file, .zipStream:
         return producer.isZip
       case .stream:
-        return !producer.isZip
+        return true
       }
     }
   }
@@ -90,18 +90,15 @@ struct ArchiveCorpusTests {
     let extracted = root.appendingPathComponent("extracted").path
     try FileManager.default.createDirectory(atPath: extracted, withIntermediateDirectories: true)
     let fallback = RecordingExtractor(BSDTarExtractor())
-    let extractor = InProcessZipExtractor(fallback: InProcessTarExtractor(fallback: fallback))
+    let tarExtractor = InProcessTarExtractor(fallback: fallback)
+    let extractor = SniffingExtractor(files: InProcessZipExtractor(fallback: tarExtractor), tars: tarExtractor)
 
     switch route {
     case .file:
       try await extractor.extract(fromFile: archive.path, to: extracted, options: ArchiveExtractOptions(), logger: logger)
     case .stream:
-      let input = BytePipe(try Data(contentsOf: archive))
-      do {
-        try await input.reading { try await extractor.extract(from: $0, to: extracted, options: ArchiveExtractOptions(), logger: logger) }
-      } catch  where route.streamsAZipToBSDTar(producer) {
-        // BUG: bsdtar may stop reading a zip on its stdin early, failing the write; flipped once streams are sniffed before an extractor is chosen.
-        return
+      try await BytePipe(try Data(contentsOf: archive)).reading {
+        try await extractor.extract(from: $0, to: extracted, options: ArchiveExtractOptions(), logger: logger)
       }
     case .zipStream:
       try await BytePipe(try Data(contentsOf: archive)).reading { source in
@@ -112,19 +109,14 @@ struct ArchiveCorpusTests {
     }
 
     // The repair removes AppleDouble files after the fact, which moves their directories' times.
-    let directoryTimes = route != .zipStream
+    let directoryTimes = !route.repairsAZip(producer)
     let expected = await bsdtarOutcome(archive, keepHardLinks: producer.keepsHardLinks, directoryTimes: directoryTimes)
     let actual = try ArchiveFixtures.tree(at: extracted, keepHardLinks: producer.keepsHardLinks, directoryTimes: directoryTimes)
     guard case .extracted(let expectedTree) = expected else {
       Issue.record("bsdtar could not extract \(producer)")
       return
     }
-    if route.streamsAZipToBSDTar(producer) {
-      // BUG: a zip read as a stream loses its modes and symlinks; flipped once streams are sniffed before an extractor is chosen.
-      #expect(ArchiveFixtures.differences(expectedTree, actual) != "", "\(producer) \(route)")
-    } else {
-      #expect(ArchiveFixtures.differences(expectedTree, actual) == "", "\(producer) \(route)")
-    }
+    #expect(ArchiveFixtures.differences(expectedTree, actual) == "", "\(producer) \(route)")
     #expect(fallback.wasReached != route.extractsInProcess(producer), "\(producer) \(route) fell back: \(fallback.wasReached)")
   }
 
