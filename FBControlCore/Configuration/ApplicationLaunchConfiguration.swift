@@ -14,24 +14,13 @@ public enum ApplicationLaunchMode: UInt {
 }
 
 /// Where a launched application's standard output or standard error goes.
-public enum ApplicationOutput: Equatable, Sendable {
+public enum ApplicationOutput: Sendable {
   case nullDevice
   /// Forwarded to the consumer, which receives end-of-file once the application exits.
   case consumer(any DataConsumer)
-
-  public static func == (lhs: ApplicationOutput, rhs: ApplicationOutput) -> Bool {
-    switch (lhs, rhs) {
-    case (.nullDevice, .nullDevice):
-      return true
-    case let (.consumer(lhs), .consumer(rhs)):
-      return lhs === rhs
-    default:
-      return false
-    }
-  }
 }
 
-public struct ApplicationLaunchConfiguration: Equatable, CustomStringConvertible {
+public struct ApplicationLaunchConfiguration: CustomStringConvertible {
 
   public let bundleID: String
   public let bundleName: String?

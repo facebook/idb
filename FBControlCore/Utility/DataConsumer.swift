@@ -12,7 +12,7 @@ import Foundation
 /// Every consumer is handed bytes from one thread and read or finished from another — that is what a
 /// consumer is for — so the protocols are `Sendable`: a conformer is either confined to one queue,
 /// immutable, or locked, and says which.
-public protocol DataConsumer: AnyObject, Sendable {
+public protocol DataConsumer: Sendable {
   /// Consumes the provided binary data.
   func consumeData(_ data: Data)
 

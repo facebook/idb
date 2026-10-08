@@ -14,21 +14,6 @@ final class FBControlCoreTransientTests: XCTestCase {
     return BundleDescriptor(name: name, identifier: identifier, path: path, binary: nil)
   }
 
-  private func makeAppLaunch(
-    bundleID: String = "com.test.host",
-    bundleName: String? = nil,
-    launchMode: ApplicationLaunchMode = .failIfRunning
-  ) -> ApplicationLaunchConfiguration {
-    return ApplicationLaunchConfiguration(
-      bundleID: bundleID,
-      bundleName: bundleName,
-      arguments: [],
-      environment: [:],
-      waitForDebugger: false,
-      launchMode: launchMode
-    )
-  }
-
   // MARK: - BundleDescriptor
 
   /// Two descriptors carrying separately parsed but equal binaries are equal.
@@ -157,20 +142,6 @@ final class FBControlCoreTransientTests: XCTestCase {
   }
 
   // MARK: - ApplicationLaunchConfiguration
-
-  func testApplicationLaunchConfigurationEquality() {
-    let a = ApplicationLaunchConfiguration(bundleID: "com.app", bundleName: "App", arguments: [], environment: [:], waitForDebugger: false, launchMode: .failIfRunning)
-    let b = ApplicationLaunchConfiguration(bundleID: "com.app", bundleName: "App", arguments: [], environment: [:], waitForDebugger: false, launchMode: .failIfRunning)
-
-    XCTAssertEqual(a, b)
-  }
-
-  func testApplicationLaunchConfigurationInequalityByMode() {
-    let a = makeAppLaunch(launchMode: .failIfRunning)
-    let b = makeAppLaunch(launchMode: .relaunchIfRunning)
-
-    XCTAssertNotEqual(a, b)
-  }
 
   func testApplicationLaunchConfigurationDescription() {
     let config = ApplicationLaunchConfiguration(

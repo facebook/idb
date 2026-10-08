@@ -70,7 +70,7 @@ final class DeviceLogCommandsTests {
     _ = try await bridgeFBFuture(consumer.finishedConsuming)
 
     #expect((String(decoding: consumer.data(), as: UTF8.self)) == ("a line of syslog\n"))
-    #expect((operation.consumer) === (consumer))
+    #expect((operation.consumer as AnyObject) === (consumer as AnyObject))
     await waitFor("the AMDevice session to close") { self.amDevice.events == syslogSessionEvents }
     #expect((syslogSessionEvents) == (amDevice.events))
   }
