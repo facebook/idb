@@ -19,7 +19,7 @@ final class InstrumentsOperationTests: XCTestCase {
 
     let resolved = await waitForCompletion(of: consumer.hasStartedLoadingTemplate)
     XCTAssertTrue(resolved, "A 'Loading template' line should resolve the template-loaded marker")
-    XCTAssertFalse(consumer.hasStoppedRecording.hasCompleted, "Loading a template is not a stop")
+    XCTAssertFalse(consumer.hasStoppedRecording.hasHappened, "Loading a template is not a stop")
   }
 
   func testConsumer_WhenTraceCompleteLineArrives_FailsWithTheAccumulatedLogs() async throws {
@@ -31,10 +31,14 @@ final class InstrumentsOperationTests: XCTestCase {
     let resolved = await waitForCompletion(of: consumer.hasStoppedRecording)
     XCTAssertTrue(resolved, "An 'Instruments Trace Complete' line should resolve the stopped-recording marker")
 
-    let error = try XCTUnwrap(consumer.hasStoppedRecording.error, "Stopping prematurely should be a failure, not a success")
-    XCTAssertTrue(
-      error.localizedDescription.contains("Recording something interesting"),
-      "The failure should carry the accumulated instruments logs, got: \(error.localizedDescription)")
+    do {
+      try await consumer.hasStoppedRecording.wait()
+      XCTFail("Stopping prematurely should be a failure, not a success")
+    } catch {
+      XCTAssertTrue(
+        error.localizedDescription.contains("Recording something interesting"),
+        "The failure should carry the accumulated instruments logs, got: \(error.localizedDescription)")
+    }
   }
 
   func testConsumer_WhenUnrelatedLinesArrive_ResolvesNeitherMarker() async throws {
@@ -43,8 +47,8 @@ final class InstrumentsOperationTests: XCTestCase {
     consumer.consume(line: "Some incidental instruments chatter")
 
     try await Task.sleep(nanoseconds: 200_000_000)
-    XCTAssertFalse(consumer.hasStartedLoadingTemplate.hasCompleted, "An unrelated line should not signal template loading")
-    XCTAssertFalse(consumer.hasStoppedRecording.hasCompleted, "An unrelated line should not signal a stop")
+    XCTAssertFalse(consumer.hasStartedLoadingTemplate.hasHappened, "An unrelated line should not signal template loading")
+    XCTAssertFalse(consumer.hasStoppedRecording.hasHappened, "An unrelated line should not signal a stop")
   }
 
   // MARK: - Startup
@@ -156,10 +160,10 @@ final class InstrumentsOperationTests: XCTestCase {
 
   /// The consumer parses lines asynchronously on the block consumer's own queue, so the
   /// markers resolve some time after the data is fed in.
-  private func waitForCompletion(of future: FBMutableFuture<NSNull>, timeout: TimeInterval = 5) async -> Bool {
+  private func waitForCompletion(of event: AsyncEvent<Void>, timeout: TimeInterval = 5) async -> Bool {
     let deadline = Date().addingTimeInterval(timeout)
     while Date() < deadline {
-      if future.hasCompleted {
+      if event.hasHappened {
         return true
       }
       try? await Task.sleep(nanoseconds: 20_000_000)

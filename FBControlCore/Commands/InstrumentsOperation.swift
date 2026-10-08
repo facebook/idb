@@ -43,12 +43,11 @@ extension InstrumentsError: LocalizedError {
 /// Watches the instruments output for the two lifecycle markers: template loading has
 /// begun, and the premature "Trace Complete" that signals a failed startup.
 ///
-/// @unchecked Sendable: the two futures are `FBMutableFuture`s, internally synchronised; the line
-/// consumer is itself a `DataConsumer`.
+/// @unchecked Sendable: the two events are `Sendable`; the line consumer is itself a `DataConsumer`.
 final class InstrumentsConsumer: NSObject, DataConsumer, @unchecked Sendable {
 
-  let hasStoppedRecording: FBMutableFuture<NSNull>
-  let hasStartedLoadingTemplate: FBMutableFuture<NSNull>
+  let hasStoppedRecording = AsyncEvent<Void>()
+  let hasStartedLoadingTemplate = AsyncEvent<Void>()
   private let lineConsumer: any DataConsumer
 
   override init() {
@@ -57,20 +56,18 @@ final class InstrumentsConsumer: NSObject, DataConsumer, @unchecked Sendable {
     final class Logs {
       var lines: [String] = []
     }
-    let hasStoppedRecording = FBMutableFuture<NSNull>()
-    let hasStartedLoadingTemplate = FBMutableFuture<NSNull>()
+    let hasStoppedRecording = self.hasStoppedRecording
+    let hasStartedLoadingTemplate = self.hasStartedLoadingTemplate
     let logs = Logs()
-    self.hasStoppedRecording = hasStoppedRecording
-    self.hasStartedLoadingTemplate = hasStartedLoadingTemplate
     self.lineConsumer = LineConsumer { logLine in
       if !logLine.isEmpty {
         logs.lines.append(logLine)
       }
       if logLine.contains("Loading template") {
-        hasStartedLoadingTemplate.resolve(withResult: NSNull())
+        hasStartedLoadingTemplate.happen()
       }
-      if logLine.contains("Instruments Trace Complete"), !hasStoppedRecording.hasCompleted {
-        hasStoppedRecording.resolveWithError(InstrumentsError.startupFailed(logs: logs.lines))
+      if logLine.contains("Instruments Trace Complete"), !hasStoppedRecording.hasHappened {
+        hasStoppedRecording.fail(InstrumentsError.startupFailed(logs: logs.lines))
       }
     }
     super.init()
@@ -196,18 +193,20 @@ public final class InstrumentsOperation {
     launchErrorTimeout: TimeInterval,
     logger: any ControlCoreLogger
   ) async throws {
-    let templateLoaded = convertFBMutableFuture(consumer.hasStartedLoadingTemplate)
-      .timeout(templateTimeout, waitingFor: "instruments to start loading the template")
-    try await bridgeFBFutureVoid(templateLoaded.retyped(FBFuture<NSNull>.self))
+    try await consumer.hasStartedLoadingTemplate.wait(timeout: templateTimeout, waitingFor: "instruments to start loading the template")
     logger.log("Waiting for \(launchErrorTimeout) seconds for instruments to start properly")
     // Instruments prints nothing once profiling has begun, so startup is judged a success when
     // the launch-error timeout passes without 'Instruments Trace Complete'.
-    let timerFuture = FBFuture<NSNull>.empty().delay(launchErrorTimeout)
-    let raced = FBFuture<AnyObject>(race: [
-      convertFBMutableFuture(consumer.hasStoppedRecording).retyped(FBFuture<AnyObject>.self),
-      timerFuture.retyped(FBFuture<AnyObject>.self),
-    ])
-    _ = try await bridgeFBFuture(raced)
+    try await withThrowingTaskGroup(of: Void.self) { group in
+      group.addTask {
+        try await consumer.hasStoppedRecording.wait()
+      }
+      group.addTask {
+        try await Task.sleep(nanoseconds: UInt64(launchErrorTimeout * 1_000_000_000))
+      }
+      defer { group.cancelAll() }
+      try await group.next()
+    }
   }
 
   /// Stops the operation, waiting for the trace file to be written out to disk.
