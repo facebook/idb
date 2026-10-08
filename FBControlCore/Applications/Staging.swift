@@ -24,6 +24,9 @@ public enum InstallSource {
   /// A single file, gzipped, arriving on a pipe that the caller is writing to;
   /// it is staged as `name`.
   case gzippedFile(BytePipe, name: String)
+
+  /// A single file, gzipped, to fetch over HTTP; it is staged as `name`.
+  case remoteGzippedFile(URL, name: String)
 }
 
 /// How to get from a source to an installable bundle.
@@ -175,32 +178,43 @@ public enum Staging {
           }
         }
       }
+    case .remoteGzippedFile(let url, let name):
+      let file = stagingDirectory.appendingPathComponent(name)
+      try await download(
+        url, extractingTo: file.path, totalStart: totalStart, configuration: downloadConfiguration,
+        logger: logger, onProgress: onProgress, onReport: onReport
+      ) { pipe in
+        try await pipe.reading { source in
+          try await FBArchiveOperations.extractGzip(from: source, toPath: file.path)
+        }
+      }
+      return .file(file)
     case .remoteURL(let url):
       try await temporaryDirectory.withTemporaryDirectory { spoolDirectory in
-        try await downloadAndExtract(
-          url, to: extractPath, options: options, totalStart: totalStart,
-          configuration: downloadConfiguration, spoolDirectory: spoolDirectory,
-          logger: logger, onProgress: onProgress, onReport: onReport)
+        try await download(
+          url, extractingTo: extractPath, totalStart: totalStart, configuration: downloadConfiguration,
+          logger: logger, onProgress: onProgress, onReport: onReport
+        ) { pipe in
+          try await extractDownload(
+            pipe, spoolingIn: spoolDirectory, to: extractPath, options: options, logger: logger, onReport: onReport)
+        }
       }
     }
     return .extracted(stagingDirectory)
   }
 
-  /// The extractor reads the transfer as it arrives rather than waiting for a
+  /// `extract` reads the transfer as it arrives rather than waiting for a
   /// complete file, so the download and extract stages overlap and each times
   /// against its own start.
-  ///
-  /// A zip is spooled into `spoolDirectory` as it is extracted.
-  private static func downloadAndExtract(
+  private static func download(
     _ url: URL,
-    to extractPath: String,
-    options: InstallOptions,
+    extractingTo extractPath: String,
     totalStart: Date,
     configuration: URLSessionConfiguration,
-    spoolDirectory: URL,
     logger: any ControlCoreLogger,
     onProgress: @escaping @Sendable (InstallProgressEvent) -> Void,
-    onReport: @escaping @Sendable (StagingReport) -> Void
+    onReport: @escaping @Sendable (StagingReport) -> Void,
+    extract: @escaping @Sendable (BytePipe) async throws -> Void
   ) async throws {
     let downloadStart = Date()
     onProgress(.downloadStarted(timing: .measure(stageStart: downloadStart, totalStart: totalStart), url: url))
@@ -227,8 +241,7 @@ public enum Staging {
     }
 
     try await runExtractStage(to: extractPath, totalStart: totalStart, onProgress: onProgress) {
-      async let extraction: Void = extractDownload(
-        download.pipe, spoolingIn: spoolDirectory, to: extractPath, options: options, logger: logger, onReport: onReport)
+      async let extraction: Void = extract(download.pipe)
       // The transfer's outcome first: the extractor only sees bytes and then an
       // end of file, so a failed transfer looks to it like a short archive.
       onReport(.download(try await download.completed()))
@@ -240,6 +253,7 @@ public enum Staging {
     }
   }
 
+  /// A zip is spooled into `spoolDirectory` as it is extracted.
   private static func extractDownload(
     _ pipe: BytePipe,
     spoolingIn spoolDirectory: URL,

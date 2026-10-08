@@ -178,55 +178,21 @@ struct InstallMethodHandler {
       return artifact
 
     case let .url(url):
-      switch Self.urlRoute(for: installDestination) {
-      case .staged:
-        return try await install(from: .remoteURL(url), compression: compression)
-      case .gzippedFile:
-        let download = DataDownloadInput.dataDownload(withURL: url, logger: targetLogger)
-        return try await Self.installDownload(download) { pipe in
-          try await install(from: .gzippedFile(pipe, name: name))
-        }
-      }
+      return try await install(from: Self.urlSource(url, for: installDestination, name: name), compression: compression)
 
     case let .filePath(filePath):
       return try await install(from: .localPath(filePath))
     }
   }
 
-  /// How a URL payload reaches staging.
-  enum URLRoute: Equatable {
-    /// Staged from the URL, which reports the download's progress.
-    case staged
-    /// Downloaded as a stream of a single gzipped file, which is not an archive staging could extract.
-    case gzippedFile
-  }
-
-  static func urlRoute(for destination: InstallDestination) -> URLRoute {
+  /// A dylib arrives as a single gzipped file; everything else as an archive.
+  static func urlSource(_ url: URL, for destination: InstallDestination, name: String) -> InstallSource {
     switch destination {
     case .application, .xctest, .dsym, .framework:
-      return .staged
+      return .remoteURL(url)
     case .dylib:
-      return .gzippedFile
+      return .remoteGzippedFile(url, name: name)
     }
-  }
-
-  /// Installs a dylib from a download's stream as it arrives.
-  ///
-  /// A failed download ends the stream early, which the install alone cannot tell from a complete one,
-  /// so its failure takes precedence over the install's outcome.
-  static func installDownload(
-    _ download: DataDownloadInput,
-    install: (BytePipe) async throws -> InstalledArtifact
-  ) async throws -> InstalledArtifact {
-    let artifact: InstalledArtifact
-    do {
-      artifact = try await install(download.pipe)
-    } catch {
-      try await download.completed()
-      throw error
-    }
-    try await download.completed()
-    return artifact
   }
 
   /// The format of a streamed payload, from its first bytes and the compression the client declared.
