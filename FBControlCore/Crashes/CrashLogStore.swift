@@ -13,8 +13,9 @@ public final class CrashLogStore {
 
   private let directories: [String]
   private let logger: any ControlCoreLogger
-  private let ingestedCrashLogs: NSMutableDictionary
-  private let queue: DispatchQueue
+  private let lock = NSLock()
+  // Guarded by `lock`, keyed by crash log name.
+  private var ingestedCrashLogs: [String: CrashLogInfo] = [:]
 
   public class func store(forDirectories directories: [String], logger: any ControlCoreLogger) -> Self {
     return self.init(directories: directories, logger: logger)
@@ -23,8 +24,6 @@ public final class CrashLogStore {
   required init(directories: [String], logger: any ControlCoreLogger) {
     self.directories = directories
     self.logger = logger
-    self.ingestedCrashLogs = NSMutableDictionary()
-    self.queue = DispatchQueue(label: "com.facebook.fbcontrolcore.crash_store")
   }
 
   // MARK: - Ingestion
@@ -73,21 +72,17 @@ public final class CrashLogStore {
 
   func removeCrashLog(atPath path: String) -> CrashLogInfo? {
     let key = (path as NSString).lastPathComponent
-    guard let crashLog = ingestedCrashLog(withName: key) else {
-      return nil
-    }
-    ingestedCrashLogs.removeObject(forKey: key)
-    return crashLog
+    return lock.withLock { ingestedCrashLogs.removeValue(forKey: key) }
   }
 
   // MARK: - Fetching
 
   public func ingestedCrashLog(withName name: String) -> CrashLogInfo? {
-    return ingestedCrashLogs[name] as? CrashLogInfo
+    lock.withLock { ingestedCrashLogs[name] }
   }
 
   func allIngestedCrashLogs() -> [CrashLogInfo] {
-    return ingestedCrashLogs.allValues.compactMap { $0 as? CrashLogInfo }
+    lock.withLock { Array(ingestedCrashLogs.values) }
   }
 
   /// Starts listening for the next crash log matching `predicate` before returning, so one ingested
@@ -105,26 +100,22 @@ public final class CrashLogStore {
   }
 
   public func pruneCrashLogs(matchingPredicate predicate: CrashLogPredicate) -> [CrashLogInfo] {
-    var keys: [String] = []
-    var crashLogs: [CrashLogInfo] = []
-    for crashLog in allIngestedCrashLogs() {
-      if !predicate.matches(crashLog) {
-        continue
+    lock.withLock {
+      let pruned = ingestedCrashLogs.values.filter(predicate.matches)
+      for crashLog in pruned {
+        ingestedCrashLogs.removeValue(forKey: crashLog.name)
       }
-      keys.append(crashLog.name)
-      crashLogs.append(crashLog)
+      return pruned
     }
-    ingestedCrashLogs.removeObjects(forKeys: keys)
-    return crashLogs
   }
 
   private func hasIngestedCrashLog(withName key: String) -> Bool {
-    return ingestedCrashLogs[key] != nil
+    lock.withLock { ingestedCrashLogs[key] != nil }
   }
 
   private func ingestCrashLog(_ crashLog: CrashLogInfo) -> CrashLogInfo {
     logger.log("Ingesting Crash Log \(crashLog)")
-    ingestedCrashLogs[crashLog.name] = crashLog
+    lock.withLock { ingestedCrashLogs[crashLog.name] = crashLog }
     NotificationCenter.default.post(name: CrashLogAppeared, object: crashLog)
     return crashLog
   }
