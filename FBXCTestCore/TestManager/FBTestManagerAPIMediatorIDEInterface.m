@@ -126,11 +126,9 @@
 {
   [self.logger log:[NSString stringWithFormat:@"Test Suite %@ started", testSuite]];
   if (testSuite.length == 0) {
-    NSError *error = [[[[XCTestBootstrapError
-                         describe:@"Test reported a suite with nil or empty identifier. This is unsupported."]
-                        inDomain:@"IDETestOperationsObserverErrorDomain"]
-                       code:0x9]
-                      build];
+    NSError *error = [NSError errorWithDomain:@"IDETestOperationsObserverErrorDomain"
+                                         code:0x9
+                                     userInfo:@{NSLocalizedDescriptionKey : @"Test reported a suite with nil or empty identifier. This is unsupported."}];
     [self.logger log:[NSString stringWithFormat:@"%@", error]];
   }
 

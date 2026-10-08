@@ -132,9 +132,10 @@ static const NSInteger FBProtocolMinimumVersion = 0x8;
                                                                                      }];
     connection = [[objc_lookUpClass("DTXConnection") alloc] initWithTransport:transport];
   } @catch (NSException *exception) {
-    return [[XCTestError
-             describe:[NSString stringWithFormat:@"Failed to wrap testmanagerd socket %d in DTXConnection: %@", socket, exception]]
-            failBool:error];
+    if (error) {
+      *error = [XCTestBootstrapErrors testFailure:[NSString stringWithFormat:@"Failed to wrap testmanagerd socket %d in DTXConnection: %@", socket, exception]];
+    }
+    return NO;
   }
   [connection registerDisconnectHandler:^{
     [logger log:@"Notified that testmanagerd connection disconnected"];
@@ -243,18 +244,14 @@ static const NSInteger FBProtocolMinimumVersion = 0x8;
 
   [self.logger log:[NSString stringWithFormat:@"Test bundle is ready, running protocol %ld, requires at least version %ld. IDE is running %ld and requires at least %ld", protocolVersionInt, minimumVersionInt, FBProtocolVersion, FBProtocolMinimumVersion]];
   if (minimumVersionInt > FBProtocolVersion) {
-    NSError *error = [[[XCTestBootstrapError
-                        describe:[NSString stringWithFormat:@"Protocol mismatch: test process requires at least version %ld, IDE is running version %ld", minimumVersionInt, FBProtocolVersion]]
-                       code:XCTestBootstrapErrorCodeStartupFailure]
-                      build];
+    NSError *error = [XCTestBootstrapErrors startupFailure:[NSString stringWithFormat:@"Protocol mismatch: test process requires at least version %ld, IDE is running version %ld", minimumVersionInt, FBProtocolVersion]
+                                           underlyingError:nil];
     [self concludeWithError:error];
     return nil;
   }
   if (protocolVersionInt < FBProtocolMinimumVersion) {
-    NSError *error = [[[XCTestBootstrapError
-                        describe:[NSString stringWithFormat:@"Protocol mismatch: IDE requires at least version %ld, test process is running version %ld", FBProtocolMinimumVersion, protocolVersionInt]]
-                       code:XCTestBootstrapErrorCodeStartupFailure]
-                      build];
+    NSError *error = [XCTestBootstrapErrors startupFailure:[NSString stringWithFormat:@"Protocol mismatch: IDE requires at least version %ld, test process is running version %ld", FBProtocolMinimumVersion, protocolVersionInt]
+                                           underlyingError:nil];
     [self concludeWithError:error];
     return nil;
   }
@@ -265,11 +262,7 @@ static const NSInteger FBProtocolMinimumVersion = 0x8;
 
 - (id)_XCT_initializationForUITestingDidFailWithError:(NSError *)error
 {
-  NSError *innerError = [[[[XCTestBootstrapError
-                            describe:@"Failed to initialize for UI testing"]
-                           causedBy:error]
-                          code:XCTestBootstrapErrorCodeStartupFailure]
-                         build];
+  NSError *innerError = [XCTestBootstrapErrors startupFailure:@"Failed to initialize for UI testing" underlyingError:error];
   [self concludeWithError:innerError];
   return nil;
 }

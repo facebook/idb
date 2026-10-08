@@ -5,7 +5,6 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-import FBControlCore
 import Foundation
 
 public let XCTestBootstrapErrorDomain = "com.facebook.XCTestBootstrap"
@@ -18,16 +17,18 @@ public let FBTestErrorDomain = "com.facebook.FBTestError"
   case startupTimeout = 0x5
 }
 
-@objc public final class XCTestBootstrapError: ControlCoreError {
-  public required init() {
-    super.init()
-    self.inDomain(XCTestBootstrapErrorDomain)
-  }
-}
+/// Errors raised by the Objective-C test manager, which cannot see the Swift domain constants.
+@objc public final class XCTestBootstrapErrors: NSObject {
 
-public final class XCTestError: ControlCoreError {
-  public required init() {
-    super.init()
-    self.inDomain(FBTestErrorDomain)
+  /// A failure to start the test run, in `XCTestBootstrapErrorDomain`.
+  @objc public static func startupFailure(_ description: String, underlyingError: NSError?) -> NSError {
+    var userInfo: [String: Any] = [NSLocalizedDescriptionKey: description]
+    userInfo[NSUnderlyingErrorKey] = underlyingError
+    return NSError(domain: XCTestBootstrapErrorDomain, code: XCTestBootstrapErrorCode.startupFailure.rawValue, userInfo: userInfo)
+  }
+
+  /// A failure attributed to the test process rather than to idb, in `FBTestErrorDomain`.
+  @objc public static func testFailure(_ description: String) -> NSError {
+    NSError(domain: FBTestErrorDomain, code: 0, userInfo: [NSLocalizedDescriptionKey: description])
   }
 }
