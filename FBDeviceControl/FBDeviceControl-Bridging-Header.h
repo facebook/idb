@@ -5,6 +5,6 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-// Static libraries have no umbrella header, so the target's own Objective-C surface reaches
+// Static libraries have no umbrella header, so the target's MobileDevice C declarations reach
 // Swift through this bridging header.
 #import "FBDeviceControl.h"
