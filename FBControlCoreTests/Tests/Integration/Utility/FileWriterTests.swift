@@ -164,7 +164,7 @@ final class FileWriterTests: XCTestCase {
     guard let writer = FileWriter.asyncWriter(withFileDescriptor: writerDescriptor, closeOnEndOfFile: true, error: &writeError) else {
       throw writeError!
     }
-    let reader = FileReader.reader(withFileDescriptor: localSocket, closeOnEndOfFile: false, consumer: FileWriter.nullWriter, logger: nil)
+    let reader = FileReader.reader(withFileDescriptor: localSocket, closeOnEndOfFile: false, consumer: NullDataConsumer(), logger: nil)
     try await bridgeFBFutureVoid(reader.startReading().timeout(10, waitingFor: "the reader to start"))
 
     // Traffic in both directions, so teardown runs against live channels.

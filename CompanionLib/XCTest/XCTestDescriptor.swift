@@ -235,8 +235,8 @@ final class XCodebuildTestRunDescriptor: XCTestDescriptor, CustomStringConvertib
 // MARK: - Private Helper
 
 private func buildAppLaunchConfig(bundleID: String, environment: [String: String], arguments: [String], logger: ControlCoreLogger, processLogDirectory: String?, waitForDebugger: Bool) async throws -> ApplicationLaunchConfiguration {
-  let stdOutConsumer = FBLoggingDataConsumer(logger: logger)
-  let stdErrConsumer = FBLoggingDataConsumer(logger: logger)
+  let stdOutConsumer = LoggingDataConsumer(logger: logger)
+  let stdErrConsumer = LoggingDataConsumer(logger: logger)
 
   guard let processLogDirectory else {
     return applicationLaunchConfiguration(bundleID: bundleID, environment: environment, arguments: arguments, waitForDebugger: waitForDebugger, stdOut: stdOutConsumer, stdErr: stdErrConsumer)

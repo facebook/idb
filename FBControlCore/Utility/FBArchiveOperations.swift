@@ -137,7 +137,7 @@ public enum FBArchiveOperations {
     do {
       let completed = try await subprocess.run(
         output: output,
-        error: .consumer(FBCompositeDataConsumer(consumers: [standardError, FBLoggingDataConsumer(logger: logger.debug())])),
+        error: .consumer(FBCompositeDataConsumer(consumers: [standardError, LoggingDataConsumer(logger: logger.debug())])),
         input: .source(writer.input),
         exitPolicy: .any,
         logger: logger)

@@ -46,7 +46,7 @@ public final class ListTestStrategy {
     let stdErrBuffer = FBDataBuffer.consumableBuffer()
     let stdErrConsumer: DataConsumer = FBCompositeDataConsumer(consumers: [
       stdErrBuffer,
-      FBLoggingDataConsumer(logger: logger),
+      LoggingDataConsumer(logger: logger),
     ])
 
     let exitCode: Int32
@@ -55,7 +55,7 @@ public final class ListTestStrategy {
         let libraries = try await OToolDynamicLibs.findFullPath(forSanitiserDyldInBundle: configuration.testBundlePath)
         let environment = ListTestStrategy.setupEnvironment(withDylibs: libraries, shimPath: shimPath, shimOutputFilePath: shimOutput.path, bundlePath: configuration.testBundlePath, target: target)
         let subprocess = try await listTestSubprocess(environment: environment, temporaryDirectory: temporaryDirectory)
-        let process = try await subprocess.launch(on: target.subprocessLauncher, output: .consumer(FBLoggingDataConsumer(logger: logger)), error: .consumer(stdErrConsumer), logger: logger)
+        let process = try await subprocess.launch(on: target.subprocessLauncher, output: .consumer(LoggingDataConsumer(logger: logger)), error: .consumer(stdErrConsumer), logger: logger)
         return try await XCTestProcess.awaitExitCode(of: process, processName: (subprocess.executable as NSString).lastPathComponent, completesWithin: configuration.testTimeout, crashLogCommands: nil, logger: logger)
       }
     } catch {

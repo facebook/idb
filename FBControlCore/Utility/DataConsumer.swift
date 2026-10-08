@@ -51,7 +51,7 @@ public extension DataConsumerLifecycle {
 }
 
 /// A consumer that logs each received chunk, trimmed of newlines, to `logger`.
-public final class FBLoggingDataConsumer: DataConsumer {
+public struct LoggingDataConsumer: DataConsumer {
   public let logger: ControlCoreLogger
 
   public init(logger: ControlCoreLogger) {
@@ -101,7 +101,7 @@ public final class FBCompositeDataConsumer: DataConsumer, DataConsumerLifecycle,
 }
 
 /// A consumer that discards everything it receives.
-public final class FBNullDataConsumer: DataConsumer {
+public struct NullDataConsumer: DataConsumer {
   public init() {}
 
   public func consumeData(_ data: Data) {}

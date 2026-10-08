@@ -334,7 +334,7 @@ final class DataConsumerTests: XCTestCase {
 
   func testLoggingConsumerLogsEachChunkTrimmedOfNewlines() {
     let logger = RecordingLogger()
-    let consumer = FBLoggingDataConsumer(logger: logger)
+    let consumer = LoggingDataConsumer(logger: logger)
 
     consumer.consumeData("FOO\n".data(using: .utf8)!)
     consumer.consumeData("\nBAR BAZ\r\n".data(using: .utf8)!)
@@ -345,7 +345,7 @@ final class DataConsumerTests: XCTestCase {
 
   func testLoggingConsumerDropsEmptyAndNonUTF8Chunks() {
     let logger = RecordingLogger()
-    let consumer = FBLoggingDataConsumer(logger: logger)
+    let consumer = LoggingDataConsumer(logger: logger)
 
     consumer.consumeData("\n\n".data(using: .utf8)!)
     consumer.consumeData(Data([0xFF, 0xFE]))

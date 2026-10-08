@@ -164,7 +164,7 @@ extension Subprocess.Output {
     case .consumer(let consumer):
       return (try Self.drainedSink(into: consumer, logger: nil), { Self.captured(()) })
     case .logger(let logger):
-      return (try Self.drainedSink(into: FBLoggingDataConsumer(logger: logger), logger: nil), { Self.captured(()) })
+      return (try Self.drainedSink(into: LoggingDataConsumer(logger: logger), logger: nil), { Self.captured(()) })
     case .loggerCapturingErrorMessage(let logger):
       let buffer = FBDataBuffer.accumulatingBuffer(withCapacity: Subprocess.errorMessageLength)
       // Lossy, because the tail can begin mid-character, and one invalid byte would otherwise empty the whole message.
@@ -218,7 +218,7 @@ extension Subprocess.Output {
     }
     let composed: any DataConsumer
     if let logger {
-      composed = FBCompositeDataConsumer(consumers: [consumer, FBLoggingDataConsumer(logger: logger)])
+      composed = FBCompositeDataConsumer(consumers: [consumer, LoggingDataConsumer(logger: logger)])
     } else {
       composed = consumer
     }

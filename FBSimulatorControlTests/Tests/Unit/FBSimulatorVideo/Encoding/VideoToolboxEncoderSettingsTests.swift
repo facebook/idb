@@ -231,12 +231,12 @@ final class VideoToolboxEncoderSettingsTests: XCTestCase {
     let config = VideoStreamConfiguration(format: h264, framesPerSecond: 30, rateControl: nil, scaleFactor: nil, keyFrameRate: nil)
     let fileWriter = SimulatorVideoFileWriter(filePath: NSTemporaryDirectory() + "/\(UUID().uuidString).mp4", logger: CapturingLogger())
     let recording = try SimulatorVideoStream.framePusher(
-      configuration: config, cadence: .eager(framesPerSecond: 30), consumer: FBNullDataConsumer(),
+      configuration: config, cadence: .eager(framesPerSecond: 30), consumer: NullDataConsumer(),
       encodedSampleConsumerOverride: fileWriter, frameWriters: nil, logger: CapturingLogger())
     XCTAssertEqual((recording as? VideoToolboxFramePusher)?.settings.sink, .file)
 
     let live = try SimulatorVideoStream.framePusher(
-      configuration: config, cadence: .eager(framesPerSecond: 30), consumer: FBNullDataConsumer(),
+      configuration: config, cadence: .eager(framesPerSecond: 30), consumer: NullDataConsumer(),
       encodedSampleConsumerOverride: nil, frameWriters: nil, logger: CapturingLogger())
     XCTAssertEqual((live as? VideoToolboxFramePusher)?.settings.sink, .live)
   }

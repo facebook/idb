@@ -68,7 +68,7 @@ enum SimulatorTestSupport {
   /// `device.responds(to:)`. The supplied object must respond to `UDID` (returning `NSUUID`)
   /// and any other selectors the code path exercises.
   static func testableSimulator(withDevice device: AnyObject) -> Simulator {
-    let logger = FBControlCoreLoggerFactory.logger(to: FBNullDataConsumer())
+    let logger = FBControlCoreLoggerFactory.logger(to: NullDataConsumer())
     let configuration = SimulatorConfiguration(
       device: .generic(withName: "Test Device"), os: .generic(withName: "TestOS 99.0"))
     return Simulator(

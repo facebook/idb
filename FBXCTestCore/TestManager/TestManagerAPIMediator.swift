@@ -238,8 +238,8 @@ public final class TestManagerAPIMediator: NSObject, @unchecked Sendable {
       arguments: arguments,
       environment: targetEnvironment,
       waitForDebugger: false,
-      stdOut: .consumer(FBLoggingDataConsumer(logger: logger)),
-      stdErr: .consumer(FBLoggingDataConsumer(logger: logger)),
+      stdOut: .consumer(LoggingDataConsumer(logger: logger)),
+      stdErr: .consumer(LoggingDataConsumer(logger: logger)),
       launchMode: .failIfRunning
     )
     return try await launchApplication(launch, atPath: path)

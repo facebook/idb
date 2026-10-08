@@ -139,7 +139,7 @@ public final class XCTestLogger: NSObject, ControlCoreLogger, @unchecked Sendabl
     return FBCompositeDataConsumer(consumers: [
       consumer,
       writer,
-      FBLoggingDataConsumer(logger: logger),
+      LoggingDataConsumer(logger: logger),
     ])
   }
 }

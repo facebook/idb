@@ -36,7 +36,7 @@ struct CompanionTargetTests {
       format: .compressedVideo(withCodec: .h264, transport: .annexB), framesPerSecond: nil, rateControl: nil, scaleFactor: nil,
       keyFrameRate: nil)
     await #expect {
-      _ = try await target.videoStream.create(configuration: configuration, to: FBNullDataConsumer())
+      _ = try await target.videoStream.create(configuration: configuration, to: NullDataConsumer())
     } throws: { error in
       error.localizedDescription == "create is not supported on the mac target"
     }

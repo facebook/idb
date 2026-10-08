@@ -219,9 +219,9 @@ public final class LogicTestRunStrategy {
     stdErrConsumers.append(stdErrBuffer)
 
     if mirrorToLogger {
-      shimConsumers.append(FBLoggingDataConsumer(logger: logger))
-      stdErrConsumers.append(FBLoggingDataConsumer(logger: logger))
-      stdErrConsumers.append(FBLoggingDataConsumer(logger: logger))
+      shimConsumers.append(LoggingDataConsumer(logger: logger))
+      stdErrConsumers.append(LoggingDataConsumer(logger: logger))
+      stdErrConsumers.append(LoggingDataConsumer(logger: logger))
     }
 
     let stdOutConsumer = FBCompositeDataConsumer(consumers: stdOutConsumers)

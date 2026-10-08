@@ -38,10 +38,6 @@ public class FileWriter: NSObject, @unchecked Sendable {
     return DispatchQueue(label: "com.facebook.fbcontrolcore.fbfilewriter")
   }
 
-  public static var nullWriter: DataConsumer {
-    return Null()
-  }
-
   private static func fileDescriptor(forPath filePath: String) throws -> Int32 {
     let fd = open(filePath, O_WRONLY | O_CREAT, 0o644)
     if fd == -1 {
@@ -117,10 +113,6 @@ public class FileWriter: NSObject, @unchecked Sendable {
     super.init()
   }
 
-  fileprivate override convenience init() {
-    self.init(fileDescriptor: -1, closeOnEndOfFile: false)
-  }
-
   // MARK: - Draining
 
   final class Draining: @unchecked Sendable {
@@ -137,22 +129,6 @@ public class FileWriter: NSObject, @unchecked Sendable {
     /// Calls `completion` with 0 once all of `data` is written, or with the `errno` that stopped it.
     func write(_ data: Data, completion: @escaping @Sendable (Int32) -> Void) {
       writer.write(data, completion: completion)
-    }
-  }
-
-  // MARK: - Null
-
-  private final class Null: FileWriter, DataConsumer, DataConsumerLifecycle, @unchecked Sendable {
-
-    func consumeData(_ data: Data) {
-    }
-
-    func consumeEndOfFile() {
-      finishedConsumingMutable.resolve(withResult: NSNull())
-    }
-
-    var finishedConsuming: FBFuture<NSNull> {
-      return finishedConsumingMutable.retyped(FBFuture<NSNull>.self)
     }
   }
 

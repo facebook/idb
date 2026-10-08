@@ -58,7 +58,7 @@ public actor SimulatorVideo {
     // Encoded frames are routed to `fileWriter` (which opens lazily on its first sample, since
     // passthrough muxing needs that sample's format); the stream's byte consumer is unused, so a
     // no-op consumer satisfies its streaming bookkeeping (and never reports back-pressure).
-    try await stream.startStreaming(FBNullDataConsumer())
+    try await stream.startStreaming(NullDataConsumer())
     keyFrames = Task { [stream] in
       while !Task.isCancelled {
         try? await Task.sleep(for: Self.keyFrameInterval)
