@@ -167,7 +167,7 @@ public final class XcodeBuildOperation {
     return mutableTestRunProperties as NSDictionary
   }
 
-  public static func confirmExit(ofXcodebuildOperation running: RunningSubprocess, configuration: TestLaunchConfiguration, reporter: XCTestReporter, target: any Target, logger: ControlCoreLogger) async throws {
+  public static func confirmExit(ofXcodebuildOperation running: RunningSubprocess, configuration: TestLaunchConfiguration, reporter: XCTestReporter, logger: ControlCoreLogger) async throws {
     let status = try await withTaskCancellationHandler {
       try await running.terminationStatus
     } onCancel: {
@@ -184,7 +184,7 @@ public final class XcodeBuildOperation {
     }
     logger.log("xcodebuild operation completed successfully with pid \(running.processIdentifier)")
     if let resultBundlePath = configuration.resultBundlePath {
-      try await XCTestResultBundleParser.parse(resultBundlePath, target: target, reporter: reporter, logger: logger, extractScreenshots: configuration.reportResultBundle)
+      try await XCTestResultBundleParser.parse(resultBundlePath, reporter: reporter, logger: logger, extractScreenshots: configuration.reportResultBundle)
     } else {
       logger.log("No result bundle to parse")
     }

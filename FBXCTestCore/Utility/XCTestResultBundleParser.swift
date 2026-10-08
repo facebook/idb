@@ -113,7 +113,7 @@ final class XCTestResultBundleParser {
 
   // MARK: - Public
 
-  public static func parse(_ resultBundlePath: String, target: any Target, reporter: XCTestReporter, logger: ControlCoreLogger, extractScreenshots: Bool) async throws {
+  public static func parse(_ resultBundlePath: String, reporter: XCTestReporter, logger: ControlCoreLogger, extractScreenshots: Bool) async throws {
     logger.log("Parsing the result bundle \(resultBundlePath)")
 
     let testSummariesPath = (resultBundlePath as NSString).appendingPathComponent("TestSummaries.plist")

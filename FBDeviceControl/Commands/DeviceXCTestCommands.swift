@@ -71,7 +71,7 @@ public final class DeviceXCTestCommands: XCTestCommands {
 
     _ = try await XcodeBuildOperation.terminateAbandonedXcodebuildProcesses(forUDID: device.udid, processFetcher: processFetcher, queue: device.workQueue, logger: logger)
     let task = try await startTestWithLaunchConfiguration(configuration: testLaunchConfiguration, logger: logger)
-    try await XcodeBuildOperation.confirmExit(ofXcodebuildOperation: task, configuration: testLaunchConfiguration, reporter: reporter, target: device, logger: logger)
+    try await XcodeBuildOperation.confirmExit(ofXcodebuildOperation: task, configuration: testLaunchConfiguration, reporter: reporter, logger: logger)
   }
 
   private func startTestWithLaunchConfiguration(configuration: TestLaunchConfiguration, logger: any ControlCoreLogger) async throws -> RunningSubprocess {

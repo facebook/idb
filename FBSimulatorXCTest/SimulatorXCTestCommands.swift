@@ -151,7 +151,7 @@ public final class SimulatorXCTestCommands: XCTestExtendedCommands {
     defer { isRunningXcodeBuildOperation = false }
 
     let subprocess = try await startTest(with: launchConfiguration, logger: logger)
-    try await XcodeBuildOperation.confirmExit(ofXcodebuildOperation: subprocess, configuration: launchConfiguration, reporter: typedReporter, target: simulator, logger: logger)
+    try await XcodeBuildOperation.confirmExit(ofXcodebuildOperation: subprocess, configuration: launchConfiguration, reporter: typedReporter, logger: logger)
   }
 
   public func listTests(forBundleAtPath bundlePath: String, timeout: TimeInterval, withAppAtPath appPath: String?) async throws -> [String] {
