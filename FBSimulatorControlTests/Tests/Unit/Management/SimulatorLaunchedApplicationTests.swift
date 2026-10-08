@@ -74,20 +74,20 @@ final class SimulatorLaunchedApplicationTests: XCTestCase {
   func testFinishesTheOutputOnceTheProcessExits() async throws {
     let process = try spawnBlockedProcess()
     let application = try await launchedApplication(forProcess: process)
-    XCTAssertFalse(output.finishedConsuming.hasCompleted)
+    XCTAssertFalse(output.finishedConsuming.isOpen)
 
     process.terminate()
     try await application.waitForTermination()
 
     await waitForOutputToFinish()
-    XCTAssertTrue(output.finishedConsuming.hasCompleted)
+    XCTAssertTrue(output.finishedConsuming.isOpen)
   }
 
   /// The output is finished after the termination, which lands on the simulator's work queue after
   /// the waiter has been woken.
   private func waitForOutputToFinish(timeout: TimeInterval = 5) async {
     let deadline = Date(timeIntervalSinceNow: timeout)
-    while !output.finishedConsuming.hasCompleted && Date() < deadline {
+    while !output.finishedConsuming.isOpen && Date() < deadline {
       try? await Task.sleep(nanoseconds: 10_000_000)
     }
   }
@@ -123,6 +123,6 @@ final class SimulatorLaunchedApplicationTests: XCTestCase {
     try await application.terminate()
 
     await waitForOutputToFinish()
-    XCTAssertTrue(output.finishedConsuming.hasCompleted)
+    XCTAssertTrue(output.finishedConsuming.isOpen)
   }
 }

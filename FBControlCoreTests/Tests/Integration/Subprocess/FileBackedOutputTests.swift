@@ -31,7 +31,7 @@ struct FileBackedOutputTests {
 
     #expect(ContinuousClock.now - finishing < .seconds(1), "Finishing after the writer has exited does not wait out the drain grace period")
 
-    _ = try await bridgeFBFuture(buffer.finishedConsuming)
+    try await buffer.awaitFinishedConsuming()
     #expect(buffer.lines() == ["hello", "world", ""])
   }
 
@@ -46,7 +46,7 @@ struct FileBackedOutputTests {
 
     #expect(ContinuousClock.now - finishing < .seconds(1))
 
-    _ = try await bridgeFBFuture(buffer.finishedConsuming)
+    try await buffer.awaitFinishedConsuming()
     #expect(buffer.lines() == ["first", "second", ""])
   }
 
@@ -62,7 +62,7 @@ struct FileBackedOutputTests {
     await output.finish()
 
     #expect(ContinuousClock.now - finishing >= .seconds(HostSubprocess.drainTimeout))
-    _ = try await bridgeFBFuture(buffer.finishedConsuming)
+    try await buffer.awaitFinishedConsuming()
     #expect(buffer.lines() == ["early", ""])
   }
 
@@ -73,7 +73,7 @@ struct FileBackedOutputTests {
 
     await output.finish()
 
-    _ = try await bridgeFBFuture(buffer.finishedConsuming)
+    try await buffer.awaitFinishedConsuming()
     #expect(buffer.data().isEmpty)
   }
 
@@ -120,7 +120,7 @@ struct FileBackedOutputTests {
     try await Task.sleep(for: .milliseconds(500))
 
     #expect(!FileManager.default.fileExists(atPath: path))
-    #expect(buffer.finishedConsuming.hasCompleted)
+    #expect(buffer.finishedConsuming.isOpen)
   }
 
   @Test("A file output hands the process the path it was given, and finishing it leaves the file alone")

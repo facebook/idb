@@ -42,7 +42,7 @@ final class ResponseForwardingConsumer: DataConsumer, DataConsumerLifecycle, @un
     consumer.consumeEndOfFile()
   }
 
-  var finishedConsuming: FBFuture<NSNull> {
+  var finishedConsuming: AsyncLatch {
     consumer.finishedConsuming
   }
 

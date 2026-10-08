@@ -68,7 +68,7 @@ struct LockdownServiceConnectionReaderTests {
     let reader = connection.readFromConnectionWriting(to: consumer, on: queue)
 
     _ = try await bridgeFBFuture(reader.startReading())
-    _ = try await bridgeFBFuture(consumer.finishedConsuming)
+    try await consumer.awaitFinishedConsuming()
 
     let finished = try await bridgeFBFuture(reader.finishedReading)
     #expect(finished == NSNumber(value: FBFileReaderState.finishedReadingNormally.rawValue))

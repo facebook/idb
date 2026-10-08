@@ -101,7 +101,7 @@ public struct DeviceSocketForwardingCommands {
     logger: (any ControlCoreLogger)?
   ) async {
     remoteWriter.consumeEndOfFile()
-    try? await bridgeFBFutureVoid(remoteWriter.finishedConsuming)
+    try? await remoteWriter.awaitFinishedConsuming()
     _ = try? await bridgeFBFuture(inputReader.finishedReading(withTimeout: teardownDrainTimeout))
     _ = try? await bridgeFBFuture(remoteReader.finishedReading(withTimeout: teardownDrainTimeout))
     logger?.log("Closing local socket \(localSocket)")

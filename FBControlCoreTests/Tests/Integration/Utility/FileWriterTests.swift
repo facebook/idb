@@ -32,7 +32,7 @@ final class FileWriterTests: XCTestCase {
     XCTAssertEqual(expected, actual)
 
     writer.consumeEndOfFile()
-    try await bridgeFBFutureVoid(writer.finishedConsuming)
+    try await writer.awaitFinishedConsuming()
 
     pipe.fileHandleForWriting.closeFile()
     pipe.fileHandleForReading.closeFile()
@@ -76,7 +76,7 @@ final class FileWriterTests: XCTestCase {
     // original (blocking) flags and forces O_NONBLOCK onto it.
     writer.consumeData("ping".data(using: .utf8)!)
     writer.consumeEndOfFile()
-    try await bridgeFBFutureVoid(writer.finishedConsuming.timeout(10, waitingFor: "the writer to finish consuming"))
+    try await writer.finishedConsuming.wait(within: PollDeadline(timeout: 10, waitingFor: "the writer to finish consuming"))
 
     var buffer = [UInt8](repeating: 0, count: 4)
     XCTAssertEqual(recv(remoteSocket, &buffer, 4, MSG_DONTWAIT), 4)
@@ -106,7 +106,7 @@ final class FileWriterTests: XCTestCase {
     // original (blocking) flags and forces O_NONBLOCK onto it.
     writer.consumeData("ping".data(using: .utf8)!)
     writer.consumeEndOfFile()
-    try await bridgeFBFutureVoid(writer.finishedConsuming.timeout(10, waitingFor: "the writer to finish consuming"))
+    try await writer.finishedConsuming.wait(within: PollDeadline(timeout: 10, waitingFor: "the writer to finish consuming"))
 
     var buffer = [UInt8](repeating: 0, count: 4)
     XCTAssertEqual(recv(remoteSocket, &buffer, 4, MSG_DONTWAIT), 4)
@@ -127,9 +127,9 @@ final class FileWriterTests: XCTestCase {
     // A caller that hands the read end to a child and keeps nothing of its own
     // releases the writer as soon as it has ended it — before the channel's
     // asynchronous teardown runs. `finishedConsuming` is retained separately
-    // and resolves from that teardown either way, so it still orders the reads
+    // and opens from that teardown either way, so it still orders the reads
     // below after the write and the close.
-    let finishedConsuming: FBFuture<NSNull> = try autoreleasepool {
+    let finishedConsuming: AsyncLatch = try autoreleasepool {
       var writeError: NSError?
       guard let writer = FileWriter.asyncWriter(withFileDescriptor: writeEnd, closeOnEndOfFile: true, error: &writeError) else {
         throw writeError!
@@ -138,7 +138,7 @@ final class FileWriterTests: XCTestCase {
       writer.consumeEndOfFile()
       return writer.finishedConsuming
     }
-    try await bridgeFBFutureVoid(finishedConsuming.timeout(10, waitingFor: "the writer to finish consuming"))
+    try await finishedConsuming.wait(within: PollDeadline(timeout: 10, waitingFor: "the writer to finish consuming"))
 
     var buffer = [UInt8](repeating: 0, count: 16)
     XCTAssertEqual(read(readEnd, &buffer, buffer.count), 4)
@@ -176,7 +176,7 @@ final class FileWriterTests: XCTestCase {
 
     // All waits are bounded so a teardown wedge fails this test alone rather than timing out the whole target.
     writer.consumeEndOfFile()
-    try await bridgeFBFutureVoid(writer.finishedConsuming.timeout(10, waitingFor: "the writer to finish consuming"))
+    try await writer.finishedConsuming.wait(within: PollDeadline(timeout: 10, waitingFor: "the writer to finish consuming"))
     XCTAssertEqual(fcntl(writerDescriptor, F_GETFD), -1)
     try await bridgeFBFutureVoid(reader.finishedReading(withTimeout: 4).timeout(10, waitingFor: "the reader to finish"))
 

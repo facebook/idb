@@ -10,8 +10,8 @@ import Foundation
 /// A consumer that splits what it receives on newlines and delivers each line, without its newline.
 ///
 /// End-of-file delivers a trailing chunk with no newline as the last line, and `finishedConsuming`
-/// resolves once every line has been delivered.
-// SAFETY: `pending` is only touched under `lock`; `FBMutableFuture` is internally synchronized.
+/// opens once every line has been delivered.
+// SAFETY: `pending` is only touched under `lock`.
 public final class LineConsumer: DataConsumer, DataConsumerLifecycle, @unchecked Sendable {
   public enum Delivery: Sendable {
     /// Lines are delivered on the thread that consumed the data.
@@ -25,7 +25,7 @@ public final class LineConsumer: DataConsumer, DataConsumerLifecycle, @unchecked
   private let lock = NSLock()
   /// `nil` once end-of-file has been consumed.
   private var pending: Data? = Data()
-  private let finishedConsumingFuture = FBMutableFuture<NSNull>()
+  public let finishedConsuming = AsyncLatch()
 
   /// Delivers each line as data.
   public init(delivery: Delivery = .queue(LineConsumer.privateQueue()), dataConsumer: @escaping (Data) -> Void) {
@@ -67,20 +67,16 @@ public final class LineConsumer: DataConsumer, DataConsumerLifecycle, @unchecked
       if !buffer.isEmpty {
         deliver(buffer)
       }
-      let finished = finishedConsumingFuture
+      let finished = finishedConsuming
       switch delivery {
       case .synchronous:
-        finished.resolve(withResult: NSNull())
+        finished.open()
       case let .queue(queue):
         queue.async {
-          finished.resolve(withResult: NSNull())
+          finished.open()
         }
       }
     }
-  }
-
-  public var finishedConsuming: FBFuture<NSNull> {
-    finishedConsumingFuture.retyped(FBFuture<NSNull>.self)
   }
 
   private func deliver(_ line: Data) {

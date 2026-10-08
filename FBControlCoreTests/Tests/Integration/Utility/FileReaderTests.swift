@@ -87,7 +87,7 @@ final class FileReaderTests: XCTestCase, DataConsumer {
 
     // Drain the writer's asynchronous channel teardown before the test ends,
     // so its deferred fd close cannot race into later tests' fd lifecycles.
-    try await bridgeFBFutureVoid(writer.finishedConsuming)
+    try await writer.awaitFinishedConsuming()
   }
 
   func testCanStopReadingBeforeEOFResolvesWhenPipeCloses() async throws {

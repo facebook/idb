@@ -67,7 +67,7 @@ final class DeviceLogCommandsTests {
     let consumer = FBDataBuffer.accumulatingBuffer()
 
     let operation = try await device.log.tail(arguments: [], consumer: consumer)
-    _ = try await bridgeFBFuture(consumer.finishedConsuming)
+    try await consumer.awaitFinishedConsuming()
 
     #expect((String(decoding: consumer.data(), as: UTF8.self)) == ("a line of syslog\n"))
     #expect((operation.consumer as AnyObject) === (consumer as AnyObject))
@@ -83,7 +83,7 @@ final class DeviceLogCommandsTests {
     let consumer = FBDataBuffer.accumulatingBuffer()
 
     let operation = try await device.log.tail(arguments: [], consumer: consumer)
-    _ = try await bridgeFBFuture(consumer.finishedConsuming)
+    try await consumer.awaitFinishedConsuming()
     await waitFor("the AMDevice session to close") { self.amDevice.events == syslogSessionEvents }
 
     var returned = false

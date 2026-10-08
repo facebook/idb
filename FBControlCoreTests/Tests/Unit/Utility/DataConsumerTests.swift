@@ -15,11 +15,11 @@ final class DataConsumerTests: XCTestCase {
     consumer.consumeData("BAR".data(using: .utf8)!)
 
     XCTAssertEqual(consumer.data(), "FOOBAR".data(using: .utf8)!)
-    XCTAssertFalse(consumer.finishedConsuming.hasCompleted)
+    XCTAssertFalse(consumer.finishedConsuming.isOpen)
 
     consumer.consumeEndOfFile()
     XCTAssertEqual(consumer.data(), "FOOBAR".data(using: .utf8)!)
-    XCTAssertTrue(consumer.finishedConsuming.hasCompleted)
+    XCTAssertTrue(consumer.finishedConsuming.isOpen)
   }
 
   func testLineBufferAccumulationWithCapacity() {
@@ -39,11 +39,11 @@ final class DataConsumerTests: XCTestCase {
 
     consumer.consumeData("ALONGSTRINGBUTIWANTAHIT".data(using: .utf8)!)
     XCTAssertEqual(consumer.lines(), ["HIT"])
-    XCTAssertFalse(consumer.finishedConsuming.hasCompleted)
+    XCTAssertFalse(consumer.finishedConsuming.isOpen)
 
     consumer.consumeEndOfFile()
     XCTAssertEqual(consumer.lines(), ["HIT"])
-    XCTAssertTrue(consumer.finishedConsuming.hasCompleted)
+    XCTAssertTrue(consumer.finishedConsuming.isOpen)
   }
 
   func testLineBufferedConsumer() {
@@ -55,16 +55,16 @@ final class DataConsumerTests: XCTestCase {
     consumer.consumeData("FOO\n".data(using: .utf8)!)
     consumer.consumeData("BAR\n".data(using: .utf8)!)
     XCTAssertEqual(lines, ["FOO", "BAR"])
-    XCTAssertFalse(consumer.finishedConsuming.hasCompleted)
+    XCTAssertFalse(consumer.finishedConsuming.isOpen)
 
     consumer.consumeEndOfFile()
     XCTAssertEqual(lines, ["FOO", "BAR"])
-    XCTAssertTrue(consumer.finishedConsuming.hasCompleted)
+    XCTAssertTrue(consumer.finishedConsuming.isOpen)
 
     consumer.consumeData("NOPE".data(using: .utf8)!)
     consumer.consumeData("NOPE".data(using: .utf8)!)
     XCTAssertEqual(lines, ["FOO", "BAR"])
-    XCTAssertTrue(consumer.finishedConsuming.hasCompleted)
+    XCTAssertTrue(consumer.finishedConsuming.isOpen)
   }
 
   func testLineBufferedConsumerAsync() {
@@ -82,17 +82,17 @@ final class DataConsumerTests: XCTestCase {
     consumer.consumeData("BAR\n".data(using: .utf8)!)
     wait(for: [bothLines], timeout: ControlCoreGlobalConfiguration.fastTimeout)
     queue.sync { XCTAssertEqual(lines, ["FOO", "BAR"]) }
-    XCTAssertFalse(consumer.finishedConsuming.hasCompleted)
+    XCTAssertFalse(consumer.finishedConsuming.isOpen)
 
     consumer.consumeEndOfFile()
-    let finished = expectation(for: NSPredicate { _, _ in consumer.finishedConsuming.hasCompleted }, evaluatedWith: nil)
+    let finished = expectation(for: NSPredicate { _, _ in consumer.finishedConsuming.isOpen }, evaluatedWith: nil)
     wait(for: [finished], timeout: ControlCoreGlobalConfiguration.fastTimeout)
     queue.sync { XCTAssertEqual(lines, ["FOO", "BAR"]) }
 
     consumer.consumeData("NOPE".data(using: .utf8)!)
     consumer.consumeData("NOPE".data(using: .utf8)!)
     queue.sync { XCTAssertEqual(lines, ["FOO", "BAR"]) }
-    XCTAssertTrue(consumer.finishedConsuming.hasCompleted)
+    XCTAssertTrue(consumer.finishedConsuming.isOpen)
   }
 
   func testLineBufferedConsumerTrailingLine() {
@@ -117,11 +117,11 @@ final class DataConsumerTests: XCTestCase {
 
     consumer.consumeData("FOO\n".data(using: .utf8)!)
     consumer.consumeEndOfFile()
-    XCTAssertFalse(consumer.finishedConsuming.hasCompleted)
+    XCTAssertFalse(consumer.finishedConsuming.isOpen)
 
     releaseQueue.signal()
     queue.sync { XCTAssertEqual(lines, ["FOO"]) }
-    XCTAssertTrue(consumer.finishedConsuming.hasCompleted)
+    XCTAssertTrue(consumer.finishedConsuming.isOpen)
   }
 
   func testUnbufferedConsumer() {
@@ -131,21 +131,21 @@ final class DataConsumerTests: XCTestCase {
       actual.append(incremental)
     }
 
-    XCTAssertFalse(consumer.finishedConsuming.hasCompleted)
+    XCTAssertFalse(consumer.finishedConsuming.isOpen)
     consumer.consumeData("FOO".data(using: .utf8)!)
     consumer.consumeData("BAR".data(using: .utf8)!)
     consumer.consumeData("BAZ".data(using: .utf8)!)
     usleep(1000)
     XCTAssertEqual(expected, actual as Data)
-    XCTAssertFalse(consumer.finishedConsuming.hasCompleted)
+    XCTAssertFalse(consumer.finishedConsuming.isOpen)
 
     consumer.consumeEndOfFile()
     XCTAssertEqual(expected, actual as Data)
-    XCTAssertTrue(consumer.finishedConsuming.hasCompleted)
+    XCTAssertTrue(consumer.finishedConsuming.isOpen)
 
     consumer.consumeData("NOPE".data(using: .utf8)!)
     consumer.consumeData("NOPE".data(using: .utf8)!)
-    XCTAssertTrue(consumer.finishedConsuming.hasCompleted)
+    XCTAssertTrue(consumer.finishedConsuming.isOpen)
     XCTAssertEqual(expected, actual as Data)
   }
 
@@ -166,7 +166,7 @@ final class DataConsumerTests: XCTestCase {
     }
     wait(for: [returned], timeout: ControlCoreGlobalConfiguration.fastTimeout)
     XCTAssertEqual("FOOBAR".data(using: .utf8)!, actual as Data)
-    XCTAssertTrue(box.consumer?.finishedConsuming.hasCompleted ?? false)
+    XCTAssertTrue(box.consumer?.finishedConsuming.isOpen ?? false)
   }
 
   func testUnbufferedConsumerAsync() {
@@ -178,21 +178,21 @@ final class DataConsumerTests: XCTestCase {
       if actual.length == expected.count { allChunks.fulfill() }
     }
 
-    XCTAssertFalse(consumer.finishedConsuming.hasCompleted)
+    XCTAssertFalse(consumer.finishedConsuming.isOpen)
     consumer.consumeData("FOO".data(using: .utf8)!)
     consumer.consumeData("BAR".data(using: .utf8)!)
     consumer.consumeData("BAZ".data(using: .utf8)!)
     wait(for: [allChunks], timeout: ControlCoreGlobalConfiguration.fastTimeout)
     XCTAssertEqual(expected, actual as Data)
-    XCTAssertFalse(consumer.finishedConsuming.hasCompleted)
+    XCTAssertFalse(consumer.finishedConsuming.isOpen)
 
     consumer.consumeEndOfFile()
     XCTAssertEqual(expected, actual as Data)
-    XCTAssertTrue(consumer.finishedConsuming.hasCompleted)
+    XCTAssertTrue(consumer.finishedConsuming.isOpen)
 
     consumer.consumeData("NOPE".data(using: .utf8)!)
     consumer.consumeData("NOPE".data(using: .utf8)!)
-    XCTAssertTrue(consumer.finishedConsuming.hasCompleted)
+    XCTAssertTrue(consumer.finishedConsuming.isOpen)
     XCTAssertEqual(expected, actual as Data)
   }
 
@@ -213,7 +213,7 @@ final class DataConsumerTests: XCTestCase {
     XCTAssertEqual(1, consumer.unprocessedDataCount())
     continueConsume.signal()
     consumer.consumeEndOfFile()
-    XCTAssertTrue(consumer.finishedConsuming.hasCompleted)
+    XCTAssertTrue(consumer.finishedConsuming.isOpen)
     XCTAssertEqual(0, consumer.unprocessedDataCount())
     XCTAssertEqual(expected, actual as Data)
   }
@@ -241,7 +241,7 @@ final class DataConsumerTests: XCTestCase {
 
     wait(for: [returned], timeout: ControlCoreGlobalConfiguration.fastTimeout)
     XCTAssertEqual("FOO".data(using: .utf8)!, actual as Data)
-    XCTAssertTrue(box.consumer?.finishedConsuming.hasCompleted ?? false)
+    XCTAssertTrue(box.consumer?.finishedConsuming.isOpen ?? false)
   }
 
   func testLineBufferConsumption() {
@@ -250,41 +250,41 @@ final class DataConsumerTests: XCTestCase {
 
     XCTAssertNil(consumer.consumeLineData())
     XCTAssertNil(consumer.consumeLineString())
-    XCTAssertFalse(consumer.finishedConsuming.hasCompleted)
+    XCTAssertFalse(consumer.finishedConsuming.isOpen)
 
     consumer.consumeData("BAR\n".data(using: .utf8)!)
 
     XCTAssertEqual(consumer.consumeLineString(), "FOOBAR")
-    XCTAssertFalse(consumer.finishedConsuming.hasCompleted)
+    XCTAssertFalse(consumer.finishedConsuming.isOpen)
 
     consumer.consumeData("BANG\nBAZ".data(using: .utf8)!)
     consumer.consumeData("\nHELLO\nHERE".data(using: .utf8)!)
 
     XCTAssertEqual(consumer.consumeCurrentString(), "BANG\nBAZ\nHELLO\nHERE")
-    XCTAssertFalse(consumer.finishedConsuming.hasCompleted)
+    XCTAssertFalse(consumer.finishedConsuming.isOpen)
 
     consumer.consumeData("GOODBYE".data(using: .utf8)!)
     consumer.consumeData("\nFOR\nNOW".data(using: .utf8)!)
 
     XCTAssertEqual(consumer.consumeCurrentData(), "GOODBYE\nFOR\nNOW".data(using: .utf8)!)
-    XCTAssertFalse(consumer.finishedConsuming.hasCompleted)
+    XCTAssertFalse(consumer.finishedConsuming.isOpen)
 
     consumer.consumeData("ILIED".data(using: .utf8)!)
     consumer.consumeData("$$SOZ\n".data(using: .utf8)!)
 
     XCTAssertEqual(consumer.consume(until: "$$".data(using: .utf8)!), "ILIED".data(using: .utf8)!)
     XCTAssertEqual(consumer.consumeLineString(), "SOZ")
-    XCTAssertFalse(consumer.finishedConsuming.hasCompleted)
+    XCTAssertFalse(consumer.finishedConsuming.isOpen)
 
     consumer.consumeData("BACKAGAIN".data(using: .utf8)!)
     consumer.consumeData("\nTHIS\nIS\nTHE\nTAIL".data(using: .utf8)!)
 
     XCTAssertEqual(consumer.consumeLineData(), "BACKAGAIN".data(using: .utf8)!)
-    XCTAssertFalse(consumer.finishedConsuming.hasCompleted)
+    XCTAssertFalse(consumer.finishedConsuming.isOpen)
 
     consumer.consumeEndOfFile()
 
-    XCTAssertTrue(consumer.finishedConsuming.hasCompleted)
+    XCTAssertTrue(consumer.finishedConsuming.isOpen)
     XCTAssertEqual(consumer.consumeLineString(), "THIS")
     XCTAssertEqual(consumer.consumeLineData(), "IS".data(using: .utf8)!)
     XCTAssertEqual(consumer.consumeLineString(), "THE")
@@ -303,20 +303,20 @@ final class DataConsumerTests: XCTestCase {
     composite.consumeData("FOO".data(using: .utf8)!)
 
     XCTAssertNil(consumable.consumeLineString())
-    XCTAssertFalse(composite.finishedConsuming.hasCompleted)
+    XCTAssertFalse(composite.finishedConsuming.isOpen)
 
     composite.consumeData("BAR\n".data(using: .utf8)!)
 
     XCTAssertEqual(consumable.consumeLineString(), "FOOBAR")
     XCTAssertNil(consumable.consumeLineString())
-    XCTAssertFalse(consumable.finishedConsuming.hasCompleted)
-    XCTAssertFalse(accumulating.finishedConsuming.hasCompleted)
-    XCTAssertFalse(composite.finishedConsuming.hasCompleted)
+    XCTAssertFalse(consumable.finishedConsuming.isOpen)
+    XCTAssertFalse(accumulating.finishedConsuming.isOpen)
+    XCTAssertFalse(composite.finishedConsuming.isOpen)
 
     composite.consumeEndOfFile()
-    XCTAssertTrue(consumable.finishedConsuming.hasCompleted)
-    XCTAssertTrue(accumulating.finishedConsuming.hasCompleted)
-    XCTAssertTrue(composite.finishedConsuming.hasCompleted)
+    XCTAssertTrue(consumable.finishedConsuming.isOpen)
+    XCTAssertTrue(accumulating.finishedConsuming.isOpen)
+    XCTAssertTrue(composite.finishedConsuming.isOpen)
   }
 
   func testLengthBasedConsumption() {

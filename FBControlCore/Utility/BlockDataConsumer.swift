@@ -10,12 +10,12 @@ import Foundation
 /// A consumer that passes each chunk of data to a block on the thread that consumed it.
 ///
 /// Deliveries are serialized, and data consumed after end-of-file is ignored.
-// SAFETY: `consumer` is only touched under `lock`; `FBMutableFuture` is internally synchronized.
+// SAFETY: `consumer` is only touched under `lock`.
 public final class SynchronousDataConsumer: DataConsumer, DataConsumerLifecycle, @unchecked Sendable {
   // Recursive because the block runs under the lock, and a block may feed this consumer again.
   private let lock = NSRecursiveLock()
   private var consumer: ((Data) -> Void)?
-  private let finishedConsumingFuture = FBMutableFuture<NSNull>()
+  public let finishedConsuming = AsyncLatch()
 
   public init(consumer: @escaping (Data) -> Void) {
     self.consumer = consumer
@@ -30,12 +30,8 @@ public final class SynchronousDataConsumer: DataConsumer, DataConsumerLifecycle,
   public func consumeEndOfFile() {
     lock.withLock {
       consumer = nil
-      finishedConsumingFuture.resolve(withResult: NSNull())
+      finishedConsuming.open()
     }
-  }
-
-  public var finishedConsuming: FBFuture<NSNull> {
-    finishedConsumingFuture.retyped(FBFuture<NSNull>.self)
   }
 
   public var consumption: DataConsumption { .synchronous }
@@ -44,10 +40,9 @@ public final class SynchronousDataConsumer: DataConsumer, DataConsumerLifecycle,
 /// A consumer that passes each chunk of data to a block, in order, on a queue.
 ///
 /// End-of-file blocks its caller until every chunk already queued has been delivered, so
-/// `finishedConsuming` resolves only after the last delivery. Data consumed after end-of-file is ignored,
+/// `finishedConsuming` opens only after the last delivery. Data consumed after end-of-file is ignored,
 /// including data a queued delivery feeds back while end-of-file waits.
-// SAFETY: `consumer` is only touched under `lock` and `pending` only under `pendingLock`;
-// `FBMutableFuture` is internally synchronized.
+// SAFETY: `consumer` is only touched under `lock` and `pending` only under `pendingLock`.
 public final class AsynchronousDataConsumer: DataConsumer, DataConsumerLifecycle, @unchecked Sendable {
   private let queue: DispatchQueue
   private let group = DispatchGroup()
@@ -55,7 +50,7 @@ public final class AsynchronousDataConsumer: DataConsumer, DataConsumerLifecycle
   private var consumer: ((Data) -> Void)?
   private let pendingLock = NSLock()
   private var pending = 0
-  private let finishedConsumingFuture = FBMutableFuture<NSNull>()
+  public let finishedConsuming = AsyncLatch()
 
   public init(queue: DispatchQueue = AsynchronousDataConsumer.privateQueue(), consumer: @escaping (Data) -> Void) {
     self.queue = queue
@@ -85,11 +80,7 @@ public final class AsynchronousDataConsumer: DataConsumer, DataConsumerLifecycle
     }
     // Outside the lock: a queued delivery that feeds this consumer again takes it.
     group.wait()
-    finishedConsumingFuture.resolve(withResult: NSNull())
-  }
-
-  public var finishedConsuming: FBFuture<NSNull> {
-    finishedConsumingFuture.retyped(FBFuture<NSNull>.self)
+    finishedConsuming.open()
   }
 
   public var consumption: DataConsumption { .queued(unprocessed: unprocessedDataCount()) }

@@ -43,7 +43,7 @@ final class SimulatorDapServerCommandTests: XCTestCase {
       input.finish()
       return try await process.terminationStatus
     }
-    _ = try await bridgeFBFuture(output.finishedConsuming)
+    try await output.awaitFinishedConsuming()
 
     XCTAssertEqual(status, .exited(0))
     let lines = output.lines().filter { !$0.isEmpty }

@@ -68,7 +68,7 @@ public final class ListTestStrategy {
       let stdErrReversed = stdErrBuffer.lines().reversed().joined(separator: "\n")
       throw ListTestError.listingFailed(exitCode: exitCode, exitDescription: description, stdErr: stdErrReversed)
     }
-    _ = try await bridgeFBFuture(shimBuffer.finishedConsuming)
+    try await shimBuffer.awaitFinishedConsuming()
     return try ListTestStrategy.testNames(fromShimOutput: shimBuffer.data())
   }
 

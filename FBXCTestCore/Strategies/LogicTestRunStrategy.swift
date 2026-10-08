@@ -18,7 +18,6 @@ private struct LogicTestRunConsumers {
 }
 
 enum LogicTestRunError: Error {
-  case endOfFileTimedOut
   case xctestProcessFailed(exitCode: Int32, exitDescription: String, stdErr: String)
   case sigstopWaitFailed(processIdentifier: pid_t, underlying: Error)
 }
@@ -26,8 +25,6 @@ enum LogicTestRunError: Error {
 extension LogicTestRunError: LocalizedError {
   public var errorDescription: String? {
     switch self {
-    case .endOfFileTimedOut:
-      return "Timed out waiting to receive an end-of-file after fifo has been stopped, as the process has already exited"
     case let .xctestProcessFailed(exitCode, exitDescription, stdErr):
       return "xctest process exited in failure (\(exitCode)): \(exitDescription) \(stdErr)"
     case let .sigstopWaitFailed(processIdentifier, underlying):
@@ -138,13 +135,8 @@ public final class LogicTestRunStrategy {
     logger.log("xctest process terminated, Tearing down IO.")
     await shimOutput.finish()
     // Bounded so that a consumer that never finishes delays the result without failing the run.
-    let finished = consumer.finishedConsuming.retyped(FBFuture<AnyObject>.self).onQueue(
-      target.workQueue, timeout: EndOfFileTimeout,
-      handler: {
-        FBFuture<AnyObject>(error: LogicTestRunError.endOfFileTimedOut)
-      })
     do {
-      _ = try await bridgeFBFuture(finished)
+      try await consumer.finishedConsuming.wait(within: PollDeadline(timeout: EndOfFileTimeout, waitingFor: "an end-of-file from the shim after the xctest process exited"))
     } catch {
       logger.log("\(error.localizedDescription)")
     }

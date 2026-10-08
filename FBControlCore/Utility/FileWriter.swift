@@ -21,8 +21,7 @@ enum FileWriterError: Error, LocalizedError {
   }
 }
 
-/// @unchecked Sendable: the descriptor and the flag are immutable; `finishedConsumingMutable` is an
-/// `FBMutableFuture`, which is internally synchronised and resolved once. The async subclass keeps
+/// @unchecked Sendable: the descriptor, the flag and the latch are immutable. The async subclass keeps
 /// its `DispatchIO` channel confined to its write queue.
 public class FileWriter: NSObject, @unchecked Sendable {
 
@@ -30,7 +29,7 @@ public class FileWriter: NSObject, @unchecked Sendable {
 
   fileprivate let fileDescriptor: Int32
   fileprivate let closeOnEndOfFile: Bool
-  fileprivate let finishedConsumingMutable: FBMutableFuture<AnyObject>
+  let finishedConsuming = AsyncLatch()
 
   // MARK: - Initializers
 
@@ -109,7 +108,6 @@ public class FileWriter: NSObject, @unchecked Sendable {
   fileprivate init(fileDescriptor: Int32, closeOnEndOfFile: Bool) {
     self.fileDescriptor = fileDescriptor
     self.closeOnEndOfFile = closeOnEndOfFile
-    self.finishedConsumingMutable = FBMutableFuture(name: "EOF Received")
     super.init()
   }
 
@@ -146,14 +144,10 @@ public class FileWriter: NSObject, @unchecked Sendable {
     }
 
     func consumeEndOfFile() {
-      finishedConsumingMutable.resolve(withResult: NSNull())
+      finishedConsuming.open()
       if closeOnEndOfFile {
         close(fileDescriptor)
       }
-    }
-
-    var finishedConsuming: FBFuture<NSNull> {
-      return finishedConsumingMutable.retyped(FBFuture<NSNull>.self)
     }
   }
 
@@ -194,10 +188,6 @@ public class FileWriter: NSObject, @unchecked Sendable {
       }
     }
 
-    var finishedConsuming: FBFuture<NSNull> {
-      return finishedConsumingMutable.retyped(FBFuture<NSNull>.self)
-    }
-
     func startWriting() throws {
       assert(io == nil)
 
@@ -205,7 +195,7 @@ public class FileWriter: NSObject, @unchecked Sendable {
       // FileReader.startReadingNow for why.
       _ = fcntl(self.fileDescriptor, F_SETFL, fcntl(self.fileDescriptor, F_GETFL) | O_NONBLOCK)
 
-      let finishedConsuming = finishedConsumingMutable
+      let finishedConsuming = self.finishedConsuming
       // The descriptor belongs to the channel rather than to this writer, so its
       // close must not be reached through the weak capture below: teardown is
       // asynchronous and routinely outlives a writer that its owner released as
@@ -219,7 +209,7 @@ public class FileWriter: NSObject, @unchecked Sendable {
           close(fileDescriptor)
         }
         // Since writing is asynchronous, wait until the io channel is fully closed.
-        finishedConsuming.resolve(withResult: NSNull())
+        finishedConsuming.open()
       }
       guard io != nil else {
         throw FileWriterError.ioChannelCreationFailed(fileDescriptor: fileDescriptor)

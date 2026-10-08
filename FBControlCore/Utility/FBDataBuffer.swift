@@ -42,7 +42,7 @@ private class AccumulatingDataBuffer: NSObject, AccumulatingBuffer, @unchecked S
   let lock = NSLock()
   let buffer: NSMutableData
   private let capacity: Int
-  private let finishedConsumingFuture = FBMutableFuture<NSNull>()
+  let finishedConsuming = AsyncLatch()
 
   init(backing: NSMutableData, capacity: Int) {
     self.buffer = backing
@@ -66,7 +66,7 @@ private class AccumulatingDataBuffer: NSObject, AccumulatingBuffer, @unchecked S
 
   func consumeData(_ data: Data) {
     lock.withLock {
-      if finishedConsumingFuture.hasCompleted {
+      if finishedConsuming.isOpen {
         return
       }
       buffer.append(data)
@@ -79,15 +79,8 @@ private class AccumulatingDataBuffer: NSObject, AccumulatingBuffer, @unchecked S
 
   func consumeEndOfFile() {
     lock.withLock {
-      if finishedConsumingFuture.hasCompleted {
-        return
-      }
-      finishedConsumingFuture.resolve(withResult: NSNull())
+      finishedConsuming.open()
     }
-  }
-
-  var finishedConsuming: FBFuture<NSNull> {
-    finishedConsumingFuture.retyped(FBFuture<NSNull>.self)
   }
 }
 

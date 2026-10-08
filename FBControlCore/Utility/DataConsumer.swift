@@ -39,14 +39,14 @@ public enum DataConsumption: Equatable, Sendable {
 
 /// Observation of a Data Consumer's lifecycle.
 public protocol DataConsumerLifecycle: Sendable {
-  /// A Future that resolves when there is no more data to write and any underlying resource managed by the consumer is released.
-  var finishedConsuming: FBFuture<NSNull> { get }
+  /// Opens when there is no more data to write and any underlying resource managed by the consumer is released.
+  var finishedConsuming: AsyncLatch { get }
 }
 
 public extension DataConsumerLifecycle {
-  /// Awaits completion of `finishedConsuming`.
+  /// Returns once `finishedConsuming` opens. Cancelling throws `CancellationError`.
   func awaitFinishedConsuming() async throws {
-    try await bridgeFBFutureVoid(self.finishedConsuming)
+    try await finishedConsuming.wait()
   }
 }
 
@@ -69,10 +69,9 @@ public struct LoggingDataConsumer: DataConsumer {
 }
 
 /// A consumer that forwards everything it receives to each of `consumers`, in order.
-// SAFETY: all state is immutable; `FBMutableFuture` is internally synchronized.
-public final class FBCompositeDataConsumer: DataConsumer, DataConsumerLifecycle, CustomStringConvertible, @unchecked Sendable {
+public final class FBCompositeDataConsumer: DataConsumer, DataConsumerLifecycle, CustomStringConvertible {
   private let consumers: [DataConsumer]
-  private let finishedConsumingFuture = FBMutableFuture<NSNull>()
+  public let finishedConsuming = AsyncLatch()
 
   public init(consumers: [DataConsumer]) {
     self.consumers = consumers
@@ -92,11 +91,7 @@ public final class FBCompositeDataConsumer: DataConsumer, DataConsumerLifecycle,
     for consumer in consumers {
       consumer.consumeEndOfFile()
     }
-    finishedConsumingFuture.resolve(withResult: NSNull())
-  }
-
-  public var finishedConsuming: FBFuture<NSNull> {
-    finishedConsumingFuture.retyped(FBFuture<NSNull>.self)
+    finishedConsuming.open()
   }
 }
 
