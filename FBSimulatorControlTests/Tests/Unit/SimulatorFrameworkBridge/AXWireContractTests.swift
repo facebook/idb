@@ -129,7 +129,6 @@ final class AXWireContractTests: XCTestCase {
       .badRequest: "bad_request",
       .assertionFailed: "assertion_failed",
       .runtimeFailed: "runtime_failed",
-      .capabilityUnavailable: "capability_unavailable",
     ]
     XCTAssertEqual(Set(AXWire.ErrorKind.allCases), Set(expected.keys), "every failure kind must have its wire value pinned")
     for (kind, wireValue) in expected {
