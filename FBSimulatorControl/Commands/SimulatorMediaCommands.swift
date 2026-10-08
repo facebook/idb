@@ -41,29 +41,11 @@ public struct SimulatorMediaCommands {
     SimulatorMediaCommands(simulator: simulator)
   }
 
-  private static var predicateForVideoPaths: NSPredicate {
-    predicateForPaths(matchingTypes: [.movie, .mpeg4Movie, .quickTimeMovie])
-  }
+  private static let videoTypes: [UTType] = [.movie, .mpeg4Movie, .quickTimeMovie]
 
-  private static var predicateForPhotoPaths: NSPredicate {
-    var types: [UTType] = [.heic, .image, .jpeg, .png]
-    if let jpeg2000 = UTType("public.jpeg-2000") {
-      types.append(jpeg2000)
-    }
-    return predicateForPaths(matchingTypes: types)
-  }
+  private static let photoTypes: [UTType] = [.heic, .image, .jpeg, .png] + [UTType("public.jpeg-2000")].compactMap { $0 }
 
-  private static var predicateForContactPaths: NSPredicate {
-    predicateForPaths(matchingTypes: [.vCard])
-  }
-
-  private static var predicateForMediaPaths: NSPredicate {
-    NSCompoundPredicate(orPredicateWithSubpredicates: [
-      predicateForVideoPaths,
-      predicateForPhotoPaths,
-      predicateForContactPaths,
-    ])
-  }
+  private static let contactTypes: [UTType] = [.vCard]
 
   public func upload(_ mediaFileURLs: [URL]) throws {
 
@@ -71,8 +53,7 @@ public struct SimulatorMediaCommands {
       throw SimulatorMediaError.noMediaProvided
     }
 
-    let mediaPredicate = SimulatorMediaCommands.predicateForMediaPaths
-    let unknown = mediaFileURLs.filter { !mediaPredicate.evaluate(with: $0) }
+    let unknown = mediaFileURLs.filter { !Self.url($0, conformsToAnyOf: Self.videoTypes + Self.photoTypes + Self.contactTypes) }
     if !unknown.isEmpty {
       throw SimulatorMediaError.unknownMediaPaths(paths: unknown)
     }
@@ -82,11 +63,7 @@ public struct SimulatorMediaCommands {
       throw SimulatorStateError.notBooted(operation: "upload photos", state: stateString)
     }
 
-    let photosAndVideosPredicate = NSCompoundPredicate(orPredicateWithSubpredicates: [
-      SimulatorMediaCommands.predicateForPhotoPaths,
-      SimulatorMediaCommands.predicateForVideoPaths,
-    ])
-    let photosAndVideos = mediaFileURLs.filter { photosAndVideosPredicate.evaluate(with: $0) }
+    let photosAndVideos = mediaFileURLs.filter { Self.url($0, conformsToAnyOf: Self.photoTypes + Self.videoTypes) }
     if !photosAndVideos.isEmpty {
       do {
         try FBObjCExceptionGuard.guarded {
@@ -97,8 +74,7 @@ public struct SimulatorMediaCommands {
       }
     }
 
-    let contactPredicate = SimulatorMediaCommands.predicateForContactPaths
-    let contacts = mediaFileURLs.filter { contactPredicate.evaluate(with: $0) }
+    let contacts = mediaFileURLs.filter { Self.url($0, conformsToAnyOf: Self.contactTypes) }
     if !contacts.isEmpty {
       do {
         try FBObjCExceptionGuard.guarded {
@@ -110,11 +86,10 @@ public struct SimulatorMediaCommands {
     }
   }
 
-  private static func predicateForPaths(matchingTypes types: [UTType]) -> NSPredicate {
-    NSPredicate { (evaluatedObject: Any?, _: [String: Any]?) -> Bool in
-      guard let url = evaluatedObject as? URL else { return false }
-      guard let contentType = try? url.resourceValues(forKeys: [.contentTypeKey]).contentType else { return false }
-      return types.contains { contentType.conforms(to: $0) }
+  private static func url(_ url: URL, conformsToAnyOf types: [UTType]) -> Bool {
+    guard let contentType = try? url.resourceValues(forKeys: [.contentTypeKey]).contentType else {
+      return false
     }
+    return types.contains { contentType.conforms(to: $0) }
   }
 }
