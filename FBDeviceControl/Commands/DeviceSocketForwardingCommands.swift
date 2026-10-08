@@ -71,17 +71,13 @@ public struct DeviceSocketForwardingCommands {
         close(localSocket)
         throw writerError ?? DeviceSocketForwardingError.socketWriterFailed(socket: localSocket)
       }
-      let remoteReader = FileReader.reader(withFileDescriptor: localSocket, closeOnEndOfFile: false, consumer: localConsumer, logger: nil)
-      let inputReader = FileReader.reader(withFileDescriptor: localFileDescriptorInput, closeOnEndOfFile: false, consumer: remoteWriter, logger: nil)
-      do {
-        try await bridgeFBFutureVoid(remoteReader.startReading())
-        try await bridgeFBFutureVoid(inputReader.startReading())
-        _ = try await bridgeFBFuture(inputReader.finishedReading)
-      } catch {
-        await Self.stopForwarding(inputReader: inputReader, remoteReader: remoteReader, remoteWriter: remoteWriter, localSocket: localSocket, logger: device.logger)
-        throw error
-      }
+      let remoteReader = DescriptorReader(fileDescriptor: localSocket, closeOnEndOfFile: false, consumer: localConsumer)
+      let inputReader = DescriptorReader(fileDescriptor: localFileDescriptorInput, closeOnEndOfFile: false, consumer: remoteWriter)
+      // Cancelling this wait stops the reader instead of throwing, so the cancellation is reported
+      // once teardown is done.
+      _ = await inputReader.finished()
       await Self.stopForwarding(inputReader: inputReader, remoteReader: remoteReader, remoteWriter: remoteWriter, localSocket: localSocket, logger: device.logger)
+      try Task.checkCancellation()
     }
   }
 
@@ -94,16 +90,16 @@ public struct DeviceSocketForwardingCommands {
   // outbound bytes flush before responses stop being read; its channel closes
   // its own duplicated descriptor. Reader drains are time-bounded.
   private static func stopForwarding(
-    inputReader: FileReader,
-    remoteReader: FileReader,
+    inputReader: DescriptorReader,
+    remoteReader: DescriptorReader,
     remoteWriter: DataConsumer & DataConsumerLifecycle,
     localSocket: Int32,
     logger: (any ControlCoreLogger)?
   ) async {
     remoteWriter.consumeEndOfFile()
     try? await remoteWriter.awaitFinishedConsuming()
-    _ = try? await bridgeFBFuture(inputReader.finishedReading(withTimeout: teardownDrainTimeout))
-    _ = try? await bridgeFBFuture(remoteReader.finishedReading(withTimeout: teardownDrainTimeout))
+    _ = await inputReader.finished(within: teardownDrainTimeout)
+    _ = await remoteReader.finished(within: teardownDrainTimeout)
     logger?.log("Closing local socket \(localSocket)")
     close(localSocket)
   }

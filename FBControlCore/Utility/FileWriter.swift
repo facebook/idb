@@ -187,7 +187,7 @@ public class FileWriter: NSObject, @unchecked Sendable {
       assert(io == nil)
 
       // O_NONBLOCK must be set before DispatchIO snapshots the descriptor flags; see
-      // FileReader.startReadingNow for why.
+      // DescriptorReader.init for why.
       _ = fcntl(self.fileDescriptor, F_SETFL, fcntl(self.fileDescriptor, F_GETFL) | O_NONBLOCK)
 
       let finishedConsuming = self.finishedConsuming

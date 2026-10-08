@@ -149,9 +149,6 @@ extension Subprocess {
     let processName = (executable as NSString).lastPathComponent
     let launched: LaunchedProcess
     do {
-      for reader in [stdOut.reader, stdErr.reader].compactMap({ $0 }) {
-        _ = try await bridgeFBFuture(reader.startReading())
-      }
       launched = try await launcher.spawn(
         self,
         standardInput: stdIn,
@@ -174,7 +171,7 @@ extension Subprocess {
       let statLoc = await launched.exitStatLoc()
       exit.markReaped()
       for reader in readers {
-        _ = try? await bridgeFBFuture(reader.finishedReading(withTimeout: HostSubprocess.drainTimeout))
+        _ = await reader.finished(within: HostSubprocess.drainTimeout)
       }
       let status = TerminationStatus(statLoc: statLoc)
       switch status {

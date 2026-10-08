@@ -164,8 +164,7 @@ final class FileWriterTests: XCTestCase {
     guard let writer = FileWriter.asyncWriter(withFileDescriptor: writerDescriptor, closeOnEndOfFile: true, error: &writeError) else {
       throw writeError!
     }
-    let reader = FileReader.reader(withFileDescriptor: localSocket, closeOnEndOfFile: false, consumer: NullDataConsumer(), logger: nil)
-    try await bridgeFBFutureVoid(reader.startReading().timeout(10, waitingFor: "the reader to start"))
+    let reader = DescriptorReader(fileDescriptor: localSocket, closeOnEndOfFile: false, consumer: NullDataConsumer())
 
     // Traffic in both directions, so teardown runs against live channels.
     writer.consumeData("ping".data(using: .utf8)!)
@@ -178,7 +177,9 @@ final class FileWriterTests: XCTestCase {
     writer.consumeEndOfFile()
     try await writer.finishedConsuming.wait(within: PollDeadline(timeout: 10, waitingFor: "the writer to finish consuming"))
     XCTAssertEqual(fcntl(writerDescriptor, F_GETFD), -1)
-    try await bridgeFBFutureVoid(reader.finishedReading(withTimeout: 4).timeout(10, waitingFor: "the reader to finish"))
+    let readerFinished = AsyncEvent<DescriptorReader.Outcome>()
+    Task { readerFinished.happen(await reader.finished(within: 4)) }
+    _ = try await readerFinished.wait(timeout: 10, waitingFor: "the reader to finish")
 
     XCTAssertEqual(close(localSocket), 0)
     XCTAssertEqual(close(remoteSocket), 0)

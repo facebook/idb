@@ -147,7 +147,7 @@ Alongside it is a "structured logger" (`EventReporter`), which receives typed ev
 
 ### IO
 
-Due to the nature of the functionality that is offered in the Frameworks, IO is a very common task. There are a number of abstractions for reading and writing data between various sources and sinks. For example, the common interface (`FileReader`) is used to read output from a spawned Application process and relay it to a consumer (`FileWriter`). This is then used to pipe Application output over `idb`'s gRPC interface without the Application launcher having to be aware of what is consuming the output.
+Due to the nature of the functionality that is offered in the Frameworks, IO is a very common task. There are a number of abstractions for reading and writing data between various sources and sinks. For example, the common interface (`DescriptorReader`) is used to read output from a spawned Application process and relay it to a consumer (`FileWriter`). This is then used to pipe Application output over `idb`'s gRPC interface without the Application launcher having to be aware of what is consuming the output.
 
 All of this is backed by `libdispatch`, due to its affordance for asynchronous IO, where file reading and writing is managed in an efficient manner without the user having to build their own IO multiplexer.
 

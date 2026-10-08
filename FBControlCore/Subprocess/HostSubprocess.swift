@@ -125,7 +125,7 @@ struct HostSink {
   /// it, so that end-of-file on the drain is driven solely by the child
   /// exiting.
   private(set) var childDescriptor: Int32?
-  let reader: FileReader?
+  let reader: DescriptorReader?
   /// The parent's end of an undrained pipe, owned by the caller once the
   /// launch succeeds and closed here only if it fails.
   var parentDescriptor: Int32?
@@ -143,9 +143,7 @@ struct HostSink {
       close(parentDescriptor)
     }
     parentDescriptor = nil
-    if let reader {
-      _ = reader.stopReading()
-    }
+    reader?.stop()
   }
 }
 
@@ -222,7 +220,7 @@ extension Subprocess.Output {
     } else {
       composed = consumer
     }
-    let reader = FileReader.reader(withFileDescriptor: descriptors[0], closeOnEndOfFile: true, consumer: composed, logger: logger)
+    let reader = DescriptorReader(fileDescriptor: descriptors[0], closeOnEndOfFile: true, consumer: composed)
     return HostSink(childDescriptor: descriptors[1], reader: reader)
   }
 }
