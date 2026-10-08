@@ -11,18 +11,13 @@ import Foundation
 public enum FBDataBuffer {
   /// A data buffer that is only mutated through consuming data.
   public static func accumulatingBuffer() -> AccumulatingBuffer {
-    AccumulatingDataBuffer(backing: NSMutableData(), capacity: 0)
+    AccumulatingDataBuffer(capacity: 0)
   }
 
   /// A data buffer that drops bytes from its beginning once `capacity` bytes are exceeded.
   public static func accumulatingBuffer(withCapacity capacity: Int) -> AccumulatingBuffer {
     precondition(capacity > 0)
-    return AccumulatingDataBuffer(backing: NSMutableData(), capacity: capacity)
-  }
-
-  /// A data buffer that appends into the provided data.
-  public static func accumulatingBuffer(for data: NSMutableData) -> AccumulatingBuffer {
-    AccumulatingDataBuffer(backing: data, capacity: 0)
+    return AccumulatingDataBuffer(capacity: capacity)
   }
 
   /// A data buffer that is appended to by consuming data and can be drained.
@@ -38,23 +33,23 @@ public enum FBDataBuffer {
   private static let newline = Data("\n".utf8)
 }
 
-private class AccumulatingDataBuffer: NSObject, AccumulatingBuffer, @unchecked Sendable {
+/// @unchecked Sendable: `buffer` is only touched under `lock`.
+private class AccumulatingDataBuffer: AccumulatingBuffer, CustomStringConvertible, @unchecked Sendable {
   let lock = NSLock()
-  let buffer: NSMutableData
+  fileprivate var buffer = Data()
   private let capacity: Int
   let finishedConsuming = AsyncLatch()
 
-  init(backing: NSMutableData, capacity: Int) {
-    self.buffer = backing
+  init(capacity: Int) {
     self.capacity = capacity
   }
 
-  override var description: String {
-    "Accumilating Buffer \(data().count) Bytes"
+  var description: String {
+    "Accumulating Buffer \(data().count) Bytes"
   }
 
   func data() -> Data {
-    lock.withLock { buffer as Data }
+    lock.withLock { buffer }
   }
 
   func lines() -> [String] {
@@ -70,9 +65,9 @@ private class AccumulatingDataBuffer: NSObject, AccumulatingBuffer, @unchecked S
         return
       }
       buffer.append(data)
-      let overrun = buffer.length - capacity
+      let overrun = buffer.count - capacity
       if capacity > 0, overrun > 0 {
-        buffer.replaceBytes(in: NSRange(location: 0, length: overrun), withBytes: nil, length: 0)
+        buffer.removeSubrange(buffer.startIndex..<(buffer.startIndex + overrun))
       }
     }
   }
@@ -86,7 +81,7 @@ private class AccumulatingDataBuffer: NSObject, AccumulatingBuffer, @unchecked S
 
 private final class ConsumableDataBuffer: AccumulatingDataBuffer, ConsumableBuffer, @unchecked Sendable {
   init() {
-    super.init(backing: NSMutableData(), capacity: 0)
+    super.init(capacity: 0)
   }
 
   override var description: String {
@@ -95,8 +90,8 @@ private final class ConsumableDataBuffer: AccumulatingDataBuffer, ConsumableBuff
 
   func consumeCurrentData() -> Data {
     lock.withLock {
-      let data = buffer as Data
-      buffer.length = 0
+      let data = buffer
+      buffer = Data()
       return data
     }
   }
@@ -108,28 +103,19 @@ private final class ConsumableDataBuffer: AccumulatingDataBuffer, ConsumableBuff
   func consumeLength(_ length: UInt) -> Data? {
     lock.withLock {
       let length = Int(length)
-      guard length <= buffer.length else {
+      guard length <= buffer.count else {
         return nil
       }
-      let range = NSRange(location: 0, length: length)
-      let data = buffer.subdata(with: range)
-      buffer.replaceBytes(in: range, withBytes: nil, length: 0)
-      return data
+      return take(upTo: buffer.startIndex + length, dropping: buffer.startIndex + length)
     }
   }
 
   func consume(until terminal: Data) -> Data? {
     lock.withLock {
-      guard buffer.length > 0 else {
+      guard !buffer.isEmpty, let terminalRange = buffer.range(of: terminal) else {
         return nil
       }
-      let terminalRange = buffer.range(of: terminal, options: [], in: NSRange(location: 0, length: buffer.length))
-      guard terminalRange.location != NSNotFound else {
-        return nil
-      }
-      let data = buffer.subdata(with: NSRange(location: 0, length: terminalRange.location))
-      buffer.replaceBytes(in: NSRange(location: 0, length: terminalRange.location + terminal.count), withBytes: nil, length: 0)
-      return data
+      return take(upTo: terminalRange.lowerBound, dropping: terminalRange.upperBound)
     }
   }
 
@@ -139,5 +125,12 @@ private final class ConsumableDataBuffer: AccumulatingDataBuffer, ConsumableBuff
 
   func consumeLineString() -> String? {
     consumeLineData().flatMap { String(data: $0, encoding: .utf8) }
+  }
+
+  /// Removes the bytes before `dropEnd` and returns those before `end`. Must be called under `lock`.
+  private func take(upTo end: Data.Index, dropping dropEnd: Data.Index) -> Data {
+    let taken = Data(buffer[buffer.startIndex..<end])
+    buffer.removeSubrange(buffer.startIndex..<dropEnd)
+    return taken
   }
 }

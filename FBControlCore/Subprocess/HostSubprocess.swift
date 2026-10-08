@@ -177,13 +177,13 @@ extension Subprocess.Output {
       let consumer = LineConsumer(consumer: sink)
       return (try Self.drainedSink(into: consumer, logger: nil), { Self.captured(()) })
     case .data:
-      let backing = NSMutableData()
-      let sink = try Self.drainedSink(into: FBDataBuffer.accumulatingBuffer(for: backing), logger: nil)
-      return (sink, { Self.captured(backing as Data) })
+      let buffer = FBDataBuffer.accumulatingBuffer()
+      let sink = try Self.drainedSink(into: buffer, logger: nil)
+      return (sink, { Self.captured(buffer.data()) })
     case .string:
-      let backing = NSMutableData()
-      let sink = try Self.drainedSink(into: FBDataBuffer.accumulatingBuffer(for: backing), logger: nil)
-      return (sink, { Self.captured(Self.string(from: backing as Data)) })
+      let buffer = FBDataBuffer.accumulatingBuffer()
+      let sink = try Self.drainedSink(into: buffer, logger: nil)
+      return (sink, { Self.captured(Self.string(from: buffer.data())) })
     }
   }
 

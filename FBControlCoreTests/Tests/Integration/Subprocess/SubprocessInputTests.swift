@@ -101,9 +101,9 @@ struct SubprocessInputTests {
     let chunks = ["first\n", "second\n", "third\n"]
 
     let source = InputSource()
-    let backing = NSMutableData()
+    let output = FBDataBuffer.accumulatingBuffer()
     let running = try await Self.new("cat").launch(
-      output: .consumer(FBDataBuffer.accumulatingBuffer(for: backing)),
+      output: .consumer(output),
       error: .closed,
       input: .source(source))
     for chunk in chunks {
@@ -112,7 +112,7 @@ struct SubprocessInputTests {
     source.finish()
 
     #expect(try await running.terminationStatus == .exited(0))
-    #expect(String(data: backing as Data, encoding: .utf8) == chunks.joined())
+    #expect(String(data: output.data(), encoding: .utf8) == chunks.joined())
   }
 
   @Test("A source finished without a write is end-of-file")
