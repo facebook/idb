@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
+  <defs>
+    <linearGradient id="tile" x1="174" y1="116" x2="850" y2="914" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#183750"/>
+      <stop offset="0.48" stop-color="#0B1F31"/>
+      <stop offset="1" stop-color="#07131F"/>
+    </linearGradient>
+    <radialGradient id="topGlow" cx="0" cy="0" r="1" gradientTransform="translate(736 186) rotate(134) scale(524)" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#6B5CFF" stop-opacity="0.58"/>
+      <stop offset="1" stop-color="#6B5CFF" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="bottomGlow" cx="0" cy="0" r="1" gradientTransform="translate(244 826) rotate(-48) scale(538)" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#00D4FF" stop-opacity="0.34"/>
+      <stop offset="1" stop-color="#00D4FF" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="frame" x1="285" y1="158" x2="733" y2="849" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#E7F8FF"/>
+      <stop offset="0.28" stop-color="#88D9F2"/>
+      <stop offset="0.64" stop-color="#397693"/>
+      <stop offset="1" stop-color="#16394F"/>
+    </linearGradient>
+    <linearGradient id="screen" x1="330" y1="204" x2="685" y2="802" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#173A54"/>
+      <stop offset="0.56" stop-color="#0E293E"/>
+      <stop offset="1" stop-color="#071927"/>
+    </linearGradient>
+    <linearGradient id="accent" x1="364" y1="372" x2="705" y2="669" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#59F2FF"/>
+      <stop offset="0.5" stop-color="#30C7FF"/>
+      <stop offset="1" stop-color="#8D7DFF"/>
+    </linearGradient>
+    <linearGradient id="targetFill" x1="372" y1="437" x2="660" y2="577" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#3CE8FF" stop-opacity="0.24"/>
+      <stop offset="1" stop-color="#8D7DFF" stop-opacity="0.12"/>
+    </linearGradient>
+    <filter id="tileShadow" x="0" y="0" width="1024" height="1024" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+      <feDropShadow dx="0" dy="27" stdDeviation="24" flood-color="#020810" flood-opacity="0.52"/>
+    </filter>
+    <filter id="deviceShadow" x="180" y="82" width="664" height="862" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+      <feDropShadow dx="0" dy="25" stdDeviation="24" flood-color="#020810" flood-opacity="0.72"/>
+    </filter>
+    <filter id="scopeGlow" x="264" y="294" width="514" height="514" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+      <feGaussianBlur stdDeviation="17"/>
+    </filter>
+    <clipPath id="tileClip">
+      <rect x="72" y="56" width="880" height="880" rx="210"/>
+    </clipPath>
+    <clipPath id="screenClip">
+      <rect x="294" y="188" width="436" height="636" rx="79"/>
+    </clipPath>
+  </defs>
+
+  <g filter="url(#tileShadow)">
+    <rect x="72" y="56" width="880" height="880" rx="210" fill="url(#tile)"/>
+  </g>
+  <g clip-path="url(#tileClip)">
+    <rect x="72" y="56" width="880" height="880" fill="url(#topGlow)"/>
+    <rect x="72" y="56" width="880" height="880" fill="url(#bottomGlow)"/>
+    <path d="M121 256C310 129 480 110 687 168C834 209 941 192 1024 125" fill="none" stroke="#FFFFFF" stroke-opacity="0.055" stroke-width="3"/>
+    <path d="M9 849C204 743 348 741 512 804C702 876 838 861 1010 735" fill="none" stroke="#5FEFFF" stroke-opacity="0.08" stroke-width="3"/>
+    <circle cx="875" cy="197" r="5" fill="#9A8CFF" fill-opacity="0.72"/>
+    <circle cx="836" cy="233" r="3" fill="#9A8CFF" fill-opacity="0.52"/>
+    <circle cx="170" cy="770" r="4" fill="#4EEAFF" fill-opacity="0.62"/>
+  </g>
+  <rect x="75" y="59" width="874" height="874" rx="207" fill="none" stroke="#A4E6FF" stroke-opacity="0.15" stroke-width="6"/>
+
+  <g filter="url(#deviceShadow)">
+    <rect x="250" y="132" width="524" height="740" rx="116" fill="#06111C"/>
+    <rect x="259" y="141" width="506" height="722" rx="107" fill="url(#frame)"/>
+    <rect x="276" y="158" width="472" height="688" rx="93" fill="#07131F"/>
+    <rect x="294" y="188" width="436" height="636" rx="79" fill="url(#screen)"/>
+  </g>
+
+  <g clip-path="url(#screenClip)">
+    <circle cx="655" cy="277" r="245" fill="#7767FF" fill-opacity="0.12"/>
+    <circle cx="330" cy="749" r="266" fill="#00D4FF" fill-opacity="0.09"/>
+    <rect x="334" y="290" width="161" height="21" rx="10.5" fill="#D9F5FF" fill-opacity="0.67"/>
+    <rect x="334" y="324" width="262" height="13" rx="6.5" fill="#8CC1D5" fill-opacity="0.34"/>
+    <rect x="334" y="352" width="208" height="13" rx="6.5" fill="#8CC1D5" fill-opacity="0.23"/>
+
+    <rect x="326" y="412" width="372" height="171" rx="37" fill="url(#targetFill)"/>
+    <rect x="342" y="428" width="340" height="139" rx="27" fill="#0B2234" fill-opacity="0.56"/>
+    <circle cx="390" cy="478" r="24" fill="#45E9FF" fill-opacity="0.91"/>
+    <rect x="432" y="456" width="167" height="17" rx="8.5" fill="#E4F9FF" fill-opacity="0.83"/>
+    <rect x="432" y="492" width="118" height="13" rx="6.5" fill="#82BCD1" fill-opacity="0.48"/>
+    <rect x="432" y="520" width="178" height="13" rx="6.5" fill="#82BCD1" fill-opacity="0.3"/>
+
+    <rect x="334" y="637" width="284" height="18" rx="9" fill="#CFEFFA" fill-opacity="0.48"/>
+    <rect x="334" y="671" width="344" height="13" rx="6.5" fill="#82BCD1" fill-opacity="0.25"/>
+    <rect x="334" y="699" width="237" height="13" rx="6.5" fill="#82BCD1" fill-opacity="0.2"/>
+    <rect x="334" y="743" width="105" height="34" rx="17" fill="#55E7FF" fill-opacity="0.18"/>
+    <rect x="453" y="743" width="105" height="34" rx="17" fill="#8D7DFF" fill-opacity="0.17"/>
+  </g>
+
+  <rect x="421" y="178" width="182" height="46" rx="23" fill="#06111C"/>
+  <circle cx="578" cy="201" r="7" fill="#17384B"/>
+  <rect x="452" y="834" width="120" height="10" rx="5" fill="#C3F4FF" fill-opacity="0.28"/>
+
+  <circle cx="512" cy="502" r="193" fill="none" stroke="#38D9FF" stroke-opacity="0.26" stroke-width="28" filter="url(#scopeGlow)"/>
+  <circle cx="512" cy="502" r="183" fill="none" stroke="url(#accent)" stroke-width="17" stroke-linecap="round" stroke-dasharray="202 72"/>
+  <circle cx="512" cy="502" r="145" fill="none" stroke="#B7F6FF" stroke-opacity="0.19" stroke-width="4"/>
+
+  <path d="M512 284V350M512 654V720M294 502H360M664 502H730" stroke="#E8FCFF" stroke-opacity="0.92" stroke-width="15" stroke-linecap="round"/>
+  <path d="M388 443V408C388 394 399 383 413 383H448M576 383H611C625 383 636 394 636 408V443M388 561V596C388 610 399 621 413 621H448M576 621H611C625 621 636 610 636 596V561" fill="none" stroke="url(#accent)" stroke-width="18" stroke-linecap="round"/>
+  <circle cx="512" cy="502" r="29" fill="#071723" stroke="#DFFCFF" stroke-width="9"/>
+  <circle cx="512" cy="502" r="10" fill="#58EEFF"/>
+
+  <circle cx="695" cy="360" r="12" fill="#9B8DFF" stroke="#E7E2FF" stroke-width="5"/>
+  <circle cx="695" cy="644" r="12" fill="#45E9FF" stroke="#D9FBFF" stroke-width="5"/>
+</svg>
