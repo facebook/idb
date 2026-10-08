@@ -8,7 +8,6 @@
 import Darwin
 import FBAXCore
 import FBControlCore
-@testable import FBSimulatorAX
 @testable import FBSimulatorControl
 import Foundation
 import SimulatorIPC
@@ -16,7 +15,7 @@ import XCTest
 import os
 
 /// Bridge socket naming and location, the deadlines a host reaches one with, and the spawn arguments
-/// and backend names that decide which guest it gets.
+/// that decide which guest it gets.
 final class AXBridgeSocketTests: XCTestCase {
 
   private var directory = ""
@@ -38,30 +37,6 @@ final class AXBridgeSocketTests: XCTestCase {
     XCTAssertLessThan(SimulatorFrameworkBridgePersistentTransport.adoptionTimeout, 1)
     XCTAssertGreaterThan(window.tv_usec, 0, "a sub-second deadline that converts to zero is no deadline")
   }
-  func testEveryResolvedBackendNameRoundTrips() {
-    let cases: [(AXBridgePersistence, UIAutomationBackendName)] = [
-      (.oneShot, .axBridgeOneShot), (.shared, .axBridgePersistent), (.exclusive, .axBridgeExclusive),
-    ]
-    for (persistence, name) in cases {
-      let backend = UIAutomationBackend.axBridge(
-        persistence: persistence, frontmostMethod: .windowServer, automationMode: true)
-      XCTAssertEqual(backend.name, name)
-      XCTAssertEqual(UIAutomationBackend(resolvedName: name), backend)
-    }
-  }
-
-  func testTheOneShotCaseHasAnExplicitWireName() {
-    XCTAssertEqual(UIAutomationBackendName.axBridgeOneShot.rawValue, "axbridge-oneshot")
-  }
-
-  func testTheSharedCaseKeepsTheExistingWireName() {
-    XCTAssertEqual(UIAutomationBackendName.axBridgePersistent.rawValue, "axbridge-persistent")
-  }
-
-  func testTheExclusiveCaseHasItsOwnWireName() {
-    XCTAssertEqual(UIAutomationBackendName.axBridgeExclusive.rawValue, "axbridge-exclusive")
-  }
-
   func testAConnectionSocketIsNamedForItsIdentifier() {
     let path = SimulatorFrameworkBridgeSocket.path(forConnection: "ABC")
     XCTAssertEqual(path, "\(SimulatorFrameworkBridgeSocket.directory)/ABC.sock")

@@ -25,8 +25,14 @@
       "FBDeviceControlTests"
     ],
     "FBSimulatorAX": [
-      "FBSimulatorControlSmokeTests",
-      "FBSimulatorControlUnitTests"
+      "FBSimulatorAXSmokeTests",
+      "FBSimulatorAXTests"
+    ],
+    "FBSimulatorAXSmokeTests": [
+      "FBSimulatorAXSmokeTests"
+    ],
+    "FBSimulatorAXTests": [
+      "FBSimulatorAXTests"
     ],
     "FBSimulatorBridgeProtocolTests": [
       "FBSimulatorBridgeProtocolTests"
@@ -89,6 +95,18 @@
     "FBDeviceControlTests": {
       "bootedSimulator": false,
       "prerequisites": []
+    },
+    "FBSimulatorAXSmokeTests": {
+      "bootedSimulator": true,
+      "prerequisites": [
+        "fbsimulatorcontrol_resources"
+      ]
+    },
+    "FBSimulatorAXTests": {
+      "bootedSimulator": false,
+      "prerequisites": [
+        "fbsimulatorcontrol_resources"
+      ]
     },
     "FBSimulatorBridgeProtocolTests": {
       "bootedSimulator": false,

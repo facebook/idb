@@ -11,15 +11,6 @@ import FBSimulatorBridgeProtocol
 import Foundation
 import XCTest
 
-func decodedBridgeAXArguments(_ request: AXBridgeRequest) throws -> [String: Any] {
-  let arguments = try request.arguments
-  XCTAssertEqual(arguments.count, 2)
-  XCTAssertEqual(arguments.first, "rpc")
-  let frame = Data(arguments[1].utf8)
-  XCTAssertEqual(try BridgeRequest.decode(frame).command, .accessibility(request))
-  return try XCTUnwrap(BridgeRequest.accessibilityParameters(of: frame)).mapValues(\.foundationValue)
-}
-
 final class BridgeTransportTests: XCTestCase {
   func testFailedConnectionRejectsLaterMutationsBeforeWriting() async throws {
     var descriptors: [Int32] = [-1, -1]
