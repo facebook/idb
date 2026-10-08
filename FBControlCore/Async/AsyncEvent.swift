@@ -74,7 +74,7 @@ public final class AsyncEvent<Value: Sendable>: @unchecked Sendable {
     }
   }
 
-  /// As `wait()`, failing with a `ControlCoreError` naming `description` if the event has not
+  /// As `wait()`, failing with a `PollTimeoutError` naming `description` if the event has not
   /// happened within `timeout` seconds.
   public func wait(timeout: TimeInterval, waitingFor description: String) async throws -> Value {
     try await withThrowingTaskGroup(of: Value.self) { group in
@@ -83,7 +83,7 @@ public final class AsyncEvent<Value: Sendable>: @unchecked Sendable {
       }
       group.addTask {
         try await Task.sleep(nanoseconds: UInt64(timeout * 1_000_000_000))
-        throw ControlCoreError.describe("Timed out after \(String(format: "%f", timeout)) seconds waiting for \(description)").build()
+        throw PollTimeoutError(deadline: PollDeadline(timeout: timeout, waitingFor: description))
       }
       defer { group.cancelAll() }
       guard let first = try await group.next() else {
