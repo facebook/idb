@@ -20,10 +20,7 @@ final class FileWriterTests: XCTestCase {
 
   func testNonBlockingCloseOfPipe() async throws {
     let pipe = Pipe()
-    var writeError: NSError?
-    guard let writer = FileWriter.asyncWriter(withFileDescriptor: pipe.fileHandleForWriting.fileDescriptor, closeOnEndOfFile: true, error: &writeError) else {
-      throw writeError!
-    }
+    let writer = try FileWriter.asyncWriter(withFileDescriptor: pipe.fileHandleForWriting.fileDescriptor, closeOnEndOfFile: true)
 
     let expected = "Foo Bar Baz".data(using: .utf8)!
     writer.consumeData(expected)
@@ -43,10 +40,7 @@ final class FileWriterTests: XCTestCase {
     XCTAssertTrue(FileManager.default.createFile(atPath: filePath, contents: nil, attributes: nil))
     let fileHandle = FileHandle(forWritingAtPath: filePath)
     XCTAssertNotNil(fileHandle)
-    var writeError: NSError?
-    guard let writer = FileWriter.asyncWriter(withFileDescriptor: fileHandle!.fileDescriptor, closeOnEndOfFile: true, error: &writeError) else {
-      throw writeError!
-    }
+    let writer = try FileWriter.asyncWriter(withFileDescriptor: fileHandle!.fileDescriptor, closeOnEndOfFile: true)
 
     let data = "Foo Bar Baz".data(using: .utf8)!
     writer.consumeData(data)
@@ -67,10 +61,7 @@ final class FileWriterTests: XCTestCase {
     // flags set through either are visible through both.
     let writerDescriptor = dup(localSocket)
     XCTAssertGreaterThanOrEqual(writerDescriptor, 0)
-    var writeError: NSError?
-    guard let writer = FileWriter.asyncWriter(withFileDescriptor: writerDescriptor, closeOnEndOfFile: true, error: &writeError) else {
-      throw writeError!
-    }
+    let writer = try FileWriter.asyncWriter(withFileDescriptor: writerDescriptor, closeOnEndOfFile: true)
 
     // A write arms the channel: libdispatch records the description's
     // original (blocking) flags and forces O_NONBLOCK onto it.
@@ -97,10 +88,7 @@ final class FileWriterTests: XCTestCase {
       close(remoteSocket)
     }
 
-    var writeError: NSError?
-    guard let writer = FileWriter.asyncWriter(withFileDescriptor: localSocket, closeOnEndOfFile: false, error: &writeError) else {
-      throw writeError!
-    }
+    let writer = try FileWriter.asyncWriter(withFileDescriptor: localSocket, closeOnEndOfFile: false)
 
     // A write arms the channel: libdispatch records the descriptor's
     // original (blocking) flags and forces O_NONBLOCK onto it.
@@ -130,10 +118,7 @@ final class FileWriterTests: XCTestCase {
     // and opens from that teardown either way, so it still orders the reads
     // below after the write and the close.
     let finishedConsuming: AsyncLatch = try autoreleasepool {
-      var writeError: NSError?
-      guard let writer = FileWriter.asyncWriter(withFileDescriptor: writeEnd, closeOnEndOfFile: true, error: &writeError) else {
-        throw writeError!
-      }
+      let writer = try FileWriter.asyncWriter(withFileDescriptor: writeEnd, closeOnEndOfFile: true)
       writer.consumeData("ping".data(using: .utf8)!)
       writer.consumeEndOfFile()
       return writer.finishedConsuming
@@ -160,10 +145,7 @@ final class FileWriterTests: XCTestCase {
     // delivers its cleanup, wedging teardown.
     let writerDescriptor = dup(localSocket)
     XCTAssertGreaterThanOrEqual(writerDescriptor, 0)
-    var writeError: NSError?
-    guard let writer = FileWriter.asyncWriter(withFileDescriptor: writerDescriptor, closeOnEndOfFile: true, error: &writeError) else {
-      throw writeError!
-    }
+    let writer = try FileWriter.asyncWriter(withFileDescriptor: writerDescriptor, closeOnEndOfFile: true)
     let reader = DescriptorReader(fileDescriptor: localSocket, closeOnEndOfFile: false, consumer: NullDataConsumer())
 
     // Traffic in both directions, so teardown runs against live channels.

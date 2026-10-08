@@ -9,9 +9,7 @@
 import Foundation
 
 public enum DeviceSocketForwardingError: Error {
-  case fileDescriptorWriterFailed(fileDescriptor: Int32)
   case socketDuplicationFailed(message: String)
-  case socketWriterFailed(socket: Int32)
   case callUnavailable(function: String)
   case connectionIDUnavailable
   case remoteConnectionFailed(remotePort: Int)
@@ -20,12 +18,8 @@ public enum DeviceSocketForwardingError: Error {
 extension DeviceSocketForwardingError: LocalizedError {
   public var errorDescription: String? {
     switch self {
-    case let .fileDescriptorWriterFailed(fileDescriptor):
-      return "Failed to create a writer for local file descriptor \(fileDescriptor)"
     case let .socketDuplicationFailed(message):
       return "Could not duplicate socket descriptor: \(message)"
-    case let .socketWriterFailed(socket):
-      return "Failed to create a writer for local socket \(socket)"
     case let .callUnavailable(function):
       return "\(function) not available"
     case .connectionIDUnavailable:
@@ -50,10 +44,7 @@ public struct DeviceSocketForwardingCommands {
     localFileOutput localFileDescriptorOutput: Int32,
     remotePort: Int32
   ) async throws {
-    var error: NSError?
-    guard let localConsumer = FileWriter.asyncWriter(withFileDescriptor: localFileDescriptorOutput, closeOnEndOfFile: false, error: &error) else {
-      throw error ?? DeviceSocketForwardingError.fileDescriptorWriterFailed(fileDescriptor: localFileDescriptorOutput)
-    }
+    let localConsumer = try FileWriter.asyncWriter(withFileDescriptor: localFileDescriptorOutput, closeOnEndOfFile: false)
     try await device.withConnectedDevice(purpose: "Socket Connection") { connectedDevice in
       let localSocket = try Self.openLocalSocket(toRemotePort: Int(remotePort), on: connectedDevice, logger: device.logger)
       // The writer gets its own duplicate of the socket, owned and closed by its channel. Two
@@ -65,11 +56,13 @@ public struct DeviceSocketForwardingCommands {
         close(localSocket)
         throw DeviceSocketForwardingError.socketDuplicationFailed(message: String(cString: strerror(errno)))
       }
-      var writerError: NSError?
-      guard let remoteWriter = FileWriter.asyncWriter(withFileDescriptor: writerDescriptor, closeOnEndOfFile: true, error: &writerError) else {
+      let remoteWriter: any DataConsumer & DataConsumerLifecycle
+      do {
+        remoteWriter = try FileWriter.asyncWriter(withFileDescriptor: writerDescriptor, closeOnEndOfFile: true)
+      } catch {
         close(writerDescriptor)
         close(localSocket)
-        throw writerError ?? DeviceSocketForwardingError.socketWriterFailed(socket: localSocket)
+        throw error
       }
       let remoteReader = DescriptorReader(fileDescriptor: localSocket, closeOnEndOfFile: false, consumer: localConsumer)
       let inputReader = DescriptorReader(fileDescriptor: localFileDescriptorInput, closeOnEndOfFile: false, consumer: remoteWriter)

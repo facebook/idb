@@ -12,19 +12,6 @@ import FBVideoCore
 import GRPCCore
 import IDBGRPCSwift
 
-private enum VideoStreamMethodHandlerError: Error {
-  case failedToCreateSyncWriter(filePath: String)
-}
-
-extension VideoStreamMethodHandlerError: LocalizedError {
-  var errorDescription: String? {
-    switch self {
-    case .failedToCreateSyncWriter(let filePath):
-      return "Failed to create sync writer for \(filePath)"
-    }
-  }
-}
-
 struct VideoStreamMethodHandler {
 
   let target: CompanionTarget
@@ -70,11 +57,7 @@ struct VideoStreamMethodHandler {
         try responseWriter.send(Idb_VideoStreamResponse.with { $0.payload.data = data })
       }
     } else {
-      var writeError: NSError?
-      guard let writer = FileWriter.syncWriter(forFilePath: start.filePath, error: &writeError) else {
-        throw writeError ?? VideoStreamMethodHandlerError.failedToCreateSyncWriter(filePath: start.filePath)
-      }
-      consumer = writer
+      consumer = try FileWriter.syncWriter(forFilePath: start.filePath)
     }
 
     return try await target.videoStream.create(

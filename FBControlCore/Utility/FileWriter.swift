@@ -23,7 +23,7 @@ enum FileWriterError: Error, LocalizedError {
 
 /// @unchecked Sendable: the descriptor, the flag and the latch are immutable. The async subclass keeps
 /// its `DispatchIO` channel confined to its write queue.
-public class FileWriter: NSObject, @unchecked Sendable {
+public class FileWriter: @unchecked Sendable {
 
   // MARK: - Properties
 
@@ -49,20 +49,14 @@ public class FileWriter: NSObject, @unchecked Sendable {
     return Sync(fileDescriptor: fileDescriptor, closeOnEndOfFile: closeOnEndOfFile)
   }
 
-  public static func asyncWriter(withFileDescriptor fileDescriptor: Int32, closeOnEndOfFile: Bool, queue: DispatchQueue, error: NSErrorPointer) -> (DataConsumer & DataConsumerLifecycle)? {
+  public static func asyncWriter(withFileDescriptor fileDescriptor: Int32, closeOnEndOfFile: Bool, queue: DispatchQueue) throws -> DataConsumer & DataConsumerLifecycle {
     let writer = Async(fileDescriptor: fileDescriptor, closeOnEndOfFile: closeOnEndOfFile, writeQueue: queue)
-    do {
-      try writer.startWriting()
-    } catch let e {
-      error?.pointee = e as NSError
-      return nil
-    }
+    try writer.startWriting()
     return writer
   }
 
-  public static func asyncWriter(withFileDescriptor fileDescriptor: Int32, closeOnEndOfFile: Bool, error: NSErrorPointer) -> (DataConsumer & DataConsumerLifecycle)? {
-    let queue = createWorkQueue()
-    return asyncWriter(withFileDescriptor: fileDescriptor, closeOnEndOfFile: closeOnEndOfFile, queue: queue, error: error)
+  public static func asyncWriter(withFileDescriptor fileDescriptor: Int32, closeOnEndOfFile: Bool) throws -> DataConsumer & DataConsumerLifecycle {
+    try asyncWriter(withFileDescriptor: fileDescriptor, closeOnEndOfFile: closeOnEndOfFile, queue: createWorkQueue())
   }
 
   /// An async writer whose writes can also report when the descriptor has taken them, so that a
@@ -73,15 +67,8 @@ public class FileWriter: NSObject, @unchecked Sendable {
     return Draining(writer: writer)
   }
 
-  public static func syncWriter(forFilePath filePath: String, error: NSErrorPointer) -> (DataConsumer & DataConsumerLifecycle)? {
-    let fd: Int32
-    do {
-      fd = try fileDescriptor(forPath: filePath)
-    } catch let e {
-      error?.pointee = e as NSError
-      return nil
-    }
-    return FileWriter.syncWriter(withFileDescriptor: fd, closeOnEndOfFile: true)
+  public static func syncWriter(forFilePath filePath: String) throws -> DataConsumer & DataConsumerLifecycle {
+    FileWriter.syncWriter(withFileDescriptor: try fileDescriptor(forPath: filePath), closeOnEndOfFile: true)
   }
 
   public static func asyncWriter(forFilePath filePath: String) async throws -> DataConsumer & DataConsumerLifecycle {
@@ -103,7 +90,6 @@ public class FileWriter: NSObject, @unchecked Sendable {
   fileprivate init(fileDescriptor: Int32, closeOnEndOfFile: Bool) {
     self.fileDescriptor = fileDescriptor
     self.closeOnEndOfFile = closeOnEndOfFile
-    super.init()
   }
 
   // MARK: - Draining
