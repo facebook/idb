@@ -437,6 +437,64 @@ final class ApplicationArchiveTests: XCTestCase {
     XCTAssertEqual(leftBehind, [])
   }
 
+  // MARK: - Installing onto a target
+
+  func testInstall_WhenGivenAnAppBundle_InstallsItWhereItIs() async throws {
+    let app = try makeAppBundle("Sample.app", identifier: "com.example.sample")
+    let target = ApplicationCommandsDouble()
+    let collected = EventCollector()
+
+    let installed = try await target.install(
+      from: .localPath(app), temporaryDirectory: temporaryDirectory, logger: logger, onProgress: collected.append)
+
+    XCTAssertEqual(installed.bundle.identifier, "com.example.sample")
+    XCTAssertEqual(target.installedPaths, [app])
+    XCTAssertEqual(collected.events.map { "\($0.stage.rawValue).\($0.phase.rawValue)" }, ["install.started", "install.completed"])
+    guard case .installCompleted(_, let artifactPath, let name)? = collected.events.last else {
+      return XCTFail("Expected the install to complete, got: \(collected.events)")
+    }
+    XCTAssertEqual(artifactPath, app)
+    XCTAssertEqual(name, "com.example.sample")
+  }
+
+  func testInstall_WhenGivenAnArchiveFile_InstallsTheUnpackedBundleThenRemovesIt() async throws {
+    let archive = try await makeArchiveFile()
+    let scratch = scratchRoot.resolvingSymlinksInPath().path
+    let target = ApplicationCommandsDouble { path in
+      XCTAssertTrue(
+        URL(fileURLWithPath: path).resolvingSymlinksInPath().path.hasPrefix(scratch),
+        "Installed from where it was unpacked: \(path)")
+    }
+    let collected = EventCollector()
+
+    let installed = try await target.install(
+      from: .localPath(archive), temporaryDirectory: temporaryDirectory, logger: logger, onProgress: collected.append)
+
+    XCTAssertEqual(installed.bundle.identifier, "com.example.sample")
+    XCTAssertEqual(target.installedPaths.count, 1)
+    XCTAssertEqual(
+      collected.events.map { "\($0.stage.rawValue).\($0.phase.rawValue)" },
+      ["extract.started", "extract.completed", "install.started", "install.completed"])
+    XCTAssertEqual(leftBehind, [])
+  }
+
+  func testInstall_WhenTheTargetFails_FailsWithItsErrorAndRemovesWhatItUnpacked() async throws {
+    struct TargetFailure: Error {}
+    let archive = try await makeArchiveFile()
+    let target = ApplicationCommandsDouble(failure: TargetFailure())
+    let collected = EventCollector()
+
+    do {
+      _ = try await target.install(
+        from: .localPath(archive), temporaryDirectory: temporaryDirectory, logger: logger, onProgress: collected.append)
+      XCTFail("Expected the target's failure to propagate")
+    } catch {
+      XCTAssertTrue(error is TargetFailure, "Got: \(error)")
+    }
+    XCTAssertEqual(collected.events.last.map { "\($0.stage.rawValue).\($0.phase.rawValue)" }, "install.started")
+    XCTAssertEqual(leftBehind, [])
+  }
+
   // MARK: - Failures
 
   func testResolve_WhenTheArchiveHoldsNoApp_Fails() async throws {
@@ -508,6 +566,42 @@ final class ApplicationArchiveTests: XCTestCase {
 /// from the download's delegate queue as well as the calling task.
 // SAFETY: every access holds `lock`.
 // patternlint-disable-next-line unchecked-sendable
+/// Installs by reading the bundle it is given, so it fails as a target would on something that is not one.
+private final class ApplicationCommandsDouble: ApplicationCommands, @unchecked Sendable {
+  private let lock = NSLock()
+  private var paths: [String] = []
+  private let failure: (any Error)?
+  private let onInstall: (String) -> Void
+
+  init(failure: (any Error)? = nil, onInstall: @escaping (String) -> Void = { _ in }) {
+    self.failure = failure
+    self.onInstall = onInstall
+  }
+
+  var installedPaths: [String] {
+    lock.withLock { paths }
+  }
+
+  func install(atPath path: String) async throws -> InstalledApplication {
+    lock.withLock { paths.append(path) }
+    onInstall(path)
+    if let failure {
+      throw failure
+    }
+    return InstalledApplication(bundle: try BundleDescriptor.bundle(fromPath: path), installType: .userDevelopment, dataContainer: nil)
+  }
+
+  func launch(_ configuration: ApplicationLaunchConfiguration) async throws -> LaunchedApplication { throw Unimplemented() }
+  func uninstall(bundleID: String) async throws { throw Unimplemented() }
+  func kill(bundleID: String) async throws { throw Unimplemented() }
+  func installed() async throws -> [InstalledApplication] { throw Unimplemented() }
+  func installed(bundleID: String) async throws -> InstalledApplication { throw Unimplemented() }
+  func running() async throws -> [String: pid_t] { throw Unimplemented() }
+  func processID(forBundleID bundleID: String) async throws -> pid_t { throw Unimplemented() }
+
+  private struct Unimplemented: Error {}
+}
+
 private final class EventCollector: @unchecked Sendable {
   private let lock = NSLock()
   private var storage: [InstallProgressEvent] = []
