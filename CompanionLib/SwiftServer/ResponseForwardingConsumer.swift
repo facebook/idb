@@ -5,9 +5,9 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+import CompanionUtilities
 import FBControlCore
 import Foundation
-import IDBConcurrency
 
 /// Forwards each chunk of data it consumes, in order on a private queue, until a send fails or
 /// `stopForwarding()` is called. Data consumed after that is dropped, so a stream that has gone away

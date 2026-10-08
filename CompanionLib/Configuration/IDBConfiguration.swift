@@ -5,9 +5,9 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+import CompanionUtilities
 import FBControlCore
 import Foundation
-import IDBTelemetry
 
 public enum IDBConfiguration {
 

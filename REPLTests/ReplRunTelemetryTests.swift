@@ -5,8 +5,8 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+import CompanionUtilities
 import Foundation
-import IDBTelemetry
 import Testing
 
 /// Tests the typed telemetry the REPL reports for sessions and runs.

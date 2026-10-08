@@ -5,8 +5,8 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+import CompanionUtilities
 import Foundation
-import IDBTelemetry
 
 /// How the REPL is being driven for this session, recorded as the `mode`
 /// normal on every row the session reports.

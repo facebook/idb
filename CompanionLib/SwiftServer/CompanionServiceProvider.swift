@@ -5,13 +5,12 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+import CompanionUtilities
 @preconcurrency import FBControlCore
 import FBXCTestCore
 import Foundation
 import GRPCCore
-import IDBConcurrency
 import IDBGRPCSwift
-import IDBTelemetry
 import SwiftProtobuf
 
 final class CompanionServiceProvider: Idb_CompanionService.SimpleServiceProtocol, @unchecked Sendable {

@@ -5,11 +5,11 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+import CompanionUtilities
 import FBControlCore
 import FBSimulatorControl
 import FBVideoCore
 import GRPCCore
-import IDBConcurrency
 import IDBGRPCSwift
 
 struct VideoStreamMethodHandler {

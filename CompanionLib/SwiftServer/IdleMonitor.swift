@@ -5,10 +5,10 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+import CompanionUtilities
 import Dispatch
 import FBControlCore
 import Foundation
-import IDBConcurrency
 
 /// Tracks in-flight work and signals when none has run for `idleTime`.
 ///

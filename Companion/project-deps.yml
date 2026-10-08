@@ -13,6 +13,8 @@
 targets:
   idb_companion:
     dependencies:
+      - framework: ../Build/Products/Release/libCompanionUtilities.a
+        embed: false
       - framework: ../Build/Products/Release/libFBAXCore.a
         embed: false
       - framework: ../Build/Products/Release/libFBArtifactStaging.a
@@ -35,20 +37,18 @@ targets:
         embed: false
       - framework: ../Build/Products/Release/FBXCTestCore.framework
         embed: false
-      - framework: ../Build/Products/Release/libIDBConcurrency.a
-        embed: false
-      - framework: ../Build/Products/Release/libIDBTelemetry.a
-        embed: false
       - framework: ../Build/Products/Release/libSimulatorIPC.a
         embed: false
       - framework: ../Build/Products/Release/libZstdDecompress.a
         embed: false
   idb-repl:
     dependencies:
-      - framework: ../Build/Products/Release/libIDBTelemetry.a
+      - framework: ../Build/Products/Release/libCompanionUtilities.a
         embed: false
   sim-video:
     dependencies:
+      - framework: ../Build/Products/Release/libCompanionUtilities.a
+        embed: false
       - framework: ../Build/Products/Release/FBControlCore.framework
         embed: false
       - framework: ../Build/Products/Release/libFBSimulatorBridgeProtocol.a
@@ -58,8 +58,6 @@ targets:
       - framework: ../Build/Products/Release/libFBSimulatorVideo.a
         embed: false
       - framework: ../Build/Products/Release/libFBVideoCore.a
-        embed: false
-      - framework: ../Build/Products/Release/libIDBConcurrency.a
         embed: false
       - framework: ../Build/Products/Release/libSimulatorIPC.a
         embed: false

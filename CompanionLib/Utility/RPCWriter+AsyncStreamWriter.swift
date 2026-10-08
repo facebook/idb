@@ -5,8 +5,8 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+import CompanionUtilities
 import GRPCCore
-import IDBConcurrency
 
 extension RPCWriter: AsyncStreamWriter {
   public typealias Value = Element

@@ -5,8 +5,8 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+import CompanionUtilities
 import Foundation
-import IDBConcurrency
 
 enum MockStreamError: Error {
   case completionIsNil

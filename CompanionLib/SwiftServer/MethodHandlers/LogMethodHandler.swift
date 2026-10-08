@@ -5,10 +5,10 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+import CompanionUtilities
 import FBControlCore
 import FBSimulatorControl
 import GRPCCore
-import IDBConcurrency
 import IDBGRPCSwift
 
 struct LogMethodHandler: @unchecked Sendable {

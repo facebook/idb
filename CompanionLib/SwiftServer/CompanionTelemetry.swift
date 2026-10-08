@@ -5,9 +5,9 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+import CompanionUtilities
 @preconcurrency import FBControlCore
 import Foundation
-import IDBTelemetry
 
 /// Per-RPC telemetry, applied in `CompanionServiceProvider` around each handler dispatch: logs
 /// `<method> called with: [<args>]` and `<method> succeeded in <duration>` / `<method> failed after

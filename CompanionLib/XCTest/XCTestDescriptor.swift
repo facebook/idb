@@ -5,10 +5,10 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+import CompanionUtilities
 import FBControlCore
 import FBXCTestCore
 import Foundation
-import IDBConcurrency
 
 public protocol XCTestDescriptor: AnyObject {
   var url: URL { get }

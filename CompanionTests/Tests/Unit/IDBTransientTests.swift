@@ -6,6 +6,7 @@
  */
 
 @testable import CompanionLib
+import CompanionUtilities
 @preconcurrency import FBControlCore
 import FBSimulatorAX
 import FBSimulatorControl
@@ -13,7 +14,6 @@ import GRPCCore
 import GRPCNIOTransportCore
 import GRPCProtobuf
 import IDBGRPCSwift
-import IDBTelemetry
 import Testing
 
 @Suite

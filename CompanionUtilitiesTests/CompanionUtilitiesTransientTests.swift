@@ -5,12 +5,12 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+@testable import CompanionUtilities
 import Foundation
-@testable import IDBConcurrency
 import Testing
 
 @Suite
-struct IDBConcurrencyTransientTests {
+struct CompanionUtilitiesTransientTests {
 
   // MARK: - Mutex Tests
 

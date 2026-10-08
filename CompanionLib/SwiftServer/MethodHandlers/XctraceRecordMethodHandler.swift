@@ -5,12 +5,12 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+import CompanionUtilities
 import FBArtifactStaging
 import FBControlCore
 import FBSimulatorControl
 import Foundation
 import GRPCCore
-import IDBConcurrency
 import IDBGRPCSwift
 
 /// The parts of a running xctrace a record session drives.

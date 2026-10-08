@@ -6,10 +6,10 @@
  */
 
 @testable import CompanionLib
+import CompanionUtilities
 @preconcurrency import FBControlCore
 import Foundation
 import IDBGRPCSwift
-import IDBTelemetry
 import Testing
 
 /// Captures every subject the telemetry reports, so the per-RPC emission can
