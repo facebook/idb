@@ -130,6 +130,8 @@ private let errorKindBadRequest = BridgeAXWire.ErrorKind.badRequest.rawValue
 private let errorKindAssertionFailed = BridgeAXWire.ErrorKind.assertionFailed.rawValue
 // The runtime reported an error none of the kinds above name, with its AXError in `ax_error` when it gave one.
 private let errorKindRuntimeFailed = BridgeAXWire.ErrorKind.runtimeFailed.rawValue
+// The guest cannot do what was asked on this simulator, such as discover displays.
+private let errorKindCapabilityUnavailable = BridgeAXWire.ErrorKind.capabilityUnavailable.rawValue
 private let responseAXError = BridgeAXWire.Envelope.axError.rawValue
 // A whole-tree read whose walk was cut short by the depth cap or the node budget: the returned tree is
 // a partial view, so the host can warn rather than pass it off as complete. Absent or `false` means the
@@ -152,11 +154,11 @@ private let kAutomationAsserted = BridgeAXWire.Automation.asserted.rawValue
 // A fullscreen modal/alert descriptor added to a describe response when one is detected in the tree.
 // Host-facing enrichment on the wire; the host does not put it in the serialized CLI output.
 private let responseModal = BridgeAXWire.Envelope.modal.rawValue
-private let modalKind = "kind"
-private let modalKindSystem = "system"
-private let modalKindApp = "app"
-private let modalElementType = "elementType"
-private let modalLabel = "label"
+private let modalKind = BridgeAXModal.CodingKeys.kind.stringValue
+private let modalKindSystem = BridgeAXModal.Kind.system.rawValue
+private let modalKindApp = BridgeAXModal.Kind.app.rawValue
+private let modalElementType = BridgeAXModal.CodingKeys.elementType.stringValue
+private let modalLabel = BridgeAXModal.CodingKeys.label.stringValue
 // Concrete accessibility element classes that mark a modal: a SpringBoard system alert window, and the
 // UIKit alert controller view (matched by prefix — the concrete class varies by idiom/OS).
 private let systemAlertWindowClass = "SBAlertItemWindow"
@@ -753,13 +755,11 @@ private final class AccessibilityRequest {
     guard hasSystemAlertWindow || alertElementType != nil else {
       return nil
     }
-    var modal = [String: String]()
-    modal[modalKind] = hasSystemAlertWindow ? modalKindSystem : modalKindApp
-    modal[modalElementType] = alertElementType ?? systemAlertWindowClass
-    if let alertLabel {
-      modal[modalLabel] = alertLabel
-    }
-    return modal
+    return BridgeAXModal(
+      kind: hasSystemAlertWindow ? .system : .app,
+      elementType: alertElementType ?? systemAlertWindowClass,
+      label: alertLabel
+    ).payload
   }
 
   // MARK: - Frontmost resolution
@@ -1386,19 +1386,17 @@ private final class AccessibilityRequest {
       let outcome = client.displayInventory()
       switch outcome.status {
       case .available:
-        return [
-          responseOk: true,
-          "displayScopedInteractions": true,
-          "displayScopedTrees": true,
-          "displayScopedQuiescence": true,
-          "displays": outcome.displays.map { display -> [String: Any] in
-            ["uniqueID": display.uniqueID, "displayID": display.displayID]
-          },
-        ]
+        let inventory = BridgeAXDisplayInventory(
+          displayScopedInteractions: true,
+          displayScopedTrees: true,
+          displayScopedQuiescence: true,
+          displays: outcome.displays.map { BridgeAXDisplayInventory.Display(uniqueID: $0.uniqueID, displayID: $0.displayID) }
+        )
+        return inventory.payload.merging([responseOk: true]) { _, ok in ok }
       case .unavailable:
         return FBAXBridgeTaggedErrorResponse(
           message: outcome.failureReason ?? "Accessibility display inventory is unavailable",
-          kind: "capability_unavailable", pid: nil)
+          kind: errorKindCapabilityUnavailable, pid: nil)
       case .failed:
         return FBAXBridgeTaggedErrorResponse(
           message: outcome.failureReason ?? "Accessibility display inventory failed",
@@ -1703,7 +1701,7 @@ public enum FBAccessibilityService {
     do {
       return try AccessibilityRequest().FBAXBridgeDispatchRequest(request: request)
     } catch AXDisplayScopeError.missingWindowIdentity {
-      return [responseOk: false, responseError: "Cannot scope accessibility: a window has no valid display identity", responseErrorKind: "capability_unavailable"]
+      return [responseOk: false, responseError: "Cannot scope accessibility: a window has no valid display identity", responseErrorKind: errorKindCapabilityUnavailable]
     } catch {
       return [responseOk: false, responseError: "the reader raised while answering: \(error.localizedDescription)"]
     }

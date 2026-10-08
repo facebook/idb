@@ -137,6 +137,9 @@ public enum BridgeAXWire {
     /// The accessibility runtime reported an error that none of the other kinds name. The envelope's
     /// `ax_error` carries the AXError when the runtime gave one.
     case runtimeFailed = "runtime_failed"
+    /// The guest cannot do what was asked on this simulator: its runtime lacks the capability, such as
+    /// display discovery, or a window it would scope by reports no display.
+    case capabilityUnavailable = "capability_unavailable"
   }
 
   /// What a failed write did to the application, as the guest's `effect` reports it. Absent means

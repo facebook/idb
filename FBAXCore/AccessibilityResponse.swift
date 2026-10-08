@@ -6,6 +6,7 @@
  */
 
 import FBControlCore
+import FBSimulatorBridgeProtocol
 import Foundation
 
 /// Where a translator-backed read spent its time.
@@ -159,6 +160,18 @@ public struct AccessibilityModalInfo: Sendable, Equatable, Encodable {
     try container.encode(kind, forKey: .kind)
     try container.encode(elementType, forKey: .elementType)
     try container.encode(label, forKey: .label)
+  }
+}
+
+extension AccessibilityModalInfo {
+  /// The modal as the guest described it on the wire.
+  public init(_ modal: BridgeAXModal) {
+    let kind: Kind =
+      switch modal.kind {
+      case .system: .system
+      case .app: .app
+      }
+    self.init(kind: kind, elementType: modal.elementType, label: modal.label)
   }
 }
 

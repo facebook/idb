@@ -169,14 +169,10 @@ extension AXTreeRead {
   /// Decodes the optional `modal` descriptor the guest adds to a describe response into a typed value,
   /// or nil when no modal is present. Host-facing enrichment — never emitted in the serialized output.
   static func modal(fromResponse response: [String: Any]) -> AccessibilityModalInfo? {
-    guard let modal = response[AXWire.Envelope.modal.rawValue] as? [String: Any],
-      let kindRaw = modal["kind"] as? String,
-      let kind = AccessibilityModalInfo.Kind(rawValue: kindRaw),
-      let elementType = modal["elementType"] as? String
-    else {
+    guard let modal = response[AXWire.Envelope.modal.rawValue] as? [String: Any] else {
       return nil
     }
-    return AccessibilityModalInfo(kind: kind, elementType: elementType, label: modal["label"] as? String)
+    return BridgeAXModal(payload: modal).map(AccessibilityModalInfo.init)
   }
 
   /// The node a successful response carries, or `nil` for a successful *empty* result
