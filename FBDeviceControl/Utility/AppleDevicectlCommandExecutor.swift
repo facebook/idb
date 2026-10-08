@@ -34,7 +34,7 @@ class AppleDevicectlCommandExecutor {
 }
 
 extension AppleDevicectlCommandExecutor {
-  func launchApplication(configuration: ApplicationLaunchConfiguration) async throws -> NSNumber {
+  func launchApplication(configuration: ApplicationLaunchConfiguration) async throws -> pid_t {
     let tmpPath = try FileManager.default.temporaryFile(extension: "json")
     let tmpPathStr = tmpPath.path()
     var arguments = [
@@ -72,13 +72,13 @@ extension AppleDevicectlCommandExecutor {
     }
     let data = try Data(contentsOf: tmpPath)
     let info = try JSONDecoder().decode(DevicectlProcInfo.self, from: data)
-    return NSNumber(value: info.result.process.processIdentifier)
+    return info.result.process.processIdentifier
   }
 
   private struct DevicectlProcInfo: Decodable {
     struct Result: Decodable {
       struct Process: Decodable {
-        var processIdentifier: Int
+        var processIdentifier: pid_t
       }
       var process: Process
     }

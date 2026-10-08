@@ -209,7 +209,7 @@ final class InstrumentsClient {
 
   // MARK: - Public
 
-  func launchApplication(_ configuration: ApplicationLaunchConfiguration) throws -> NSNumber {
+  func launchApplication(_ configuration: ApplicationLaunchConfiguration) throws -> pid_t {
     let options: [String: Any] = [
       "StartSuspendedKey": configuration.waitForDebugger,
       "KillExisting": configuration.launchMode != .failIfRunning,
@@ -227,7 +227,7 @@ final class InstrumentsClient {
     guard let processIdentifier = response.returnValue as? NSNumber else {
       throw InstrumentsClientError.unexpectedLaunchResult(described: String(describing: response.returnValue))
     }
-    return processIdentifier
+    return processIdentifier.int32Value
   }
 
   func killProcess(_ processIdentifier: pid_t) throws {

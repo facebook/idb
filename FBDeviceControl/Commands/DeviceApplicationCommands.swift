@@ -255,7 +255,7 @@ public final class DeviceApplicationCommands: ApplicationCommands {
     guard let device else {
       throw DeviceNilError.deviceNil
     }
-    let pid: NSNumber
+    let pid: pid_t
     if device.osVersion.version.majorVersion >= 17 {
       let devicectl = AppleDevicectlCommandExecutor(device: device)
       pid = try await devicectl.launchApplication(configuration: configuration)
@@ -265,7 +265,7 @@ public final class DeviceApplicationCommands: ApplicationCommands {
       }
     }
     return DeviceLaunchedApplication(
-      processIdentifier: pid.int32Value,
+      processIdentifier: pid,
       configuration: configuration,
       commands: self,
       queue: device.workQueue

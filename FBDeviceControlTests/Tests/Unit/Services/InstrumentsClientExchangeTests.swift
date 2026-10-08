@@ -96,7 +96,7 @@ struct InstrumentsClientExchangeTests {
     let client = try makeClient(connection)
     let processIdentifier = try client.launchApplication(launchConfiguration)
 
-    #expect(processIdentifier.int32Value == 4242)
+    #expect(processIdentifier == 4242)
     #expect(service.sentBytes.range(of: archived("com.example.app")) != nil)
   }
 
