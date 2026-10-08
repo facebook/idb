@@ -129,18 +129,25 @@ final class VideoToolboxFramePusher: FramePusher, @unchecked Sendable {
     // `VTCompressionSessionEncodeFrame(...outputHandler:)` overload (see `writeEncodedFrame`),
     // so the session needs neither an `outputCallback` nor a `refcon`.
     var compressionSession: VTCompressionSession?
-    let status = VTCompressionSessionCreate(
-      allocator: nil,
-      width: Int32(destinationWidth),
-      height: Int32(destinationHeight),
-      codecType: videoCodec,
-      encoderSpecification: encoderSpecification as CFDictionary,
-      imageBufferAttributes: converter.outputBufferAttributes as CFDictionary,
-      compressedDataAllocator: nil,
-      outputCallback: nil,
-      refcon: nil,
-      compressionSessionOut: &compressionSession
-    )
+    func createCompressionSession(_ specification: [String: Any]) -> OSStatus {
+      VTCompressionSessionCreate(
+        allocator: nil,
+        width: Int32(destinationWidth),
+        height: Int32(destinationHeight),
+        codecType: videoCodec,
+        encoderSpecification: specification as CFDictionary,
+        imageBufferAttributes: converter.outputBufferAttributes as CFDictionary,
+        compressedDataAllocator: nil,
+        outputCallback: nil,
+        refcon: nil,
+        compressionSessionOut: &compressionSession
+      )
+    }
+    var status = createCompressionSession(encoderSpecification)
+    if status != noErr, let fallback = settings.fallbackEncoderSpecification {
+      logger.info().log("Hardware compression session refused (\(status)); retrying with a software encoder allowed")
+      status = createCompressionSession(fallback)
+    }
     if status != noErr {
       throw VideoToolboxFramePusherError.failedToStartCompressionSession(status: status)
     }

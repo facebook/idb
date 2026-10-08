@@ -112,6 +112,18 @@ final class VideoToolboxEncoderSettingsTests: XCTestCase {
     XCTAssertNil(specification[kVTVideoEncoderSpecification_EnableLowLatencyRateControl as String])
   }
 
+  func testFileSinkFallsBackToAnEncoderThatMayUseSoftware() {
+    let fallback = settings(h264, framesPerSecond: 30, sink: .file).fallbackEncoderSpecification
+    XCTAssertEqual(fallback?[kVTVideoEncoderSpecification_EnableHardwareAcceleratedVideoEncoder as String] as? Bool, true)
+    XCTAssertNil(fallback?[kVTVideoEncoderSpecification_RequireHardwareAcceleratedVideoEncoder as String])
+  }
+
+  func testLiveSinksAndJPEGFormatsHaveNoFallback() {
+    XCTAssertNil(settings(h264).fallbackEncoderSpecification)
+    XCTAssertNil(settings(mjpeg, sink: .file).fallbackEncoderSpecification)
+    XCTAssertNil(settings(.minicap, sink: .file).fallbackEncoderSpecification)
+  }
+
   // MARK: - Cadence
 
   func testLazyCadenceSetsNoExpectedFrameRate() {

@@ -112,6 +112,22 @@ struct VideoToolboxEncoderSettings {
     }
   }
 
+  /// What `VTCompressionSessionCreate` is retried with once when it refuses `encoderSpecification`,
+  /// or nil when a refusal is final. A file sink has no latency to protect, so an encoder that may
+  /// fall back to software beats no recording at all; on the end-to-end simulator hosts a
+  /// hardware-only session is intermittently refused with -12903, which loses the whole recording.
+  /// A live consumer cannot use a stream that falls behind, so live sinks still fail.
+  var fallbackEncoderSpecification: [String: Any]? {
+    switch (format, sink) {
+    case (.compressedVideo, .file):
+      return [
+        kVTVideoEncoderSpecification_EnableHardwareAcceleratedVideoEncoder as String: true
+      ]
+    case (.compressedVideo, .live), (.mjpeg, _), (.minicap, _), (.bgra, _):
+      return nil
+    }
+  }
+
   /// The `VTSessionSetProperties` dictionary for a session encoding `outputWidth`×`outputHeight`.
   func sessionProperties(outputWidth: Int, outputHeight: Int) -> [String: Any] {
     var properties: [String: Any] = [
