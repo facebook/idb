@@ -7,7 +7,6 @@
 
 @preconcurrency import FBControlCore
 import Foundation
-import os
 
 private typealias HeaderIntType = UInt32
 private let HeaderLength = MemoryLayout<HeaderIntType>.size
@@ -80,7 +79,7 @@ public final class LockdownServiceConnection: CustomStringConvertible {
   /// that back. Retaining it here would leave the release unbalanced.
   private var connectionRef: Unmanaged<AnyObject>?
 
-  private var activeReaderFinished: FBFuture<NSNumber>?
+  private var activeReaderFinished: AsyncEvent<Void>?
 
   var readerDrainTimeout = ReaderDrainTimeout
 
@@ -157,7 +156,7 @@ public final class LockdownServiceConnection: CustomStringConvertible {
     // mid-read reads freed memory inside the SSL layer.
     var drained = true
     if let activeReaderFinished {
-      drained = await Self.resolves(activeReaderFinished, within: readerDrainTimeout)
+      drained = (try? await activeReaderFinished.wait(timeout: readerDrainTimeout, waitingFor: "the reader to drain")) != nil
     }
     // AMDServiceConnectionInvalidate does not release the connection. If the reader did not
     // drain, leak rather than release: releasing under a still-blocked read is a use-after-free.
@@ -167,23 +166,6 @@ public final class LockdownServiceConnection: CustomStringConvertible {
       logger?.log("Reader did not drain within \(readerDrainTimeout)s; leaking the connection rather than freeing it under an active read")
     }
     self.connectionRef = nil
-  }
-
-  /// Whether `future` resolves successfully within `timeout`. Giving up leaves `future` running,
-  /// unlike `FBFuture.timeout(_:waitingFor:)`, which cancels it.
-  private static func resolves(_ future: FBFuture<NSNumber>, within timeout: TimeInterval) async -> Bool {
-    await withCheckedContinuation { (continuation: CheckedContinuation<Bool, Never>) in
-      let pending = OSAllocatedUnfairLock<CheckedContinuation<Bool, Never>?>(initialState: continuation)
-      let resume: @Sendable (Bool) -> Void = { resolved in
-        pending.withLock { pending in
-          pending?.resume(returning: resolved)
-          pending = nil
-        }
-      }
-      let queue = DispatchQueue.global(qos: .userInitiated)
-      future.onQueue(queue, notifyOfCompletion: { completed in resume(completed.state == .done) })
-      queue.asyncAfter(deadline: .now() + timeout) { resume(false) }
-    }
   }
 
   // MARK: - AFC
@@ -353,14 +335,22 @@ final class LockdownServiceConnectionReader {
   private let connection: LockdownServiceConnection
   private let consumer: any DataConsumer
   private let schedule: (@escaping () -> Void) -> Void
-  private let finishedReadingMutable: FBMutableFuture<NSNumber>
+
+  /// Happens once the read loop has exited and delivered end-of-file.
+  let finishedReading = AsyncEvent<Void>()
+
+  enum State: UInt {
+    case notStarted = 0
+    case reading = 1
+    case finishedReadingNormally = 2
+  }
 
   /// Locked rather than a bare stored property: the read loop polls this from its own thread while
   /// `startReading` writes it from whichever thread the caller is on.
   private let stateLock = NSLock()
-  private var stateStorage: FBFileReaderState
+  private var stateStorage = State.notStarted
 
-  private(set) var state: FBFileReaderState {
+  private(set) var state: State {
     get {
       stateLock.lock()
       defer { stateLock.unlock() }
@@ -378,25 +368,18 @@ final class LockdownServiceConnectionReader {
     self.connection = connection
     self.consumer = consumer
     self.schedule = schedule
-    self.stateStorage = .notStarted
-    self.finishedReadingMutable = FBMutableFuture<NSNumber>()
   }
 
-  var finishedReading: FBFuture<NSNumber> {
-    finishedReadingMutable.retyped(FBFuture<NSNumber>.self)
-  }
-
-  @discardableResult
-  func startReading() -> FBFuture<NSNull> {
+  func startReading() throws {
     guard state == .notStarted else {
-      return FBFuture<NSNull>(error: LockdownServiceConnectionError.cannotStartReading(state: state.rawValue) as NSError)
+      throw LockdownServiceConnectionError.cannotStartReading(state: state.rawValue)
     }
 
     state = .reading
     schedule { [self] in
       let buffer = UnsafeMutableRawPointer.allocate(byteCount: ReadBufferSize, alignment: MemoryLayout<UInt8>.alignment)
       defer { buffer.deallocate() }
-      while state == .reading && finishedReadingMutable.state == .running {
+      while state == .reading {
         let readBytes = connection.receive(buffer, size: ReadBufferSize)
         if readBytes < 1 {
           break
@@ -405,9 +388,7 @@ final class LockdownServiceConnectionReader {
       }
       consumer.consumeEndOfFile()
       state = .finishedReadingNormally
-      finishedReadingMutable.resolve(withResult: NSNumber(value: FBFileReaderState.finishedReadingNormally.rawValue))
+      finishedReading.happen()
     }
-
-    return FBFuture<NSNull>.empty()
   }
 }

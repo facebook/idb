@@ -67,11 +67,11 @@ struct LockdownServiceConnectionReaderTests {
     let queue = DispatchQueue(label: "com.facebook.fbdevicecontrol.tests.reader")
     let reader = connection.readFromConnectionWriting(to: consumer, on: queue)
 
-    _ = try await bridgeFBFuture(reader.startReading())
+    try reader.startReading()
     try await consumer.awaitFinishedConsuming()
 
-    let finished = try await bridgeFBFuture(reader.finishedReading)
-    #expect(finished == NSNumber(value: FBFileReaderState.finishedReadingNormally.rawValue))
+    try await reader.finishedReading.wait()
+    #expect(reader.state == .finishedReadingNormally)
   }
 
   @Test
@@ -85,8 +85,8 @@ struct LockdownServiceConnectionReaderTests {
     // Running the loop inline is the worst case of the loop's thread winning the race against the rest of `startReading`.
     let reader = LockdownServiceConnectionReader(connection: connection, consumer: consumer) { $0() }
 
-    _ = try await bridgeFBFuture(reader.startReading())
-    _ = try await bridgeFBFuture(reader.finishedReading)
+    try reader.startReading()
+    try await reader.finishedReading.wait()
 
     #expect(sReceiveCount == 1)
     #expect(reader.state == .finishedReadingNormally)
@@ -99,10 +99,10 @@ struct LockdownServiceConnectionReaderTests {
     calls.ServiceConnectionReceive = endOfFileReceive
     let connection = makeConnection(calls: calls)
     let reader = LockdownServiceConnectionReader(connection: connection, consumer: FBDataBuffer.accumulatingBuffer()) { $0() }
-    _ = try await bridgeFBFuture(reader.startReading())
+    try reader.startReading()
 
     do {
-      _ = try await bridgeFBFuture(reader.startReading())
+      try reader.startReading()
       Issue.record("A reader that has already started should refuse to start again")
     } catch {
       #expect(error.localizedDescription == "Cannot start reading in state 2")
@@ -125,12 +125,12 @@ struct LockdownServiceConnectionReaderTests {
     let queue = DispatchQueue(label: "com.facebook.fbdevicecontrol.tests.blocked-reader")
     let reader = connection.readFromConnectionWriting(to: consumer, on: queue)
 
-    _ = try await bridgeFBFuture(reader.startReading())
+    try reader.startReading()
 
     // Invalidation unblocks the (gated) receive and must not return until the read loop has
     // exited.
     try await connection.invalidate()
-    #expect(reader.finishedReading.state == .done)
+    #expect(reader.finishedReading.hasHappened)
   }
 
   @Test
@@ -150,7 +150,7 @@ struct LockdownServiceConnectionReaderTests {
       _ = Unmanaged.passRetained(connectionRef)
       let queue = DispatchQueue(label: "com.facebook.fbdevicecontrol.tests.stuck-reader")
       reader = connection.readFromConnectionWriting(to: FBDataBuffer.accumulatingBuffer(), on: queue)
-      _ = try await bridgeFBFuture(reader.startReading())
+      try reader.startReading()
 
       try await connection.invalidate()
     }
@@ -158,7 +158,7 @@ struct LockdownServiceConnectionReaderTests {
     // The blocked read holds the reference while it is inside receive, so whether invalidate
     // released it is only observable once the read has returned.
     sReceiveGate.signal()
-    _ = try await bridgeFBFuture(reader.finishedReading)
+    try await reader.finishedReading.wait()
     #expect(leaked != nil, "a connection whose read did not drain must be leaked rather than released")
     if let leaked {
       Unmanaged.passUnretained(leaked).release()

@@ -70,7 +70,7 @@ public struct DeviceLogCommands: LogCommands {
     let readQueue = DispatchQueue(label: "com.facebook.fbdevicecontrol.device_log_consumer")
     let connection = try await device.openServiceConnection(syslogRelayService)
     let reader = connection.readFromConnectionWriting(to: consumer, on: readQueue)
-    reader.startReading()
+    try reader.startReading()
     return DeviceLogOperation(
       consumer: consumer,
       connection: connection,
