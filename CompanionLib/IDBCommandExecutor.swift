@@ -120,15 +120,11 @@ public final class IDBCommandExecutor {
     onProgress: @escaping @Sendable (InstallProgressEvent) -> Void = { _ in },
     onReport: @escaping @Sendable (StagingReport) -> Void = { _ in }
   ) async throws -> InstalledArtifact {
-    let totalStart = Date()
-    let kind = destination.kind
-    return try await Staging.withMaterialized(source, as: kind, options: options, totalStart: totalStart, temporaryDirectory: temporaryDirectory, logger: target.logger, onProgress: onProgress, onReport: onReport) { tree in
-      let artifact = try kind.identify(in: tree, logger: target.logger)
-      let installStart = Date()
-      onProgress(.installStarted(timing: .measure(stageStart: installStart, totalStart: totalStart), artifactPath: artifact.url.path))
-      let installed = try await install(artifact, as: destination, inPlace: tree.isInPlace)
-      onProgress(.installCompleted(timing: .measure(stageStart: installStart, totalStart: totalStart), artifactPath: artifact.url.path, name: installed.name))
-      return installed
+    return try await Staging.install(
+      source, as: destination.kind, options: options, temporaryDirectory: temporaryDirectory, logger: target.logger, onProgress: onProgress,
+      onReport: onReport, name: \.name
+    ) { artifact, inPlace in
+      try await install(artifact, as: destination, inPlace: inPlace)
     }
   }
 

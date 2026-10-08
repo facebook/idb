@@ -122,6 +122,39 @@ public enum Staging {
     }
   }
 
+  /// Stages `source`, identifies the artifact of `kind` in it and installs that with `install`, reporting the install
+  /// stage alongside the ones staging reports.
+  ///
+  /// `install` is told whether the artifact is in place; one that is not is deleted once `install` returns. `name` is
+  /// what the installed artifact is known by on the target, for the stage's completion.
+  public static func install<Installed>(
+    _ source: InstallSource,
+    as kind: ArtifactKind,
+    options: InstallOptions = InstallOptions(),
+    totalStart: Date = Date(),
+    downloadConfiguration: URLSessionConfiguration = .default,
+    temporaryDirectory: TemporaryDirectory,
+    logger: any ControlCoreLogger,
+    onProgress: @escaping @Sendable (InstallProgressEvent) -> Void = { _ in },
+    onReport: @escaping @Sendable (StagingReport) -> Void = { _ in },
+    name: (Installed) -> String,
+    _ install: (_ artifact: Artifact, _ inPlace: Bool) async throws -> Installed
+  ) async throws -> Installed {
+    try await withMaterialized(
+      source, as: kind, options: options, totalStart: totalStart, downloadConfiguration: downloadConfiguration,
+      temporaryDirectory: temporaryDirectory, logger: logger, onProgress: onProgress, onReport: onReport
+    ) { tree in
+      let artifact = try kind.identify(in: tree, logger: logger)
+      let installStart = Date()
+      onProgress(.installStarted(timing: .measure(stageStart: installStart, totalStart: totalStart), artifactPath: artifact.url.path))
+      let installed = try await install(artifact, tree.isInPlace)
+      onProgress(
+        .installCompleted(
+          timing: .measure(stageStart: installStart, totalStart: totalStart), artifactPath: artifact.url.path, name: name(installed)))
+      return installed
+    }
+  }
+
   /// Whether staging `source` unpacks it. What is unpacked belongs to staging,
   /// which removes it afterwards, so the body may move it away; anything else is
   /// the caller's own, and must be left where it is. Only an application's local
