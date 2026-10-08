@@ -16,6 +16,7 @@ enum XCTestProcessError: Error {
   case stalled(timeout: TimeInterval, processIdentifier: pid_t, stackshot: String)
   case crashed(info: String, rawLog: String)
   case crashLogTimedOut(processIdentifier: pid_t)
+  case exitedWithoutCrashLog(processIdentifier: pid_t, lookupFailure: Error)
 }
 
 extension XCTestProcessError: LocalizedError {
@@ -27,6 +28,19 @@ extension XCTestProcessError: LocalizedError {
       return "xctest process crashed\n\(info)\n\nRaw Crash File Contents\n\(rawLog)"
     case let .crashLogTimedOut(processIdentifier):
       return "Crash logs for terminated process \(processIdentifier) to appear"
+    case let .exitedWithoutCrashLog(processIdentifier, _):
+      return "xctest process (\(processIdentifier)) exited abnormally with no crash log, to check for yourself look in ~/Library/Logs/DiagnosticReports"
+    }
+  }
+}
+
+extension XCTestProcessError: CustomNSError {
+  public var errorUserInfo: [String: Any] {
+    switch self {
+    case let .exitedWithoutCrashLog(_, lookupFailure):
+      return [NSUnderlyingErrorKey: lookupFailure]
+    case .stalled, .crashed, .crashLogTimedOut:
+      return [:]
     }
   }
 }
@@ -78,7 +92,7 @@ final class XCTestProcess {
           within: CrashLogWaitTime,
           orThrow: XCTestProcessError.crashLogTimedOut(processIdentifier: processIdentifier))
       } catch {
-        throw ControlCoreError.describe("xctest process (\(processIdentifier)) exited abnormally with no crash log, to check for yourself look in ~/Library/Logs/DiagnosticReports").caused(by: error).build()
+        throw XCTestProcessError.exitedWithoutCrashLog(processIdentifier: processIdentifier, lookupFailure: error)
       }
       throw XCTestProcessError.crashed(info: String(describing: crashLog), rawLog: (try? crashLog.loadRawCrashLogString()) ?? "")
     }
