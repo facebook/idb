@@ -71,7 +71,7 @@ class DefaultsModificationStrategy {
     _ = try await run(.write(domain: domain, key: key, type: type ?? "string", value: value))
   }
 
-  fileprivate func getDefault(inDomain domain: String, key: String) async throws -> NSString {
+  fileprivate func getDefault(inDomain domain: String, key: String) async throws -> String {
     return try await run(.read(domain: domain, key: key))
   }
 
@@ -112,13 +112,13 @@ class DefaultsModificationStrategy {
     }
   }
 
-  fileprivate func run(_ command: Command) async throws -> NSString {
+  fileprivate func run(_ command: Command) async throws -> String {
     let launchPath = defaultsBinary
     let output = try await simulator.runtimeTools.launchConsumingOutput(launchPath: launchPath, arguments: command.arguments)
     return try DefaultsModificationStrategy.stdout(orThrowFrom: output, command: command, logger: simulator.logger)
   }
 
-  static func stdout(orThrowFrom output: InSimulatorToolOutput, command: Command, logger: (any ControlCoreLogger)?) throws -> NSString {
+  static func stdout(orThrowFrom output: InSimulatorToolOutput, command: Command, logger: (any ControlCoreLogger)?) throws -> String {
     if output.exitCode != 0 {
       let stderr = String(data: output.stderr, encoding: .utf8) ?? ""
       guard command.exitCodePolicy.accepts(output.exitCode) else {
@@ -127,7 +127,7 @@ class DefaultsModificationStrategy {
       logger?.log("defaults \(command.arguments.joined(separator: " ")) exited with code \(output.exitCode): \(stderr)")
     }
     let stdout = String(data: output.stdout, encoding: .utf8) ?? ""
-    return stdout.trimmingCharacters(in: .newlines) as NSString
+    return stdout.trimmingCharacters(in: .newlines)
   }
 
   fileprivate func amendRelativeTo(path relativePath: String, defaults: [String: Any], managingService serviceName: String) async throws {
@@ -185,7 +185,7 @@ class PreferenceModificationStrategy: DefaultsModificationStrategy {
 
   func getCurrentPreference(_ name: String, domain: String?) async throws -> String {
     let effectiveDomain = domain ?? PreferenceModificationStrategy.appleGlobalDomain
-    return try await getDefault(inDomain: effectiveDomain, key: name) as String
+    return try await getDefault(inDomain: effectiveDomain, key: name)
   }
 }
 

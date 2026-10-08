@@ -14,20 +14,20 @@ final class DefaultsModificationStrategyTests: XCTestCase {
   func testReadReturnsTrimmedStdoutOnZeroExit() throws {
     let output = InSimulatorToolOutput(stdout: Data("value\n".utf8), stderr: Data(), exitCode: 0)
     let result = try DefaultsModificationStrategy.stdout(orThrowFrom: output, command: .read(domain: "d", key: "k"), logger: nil)
-    XCTAssertEqual(result as String, "value")
+    XCTAssertEqual(result, "value")
   }
 
   func testReadToleratesMissingKeyNonZeroExit() throws {
     // defaults returns 1 for a missing key/domain; a benign optional read, not a failure.
     let output = InSimulatorToolOutput(stdout: Data(), stderr: Data("does not exist\n".utf8), exitCode: 1)
     let result = try DefaultsModificationStrategy.stdout(orThrowFrom: output, command: .read(domain: "d", key: "missing"), logger: nil)
-    XCTAssertEqual(result as String, "")
+    XCTAssertEqual(result, "")
   }
 
   func testDeleteToleratesMissingKeyNonZeroExit() throws {
     let output = InSimulatorToolOutput(stdout: Data(), stderr: Data("does not exist\n".utf8), exitCode: 1)
     let result = try DefaultsModificationStrategy.stdout(orThrowFrom: output, command: .delete(path: "p", key: "k"), logger: nil)
-    XCTAssertEqual(result as String, "")
+    XCTAssertEqual(result, "")
   }
 
   func testWriteThrowsOnNonZeroExit() {
