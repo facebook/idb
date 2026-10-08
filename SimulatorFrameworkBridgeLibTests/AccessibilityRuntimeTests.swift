@@ -268,13 +268,13 @@ final class AccessibilityRuntimeTests: XCTestCase {
     let seeded = FBAccessibilityService.handleRequest(["verb": "hittest", "pid": NSNumber(value: kAppPid), "x": NSNumber(value: 1), "y": NSNumber(value: 2)])
     assertEqualObjects(axValue(seeded, "ok"), NSNumber(value: false))
     assertEqualObjects(axValue(seeded, "error_kind"), "application_not_responding")
-    assertEqualObjects(axValue(seeded, "error"), "pid 4321 did not answer the hit-test in time")
+    assertEqualObjects(axValue(seeded, "error"), "pid 4321 did not respond to the hit-test before it timed out")
     assertEqualObjects(axValue(seeded, "timeout_seconds"), NSNumber(value: 5))
     assertEqualObjects(axValue(seeded, "pid"), NSNumber(value: kAppPid))
 
     let systemWide = FBAccessibilityService.handleRequest(["verb": "hittest", "x": NSNumber(value: 1), "y": NSNumber(value: 2)])
     assertEqualObjects(axValue(systemWide, "error_kind"), "application_not_responding")
-    assertEqualObjects(axValue(systemWide, "error"), "the application at the hit-test point did not answer in time")
+    assertEqualObjects(axValue(systemWide, "error"), "the application at the hit-test point did not respond before it timed out")
     assertEqualObjects(axValue(systemWide, "timeout_seconds"), NSNumber(value: 5))
     XCTAssertNil(axValue(systemWide, "empty"), "empty must not be set on a not-responding response")
   }
@@ -305,7 +305,7 @@ final class AccessibilityRuntimeTests: XCTestCase {
     runtime.hitTestOutcome = FBAXHitTestOutcome.hit(FBAXFakeElement.applicationNotResponding(), owningProcessIdentifier: kAppPid)
     let notResponding = FBAccessibilityService.handleRequest(["verb": "hittest", "x": NSNumber(value: 1), "y": NSNumber(value: 2)])
     assertEqualObjects(axValue(notResponding, "error_kind"), "application_not_responding")
-    assertEqualObjects(axValue(notResponding, "error"), "pid 4321 did not answer the read of the hit element in time")
+    assertEqualObjects(axValue(notResponding, "error"), "pid 4321 did not respond to the read of the hit element before it timed out")
     assertEqualObjects(axValue(notResponding, "timeout_seconds"), NSNumber(value: 5))
 
     runtime.hitTestOutcome = FBAXHitTestOutcome.hit(FBAXFakeElement.failed(FBAXTestsErrorWithCode(FBAXError.invalidUIElement.rawValue)), owningProcessIdentifier: kAppPid)
@@ -827,7 +827,7 @@ final class AccessibilityRuntimeTests: XCTestCase {
     assertEqualObjects(axValue(second, "outstanding"), NSNumber(value: true))
     assertEqualObjects(
       axValue(second, "error"),
-      "pid \(kAppPid) is still working on an earlier read that did not answer in time; nothing larger was sent to it")
+      "pid \(kAppPid) is still working on an earlier read it did not respond to before it timed out; nothing larger was sent to it")
   }
 
   func testASnapshotSentOnceTheApplicationHasCaughtUpIsSent() {
@@ -981,7 +981,7 @@ final class AccessibilityRuntimeTests: XCTestCase {
     assertEqualObjects(axValue(response, "ok"), NSNumber(value: false))
     assertEqualObjects(axValue(response, "error_kind"), "application_not_responding")
     assertEqualObjects(axValue(response, "pid"), NSNumber(value: kAppPid))
-    assertEqualObjects(axValue(response, "error"), "pid \(kAppPid) did not answer the read of its element tree in time")
+    assertEqualObjects(axValue(response, "error"), "pid \(kAppPid) did not respond to the read of its element tree before it timed out")
     assertEqualObjects(runtime.operations, ["automationRead", "applicationElement", "readAttributes", "readAttributes"])
   }
 
@@ -1302,7 +1302,7 @@ final class AccessibilityRuntimeTests: XCTestCase {
     runtime.hitTestOutcome = FBAXHitTestOutcome.applicationNotResponding()
     let response = FBAccessibilityService.handleRequest(FBAXTestsPress())
     assertEqualObjects(axValue(response, "error_kind"), "application_not_responding")
-    assertEqualObjects(axValue(response, "error"), "the application did not answer the write in time")
+    assertEqualObjects(axValue(response, "error"), "the application did not respond to the write before it timed out")
     assertEqualObjects(axValue(response, "timeout_seconds"), NSNumber(value: 5))
     assertEqualObjects(axValue(response, "effect"), "none")
     XCTAssertEqual(runtime.performCount, 0)
@@ -1316,7 +1316,7 @@ final class AccessibilityRuntimeTests: XCTestCase {
     runtime.hitTestOutcome = FBAXHitTestOutcome.hit(FBAXFakeElement.applicationNotResponding(), owningProcessIdentifier: kAppPid)
     let unanswered = FBAccessibilityService.handleRequest(request)
     assertEqualObjects(axValue(unanswered, "error_kind"), "application_not_responding")
-    assertEqualObjects(axValue(unanswered, "error"), "pid 4321 did not answer the write in time")
+    assertEqualObjects(axValue(unanswered, "error"), "pid 4321 did not respond to the write before it timed out")
     assertEqualObjects(axValue(unanswered, "timeout_seconds"), NSNumber(value: 5))
     assertEqualObjects(axValue(unanswered, "effect"), "none")
 
@@ -1337,7 +1337,7 @@ final class AccessibilityRuntimeTests: XCTestCase {
 
     runtime.hitTestOutcome = FBAXHitTestOutcome.hit(FBAXFakeElement.applicationNotResponding(), owningProcessIdentifier: kAppPid)
     let unanswered = FBAccessibilityService.handleRequest(request)
-    assertEqualObjects(axValue(unanswered, "error"), "pid 4321 did not answer the write in time")
+    assertEqualObjects(axValue(unanswered, "error"), "pid 4321 did not respond to the write before it timed out")
     assertEqualObjects(axValue(unanswered, "pid"), kAppPid)
 
     runtime.hitTestOutcome = FBAXHitTestOutcome.hit(FBAXFakeElement.applicationUnavailable(), owningProcessIdentifier: kAppPid)
@@ -1586,10 +1586,10 @@ final class AccessibilityRuntimeTests: XCTestCase {
     assertEqualObjects(axValue(coded, "ax_error"), NSNumber(value: -25205))
     assertEqualObjects(axValue(coded, "pid"), NSNumber(value: kAppPid))
 
-    runtime.writeOutcome = FBAXWriteOutcome.failed("the application did not answer the write in time")
+    runtime.writeOutcome = FBAXWriteOutcome.failed("the application did not respond to the write before it timed out")
     let response = FBAccessibilityService.handleRequest(FBAXTestsPress())
     assertEqualObjects(axValue(response, "ok"), NSNumber(value: false))
-    assertEqualObjects(axValue(response, "error"), "the application did not answer the write in time")
+    assertEqualObjects(axValue(response, "error"), "the application did not respond to the write before it timed out")
     assertEqualObjects(axValue(response, "error_kind"), "runtime_failed")
     XCTAssertNil(axValue(response, "ax_error"))
     assertEqualObjects(axValue(response, "effect"), "unknown")
@@ -2156,7 +2156,7 @@ final class AccessibilityRuntimeTests: XCTestCase {
     self.seedHitElement(withAttributes: [:])
     runtime.writeOutcome = FBAXWriteOutcome.applicationNotResponding()
     for request in [FBAXTestsPress(), ["verb": "setvalue", "x": 1, "y": 2, "value": "text"]] {
-      assertEqualObjects(FBAccessibilityService.handleRequest(request), ["ok": false, "error": "pid 4321 did not answer the write in time", "error_kind": "application_not_responding", "pid": kAppPid, "effect": "unknown", "timeout_seconds": 5])
+      assertEqualObjects(FBAccessibilityService.handleRequest(request), ["ok": false, "error": "pid 4321 did not respond to the write before it timed out", "error_kind": "application_not_responding", "pid": kAppPid, "effect": "unknown", "timeout_seconds": 5])
     }
     XCTAssertEqual(runtime.performCount, 1)
     XCTAssertEqual(runtime.setValueCount, 1)
@@ -2281,7 +2281,7 @@ final class AccessibilityRuntimeTests: XCTestCase {
     let response = FBAccessibilityService.handleRequest(["verb": "describe", "pid": NSNumber(value: kAppPid)])
     assertEqualObjects(axValue(response, "ok"), NSNumber(value: false))
     assertEqualObjects(axValue(response, "error_kind"), "application_not_responding")
-    assertEqualObjects(axValue(response, "error"), "pid 4321 did not answer the read of its element tree in time")
+    assertEqualObjects(axValue(response, "error"), "pid 4321 did not respond to the read of its element tree before it timed out")
     assertEqualObjects(axValue(response, "timeout_seconds"), NSNumber(value: 5))
     assertEqualObjects(axValue(response, "pid"), NSNumber(value: kAppPid))
   }
@@ -2445,7 +2445,7 @@ final class AccessibilityRuntimeTests: XCTestCase {
     let notResponding = FBAccessibilityService.handleRequest(
       ["verb": "describe", "x": NSNumber(value: 5), "y": NSNumber(value: 6), "method": "center-point"]
     )
-    assertEqualObjects(axValue(notResponding, "error"), "the application at (5.0, 6.0) did not answer the system-wide hit-test in time")
+    assertEqualObjects(axValue(notResponding, "error"), "the application at (5.0, 6.0) did not respond to the system-wide hit-test before it timed out")
     assertEqualObjects(axValue(notResponding, "error_kind"), "application_not_responding")
     assertEqualObjects(axValue(notResponding, "timeout_seconds"), NSNumber(value: 5))
   }

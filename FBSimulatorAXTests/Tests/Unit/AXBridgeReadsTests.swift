@@ -168,7 +168,7 @@ final class AXBridgeReadsTests: XCTestCase {
     // the AX timeout at all — so it must not land in the same bucket as a reader bug.
     let data = try envelope([
       "ok": false,
-      "error": "pid 8865 did not answer the read of its element tree in time",
+      "error": "pid 8865 did not respond to the read of its element tree before it timed out",
       "error_kind": "application_not_responding",
       "pid": 8865,
     ])
@@ -345,7 +345,7 @@ final class AXBridgeReadsTests: XCTestCase {
     let cases: [(any LocalizedError, String)] = [
       (AXBridgeError.readerUnavailable("XCTAccessibilityFramework unavailable"), "could not bind"),
       (AXBridgeError.frontmostUnresolved(method: .runningBoard, reason: "Client not entitled"), "runningboard strategy"),
-      (UIAutomationError.applicationNotResponding(backend: Self.axBridge, pid: 8865), "did not answer in time"),
+      (UIAutomationError.applicationNotResponding(backend: Self.axBridge, pid: 8865), "did not respond to an accessibility request before it timed out"),
       (UIAutomationError.applicationUnavailable(backend: Self.axBridge, pid: 8865), "accessibility server has not started"),
       (UIAutomationError.noElementAtPoint(backend: Self.axBridge, x: 1, y: 2), "the point is empty"),
     ]
@@ -432,7 +432,7 @@ final class AXBridgeReadsTests: XCTestCase {
     (
       "guestApplicationNotResponding",
       AXBridgeError.applicationNotResponding(pid: 8865),
-      "The axbridge guest requested accessibility from the application with pid 8865, which did not answer in time"
+      "The application with pid 8865 did not respond to an accessibility request before it timed out"
     ),
     (
       "assertionFailed",
@@ -467,12 +467,12 @@ final class AXBridgeReadsTests: XCTestCase {
     (
       "applicationNotResponding",
       UIAutomationError.applicationNotResponding(backend: AXBridgeReadsTests.axBridge, pid: 8865),
-      "The axbridge backend requested accessibility from the application with pid 8865, which did not answer in time"
+      "The application with pid 8865 did not respond to an accessibility request before it timed out"
     ),
     (
       "applicationNotRespondingWithoutPid",
       UIAutomationError.applicationNotResponding(backend: AXBridgeReadsTests.axBridge, pid: nil),
-      "The axbridge backend requested accessibility from the application at that point, which did not answer in time"
+      "The application at that point did not respond to an accessibility request before it timed out"
     ),
   ]
 
@@ -980,7 +980,7 @@ final class AXBridgeReadsTests: XCTestCase {
       let error = try await writeFailure(
         write,
         guestResponse: [
-          "ok": false, "error": "pid 42 did not answer the write in time", "error_kind": "application_not_responding",
+          "ok": false, "error": "pid 42 did not respond to the write before it timed out", "error_kind": "application_not_responding",
           "pid": 42, "effect": "none",
         ])
       guard case UIAutomationError.applicationNotResponding? = error as? UIAutomationError else {
@@ -1036,7 +1036,7 @@ final class AXBridgeReadsTests: XCTestCase {
     let error = try await writeFailure(
       markerTap,
       guestResponse: [
-        "ok": false, "error": "pid 42 did not answer the write in time", "error_kind": "application_not_responding",
+        "ok": false, "error": "pid 42 did not respond to the write before it timed out", "error_kind": "application_not_responding",
         "pid": 42, "effect": "unknown",
       ])
     let retry = try XCTUnwrap(UIAutomationRetry(for: error))
@@ -1044,7 +1044,7 @@ final class AXBridgeReadsTests: XCTestCase {
     XCTAssertEqual(retry.verdict, .unsafe)
     XCTAssertEqual(
       error.localizedDescription,
-      "The axbridge backend requested accessibility from the application with pid 42, which did not answer in time"
+      "The application with pid 42 did not respond to an accessibility request before it timed out"
     )
   }
 
@@ -1064,7 +1064,7 @@ final class AXBridgeReadsTests: XCTestCase {
     let error = try await writeFailure(
       markerTap,
       guestResponse: [
-        "ok": false, "error": "pid 42 did not answer the write in time", "error_kind": "application_not_responding", "pid": 42,
+        "ok": false, "error": "pid 42 did not respond to the write before it timed out", "error_kind": "application_not_responding", "pid": 42,
       ])
     XCTAssertEqual(UIAutomationRetry(for: error), .outcomeUnknown)
   }

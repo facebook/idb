@@ -225,7 +225,7 @@ private enum AccessibilityFailure {
       return response
     case let .outstanding(pid):
       var response = AccessibilityFailure.notResponding(
-        message: "pid \(pid) is still working on an earlier read that did not answer in time; nothing larger was sent to it",
+        message: "pid \(pid) is still working on an earlier read it did not respond to before it timed out; nothing larger was sent to it",
         pid: pid as NSNumber
       ).dictionary
       response[responseOutstanding] = true
@@ -794,7 +794,7 @@ private final class AccessibilityRequest {
     case FBAXHitTestStatus.applicationUnavailable:
       return FBAXFrontmostOutcome.applicationUnavailable(String(format: "no accessibility server answered the system-wide hit-test at (%.1f, %.1f)", anchor.x, anchor.y))
     case FBAXHitTestStatus.applicationNotResponding:
-      return FBAXFrontmostOutcome.applicationNotResponding(String(format: "the application at (%.1f, %.1f) did not answer the system-wide hit-test in time", anchor.x, anchor.y))
+      return FBAXFrontmostOutcome.applicationNotResponding(String(format: "the application at (%.1f, %.1f) did not respond to the system-wide hit-test before it timed out", anchor.x, anchor.y))
     case FBAXHitTestStatus.failed:
       fallthrough
     @unknown default:
@@ -872,7 +872,7 @@ private final class AccessibilityRequest {
       )
     case FBAXReadStatus.applicationNotResponding:
       return FBAXBridgeNotRespondingResponse(
-        message: "pid \(pid) did not answer the read of its element tree in time",
+        message: "pid \(pid) did not respond to the read of its element tree before it timed out",
         pid: pid as NSNumber
       )
     case FBAXReadStatus.failed:
@@ -999,7 +999,7 @@ private final class AccessibilityRequest {
       )
     case FBAXHitTestStatus.applicationNotResponding:
       return FBAXBridgeNotRespondingResponse(
-        message: pidNumber != nil ? "pid \((pidNumber?.int32Value ?? 0)) did not answer the hit-test in time" : "the application at the hit-test point did not answer in time",
+        message: pidNumber != nil ? "pid \((pidNumber?.int32Value ?? 0)) did not respond to the hit-test before it timed out" : "the application at the hit-test point did not respond before it timed out",
         pid: pidNumber
       )
     case FBAXHitTestStatus.empty:
@@ -1036,7 +1036,7 @@ private final class AccessibilityRequest {
       )
     case FBAXReadStatus.applicationNotResponding:
       return FBAXBridgeNotRespondingResponse(
-        message: "pid \(outcome.owningProcessIdentifier) did not answer the read of the hit element in time",
+        message: "pid \(outcome.owningProcessIdentifier) did not respond to the read of the hit element before it timed out",
         pid: outcome.owningProcessIdentifier as NSNumber
       )
     case FBAXReadStatus.failed:
@@ -1174,7 +1174,7 @@ private final class AccessibilityRequest {
       )
     case FBAXWriteStatus.applicationNotResponding:
       return FBAXBridgeNotRespondingResponse(
-        message: pid > 0 ? "pid \(pid) did not answer the write in time" : "the application did not answer the write in time",
+        message: pid > 0 ? "pid \(pid) did not respond to the write before it timed out" : "the application did not respond to the write before it timed out",
         pid: pid > 0 ? pid as NSNumber : nil
       )
     case FBAXWriteStatus.failed:
@@ -1477,7 +1477,7 @@ private final class AccessibilityRequest {
         )
       case FBAXFrontmostStatus.applicationNotResponding:
         return FBAXBridgeNotRespondingResponse(
-          message: resolved.failureReason ?? "the frontmost application did not answer in time",
+          message: resolved.failureReason ?? "the frontmost application did not respond before it timed out",
           pid: nil
         )
       case FBAXFrontmostStatus.unresolved:

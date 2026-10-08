@@ -95,8 +95,8 @@ public enum UIAutomationError: LocalizedError, CustomStringConvertible, Sendable
       return "\(operation) is not supported over \(backend.inlineName)"
     case let .applicationUnavailable(backend, pid):
       return "\(backend.displayName) could not read the application \(Self.pidPhrase(pid)): it is not a running app, or its accessibility server has not started. \(AccessibilityGuidance.accessibilityServer)"
-    case let .applicationNotResponding(backend, pid):
-      return "\(backend.displayName) requested accessibility from the application \(Self.pidPhrase(pid)), which did not answer in time"
+    case let .applicationNotResponding(_, pid):
+      return "The application \(Self.pidPhrase(pid)) did not respond to an accessibility request before it timed out"
     case let .valueMismatch(backend, key, expected, actual):
       return "\(backend.displayName) expected \(key) to equal \"\(expected)\" before tapping, but it was \"\(actual)\""
     case let .elementMoved(backend, key, value):

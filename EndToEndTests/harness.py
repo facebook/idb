@@ -86,9 +86,12 @@ ACCESSIBILITY_PROBE_ARGS = ("ui", "describe-all", "--json")
 
 # idb's answers when the accessibility tree was momentarily out of step with a
 # command, rather than wrong about it.
+# Older companions print the first wording.
 UNANSWERED = re.compile(
     r"requested accessibility from the application (?:with pid \d+|at that point), "
     r"which did not answer in time"
+    r"|The application (?:with pid \d+|at that point) did not respond to an "
+    r"accessibility request before it timed out"
 )
 NOTHING_WRITTEN_MARKER = "nothing was written. Read the tree again and retry"
 # The line idb prints after a failure's message saying whether the command is

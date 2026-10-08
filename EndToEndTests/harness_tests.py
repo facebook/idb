@@ -1455,6 +1455,12 @@ UNANSWERED = Completed(
     b"The axbridge backend requested accessibility from the application with "
     b"pid 10891, which did not answer in time\n",
 )
+UNRESPONSIVE = Completed(
+    1,
+    b"",
+    b"The application with pid 10891 did not respond to an accessibility request "
+    b"before it timed out\n",
+)
 ELEMENT_MOVED = Completed(
     1,
     b"",
@@ -1537,10 +1543,12 @@ class TransientAccessibilityAnswerTests(unittest.IsolatedAsyncioTestCase):
         return outcome, run, recording
 
     async def test_a_set_value_the_application_did_not_answer(self) -> None:
-        outcome, run, _ = await self.attempt(SET_VALUE, [UNANSWERED, SUCCEEDED])
+        for failure in (UNANSWERED, UNRESPONSIVE):
+            with self.subTest(failure=failure.stderr):
+                outcome, run, _ = await self.attempt(SET_VALUE, [failure, SUCCEEDED])
 
-        self.assertEqual(outcome, SUCCEEDED)
-        self.assertEqual(run.await_count, 2)
+                self.assertEqual(outcome, SUCCEEDED)
+                self.assertEqual(run.await_count, 2)
 
     async def test_a_tap_whose_element_moved(self) -> None:
         outcome, run, _ = await self.attempt(TAP, [ELEMENT_MOVED, SUCCEEDED])
@@ -1553,25 +1561,32 @@ class TransientAccessibilityAnswerTests(unittest.IsolatedAsyncioTestCase):
     ) -> None:
         # The tap may have landed, and a second one would tap twice. A verdict
         # this harness does not know says no more than no verdict.
-        for answer in (
-            UNANSWERED,
-            with_verdict(UNANSWERED, b"retry: maybe (written_partially)\n"),
+        for failure, text in (
+            (UNANSWERED, "did not answer in time"),
+            (UNRESPONSIVE, "did not respond to an accessibility request"),
+            (
+                with_verdict(UNRESPONSIVE, b"retry: maybe (written_partially)\n"),
+                "did not respond to an accessibility request",
+            ),
         ):
-            with self.subTest(answer=answer):
-                outcome, run, _ = await self.attempt(TAP, [answer, SUCCEEDED])
+            with self.subTest(failure=failure.stderr):
+                outcome, run, _ = await self.attempt(TAP, [failure, SUCCEEDED])
 
                 self.assertIsInstance(outcome, Failed)
-                self.assertIn("did not answer in time", str(outcome))
+                self.assertIn(text, str(outcome))
                 self.assertEqual(run.await_count, 1)
 
     async def test_a_tap_that_idb_says_wrote_nothing_is_repeated(self) -> None:
-        # The application did not answer while the tap was finding its target.
-        outcome, run, _ = await self.attempt(
-            TAP, [UNANSWERED_NOTHING_WRITTEN, SUCCEEDED]
-        )
+        # The application did not respond while the tap was finding its target.
+        for failure in (
+            UNANSWERED_NOTHING_WRITTEN,
+            with_verdict(UNRESPONSIVE, b"retry: safe (nothing_written)\n"),
+        ):
+            with self.subTest(failure=failure.stderr):
+                outcome, run, _ = await self.attempt(TAP, [failure, SUCCEEDED])
 
-        self.assertEqual(outcome, SUCCEEDED)
-        self.assertEqual(run.await_count, 2)
+                self.assertEqual(outcome, SUCCEEDED)
+                self.assertEqual(run.await_count, 2)
 
     async def test_a_verdict_given_as_json_is_read(self) -> None:
         answer = with_verdict(
