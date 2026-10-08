@@ -5,18 +5,14 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-import FBAXCore
 import FBControlCore
-@testable import FBSimulatorAX
 @testable import FBSimulatorControl
-@testable import FBSimulatorVideo
-import FBSimulatorXCTest
-import FBVideoCore
 import Foundation
 import Testing
 
-/// Every command accessor on `Simulator`, so the retention rule is checked against all of them
-/// rather than a hand-picked few.
+/// Every command accessor FBSimulatorControl defines on `Simulator`, so the retention rule is
+/// checked against all of them rather than a hand-picked few. The libraries that add accessors of
+/// their own check those in their own bundles.
 enum SimulatorCommandAccessor: CaseIterable, Sendable {
   case application
   case crashLog
@@ -25,8 +21,6 @@ enum SimulatorCommandAccessor: CaseIterable, Sendable {
   case debugServer
   case file
   case log
-  case videoRecording
-  case videoStream
   case launchCtl
   case xctraceRecord
   case instruments
@@ -42,11 +36,7 @@ enum SimulatorCommandAccessor: CaseIterable, Sendable {
   case health
   case contacts
   case photos
-  case xctest
-  case uiAutomation
-  case accessibility
   case dapServer
-  case repl
   case notification
   case memory
   case audio
@@ -69,10 +59,6 @@ enum SimulatorCommandAccessor: CaseIterable, Sendable {
       _ = simulator.file
     case .log:
       _ = simulator.log
-    case .videoRecording:
-      _ = simulator.videoRecording
-    case .videoStream:
-      _ = simulator.videoStream
     case .launchCtl:
       _ = simulator.launchCtl
     case .xctraceRecord:
@@ -103,19 +89,8 @@ enum SimulatorCommandAccessor: CaseIterable, Sendable {
       _ = simulator.contacts
     case .photos:
       _ = simulator.photos
-    case .xctest:
-      _ = simulator.xctest
-    case .uiAutomation:
-      // Every backend, since only the persistent axbridge scopes resolve a transport into the cache.
-      for name in UIAutomationBackendName.allCases {
-        _ = try? simulator.uiAutomation(backend: UIAutomationBackend(resolvedName: name))
-      }
-    case .accessibility:
-      _ = simulator.accessibility
     case .dapServer:
       _ = simulator.dapServer
-    case .repl:
-      _ = simulator.repl
     case .notification:
       _ = simulator.notification
     case .memory:
@@ -130,30 +105,8 @@ enum SimulatorCommandAccessor: CaseIterable, Sendable {
   }
 }
 
-/// Whether resolving a command class keeps the simulator alive.
-///
-/// A simulator owns its `commandCache`; the cache owns whatever is resolved into it. A memoized
-/// command that holds its simulator strongly therefore closes a cycle — simulator to cache to
-/// command to simulator — and the simulator can never be released, which is why the memoized
-/// commands hold `weak var simulator`. Commands built per call are free to hold it strongly:
-/// nothing outlives the call that builds them.
-///
-/// Asserting over every accessor rather than the memoized ones keeps the rule intact when a
-/// per-call command is later moved into the cache.
 @Suite("Simulator command retention")
 struct SimulatorCommandRetentionTests {
-
-  /// Resolves a command, then reports whether the simulator survived the only strong reference to
-  /// it going away.
-  private func simulatorSurvives(_ resolve: (Simulator) -> Void) -> Bool {
-    weak var weakSimulator: Simulator?
-    autoreleasepool {
-      let simulator = SimulatorTestSupport.testableSimulator()
-      weakSimulator = simulator
-      resolve(simulator)
-    }
-    return weakSimulator != nil
-  }
 
   @Test("Resolving a command does not retain the simulator", arguments: SimulatorCommandAccessor.allCases)
   func resolvingACommandDoesNotRetainTheSimulator(_ accessor: SimulatorCommandAccessor) {
