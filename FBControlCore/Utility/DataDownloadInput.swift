@@ -28,14 +28,18 @@ public final class DataDownloadInput: NSObject, @unchecked Sendable {
   /// dropped. `pipe` alone cannot distinguish a failed download from a short one.
   @discardableResult
   public func completed() async throws -> DownloadReport {
-    _ = try await bridgeFBFuture(completedFuture)
-    // The future resolves on the delegate queue after the last write to `report`.
+    try await finished.wait()
+    // The latch opens on the delegate queue after the last write to `report` and `failure`.
+    if let failure {
+      throw failure
+    }
     return report
   }
 
-  private let completedFuture: FBMutableFuture<NSNull>
+  private let finished = AsyncLatch()
   // Written only from the session's delegate queue, which is serial.
   private var report = DownloadReport()
+  private var failure: Error?
   // The download starts as soon as it is made.
   private let requestStart = Date()
   private let onEvent: (@Sendable (DataDownloadEvent) -> Void)?
@@ -68,7 +72,6 @@ public final class DataDownloadInput: NSObject, @unchecked Sendable {
   ) {
     self.logger = logger
     self.onEvent = onEvent
-    self.completedFuture = FBMutableFuture<NSNull>()
     super.init()
   }
 
@@ -104,7 +107,7 @@ extension DataDownloadInput: URLSessionDataDelegate {
         url: dataTask.originalRequest?.url ?? httpResponse.url,
         statusCode: httpResponse.statusCode)
       logger.error().log(error.description)
-      completedFuture.resolveWithError(error)
+      fail(error)
       completionHandler(.cancel)
       return
     }
@@ -127,13 +130,20 @@ extension DataDownloadInput: URLSessionDataDelegate {
     if let error {
       logger.error().log("Download task \(task) failed with error \(error)")
       report.trust = DownloadReport.Trust.evaluating(failure: error)
-      // First resolution wins, so a cancellation triggered by a rejected response
-      // does not displace the HTTP status that caused it.
-      completedFuture.resolveWithError(
-        InstallError.transferFailed(url: task.originalRequest?.url, underlying: error, report: report))
+      fail(InstallError.transferFailed(url: task.originalRequest?.url, underlying: error, report: report))
     } else {
-      _ = completedFuture.resolve(withResult: NSNull())
+      finished.open()
     }
     pipe.input.finish()
+  }
+
+  // The first failure wins, so a cancellation triggered by a rejected response
+  // does not displace the HTTP status that caused it.
+  private func fail(_ error: Error) {
+    guard !finished.isOpen else {
+      return
+    }
+    failure = error
+    finished.open()
   }
 }
