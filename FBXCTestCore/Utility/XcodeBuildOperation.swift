@@ -110,14 +110,12 @@ public final class XcodeBuildOperation {
 
     let defaultTestRunProperties = XcodeBuildOperation.xctestRunProperties(configuration)
 
-    let testRunProperties: NSDictionary
-    if let xcTestRunProps = configuration.xcTestRunProperties {
-      testRunProperties = XcodeBuildOperation.overwriteXCTestRunProperties(withBaseProperties: xcTestRunProps, newProperties: defaultTestRunProperties)
-    } else {
-      testRunProperties = defaultTestRunProperties as NSDictionary
-    }
+    let testRunProperties =
+      configuration.xcTestRunProperties.map {
+        XcodeBuildOperation.overwriteXCTestRunProperties(withBaseProperties: $0, newProperties: defaultTestRunProperties)
+      } ?? defaultTestRunProperties
 
-    if !testRunProperties.write(toFile: path, atomically: false) {
+    if !(testRunProperties as NSDictionary).write(toFile: path, atomically: false) {
       throw XcodeBuildError.writeFailed(path: path)
     }
     return path
@@ -152,7 +150,7 @@ public final class XcodeBuildOperation {
     return path
   }
 
-  public static func overwriteXCTestRunProperties(withBaseProperties baseProperties: [String: Any], newProperties: [String: Any]) -> NSDictionary {
+  public static func overwriteXCTestRunProperties(withBaseProperties baseProperties: [String: Any], newProperties: [String: Any]) -> [String: Any] {
     let defaultTestProperties = newProperties["StubBundleId"] as? [String: Any] ?? [:]
     var mutableTestRunProperties: [String: Any] = [:]
     for (testId, value) in baseProperties {
@@ -164,7 +162,7 @@ public final class XcodeBuildOperation {
       }
       mutableTestRunProperties[testId] = mutableTestProperties
     }
-    return mutableTestRunProperties as NSDictionary
+    return mutableTestRunProperties
   }
 
   public static func confirmExit(ofXcodebuildOperation running: RunningSubprocess, configuration: TestLaunchConfiguration, reporter: XCTestReporter, logger: ControlCoreLogger) async throws {
