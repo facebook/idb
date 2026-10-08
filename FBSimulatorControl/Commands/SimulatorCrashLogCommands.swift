@@ -37,23 +37,20 @@ public final class SimulatorCrashLogCommands: CrashLogCommands {
     self.store = store
   }
 
-  public func notifyOfCrash(matching predicate: NSPredicate) async throws -> CrashLogInfo {
+  public func notifyOfCrash(matching predicate: CrashLogPredicate) async throws -> CrashLogInfo {
     try await notifier.nextCrashLog(forPredicate: predicate)
   }
 
-  public func crashes(matching predicate: NSPredicate, useCache: Bool) async throws -> [CrashLogInfo] {
+  public func crashes(matching predicate: CrashLogPredicate, useCache: Bool) async throws -> [CrashLogInfo] {
     ingestAllCrashLogs(useCache: useCache)
     return store.ingestedCrashLogs(matchingPredicate: predicate)
   }
 
-  public func prune(matching predicate: NSPredicate) async throws -> [CrashLogInfo] {
+  public func prune(matching predicate: CrashLogPredicate) async throws -> [CrashLogInfo] {
     guard let simulator = self.simulator else {
       throw WeakTargetError.simulator
     }
-    let simulatorPredicate = NSCompoundPredicate(andPredicateWithSubpredicates: [
-      CrashLogInfo.predicate(forSimulatorUDID: simulator.udid),
-      predicate,
-    ])
+    let simulatorPredicate = CrashLogPredicate.simulatorUDID(simulator.udid) && predicate
     ingestAllCrashLogs(useCache: false)
     let pruned = store.pruneCrashLogs(matchingPredicate: simulatorPredicate)
     for crashLog in pruned {

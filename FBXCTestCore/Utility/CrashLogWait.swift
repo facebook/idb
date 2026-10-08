@@ -12,7 +12,7 @@ extension CrashLogCommands {
 
   /// Waits for the next crash log matching `predicate`, failing with `timeoutError` if none appears
   /// within `timeout`.
-  func notifyOfCrash(matching predicate: NSPredicate, within timeout: TimeInterval, orThrow timeoutError: any Error) async throws -> CrashLogInfo {
+  func notifyOfCrash(matching predicate: CrashLogPredicate, within timeout: TimeInterval, orThrow timeoutError: any Error) async throws -> CrashLogInfo {
     let query = CrashLogQuery(crashLogCommands: self, predicate: predicate)
     return try await withThrowingTaskGroup(of: CrashLogBox.self) { group in
       group.addTask {
@@ -31,11 +31,11 @@ extension CrashLogCommands {
   }
 }
 
-/// Neither `CrashLogCommands` nor `NSPredicate` is Sendable; the query is only ever used by the
-/// one child task that waits on it.
+/// `CrashLogCommands` is not Sendable; the query is only ever used by the one child task that waits
+/// on it.
 private struct CrashLogQuery: @unchecked Sendable {
   let crashLogCommands: any CrashLogCommands
-  let predicate: NSPredicate
+  let predicate: CrashLogPredicate
 
   func next() async throws -> CrashLogBox {
     CrashLogBox(try await crashLogCommands.notifyOfCrash(matching: predicate))

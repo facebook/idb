@@ -123,7 +123,7 @@ struct PlainTextCrashLogParser: CrashLogParser {
 
   private static let maxLineSearch: UInt = 20
 
-  // Leaves `coalitionName` empty: this format has no coalition field, and it never redacts the simulator path, which `CrashLogInfo.predicate(forSimulatorUDID:)` matches instead.
+  // Leaves `coalitionName` empty: this format has no coalition field, and it never redacts the simulator path, which `CrashLogPredicate.simulatorUDID(_:)` matches instead.
   func parse(_ str: String) throws -> ParsedCrashLog {
     var parsed = ParsedCrashLog()
     let nsStr = str as NSString

@@ -9,11 +9,11 @@ import Foundation
 
 public protocol CrashLogCommands {
 
-  func crashes(matching predicate: NSPredicate, useCache: Bool) async throws -> [CrashLogInfo]
+  func crashes(matching predicate: CrashLogPredicate, useCache: Bool) async throws -> [CrashLogInfo]
 
-  func notifyOfCrash(matching predicate: NSPredicate) async throws -> CrashLogInfo
+  func notifyOfCrash(matching predicate: CrashLogPredicate) async throws -> CrashLogInfo
 
-  func prune(matching predicate: NSPredicate) async throws -> [CrashLogInfo]
+  func prune(matching predicate: CrashLogPredicate) async throws -> [CrashLogInfo]
 
   func withFiles<R>(body: (any AsyncFileContainer) async throws -> R) async throws -> R
 }

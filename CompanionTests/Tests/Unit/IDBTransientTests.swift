@@ -258,53 +258,51 @@ struct IDBTransientTests {
   // MARK: - CrashLogQueryValueTransformer Tests
 
   @Test
-  func emptyQueryReturnsTruePredicate() {
-    let query = Idb_CrashLogQuery()
-    let predicate = CrashLogQueryValueTransformer.predicate(from: query)
-    #expect((predicate) == (NSPredicate(value: true)))
+  func emptyQueryMatchesEveryCrashLog() {
+    let predicate = CrashLogQueryValueTransformer.predicate(from: Idb_CrashLogQuery())
+    #expect(predicate.description == "all")
   }
 
   @Test
-  func queryWithSinceReturnsCompoundPredicate() {
+  func queryWithSinceSelectsNewerCrashLogs() {
     var query = Idb_CrashLogQuery()
     query.since = 1000
     let predicate = CrashLogQueryValueTransformer.predicate(from: query)
-    #expect((predicate is NSCompoundPredicate))
+    #expect(predicate.description == "date > \(Date(timeIntervalSince1970: 1000))")
   }
 
   @Test
-  func queryWithBeforeReturnsCompoundPredicate() {
+  func queryWithBeforeSelectsOlderCrashLogs() {
     var query = Idb_CrashLogQuery()
     query.before = 2000
     let predicate = CrashLogQueryValueTransformer.predicate(from: query)
-    #expect((predicate is NSCompoundPredicate))
+    #expect(predicate.description == "!(date > \(Date(timeIntervalSince1970: 2000)))")
   }
 
   @Test
-  func queryWithNameReturnsCompoundPredicate() {
+  func queryWithNameSelectsByName() {
     var query = Idb_CrashLogQuery()
     query.name = "MyCrash"
     let predicate = CrashLogQueryValueTransformer.predicate(from: query)
-    #expect((predicate is NSCompoundPredicate))
+    #expect(predicate.description == "name == MyCrash")
   }
 
   @Test
-  func queryWithBundleIDReturnsCompoundPredicate() {
+  func queryWithBundleIDSelectsByIdentifier() {
     var query = Idb_CrashLogQuery()
     query.bundleID = "com.example.app"
     let predicate = CrashLogQueryValueTransformer.predicate(from: query)
-    #expect((predicate is NSCompoundPredicate))
+    #expect(predicate.description == "identifier == com.example.app")
   }
 
   @Test
-  func queryWithMultipleFiltersReturnsCorrectSubpredicateCount() {
+  func queryWithMultipleFiltersRequiresAllOfThem() {
     var query = Idb_CrashLogQuery()
     query.since = 1000
     query.before = 2000
     query.name = "Crash"
     let predicate = CrashLogQueryValueTransformer.predicate(from: query)
-    let compound = predicate as! NSCompoundPredicate
-    #expect((compound.subpredicates.count) == (3))
+    #expect(predicate.description.components(separatedBy: " && ").count == 3)
   }
 
   // MARK: - ErrorMapping Tests

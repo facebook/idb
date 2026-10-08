@@ -219,7 +219,7 @@ final class TestBundleConnection {
       crashWaitTimeout = TimeInterval((env as NSString).floatValue)
     }
     let pid = testHostApplication.processIdentifier
-    let predicate = CrashLogInfo.predicateForCrashLogs(withProcessID: pid)
+    let predicate = CrashLogPredicate.processIdentifier(pid)
     let info = try await target.crashLog.notifyOfCrash(matching: predicate, within: crashWaitTimeout, orThrow: TestBundleConnectionError.crashLogTimedOut(processIdentifier: pid, bundleID: bundleID, timeout: crashWaitTimeout))
     return try info.obtainCrashLog()
   }

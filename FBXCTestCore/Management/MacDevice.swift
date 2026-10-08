@@ -469,15 +469,15 @@ extension MacDevice: ApplicationCommands {
 
 extension MacDevice: CrashLogCommands {
 
-  public func crashes(matching predicate: NSPredicate, useCache: Bool) async throws -> [CrashLogInfo] {
+  public func crashes(matching predicate: CrashLogPredicate, useCache: Bool) async throws -> [CrashLogInfo] {
     throw MacDeviceError.notImplemented(selector: "crashes:useCache:")
   }
 
-  public func notifyOfCrash(matching predicate: NSPredicate) async throws -> CrashLogInfo {
+  public func notifyOfCrash(matching predicate: CrashLogPredicate) async throws -> CrashLogInfo {
     try await CrashLogNotifier.sharedInstance.nextCrashLog(forPredicate: predicate)
   }
 
-  public func prune(matching predicate: NSPredicate) async throws -> [CrashLogInfo] {
+  public func prune(matching predicate: CrashLogPredicate) async throws -> [CrashLogInfo] {
     throw MacDeviceError.notImplemented(selector: "prune:")
   }
 

@@ -37,19 +37,19 @@ final class SimulatorCrashLogCommandsTests: XCTestCase {
   }
 
   func testCrashesReadsReportsWrittenSinceTheLastRead() async throws {
-    let before = try await commands.crashes(matching: NSPredicate(value: true), useCache: false)
+    let before = try await commands.crashes(matching: CrashLogPredicate.all, useCache: false)
     XCTAssertEqual(before.map(\.name), [])
 
     try writeReport(named: "ReplHost.crash", udid: simulator.udid)
 
-    let after = try await commands.crashes(matching: NSPredicate(value: true), useCache: false)
+    let after = try await commands.crashes(matching: CrashLogPredicate.all, useCache: false)
     XCTAssertEqual(after.map(\.name), ["ReplHost.crash"])
   }
 
   func testPruneRemovesTheSimulatorsReports() async throws {
     let path = try writeReport(named: "ReplHost.crash", udid: simulator.udid)
 
-    let pruned = try await commands.prune(matching: NSPredicate(value: true))
+    let pruned = try await commands.prune(matching: CrashLogPredicate.all)
 
     XCTAssertEqual(pruned.map(\.name), ["ReplHost.crash"])
     XCTAssertFalse(FileManager.default.fileExists(atPath: path))
@@ -57,23 +57,23 @@ final class SimulatorCrashLogCommandsTests: XCTestCase {
 
   func testPruneLeavesOtherSimulatorsReports() async throws {
     let path = try writeReport(named: "Other.crash", udid: UUID().uuidString)
-    let listed = try await commands.crashes(matching: NSPredicate(value: true), useCache: false)
+    let listed = try await commands.crashes(matching: CrashLogPredicate.all, useCache: false)
     XCTAssertEqual(listed.map(\.name), ["Other.crash"])
 
-    let pruned = try await commands.prune(matching: NSPredicate(value: true))
+    let pruned = try await commands.prune(matching: CrashLogPredicate.all)
 
     XCTAssertEqual(pruned.map(\.name), [])
     XCTAssertTrue(FileManager.default.fileExists(atPath: path))
-    let remaining = try await commands.crashes(matching: NSPredicate(value: true), useCache: false)
+    let remaining = try await commands.crashes(matching: CrashLogPredicate.all, useCache: false)
     XCTAssertEqual(remaining.map(\.name), ["Other.crash"])
   }
 
   func testPruneRemovesTheSimulatorsReportsWithARedactedPath() async throws {
     let path = try writeRedactedReport(named: "ReplHost-2026-09-30-102328.ips", udid: simulator.udid)
-    let listed = try await commands.crashes(matching: NSPredicate(value: true), useCache: false)
+    let listed = try await commands.crashes(matching: CrashLogPredicate.all, useCache: false)
     XCTAssertEqual(listed.map(\.name), ["ReplHost-2026-09-30-102328.ips"])
 
-    let pruned = try await commands.prune(matching: NSPredicate(value: true))
+    let pruned = try await commands.prune(matching: CrashLogPredicate.all)
 
     XCTAssertEqual(pruned.map(\.name), ["ReplHost-2026-09-30-102328.ips"])
     XCTAssertFalse(FileManager.default.fileExists(atPath: path))
@@ -81,10 +81,10 @@ final class SimulatorCrashLogCommandsTests: XCTestCase {
 
   func testPruneLeavesOtherSimulatorsReportsWithARedactedPath() async throws {
     let path = try writeRedactedReport(named: "Other-2026-09-30-102328.ips", udid: UUID().uuidString)
-    let listed = try await commands.crashes(matching: NSPredicate(value: true), useCache: false)
+    let listed = try await commands.crashes(matching: CrashLogPredicate.all, useCache: false)
     XCTAssertEqual(listed.map(\.name), ["Other-2026-09-30-102328.ips"])
 
-    let pruned = try await commands.prune(matching: NSPredicate(value: true))
+    let pruned = try await commands.prune(matching: CrashLogPredicate.all)
 
     XCTAssertEqual(pruned.map(\.name), [])
     XCTAssertTrue(FileManager.default.fileExists(atPath: path))

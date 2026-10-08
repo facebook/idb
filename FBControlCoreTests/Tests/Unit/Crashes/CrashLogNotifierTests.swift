@@ -45,7 +45,7 @@ final class CrashLogNotifierTests: XCTestCase {
   func testNextCrashLogForPredicate_WhenNoMatchingCrashLog_PollDoesNotResolve() async throws {
     let notifier = CrashLogNotifier(logger: ControlCoreLoggerDouble())
 
-    let predicate = NSPredicate(value: false)
+    let predicate = CrashLogPredicate.none
     let poll = Task { try await notifier.nextCrashLog(forPredicate: predicate) }
 
     try await Task.sleep(nanoseconds: 200_000_000)

@@ -63,7 +63,7 @@ public final class DeviceCrashLogCommands: CrashLogCommands {
 
   // MARK: - Notify
 
-  public func notifyOfCrash(matching predicate: NSPredicate) async throws -> CrashLogInfo {
+  public func notifyOfCrash(matching predicate: CrashLogPredicate) async throws -> CrashLogInfo {
     let listener = store.listenForNextCrashLog(matching: predicate)
     // A crash ingested later, by any caller, still resolves the wait, so failing to ingest now does
     // not end it.
@@ -77,7 +77,7 @@ public final class DeviceCrashLogCommands: CrashLogCommands {
 
   // MARK: - Async
 
-  public func crashes(matching predicate: NSPredicate, useCache: Bool) async throws -> [CrashLogInfo] {
+  public func crashes(matching predicate: CrashLogPredicate, useCache: Bool) async throws -> [CrashLogInfo] {
     guard device != nil else {
       throw DeviceNilError.deviceNil
     }
@@ -85,7 +85,7 @@ public final class DeviceCrashLogCommands: CrashLogCommands {
     return store.ingestedCrashLogs(matchingPredicate: predicate)
   }
 
-  public func prune(matching predicate: NSPredicate) async throws -> [CrashLogInfo] {
+  public func prune(matching predicate: CrashLogPredicate) async throws -> [CrashLogInfo] {
     guard let device else {
       throw DeviceNilError.deviceNil
     }

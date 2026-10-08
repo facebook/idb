@@ -85,10 +85,7 @@ final class XCTestProcess {
       let crashLog: CrashLogInfo
       do {
         crashLog = try await crashLogCommands.notifyOfCrash(
-          matching: NSCompoundPredicate(andPredicateWithSubpredicates: [
-            CrashLogInfo.predicateForCrashLogs(withProcessID: processIdentifier),
-            CrashLogInfo.predicateNewer(thanDate: startDate),
-          ]),
+          matching: CrashLogPredicate.processIdentifier(processIdentifier) && CrashLogPredicate.newer(than: startDate),
           within: CrashLogWaitTime,
           orThrow: XCTestProcessError.crashLogTimedOut(processIdentifier: processIdentifier))
       } catch {

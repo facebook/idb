@@ -56,7 +56,7 @@ struct DeviceCrashLogFileTests {
   }
 
   private func allCrashes(_ device: Device) async throws -> [CrashLogInfo] {
-    try await device.crashLog.crashes(matching: NSPredicate(value: true), useCache: false)
+    try await device.crashLog.crashes(matching: CrashLogPredicate.all, useCache: false)
   }
 
   // MARK: - Ingesting
@@ -110,7 +110,7 @@ struct DeviceCrashLogFileTests {
   func pruningRemovesTheReportFromTheDevice() async throws {
     let device = makeDevice(remoteFiles: ["SomeApp-2026-01-01.ips": crashReport])
 
-    let pruned = try await device.crashLog.prune(matching: NSPredicate(value: true))
+    let pruned = try await device.crashLog.prune(matching: CrashLogPredicate.all)
 
     #expect(pruned.map(\.name) == ["SomeApp-2026-01-01.ips"])
     #expect(afc.removedPaths == ["SomeApp-2026-01-01.ips"])
@@ -122,7 +122,7 @@ struct DeviceCrashLogFileTests {
   func notifyingReportsAReportIngestedFromTheDevice() async throws {
     let device = makeDevice(remoteFiles: ["SomeApp-2026-01-01.ips": crashReport])
 
-    let crash = try await device.crashLog.notifyOfCrash(matching: NSPredicate(value: true))
+    let crash = try await device.crashLog.notifyOfCrash(matching: CrashLogPredicate.all)
 
     #expect(crash.name == "SomeApp-2026-01-01.ips")
   }
@@ -134,7 +134,7 @@ struct DeviceCrashLogFileTests {
       "second.ips": crashReport,
     ])
 
-    let second = NSPredicate { object, _ in (object as? CrashLogInfo)?.name == "second.ips" }
+    let second = CrashLogPredicate.name("second.ips")
     let crash = try await device.crashLog.notifyOfCrash(matching: second)
 
     #expect(crash.name == "second.ips")
@@ -148,7 +148,7 @@ struct DeviceCrashLogFileTests {
     _ = try await allCrashes(device)
 
     let crashLog = device.crashLog
-    let wait = Task { try await crashLog.notifyOfCrash(matching: NSPredicate(value: true)) }
+    let wait = Task { try await crashLog.notifyOfCrash(matching: CrashLogPredicate.all) }
     try await Task.sleep(nanoseconds: 200_000_000)
     wait.cancel()
 

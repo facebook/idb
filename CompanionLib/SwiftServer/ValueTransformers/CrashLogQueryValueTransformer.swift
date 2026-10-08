@@ -10,23 +10,20 @@ import IDBGRPCSwift
 
 enum CrashLogQueryValueTransformer {
 
-  static func predicate(from request: Idb_CrashLogQuery) -> NSPredicate {
-    var subpredicates: [NSPredicate] = []
+  static func predicate(from request: Idb_CrashLogQuery) -> CrashLogPredicate {
+    var predicates: [CrashLogPredicate] = []
     if request.since != 0 {
-      subpredicates.append(CrashLogInfo.predicateNewer(thanDate: Date(timeIntervalSince1970: TimeInterval(request.since))))
+      predicates.append(.newer(than: Date(timeIntervalSince1970: TimeInterval(request.since))))
     }
     if request.before != 0 {
-      subpredicates.append(CrashLogInfo.predicateOlder(thanDate: Date(timeIntervalSince1970: TimeInterval(request.before))))
+      predicates.append(.older(than: Date(timeIntervalSince1970: TimeInterval(request.before))))
     }
     if !request.bundleID.isEmpty {
-      subpredicates.append(CrashLogInfo.predicate(forIdentifier: request.bundleID))
+      predicates.append(.identifier(request.bundleID))
     }
     if !request.name.isEmpty {
-      subpredicates.append(CrashLogInfo.predicate(forName: request.name))
+      predicates.append(.name(request.name))
     }
-    if subpredicates.isEmpty {
-      return NSPredicate(value: true)
-    }
-    return NSCompoundPredicate(andPredicateWithSubpredicates: subpredicates)
+    return .allOf(predicates)
   }
 }

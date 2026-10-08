@@ -55,7 +55,7 @@ final class CrashLogStoreTests: XCTestCase {
 
   func testNextCrashLog_WhenMatchingCrashLogIsIngested_DeliversIt() async throws {
     let store = makeStore()
-    let next = Task { try await store.nextCrashLog(forMatchingPredicate: CrashLogInfo.predicate(forIdentifier: "assetsd")) }
+    let next = Task { try await store.nextCrashLog(forMatchingPredicate: CrashLogPredicate.identifier("assetsd")) }
     defer { next.cancel() }
 
     let ingester = ingestRepeatedly(try assetsdCrashData(), into: store, named: "assetsd")
@@ -68,7 +68,7 @@ final class CrashLogStoreTests: XCTestCase {
 
   func testNextCrashLog_WhenIngestedCrashLogDoesNotMatch_SkipsItAndWaitsForOneThatDoes() async throws {
     let store = makeStore()
-    let next = Task { try await store.nextCrashLog(forMatchingPredicate: CrashLogInfo.predicate(forIdentifier: "assetsd")) }
+    let next = Task { try await store.nextCrashLog(forMatchingPredicate: CrashLogPredicate.identifier("assetsd")) }
     defer { next.cancel() }
 
     try await Task.sleep(nanoseconds: 200_000_000)
@@ -89,7 +89,7 @@ final class CrashLogStoreTests: XCTestCase {
     let returned = expectation(description: "The cancelled wait returns")
     let next = Task {
       defer { returned.fulfill() }
-      _ = try await store.nextCrashLog(forMatchingPredicate: CrashLogInfo.predicate(forIdentifier: "assetsd"))
+      _ = try await store.nextCrashLog(forMatchingPredicate: CrashLogPredicate.identifier("assetsd"))
     }
 
     try await Task.sleep(nanoseconds: 200_000_000)
@@ -102,7 +102,7 @@ final class CrashLogStoreTests: XCTestCase {
 
   func testListener_WhenMatchingCrashLogIsIngestedBeforeAwaiting_DeliversIt() async throws {
     let store = makeStore()
-    let listener = store.listenForNextCrashLog(matching: CrashLogInfo.predicate(forIdentifier: "assetsd"))
+    let listener = store.listenForNextCrashLog(matching: CrashLogPredicate.identifier("assetsd"))
 
     XCTAssertNotNil(store.ingestCrashLogData(try assetsdCrashData(), name: "assetsd.crash"))
     let delivered = try await listener.next()
@@ -112,7 +112,7 @@ final class CrashLogStoreTests: XCTestCase {
 
   func testListener_WhenNonMatchingCrashLogIsIngestedFirst_DeliversTheMatchingOne() async throws {
     let store = makeStore()
-    let listener = store.listenForNextCrashLog(matching: CrashLogInfo.predicate(forIdentifier: "assetsd"))
+    let listener = store.listenForNextCrashLog(matching: CrashLogPredicate.identifier("assetsd"))
 
     XCTAssertNotNil(store.ingestCrashLogData(try tableSearchCrashData(), name: "tablesearch.crash"))
     XCTAssertNotNil(store.ingestCrashLogData(try assetsdCrashData(), name: "assetsd.crash"))
@@ -123,7 +123,7 @@ final class CrashLogStoreTests: XCTestCase {
 
   func testListener_WhenSeveralMatchingCrashLogsAreIngested_DeliversTheFirst() async throws {
     let store = makeStore()
-    let listener = store.listenForNextCrashLog(matching: CrashLogInfo.predicate(forIdentifier: "assetsd"))
+    let listener = store.listenForNextCrashLog(matching: CrashLogPredicate.identifier("assetsd"))
     let data = try assetsdCrashData()
 
     XCTAssertNotNil(store.ingestCrashLogData(data, name: "first.crash"))
@@ -136,7 +136,7 @@ final class CrashLogStoreTests: XCTestCase {
   func testListener_WhenCrashLogWasIngestedBeforeListening_DoesNotDeliverIt() async throws {
     let store = makeStore()
     XCTAssertNotNil(store.ingestCrashLogData(try assetsdCrashData(), name: "assetsd.crash"))
-    let listener = store.listenForNextCrashLog(matching: CrashLogInfo.predicate(forIdentifier: "assetsd"))
+    let listener = store.listenForNextCrashLog(matching: CrashLogPredicate.identifier("assetsd"))
 
     let next = Task { try await listener.next() }
     try await Task.sleep(nanoseconds: 200_000_000)
@@ -150,7 +150,7 @@ final class CrashLogStoreTests: XCTestCase {
 
   func testListener_WhenCancelledBeforeAwaiting_ThrowsCancellation() async throws {
     let store = makeStore()
-    let listener = store.listenForNextCrashLog(matching: CrashLogInfo.predicate(forIdentifier: "assetsd"))
+    let listener = store.listenForNextCrashLog(matching: CrashLogPredicate.identifier("assetsd"))
 
     let next = Task {
       withUnsafeCurrentTask { $0?.cancel() }

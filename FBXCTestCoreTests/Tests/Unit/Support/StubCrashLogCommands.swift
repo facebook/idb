@@ -16,19 +16,19 @@ struct StubCrashLogCommands: CrashLogCommands {
 
   let crash: @Sendable () async throws -> CrashLogInfo
 
-  func notifyOfCrash(matching predicate: NSPredicate) async throws -> CrashLogInfo {
+  func notifyOfCrash(matching predicate: CrashLogPredicate) async throws -> CrashLogInfo {
     let crash = try await crash()
-    guard predicate.evaluate(with: crash) else {
+    guard predicate.matches(crash) else {
       throw CrashDoesNotMatch()
     }
     return crash
   }
 
-  func crashes(matching predicate: NSPredicate, useCache: Bool) async throws -> [CrashLogInfo] {
+  func crashes(matching predicate: CrashLogPredicate, useCache: Bool) async throws -> [CrashLogInfo] {
     fatalError("Not used by these tests")
   }
 
-  func prune(matching predicate: NSPredicate) async throws -> [CrashLogInfo] {
+  func prune(matching predicate: CrashLogPredicate) async throws -> [CrashLogInfo] {
     fatalError("Not used by these tests")
   }
 

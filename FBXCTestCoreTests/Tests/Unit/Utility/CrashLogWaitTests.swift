@@ -27,7 +27,7 @@ final class CrashLogWaitTests: XCTestCase {
       exceptionDescription: nil,
       crashedThreadDescription: nil)
 
-    let found = try await StubCrashLogCommands { crash }.notifyOfCrash(matching: CrashLogInfo.predicateForCrashLogs(withProcessID: 42), within: 30, orThrow: TimedOut())
+    let found = try await StubCrashLogCommands { crash }.notifyOfCrash(matching: CrashLogPredicate.processIdentifier(42), within: 30, orThrow: TimedOut())
 
     XCTAssertEqual(found.processIdentifier, 42)
   }
@@ -38,7 +38,7 @@ final class CrashLogWaitTests: XCTestCase {
       _ = try await StubCrashLogCommands {
         try await Task.sleep(nanoseconds: 3_600_000_000_000)
         throw CancellationError()
-      }.notifyOfCrash(matching: NSPredicate(value: true), within: 0.1, orThrow: TimedOut())
+      }.notifyOfCrash(matching: CrashLogPredicate.all, within: 0.1, orThrow: TimedOut())
       XCTFail("Expected the wait to time out")
     } catch is TimedOut {
       XCTAssertLessThan(Date().timeIntervalSince(start), 10, "The lookup is cancelled rather than waited out")

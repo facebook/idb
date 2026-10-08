@@ -63,11 +63,11 @@ final class CrashLogInfoTests: XCTestCase {
   }
 
   func testIdentifierPredicate() throws {
-    try XCTAssertEqual(allCrashLogs.filtered(using: CrashLogInfo.predicate(forIdentifier: "assetsd")).count, 1)
+    try XCTAssertEqual(allCrashLogs.filter(CrashLogPredicate.identifier("assetsd").matches).count, 1)
   }
 
   func testNamePredicate() throws {
-    try XCTAssertEqual(allCrashLogs.filtered(using: CrashLogInfo.predicate(forName: "assetsd_custom_set.crash")).count, 1)
+    try XCTAssertEqual(allCrashLogs.filter(CrashLogPredicate.name("assetsd_custom_set.crash").matches).count, 1)
   }
 
   func testJSONCrashLogFormat() throws {
@@ -122,7 +122,7 @@ final class CrashLogInfoTests: XCTestCase {
     } catch {}
   }
 
-  private var allCrashLogs: NSArray {
+  private var allCrashLogs: [CrashLogInfo] {
     get throws {
       return try [
         CrashLogInfo.fromCrashLog(atPath: TestFixtures.assetsdCrashPathWithCustomDeviceSet),

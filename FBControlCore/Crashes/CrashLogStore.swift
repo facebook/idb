@@ -92,23 +92,23 @@ public final class CrashLogStore {
 
   /// Starts listening for the next crash log matching `predicate` before returning, so one ingested
   /// before `CrashLogListener.next()` is awaited is still delivered.
-  public func listenForNextCrashLog(matching predicate: NSPredicate) -> CrashLogListener {
+  public func listenForNextCrashLog(matching predicate: CrashLogPredicate) -> CrashLogListener {
     CrashLogListener(predicate: predicate)
   }
 
-  public func nextCrashLog(forMatchingPredicate predicate: NSPredicate) async throws -> CrashLogInfo {
+  public func nextCrashLog(forMatchingPredicate predicate: CrashLogPredicate) async throws -> CrashLogInfo {
     try await listenForNextCrashLog(matching: predicate).next()
   }
 
-  public func ingestedCrashLogs(matchingPredicate predicate: NSPredicate) -> [CrashLogInfo] {
-    return allIngestedCrashLogs().filter(predicate.evaluate(with:))
+  public func ingestedCrashLogs(matchingPredicate predicate: CrashLogPredicate) -> [CrashLogInfo] {
+    return allIngestedCrashLogs().filter(predicate.matches)
   }
 
-  public func pruneCrashLogs(matchingPredicate predicate: NSPredicate) -> [CrashLogInfo] {
+  public func pruneCrashLogs(matchingPredicate predicate: CrashLogPredicate) -> [CrashLogInfo] {
     var keys: [String] = []
     var crashLogs: [CrashLogInfo] = []
     for crashLog in allIngestedCrashLogs() {
-      if !predicate.evaluate(with: crashLog) {
+      if !predicate.matches(crashLog) {
         continue
       }
       keys.append(crashLog.name)
@@ -157,12 +157,11 @@ public final class CrashLogListener: @unchecked Sendable {
   private var state = State.listening
   private var observer: NSObjectProtocol?
 
-  init(predicate: NSPredicate) {
-    nonisolated(unsafe) let predicate = predicate
+  init(predicate: CrashLogPredicate) {
     lock.lock()
     defer { lock.unlock() }
     observer = NotificationCenter.default.addObserver(forName: CrashLogAppeared, object: nil, queue: nil) { [weak self] notification in
-      guard let crashLog = notification.object as? CrashLogInfo, predicate.evaluate(with: crashLog) else { return }
+      guard let crashLog = notification.object as? CrashLogInfo, predicate.matches(crashLog) else { return }
       self?.resolve(.success(CrashLogResultBox(crashLog)))
     }
   }

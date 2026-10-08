@@ -18,7 +18,7 @@ struct CrashShowMethodHandler {
       throw RPCError(code: .invalidArgument, message: "Missing crash name")
     }
 
-    let predicate = CrashLogInfo.predicate(forName: request.name)
+    let predicate = CrashLogPredicate.name(request.name)
     let crash = try await commandExecutor.crash_show(predicate)
     return .with {
       $0.info = CrashLogInfoValueTransformer.responseCrashLogInfo(from: crash.info)

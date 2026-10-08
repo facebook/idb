@@ -37,14 +37,13 @@ public final class CrashLogNotifier {
 
   /// Polls until a crash log matching `predicate` appears; callers impose their own timeouts and task
   /// cancellation stops the poll.
-  public func nextCrashLog(forPredicate predicate: NSPredicate) async throws -> CrashLogInfo {
+  public func nextCrashLog(forPredicate predicate: CrashLogPredicate) async throws -> CrashLogInfo {
     _ = startListening(true)
     while true {
       try Task.checkCancellation()
       let crashInfo =
-        (await CrashLogInfo.crashInfo(afterDate: sinceDate, logger: nil) as NSArray)
-        .filtered(using: predicate)
-        .first as? CrashLogInfo
+        await CrashLogInfo.crashInfo(afterDate: sinceDate, logger: nil)
+        .first(where: predicate.matches)
       if let crashInfo {
         _ = store.ingestCrashLog(atPath: crashInfo.crashPath)
         return crashInfo

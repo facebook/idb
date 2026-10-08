@@ -234,57 +234,6 @@ public final class CrashLogInfo: CustomStringConvertible {
     return CrashReport(info: self, contents: contents)
   }
 
-  // MARK: - Predicates
-
-  public class func predicateForCrashLogs(withProcessID processID: pid_t) -> NSPredicate {
-    NSPredicate { evaluatedObject, _ in
-      guard let crashLog = evaluatedObject as? CrashLogInfo else { return false }
-      return crashLog.processIdentifier == processID
-    }
-  }
-
-  public class func predicateNewer(thanDate date: Date) -> NSPredicate {
-    NSPredicate { evaluatedObject, _ in
-      guard let crashLog = evaluatedObject as? CrashLogInfo else { return false }
-      return date.compare(crashLog.date) == .orderedAscending
-    }
-  }
-
-  public class func predicateOlder(thanDate date: Date) -> NSPredicate {
-    NSCompoundPredicate(notPredicateWithSubpredicate: predicateNewer(thanDate: date))
-  }
-
-  public class func predicate(forIdentifier identifier: String) -> NSPredicate {
-    NSPredicate { evaluatedObject, _ in
-      guard let crashLog = evaluatedObject as? CrashLogInfo else { return false }
-      return identifier == crashLog.identifier
-    }
-  }
-
-  public class func predicate(forName name: String) -> NSPredicate {
-    NSPredicate { evaluatedObject, _ in
-      guard let crashLog = evaluatedObject as? CrashLogInfo else { return false }
-      return name == crashLog.name
-    }
-  }
-
-  /// A simulator's report names its udid in the executable's path, or, where macOS redacts that
-  /// path, in the report's coalition.
-  public class func predicate(forSimulatorUDID udid: String) -> NSPredicate {
-    let coalitionName = "com.apple.CoreSimulator.SimDevice.\(udid)"
-    return NSPredicate { evaluatedObject, _ in
-      guard let crashLog = evaluatedObject as? CrashLogInfo else { return false }
-      return crashLog.executablePath.contains(udid) || crashLog.coalitionName == coalitionName
-    }
-  }
-
-  public class func predicate(forExecutablePathContains contains: String) -> NSPredicate {
-    NSPredicate { evaluatedObject, _ in
-      guard let crashLog = evaluatedObject as? CrashLogInfo else { return false }
-      return crashLog.executablePath.contains(contains)
-    }
-  }
-
   public class var diagnosticReportsPaths: [String] {
     [
       (NSHomeDirectory() as NSString).appendingPathComponent("Library/Logs/DiagnosticReports"),
