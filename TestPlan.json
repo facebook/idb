@@ -99,7 +99,7 @@
     "FBControlCoreTests": {
       "bootedSimulator": false,
       "prerequisites": [],
-      "runner": "standard"
+      "runner": "large"
     },
     "FBDeviceControlTests": {
       "bootedSimulator": false,
@@ -144,7 +144,7 @@
       "prerequisites": [
         "fbsimulatorcontrol_resources"
       ],
-      "runner": "standard"
+      "runner": "large"
     },
     "FBSimulatorVideoTests": {
       "bootedSimulator": false,
