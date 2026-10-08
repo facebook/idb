@@ -58,7 +58,10 @@
       "FBSimulatorVideoTests"
     ],
     "FBSimulatorXCTest": [
-      "FBSimulatorControlUnitTests"
+      "FBSimulatorXCTestTests"
+    ],
+    "FBSimulatorXCTestTests": [
+      "FBSimulatorXCTestTests"
     ],
     "FBVideoCore": [
       "FBVideoCoreTests"
@@ -131,6 +134,12 @@
       ]
     },
     "FBSimulatorVideoTests": {
+      "bootedSimulator": false,
+      "prerequisites": [
+        "fbsimulatorcontrol_resources"
+      ]
+    },
+    "FBSimulatorXCTestTests": {
       "bootedSimulator": false,
       "prerequisites": [
         "fbsimulatorcontrol_resources"
