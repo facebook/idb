@@ -14,8 +14,7 @@ public let FBControlCoreDebugLogging = "FBCONTROLCORE_DEBUG_LOGGING"
 
 private let ConfirmShimsAreSignedEnv = "FBCONTROLCORE_CONFIRM_SIGNED_SHIMS"
 
-@objc
-public final class ControlCoreGlobalConfiguration: NSObject {
+public enum ControlCoreGlobalConfiguration {
 
   // Guarded by _loggerLock.
   nonisolated(unsafe) private static var _logger: (any ControlCoreLogger)?
@@ -23,9 +22,9 @@ public final class ControlCoreGlobalConfiguration: NSObject {
 
   // MARK: - Timeouts
 
-  @objc public class var fastTimeout: TimeInterval { 10 }
-  @objc public class var regularTimeout: TimeInterval { 30 }
-  @objc public class var slowTimeout: TimeInterval { 120 }
+  public static var fastTimeout: TimeInterval { 10 }
+  public static var regularTimeout: TimeInterval { 30 }
+  public static var slowTimeout: TimeInterval { 120 }
 
   // MARK: - Logger
 
@@ -35,7 +34,7 @@ public final class ControlCoreGlobalConfiguration: NSObject {
   /// in a process without a terminal nothing reaches stderr and diagnostics are only visible via
   /// `log stream --predicate 'subsystem == "com.facebook.fbcontrolcore"'`.
   /// `FBCONTROLCORE_LOGGING` mirrors output to stderr; `FBCONTROLCORE_DEBUG_LOGGING` raises the level to debug.
-  @objc public class var defaultLogger: any ControlCoreLogger {
+  public static var defaultLogger: any ControlCoreLogger {
     get {
       _loggerLock.lock()
       defer { _loggerLock.unlock() }
@@ -57,12 +56,12 @@ public final class ControlCoreGlobalConfiguration: NSObject {
     }
   }
 
-  @objc public class var confirmCodesignaturesAreValid: Bool {
+  public static var confirmCodesignaturesAreValid: Bool {
     guard let value = ProcessInfo.processInfo.environment[ConfirmShimsAreSignedEnv] else { return false }
     return (value as NSString).boolValue
   }
 
-  override public class func description() -> String {
+  public static var description: String {
     _loggerLock.lock()
     let logger = _logger
     _loggerLock.unlock()
@@ -71,20 +70,16 @@ public final class ControlCoreGlobalConfiguration: NSObject {
     return "Default Logger \(logger.map(String.init(describing:)) ?? "(nil)")"
   }
 
-  public override var description: String {
-    Self.description()
-  }
-
-  private class func createDefaultLogger() -> any ControlCoreLogger {
+  private static func createDefaultLogger() -> any ControlCoreLogger {
     FBControlCoreLoggerFactory.systemLoggerWriting(toStderr: stderrLoggingEnabledByDefault, withDebugLogging: debugLoggingEnabledByDefault)
   }
 
-  private class var stderrLoggingEnabledByDefault: Bool {
+  private static var stderrLoggingEnabledByDefault: Bool {
     guard let value = ProcessInfo.processInfo.environment[FBControlCoreStderrLogging] else { return false }
     return (value as NSString).boolValue
   }
 
-  private class var debugLoggingEnabledByDefault: Bool {
+  private static var debugLoggingEnabledByDefault: Bool {
     guard let value = ProcessInfo.processInfo.environment[FBControlCoreDebugLogging] else { return false }
     return (value as NSString).boolValue
   }

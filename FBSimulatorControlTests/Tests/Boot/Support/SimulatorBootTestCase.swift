@@ -43,7 +43,7 @@ final class SimulatorBootTestCase: XCTestCase {
     if ProcessInfo.processInfo.environment[FBControlCoreDebugLogging] == nil {
       setenv(FBControlCoreDebugLogging, "NO", 1)
     }
-    ControlCoreGlobalConfiguration.defaultLogger.log("Current Configuration => \(String(describing: ControlCoreGlobalConfiguration.description))")
+    ControlCoreGlobalConfiguration.defaultLogger.log("Current Configuration => \(ControlCoreGlobalConfiguration.description)")
   }
 
   override func setUpWithError() throws {

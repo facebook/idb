@@ -7,11 +7,9 @@
 
 import Foundation
 
-@objc
-public final class CollectionInformation: NSObject {
+public enum CollectionInformation {
 
-  @objc(oneLineDescriptionFromArray:)
-  public class func oneLineDescription(from array: [Any]) -> String {
+  public static func oneLineDescription(from array: [Any]) -> String {
     joined(array)
   }
 
@@ -19,8 +17,7 @@ public final class CollectionInformation: NSObject {
     "[\(elements.map { String(describing: $0) }.joined(separator: ", "))]"
   }
 
-  @objc(oneLineDescriptionFromDictionary:)
-  public class func oneLineDescription(from dictionary: [String: Any]) -> String {
+  public static func oneLineDescription(from dictionary: [String: Any]) -> String {
     let pieces = dictionary.map { "\($0.key) => \($0.value)" }
     return "{\(pieces.joined(separator: ", "))}"
   }

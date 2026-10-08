@@ -7,11 +7,9 @@
 
 import Foundation
 
-@objc
-public final class CollectionOperations: NSObject {
+public enum CollectionOperations {
 
-  @objc(recursiveFilteredJSONSerializableRepresentationOfDictionary:)
-  public class func recursiveFilteredJSONSerializableRepresentation(of input: [String: Any]) -> [String: Any] {
+  public static func recursiveFilteredJSONSerializableRepresentation(of input: [String: Any]) -> [String: Any] {
     var output: [String: Any] = [:]
     for (key, value) in input {
       if let resolved = jsonSerializableValueOrNil(value) {
@@ -21,8 +19,7 @@ public final class CollectionOperations: NSObject {
     return output
   }
 
-  @objc(recursiveFilteredJSONSerializableRepresentationOfArray:)
-  public class func recursiveFilteredJSONSerializableRepresentation(of input: [Any]) -> [Any] {
+  public static func recursiveFilteredJSONSerializableRepresentation(of input: [Any]) -> [Any] {
     var output: [Any] = []
     for value in input {
       if let resolved = jsonSerializableValueOrNil(value) {
@@ -32,7 +29,7 @@ public final class CollectionOperations: NSObject {
     return output
   }
 
-  private class func jsonSerializableValueOrNil(_ value: Any) -> Any? {
+  private static func jsonSerializableValueOrNil(_ value: Any) -> Any? {
     if value is String || value is NSString {
       return value
     }
