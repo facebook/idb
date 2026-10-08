@@ -286,78 +286,45 @@ public final class CrashLogInfo: CustomStringConvertible {
   }
 
   private class func fromCrashLogString(_ crashString: String, crashPath: String, parser: CrashLogParser) throws -> CrashLogInfo {
-    var executablePath: NSString = NSString()
-    var identifier: NSString = NSString()
-    var processName: NSString = NSString()
-    var parentProcessName: NSString = NSString()
-    var processIdentifier: pid_t = -1
-    var parentProcessIdentifier: pid_t = -1
-    var date: NSDate = NSDate()
-    var exceptionDescription: NSString = NSString()
-    var crashedThreadDescription: NSString = NSString()
-    var coalitionName: NSString = NSString()
-
-    var parseError: NSError?
-    parser.parseCrashLog(
-      from: crashString,
-      executablePathOut: &executablePath,
-      identifierOut: &identifier,
-      processNameOut: &processName,
-      parentProcessNameOut: &parentProcessName,
-      processIdentifierOut: &processIdentifier,
-      parentProcessIdentifierOut: &parentProcessIdentifier,
-      dateOut: &date,
-      exceptionDescription: &exceptionDescription,
-      crashedThreadDescription: &crashedThreadDescription,
-      coalitionNameOut: &coalitionName,
-      error: &parseError
-    )
-
-    if let parseError {
-      throw CrashLogError.parseFailed(underlying: parseError)
+    let parsed: ParsedCrashLog
+    do {
+      parsed = try parser.parse(crashString)
+    } catch {
+      throw CrashLogError.parseFailed(underlying: error)
     }
 
-    let processNameStr = processName as String
-    if processNameStr.isEmpty {
+    if parsed.processName.isEmpty {
       throw CrashLogError.missingField(field: "process name")
     }
-    let identifierStr = identifier as String
-    if identifierStr.isEmpty {
+    if parsed.identifier.isEmpty {
       throw CrashLogError.missingField(field: "identifier")
     }
-    let parentProcessNameStr = parentProcessName as String
-    if parentProcessNameStr.isEmpty {
+    if parsed.parentProcessName.isEmpty {
       throw CrashLogError.missingField(field: "parent process name")
     }
-    let executablePathStr = executablePath as String
-    if executablePathStr.isEmpty {
+    if parsed.executablePath.isEmpty {
       throw CrashLogError.missingField(field: "executable path")
     }
-    if processIdentifier == -1 {
+    if parsed.processIdentifier == -1 {
       throw CrashLogError.missingField(field: "process identifier")
     }
-    if parentProcessIdentifier == -1 {
+    if parsed.parentProcessIdentifier == -1 {
       throw CrashLogError.missingField(field: "parent process identifier")
     }
 
-    let processType = self.processType(forExecutablePath: executablePathStr)
-
-    let exceptionDescStr = exceptionDescription as String
-    let crashedThreadDescStr = crashedThreadDescription as String
-
     return CrashLogInfo(
       crashPath: crashPath,
-      executablePath: executablePathStr,
-      identifier: identifierStr,
-      processName: processNameStr,
-      processIdentifier: processIdentifier,
-      parentProcessName: parentProcessNameStr,
-      parentProcessIdentifier: parentProcessIdentifier,
-      date: date as Date,
-      processType: processType,
-      exceptionDescription: exceptionDescStr.isEmpty ? nil : exceptionDescStr,
-      crashedThreadDescription: crashedThreadDescStr.isEmpty ? nil : crashedThreadDescStr,
-      coalitionName: coalitionName.length == 0 ? nil : coalitionName as String
+      executablePath: parsed.executablePath,
+      identifier: parsed.identifier,
+      processName: parsed.processName,
+      processIdentifier: parsed.processIdentifier,
+      parentProcessName: parsed.parentProcessName,
+      parentProcessIdentifier: parsed.parentProcessIdentifier,
+      date: parsed.date,
+      processType: processType(forExecutablePath: parsed.executablePath),
+      exceptionDescription: parsed.exceptionDescription.isEmpty ? nil : parsed.exceptionDescription,
+      crashedThreadDescription: parsed.crashedThreadDescription.isEmpty ? nil : parsed.crashedThreadDescription,
+      coalitionName: parsed.coalitionName.isEmpty ? nil : parsed.coalitionName
     )
   }
 

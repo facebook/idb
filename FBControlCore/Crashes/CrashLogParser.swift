@@ -7,55 +7,62 @@
 
 import Foundation
 
-@objc
-protocol CrashLogParser: NSObjectProtocol {
-  @objc(parseCrashLogFromString:executablePathOut:identifierOut:processNameOut:parentProcessNameOut:processIdentifierOut:parentProcessIdentifierOut:dateOut:exceptionDescription:crashedThreadDescription:coalitionNameOut:error:)
-  func parseCrashLog(from str: String, executablePathOut: AutoreleasingUnsafeMutablePointer<NSString>, identifierOut: AutoreleasingUnsafeMutablePointer<NSString>, processNameOut: AutoreleasingUnsafeMutablePointer<NSString>, parentProcessNameOut: AutoreleasingUnsafeMutablePointer<NSString>, processIdentifierOut: UnsafeMutablePointer<pid_t>, parentProcessIdentifierOut: UnsafeMutablePointer<pid_t>, dateOut: AutoreleasingUnsafeMutablePointer<NSDate>, exceptionDescription: AutoreleasingUnsafeMutablePointer<NSString>, crashedThreadDescription: AutoreleasingUnsafeMutablePointer<NSString>, coalitionNameOut: AutoreleasingUnsafeMutablePointer<NSString>, error: NSErrorPointer)
+/// The fields a crash log parser extracts. A field the log does not have is left at its default.
+struct ParsedCrashLog {
+  var executablePath = ""
+  var identifier = ""
+  var processName = ""
+  var parentProcessName = ""
+  var processIdentifier: pid_t = -1
+  var parentProcessIdentifier: pid_t = -1
+  var date = Date()
+  var exceptionDescription = ""
+  var crashedThreadDescription = ""
+  var coalitionName = ""
+}
+
+protocol CrashLogParser {
+  func parse(_ str: String) throws -> ParsedCrashLog
 }
 
 /// A macOS 12+ `.ips` file is two concatenated JSON objects (metadata, then content) with some fields
 /// repeated. Apple can change the layout, so every object is searched for each needed field rather
 /// than assuming a position.
-final class ConcatedJSONCrashLogParser: NSObject, CrashLogParser {
+struct ConcatedJSONCrashLogParser: CrashLogParser {
 
-  public func parseCrashLog(from str: String, executablePathOut: AutoreleasingUnsafeMutablePointer<NSString>, identifierOut: AutoreleasingUnsafeMutablePointer<NSString>, processNameOut: AutoreleasingUnsafeMutablePointer<NSString>, parentProcessNameOut: AutoreleasingUnsafeMutablePointer<NSString>, processIdentifierOut: UnsafeMutablePointer<pid_t>, parentProcessIdentifierOut: UnsafeMutablePointer<pid_t>, dateOut: AutoreleasingUnsafeMutablePointer<NSDate>, exceptionDescription: AutoreleasingUnsafeMutablePointer<NSString>, crashedThreadDescription: AutoreleasingUnsafeMutablePointer<NSString>, coalitionNameOut: AutoreleasingUnsafeMutablePointer<NSString>, error: NSErrorPointer) {
-    let parsedReport: [String: Any]
-    do {
-      parsedReport = try ConcatedJsonParser.parseConcatenatedJSON(from: str)
-    } catch let parseError {
-      error?.pointee = parseError as NSError
-      return
-    }
+  func parse(_ str: String) throws -> ParsedCrashLog {
+    var parsed = ParsedCrashLog()
+    let parsedReport = try ConcatedJsonParser.parseConcatenatedJSON(from: str)
 
     if let procPath = parsedReport["procPath"] as? String {
-      executablePathOut.pointee = procPath as NSString
+      parsed.executablePath = procPath
     }
 
     if let procName = parsedReport["procName"] as? String {
-      processNameOut.pointee = procName as NSString
-      identifierOut.pointee = procName as NSString
+      parsed.processName = procName
+      parsed.identifier = procName
     }
     // An app's report records its bundle id; a process without one is identified by its name.
     let bundleInfo = parsedReport["bundleInfo"] as? [String: Any]
     if let bundleID = bundleInfo?["CFBundleIdentifier"] as? String ?? parsedReport["bundleID"] as? String {
-      identifierOut.pointee = bundleID as NSString
+      parsed.identifier = bundleID
     }
     if let pid = parsedReport["pid"] as? NSNumber {
-      processIdentifierOut.pointee = pid.int32Value
+      parsed.processIdentifier = pid.int32Value
     }
 
     if let parentProc = parsedReport["parentProc"] as? String {
-      parentProcessNameOut.pointee = parentProc as NSString
+      parsed.parentProcessName = parentProc
     }
     if let parentPid = parsedReport["parentPid"] as? NSNumber {
-      parentProcessIdentifierOut.pointee = parentPid.int32Value
+      parsed.parentProcessIdentifier = parentPid.int32Value
     }
     if let coalitionName = parsedReport["coalitionName"] as? String {
-      coalitionNameOut.pointee = coalitionName as NSString
+      parsed.coalitionName = coalitionName
     }
     if let captureTime = parsedReport["captureTime"] as? String {
       if let date = CrashReport.dateFormatter().date(from: captureTime) {
-        dateOut.pointee = date as NSDate
+        parsed.date = date
       }
     }
 
@@ -70,7 +77,7 @@ final class ConcatedJSONCrashLogParser: NSObject, CrashLogParser {
       if let exceptionSubtype = exceptionDictionary["subtype"] as? String {
         exceptionDescriptionMutable += " " + exceptionSubtype
       }
-      exceptionDescription.pointee = exceptionDescriptionMutable as NSString
+      parsed.exceptionDescription = exceptionDescriptionMutable
     }
 
     var imageNames: [String] = []
@@ -102,21 +109,23 @@ final class ConcatedJSONCrashLogParser: NSObject, CrashLogParser {
               crashedThreadDescriptionMutable += symbol + "\n"
             }
           }
-          crashedThreadDescription.pointee = crashedThreadDescriptionMutable.trimmingCharacters(in: .whitespacesAndNewlines) as NSString
+          parsed.crashedThreadDescription = crashedThreadDescriptionMutable.trimmingCharacters(in: .whitespacesAndNewlines)
         }
         break
       }
     }
+    return parsed
   }
 }
 
 /// Parses the pre-macOS 12 plain-text `.crash` format.
-final class PlainTextCrashLogParser: NSObject, CrashLogParser {
+struct PlainTextCrashLogParser: CrashLogParser {
 
   private static let maxLineSearch: UInt = 20
 
-  // Leaves `coalitionNameOut` empty: this format has no coalition field, and it never redacts the simulator path, which `CrashLogInfo.predicate(forSimulatorUDID:)` matches instead.
-  public func parseCrashLog(from str: String, executablePathOut: AutoreleasingUnsafeMutablePointer<NSString>, identifierOut: AutoreleasingUnsafeMutablePointer<NSString>, processNameOut: AutoreleasingUnsafeMutablePointer<NSString>, parentProcessNameOut: AutoreleasingUnsafeMutablePointer<NSString>, processIdentifierOut: UnsafeMutablePointer<pid_t>, parentProcessIdentifierOut: UnsafeMutablePointer<pid_t>, dateOut: AutoreleasingUnsafeMutablePointer<NSDate>, exceptionDescription: AutoreleasingUnsafeMutablePointer<NSString>, crashedThreadDescription: AutoreleasingUnsafeMutablePointer<NSString>, coalitionNameOut: AutoreleasingUnsafeMutablePointer<NSString>, error: NSErrorPointer) {
+  // Leaves `coalitionName` empty: this format has no coalition field, and it never redacts the simulator path, which `CrashLogInfo.predicate(forSimulatorUDID:)` matches instead.
+  func parse(_ str: String) throws -> ParsedCrashLog {
+    var parsed = ParsedCrashLog()
     let nsStr = str as NSString
     let length = nsStr.length
     var paraStart: Int = 0
@@ -130,28 +139,29 @@ final class PlainTextCrashLogParser: NSObject, CrashLogParser {
       let line = nsStr.substring(with: NSRange(location: paraStart, length: contentsEnd - paraStart))
 
       if let match = parseProcessLine(line) {
-        processNameOut.pointee = match.name as NSString
-        processIdentifierOut.pointee = match.pid
+        parsed.processName = match.name
+        parsed.processIdentifier = match.pid
         continue
       }
       if let identifier = parseIdentifierLine(line) {
-        identifierOut.pointee = identifier as NSString
+        parsed.identifier = identifier
         continue
       }
       if let match = parseParentProcessLine(line) {
-        parentProcessNameOut.pointee = match.name as NSString
-        parentProcessIdentifierOut.pointee = match.pid
+        parsed.parentProcessName = match.name
+        parsed.parentProcessIdentifier = match.pid
         continue
       }
       if let path = parsePathLine(line) {
-        executablePathOut.pointee = path as NSString
+        parsed.executablePath = path
         continue
       }
       if let date = parseDateLine(line) {
-        dateOut.pointee = date as NSDate
+        parsed.date = date
         continue
       }
     }
+    return parsed
   }
 
   // MARK: - Private
