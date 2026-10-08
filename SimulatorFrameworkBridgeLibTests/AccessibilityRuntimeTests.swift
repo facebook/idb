@@ -178,11 +178,16 @@ final class AccessibilityRuntimeTests: XCTestCase {
     XCTAssertEqual(FBAXHitTestOutcome(forHitTestError: FBAXError.serverNotFound.rawValue, hasElement: false)?.status, FBAXHitTestStatus.applicationUnavailable, "server-not-found classifies as application-unavailable, not empty")
     XCTAssertEqual(FBAXHitTestOutcome(forHitTestError: FBAXError.invalidUIElement.rawValue, hasElement: false)?.status, FBAXHitTestStatus.empty, "a genuinely empty point")
     XCTAssertEqual(FBAXHitTestOutcome(forHitTestError: FBAXError.ipcTimeout.rawValue, hasElement: false)?.status, FBAXHitTestStatus.applicationNotResponding, "an IPC timeout classifies as application-not-responding, not empty or unavailable")
-    // A hit-test that went wrong must not look like blank space, and says which code it got.
-    for code in [FBAXError.failure.rawValue, -25204, -1] {
+    // A hit-test that went wrong must not look like blank space, and says which code it got, by name when it has one.
+    for (code, reason) in [
+      (FBAXError.failure.rawValue, "the hit-test failed with AX error -25200 (kAXErrorFailure)"),
+      (-25204, "the hit-test failed with AX error -25204 (kAXErrorCannotComplete)"),
+      (-25214, "the hit-test failed with AX error -25214 (kAXErrorCalledOnNonMainThread)"),
+      (-1, "the hit-test failed with AX error -1"),
+    ] {
       let outcome = FBAXHitTestOutcome(forHitTestError: code, hasElement: false)
       XCTAssertEqual(outcome?.status, FBAXHitTestStatus.failed, "AX code \(code)")
-      XCTAssertTrue(outcome?.failureReason?.contains("AX error \(code)") == true, "got: \(String(describing: outcome?.failureReason))")
+      XCTAssertEqual(outcome?.failureReason, reason)
     }
   }
 
@@ -290,7 +295,7 @@ final class AccessibilityRuntimeTests: XCTestCase {
 
     runtime.hitTestOutcome = FBAXHitTestOutcome.failed(withAXError: -25200)
     let coded = FBAccessibilityService.handleRequest(["verb": "hittest", "x": NSNumber(value: 1), "y": NSNumber(value: 2)])
-    assertEqualObjects(axValue(coded, "error"), "the hit-test failed with AX error -25200")
+    assertEqualObjects(axValue(coded, "error"), "the hit-test failed with AX error -25200 (kAXErrorFailure)")
     assertEqualObjects(axValue(coded, "error_kind"), "runtime_failed")
     assertEqualObjects(axValue(coded, "ax_error"), NSNumber(value: -25200))
   }
@@ -1289,7 +1294,7 @@ final class AccessibilityRuntimeTests: XCTestCase {
     for request in [FBAXTestsPress(), ["verb": "setvalue", "x": NSNumber(value: 1), "y": NSNumber(value: 2), "value": "hello"]] {
       let response = FBAccessibilityService.handleRequest(request)
       assertEqualObjects(axValue(response, "ok"), NSNumber(value: false), "\(String(describing: axValue(request, "verb")))")
-      assertEqualObjects(axValue(response, "error"), "the hit-test failed with AX error -25200")
+      assertEqualObjects(axValue(response, "error"), "the hit-test failed with AX error -25200 (kAXErrorFailure)")
       assertEqualObjects(axValue(response, "error_kind"), "runtime_failed")
       assertEqualObjects(axValue(response, "ax_error"), NSNumber(value: -25200))
       assertEqualObjects(axValue(response, "effect"), "none")
@@ -1581,7 +1586,7 @@ final class AccessibilityRuntimeTests: XCTestCase {
     self.seedHitElement(withAttributes: [:])
     runtime.writeOutcome = FBAXWriteOutcome.failed(withAXError: -25205)
     let coded = FBAccessibilityService.handleRequest(FBAXTestsPress())
-    assertEqualObjects(axValue(coded, "error"), "the accessibility runtime rejected the write (-25205)")
+    assertEqualObjects(axValue(coded, "error"), "the accessibility runtime rejected the write with AX error -25205 (kAXErrorAttributeUnsupported)")
     assertEqualObjects(axValue(coded, "error_kind"), "runtime_failed")
     assertEqualObjects(axValue(coded, "ax_error"), NSNumber(value: -25205))
     assertEqualObjects(axValue(coded, "pid"), NSNumber(value: kAppPid))

@@ -1052,11 +1052,11 @@ final class AXBridgeReadsTests: XCTestCase {
     let error = try await writeFailure(
       markerSetValue,
       guestResponse: [
-        "ok": false, "error": "the accessibility runtime rejected the write (-25200)", "error_kind": "runtime_failed",
+        "ok": false, "error": "the accessibility runtime rejected the write with AX error -25200 (kAXErrorFailure)", "error_kind": "runtime_failed",
         "ax_error": -25200, "pid": 42, "effect": "unknown",
       ])
     XCTAssertEqual(UIAutomationRetry(for: error), .idempotent)
-    XCTAssertEqual(error.localizedDescription, "The axbridge guest failed: the accessibility runtime rejected the write (-25200)")
+    XCTAssertEqual(error.localizedDescription, "The axbridge guest failed: the accessibility runtime rejected the write with AX error -25200 (kAXErrorFailure)")
   }
 
   // An older guest sends no `effect`; that can only mean it may have sent the write.

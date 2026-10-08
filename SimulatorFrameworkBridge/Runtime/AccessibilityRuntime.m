@@ -18,6 +18,48 @@
 #import "Private/RunningBoardServicesPrivate.h"
 #import "Private/XCTAutomationSupportPrivate.h"
 
+#pragma mark - AX errors
+
+/**
+ * An AX error code with its name, e.g. "AX error -25204 (kAXErrorCannotComplete)", or the bare code when it has none.
+ *
+ * The names are the simulator runtime's own, from `XCTStringFromAXError` in XCTAutomationSupport, and differ from macOS's
+ * `AXError.h`: -25214 is kAXErrorCalledOnNonMainThread rather than kAXErrorNotEnoughPrecision, and -25215 and -25216 exist
+ * only here.
+ */
+static NSString *FBAXErrorDescription(int32_t axError)
+{
+  static NSDictionary<NSNumber *, NSString *> *names;
+  static dispatch_once_t onceToken;
+  dispatch_once(&onceToken, ^{
+    names = @{
+      @0 : @"kAXErrorSuccess",
+      @(-25200) : @"kAXErrorFailure",
+      @(-25201) : @"kAXErrorIllegalArgument",
+      @(-25202) : @"kAXErrorInvalidUIElement",
+      @(-25203) : @"kAXErrorInvalidUIElementObserver",
+      @(-25204) : @"kAXErrorCannotComplete",
+      @(-25205) : @"kAXErrorAttributeUnsupported",
+      @(-25206) : @"kAXErrorActionUnsupported",
+      @(-25207) : @"kAXErrorNotificationUnsupported",
+      @(-25208) : @"kAXErrorNotImplemented",
+      @(-25209) : @"kAXErrorNotificationAlreadyRegistered",
+      @(-25210) : @"kAXErrorNotificationNotRegistered",
+      @(-25211) : @"kAXErrorAPIDisabled",
+      @(-25212) : @"kAXErrorNoValue",
+      @(-25213) : @"kAXErrorParameterizedAttributeUnsupported",
+      @(-25214) : @"kAXErrorCalledOnNonMainThread",
+      @(-25215) : @"kAXErrorServerNotFound",
+      @(-25216) : @"kAXErrorIPCTimeout",
+    };
+  });
+  NSString *name = names[@(axError)];
+  if (!name) {
+    return [NSString stringWithFormat:@"AX error %d", axError];
+  }
+  return [NSString stringWithFormat:@"AX error %d (%@)", axError, name];
+}
+
 #pragma mark - Outcomes
 
 @interface FBAXHitTestOutcome ()
@@ -148,7 +190,7 @@
 
 + (instancetype)failedWithAXError:(int32_t)axError
 {
-  FBAXHitTestOutcome *outcome = [self failed:[NSString stringWithFormat:@"the hit-test failed with AX error %d", axError]];
+  FBAXHitTestOutcome *outcome = [self failed:[NSString stringWithFormat:@"the hit-test failed with %@", FBAXErrorDescription(axError)]];
   outcome.axError = @(axError);
   return outcome;
 }
@@ -224,7 +266,7 @@
 
 + (instancetype)failedWithAXError:(int32_t)axError
 {
-  return [self failed:[NSString stringWithFormat:@"the accessibility runtime rejected the write (%d)", axError] axError:@(axError)];
+  return [self failed:[NSString stringWithFormat:@"the accessibility runtime rejected the write with %@", FBAXErrorDescription(axError)] axError:@(axError)];
 }
 
 + (instancetype)outcomeForWriteError:(int32_t)axError
@@ -766,7 +808,7 @@ static void FBAXQuiescenceObserverCallback(void *observer, void *element, uint32
   int32_t createError = _functions.observerCreate(0, FBAXQuiescenceObserverCallback, &observer);
   if (createError != FBAXErrorSuccess || !observer) {
     if (error) {
-      *error = [NSString stringWithFormat:@"AXObserverCreate failed (%d)", createError];
+      *error = [NSString stringWithFormat:@"AXObserverCreate failed with %@", FBAXErrorDescription(createError)];
     }
     return nil;
   }
@@ -778,7 +820,7 @@ static void FBAXQuiescenceObserverCallback(void *observer, void *element, uint32
     }];
     if (addError != FBAXErrorSuccess) {
       if (error) {
-        *error = [NSString stringWithFormat:@"AXObserverAddNotification(%@) failed (%d)", notification, addError];
+        *error = [NSString stringWithFormat:@"AXObserverAddNotification(%@) failed with %@", notification, FBAXErrorDescription(addError)];
       }
       return nil;
     }
@@ -1109,7 +1151,7 @@ static NSString *const kFrontboardVisibilityEndowment = @"com.apple.frontboard.v
   }];
   if (timeoutError != FBAXErrorSuccess) {
     if (error) {
-      *error = [NSString stringWithFormat:@"could not configure the AX reply timeout (%d)", timeoutError];
+      *error = [NSString stringWithFormat:@"could not configure the AX reply timeout: %@", FBAXErrorDescription(timeoutError)];
     }
     return nil;
   }
@@ -1578,7 +1620,8 @@ static NSError *FBAXSnapshotFailure(NSInteger code, NSString *description)
   }];
   if (pidError != FBAXErrorSuccess || owningPid <= 0) {
     if (pid <= 0) {
-      return [FBAXHitTestOutcome failed:[NSString stringWithFormat:@"could not resolve the owning pid of the hit element (%d)", pidError]];
+      NSString *reason = pidError == FBAXErrorSuccess ? @"the hit element reported no pid" : [NSString stringWithFormat:@"could not resolve the owning pid of the hit element: %@", FBAXErrorDescription(pidError)];
+      return [FBAXHitTestOutcome failed:reason];
     }
     owningPid = pid;
   }
@@ -1615,13 +1658,13 @@ static NSError *FBAXSnapshotFailure(NSInteger code, NSString *description)
       return [reference objectFromElement:^id (void *raw) {
         Class<FBAXNativeElementClass> nativeClass = (Class<FBAXNativeElementClass>)objc_lookUpClass("AXElement");
         if (![nativeClass respondsToSelector:@selector(elementWithAXUIElement:)]) {
-          return [FBAXWriteOutcome failed:@"AXPress was refused (-25200), and this runtime has no native element activation API"];
+          return [FBAXWriteOutcome failed:[NSString stringWithFormat:@"AXPress was refused with %@, and this runtime has no native element activation API", FBAXErrorDescription(FBAXErrorFailure)]];
         }
         AXElement *native = [nativeClass elementWithAXUIElement:raw];
         if (![native respondsToSelector:@selector(press)]) {
-          return [FBAXWriteOutcome failed:@"AXPress was refused (-25200), and the element has no native press operation"];
+          return [FBAXWriteOutcome failed:[NSString stringWithFormat:@"AXPress was refused with %@, and the element has no native press operation", FBAXErrorDescription(FBAXErrorFailure)]];
         }
-        return [native press] ? [FBAXWriteOutcome written] : [FBAXWriteOutcome failed:@"AXPress was refused (-25200), and native activation could not activate the element or tap its visible point"];
+        return [native press] ? [FBAXWriteOutcome written] : [FBAXWriteOutcome failed:[NSString stringWithFormat:@"AXPress was refused with %@, and native activation could not activate the element or tap its visible point", FBAXErrorDescription(FBAXErrorFailure)]];
       }];
     };
     return [FBAXWriteOutcome outcomeForPressError:axError fallback:fallback];
