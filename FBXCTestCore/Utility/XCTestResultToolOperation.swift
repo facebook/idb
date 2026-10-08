@@ -64,10 +64,6 @@ final class XCTestResultToolOperation {
     }
   }
 
-  public static func describeFormat(logger: ControlCoreLogger?) async throws -> NSDictionary {
-    try json(from: try await xcresulttool(arguments: ["formatDescription"], logger: logger))
-  }
-
   private static func xcresulttool(arguments: [String], logger: ControlCoreLogger?, timeout: TimeInterval? = nil) async throws -> String {
     try await run(XcrunPath, arguments: ["xcresulttool"] + arguments, logger: logger, timeout: timeout)
   }
