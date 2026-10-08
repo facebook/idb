@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="generator" content="Docusaurus v3.10.2">
 <title data-rh="true">FBSimulatorControl | idb</title><meta data-rh="true" name="viewport" content="width=device-width,initial-scale=1"><meta data-rh="true" name="twitter:card" content="summary_large_image"><meta data-rh="true" property="og:url" content="https://fbidb.io/idb/fbsimulatorcontrol"><meta data-rh="true" property="og:locale" content="en"><meta data-rh="true" name="docusaurus_locale" content="en"><meta data-rh="true" name="docsearch:language" content="en"><meta data-rh="true" name="docusaurus_version" content="current"><meta data-rh="true" name="docusaurus_tag" content="docs-default-current"><meta data-rh="true" name="docsearch:version" content="current"><meta data-rh="true" name="docsearch:docusaurus_tag" content="docs-default-current"><meta data-rh="true" property="og:title" content="FBSimulatorControl | idb"><meta data-rh="true" name="description" content="{/ Generated from FBSimulatorControl/README.md by scripts/generate-framework-docs.js — edit the README, not this file. /}"><meta data-rh="true" property="og:description" content="{/ Generated from FBSimulatorControl/README.md by scripts/generate-framework-docs.js — edit the README, not this file. /}"><link data-rh="true" rel="icon" href="/img/favicon.png"><link data-rh="true" rel="canonical" href="https://fbidb.io/idb/fbsimulatorcontrol"><link data-rh="true" rel="alternate" href="https://fbidb.io/idb/fbsimulatorcontrol" hreflang="en"><link data-rh="true" rel="alternate" href="https://fbidb.io/idb/fbsimulatorcontrol" hreflang="x-default"><script data-rh="true" type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"FBSimulatorControl","item":"https://fbidb.io/idb/fbsimulatorcontrol"}]}</script><link rel="stylesheet" href="/assets/css/styles.4b4505f8.css">
-<script src="/assets/js/runtime~main.eadc4617.js" defer="defer"></script>
+<script src="/assets/js/runtime~main.66e49cdf.js" defer="defer"></script>
 <script src="/assets/js/main.2564aff4.js" defer="defer"></script>
 </head>
 <body>
@@ -27,7 +27,7 @@
 <li class="">Exposes a broad range of functionality that is available in <code>simctl</code> and Xcode.</li>
 <li class="">Implements additional functionality not available in <code>simctl</code> including file manipulation, direct input event injection and more. Hardware-encoded video recording and streaming are in <a href="https://github.com/facebook/idb/tree/main/FBSimulatorVideo/README.md" target="_blank" rel="noopener noreferrer" class=""><code>FBSimulatorVideo</code></a>, and accessibility reading in <a href="https://github.com/facebook/idb/tree/main/FBSimulatorAX/README.md" target="_blank" rel="noopener noreferrer" class=""><code>FBSimulatorAX</code></a>.</li>
 <li class="">No external dependencies.</li>
-<li class="">A Swift framework. What Objective-C remains is an implementation detail of reaching Apple&#x27;s private frameworks, not part of the API.</li>
+<li class="">A Swift framework. Apple&#x27;s private frameworks are reached through header-only declarations, not part of the API.</li>
 </ul>
 <h2 class="anchor anchorTargetStickyNavbar_Vzrq" id="about">About<a href="#about" class="hash-link" aria-label="Direct link to About" title="Direct link to About" translate="no">​</a></h2>
 <p>The original use-case for <code>FBSimulatorControl</code> was to boot multiple Simulators on the same host, before this was officially supported in Xcode.</p>
