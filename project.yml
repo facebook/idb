@@ -140,7 +140,6 @@ targets:
     platform: macOS
     scheme:
       testTargets:
-        - FBSimulatorControlUnitTests
         - FBSimulatorVideoTests
     sources:
       - path: FBSimulatorVideo
@@ -199,7 +198,27 @@ targets:
       testTargets:
         - FBSimulatorVideoTests
     sources:
-      - path: Tools/VideoRecorder/Tests
+      - path: FBSimulatorVideoTests
+        excludes:
+          - "**/*.png"
+      - path: FBSimulatorControlTests/Tests/Unit/Support/CapturingLogger.swift
+      - path: FBSimulatorControlTests/Tests/Unit/Support/FramebufferTestDoubles.swift
+      - path: FBSimulatorVideoTests/Fixtures/circle_iphone11.png
+        buildPhase: resources
+      - path: FBSimulatorVideoTests/Fixtures/fadeout_circle_end_iphone11.png
+        buildPhase: resources
+      - path: FBSimulatorVideoTests/Fixtures/fadeout_circle_mid_iphone11.png
+        buildPhase: resources
+      - path: FBSimulatorVideoTests/Fixtures/fadeout_circle_start_iphone11.png
+        buildPhase: resources
+      - path: FBSimulatorVideoTests/Fixtures/label_in_header_iphone11.png
+        buildPhase: resources
+      - path: FBSimulatorVideoTests/Fixtures/rect_iphone11.png
+        buildPhase: resources
+      - path: FBSimulatorVideoTests/Fixtures/rect_negative_width_iphone11.png
+        buildPhase: resources
+      - path: FBSimulatorVideoTests/Fixtures/transient_persistence_iphone11.png
+        buildPhase: resources
       - path: REPL/IDB/IDBAPI.swiftinterface
         buildPhase: resources
     postBuildScripts:
@@ -244,6 +263,9 @@ targets:
       - target: FBVideoCore
       - target: SimulatorIPC
       - target: ZstdDecompress
+      - sdk: AVFoundation.framework
+      - sdk: Cocoa.framework
+      - sdk: Metal.framework
       - sdk: XCTest.framework
   ShimulatorProtocol:
     type: library.static
@@ -783,25 +805,9 @@ targets:
         excludes:
           - "**/*-Info.plist"
           - "**/*.xcconfig"
-      - path: FBSimulatorControlTests/Fixtures/circle_iphone11.png
-        buildPhase: resources
-      - path: FBSimulatorControlTests/Fixtures/fadeout_circle_end_iphone11.png
-        buildPhase: resources
-      - path: FBSimulatorControlTests/Fixtures/fadeout_circle_mid_iphone11.png
-        buildPhase: resources
-      - path: FBSimulatorControlTests/Fixtures/fadeout_circle_start_iphone11.png
-        buildPhase: resources
-      - path: FBSimulatorControlTests/Fixtures/label_in_header_iphone11.png
-        buildPhase: resources
       - path: FBSimulatorControlTests/Fixtures/photo0.png
         buildPhase: resources
       - path: FBSimulatorControlTests/Fixtures/photo1.png
-        buildPhase: resources
-      - path: FBSimulatorControlTests/Fixtures/rect_iphone11.png
-        buildPhase: resources
-      - path: FBSimulatorControlTests/Fixtures/rect_negative_width_iphone11.png
-        buildPhase: resources
-      - path: FBSimulatorControlTests/Fixtures/transient_persistence_iphone11.png
         buildPhase: resources
       - path: FBSimulatorControlTests/Fixtures/video0.mp4
         buildPhase: resources
@@ -872,25 +878,9 @@ targets:
         excludes:
           - "**/*-Info.plist"
           - "**/*.xcconfig"
-      - path: FBSimulatorControlTests/Fixtures/circle_iphone11.png
-        buildPhase: resources
-      - path: FBSimulatorControlTests/Fixtures/fadeout_circle_end_iphone11.png
-        buildPhase: resources
-      - path: FBSimulatorControlTests/Fixtures/fadeout_circle_mid_iphone11.png
-        buildPhase: resources
-      - path: FBSimulatorControlTests/Fixtures/fadeout_circle_start_iphone11.png
-        buildPhase: resources
-      - path: FBSimulatorControlTests/Fixtures/label_in_header_iphone11.png
-        buildPhase: resources
       - path: FBSimulatorControlTests/Fixtures/photo0.png
         buildPhase: resources
       - path: FBSimulatorControlTests/Fixtures/photo1.png
-        buildPhase: resources
-      - path: FBSimulatorControlTests/Fixtures/rect_iphone11.png
-        buildPhase: resources
-      - path: FBSimulatorControlTests/Fixtures/rect_negative_width_iphone11.png
-        buildPhase: resources
-      - path: FBSimulatorControlTests/Fixtures/transient_persistence_iphone11.png
         buildPhase: resources
       - path: FBSimulatorControlTests/Fixtures/video0.mp4
         buildPhase: resources
@@ -961,25 +951,9 @@ targets:
         excludes:
           - "**/*-Info.plist"
           - "**/*.xcconfig"
-      - path: FBSimulatorControlTests/Fixtures/circle_iphone11.png
-        buildPhase: resources
-      - path: FBSimulatorControlTests/Fixtures/fadeout_circle_end_iphone11.png
-        buildPhase: resources
-      - path: FBSimulatorControlTests/Fixtures/fadeout_circle_mid_iphone11.png
-        buildPhase: resources
-      - path: FBSimulatorControlTests/Fixtures/fadeout_circle_start_iphone11.png
-        buildPhase: resources
-      - path: FBSimulatorControlTests/Fixtures/label_in_header_iphone11.png
-        buildPhase: resources
       - path: FBSimulatorControlTests/Fixtures/photo0.png
         buildPhase: resources
       - path: FBSimulatorControlTests/Fixtures/photo1.png
-        buildPhase: resources
-      - path: FBSimulatorControlTests/Fixtures/rect_iphone11.png
-        buildPhase: resources
-      - path: FBSimulatorControlTests/Fixtures/rect_negative_width_iphone11.png
-        buildPhase: resources
-      - path: FBSimulatorControlTests/Fixtures/transient_persistence_iphone11.png
         buildPhase: resources
       - path: FBSimulatorControlTests/Fixtures/video0.mp4
         buildPhase: resources

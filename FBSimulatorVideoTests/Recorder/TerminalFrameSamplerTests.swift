@@ -6,8 +6,8 @@
  */
 
 import CoreVideo
-import IOSurface
 import FBSimulatorVideo
+import IOSurface
 import Testing
 
 /// A surface whose four quadrants are filled with the given RGB colours.

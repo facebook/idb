@@ -46,7 +46,6 @@
       "FBSimulatorControlUnitTests"
     ],
     "FBSimulatorVideo": [
-      "FBSimulatorControlUnitTests",
       "FBSimulatorVideoTests"
     ],
     "FBSimulatorVideoTests": [
