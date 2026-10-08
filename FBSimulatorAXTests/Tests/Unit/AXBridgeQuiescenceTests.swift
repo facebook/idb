@@ -86,7 +86,7 @@ final class AXBridgeQuiescenceTests: XCTestCase {
     do {
       _ = try await events(automation(transport).quiescence(.application(pid: 7), parameters: QuiescenceParameters()))
       XCTFail("expected a failure")
-    } catch let UIAutomationError.applicationUnavailable(_, pid) {
+    } catch let UIAutomationError.applicationUnavailable(_, pid, _) {
       XCTAssertEqual(pid, 7)
     }
   }

@@ -474,6 +474,21 @@ final class AXBridgeReadsTests: XCTestCase {
       UIAutomationError.applicationNotResponding(backend: AXBridgeReadsTests.axBridge, pid: nil),
       "The application at that point did not respond to an accessibility request before it timed out"
     ),
+    (
+      "applicationUnavailableNamed",
+      UIAutomationError.applicationUnavailable(backend: AXBridgeReadsTests.axBridge, pid: 8865, bundleID: "com.example.app"),
+      "The axbridge backend could not read the application with pid 8865: it is not a running app, or its accessibility server has not started. Pid 8865 is com.example.app. \(AccessibilityGuidance.accessibilityServer)"
+    ),
+    (
+      "applicationNotRespondingNamed",
+      UIAutomationError.applicationNotResponding(backend: AXBridgeReadsTests.axBridge, pid: 8865, bundleID: "com.example.app"),
+      "The application with pid 8865 did not respond to an accessibility request before it timed out. Pid 8865 is com.example.app."
+    ),
+    (
+      "applicationNotRespondingNamedWithoutPid",
+      UIAutomationError.applicationNotResponding(backend: AXBridgeReadsTests.axBridge, pid: nil, bundleID: "com.example.app"),
+      "The application at that point did not respond to an accessibility request before it timed out"
+    ),
   ]
 
   /// What a consumer can parse a kind out of a rendered message by: an `axbridge[<kind>]` tag leading
@@ -880,12 +895,15 @@ final class AXBridgeReadsTests: XCTestCase {
     XCTAssertEqual(count, 1)
   }
 
-  private func nativeWaitReader(responses: [Data]) -> (AXBridgeUIAutomation, StubAXBridgeWaitTransport) {
+  private func nativeWaitReader(
+    responses: [Data], runningApplications: (@Sendable () async throws -> [String: pid_t])? = nil
+  ) -> (AXBridgeUIAutomation, StubAXBridgeWaitTransport) {
     let transport = StubAXBridgeWaitTransport(responses: responses)
     let reader = AXBridgeUIAutomation(
       simulator: SimulatorTestSupport.testableSimulator(withDevice: AXBridgeWaitDevice()),
       transport: transport,
-      persistence: .exclusive
+      persistence: .exclusive,
+      runningApplications: runningApplications
     )
     return (reader, transport)
   }
@@ -1030,6 +1048,74 @@ final class AXBridgeReadsTests: XCTestCase {
         XCTAssertEqual(UIAutomationRetry(for: error), .willNotChange)
       }
     }
+  }
+
+  func testAnApplicationFailureNamesTheAppTheSimulatorRunsWithItsPid() async throws {
+    struct ListingFailed: Error {}
+    let lookups: [(name: String, running: @Sendable () async throws -> [String: pid_t], bundleID: String?)] = [
+      ("running", { ["com.example.app": 42, "com.example.other": 7] }, "com.example.app"),
+      ("notRunning", { ["com.example.other": 7] }, nil),
+      ("listingFailed", { throw ListingFailed() }, nil),
+    ]
+    for kind in ["application_unavailable", "application_not_responding"] {
+      for lookup in lookups {
+        let reader = try AXBridgeUIAutomation(
+          simulator: SimulatorTestSupport.testableSimulator(withDevice: AXBridgeWaitDevice()),
+          transport: StubAXBridgeWaitTransport(responses: [waitErrorEnvelope(kind)]), persistence: .exclusive,
+          runningApplications: lookup.running)
+        do {
+          _ = try await reader.describe(.frontmost, options: AccessibilityRequestOptions())
+          XCTFail("\(kind) \(lookup.name): expected a failure")
+        } catch let UIAutomationError.applicationUnavailable(_, pid, bundleID), let UIAutomationError.applicationNotResponding(_, pid, bundleID) {
+          XCTAssertEqual(pid, 42, "\(kind) \(lookup.name)")
+          XCTAssertEqual(bundleID, lookup.bundleID, "\(kind) \(lookup.name)")
+        }
+      }
+    }
+  }
+
+  func testOnlyAnApplicationFailureThatReachesTheCallerListsTheRunningApps() async throws {
+    let listings = RunningApplicationListings()
+    let running: @Sendable () async throws -> [String: pid_t] = {
+      await listings.record()
+      return ["com.example.app": 42]
+    }
+    let (waiter, _) = try nativeWaitReader(
+      responses: [waitErrorEnvelope("application_unavailable"), waitMatchingEnvelope()], runningApplications: running)
+    try await waiter.wait(.marker(value: "ready", key: .label, depth: 10), timeout: 5, pollInterval: 0)
+    let afterWait = await listings.count
+    XCTAssertEqual(afterWait, 0, "a failed poll is read again, so it names no app")
+
+    let (tapper, _) = try nativeWaitReader(
+      responses: [waitErrorEnvelope("application_not_responding"), waitErrorEnvelope("application_not_responding")],
+      runningApplications: running)
+    do {
+      try await tapper.tap(.marker(value: "General", key: .label, depth: 10), options: TapOptions())
+      XCTFail("an unresolved target must fail")
+    } catch let UIAutomationError.applicationNotResponding(_, _, bundleID) {
+      XCTAssertEqual(bundleID, "com.example.app")
+    }
+    let afterTap = await listings.count
+    XCTAssertEqual(afterTap, 1, "only the target read that is not repeated names the app")
+  }
+
+  func testASlowListingLeavesTheFailureUnnamedWithoutWaitingForIt() async throws {
+    let (reader, _) = try nativeWaitReader(
+      responses: [waitErrorEnvelope("application_unavailable")],
+      runningApplications: {
+        // Detached, so the listing ignores the cancellation the deadline sends it.
+        await Task.detached { try? await Task.sleep(nanoseconds: 60_000_000_000) }.value
+        return ["com.example.app": 42]
+      })
+    let started = Date()
+    do {
+      _ = try await reader.describe(.frontmost, options: AccessibilityRequestOptions())
+      XCTFail("expected a failure")
+    } catch let UIAutomationError.applicationUnavailable(_, pid, bundleID) {
+      XCTAssertEqual(pid, 42)
+      XCTAssertNil(bundleID)
+    }
+    XCTAssertLessThan(Date().timeIntervalSince(started), 10)
   }
 
   func testASentPressThatWasNotConfirmedIsUnsafeToRetryWithItsMessageUnchanged() async throws {
@@ -3021,5 +3107,13 @@ private actor StubAXBridgeWaitTransport: AXBridgeTransport {
 private struct MissingGuestLauncher: BridgeGuestLauncher {
   func launch(_ arguments: [String]) async throws -> InSimulatorToolOutput {
     throw SimulatorFrameworkBridgeError.binaryMissing
+  }
+}
+
+private actor RunningApplicationListings {
+  private(set) var count = 0
+
+  func record() {
+    count += 1
   }
 }

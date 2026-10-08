@@ -49,11 +49,14 @@ public enum UIAutomationError: LocalizedError, CustomStringConvertible, Sendable
   case operationUnsupported(backend: UIAutomationBackend, operation: String)
   /// A read found no tree: the pid is not a live app, or its accessibility server never started. `pid` is
   /// nil when the read resolved no application to name — a point read that nothing answered.
-  case applicationUnavailable(backend: UIAutomationBackend, pid: pid_t?)
+  /// `bundleID` is the app the simulator was running with that pid when the failure was reported, or nil
+  /// when it was running none; it is only ever printed beside the pid.
+  case applicationUnavailable(backend: UIAutomationBackend, pid: pid_t?, bundleID: String? = nil)
   /// The application has an accessibility server and did not answer in time. A fact about the
   /// application rather than the transport, like `applicationUnavailable`, and held apart from it because
   /// the application has not gone away — so it is a wait, not a reconfiguration.
-  case applicationNotResponding(backend: UIAutomationBackend, pid: pid_t?)
+  /// `bundleID` is as for `applicationUnavailable`.
+  case applicationNotResponding(backend: UIAutomationBackend, pid: pid_t?, bundleID: String? = nil)
   /// A `tap` asserted the element's value for `key` (via `TapOptions.assertion`) before tapping, but
   /// the element's actual value did not match.
   case valueMismatch(backend: UIAutomationBackend, key: String, expected: String, actual: String)
@@ -93,10 +96,11 @@ public enum UIAutomationError: LocalizedError, CustomStringConvertible, Sendable
       return "\(backend.displayName) was given a negative poll interval (\(pollInterval)s); it must be zero or positive"
     case let .operationUnsupported(backend, operation):
       return "\(operation) is not supported over \(backend.inlineName)"
-    case let .applicationUnavailable(backend, pid):
-      return "\(backend.displayName) could not read the application \(Self.pidPhrase(pid)): it is not a running app, or its accessibility server has not started. \(AccessibilityGuidance.accessibilityServer)"
-    case let .applicationNotResponding(_, pid):
-      return "The application \(Self.pidPhrase(pid)) did not respond to an accessibility request before it timed out"
+    case let .applicationUnavailable(backend, pid, bundleID):
+      return "\(backend.displayName) could not read the application \(Self.pidPhrase(pid)): it is not a running app, or its accessibility server has not started. \(Self.naming(pid, bundleID).map { "\($0). " } ?? "")\(AccessibilityGuidance.accessibilityServer)"
+    case let .applicationNotResponding(_, pid, bundleID):
+      let message = "The application \(Self.pidPhrase(pid)) did not respond to an accessibility request before it timed out"
+      return Self.naming(pid, bundleID).map { "\(message). \($0)." } ?? message
     case let .valueMismatch(backend, key, expected, actual):
       return "\(backend.displayName) expected \(key) to equal \"\(expected)\" before tapping, but it was \"\(actual)\""
     case let .elementMoved(backend, key, value):
@@ -115,6 +119,15 @@ public enum UIAutomationError: LocalizedError, CustomStringConvertible, Sendable
       return "at that point"
     }
     return "with pid \(pid)"
+  }
+
+  /// Names the app behind a pid in a sentence of its own after the one carrying the pid, never inside
+  /// it: callers match that sentence, some of them against the whole message.
+  private static func naming(_ pid: pid_t?, _ bundleID: String?) -> String? {
+    guard let pid, let bundleID else {
+      return nil
+    }
+    return "Pid \(pid) is \(bundleID)"
   }
 }
 

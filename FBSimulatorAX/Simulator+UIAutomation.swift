@@ -47,7 +47,8 @@ extension Simulator {
         }
       return AXBridgeUIAutomation(
         simulator: self, transport: transport, persistence: persistence, frontmostMethod: frontmostMethod,
-        automationMode: automationMode, displays: displays, selection: display
+        automationMode: automationMode, displays: displays, selection: display,
+        runningApplications: { [self] in try await application.running() }
       )
     }
   }

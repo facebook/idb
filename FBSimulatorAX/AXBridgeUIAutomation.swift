@@ -43,6 +43,16 @@ final class AXBridgeUIAutomation: AXBridgeTreeReader, @unchecked Sendable {
   /// caller can select the positional `.centerPoint` or `.runningBoard`.
   private let frontmostMethod: AXBridgeFrontmostMethod
 
+  /// The simulator's running apps by bundle ID, read only to name the app behind a failure's pid. Nil
+  /// names none.
+  private let runningApplications: (@Sendable () async throws -> [String: pid_t])?
+
+  /// Off while idb itself will read again, so only a failure that reaches the caller lists the apps.
+  @TaskLocal private static var namesFailedApplication = true
+
+  /// `launchctl list` has no timeout of its own, and an unnamed failure beats a late one.
+  private static let runningApplicationsTimeoutNanoseconds: UInt64 = 1_000_000_000
+
   init(
     simulator: Simulator,
     transport: any AXBridgeTransport,
@@ -50,9 +60,11 @@ final class AXBridgeUIAutomation: AXBridgeTreeReader, @unchecked Sendable {
     frontmostMethod: AXBridgeFrontmostMethod = .windowServer,
     automationMode: Bool? = true,
     displays: (any DisplayCommands)? = nil,
-    selection: DisplaySelection = .active
+    selection: DisplaySelection = .active,
+    runningApplications: (@Sendable () async throws -> [String: pid_t])? = nil
   ) {
     self.routing = displays.map { .unresolved($0, selection) } ?? .unrouted
+    self.runningApplications = runningApplications
     self.simulator = simulator
     self.transport = transport
     self.persistence = persistence
@@ -66,6 +78,7 @@ final class AXBridgeUIAutomation: AXBridgeTreeReader, @unchecked Sendable {
     self.persistence = reader.persistence
     self.frontmostMethod = reader.frontmostMethod
     self.requestedAutomationMode = reader.requestedAutomationMode
+    self.runningApplications = reader.runningApplications
     self.routing = routing
   }
 
@@ -134,10 +147,34 @@ final class AXBridgeUIAutomation: AXBridgeTreeReader, @unchecked Sendable {
     do {
       return try await body()
     } catch let AXBridgeError.applicationUnavailable(pid) {
-      throw UIAutomationError.applicationUnavailable(backend: backend, pid: pid)
+      throw UIAutomationError.applicationUnavailable(backend: backend, pid: pid, bundleID: await bundleID(of: pid))
     } catch let AXBridgeError.applicationNotResponding(pid) {
-      throw UIAutomationError.applicationNotResponding(backend: backend, pid: pid)
+      throw UIAutomationError.applicationNotResponding(backend: backend, pid: pid, bundleID: await bundleID(of: pid))
     }
+  }
+
+  /// Best effort: a listing that fails or is slow leaves the failure unnamed rather than replacing or
+  /// delaying it. Read after the failure, so a pid the app has since given up may name whatever took it over.
+  private func bundleID(of pid: pid_t?) async -> String? {
+    guard let pid, let runningApplications, Self.namesFailedApplication else {
+      return nil
+    }
+    // A stream rather than a task group, which would wait for a listing that ignores cancellation.
+    let (first, continuation) = AsyncStream<[String: pid_t]?>.makeStream()
+    let listing = Task { continuation.yield(try? await runningApplications()) }
+    let deadline = Task {
+      try? await Task.sleep(nanoseconds: Self.runningApplicationsTimeoutNanoseconds)
+      continuation.yield(nil)
+    }
+    defer {
+      listing.cancel()
+      deadline.cancel()
+      continuation.finish()
+    }
+    for await running in first {
+      return running?.first { $0.value == pid }?.key
+    }
+    return nil
   }
 
   /// Assembles what both sides measured; the phases come off the envelope `AXTreeRead` already parsed.
@@ -259,7 +296,9 @@ final class AXBridgeUIAutomation: AXBridgeTreeReader, @unchecked Sendable {
       do {
         // Raw read (not `describeTree`) so truncation is not warned per poll. `.viewHierarchy` because the
         // single fetch is unmeasured on a transitioning screen.
-        let read = try await self.readRawTree(for: .frontmost, attributes: nil, explainUnreachable: false, traversal: .viewHierarchy)
+        let read = try await Self.$namesFailedApplication.withValue(false) {
+          try await self.readRawTree(for: .frontmost, attributes: nil, explainUnreachable: false, traversal: .viewHierarchy)
+        }
         let elements = AXTreeWalk.describeAllElements(
           fromTree: read.tree, keys: AXKeys.defaultSet.union([key.serializationKey]), nestedFormat: false, pid: read.pid
         )
@@ -532,7 +571,9 @@ final class AXBridgeUIAutomation: AXBridgeTreeReader, @unchecked Sendable {
     callerAssertion: TapOptions.Assertion?
   ) async throws -> AXWriteTarget {
     do {
-      return try await writeTarget(for: query, operation: operation, callerAssertion: callerAssertion)
+      return try await Self.$namesFailedApplication.withValue(false) {
+        try await writeTarget(for: query, operation: operation, callerAssertion: callerAssertion)
+      }
     } catch UIAutomationError.applicationNotResponding {
       // Only target resolution is repeated. A write timeout does not establish whether it was applied.
       try Task.checkCancellation()

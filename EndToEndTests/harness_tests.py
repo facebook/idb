@@ -1461,6 +1461,12 @@ UNRESPONSIVE = Completed(
     b"The application with pid 10891 did not respond to an accessibility request "
     b"before it timed out\n",
 )
+UNRESPONSIVE_NAMED = Completed(
+    1,
+    b"",
+    b"The application with pid 10891 did not respond to an accessibility request "
+    b"before it timed out. Pid 10891 is com.apple.Preferences.\n",
+)
 ELEMENT_MOVED = Completed(
     1,
     b"",
@@ -1549,7 +1555,7 @@ class TransientAccessibilityAnswerTests(unittest.IsolatedAsyncioTestCase):
         return outcome, run, recording
 
     async def test_a_set_value_the_application_did_not_answer(self) -> None:
-        for failure in (UNANSWERED, UNRESPONSIVE):
+        for failure in (UNANSWERED, UNRESPONSIVE, UNRESPONSIVE_NAMED):
             with self.subTest(failure=failure.stderr):
                 outcome, run, _ = await self.attempt(SET_VALUE, [failure, SUCCEEDED])
 
