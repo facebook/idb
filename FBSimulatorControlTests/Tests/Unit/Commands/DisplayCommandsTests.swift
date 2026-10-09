@@ -169,7 +169,7 @@ final class DisplayCommandsTests: XCTestCase {
     return display
   }
 
-  private let transition = Result<SimulatorDisplayReport, any Error>.success(.transitioning)
+  private let transition = Result<SimulatorDisplayReport, any Error>.success(.transitioning(incoming: nil))
 
   private func outcome<T>(_ body: () async throws -> T) async -> Result<T, any Error> {
     do { return .success(try await body()) } catch { return .failure(error) }
@@ -205,7 +205,7 @@ final class DisplayCommandsTests: XCTestCase {
   }
 
   func testDescribingDuringADisplayTransitionSettlesOnTheNextReport() async throws {
-    let displays = DisplayCommandsDouble([.success(.transitioning), .success(.displays([display("inner")]))])
+    let displays = DisplayCommandsDouble([.success(.transitioning(incoming: nil)), .success(.displays([display("inner")]))])
 
     guard case let .read(described) = try await displays.describedDisplays() else { return XCTFail("the settled displays are read") }
 
@@ -214,7 +214,7 @@ final class DisplayCommandsTests: XCTestCase {
   }
 
   func testDescribingFailsWhenADisplayTransitionDoesNotSettle() async throws {
-    guard case let .failed(error) = try await DisplayCommandsDouble([.success(.transitioning)]).describedDisplays(),
+    guard case let .failed(error) = try await DisplayCommandsDouble([.success(.transitioning(incoming: nil))]).describedDisplays(),
       case SimulatorDisplayError.transitioning = error
     else { return XCTFail("an unsettled transition fails") }
   }
@@ -257,7 +257,7 @@ final class DisplayCommandsTests: XCTestCase {
 
   func testTheSelectedDisplayIsTheActiveOneOnceATransitionSettles() async throws {
     for selection in [DisplaySelection.display(uniqueID: "inner"), .configuration(generation: 1)] {
-      let displays = DisplayCommandsDouble([.success(.transitioning), .success(.reporting(.selected(display("inner"))))])
+      let displays = DisplayCommandsDouble([.success(.transitioning(incoming: nil)), .success(.reporting(.selected(display("inner"))))])
       let selected = try await displays.activeDisplay(selectedBy: selection, within: .seconds(1))
       XCTAssertEqual(selected, display("inner"), "\(selection)")
       XCTAssertEqual(displays.reads, 2, "\(selection)")
@@ -279,7 +279,7 @@ final class DisplayCommandsTests: XCTestCase {
 
   func testNoDisplayIsSelectedMidTransition() async {
     do {
-      _ = try await DisplayCommandsDouble([.success(.transitioning)]).activeDisplay(selectedBy: .display(uniqueID: "inner"), within: .zero)
+      _ = try await DisplayCommandsDouble([.success(.transitioning(incoming: nil))]).activeDisplay(selectedBy: .display(uniqueID: "inner"), within: .zero)
       XCTFail("Expected a transition")
     } catch { guard case SimulatorDisplayError.transitioning = error else { return XCTFail("\(error)") } }
   }

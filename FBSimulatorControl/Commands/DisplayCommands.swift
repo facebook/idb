@@ -216,7 +216,7 @@ extension DisplayCommands {
     let deadline = ContinuousClock.now + timeout
     while true {
       let current = try await read()
-      guard current.report == .transitioning, ContinuousClock.now < deadline else { return current }
+      guard case .transitioning = current.report, ContinuousClock.now < deadline else { return current }
       try await Task.sleep(for: transitionSettling.interval)
     }
   }

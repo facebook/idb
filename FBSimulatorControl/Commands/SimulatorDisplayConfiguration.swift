@@ -15,7 +15,9 @@ public struct SimulatorDisplayConfiguration: Equatable, Sendable {
     case settled
     /// Layout has moved to a display whose backlight has not caught up, as during a hinge change.
     /// `displays` and `active` are the outgoing configuration, and input should wait for `.settled`.
-    case transitioning
+    /// `incoming` is the integrated display the layout has moved to, when the runtime names exactly one; it
+    /// already draws, so a consumer of frames can move to it before the transition settles.
+    case transitioning(incoming: SimulatorDisplay?)
   }
 
   /// The display interactions target: the sole integrated display, or the active one of several.
@@ -164,13 +166,14 @@ package final class DisplayConfigurationTracker: @unchecked Sendable {
     switch report {
     case let .failed(error):
       return .failure(error)
-    case .transitioning:
+    case let .transitioning(incoming):
       guard let current else {
-        return .success(SimulatorDisplayConfiguration(generation: 1, displays: [], active: .unresolved, phase: .transitioning))
+        return .success(SimulatorDisplayConfiguration(generation: 1, displays: [], active: .unresolved, phase: .transitioning(incoming: incoming)))
       }
       let previous = current.configuration
       return .success(
-        SimulatorDisplayConfiguration(generation: previous.generation, displays: previous.displays, active: previous.active, phase: .transitioning))
+        SimulatorDisplayConfiguration(
+          generation: previous.generation, displays: previous.displays, active: previous.active, phase: .transitioning(incoming: incoming)))
     case let .displays(displays):
       return .success(settle(displays: displays, basis: displays.map { .identified($0) }, active: Self.active(in: resolution)))
     case let .legacy(integrated):

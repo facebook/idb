@@ -75,7 +75,7 @@ final class FramebufferTests: XCTestCase {
     let attachment = try Framebuffer(surface: surface, boundTo: 2, logger: CapturingLogger()).attach()
 
     surface.configurationChanged?(SimulatorDisplayConfiguration(generation: 2, displays: [], active: .unresolved, phase: .settled))
-    surface.configurationChanged?(SimulatorDisplayConfiguration(generation: 2, displays: [], active: .unresolved, phase: .transitioning))
+    surface.configurationChanged?(SimulatorDisplayConfiguration(generation: 2, displays: [], active: .unresolved, phase: .transitioning(incoming: nil)))
     surface.frameRendered?()
     surface.configurationChanged?(SimulatorDisplayConfiguration(generation: 3, displays: [], active: .unresolved, phase: .settled))
     surface.frameRendered?()

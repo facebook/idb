@@ -56,7 +56,7 @@ final class SimulatorScreenshotCommandsTests: XCTestCase {
   }
 
   func testTheDisplayIsResolvedOnceATransitionSettles() async throws {
-    let displays = DisplayCommandsDouble([.success(.transitioning), .success(.reporting(.selected(inner)))])
+    let displays = DisplayCommandsDouble([.success(.transitioning(incoming: nil)), .success(.reporting(.selected(inner)))])
     let resolved = try await SimulatorScreenshotCommands.resolution(of: displays)
     XCTAssertEqual(resolved, .target(.selected(inner)))
   }

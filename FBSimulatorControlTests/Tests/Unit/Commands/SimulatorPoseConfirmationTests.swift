@@ -60,10 +60,10 @@ final class SimulatorPoseConfirmationTests: XCTestCase {
   }
 
   func testReachedPoseWithUnsettledDisplaysReturnsTheTransitioningConfiguration() async throws {
-    let poses = OrientationPoseDouble([.success(.portrait)], displays: [.displays([display]), .transitioning])
+    let poses = OrientationPoseDouble([.success(.portrait)], displays: [.displays([display]), .transitioning(incoming: nil)])
     _ = try await poses.displays.settledConfiguration(within: .zero)
     let configuration = try await poses.set(.portrait, confirmingWithin: .milliseconds(20), interval: .milliseconds(1))
-    XCTAssertEqual(configuration, SimulatorDisplayConfiguration(generation: 1, displays: [display], active: .identified(display), phase: .transitioning))
+    XCTAssertEqual(configuration, SimulatorDisplayConfiguration(generation: 1, displays: [display], active: .identified(display), phase: .transitioning(incoming: nil)))
   }
 
   func testFailedReadIsThrown() async {

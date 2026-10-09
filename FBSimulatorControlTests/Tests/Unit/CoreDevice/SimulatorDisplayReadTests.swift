@@ -313,12 +313,35 @@ final class SimulatorDisplayReadTests: XCTestCase {
     xpc_dictionary_set_bool(cover, "active", false)
     assertFailed(report([cover, inner]))
     xpc_dictionary_set_bool(inner, "active", false)
-    XCTAssertEqual(report([cover, inner]), .transitioning)
+    XCTAssertEqual(report([cover, inner]), .transitioning(incoming: nil))
     XCTAssertEqual(resolution([cover, inner]), .transitioning)
     XCTAssertEqual(
       SimulatorDisplayError.transitioning.localizedDescription, "Simulator display is still changing: layout has moved to a display that is not lit yet")
     xpc_dictionary_set_bool(inner, "active", true)
     XCTAssertEqual(try selected([cover, inner]).uniqueID, "inner")
+  }
+
+  func testATransitioningReportNamesTheDisplayTheLayoutMovedTo() throws {
+    let cover = displayValue(id: "cover", active: true, primary: true)
+    let inner = displayValue(id: "inner", active: false)
+    xpc_dictionary_set_string(cover, "backlightState", "off")
+    xpc_dictionary_set_string(inner, "backlightState", "activeOn")
+    guard case let .transitioning(incoming) = report([cover, inner]) else { return XCTFail("Expected a transition") }
+    let display = try XCTUnwrap(incoming)
+    XCTAssertEqual(display.uniqueID, "cover")
+    XCTAssertEqual(display.activity, .active)
+    XCTAssertTrue(display.isIntegrated)
+    XCTAssertEqual(display.geometry.unrotatedPointSize, CGSize(width: 669, height: 951))
+    XCTAssertEqual(resolution([cover, inner]), .transitioning)
+  }
+
+  func testATransitioningReportWithoutOneLaidOutIntegratedDisplayNamesNone() {
+    let external = displayValue(id: "external", active: true)
+    xpc_dictionary_set_value(external, "type", SimulatorCoreDevice.dictionary(["external": SimulatorCoreDevice.dictionary([:])]))
+    let inner = displayValue(id: "inner", active: false)
+    xpc_dictionary_set_string(external, "backlightState", "activeOn")
+    xpc_dictionary_set_string(inner, "backlightState", "activeOn")
+    XCTAssertEqual(report([external, inner]), .transitioning(incoming: nil))
   }
 
   func testDisplayStringsAreBounded() {

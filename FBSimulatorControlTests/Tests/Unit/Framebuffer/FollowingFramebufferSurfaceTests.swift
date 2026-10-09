@@ -188,11 +188,11 @@ final class FollowingFramebufferSurfaceTests: XCTestCase {
         if $0.phase == .settled { registeredDuringTransition = inner.registeredTokens.count }
       })
 
-    continuation.yield(configuration(active: "inner", phase: .transitioning))
+    continuation.yield(configuration(active: "inner", phase: .transitioning(incoming: nil)))
     continuation.yield(configuration(active: "inner"))
     try await waitUntil { !inner.registeredTokens.isEmpty }
 
-    XCTAssertEqual(phases, [.transitioning, .settled])
+    XCTAssertEqual(phases, [.transitioning(incoming: nil), .settled])
     XCTAssertEqual(registeredDuringTransition, 0)
   }
 

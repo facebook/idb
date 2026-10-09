@@ -15,8 +15,9 @@ package enum SimulatorDisplayReport: Equatable, Sendable {
   /// A runtime that reports no display activity. The geometry of each integrated display, which may not be
   /// identified.
   case legacy(integrated: [SimulatorDisplayGeometry])
-  /// Layout has moved to a display whose backlight has not caught up, as after a hinge change.
-  case transitioning
+  /// Layout has moved to a display whose backlight has not caught up, as after a hinge change. `incoming` is the
+  /// integrated display the layout has moved to, when exactly one is named.
+  case transitioning(incoming: SimulatorDisplay?)
   case failed(SimulatorCoreDeviceError)
 }
 
@@ -102,7 +103,9 @@ enum SimulatorDisplayProtocol {
       guard let id = record.uniqueId, !id.isEmpty, id.utf8.count <= maximumStringLength, identifiers.insert(id).inserted else {
         throw SimulatorCoreDeviceError.malformed("Duplicate or empty display identity")
       }
-      guard let activity = try activity(of: record, hasLayoutActivity: hasLayoutActivity) else { return .transitioning }
+      guard let activity = try activity(of: record, hasLayoutActivity: hasLayoutActivity) else {
+        return .transitioning(incoming: incomingDisplay(in: report))
+      }
       guard activity != .active || !validated.bounds.isEmpty else { throw SimulatorCoreDeviceError.malformed("Active display has empty bounds") }
       displays.append(
         SimulatorDisplay(
@@ -110,6 +113,20 @@ enum SimulatorDisplayProtocol {
           bounds: validated.bounds, scale: Double(record.pointScale), rotation: record.currentOrientation))
     }
     return .displays(displays.sorted { $0.uniqueID < $1.uniqueID })
+  }
+
+  /// The sole integrated display whose layout is active. Read without failing, so a transitioning report is
+  /// recognised whatever the other records hold, as it is when no display is incoming.
+  private static func incomingDisplay(in report: Report) -> SimulatorDisplay? {
+    let laidOut = report.displays.filter { $0.active == true }
+    guard laidOut.count == 1, let record = laidOut.first, let id = record.uniqueId, !id.isEmpty, id.utf8.count <= maximumStringLength,
+      let validated = try? validated(record), validated.integrated, !validated.bounds.isEmpty
+    else {
+      return nil
+    }
+    return SimulatorDisplay(
+      uniqueID: id, name: record.name, activity: .active, isPrimary: record.primary, isIntegrated: true, bounds: validated.bounds,
+      scale: Double(record.pointScale), rotation: record.currentOrientation)
   }
 
   /// Layout activity is authoritative when the report carries it; otherwise backlight state identifies

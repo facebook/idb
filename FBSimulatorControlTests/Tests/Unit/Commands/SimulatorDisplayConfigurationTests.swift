@@ -35,9 +35,11 @@ final class SimulatorDisplayConfigurationTests: XCTestCase {
   func testFoldTransitionsWithinTheOutgoingGenerationThenSettlesOnTheNext() throws {
     let tracker = DisplayConfigurationTracker()
     let before = try tracker.observe(cover)
-    let transitioning = try tracker.observe(.transitioning)
+    let transitioning = try tracker.observe(.transitioning(incoming: display("inner")))
     let after = try tracker.observe(inner)
-    XCTAssertEqual(transitioning, SimulatorDisplayConfiguration(generation: 1, displays: before.displays, active: before.active, phase: .transitioning))
+    XCTAssertEqual(
+      transitioning,
+      SimulatorDisplayConfiguration(generation: 1, displays: before.displays, active: before.active, phase: .transitioning(incoming: display("inner"))))
     XCTAssertEqual(after.generation, 2)
     XCTAssertEqual(after.active, .identified(display("inner")))
     XCTAssertEqual(after.phase, .settled)
@@ -46,7 +48,7 @@ final class SimulatorDisplayConfigurationTests: XCTestCase {
   func testTransitionThatSettlesWhereItStartedKeepsItsGeneration() throws {
     let tracker = DisplayConfigurationTracker()
     _ = try tracker.observe(cover)
-    _ = try tracker.observe(.transitioning)
+    _ = try tracker.observe(.transitioning(incoming: nil))
     XCTAssertEqual(try tracker.observe(cover).generation, 1)
   }
 
@@ -122,7 +124,7 @@ final class SimulatorDisplayConfigurationTests: XCTestCase {
   func testTransitioningConfigurationHasNoActiveDisplayYet() throws {
     let tracker = DisplayConfigurationTracker()
     _ = try tracker.observe(cover)
-    let configuration = try tracker.observe(.transitioning)
+    let configuration = try tracker.observe(.transitioning(incoming: nil))
     XCTAssertThrowsError(try configuration.activeDisplay()) { error in
       guard case SimulatorDisplayError.transitioning = error else { return XCTFail("unexpected error: \(error)") }
     }
@@ -140,7 +142,7 @@ final class SimulatorDisplayConfigurationTests: XCTestCase {
   // MARK: - Settled reads
 
   func testSettledConfigurationWaitsOutATransition() async throws {
-    let displays = DisplayCommandsDouble([.success(.transitioning), .success(.transitioning), .success(inner)])
+    let displays = DisplayCommandsDouble([.success(.transitioning(incoming: nil)), .success(.transitioning(incoming: nil)), .success(inner)])
     let configuration = try await displays.settledConfiguration(within: .seconds(1))
     XCTAssertEqual(configuration.phase, .settled)
     XCTAssertEqual(configuration.active, .identified(display("inner")))
@@ -148,10 +150,10 @@ final class SimulatorDisplayConfigurationTests: XCTestCase {
   }
 
   func testSettledConfigurationReportsATransitionThatOutlastsTheTimeout() async throws {
-    let displays = DisplayCommandsDouble([.success(cover), .success(.transitioning)])
+    let displays = DisplayCommandsDouble([.success(cover), .success(.transitioning(incoming: nil))])
     _ = try await displays.settledConfiguration(within: .zero)
     let configuration = try await displays.settledConfiguration(within: .milliseconds(20))
-    XCTAssertEqual(configuration.phase, .transitioning)
+    XCTAssertEqual(configuration.phase, .transitioning(incoming: nil))
     XCTAssertEqual(configuration.active, .identified(display("cover")))
   }
 
@@ -191,14 +193,14 @@ final class SimulatorDisplayConfigurationTests: XCTestCase {
   func testStreamReplaysTheCurrentConfigurationThenFollowsChangedPushes() async {
     let (pushes, push) = AsyncThrowingStream<SimulatorDisplayReport, Error>.makeStream()
     push.yield(cover)
-    push.yield(.transitioning)
+    push.yield(.transitioning(incoming: nil))
     push.yield(inner)
     push.yield(inner)
     push.finish()
     let displays = DisplayCommandsDouble([.success(cover), .success(inner)], pushes: pushes)
     let configurations = await collect(displays.followConfigurations(), count: 3)
     XCTAssertEqual(configurations.map(\.generation), [1, 1, 2])
-    XCTAssertEqual(configurations.map(\.phase), [.settled, .transitioning, .settled])
+    XCTAssertEqual(configurations.map(\.phase), [.settled, .transitioning(incoming: nil), .settled])
   }
 
   func testStreamPollsWhenPushesAreUnavailable() async {
