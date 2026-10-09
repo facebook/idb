@@ -5,17 +5,17 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-@testable import CompanionLib
+import FBSimulatorCodeInjection
 import Foundation
 import Testing
 
 @Suite
-struct ReplSocketClientTests {
+struct ReplControlClientTests {
 
   @Test
   func readsTheShimsGreeting() async throws {
     let shim = try FakeReplShim()
-    async let client = ReplSocketClient.connect(path: shim.path, timeout: 5)
+    async let client = ReplControlClient.connect(path: shim.path, timeout: 5)
     let connection = try await shim.accept()
     try connection.send(["type": "greeting", "interfaces": ["/tmp/A.swiftinterface"], "nextRunIndex": 7, "sessionID": "session"])
 
@@ -28,7 +28,7 @@ struct ReplSocketClientTests {
   @Test
   func aGreetingWithoutOptionalFieldsDefaultsThem() async throws {
     let shim = try FakeReplShim()
-    async let client = ReplSocketClient.connect(path: shim.path, timeout: 5)
+    async let client = ReplControlClient.connect(path: shim.path, timeout: 5)
     let connection = try await shim.accept()
     try connection.send(["type": "greeting"])
 
@@ -41,12 +41,12 @@ struct ReplSocketClientTests {
   @Test
   func aFirstMessageThatIsNotAGreetingFails() async throws {
     let shim = try FakeReplShim()
-    async let client = ReplSocketClient.connect(path: shim.path, timeout: 5)
+    async let client = ReplControlClient.connect(path: shim.path, timeout: 5)
     let connection = try await shim.accept()
     try connection.send(["type": "result"])
     let connected = try await client
 
-    await #expect(throws: (any Error).self) { try await connected.readGreeting() }
+    await #expect(throws: ReplControlError.missingGreeting(received: "result")) { try await connected.readGreeting() }
   }
 
   @Test
@@ -92,7 +92,7 @@ struct ReplSocketClientTests {
     let reply = Data("tapped".utf8)
 
     async let result = client.execute(dylibPath: "/tmp/run.dylib", symbol: "idb_repl_0") { received in
-      received == command ? .success(reply) : .failure(HostCommandError.message("unexpected command"))
+      received == command ? .success(reply) : .failure(HostCommandFailure("unexpected command"))
     }
     _ = try await connection.receive()
     try connection.send(["type": "host_command", "command": command])
@@ -112,7 +112,7 @@ struct ReplSocketClientTests {
     let connection = shim.connection!
 
     async let result = client.execute(dylibPath: "/tmp/run.dylib", symbol: "idb_repl_0") { _ in
-      .failure(HostCommandError.message("no such element"))
+      .failure(HostCommandFailure("no such element"))
     }
     _ = try await connection.receive()
     try connection.send(["type": "host_command", "command": Data()])
@@ -134,28 +134,36 @@ struct ReplSocketClientTests {
     _ = try await connection.receive()
     connection.close()
 
-    await #expect(throws: (any Error).self) { try await result.value }
+    await #expect(throws: ReplControlError.disconnected) { try await result.value }
   }
 
   @Test
   func connectingToASocketNobodyServesTimesOut() async throws {
     let path = FakeReplShim.temporarySocketPath()
-    await #expect(throws: (any Error).self) { try await ReplSocketClient.connect(path: path, timeout: 0.2) }
+    await #expect(throws: ReplControlError.connectTimedOut(path: path)) { try await ReplControlClient.connect(path: path, timeout: 0.2) }
   }
 
   @Test
   func aSocketPathLongerThanSunPathIsRefused() async throws {
     let path = "/tmp/" + String(repeating: "x", count: 200) + ".sock"
-    await #expect(throws: (any Error).self) { try await ReplSocketClient.connect(path: path, timeout: 5) }
+    await #expect(throws: ReplControlError.socketPathTooLong(path: path)) { try await ReplControlClient.connect(path: path, timeout: 5) }
   }
 
-  private func connectedClient(to shim: FakeReplShim) async throws -> ReplSocketClient {
-    async let client = ReplSocketClient.connect(path: shim.path, timeout: 5)
+  private func connectedClient(to shim: FakeReplShim) async throws -> ReplControlClient {
+    async let client = ReplControlClient.connect(path: shim.path, timeout: 5)
     let connection = try await shim.accept()
     try connection.send(["type": "greeting"])
     let connected = try await client
     _ = try await connected.readGreeting()
     return connected
+  }
+}
+
+private struct HostCommandFailure: Error, CustomStringConvertible {
+  let description: String
+
+  init(_ description: String) {
+    self.description = description
   }
 }
 

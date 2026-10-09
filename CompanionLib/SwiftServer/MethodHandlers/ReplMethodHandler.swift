@@ -84,7 +84,7 @@ struct ReplMethodHandler {
     defer { try? FileManager.default.removeItem(at: artifactsDirectory) }
     let hostState = ReplHostCommandState(stagingDirectory: artifactsDirectory, containerRelativeBase: artifactsContainerBase)
 
-    let client = try await ReplSocketClient.connect(path: session.socketPath, timeout: 120)
+    let client = try await reportingReplControlErrors { try await ReplControlClient.connect(path: session.socketPath, timeout: 120) }
     defer { client.close() }
 
     // The host greets us with the .swiftinterface paths it generated in-process
@@ -92,7 +92,7 @@ struct ReplMethodHandler {
     // interfaces (the `IDB` module's). We read each file's contents here and
     // forward those (not the paths) to the driver, which may not share a
     // filesystem with the companion; the driver materializes them locally.
-    let greeting = try await client.readGreeting()
+    let greeting = try await reportingReplControlErrors { try await client.readGreeting() }
     let interfacePaths = greeting.interfaces + session.extraInterfacePaths
     let generatedInterfaces: [Idb_ReplResponse.Ready.GeneratedInterface] = interfacePaths.compactMap { path in
       guard let contents = try? String(contentsOfFile: path, encoding: .utf8) else {
@@ -139,15 +139,17 @@ struct ReplMethodHandler {
         // the driver assigned (the `idb_repl_<n>` entry-point symbol).
         hostState.beginRun(index: Self.replRunIndex(fromSymbol: execute.symbol) ?? runIndex)
 
-        let result = try await client.execute(
-          dylibPath: dylibPath,
-          symbol: execute.symbol,
-          hostCommandHandler: { commandData in
-            guard let command = try? PropertyListDecoder().decode(ReplCommand.self, from: commandData) else {
-              return .failure(HostCommandError.message("repl: could not decode host command"))
-            }
-            return await dispatcher.run(command)
-          })
+        let result = try await reportingReplControlErrors {
+          try await client.execute(
+            dylibPath: dylibPath,
+            symbol: execute.symbol,
+            hostCommandHandler: { commandData in
+              guard let command = try? PropertyListDecoder().decode(ReplCommand.self, from: commandData) else {
+                return .failure(HostCommandError.message("repl: could not decode host command"))
+              }
+              return await dispatcher.run(command)
+            })
+        }
         let artifacts = hostState.runArtifacts.map { artifact in
           Idb_ReplResponse.Result.Artifact.with {
             $0.hostPath = artifact.hostPath

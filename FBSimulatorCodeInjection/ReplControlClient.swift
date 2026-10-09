@@ -6,21 +6,21 @@
  */
 
 import Foundation
-import GRPCCore
 
 /// A client for the REPL control socket served by the injected shim inside the
-/// test process. The shim is the server (it binds the socket); the companion
-/// connects to it and forwards `dlopen`/`dlsym`/call requests.
+/// REPL host. The shim is the server (it binds the socket at
+/// `LaunchedRepl.socketPath`); a client connects to it and sends it
+/// `dlopen`/`dlsym`/call requests.
 ///
 /// Messages are length-prefixed binary property-list frames (a 4-byte big-endian
 /// byte count then that many bytes of a binary plist), matching
 /// `ReplSocketServer`. Length framing lets payloads carry arbitrary binary, so
 /// command values round-trip exactly.
 ///
-/// All blocking socket I/O runs on a dedicated dispatch queue so the gRPC
-/// handler's cooperative thread is never blocked (a user's compiled code may run
+/// All blocking socket I/O runs on a dedicated dispatch queue so the caller's
+/// cooperative thread is never blocked (a user's compiled code may run
 /// for an arbitrary amount of time).
-final class ReplSocketClient: @unchecked Sendable {
+public final class ReplControlClient: @unchecked Sendable {
 
   private let fd: Int32
   private let ioQueue = DispatchQueue(label: "com.facebook.idb.repl.socket")
@@ -33,13 +33,13 @@ final class ReplSocketClient: @unchecked Sendable {
 
   /// Connects to the shim's socket, retrying until `timeout` elapses (the socket
   /// only appears once the test process has launched and the shim has bound it).
-  static func connect(path: String, timeout: TimeInterval) async throws -> ReplSocketClient {
+  public static func connect(path: String, timeout: TimeInterval) async throws -> ReplControlClient {
     let queue = DispatchQueue(label: "com.facebook.idb.repl.connect")
     let fd: Int32 = try await withCheckedThrowingContinuation { continuation in
       queue.async {
         let fd = Darwin.socket(AF_UNIX, SOCK_STREAM, 0)
         guard fd >= 0 else {
-          continuation.resume(throwing: RPCError(code: .internalError, message: "repl: failed to create socket"))
+          continuation.resume(throwing: ReplControlError.socketCreationFailed)
           return
         }
         var addr = sockaddr_un()
@@ -47,7 +47,7 @@ final class ReplSocketClient: @unchecked Sendable {
         let maxLength = MemoryLayout.size(ofValue: addr.sun_path)
         guard path.utf8.count < maxLength else {
           Darwin.close(fd)
-          continuation.resume(throwing: RPCError(code: .invalidArgument, message: "repl: socket path too long (\(path.utf8.count) bytes): \(path)"))
+          continuation.resume(throwing: ReplControlError.socketPathTooLong(path: path))
           return
         }
         _ = withUnsafeMutablePointer(to: &addr.sun_path) { ptr in
@@ -67,14 +67,14 @@ final class ReplSocketClient: @unchecked Sendable {
           }
           if Date() >= deadline {
             Darwin.close(fd)
-            continuation.resume(throwing: RPCError(code: .deadlineExceeded, message: "repl: timed out connecting to control socket at \(path)"))
+            continuation.resume(throwing: ReplControlError.connectTimedOut(path: path))
             return
           }
           usleep(100_000)
         }
       }
     }
-    return ReplSocketClient(fd: fd)
+    return ReplControlClient(fd: fd)
   }
 
   /// The shim's greeting: the `.swiftinterface` paths it advertises (possibly
@@ -82,22 +82,22 @@ final class ReplSocketClient: @unchecked Sendable {
   /// the app persisted a higher value across reconnects), and the host's stable
   /// session id (the same across reconnects to a still-running app, regenerated on
   /// relaunch).
-  struct Greeting {
-    let interfaces: [String]
-    let nextRunIndex: UInt32
-    let sessionID: String
+  public struct Greeting: Sendable {
+    public let interfaces: [String]
+    public let nextRunIndex: UInt32
+    public let sessionID: String
   }
 
   /// Reads the shim's greeting frame, sent once on connect before any command.
   /// Must be called exactly once, before the first `execute`.
-  func readGreeting() async throws -> Greeting {
+  public func readGreeting() async throws -> Greeting {
     let fd = self.fd
     return try await withCheckedThrowingContinuation { continuation in
       ioQueue.async {
         do {
           let message = try Self.readMessage(fd: fd)
           guard message["type"] as? String == "greeting" else {
-            throw RPCError(code: .internalError, message: "repl: expected a 'greeting' message, got type '\(message["type"] as? String ?? "nil")'")
+            throw ReplControlError.missingGreeting(received: message["type"] as? String)
           }
           let interfaces = message["interfaces"] as? [String] ?? []
           let nextRunIndex = (message["nextRunIndex"] as? NSNumber)?.uint32Value ?? 0
@@ -113,7 +113,7 @@ final class ReplSocketClient: @unchecked Sendable {
   /// Services a `host_command` the served process sends back *while* an `execute`
   /// is in flight. Receives the raw encoded command bytes (a binary property list
   /// of a `ReplCommand`) and returns the command's outcome.
-  typealias HostCommandHandler = (_ commandData: Data) async -> HostCommandResult
+  public typealias HostCommandHandler = (_ commandData: Data) async -> ReplHostCommandResult
 
   /// Sends a `{dylib, symbol}` command to the shim and returns its result. While
   /// the served process runs the injected code it may send nested `host_command`
@@ -122,7 +122,7 @@ final class ReplSocketClient: @unchecked Sendable {
   /// `result` for this execute arrives. A `read` returning EOF/error before a
   /// complete message means the shim closed the socket mid-exchange (e.g. the test
   /// process crashed), surfaced as a disconnect.
-  func execute(dylibPath: String, symbol: String, hostCommandHandler: @escaping HostCommandHandler) async throws -> (success: Bool, output: String, nextRunIndex: Int32) {
+  public func execute(dylibPath: String, symbol: String, hostCommandHandler: @escaping HostCommandHandler) async throws -> (success: Bool, output: String, nextRunIndex: Int32) {
     let fd = self.fd
     return try await withCheckedThrowingContinuation { continuation in
       // Not Sendable, so rebound as nonisolated(unsafe) for the ioQueue closure to capture.
@@ -150,7 +150,7 @@ final class ReplSocketClient: @unchecked Sendable {
               return
 
             case let other:
-              throw RPCError(code: .internalError, message: "repl: unexpected control-socket message type '\(other ?? "nil")'")
+              throw ReplControlError.unexpectedMessage(received: other)
             }
           }
         } catch {
@@ -163,8 +163,8 @@ final class ReplSocketClient: @unchecked Sendable {
   /// Runs the async `hostCommandHandler` to completion from the synchronous
   /// `ioQueue`, bridging with a semaphore. The `ioQueue` is dedicated to this
   /// socket, so blocking it here is fine.
-  private static func runHostCommand(_ handler: @escaping HostCommandHandler, commandData: Data) -> HostCommandResult {
-    final class Box: @unchecked Sendable { var value: HostCommandResult = .failure(HostCommandError.message("repl: host command did not complete")) }
+  private static func runHostCommand(_ handler: @escaping HostCommandHandler, commandData: Data) -> ReplHostCommandResult {
+    final class Box: @unchecked Sendable { var value: ReplHostCommandResult = .failure(ReplControlError.hostCommandDidNotComplete) }
     let box = Box()
     let semaphore = DispatchSemaphore(value: 0)
     nonisolated(unsafe) let commandHandler = handler
@@ -176,7 +176,7 @@ final class ReplSocketClient: @unchecked Sendable {
     return box.value
   }
 
-  private static func hostResultMessage(_ result: HostCommandResult) -> [String: Any] {
+  private static func hostResultMessage(_ result: ReplHostCommandResult) -> [String: Any] {
     switch result {
     case .success(let data):
       return ["type": "host_result", "success": true, "result": data]
@@ -205,9 +205,9 @@ final class ReplSocketClient: @unchecked Sendable {
       if n > 0 {
         total += n
       } else if n == 0 {
-        throw RPCError(code: .unavailable, message: "repl: control socket closed before a complete message was received (the test process may have crashed)")
+        throw ReplControlError.disconnected
       } else {
-        throw RPCError(code: .internalError, message: "repl: failed to read from control socket: \(String(cString: strerror(errno)))")
+        throw ReplControlError.readFailed(errno: errno)
       }
     }
     return data
@@ -216,7 +216,7 @@ final class ReplSocketClient: @unchecked Sendable {
   private static func readMessage(fd: Int32) throws -> [String: Any] {
     let frame = try readFrame(fd: fd)
     guard let message = try PropertyListSerialization.propertyList(from: frame, options: [], format: nil) as? [String: Any] else {
-      throw RPCError(code: .internalError, message: "repl: invalid control-socket message")
+      throw ReplControlError.invalidMessage
     }
     return message
   }
@@ -241,7 +241,7 @@ final class ReplSocketClient: @unchecked Sendable {
       while written < raw.count {
         let n = Darwin.write(fd, base + written, raw.count - written)
         guard n > 0 else {
-          throw RPCError(code: .internalError, message: "repl: failed to write to control socket")
+          throw ReplControlError.writeFailed
         }
         written += n
       }
@@ -251,11 +251,61 @@ final class ReplSocketClient: @unchecked Sendable {
   /// Closes the socket. This is what tears the session down: the shim's `accept`
   /// loop ends, `TestRepl/start` returns, and the test process exits. Closing
   /// the fd directly also interrupts any in-flight blocking read.
-  func close() {
+  public func close() {
     closeLock.lock()
     defer { closeLock.unlock() }
     guard !isClosed else { return }
     isClosed = true
     Darwin.close(fd)
   }
+}
+
+/// The outcome of a host command the injected code sent back mid-execute: on success, the
+/// serialized result payload (empty when the command has no return value); on failure, the error,
+/// whose description reaches the injected code.
+public enum ReplHostCommandResult {
+  case success(Data)
+  case failure(any Error)
+}
+
+public enum ReplControlError: Error, Equatable {
+  case socketCreationFailed
+  case socketPathTooLong(path: String)
+  case connectTimedOut(path: String)
+  case missingGreeting(received: String?)
+  case unexpectedMessage(received: String?)
+  case invalidMessage
+  case disconnected
+  case readFailed(errno: Int32)
+  case writeFailed
+  case hostCommandDidNotComplete
+}
+
+extension ReplControlError: CustomStringConvertible, LocalizedError {
+  public var description: String {
+    switch self {
+    case .socketCreationFailed:
+      return "repl: failed to create socket"
+    case let .socketPathTooLong(path):
+      return "repl: socket path too long (\(path.utf8.count) bytes): \(path)"
+    case let .connectTimedOut(path):
+      return "repl: timed out connecting to control socket at \(path)"
+    case let .missingGreeting(received):
+      return "repl: expected a 'greeting' message, got type '\(received ?? "nil")'"
+    case let .unexpectedMessage(received):
+      return "repl: unexpected control-socket message type '\(received ?? "nil")'"
+    case .invalidMessage:
+      return "repl: invalid control-socket message"
+    case .disconnected:
+      return "repl: control socket closed before a complete message was received (the test process may have crashed)"
+    case let .readFailed(errno):
+      return "repl: failed to read from control socket: \(String(cString: strerror(errno)))"
+    case .writeFailed:
+      return "repl: failed to write to control socket"
+    case .hostCommandDidNotComplete:
+      return "repl: host command did not complete"
+    }
+  }
+
+  public var errorDescription: String? { description }
 }

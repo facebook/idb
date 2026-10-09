@@ -7,17 +7,11 @@
 
 import CoreGraphics
 import FBControlCore
+import FBSimulatorCodeInjection
 import FBSimulatorControl
 import FBVideoCore
 import Foundation
 import ReplProtocol
-
-/// The outcome of running a host command: on success, the serialized result
-/// payload (empty when the command has no return value); on failure, the error.
-enum HostCommandResult {
-  case success(Data)
-  case failure(Error)
-}
 
 /// An error raised while handling a host command (e.g. an invalid argument). Its
 /// `description` is the message that reaches the REPL client.
@@ -120,7 +114,7 @@ struct HostCommandDispatcher: @unchecked Sendable {
     case propertyList(Any)
   }
 
-  func run(_ command: ReplCommand) async -> HostCommandResult {
+  func run(_ command: ReplCommand) async -> ReplHostCommandResult {
     do {
       switch try await resultValue(for: command) {
       case nil:
