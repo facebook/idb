@@ -8,6 +8,7 @@
 @preconcurrency internal import AccessibilityPlatformTranslation
 import AppKit
 import CoreSimulator
+import FBAXCore
 import FBControlCore
 import FBSimulatorControl
 import Foundation
@@ -96,24 +97,24 @@ final class SimulatorAccessibilityCommands: AccessibilityOperations {
 
   // MARK: - AccessibilityOperations
 
-  func resolveElement(for query: AccessibilityElementQuery) async throws -> AccessibilityElement {
+  func resolveElement(for query: AccessibilityElementQuery, clientType: AXClientType) async throws -> AccessibilityElement {
     try validateAccessibility()
     let display = try await readDisplay()
     switch query {
     case let .point(point):
-      let request = AXTranslationRequest(kind: .point(point), display: display)
+      let request = AXTranslationRequest(kind: .point(point), display: display, clientType: clientType)
       return try await accessibilityElement(request: request, remediationPermitted: false)
     case .frontmost:
-      let request = AXTranslationRequest(kind: .frontmostApplication, display: display)
+      let request = AXTranslationRequest(kind: .frontmostApplication, display: display, clientType: clientType)
       return try await accessibilityElement(request: request, remediationPermitted: true)
     case let .marker(value, key, depth, ignoresCase):
-      let request = AXTranslationRequest(kind: .frontmostApplication, display: display)
+      let request = AXTranslationRequest(kind: .frontmostApplication, display: display, clientType: clientType)
       let root = try await accessibilityElement(request: request, remediationPermitted: true)
       return try await root.findElement(withValue: value, forKey: key, depth: depth, ignoresCase: ignoresCase)
     case let .application(pid):
       // An explicit pid target: read that application directly, no SpringBoard stale-hierarchy
       // remediation (that is only meaningful for the frontmost read).
-      let request = AXTranslationRequest(kind: .applicationForPid(pid), display: display)
+      let request = AXTranslationRequest(kind: .applicationForPid(pid), display: display, clientType: clientType)
       return try await accessibilityElement(request: request, remediationPermitted: false)
     }
   }

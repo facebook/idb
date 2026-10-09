@@ -65,6 +65,8 @@ final class AXTranslationRequest {
 
   let kind: Kind
   let display: AXTranslationDisplay?
+  /// The client every translator request for this read carries, resolved by the caller.
+  let clientType: AXClientType
   let token: String
   var device: SimDevice?
   /// Owned from construction: the dispatcher records acquisition timings before the caller reaches
@@ -78,9 +80,10 @@ final class AXTranslationRequest {
   /// no "wait forever" mode — a stalled XPC service never hangs the caller.
   var requestTimeoutSeconds: TimeInterval
 
-  init(kind: Kind, display: AXTranslationDisplay? = nil) {
+  init(kind: Kind, display: AXTranslationDisplay? = nil, clientType: AXClientType) {
     self.kind = kind
     self.display = display
+    self.clientType = clientType
     self.token = UUID().uuidString
     self.requestTimeoutSeconds = Self.defaultRequestTimeoutSeconds
     self.collector = AccessibilityProfilingCollector()
@@ -91,7 +94,7 @@ final class AXTranslationRequest {
   ///
   /// The collector carries over so the profile spans the failed attempt the caller also waited through.
   func cloneWithNewToken() -> AXTranslationRequest {
-    let clone = AXTranslationRequest(kind: kind, display: display)
+    let clone = AXTranslationRequest(kind: kind, display: display, clientType: clientType)
     clone.collector = collector
     return clone
   }

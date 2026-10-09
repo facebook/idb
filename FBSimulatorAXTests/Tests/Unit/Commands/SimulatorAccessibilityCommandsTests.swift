@@ -527,7 +527,23 @@ final class SimulatorAccessibilityCommandsTests: XCTestCase {
     element.close()
 
     let forwarded = fixture!.device.accessibilityRequests.compactMap { AccessibilityTranslatorRequests.clientType(of: $0) }
-    XCTAssertEqual(forwarded, [0, 5])
+    XCTAssertEqual(forwarded, [0, 0])
+  }
+
+  func testTheDispatcherStampsTheRequestedClientOnAFrontmostResolution() async throws {
+    try setUp(withRootElement: defaultElementTree)
+    fixture!.translator.bridgeRequestClientTypes = [0, 5]
+
+    let element = try await simulator.accessibility.resolveElement(for: .frontmost, clientType: .xctest)
+    element.close()
+
+    let forwarded = fixture!.device.accessibilityRequests.compactMap { AccessibilityTranslatorRequests.clientType(of: $0) }
+    XCTAssertEqual(forwarded, [AXClientType.xctest.rawValue, AXClientType.xctest.rawValue])
+  }
+
+  func testARetriedRequestKeepsItsClient() {
+    let request = AXTranslationRequest(kind: .frontmostApplication, clientType: .voiceOver)
+    XCTAssertEqual(request.cloneWithNewToken().clientType, .voiceOver)
   }
 
   func testAccessibilityCommandsProducesCorrectFlatOutput() async throws {

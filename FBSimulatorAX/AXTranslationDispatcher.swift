@@ -176,8 +176,10 @@ final class AXTranslationDispatcher: NSObject, AXPTranslationTokenDelegateHelper
     let collector = request.collector
     let logger = request.logger
     let timeoutSeconds = request.requestTimeoutSeconds
+    let clientType = request.clientType
     let callbackQueue = self.callbackQueue
     return { axRequest in
+      axRequest?.clientType = clientType.rawValue
       logger?.log("Sending Accessibility Request \(String(describing: axRequest))")
       let group = DispatchGroup()
       group.enter()

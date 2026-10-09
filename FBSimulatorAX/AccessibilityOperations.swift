@@ -5,6 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+import FBAXCore
 import FBControlCore
 import FBSimulatorControl
 import Foundation
@@ -12,6 +13,7 @@ import Foundation
 protocol AccessibilityOperations: AnyObject {
 
   /// Resolves a query to a concrete accessibility element via the point / matching / frontmost
-  /// mechanism. Callers own the returned element and must `close()` it.
-  func resolveElement(for query: AccessibilityElementQuery) async throws -> AccessibilityElement
+  /// mechanism. `clientType` is carried by every translator request made for the element, from
+  /// resolution through serialization. Callers own the returned element and must `close()` it.
+  func resolveElement(for query: AccessibilityElementQuery, clientType: AXClientType) async throws -> AccessibilityElement
 }

@@ -299,6 +299,22 @@ enum AccessibilityTranslatorRequests {
 
 typealias AccessibilityResponseHandler = (Any, @escaping (Any?) -> Void) -> Void
 
+// MARK: - Resolution without a client
+
+extension AccessibilityOperations {
+  /// Resolution as a default read would make it.
+  func resolveElement(for query: AccessibilityElementQuery) async throws -> AccessibilityElement {
+    try await resolveElement(for: query, clientType: AccessibilityRequestOptions().resolvedClientType)
+  }
+}
+
+extension AXTranslationRequest {
+  /// A request as a default read would make it.
+  convenience init(kind: Kind, display: AXTranslationDisplay? = nil) {
+    self.init(kind: kind, display: display, clientType: AccessibilityRequestOptions().resolvedClientType)
+  }
+}
+
 // MARK: - SimDevice Accessibility Double
 
 class SimDeviceAccessibilityDouble: NSObject {
