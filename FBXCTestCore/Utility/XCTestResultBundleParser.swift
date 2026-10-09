@@ -336,20 +336,20 @@ final class XCTestResultBundleParser {
     for selectedTest in records(selectedTests) {
       guard let testTargetXctests = selectedTest.unwrappedArray("subtests", logger: logger) else {
         logger.log("Test failed and no target test results found in the bundle")
-        reportUnattributedFailure(to: reporter)
+        reportMissingResults("No test results were found in \(testBundleName)", testClass: "", to: reporter)
         continue
       }
       for testTargetXctest in records(testTargetXctests) {
         guard let testClasses = testTargetXctest.unwrappedArray("subtests", logger: logger) else {
           logger.log("Test failed and no test class results found in the bundle")
-          reportUnattributedFailure(to: reporter)
+          reportMissingResults("No test classes were found in \(testBundleName)", testClass: "", to: reporter)
           continue
         }
         for testClass in records(testClasses) {
           let testClassName = testClass.unwrappedString("identifier", logger: logger) ?? ""
           guard let testMethods = testClass.unwrappedArray("subtests", logger: logger) else {
             logger.log("Test failed for \(testClassName) and no test method results found")
-            reportUnattributedFailure(to: reporter)
+            reportMissingResults("No test methods were found in \(testClassName)", testClass: testClassName, to: reporter)
             continue
           }
           for testMethod in records(testMethods) {
@@ -360,8 +360,8 @@ final class XCTestResultBundleParser {
     }
   }
 
-  private static func reportUnattributedFailure(to reporter: XCTestReporter) {
-    reporter.testCaseDidFail(forTestClass: "", method: "", exceptions: [TestExceptionInfo(message: "")])
+  private static func reportMissingResults(_ message: String, testClass: String, to reporter: XCTestReporter) {
+    reporter.testCaseDidFail(forTestClass: testClass, method: "", exceptions: [TestExceptionInfo(message: message)])
   }
 
   private static func reportTestMethod(_ testMethod: ResultRecord, testBundleName: String, testClassName: String, reporter: XCTestReporter, resultBundlePath: String, tool: any XCResultReading, logger: ControlCoreLogger, extractScreenshots: Bool) async {

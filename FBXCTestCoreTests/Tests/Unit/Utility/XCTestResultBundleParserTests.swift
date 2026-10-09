@@ -360,25 +360,21 @@ struct XCTestResultBundleParserTests {
   func aTestGroupWithoutSubtestsReportsAFailure() async throws {
     let xcresult = try xcresult(tests: [[:]])
 
-    // BUG: the failure names no test and says nothing about what was missing — flipped in the
-    // following commit.
-    #expect(try await parse(xcresult: xcresult) == [.failed(testClass: "", method: "", messages: [""])])
+    #expect(try await parse(xcresult: xcresult) == [.failed(testClass: "", method: "", messages: ["No test results were found in MyTests"])])
   }
 
   @Test
   func aTestBundleWithoutClassesReportsAFailure() async throws {
     let xcresult = try xcresult(tests: [["subtests": values([[:]])]])
 
-    // BUG: as above — flipped in the following commit.
-    #expect(try await parse(xcresult: xcresult) == [.failed(testClass: "", method: "", messages: [""])])
+    #expect(try await parse(xcresult: xcresult) == [.failed(testClass: "", method: "", messages: ["No test classes were found in MyTests"])])
   }
 
   @Test
   func aTestClassWithoutMethodsReportsAFailure() async throws {
     let xcresult = try xcresult(tests: [["subtests": values([["subtests": values([["identifier": value("MyTestClass")]])]])]])
 
-    // BUG: as above, though the class is known — flipped in the following commit.
-    #expect(try await parse(xcresult: xcresult) == [.failed(testClass: "", method: "", messages: [""])])
+    #expect(try await parse(xcresult: xcresult) == [.failed(testClass: "MyTestClass", method: "", messages: ["No test methods were found in MyTestClass"])])
   }
 
   @Test
