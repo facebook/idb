@@ -205,7 +205,7 @@ public final class SimulatorXCTestCommands: XCTestExtendedCommands {
       throw WeakTargetError.simulator
     }
     let deadline = Date().addingTimeInterval(testmanagerdSimSockTimeout)
-    var lastError: NSError?
+    var lastError: Error?
     while true {
       do {
         let socketPath = try simulator.device.getenv(simSockEnvKey)
@@ -213,7 +213,7 @@ public final class SimulatorXCTestCommands: XCTestExtendedCommands {
           return socketPath
         }
       } catch {
-        lastError = error as NSError
+        lastError = error
       }
       if Date() >= deadline {
         throw SimulatorXCTestError.environmentVariableUnavailable(key: simSockEnvKey, underlying: lastError)
