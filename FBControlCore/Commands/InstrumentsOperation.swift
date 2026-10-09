@@ -22,7 +22,7 @@ enum InstrumentsError: Error {
   case outputDirectoryCreationFailed(underlying: Error)
   case startupFailed(logs: [String])
   case launchTimedOut(timeout: TimeInterval)
-  case exitedWithFailure(exitCode: NSNumber)
+  case exitedWithFailure(exitCode: Int32)
 }
 
 extension InstrumentsError: LocalizedError {
@@ -215,7 +215,7 @@ public final class InstrumentsOperation {
     case .exited(0):
       return traceFile
     case .exited(let code):
-      throw InstrumentsError.exitedWithFailure(exitCode: NSNumber(value: code))
+      throw InstrumentsError.exitedWithFailure(exitCode: code)
     case .signalled(let signo):
       throw ProcessTerminationError.exitedWithSignal(
         processIdentifier: running.processIdentifier,

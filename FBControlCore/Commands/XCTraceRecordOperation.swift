@@ -10,7 +10,7 @@ import Foundation
 enum XCTraceError: Error {
   case outputDirectoryCreationFailed(underlying: Error)
   case shimMissing
-  case recordFailed(exitCode: NSNumber)
+  case recordFailed(exitCode: Int32)
   case xctraceMissing(path: String)
 }
 
@@ -106,7 +106,7 @@ public final class XCTraceRecordOperation: @unchecked Sendable {
     case .exited(0):
       return traceDir
     case .exited(let code):
-      throw XCTraceError.recordFailed(exitCode: NSNumber(value: code))
+      throw XCTraceError.recordFailed(exitCode: code)
     case .signalled(let signo):
       throw ProcessTerminationError.exitedWithSignal(
         processIdentifier: running.processIdentifier,

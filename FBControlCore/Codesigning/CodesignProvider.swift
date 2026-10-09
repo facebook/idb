@@ -8,8 +8,8 @@
 import Foundation
 
 enum CodesignError: Error, LocalizedError {
-  case signingFailed(exitCode: NSNumber, stdOut: String, stdErr: String)
-  case cdHashCheckFailed(exitCode: NSNumber, stdOut: String, stdErr: String)
+  case signingFailed(exitCode: Int32, stdOut: String, stdErr: String)
+  case cdHashCheckFailed(exitCode: Int32, stdOut: String, stdErr: String)
   case cdHashNotFound(output: String)
 
   public var errorDescription: String? {
@@ -71,7 +71,7 @@ public final class CodesignProvider {
     )
     .run(exitPolicy: .any, logger: logger)
     try result.checkExitedCleanly { code in
-      CodesignError.signingFailed(exitCode: NSNumber(value: code), stdOut: result.standardOutput, stdErr: result.standardError)
+      CodesignError.signingFailed(exitCode: code, stdOut: result.standardOutput, stdErr: result.standardError)
     }
     logger?.log("Successfully signed bundle \(result.standardError)")
   }
@@ -85,7 +85,7 @@ public final class CodesignProvider {
     )
     .run(exitPolicy: .any, logger: logger)
     try result.checkExitedCleanly { code in
-      CodesignError.cdHashCheckFailed(exitCode: NSNumber(value: code), stdOut: result.standardOutput, stdErr: result.standardError)
+      CodesignError.cdHashCheckFailed(exitCode: code, stdOut: result.standardOutput, stdErr: result.standardError)
     }
 
     // `codesign -dvvvv` writes its report, CDHash included, to stderr.
