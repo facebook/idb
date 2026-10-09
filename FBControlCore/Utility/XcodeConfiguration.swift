@@ -7,8 +7,7 @@
 
 import Foundation
 
-@objc
-public final class XcodeConfiguration: NSObject {
+public enum XcodeConfiguration {
 
   // MARK: - Public Properties
 
@@ -31,11 +30,6 @@ public final class XcodeConfiguration: NSObject {
 
   public static let iosSDKVersion: String = {
     return XcodeConfiguration.readValue(forKey: "Version", fromPlistAtPath: XcodeConfiguration.iPhoneSimulatorPlatformInfoPlistPath) as? String ?? ""
-  }()
-
-  // Read by the Objective-C test configuration.
-  @objc public static let isXcode12_5OrGreater: Bool = {
-    xcodeVersionNumber.compare(NSDecimalNumber(string: "12.5")) != .orderedAscending
   }()
 
   public static let simulatorApp: BundleDescriptor = {
