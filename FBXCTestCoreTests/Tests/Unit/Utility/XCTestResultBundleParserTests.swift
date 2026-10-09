@@ -59,14 +59,14 @@ private final class FakeXCResult: XCResultReading, @unchecked Sendable {
 
   struct Missing: Error {}
 
-  func record(forId bundleObjectId: String?, timeout: TimeInterval?) async throws -> NSDictionary {
+  func record(forId bundleObjectId: String?, timeout: TimeInterval?) async throws -> ResultRecord {
     guard let bundleObjectId else {
-      return root as NSDictionary
+      return ResultRecord(root)
     }
     guard let record = records[bundleObjectId] else {
       throw Missing()
     }
-    return record as NSDictionary
+    return ResultRecord(record)
   }
 
   func exportJPEG(to destination: String, forId bundleObjectId: String, type encodeType: String, timeout: TimeInterval?) async throws {

@@ -12,28 +12,6 @@ private let XCTestOperationTimeoutSecs: TimeInterval = 120
 
 // MARK: - Helper functions
 
-private func readFromDict(_ dict: NSDictionary, _ key: String) throws -> Any {
-  guard let val = dict[key] else {
-    throw XCTestResultBundleError.missingKey(key)
-  }
-  return val
-}
-
-private func read<T>(_ dict: NSDictionary, _ key: String, as type: T.Type) throws -> T {
-  guard let val = try readFromDict(dict, key) as? T else {
-    throw XCTestResultBundleError.unexpectedType(key: key, expected: String(describing: type))
-  }
-  return val
-}
-
-private func readNumberFromDict(_ dict: NSDictionary, _ key: String) throws -> NSNumber {
-  try read(dict, key, as: NSNumber.self)
-}
-
-private func readDictionaryFromDict(_ dict: NSDictionary, _ key: String) throws -> NSDictionary {
-  try read(dict, key, as: NSDictionary.self)
-}
-
 /// A decoded plist or JSON object, read through accessors that fail with the field they expected.
 struct ResultRecord {
   let fields: [String: Any]
@@ -78,38 +56,61 @@ struct ResultRecord {
   func optionalRecords(_ key: String) -> [ResultRecord]? {
     (fields[key] as? [[String: Any]])?.map(ResultRecord.init)
   }
+
+  func record(_ key: String) throws -> ResultRecord {
+    ResultRecord(try value(key, as: [String: Any].self))
+  }
+
+  func optionalRecord(_ key: String) -> ResultRecord? {
+    (fields[key] as? [String: Any]).map(ResultRecord.init)
+  }
+
+  // MARK: - xcresulttool's wrapped values
+
+  /// The scalar xcresulttool wraps as `{"_value": …}` under `key`, logging why when there is none.
+  func unwrappedValue(_ key: String, logger: ControlCoreLogger) -> Any? {
+    guard let wrapped = fields[key] as? [String: Any] else {
+      logger.log("\(key) does not exist inside \(CollectionInformation.oneLineDescription(from: Array(fields.keys)))")
+      return nil
+    }
+    let unwrapped = wrapped["_value"]
+    if unwrapped == nil {
+      logger.log("Failed to unwrap value for \(key) from \(CollectionInformation.oneLineDescription(from: Array(wrapped.keys)))")
+    }
+    return unwrapped
+  }
+
+  func unwrappedString(_ key: String, logger: ControlCoreLogger) -> String? {
+    unwrappedValue(key, logger: logger) as? String
+  }
+
+  /// The array xcresulttool wraps as `{"_values": […]}` under `key`, logging why when there is none.
+  func unwrappedArray(_ key: String, logger: ControlCoreLogger) -> [Any]? {
+    guard let wrapped = fields[key] as? [String: Any] else {
+      logger.log("\(key) does not exist inside \(CollectionInformation.oneLineDescription(from: Array(fields.keys)))")
+      return nil
+    }
+    let unwrapped = wrapped["_values"] as? [Any]
+    if unwrapped == nil {
+      logger.log("Failed to unwrap values for \(key) from \(CollectionInformation.oneLineDescription(from: Array(wrapped.keys)))")
+    }
+    return unwrapped
+  }
+
+  /// The wrapped array under `key` when every element is a record.
+  func unwrappedRecords(_ key: String, logger: ControlCoreLogger) -> [ResultRecord]? {
+    (unwrappedArray(key, logger: logger) as? [[String: Any]])?.map(ResultRecord.init)
+  }
+
+  /// As `unwrappedRecords`, without logging when there are none.
+  func silentlyUnwrappedRecords(_ key: String) -> [ResultRecord]? {
+    (optionalRecord(key)?.fields["_values"] as? [[String: Any]])?.map(ResultRecord.init)
+  }
 }
 
-private func unwrapValues(_ wrapped: NSDictionary) -> NSArray? {
-  wrapped["_values"] as? NSArray
-}
-
-private func unwrapValue(_ wrapped: NSDictionary) -> Any? {
-  wrapped["_value"]
-}
-
-private func accessAndUnwrapValues(_ dict: NSDictionary, _ key: String, _ logger: ControlCoreLogger) -> NSArray? {
-  guard let wrapped = dict[key] as? NSDictionary else {
-    logger.log("\(key) does not exist inside \(CollectionInformation.oneLineDescription(from: dict.allKeys))")
-    return nil
-  }
-  let unwrapped = unwrapValues(wrapped)
-  if unwrapped == nil {
-    logger.log("Failed to unwrap values for \(key) from \(CollectionInformation.oneLineDescription(from: wrapped.allKeys))")
-  }
-  return unwrapped
-}
-
-private func accessAndUnwrapValue(_ dict: NSDictionary, _ key: String, _ logger: ControlCoreLogger) -> Any? {
-  guard let wrapped = dict[key] as? NSDictionary else {
-    logger.log("\(key) does not exist inside \(CollectionInformation.oneLineDescription(from: dict.allKeys))")
-    return nil
-  }
-  let unwrapped = unwrapValue(wrapped)
-  if unwrapped == nil {
-    logger.log("Failed to unwrap value for \(key) from \(CollectionInformation.oneLineDescription(from: wrapped.allKeys))")
-  }
-  return unwrapped
+/// The elements of a wrapped array, or none unless every element is a record.
+private func records(_ array: [Any]) -> [ResultRecord] {
+  (array as? [[String: Any]])?.map(ResultRecord.init) ?? []
 }
 
 /// xcresulttool writes numbers as strings; accept either.
@@ -155,7 +156,7 @@ extension XCTestResultBundleError: LocalizedError {
 
 /// Reads an xcresult bundle's records and exports its attachments.
 protocol XCResultReading {
-  func record(forId bundleObjectId: String?, timeout: TimeInterval?) async throws -> NSDictionary
+  func record(forId bundleObjectId: String?, timeout: TimeInterval?) async throws -> ResultRecord
   func exportJPEG(to destination: String, forId bundleObjectId: String, type encodeType: String, timeout: TimeInterval?) async throws
 }
 
@@ -164,8 +165,9 @@ struct XCResultTool: XCResultReading {
   let path: String
   let logger: ControlCoreLogger
 
-  func record(forId bundleObjectId: String?, timeout: TimeInterval?) async throws -> NSDictionary {
-    try await XCTestResultToolOperation.getJSON(from: path, forId: bundleObjectId, logger: logger, timeout: timeout)
+  func record(forId bundleObjectId: String?, timeout: TimeInterval?) async throws -> ResultRecord {
+    let json = try await XCTestResultToolOperation.getJSON(from: path, forId: bundleObjectId, logger: logger, timeout: timeout)
+    return ResultRecord(json as? [String: Any] ?? [:])
   }
 
   func exportJPEG(to destination: String, forId bundleObjectId: String, type encodeType: String, timeout: TimeInterval?) async throws {
@@ -184,31 +186,31 @@ final class XCTestResultBundleParser {
     let testSummariesPath = (resultBundlePath as NSString).appendingPathComponent("TestSummaries.plist")
     let results = ResultRecord(contentsOfPropertyList: testSummariesPath)
     let resultBundleInfoPath = (resultBundlePath as NSString).appendingPathComponent("Info.plist")
-    let bundleInfo = NSDictionary(contentsOfFile: resultBundleInfoPath)
-    let bundleFormatVersion = bundleInfo?["version"]
+    let bundleInfo = ResultRecord(contentsOfPropertyList: resultBundleInfoPath)
 
     if let results {
       try reportResultsLegacy(results, reporter: reporter)
       logger.log("ResultBundlePath: \(resultBundlePath)")
       return
     }
-    guard let bundleFormatVersion = bundleFormatVersion as? NSDictionary else {
+    guard let bundleFormatVersion = bundleInfo?.optionalRecord("version") else {
       reporter.testPlanDidFail?(withMessage: "No test results were produced")
       return
     }
-    let majorVersion = try readNumberFromDict(bundleFormatVersion, "major")
-    let minorVersion = try readNumberFromDict(bundleFormatVersion, "minor")
+    let majorVersion = try bundleFormatVersion.value("major", as: Int.self)
+    let minorVersion = try bundleFormatVersion.value("minor", as: Int.self)
     logger.log("Test result bundle format version: \(majorVersion).\(minorVersion)")
 
     let record = try await tool.record(forId: nil, timeout: nil)
-    guard let actions = record["actions"] as? NSDictionary else {
+    guard let actions = record.optionalRecord("actions") else {
       throw XCTestResultBundleError.noActions
     }
     for bundleObjectId in try parseActions(actions, logger: logger) {
       let xcresults = try await tool.record(forId: bundleObjectId, timeout: nil)
       logger.log("Parsing summaries for id \(bundleObjectId)")
-      let summaries = accessAndUnwrapValues(xcresults, "summaries", logger)
-      await reportSummaries(summaries, reporter: reporter, resultBundlePath: resultBundlePath, tool: tool, logger: logger, extractScreenshots: extractScreenshots)
+      for summary in xcresults.unwrappedRecords("summaries", logger: logger) ?? [] {
+        await reportResults(summary, reporter: reporter, resultBundlePath: resultBundlePath, tool: tool, logger: logger, extractScreenshots: extractScreenshots)
+      }
       logger.log("Done parsing summaries for id \(bundleObjectId)")
     }
   }
@@ -290,142 +292,72 @@ final class XCTestResultBundleParser {
 
   // MARK: - Private: Xcode 11+ XCTest Result Parsing
 
-  private static func parseActions(_ actions: NSDictionary, logger: ControlCoreLogger) throws -> [String] {
-    guard let actionValues = unwrapValues(actions) as? [NSDictionary] else {
+  private static func parseActions(_ actions: ResultRecord, logger: ControlCoreLogger) throws -> [String] {
+    guard let actionValues = actions.fields["_values"] as? [[String: Any]] else {
       throw XCTestResultBundleError.unexpectedType(key: "actions", expected: "array of actions")
     }
-    var ids: [String] = []
-    for action in actionValues {
-      ids.append(try parseAction(action, logger: logger))
-    }
-    return ids
-  }
-
-  private static func parseAction(_ action: NSDictionary, logger: ControlCoreLogger) throws -> String {
-    try parseActionResult(try readDictionaryFromDict(action, "actionResult"), logger: logger)
-  }
-
-  private static func parseActionResult(_ actionResult: NSDictionary, logger: ControlCoreLogger) throws -> String {
-    try parseTestsRef(try readDictionaryFromDict(actionResult, "testsRef"), logger: logger)
-  }
-
-  private static func parseTestsRef(_ testsRef: NSDictionary, logger: ControlCoreLogger) throws -> String {
-    guard let id = accessAndUnwrapValue(testsRef, "id", logger) as? String else {
-      throw XCTestResultBundleError.unexpectedType(key: "testsRef.id", expected: String(describing: String.self))
-    }
-    return id
-  }
-
-  private static func reportSummaries(_ summaries: NSArray?, reporter: XCTestReporter, resultBundlePath: String, tool: any XCResultReading, logger: ControlCoreLogger, extractScreenshots: Bool) async {
-    guard let summaries = summaries as? [NSDictionary] else { return }
-    for summary in summaries {
-      await reportResults(summary, reporter: reporter, resultBundlePath: resultBundlePath, tool: tool, logger: logger, extractScreenshots: extractScreenshots)
+    return try actionValues.map { action in
+      let testsRef = try ResultRecord(action).record("actionResult").record("testsRef")
+      guard let id = testsRef.unwrappedString("id", logger: logger) else {
+        throw XCTestResultBundleError.unexpectedType(key: "testsRef.id", expected: String(describing: String.self))
+      }
+      return id
     }
   }
 
-  private static func reportResults(_ results: NSDictionary, reporter: XCTestReporter, resultBundlePath: String, tool: any XCResultReading, logger: ControlCoreLogger, extractScreenshots: Bool) async {
-    let testTargets = accessAndUnwrapValues(results, "testableSummaries", logger)
-    await reportTargetTests(testTargets, reporter: reporter, resultBundlePath: resultBundlePath, tool: tool, logger: logger, extractScreenshots: extractScreenshots)
-  }
-
-  private static func reportTargetTests(_ targetTests: NSArray?, reporter: XCTestReporter, resultBundlePath: String, tool: any XCResultReading, logger: ControlCoreLogger, extractScreenshots: Bool) async {
-    guard let targetTests = targetTests as? [NSDictionary] else { return }
-    for targetTest in targetTests {
+  private static func reportResults(_ results: ResultRecord, reporter: XCTestReporter, resultBundlePath: String, tool: any XCResultReading, logger: ControlCoreLogger, extractScreenshots: Bool) async {
+    for targetTest in results.unwrappedRecords("testableSummaries", logger: logger) ?? [] {
       await reportTargetTest(targetTest, reporter: reporter, resultBundlePath: resultBundlePath, tool: tool, logger: logger, extractScreenshots: extractScreenshots)
     }
   }
 
-  private static func reportTargetTest(_ targetTest: NSDictionary, reporter: XCTestReporter, resultBundlePath: String, tool: any XCResultReading, logger: ControlCoreLogger, extractScreenshots: Bool) async {
-    let testBundleName = accessAndUnwrapValue(targetTest, "targetName", logger) as? String ?? ""
-    let selectedTests = accessAndUnwrapValues(targetTest, "tests", logger)
-    if selectedTests != nil {
-      await reportSelectedTests(selectedTests, testBundleName: testBundleName, reporter: reporter, resultBundlePath: resultBundlePath, tool: tool, logger: logger, extractScreenshots: extractScreenshots)
-    } else {
+  private static func reportTargetTest(_ targetTest: ResultRecord, reporter: XCTestReporter, resultBundlePath: String, tool: any XCResultReading, logger: ControlCoreLogger, extractScreenshots: Bool) async {
+    let testBundleName = targetTest.unwrappedString("targetName", logger: logger) ?? ""
+    guard let selectedTests = targetTest.unwrappedArray("tests", logger: logger) else {
       logger.log("Test failed and no test results found in the bundle")
-      let failureSummaries = accessAndUnwrapValues(targetTest, "failureSummaries", logger)
+      let failureSummaries = targetTest.unwrappedArray("failureSummaries", logger: logger)
       reporter.testCaseDidFail(
         forTestClass: "", method: "",
         exceptions: [
           TestExceptionInfo(message: buildErrorMessage(failureSummaries, logger: logger))
         ])
+      return
+    }
+    for selectedTest in records(selectedTests) {
+      guard let testTargetXctests = selectedTest.unwrappedArray("subtests", logger: logger) else {
+        logger.log("Test failed and no target test results found in the bundle")
+        reportUnattributedFailure(to: reporter)
+        continue
+      }
+      for testTargetXctest in records(testTargetXctests) {
+        guard let testClasses = testTargetXctest.unwrappedArray("subtests", logger: logger) else {
+          logger.log("Test failed and no test class results found in the bundle")
+          reportUnattributedFailure(to: reporter)
+          continue
+        }
+        for testClass in records(testClasses) {
+          let testClassName = testClass.unwrappedString("identifier", logger: logger) ?? ""
+          guard let testMethods = testClass.unwrappedArray("subtests", logger: logger) else {
+            logger.log("Test failed for \(testClassName) and no test method results found")
+            reportUnattributedFailure(to: reporter)
+            continue
+          }
+          for testMethod in records(testMethods) {
+            await reportTestMethod(testMethod, testBundleName: testBundleName, testClassName: testClassName, reporter: reporter, resultBundlePath: resultBundlePath, tool: tool, logger: logger, extractScreenshots: extractScreenshots)
+          }
+        }
+      }
     }
   }
 
-  private static func reportSelectedTests(_ selectedTests: NSArray?, testBundleName: String, reporter: XCTestReporter, resultBundlePath: String, tool: any XCResultReading, logger: ControlCoreLogger, extractScreenshots: Bool) async {
-    guard let selectedTests = selectedTests as? [NSDictionary] else { return }
-    for selectedTest in selectedTests {
-      await reportSelectedTest(selectedTest, testBundleName: testBundleName, reporter: reporter, resultBundlePath: resultBundlePath, tool: tool, logger: logger, extractScreenshots: extractScreenshots)
-    }
+  private static func reportUnattributedFailure(to reporter: XCTestReporter) {
+    reporter.testCaseDidFail(forTestClass: "", method: "", exceptions: [TestExceptionInfo(message: "")])
   }
 
-  private static func reportSelectedTest(_ selectedTest: NSDictionary, testBundleName: String, reporter: XCTestReporter, resultBundlePath: String, tool: any XCResultReading, logger: ControlCoreLogger, extractScreenshots: Bool) async {
-    let testTargetXctests = accessAndUnwrapValues(selectedTest, "subtests", logger)
-    if testTargetXctests != nil {
-      await reportTestTargetXctests(testTargetXctests, testBundleName: testBundleName, reporter: reporter, resultBundlePath: resultBundlePath, tool: tool, logger: logger, extractScreenshots: extractScreenshots)
-    } else {
-      logger.log("Test failed and no target test results found in the bundle")
-      reporter.testCaseDidFail(
-        forTestClass: "", method: "",
-        exceptions: [
-          TestExceptionInfo(message: "")
-        ])
-    }
-  }
-
-  private static func reportTestTargetXctests(_ testTargetXctests: NSArray?, testBundleName: String, reporter: XCTestReporter, resultBundlePath: String, tool: any XCResultReading, logger: ControlCoreLogger, extractScreenshots: Bool) async {
-    guard let testTargetXctests = testTargetXctests as? [NSDictionary] else { return }
-    for testTargetXctest in testTargetXctests {
-      await reportTestTargetXctest(testTargetXctest, testBundleName: testBundleName, reporter: reporter, resultBundlePath: resultBundlePath, tool: tool, logger: logger, extractScreenshots: extractScreenshots)
-    }
-  }
-
-  private static func reportTestTargetXctest(_ testTargetXctest: NSDictionary, testBundleName: String, reporter: XCTestReporter, resultBundlePath: String, tool: any XCResultReading, logger: ControlCoreLogger, extractScreenshots: Bool) async {
-    let testClasses = accessAndUnwrapValues(testTargetXctest, "subtests", logger)
-    if testClasses != nil {
-      await reportTestClasses(testClasses, testBundleName: testBundleName, reporter: reporter, resultBundlePath: resultBundlePath, tool: tool, logger: logger, extractScreenshots: extractScreenshots)
-    } else {
-      logger.log("Test failed and no test class results found in the bundle")
-      reporter.testCaseDidFail(
-        forTestClass: "", method: "",
-        exceptions: [
-          TestExceptionInfo(message: "")
-        ])
-    }
-  }
-
-  private static func reportTestClasses(_ testClasses: NSArray?, testBundleName: String, reporter: XCTestReporter, resultBundlePath: String, tool: any XCResultReading, logger: ControlCoreLogger, extractScreenshots: Bool) async {
-    guard let testClasses = testClasses as? [NSDictionary] else { return }
-    for testClass in testClasses {
-      await reportTestClass(testClass, testBundleName: testBundleName, reporter: reporter, resultBundlePath: resultBundlePath, tool: tool, logger: logger, extractScreenshots: extractScreenshots)
-    }
-  }
-
-  private static func reportTestClass(_ testClass: NSDictionary, testBundleName: String, reporter: XCTestReporter, resultBundlePath: String, tool: any XCResultReading, logger: ControlCoreLogger, extractScreenshots: Bool) async {
-    let testClassName = accessAndUnwrapValue(testClass, "identifier", logger) as? String ?? ""
-    let testMethods = accessAndUnwrapValues(testClass, "subtests", logger)
-    if testMethods != nil {
-      await reportTestMethods(testMethods, testBundleName: testBundleName, testClassName: testClassName, reporter: reporter, resultBundlePath: resultBundlePath, tool: tool, logger: logger, extractScreenshots: extractScreenshots)
-    } else {
-      logger.log("Test failed for \(testClassName) and no test method results found")
-      reporter.testCaseDidFail(
-        forTestClass: "", method: "",
-        exceptions: [
-          TestExceptionInfo(message: "")
-        ])
-    }
-  }
-
-  private static func reportTestMethods(_ testMethods: NSArray?, testBundleName: String, testClassName: String, reporter: XCTestReporter, resultBundlePath: String, tool: any XCResultReading, logger: ControlCoreLogger, extractScreenshots: Bool) async {
-    guard let testMethods = testMethods as? [NSDictionary] else { return }
-    for testMethod in testMethods {
-      await reportTestMethod(testMethod, testBundleName: testBundleName, testClassName: testClassName, reporter: reporter, resultBundlePath: resultBundlePath, tool: tool, logger: logger, extractScreenshots: extractScreenshots)
-    }
-  }
-
-  private static func reportTestMethod(_ testMethod: NSDictionary, testBundleName: String, testClassName: String, reporter: XCTestReporter, resultBundlePath: String, tool: any XCResultReading, logger: ControlCoreLogger, extractScreenshots: Bool) async {
-    let testStatus = accessAndUnwrapValue(testMethod, "testStatus", logger) as? String ?? ""
-    let testMethodIdentifier = accessAndUnwrapValue(testMethod, "identifier", logger) as? String ?? ""
-    let duration = number(from: accessAndUnwrapValue(testMethod, "duration", logger)) ?? 0
+  private static func reportTestMethod(_ testMethod: ResultRecord, testBundleName: String, testClassName: String, reporter: XCTestReporter, resultBundlePath: String, tool: any XCResultReading, logger: ControlCoreLogger, extractScreenshots: Bool) async {
+    let testStatus = testMethod.unwrappedString("testStatus", logger: logger) ?? ""
+    let testMethodIdentifier = testMethod.unwrappedString("identifier", logger: logger) ?? ""
+    let duration = number(from: testMethod.unwrappedValue("duration", logger: logger)) ?? 0
 
     var status = FBTestReportStatus.unknown
     if testStatus == "Success" {
@@ -437,60 +369,52 @@ final class XCTestResultBundleParser {
 
     reporter.testCaseDidStart(forTestClass: testClassName, method: testMethodIdentifier)
 
-    let summaryRef = testMethod["summaryRef"] as? NSDictionary
-    if let summaryRef, let summaryRefId = accessAndUnwrapValue(summaryRef, "id", logger) as? String {
-      // A tool failure abandons this method's summary: the case has started
-      // and never finishes.
-      guard let actionTestSummary = try? await tool.record(forId: summaryRefId, timeout: XCTestOperationTimeoutSecs) else {
-        return
-      }
-      if status == .failed {
-        let failureSummaries = accessAndUnwrapValues(actionTestSummary, "failureSummaries", logger)
-        reporter.testCaseDidFail(
-          forTestClass: testClassName, method: testMethodIdentifier,
-          exceptions: [
-            TestExceptionInfo(message: buildErrorMessage(failureSummaries, logger: logger))
-          ])
-      }
-
-      let performanceMetrics = accessAndUnwrapValues(actionTestSummary, "performanceMetrics", logger) as? [NSDictionary]
-      if let performanceMetrics {
-        var testMethodName = accessAndUnwrapValue(testMethod, "name", logger) as? String ?? ""
-        let suffix = "()"
-        if testMethodName.hasSuffix(suffix) {
-          testMethodName = String(testMethodName.dropLast(suffix.count))
-        }
-        savePerformanceMetrics(performanceMetrics, toTestResultBundle: resultBundlePath, forTestTarget: testBundleName, testClass: testClassName, testMethod: testMethodName, logger: logger)
-      }
-
-      let activitySummaries = accessAndUnwrapValues(actionTestSummary, "activitySummaries", logger) as? [NSDictionary]
-      if extractScreenshots, let activitySummaries {
-        await extractScreenshotsFromActivities(activitySummaries, resultBundlePath: resultBundlePath, tool: tool, logger: logger)
-      }
-
-      let logs = buildTestLog(accessAndUnwrapValues(actionTestSummary, "activitySummaries", logger) as? [NSDictionary], testBundleName: testBundleName, testClassName: testClassName, testMethodName: testMethodIdentifier, testPassed: status == .passed, duration: duration, logger: logger)
-      reporter.testCaseDidFinish(forTestClass: testClassName, method: testMethodIdentifier, with: status, duration: duration, logs: logs)
+    guard let summaryRefId = testMethod.optionalRecord("summaryRef")?.unwrappedString("id", logger: logger) else {
+      return
     }
+    // A tool failure abandons this method's summary: the case has started
+    // and never finishes.
+    guard let actionTestSummary = try? await tool.record(forId: summaryRefId, timeout: XCTestOperationTimeoutSecs) else {
+      return
+    }
+    if status == .failed {
+      let failureSummaries = actionTestSummary.unwrappedArray("failureSummaries", logger: logger)
+      reporter.testCaseDidFail(
+        forTestClass: testClassName, method: testMethodIdentifier,
+        exceptions: [
+          TestExceptionInfo(message: buildErrorMessage(failureSummaries, logger: logger))
+        ])
+    }
+
+    if let performanceMetrics = actionTestSummary.unwrappedRecords("performanceMetrics", logger: logger) {
+      var testMethodName = testMethod.unwrappedString("name", logger: logger) ?? ""
+      let suffix = "()"
+      if testMethodName.hasSuffix(suffix) {
+        testMethodName = String(testMethodName.dropLast(suffix.count))
+      }
+      savePerformanceMetrics(performanceMetrics, toTestResultBundle: resultBundlePath, forTestTarget: testBundleName, testClass: testClassName, testMethod: testMethodName, logger: logger)
+    }
+
+    if extractScreenshots, let activitySummaries = actionTestSummary.unwrappedRecords("activitySummaries", logger: logger) {
+      await extractScreenshotsFromActivities(activitySummaries, resultBundlePath: resultBundlePath, tool: tool, logger: logger)
+    }
+
+    let logs = buildTestLog(actionTestSummary.unwrappedRecords("activitySummaries", logger: logger), testBundleName: testBundleName, testClassName: testClassName, testMethodName: testMethodIdentifier, testPassed: status == .passed, duration: duration, logger: logger)
+    reporter.testCaseDidFinish(forTestClass: testClassName, method: testMethodIdentifier, with: status, duration: duration, logs: logs)
   }
 
-  private static func buildTestLog(_ activitySummaries: [NSDictionary]?, testBundleName: String, testClassName: String, testMethodName: String, testPassed: Bool, duration: Double, logger: ControlCoreLogger) -> [String] {
+  private static func buildTestLog(_ activitySummaries: [ResultRecord]?, testBundleName: String, testClassName: String, testMethodName: String, testPassed: Bool, duration: Double, logger: ControlCoreLogger) -> [String] {
     var logs: [String] = []
     let testCaseFullName = "-[\(testBundleName).\(testClassName) \(testMethodName)]"
     logs.append("Test Case '\(testCaseFullName)' started.")
 
-    var testStartTimeInterval: Double = 0
-    var startTimeSet = false
+    var testStartTimeInterval: Double?
     for activitySummary in activitySummaries ?? [] {
-      if !startTimeSet {
-        if let dateStr = accessAndUnwrapValue(activitySummary, "start", logger) as? String, let date = dateFromString(dateStr) {
-          testStartTimeInterval = date.timeIntervalSince1970
-          startTimeSet = true
-        }
+      if testStartTimeInterval == nil, let start = activitySummary.unwrappedString("start", logger: logger).flatMap(dateFromString) {
+        testStartTimeInterval = start.timeIntervalSince1970
       }
-
-      let activityType = accessAndUnwrapValue(activitySummary, "activityType", logger) as? String
-      if activityType == "com.apple.dt.xctest.activity-type.internal" {
-        addTestLogsFromActivitySummary(activitySummary, logs: &logs, testStartTimeInterval: testStartTimeInterval, indent: 0, logger: logger)
+      if activitySummary.unwrappedString("activityType", logger: logger) == "com.apple.dt.xctest.activity-type.internal" {
+        addTestLogsFromActivitySummary(activitySummary, logs: &logs, testStartTimeInterval: testStartTimeInterval ?? 0, indent: 0, logger: logger)
       }
     }
 
@@ -498,27 +422,19 @@ final class XCTestResultBundleParser {
     return logs
   }
 
-  private static func addTestLogsFromActivitySummary(_ activitySummary: NSDictionary, logs: inout [String], testStartTimeInterval: Double, indent: UInt, logger: ControlCoreLogger) {
-    let message = accessAndUnwrapValue(activitySummary, "title", logger) as? String ?? ""
-    let dateStr = accessAndUnwrapValue(activitySummary, "start", logger) as? String ?? ""
-    let date = dateFromString(dateStr)
-    let startTimeInterval = date?.timeIntervalSince1970 ?? 0
+  private static func addTestLogsFromActivitySummary(_ activitySummary: ResultRecord, logs: inout [String], testStartTimeInterval: Double, indent: UInt, logger: ControlCoreLogger) {
+    let message = activitySummary.unwrappedString("title", logger: logger) ?? ""
+    let startTimeInterval = dateFromString(activitySummary.unwrappedString("start", logger: logger) ?? "")?.timeIntervalSince1970 ?? 0
     let elapsed = startTimeInterval - testStartTimeInterval
     let indentString = "".padding(toLength: 1 + Int(indent) * 4, withPad: " ", startingAt: 0)
-    let log = String(format: "    t = %8.2fs%@%@", elapsed, indentString, message)
-    logs.append(log)
+    logs.append(String(format: "    t = %8.2fs%@%@", elapsed, indentString, message))
 
-    guard let wrappedSubActivities = activitySummary["subactivities"] as? NSDictionary,
-      let subActivities = unwrapValues(wrappedSubActivities) as? [NSDictionary]
-    else {
-      return
-    }
-    for subActivity in subActivities {
+    for subActivity in activitySummary.silentlyUnwrappedRecords("subactivities") ?? [] {
       addTestLogsFromActivitySummary(subActivity, logs: &logs, testStartTimeInterval: testStartTimeInterval, indent: indent + 1, logger: logger)
     }
   }
 
-  private static func extractScreenshotsFromActivities(_ activities: [NSDictionary], resultBundlePath: String, tool: any XCResultReading, logger: ControlCoreLogger) async {
+  private static func extractScreenshotsFromActivities(_ activities: [ResultRecord], resultBundlePath: String, tool: any XCResultReading, logger: ControlCoreLogger) async {
     let screenshotsPath: String
     do {
       screenshotsPath = try ensureSubdirectory("Attachments", insideResultBundle: resultBundlePath)
@@ -527,15 +443,11 @@ final class XCTestResultBundleParser {
       return
     }
     for activity in activities {
-      if activity["attachments"] != nil {
-        if let attachments = accessAndUnwrapValues(activity, "attachments", logger) as? [NSDictionary] {
-          await extractScreenshotsFromAttachments(attachments, to: screenshotsPath, resultBundlePath: resultBundlePath, tool: tool, logger: logger)
-        }
+      if activity.fields["attachments"] != nil, let attachments = activity.unwrappedRecords("attachments", logger: logger) {
+        await extractScreenshotsFromAttachments(attachments, to: screenshotsPath, tool: tool, logger: logger)
       }
-      if activity["subactivities"] != nil {
-        if let subactivities = accessAndUnwrapValues(activity, "subactivities", logger) as? [NSDictionary] {
-          await extractScreenshotsFromActivities(subactivities, resultBundlePath: resultBundlePath, tool: tool, logger: logger)
-        }
+      if activity.fields["subactivities"] != nil, let subactivities = activity.unwrappedRecords("subactivities", logger: logger) {
+        await extractScreenshotsFromActivities(subactivities, resultBundlePath: resultBundlePath, tool: tool, logger: logger)
       }
     }
   }
@@ -554,36 +466,28 @@ final class XCTestResultBundleParser {
     return subdirectoryFullPath
   }
 
-  private static func extractScreenshotsFromAttachments(_ attachments: [NSDictionary], to destination: String, resultBundlePath: String, tool: any XCResultReading, logger: ControlCoreLogger) async {
+  private static func extractScreenshotsFromAttachments(_ attachments: [ResultRecord], to destination: String, tool: any XCResultReading, logger: ControlCoreLogger) async {
     for attachment in attachments {
-      guard let filename = accessAndUnwrapValue(attachment, "filename", logger) as? String else { continue }
+      guard let filename = attachment.unwrappedString("filename", logger: logger) else { continue }
       guard filename.hasPrefix("Screenshot_"),
-        let payloadRef = attachment["payloadRef"] as? NSDictionary,
-        let screenshotId = accessAndUnwrapValue(payloadRef, "id", logger) as? String,
-        let screenshotType = accessAndUnwrapValue(attachment, "uniformTypeIdentifier", logger) as? String
+        let screenshotId = attachment.optionalRecord("payloadRef")?.unwrappedString("id", logger: logger),
+        let screenshotType = attachment.unwrappedString("uniformTypeIdentifier", logger: logger)
       else { continue }
-      let timestamp = accessAndUnwrapValue(attachment, "timestamp", logger) as? String ?? ""
+      let timestamp = attachment.unwrappedString("timestamp", logger: logger) ?? ""
       let jpgFilename = (filename as NSString).deletingPathExtension.appending(".jpg")
       let exportPath = (destination as NSString).appendingPathComponent("\(timestamp)_\(jpgFilename)")
       _ = try? await tool.exportJPEG(to: exportPath, forId: screenshotId, type: screenshotType, timeout: XCTestOperationTimeoutSecs)
     }
   }
 
-  private static func savePerformanceMetrics(_ performanceMetrics: [NSDictionary], toTestResultBundle resultBundlePath: String, forTestTarget testTarget: String, testClass: String, testMethod: String, logger: ControlCoreLogger) {
-    var metrics: [[String: Any]] = []
-    for performanceMetric in performanceMetrics {
-      let metricName = accessAndUnwrapValue(performanceMetric, "displayName", logger) as? String ?? ""
-      let metricUnit = accessAndUnwrapValue(performanceMetric, "unitOfMeasurement", logger) as? String ?? ""
-      let metricIdentifier = accessAndUnwrapValue(performanceMetric, "identifier", logger) as? String ?? ""
-      let metricMeasurements = accessAndUnwrapValues(performanceMetric, "measurements", logger) as? [NSDictionary] ?? []
-      let measurements = metricMeasurements.compactMap { number(from: unwrapValue($0)) }
-      let metric: [String: Any] = [
-        "name": metricName,
-        "unit": metricUnit,
-        "identifier": metricIdentifier,
-        "measurements": measurements,
+  private static func savePerformanceMetrics(_ performanceMetrics: [ResultRecord], toTestResultBundle resultBundlePath: String, forTestTarget testTarget: String, testClass: String, testMethod: String, logger: ControlCoreLogger) {
+    let metrics: [[String: Any]] = performanceMetrics.map { performanceMetric in
+      [
+        "name": performanceMetric.unwrappedString("displayName", logger: logger) ?? "",
+        "unit": performanceMetric.unwrappedString("unitOfMeasurement", logger: logger) ?? "",
+        "identifier": performanceMetric.unwrappedString("identifier", logger: logger) ?? "",
+        "measurements": (performanceMetric.unwrappedRecords("measurements", logger: logger) ?? []).compactMap { number(from: $0.fields["_value"]) },
       ]
-      metrics.append(metric)
     }
 
     if !JSONSerialization.isValidJSONObject(metrics) {
@@ -603,14 +507,8 @@ final class XCTestResultBundleParser {
     }
   }
 
-  private static func buildErrorMessage(_ failureSummaries: NSArray?, logger: ControlCoreLogger) -> String {
-    guard let failureSummaries = failureSummaries as? [NSDictionary] else { return "" }
-    var messages: [String] = []
-    for failureSummary in failureSummaries {
-      if let msg = accessAndUnwrapValue(failureSummary, "message", logger) as? String {
-        messages.append(msg)
-      }
-    }
-    return messages.joined(separator: "\n")
+  private static func buildErrorMessage(_ failureSummaries: [Any]?, logger: ControlCoreLogger) -> String {
+    guard let failureSummaries = failureSummaries as? [[String: Any]] else { return "" }
+    return failureSummaries.compactMap { ResultRecord($0).unwrappedString("message", logger: logger) }.joined(separator: "\n")
   }
 }
