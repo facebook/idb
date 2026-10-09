@@ -37,6 +37,9 @@ public final class Simulator: Target, Hashable, CustomStringConvertible, @unchec
   public let logger: any ControlCoreLogger
   public let auxillaryDirectory: String
 
+  /// How much of each HID event this simulator's HID connection logs.
+  public let hidEventLogging: SimulatorHIDEventLogging
+
   private let temporaryDirectoryLock = NSLock()
   private var _temporaryDirectory: TemporaryDirectory?
 
@@ -48,7 +51,8 @@ public final class Simulator: Target, Hashable, CustomStringConvertible, @unchec
       configuration: configuration ?? SimulatorConfiguration.inferSimulatorConfiguration(fromDevice: device),
       set: set,
       auxillaryDirectory: auxillaryDirectory(fromSimDevice: device),
-      logger: set.logger)
+      logger: set.logger,
+      hidEventLogging: set.configuration.hidEventLogging)
   }
 
   public init(
@@ -56,12 +60,14 @@ public final class Simulator: Target, Hashable, CustomStringConvertible, @unchec
     configuration: SimulatorConfiguration,
     set: SimulatorSet?,
     auxillaryDirectory: String,
-    logger: (any ControlCoreLogger)?
+    logger: (any ControlCoreLogger)?,
+    hidEventLogging: SimulatorHIDEventLogging = .redacted
   ) {
     self.device = device
     self.configuration = configuration
     self.set = set
     self.auxillaryDirectory = auxillaryDirectory
+    self.hidEventLogging = hidEventLogging
     self.logger = (logger ?? ControlCoreGlobalConfiguration.defaultLogger).withName(device.udid.uuidString)
     self.commandCache = TargetCommandCache()
   }

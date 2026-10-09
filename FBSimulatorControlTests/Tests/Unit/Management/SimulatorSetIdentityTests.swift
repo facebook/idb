@@ -100,4 +100,15 @@ struct SimulatorSetIdentityTests {
     _ = set.simulator(withUDID: target.UDID.uuidString)
     #expect(devices.map(\.deviceTypeReads).reduce(0, +) == devices.count)
   }
+
+  @Test func vendedSimulatorCarriesTheSetsHIDEventLogging() {
+    let device = Self.makeDevice()
+    let deviceSet = SimDeviceSetDouble()
+    deviceSet.devices = [device]
+    let configuration = SimulatorControlConfiguration(deviceSetPath: nil, logger: nil, hidEventLogging: .detailed)
+    let set = createSimulatorSet(configuration: configuration, fakeDeviceSet: deviceSet)
+
+    #expect(set.simulator(withUDID: device.UDID.uuidString)?.hidEventLogging == .detailed)
+    #expect(SimulatorTestSupport.testableSimulator().hidEventLogging == .redacted)
+  }
 }

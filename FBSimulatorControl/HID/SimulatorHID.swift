@@ -41,7 +41,7 @@ public final class SimulatorHID: CustomStringConvertible, Sendable {
       transport: try await SimulatorHIDTransport.negotiate(for: simulator, requested: transportType),
       operationLease: simulator.commandCache.resolve { SimulatorHIDOperationLease() },
       displays: simulator.displays,
-      logging: simulator.set?.configuration.hidEventLogging ?? .redacted)
+      logging: simulator.hidEventLogging)
   }
 
   /// Instances sharing `operationLease` never interleave operations.
