@@ -2878,6 +2878,19 @@ final class AXAutoTraversalTests: XCTestCase {
     }
   }
 
+  func testANilClientTypeResolvesToNone() {
+    XCTAssertNil(AccessibilityRequestOptions().clientType)
+    XCTAssertEqual(AccessibilityRequestOptions().resolvedClientType, .noClient)
+    for clientType in AXClientType.allCases {
+      XCTAssertEqual(AccessibilityRequestOptions(clientType: clientType).resolvedClientType, clientType)
+    }
+  }
+
+  func testTheDefaultOptionsDescriptionNamesNoClientType() {
+    XCTAssertFalse(String(describing: AccessibilityRequestOptions()).contains("clientType"))
+    XCTAssertTrue(String(describing: AccessibilityRequestOptions(clientType: .xctest)).contains("clientType=xctest"))
+  }
+
   private static func readRequest(traversal: AXTraversal) -> AXBridgeRequest {
     .read(
       pid: 1,

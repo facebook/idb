@@ -109,6 +109,8 @@ extension AccessibilityMatch: CustomStringConvertible {
 
 public typealias AXTraversal = BridgeAXTraversal
 
+public typealias AXClientType = BridgeAXClientType
+
 extension BridgeAXTraversal {
 
   /// Keys this traversal cannot answer for every element: `semantic` maps only identified translator roles
@@ -240,6 +242,16 @@ public struct AccessibilityRequestOptions: Sendable {
   /// How the read asks to traverse.
   public var traversalStrategy: AXTraversalStrategy
 
+  /// The assistive client the read's translator requests claim to come from, or nil for the default.
+  /// Only `resolvedClientType` should be read below this layer.
+  public var clientType: AXClientType?
+
+  /// The client a read's translator requests carry. Nil resolves to `noClient`, which is what every translator
+  /// path sent before a client could be chosen.
+  public var resolvedClientType: AXClientType {
+    clientType ?? .noClient
+  }
+
   /// The requested keys the given traversal cannot answer for every element.
   public func unsatisfiableKeys(for traversal: AXTraversal) -> Set<AXKeys> {
     serializationKeys.intersection(traversal.unsatisfiableKeys)
@@ -254,7 +266,8 @@ public struct AccessibilityRequestOptions: Sendable {
     remoteContentOptions: AccessibilityRemoteContentOptions? = nil,
     filter: AccessibilityElementFilter = .all,
     match: AccessibilityMatch? = nil,
-    traversalStrategy: AXTraversalStrategy = .auto
+    traversalStrategy: AXTraversalStrategy = .auto,
+    clientType: AXClientType? = nil
   ) {
     self.format = format
     self.keys = keys
@@ -265,11 +278,12 @@ public struct AccessibilityRequestOptions: Sendable {
     self.filter = filter
     self.match = match
     self.traversalStrategy = traversalStrategy
+    self.clientType = clientType
   }
 }
 
 extension AccessibilityRequestOptions: CustomStringConvertible {
   public var description: String {
-    "<AccessibilityRequestOptions: format=\(format.rawValue), keys=\(keys), logging=\(enableLogging), profiling=\(enableProfiling), collectFrameCoverage=\(collectFrameCoverage), remote=\(String(describing: remoteContentOptions)), filter=\(filter.rawValue), match=\(match.map(String.init(describing:)) ?? "none"), traversal=\(traversalStrategy.rawValue)>"
+    "<AccessibilityRequestOptions: format=\(format.rawValue), keys=\(keys), logging=\(enableLogging), profiling=\(enableProfiling), collectFrameCoverage=\(collectFrameCoverage), remote=\(String(describing: remoteContentOptions)), filter=\(filter.rawValue), match=\(match.map(String.init(describing:)) ?? "none"), traversal=\(traversalStrategy.rawValue)\(clientType.map { ", clientType=\($0)" } ?? "")>"
   }
 }
