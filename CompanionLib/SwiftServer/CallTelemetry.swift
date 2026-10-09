@@ -39,8 +39,8 @@ final class CallTelemetry: @unchecked Sendable {
     lock.withLock { normalValues[key] = value }
   }
 
-  var size: NSNumber? {
-    lock.withLock { sizeValue.map { NSNumber(value: $0) } }
+  var size: Int64? {
+    lock.withLock { sizeValue }
   }
 
   var ints: [String: Int] {

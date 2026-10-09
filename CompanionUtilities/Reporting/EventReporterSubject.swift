@@ -23,8 +23,10 @@ public struct EventReporterSubject: Sendable {
   public let eventName: String
   public let eventType: EventType
   public let arguments: [String]?
-  public let duration: NSNumber?
-  public let size: NSNumber?
+  /// Milliseconds, saturating at `UInt.max`.
+  public let duration: UInt?
+  /// Bytes.
+  public let size: Int64?
   public let message: String?
   /// Additional per-event string columns attached to this subject alone —
   /// unlike reporter metadata, which applies to every subsequent event.
@@ -63,7 +65,7 @@ public struct EventReporterSubject: Sendable {
   public init(
     forSuccessfulCall call: String,
     duration: TimeInterval,
-    size: NSNumber?,
+    size: Int64?,
     arguments: [String],
     normals: [String: String] = [:],
     ints: [String: Int] = [:]
@@ -84,7 +86,7 @@ public struct EventReporterSubject: Sendable {
     forFailingCall call: String,
     duration: TimeInterval,
     message: String,
-    size: NSNumber?,
+    size: Int64?,
     arguments: [String],
     normals: [String: String] = [:],
     ints: [String: Int] = [:]
@@ -104,18 +106,18 @@ public struct EventReporterSubject: Sendable {
   // Saturating on purpose: durations can arrive negative (wall clocks step
   // backwards under NTP between a call's start and end) or non-finite, and
   // UInt.init traps on both, killing the process for a telemetry value.
-  private static func durationMilliseconds(_ timeInterval: TimeInterval) -> NSNumber {
+  private static func durationMilliseconds(_ timeInterval: TimeInterval) -> UInt {
     let milliseconds = timeInterval * 1000
     guard milliseconds.isFinite, milliseconds > 0 else {
-      return NSNumber(value: UInt(0))
+      return 0
     }
     guard milliseconds < Double(UInt.max) else {
-      return NSNumber(value: UInt.max)
+      return UInt.max
     }
-    return NSNumber(value: UInt(milliseconds))
+    return UInt(milliseconds)
   }
 
-  private init(eventName: String, eventType: EventType, arguments: [String]?, duration: NSNumber?, size: NSNumber?, message: String?, normals: [String: String], ints: [String: Int]) {
+  private init(eventName: String, eventType: EventType, arguments: [String]?, duration: UInt?, size: Int64?, message: String?, normals: [String: String], ints: [String: Int]) {
     self.eventName = eventName
     self.eventType = eventType
     self.arguments = arguments

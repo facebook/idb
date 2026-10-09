@@ -39,7 +39,7 @@ struct ReplRunTelemetryTests {
       now: now)
     #expect(subject.eventName == "run")
     #expect(subject.eventType == .success)
-    #expect(subject.duration == NSNumber(value: 2000))
+    #expect(subject.duration == 2000)
     #expect(subject.arguments == ["size=9"])
     #expect(subject.ints == ["code_size": 9, "code_lines": 1])
     #expect(subject.normals.isEmpty)

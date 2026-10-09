@@ -138,7 +138,7 @@ struct CompanionTelemetryTests {
     #expect((recorder.subjects.count) == (1))
     let subject = recorder.subjects[0]
     #expect((subject.eventType) == (.success))
-    #expect((subject.size) == (NSNumber(value: 4096)))
+    #expect((subject.size) == (4096))
     #expect((subject.ints) == (["install_ms": 12]))
     #expect((subject.normals) == (["payload_kind": "url"]))
   }
@@ -159,7 +159,7 @@ struct CompanionTelemetryTests {
     #expect((recorder.subjects.count) == (1))
     let subject = recorder.subjects[0]
     #expect((subject.eventType) == (.failure))
-    #expect((subject.size) == (NSNumber(value: 10)))
+    #expect((subject.size) == (10))
     #expect((subject.normals) == (["failure_stage": "extract"]))
   }
 
@@ -183,7 +183,7 @@ struct CompanionTelemetryTests {
       CallTelemetry.current?.setInt(2, forKey: "extract_ms")
     }
     let subject = recorder.subjects[0]
-    #expect((subject.size) == (NSNumber(value: 2)))
+    #expect((subject.size) == (2))
     #expect((subject.ints) == (["extract_ms": 2]))
   }
 

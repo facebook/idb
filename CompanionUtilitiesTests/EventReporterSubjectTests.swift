@@ -15,42 +15,42 @@ struct EventReporterSubjectTests {
   @Test
   func successfulCallDurationConvertsSecondsToMilliseconds() {
     let subject = EventReporterSubject(forSuccessfulCall: "list_apps", duration: 1.5, size: nil, arguments: [])
-    #expect(subject.duration == NSNumber(value: UInt(1500)))
+    #expect(subject.duration == 1500)
   }
 
   @Test
   func failingCallDurationConvertsSecondsToMilliseconds() {
     let subject = EventReporterSubject(forFailingCall: "list_apps", duration: 0.25, message: "failed", size: nil, arguments: [])
-    #expect(subject.duration == NSNumber(value: UInt(250)))
+    #expect(subject.duration == 250)
   }
 
   @Test
   func zeroDurationIsZeroMilliseconds() {
     let subject = EventReporterSubject(forSuccessfulCall: "list_apps", duration: 0, size: nil, arguments: [])
-    #expect(subject.duration == NSNumber(value: UInt(0)))
+    #expect(subject.duration == 0)
   }
 
   @Test
   func negativeDurationSaturatesToZero() {
     let subject = EventReporterSubject(forSuccessfulCall: "list_apps", duration: -5, size: nil, arguments: [])
-    #expect(subject.duration == NSNumber(value: UInt(0)))
+    #expect(subject.duration == 0)
   }
 
   @Test
   func naNDurationSaturatesToZero() {
     let subject = EventReporterSubject(forSuccessfulCall: "list_apps", duration: .nan, size: nil, arguments: [])
-    #expect(subject.duration == NSNumber(value: UInt(0)))
+    #expect(subject.duration == 0)
   }
 
   @Test
   func infiniteDurationSaturatesToZero() {
     let subject = EventReporterSubject(forSuccessfulCall: "list_apps", duration: .infinity, size: nil, arguments: [])
-    #expect(subject.duration == NSNumber(value: UInt(0)))
+    #expect(subject.duration == 0)
   }
 
   @Test
   func overflowingDurationSaturatesToUIntMax() {
     let subject = EventReporterSubject(forSuccessfulCall: "list_apps", duration: 1e30, size: nil, arguments: [])
-    #expect(subject.duration == NSNumber(value: UInt.max))
+    #expect(subject.duration == UInt.max)
   }
 }
