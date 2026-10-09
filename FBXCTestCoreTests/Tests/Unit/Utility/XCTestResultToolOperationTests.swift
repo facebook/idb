@@ -40,7 +40,8 @@ final class XCTestResultToolOperationTests: XCTestCase {
   // MARK: - Decoding
 
   func testAJSONObjectDecodesToItsFields() throws {
-    XCTAssertEqual(try XCTestResultToolOperation.json(from: #"{"actions": {"_values": []}}"#)["actions"] as? NSDictionary, ["_values": []])
+    let actions = try XCTestResultToolOperation.json(from: #"{"actions": {"_values": []}}"#)["actions"] as? [String: Any]
+    XCTAssertEqual((actions?["_values"] as? [Any])?.count, 0)
   }
 
   func testOutputThatIsNotJSONIsRejected() {

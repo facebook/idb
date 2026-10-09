@@ -29,7 +29,7 @@ enum XCTestResultToolError: Error, LocalizedError {
 
 final class XCTestResultToolOperation {
 
-  public static func getJSON(from path: String, forId bundleObjectId: String?, logger: ControlCoreLogger?, timeout: TimeInterval? = nil) async throws -> NSDictionary {
+  public static func getJSON(from path: String, forId bundleObjectId: String?, logger: ControlCoreLogger?, timeout: TimeInterval? = nil) async throws -> [String: Any] {
     logger?.log("Getting json for id \(bundleObjectId ?? "nil")")
     var arguments = ["get", "--path", path, "--format", "json"]
     if let bundleObjectId, !bundleObjectId.isEmpty {
@@ -76,8 +76,8 @@ final class XCTestResultToolOperation {
     return try await subprocess.run(output: .string, error: .logger(logger), timeout: timeout, logger: logger).standardOutput
   }
 
-  static func json(from output: String) throws -> NSDictionary {
-    guard let json = (try? JSONSerialization.jsonObject(with: Data(output.utf8))) as? NSDictionary else {
+  static func json(from output: String) throws -> [String: Any] {
+    guard let json = (try? JSONSerialization.jsonObject(with: Data(output.utf8))) as? [String: Any] else {
       throw XCTestResultToolError.outputIsNotAJSONObject(output: output)
     }
     return json

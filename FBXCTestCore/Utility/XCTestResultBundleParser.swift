@@ -166,8 +166,7 @@ struct XCResultTool: XCResultReading {
   let logger: ControlCoreLogger
 
   func record(forId bundleObjectId: String?, timeout: TimeInterval?) async throws -> ResultRecord {
-    let json = try await XCTestResultToolOperation.getJSON(from: path, forId: bundleObjectId, logger: logger, timeout: timeout)
-    return ResultRecord(json as? [String: Any] ?? [:])
+    ResultRecord(try await XCTestResultToolOperation.getJSON(from: path, forId: bundleObjectId, logger: logger, timeout: timeout))
   }
 
   func exportJPEG(to destination: String, forId bundleObjectId: String, type encodeType: String, timeout: TimeInterval?) async throws {
