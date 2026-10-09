@@ -14,6 +14,7 @@
 
 #import <Foundation/Foundation.h>
 
+#import "../AccessibilityRuntime.h"
 #import "AXRuntimePrivate.h"
 
 NS_ASSUME_NONNULL_BEGIN
@@ -46,6 +47,21 @@ typedef NSDictionary<NSString *, id> *_Nullable (*FBAXDefaultSnapshotParametersF
  * numeric keys are mapped back through the result of this call rather than through any hardcoded table.
  */
 typedef NSArray<NSNumber *> *_Nullable (*FBAXAttributeNumbersForNamesFn)(NSArray<NSString *> *names);
+
+/**
+ * `XCTElementTypeFromAXAutomationType`: XCTest's mapping from an element's
+ * `XC_kAXXCAttributeAutomationType` to its `XCUIElementType`. Its only caller in XCTAutomationSupport is
+ * `+[XCElementSnapshot elementTypeForAccessibilityElement:usingAXAttributes_iOS:useLegacyElementType:]`,
+ * which is how XCUITest types an iOS element.
+ *
+ * The two numberings are not the same, so an automation type is never compared against an element type
+ * without passing through here. The function is an exported text symbol (`nm -U XCTAutomationSupport`);
+ * its arm64 body is a bounds check against 0x58 and a load from an 89-entry table in `__TEXT,__const`,
+ * returning `FBXCUIElementTypeAny` past the end. Reading that table from the Xcode 27.1 simulator's copy:
+ * automation types 0-8 map to Other, Application, Window, Sheet, Drawer, Group, Alert, Dialog and 83 (no
+ * public name), 9-82 map to themselves, 83 maps to Other, and 84-88 all map to Button.
+ */
+typedef FBXCUIElementType (*FBAXElementTypeFromAutomationTypeFn)(NSUInteger automationType);
 
 /**
  * The accessibility client XCTest drives a device's AX server through.

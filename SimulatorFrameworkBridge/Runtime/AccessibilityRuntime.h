@@ -447,6 +447,12 @@ typedef void (^FBAXQuiescenceHandler)(FBAXQuiescenceReport report, pid_t pid);
 - (pid_t)owningProcessIdentifierOfElement:(id)element;
 
 /**
+ * XCTest's element type for an automation type read from `XC_kAXXCAttributeAutomationType`, converted
+ * the way XCUITest converts it. `FBXCUIElementTypeAny` when the runtime lacks the conversion.
+ */
+- (FBXCUIElementType)elementTypeForAutomationType:(NSUInteger)automationType;
+
+/**
  * A whole bounded subtree in one round trip, via the call XCUITest walks hierarchies with. Nil means the
  * read could not be performed (including a runtime without the selector; `*error` says which).
  *

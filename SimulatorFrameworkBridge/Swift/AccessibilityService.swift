@@ -774,6 +774,49 @@ private final class AccessibilityRequest {
     return try client.hitTest(at: point, processIdentifier: pid, displayIdentifier: displayID)
   }
 
+  // Bounds a descent against an accessibility tree that loops back on itself.
+  private let hitTestMaxDescent = 64
+
+  // Apple's hit-test answers with the element VoiceOver would focus, which can be a container whose
+  // children a tree walk lists separately: a header that is one accessibility element over its own
+  // buttons. Descends from it through the last-drawn child whose frame contains the point, so a hit-test
+  // names the same element a tree walk shows there. Stops at a control or at an element with no child
+  // under the point. The hit-test has already answered by the time this runs, so a read that fails or
+  // raises never costs it that answer: a child that cannot be read is skipped, as a tree walk drops it, and
+  // an element whose own read fails ends the descent there.
+  fileprivate func FBAXBridgeDescendHit(client: FBAXClient, from element: FBAXElement, at point: CGPoint) -> FBAXElement {
+    var current = element
+    for _ in 0..<hitTestMaxDescent {
+      FBAXBridgeCountRoundTrip()
+      guard let read = try? client.readAttributes([axAutomationType, axChildren], of: current),
+        read.status == FBAXReadStatus.read, let children = try? read.children()
+      else {
+        return current
+      }
+      if let automationType = read.attributes?[axAutomationType] as? NSNumber,
+        client.elementType(forAutomationType: automationType.uintValue).isHitTestControl
+      {
+        return current
+      }
+      var next: FBAXElement?
+      for child in children.reversed() {
+        FBAXBridgeCountRoundTrip()
+        guard let childRead = try? client.readAttributes([axFrame], of: child),
+          childRead.status == FBAXReadStatus.read, let frameValue = childRead.attributes?[axFrame],
+          let frame = (try? FBAXBridgeFrameDictionary(client: client, frameValue: frameValue)) as? NSDictionary,
+          let rect = CGRect(dictionaryRepresentation: frame), rect.contains(point)
+        else {
+          continue
+        }
+        next = child
+        break
+      }
+      guard let next else { return current }
+      current = next
+    }
+    return current
+  }
+
   // Resolves the frontmost application positionally: a system-wide hit-test at the caller's screen anchor
   // reads whichever element owns that point, and its owning pid is the frontmost app.
   //
@@ -1012,11 +1055,11 @@ private final class AccessibilityRequest {
 
     traversal.remainingNodes = 1
     traversal.truncated = false
-    // maxDepth 0 reads just the hit element's own attributes (no child recursion) — the leaf at the point.
-    let hitElement = outcome.element
-    guard let hitElement else {
+    // maxDepth 0 reads just the hit element's own attributes (no child recursion).
+    guard let reported = outcome.element else {
       return FBAXBridgeErrorResponse(message: "the hit-test reported an element but returned none")
     }
+    let hitElement = FBAXBridgeDescendHit(client: client, from: reported, at: point)
     let read = try FBAXBridgeBuildNode(
       client: client,
       element: hitElement,
@@ -1782,5 +1825,24 @@ public enum FBAccessibilityService {
     let response = handleRequest(parameters: request)
     _ = writeResponse(serializeResponse(response))
     return (response[responseOk] as? NSNumber)?.boolValue == true ? 0 : 1
+  }
+}
+
+// MARK: - FBXCUIElementType
+
+extension FBXCUIElementType {
+  // Whether a hit-test descent stops here, so a hit on a button names the button rather than the text
+  // inside it. Cells are not controls: a hit on a cell should still reach the control inside it.
+  var isHitTestControl: Bool {
+    switch self {
+    case .button, .radioButton, .checkBox, .disclosureTriangle, .popUpButton, .key, .slider, .segmentedControl,
+      .picker, .pickerWheel, .switch, .toggle, .link, .searchField, .textField, .secureTextField, .textView,
+      .menuItem, .stepper, .tab:
+      return true
+    case .any, .other:
+      return false
+    @unknown default:
+      return false
+    }
   }
 }

@@ -221,8 +221,7 @@ final class AccessibilityRuntimeTests: XCTestCase {
 
     runtime.hitTestOutcome = FBAXHitTestOutcome.hit(header, owningProcessIdentifier: kAppPid)
     let onFollow = FBAccessibilityService.handleRequest(["verb": "hittest", "pid": NSNumber(value: kAppPid), "x": 323, "y": 264])
-    // BUG: Apple's hit-test answer is returned as it is, so the container answers for the button inside it — flipped in the following commit.
-    assertEqualObjects(axValue(axValue(onFollow, "tree"), kAXElementType), "Header", "a hit on a container names the control under the point, not the text inside it")
+    assertEqualObjects(axValue(axValue(onFollow, "tree"), kAXElementType), "FollowButton", "a hit on a container names the control under the point, not the text inside it")
 
     let besideEverything = FBAccessibilityService.handleRequest(["verb": "hittest", "pid": NSNumber(value: kAppPid), "x": 280, "y": 285])
     assertEqualObjects(axValue(axValue(besideEverything, "tree"), kAXElementType), "Header", "a point under no child stays on the element the hit-test returned")
@@ -239,8 +238,7 @@ final class AccessibilityRuntimeTests: XCTestCase {
 
     runtime.hitTestOutcome = FBAXHitTestOutcome.hit(header, owningProcessIdentifier: kAppPid)
     let pastBrokenChild = FBAccessibilityService.handleRequest(["verb": "hittest", "pid": NSNumber(value: kAppPid), "x": 323, "y": 264])
-    // BUG: Apple's hit-test answer is returned as it is, so the container answers for the button inside it — flipped in the following commit.
-    assertEqualObjects(axValue(axValue(pastBrokenChild, "tree"), kAXElementType), "Header", "a child that raises is skipped, not fatal to the hit-test")
+    assertEqualObjects(axValue(axValue(pastBrokenChild, "tree"), kAXElementType), "FollowButton", "a child that raises is skipped, not fatal to the hit-test")
 
     header.readRaiseReason = "the hit element raises when read for its children"
     let brokenHit = FBAccessibilityService.handleRequest(["verb": "hittest", "pid": NSNumber(value: kAppPid), "x": 323, "y": 264])

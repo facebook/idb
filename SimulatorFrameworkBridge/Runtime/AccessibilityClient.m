@@ -247,6 +247,11 @@ static id FBAXCopyAttributeContainers(id value)
   }
 }
 
+- (FBXCUIElementType)elementTypeForAutomationType:(NSUInteger)automationType
+{
+  return [_runtime elementTypeForAutomationType:automationType];
+}
+
 - (NSNumber *)owningProcessIdentifierOfElement:(FBAXElement *)element error:(NSError **)error
 {
   @try {

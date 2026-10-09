@@ -604,6 +604,7 @@ typedef struct {
   FBAXValueGetValueFn valueGetValue;                                // borrows
   FBAXDefaultSnapshotParametersFn defaultSnapshotParameters;
   FBAXAttributeNumbersForNamesFn attributeNumbersForNames;
+  FBAXElementTypeFromAutomationTypeFn elementTypeFromAutomationType;
   // Proves a snapshot element is an AXUIElementRef before it reaches the C entry points, which do not
   // check. Optional: without it boundary continuation stays off.
   CFTypeID (*elementTypeID)(void);
@@ -1122,6 +1123,7 @@ static NSString *const kFrontboardVisibilityEndowment = @"com.apple.frontboard.v
   _functions.valueGetValue = dlsym(RTLD_DEFAULT, "AXValueGetValue");
   _functions.defaultSnapshotParameters = dlsym(RTLD_DEFAULT, "XCTDefaultSnapshotParameters");
   _functions.attributeNumbersForNames = dlsym(RTLD_DEFAULT, "XCAXAccessibilityAttributesForStringAttributes");
+  _functions.elementTypeFromAutomationType = dlsym(RTLD_DEFAULT, "XCTElementTypeFromAXAutomationType");
   _functions.elementTypeID = dlsym(RTLD_DEFAULT, "AXUIElementGetTypeID");
   _functions.performActionWithValue = dlsym(RTLD_DEFAULT, "AXUIElementPerformActionWithValue");
   _functions.observerCreate = dlsym(RTLD_DEFAULT, "AXObserverCreate");
@@ -1441,6 +1443,11 @@ static NSError *FBAXSnapshotFailure(NSInteger code, NSString *description)
     return 0;
   }
   return pid;
+}
+
+- (FBXCUIElementType)elementTypeForAutomationType:(NSUInteger)automationType
+{
+  return _functions.elementTypeFromAutomationType ? _functions.elementTypeFromAutomationType(automationType) : FBXCUIElementTypeAny;
 }
 
 - (pid_t)owningProcessIdentifierOfElement:(id)element
