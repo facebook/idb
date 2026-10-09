@@ -192,11 +192,11 @@ public struct DeveloperDiskImage: Sendable, CustomStringConvertible {
   }
 
   public func compare(_ other: DeveloperDiskImage) -> ComparisonResult {
-    var comparison = NSNumber(value: version.majorVersion).compare(NSNumber(value: other.version.majorVersion))
+    var comparison = version.majorVersion.compared(to: other.version.majorVersion)
     if comparison != .orderedSame { return comparison }
-    comparison = NSNumber(value: version.minorVersion).compare(NSNumber(value: other.version.minorVersion))
+    comparison = version.minorVersion.compared(to: other.version.minorVersion)
     if comparison != .orderedSame { return comparison }
-    return NSNumber(value: version.patchVersion).compare(NSNumber(value: other.version.patchVersion))
+    return version.patchVersion.compared(to: other.version.patchVersion)
   }
 
 }

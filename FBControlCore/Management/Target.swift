@@ -58,7 +58,7 @@ public protocol TargetInfo: AnyObject {
 extension TargetInfo {
 
   public func compare(_ target: any TargetInfo) -> ComparisonResult {
-    var comparison = NSNumber(value: targetType.rawValue).compare(NSNumber(value: target.targetType.rawValue))
+    var comparison = targetType.rawValue.compared(to: target.targetType.rawValue)
     if comparison != .orderedSame {
       return comparison
     }
@@ -66,7 +66,7 @@ extension TargetInfo {
     if comparison != .orderedSame {
       return comparison
     }
-    comparison = NSNumber(value: deviceType.family.rawValue).compare(NSNumber(value: target.deviceType.family.rawValue))
+    comparison = deviceType.family.rawValue.compared(to: target.deviceType.family.rawValue)
     if comparison != .orderedSame {
       return comparison
     }
@@ -74,7 +74,7 @@ extension TargetInfo {
     if comparison != .orderedSame {
       return comparison
     }
-    comparison = NSNumber(value: state.rawValue).compare(NSNumber(value: target.state.rawValue))
+    comparison = state.rawValue.compared(to: target.state.rawValue)
     if comparison != .orderedSame {
       return comparison
     }
