@@ -73,7 +73,7 @@ final class FBTestBundleDTXConnectionTests: XCTestCase {
       interface: interface,
       delegate: events,
       request: DispatchQueue(label: "com.facebook.xctestbootstrap.tests.request"),
-      logger: ControlCoreGlobalConfiguration.defaultLogger)
+      logger: ControlCoreLoggerSink(ControlCoreGlobalConfiguration.defaultLogger))
   }
 
   private func bundleReady(_ connection: FBTestBundleDTXConnection, protocolVersion: Int, minimumVersion: Int) {

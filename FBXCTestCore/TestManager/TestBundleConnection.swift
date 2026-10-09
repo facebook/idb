@@ -141,7 +141,7 @@ final class TestBundleConnection {
       interface: interface,
       delegate: events,
       request: requestQueue,
-      logger: logger
+      logger: ControlCoreLoggerSink(logger)
     )
     try core.connect()
     defer { core.disconnect() }

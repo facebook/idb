@@ -8,7 +8,7 @@
 #import <Foundation/Foundation.h>
 
 @class TestManagerContext;
-@protocol ControlCoreLogger;
+@protocol TestManagerLogSink;
 
 /**
  Told what the test bundle and testmanagerd do over the connection. Called on arbitrary queues.
@@ -58,7 +58,7 @@
  @param interface the `XCTestManager_IDEInterface` / `XCTMessagingChannel_RunnerToIDE` implementor that bundle and daemon callbacks are forwarded to. Typed as `id` to keep private XCTest protocols out of this header.
  @param delegate told of each step of the session.
  */
-- (nonnull instancetype)initWithContext:(nonnull TestManagerContext *)context workQueue:(nonnull dispatch_queue_t)workQueue socket:(int)socket interface:(nonnull id)interface delegate:(nonnull id<FBTestBundleDTXConnectionDelegate>)delegate requestQueue:(nonnull dispatch_queue_t)requestQueue logger:(nonnull id<ControlCoreLogger>)logger;
+- (nonnull instancetype)initWithContext:(nonnull TestManagerContext *)context workQueue:(nonnull dispatch_queue_t)workQueue socket:(int)socket interface:(nonnull id)interface delegate:(nonnull id<FBTestBundleDTXConnectionDelegate>)delegate requestQueue:(nonnull dispatch_queue_t)requestQueue logger:(nonnull id<TestManagerLogSink>)logger;
 
 #pragma mark Step-wise connection API
 

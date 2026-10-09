@@ -43,7 +43,7 @@ static const NSInteger FBProtocolMinimumVersion = 0x8;
 @property (nonatomic, readonly, strong) id<XCTestManager_IDEInterface, XCTMessagingChannel_RunnerToIDE, NSObject> interface;
 @property (nonatomic, readonly, strong) id<FBTestBundleDTXConnectionDelegate> delegate;
 @property (nonatomic, readonly, strong) dispatch_queue_t requestQueue;
-@property (nonatomic, readonly, strong) id<ControlCoreLogger> logger;
+@property (nonatomic, readonly, strong) id<TestManagerLogSink> logger;
 
 @property (nullable, nonatomic, strong) DTXConnection *testManagerdConnection;
 // Set from the proxy handler's queue and read once the delegate has been told the bundle is ready.
@@ -77,7 +77,7 @@ static const NSInteger FBProtocolMinimumVersion = 0x8;
   return _clientProcessDisplayPath;
 }
 
-- (instancetype)initWithContext:(TestManagerContext *)context workQueue:(dispatch_queue_t)workQueue socket:(int)socket interface:(id)interface delegate:(id<FBTestBundleDTXConnectionDelegate>)delegate requestQueue:(dispatch_queue_t)requestQueue logger:(id<ControlCoreLogger>)logger
+- (instancetype)initWithContext:(TestManagerContext *)context workQueue:(dispatch_queue_t)workQueue socket:(int)socket interface:(id)interface delegate:(id<FBTestBundleDTXConnectionDelegate>)delegate requestQueue:(dispatch_queue_t)requestQueue logger:(id<TestManagerLogSink>)logger
 {
   self = [super init];
   if (!self) {
@@ -121,7 +121,7 @@ static const NSInteger FBProtocolMinimumVersion = 0x8;
 - (BOOL)connectWithError:(NSError **)error
 {
   int socket = self.testManagerdSocket;
-  id<ControlCoreLogger> logger = self.logger;
+  id<TestManagerLogSink> logger = self.logger;
   [logger log:[NSString stringWithFormat:@"Wrapping testmanagerd socket (%d) in DTXTransport and DTXConnection", socket]];
   DTXConnection *connection;
   // DTX asserts internally on a dead socket; the raise would otherwise cross
