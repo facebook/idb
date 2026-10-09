@@ -107,4 +107,39 @@ final class BridgeAXRequestTests: XCTestCase {
     XCTAssertEqual(BridgeRequest.accessibilityParameters(of: frame), ["verb": .string("quiet"), "quietWindowMs": .integer(-1)])
     XCTAssertNil(BridgeRequest.accessibilityParameters(of: try BridgeRequest(command: .ping).encoded()))
   }
+
+  func testClientTypesCarryTheTranslatorsIntegers() {
+    let expected: [BridgeAXClientType: UInt64] = [
+      .noClient: 0, .unidentified: 1, .application: 2, .xcodeHelper: 3, .xctest: 4, .scripter: 5, .systemEvents: 6, .voiceOver: 7,
+      .switchControl: 8, .fullKeyboardAccess: 9, .voiceControl: 10, .accessibilityInspector: 11,
+    ]
+    XCTAssertEqual(Set(BridgeAXClientType.allCases), Set(expected.keys))
+    for (clientType, value) in expected {
+      XCTAssertEqual(clientType.rawValue, value, "\(clientType)")
+    }
+    XCTAssertNil(BridgeAXClientType(rawValue: 12))
+  }
+
+  func testClientTypesMapOntoTheRequestingClientTheGuestTranslatorInstalls() {
+    let expected: [BridgeAXClientType: UInt32] = [
+      .noClient: 0, .unidentified: 0, .application: 1, .xcodeHelper: 2, .xctest: 2, .scripter: 1, .systemEvents: 1, .voiceOver: 3,
+      .switchControl: 4, .fullKeyboardAccess: 10, .voiceControl: 5, .accessibilityInspector: 12,
+    ]
+    for clientType in BridgeAXClientType.allCases {
+      XCTAssertEqual(clientType.requestingClient.rawValue, expected[clientType], "\(clientType)")
+    }
+  }
+
+  func testOnlyScriptingAndTestingClientsDeserveTheAutomationTree() {
+    XCTAssertEqual(
+      Set(BridgeAXClientType.allCases.filter(\.deservesAutomation)),
+      [.application, .xcodeHelper, .xctest, .scripter, .systemEvents])
+    XCTAssertEqual(Set(BridgeAXRequestingClient.allCases.filter(\.deservesAutomation)), [.scripting, .xctest, .typist])
+  }
+
+  func testRequestingClientsCarryTheRuntimesIntegers() {
+    XCTAssertEqual(
+      BridgeAXRequestingClient.allCases.map(\.rawValue),
+      [0, 1, 2, 3, 4, 5, 6, 7, 8, 10, 11, 12, 13, 14, 15, 16, 17])
+  }
 }
