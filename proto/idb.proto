@@ -699,8 +699,22 @@ message HIDEvent {
     UP = 1;
   }
 
+  // The screen edge a contact started at. iOS reads system gestures, such as
+  // the home indicator, Notification Centre and back, from this rather than
+  // from where the contact is, so a swipe that merely starts at an edge does
+  // not trigger them.
+  enum HIDEdge {
+    NO_EDGE = 0;
+    TOP_EDGE = 1;
+    LEFT_EDGE = 2;
+    BOTTOM_EDGE = 3;
+    RIGHT_EDGE = 4;
+  }
+
   message HIDTouch {
     Point point = 1;
+    // Every contact of an edge gesture carries the edge, not only the first.
+    HIDEdge edge = 2;
   }
 
   enum HIDButtonType {
@@ -741,6 +755,7 @@ message HIDEvent {
     Point end = 2;
     double delta = 5;
     double duration = 6;
+    HIDEdge edge = 7;
   }
 
   message HIDDelay {

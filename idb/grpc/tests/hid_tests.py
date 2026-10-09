@@ -29,6 +29,7 @@ from idb.grpc.hid import (
     HIDButtonType,
     HIDDelay,
     HIDDirection,
+    HIDEdge,
     HIDHinge,
     HIDKey,
     HIDOrientation,
@@ -112,6 +113,30 @@ class HidTests(TestCase):
                     )
                 ),
             )
+
+    def test_edges(self) -> None:
+        for edge in HIDEdge:
+            with self.subTest(edge=edge):
+                touch = event_to_grpc(
+                    HIDPress(
+                        action=HIDTouch(point=Point(x=1, y=2), edge=edge),
+                        direction=HIDDirection.DOWN,
+                    )
+                )
+                swipe = event_to_grpc(
+                    HIDSwipe(
+                        start=Point(x=1, y=2),
+                        end=Point(x=3, y=4),
+                        delta=None,
+                        duration=None,
+                        edge=edge,
+                    )
+                )
+                for grpc_edge in [touch.press.action.touch.edge, swipe.swipe.edge]:
+                    self.assertEqual(
+                        GrpcHIDEvent.HIDEdge.Name(grpc_edge),
+                        "NO_EDGE" if edge == HIDEdge.NONE else f"{edge.name}_EDGE",
+                    )
 
     def test_delay(self) -> None:
         self.assertEqual(

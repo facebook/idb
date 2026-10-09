@@ -80,6 +80,7 @@ from idb.common.types import (
     FileEntryInfo,
     FileListing,
     HIDButtonType,
+    HIDEdge,
     HIDEvent,
     HIDHinge,
     HIDOrientationType,
@@ -1350,8 +1351,9 @@ class Client(ClientBase):
         p_end: tuple[int, int],
         duration: float | None = None,
         delta: int | None = None,
+        edge: HIDEdge = HIDEdge.NONE,
     ) -> None:
-        await self.send_events(swipe_to_events(p_start, p_end, duration, delta))
+        await self.send_events(swipe_to_events(p_start, p_end, duration, delta, edge))
 
     @log_and_handle_exceptions("hid")
     async def key_sequence(self, key_sequence: list[int]) -> None:
