@@ -6,6 +6,3 @@
 INFOPLIST_FILE = $(SRCROOT)/FBDeviceControl/FBDeviceControl-Info.plist
 PRODUCT_BUNDLE_IDENTIFIER = com.facebook.FBDeviceControl
 PRODUCT_NAME = FBDeviceControl
-
-// Suppress incomplete umbrella warning when importing FBXCTestCore module
-OTHER_CFLAGS = $(inherited) -Wno-incomplete-umbrella

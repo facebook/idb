@@ -8,6 +8,3 @@ INFOPLIST_FILE = $(SRCROOT)/FBXCTestCore/FBXCTestCore-Info.plist
 LD_RUNPATH_SEARCH_PATHS = @loader_path/Frameworks
 PRODUCT_BUNDLE_IDENTIFIER = com.facebook.FBXCTestCore
 PRODUCT_NAME = FBXCTestCore
-
-// Suppress incomplete umbrella warning - some headers import private frameworks and can't be in umbrella
-OTHER_CFLAGS = $(inherited) -Wno-incomplete-umbrella
