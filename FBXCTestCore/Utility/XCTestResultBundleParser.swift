@@ -368,12 +368,13 @@ final class XCTestResultBundleParser {
 
     reporter.testCaseDidStart(forTestClass: testClassName, method: testMethodIdentifier)
 
-    guard let summaryRefId = testMethod.optionalRecord("summaryRef")?.unwrappedString("id", logger: logger) else {
-      return
-    }
-    // A tool failure abandons this method's summary: the case has started
-    // and never finishes.
-    guard let actionTestSummary = try? await tool.record(forId: summaryRefId, timeout: XCTestOperationTimeoutSecs) else {
+    // Without a readable summary there are no failure messages or activities, but the method
+    // still finishes with the status and duration its own record gives.
+    guard let summaryRefId = testMethod.optionalRecord("summaryRef")?.unwrappedString("id", logger: logger),
+      let actionTestSummary = try? await tool.record(forId: summaryRefId, timeout: XCTestOperationTimeoutSecs)
+    else {
+      let logs = buildTestLog(nil, testBundleName: testBundleName, testClassName: testClassName, testMethodName: testMethodIdentifier, testPassed: status == .passed, duration: duration, logger: logger)
+      reporter.testCaseDidFinish(forTestClass: testClassName, method: testMethodIdentifier, with: status, duration: duration, logs: logs)
       return
     }
     if status == .failed {

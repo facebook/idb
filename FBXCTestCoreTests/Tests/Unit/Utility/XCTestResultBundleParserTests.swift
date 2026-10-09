@@ -292,17 +292,35 @@ struct XCTestResultBundleParserTests {
   }
 
   @Test
-  func aTestWithoutASummaryStartsButNeverFinishes() async throws {
+  func aTestWithoutASummaryFinishesWithItsOwnStatusAndDuration() async throws {
     let xcresult = try xcresult(methods: [method("testNoSummary", status: "Success")])
 
-    #expect(try await parse(xcresult: xcresult) == [.started(testClass: "MyTestClass", method: "testNoSummary")])
+    #expect(
+      try await parse(xcresult: xcresult) == [
+        .started(testClass: "MyTestClass", method: "testNoSummary"),
+        .finished(
+          testClass: "MyTestClass", method: "testNoSummary", status: .passed, duration: 0.5,
+          logs: [
+            "Test Case '-[MyTests.MyTestClass testNoSummary]' started.",
+            "Test Case '-[MyTests.MyTestClass testNoSummary]' passed in 0.500 seconds",
+          ]),
+      ])
   }
 
   @Test
-  func aTestWhoseSummaryCannotBeReadStartsButNeverFinishes() async throws {
+  func aTestWhoseSummaryCannotBeReadFinishesWithItsOwnStatusAndDuration() async throws {
     let xcresult = try xcresult(methods: [method("testUnreadable", status: "Success", summaryRef: "MISSING")])
 
-    #expect(try await parse(xcresult: xcresult) == [.started(testClass: "MyTestClass", method: "testUnreadable")])
+    #expect(
+      try await parse(xcresult: xcresult) == [
+        .started(testClass: "MyTestClass", method: "testUnreadable"),
+        .finished(
+          testClass: "MyTestClass", method: "testUnreadable", status: .passed, duration: 0.5,
+          logs: [
+            "Test Case '-[MyTests.MyTestClass testUnreadable]' started.",
+            "Test Case '-[MyTests.MyTestClass testUnreadable]' passed in 0.500 seconds",
+          ]),
+      ])
   }
 
   @Test
