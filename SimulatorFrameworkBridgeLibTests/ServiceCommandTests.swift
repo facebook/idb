@@ -86,10 +86,16 @@ final class ServiceCommandTests: XCTestCase {
     XCTAssertTrue(services.calls.isEmpty)
   }
 
-  func testReplForwardsOnlySocketAndLibraryPaths() {
+  func testReplForwardsSocketLibraryAndAdditionalLibraryPaths() {
     let services = RecordingServices()
-    XCTAssertEqual(FBBridgeCommand.dispatch(service: "repl", action: "start", arguments: ["socket", "library", "ignored"], services: services), 23)
-    XCTAssertEqual(services.calls, [Call(service: "repl", action: "start", arguments: ["socket", "library"])])
+    XCTAssertEqual(FBBridgeCommand.dispatch(service: "repl", action: "start", arguments: ["socket", "library"], services: services), 23)
+    XCTAssertEqual(FBBridgeCommand.dispatch(service: "repl", action: "start", arguments: ["socket", "library", "first", "second"], services: services), 23)
+    XCTAssertEqual(
+      services.calls,
+      [
+        Call(service: "repl", action: "start", arguments: ["socket", "library"]),
+        Call(service: "repl", action: "start", arguments: ["socket", "library", "first", "second"]),
+      ])
   }
 }
 
@@ -118,5 +124,7 @@ private final class RecordingServices: FBBridgeServiceHandling {
   func proxy(_ action: String, arguments: [String]) -> Int32 { record("proxy", action, arguments) }
   func accessibility(_ action: String, arguments: [String]) -> Int32 { record("accessibility", action, arguments) }
   func orientation(_ action: String, arguments: [String]) -> Int32 { record("orientation", action, arguments) }
-  func repl(_ socketPath: String?, libraryPath: String) -> Int32 { record("repl", "start", [socketPath, libraryPath]) }
+  func repl(_ socketPath: String?, libraryPath: String, additionalLibraryPaths: [String]) -> Int32 {
+    record("repl", "start", [socketPath, libraryPath] + additionalLibraryPaths.map { $0 })
+  }
 }

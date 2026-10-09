@@ -34,6 +34,8 @@ extension SimulatorReplError: LocalizedError {
   }
 }
 
+/// Each host is started with the shim injected. `additionalLibraries` are loaded into the host
+/// alongside it, before any code is injected, so injected code resolves their symbols at load.
 public struct SimulatorReplCommands {
 
   private let simulator: Simulator
@@ -46,7 +48,7 @@ public struct SimulatorReplCommands {
 
   // MARK: - Async
 
-  public func startTest(bundlePath: String) async throws -> LaunchedRepl {
+  public func startTest(bundlePath: String, additionalLibraries: [String] = []) async throws -> LaunchedRepl {
     let logger = simulator.logger
 
     // The driver auto-imports the IDBAPI `.swiftinterface` so injected code can call `IDB`; the API
@@ -79,7 +81,7 @@ public struct SimulatorReplCommands {
       binaryPath: bundle.binary?.path,
       logDirectoryPath: nil,
       architectures: architectures,
-      injectLibraries: [replDylibPath]
+      injectLibraries: [replDylibPath] + additionalLibraries
     )
 
     let runner = LogicTestRunStrategy(
@@ -90,7 +92,7 @@ public struct SimulatorReplCommands {
     return LaunchedRepl(socketPath: socketPath, host: .testRun(Task { try await runner.run() }), extraInterfacePaths: extraInterfacePaths)
   }
 
-  public func startSimulator() async throws -> LaunchedRepl {
+  public func startSimulator(additionalLibraries: [String] = []) async throws -> LaunchedRepl {
 
     guard let bridgePath = simulator.frameworkBridgePath else {
       throw SimulatorReplError.bundledResourceMissing(item: "SimulatorFrameworkBridge binary")
@@ -99,34 +101,34 @@ public struct SimulatorReplCommands {
       throw SimulatorReplError.bundledResourceMissing(item: "libRepl-iOS.dylib")
     }
     let idbInterfacePath = BundledResources.path(forItem: "IDBAPI.swiftinterface")
-    return try await startSimulator(bridgePath: bridgePath, libReplPath: libReplPath, extraInterfacePaths: [idbInterfacePath].compactMap { $0 })
+    return try await startSimulator(bridgePath: bridgePath, libReplPath: libReplPath, additionalLibraries: additionalLibraries, extraInterfacePaths: [idbInterfacePath].compactMap { $0 })
   }
 
-  func startSimulator(bridgePath: String, libReplPath: String, extraInterfacePaths: [String]) async throws -> LaunchedRepl {
+  func startSimulator(bridgePath: String, libReplPath: String, additionalLibraries: [String] = [], extraInterfacePaths: [String]) async throws -> LaunchedRepl {
     // `repl start` blocks until the socket is closed, which is what keeps the session alive.
     let socketPath = "/tmp/idb_repl_\(UUID().uuidString).sock"
 
     let process = try await Subprocess(
       executable: bridgePath,
-      arguments: ["repl", "start", socketPath, libReplPath],
+      arguments: ["repl", "start", socketPath, libReplPath] + additionalLibraries,
       environment: .exact([:]),
       mode: .posixSpawn
     ).launch(on: SimulatorSubprocessLauncher(simulator: simulator), output: .nullDevice, error: .nullDevice)
     return LaunchedRepl(socketPath: socketPath, host: .process(process), extraInterfacePaths: extraInterfacePaths)
   }
 
-  public func appLaunchEnvironment(bundleID: String) async throws -> [String: String] {
+  public func appLaunchEnvironment(bundleID: String, additionalLibraries: [String] = []) async throws -> [String: String] {
     guard let replDylibPath = BundledResources.path(forItem: "libRepl-iOS.dylib") else {
       throw SimulatorReplError.bundledResourceMissing(item: "libRepl-iOS.dylib")
     }
     return [
-      "DYLD_INSERT_LIBRARIES": replDylibPath,
+      "DYLD_INSERT_LIBRARIES": ([replDylibPath] + additionalLibraries).joined(separator: ":"),
       "IDB_REPL_APP_AUTOSTART": "1",
       "IDB_REPL_SOCKET_PATH": replSocketPath(udid: simulator.udid, bundleID: bundleID),
     ]
   }
 
-  public func startApp(bundleID: String, reuseSession: Bool) async throws -> LaunchedRepl {
+  public func startApp(bundleID: String, reuseSession: Bool, additionalLibraries: [String] = []) async throws -> LaunchedRepl {
     let logger = simulator.logger
 
     // Read host-side by the companion, so the app sandbox need not contain it.
@@ -145,7 +147,7 @@ public struct SimulatorReplCommands {
     }
 
     // `.relaunchIfRunning` so an app already running without the dylib picks it up.
-    let environment = try await appLaunchEnvironment(bundleID: bundleID)
+    let environment = try await appLaunchEnvironment(bundleID: bundleID, additionalLibraries: additionalLibraries)
     let configuration = ApplicationLaunchConfiguration(
       bundleID: bundleID,
       bundleName: nil,

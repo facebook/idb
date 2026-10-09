@@ -10,7 +10,7 @@ import FBControlCore
 @testable import FBSimulatorControl
 import XCTest
 
-/// What the simulator-context REPL spawns inside the simulator, and when its session is over.
+/// What the REPL injects into each host, what the simulator context spawns, and when its session is over.
 final class SimulatorReplCommandsTests: XCTestCase {
 
   private static func isWritable(_ fileDescriptor: Any?) -> Bool {
@@ -32,6 +32,26 @@ final class SimulatorReplCommandsTests: XCTestCase {
     XCTAssertTrue(Self.isWritable(options["stdout"]), "The bridge writes to /dev/null")
     XCTAssertTrue(Self.isWritable(options["stderr"]), "The bridge writes to /dev/null")
     device.terminate(statLoc: 0)
+  }
+
+  func testLoadsAdditionalLibrariesIntoTheBridgeAfterTheShim() async throws {
+    let device = HeldSpawnDevice()
+    let commands = SimulatorReplCommands.commands(with: SimulatorTestSupport.testableSimulator(withDevice: device))
+
+    let repl = try await commands.startSimulator(bridgePath: "/bridge", libReplPath: "/libRepl.dylib", additionalLibraries: ["/first.dylib", "/second.dylib"], extraInterfacePaths: [])
+
+    let options = try XCTUnwrap(device.spawnedOptions)
+    XCTAssertEqual(options["arguments"] as? [String], ["/bridge", "repl", "start", repl.socketPath, "/libRepl.dylib", "/first.dylib", "/second.dylib"])
+    device.terminate(statLoc: 0)
+  }
+
+  func testArmsAnAppLaunchWithTheShimThenAdditionalLibraries() async throws {
+    let commands = SimulatorReplCommands.commands(with: SimulatorTestSupport.testableSimulator(withDevice: HeldSpawnDevice()))
+
+    let environment = try await commands.appLaunchEnvironment(bundleID: "com.example.App", additionalLibraries: ["/first.dylib", "/second.dylib"])
+
+    let shim = try XCTUnwrap(BundledResources.path(forItem: "libRepl-iOS.dylib"))
+    XCTAssertEqual(environment["DYLD_INSERT_LIBRARIES"], "\(shim):/first.dylib:/second.dylib")
   }
 
   func testSessionRunsUntilTheBridgeExits() async throws {

@@ -35,7 +35,7 @@ public protocol FBBridgeServiceHandling {
   func proxy(_ action: String, arguments: [String]) -> Int32
   func accessibility(_ action: String, arguments: [String]) -> Int32
   func orientation(_ action: String, arguments: [String]) -> Int32
-  func repl(_ socketPath: String?, libraryPath: String) -> Int32
+  func repl(_ socketPath: String?, libraryPath: String, additionalLibraryPaths: [String]) -> Int32
 }
 
 /// The services the guest command line reaches, each reporting to stdout.
@@ -99,11 +99,18 @@ public struct FBBridgeServices: FBBridgeServiceHandling {
     FBOrientationService.run(action: action, arguments: arguments)
   }
 
-  public func repl(_ socketPath: String?, libraryPath: String) -> Int32 {
-    // The socket server and injected IDB API must use libRepl's one control connection.
+  public func repl(_ socketPath: String?, libraryPath: String, additionalLibraryPaths: [String]) -> Int32 {
+    // The socket server and any library injected code calls through must use libRepl's one
+    // control connection, so everything loads globally into this process.
     guard let handle = dlopen((libraryPath as NSString).fileSystemRepresentation, RTLD_NOW | RTLD_GLOBAL) else {
       NSLog("Failed to load libRepl at %@: %@", libraryPath, Self.lastLoaderError())
       return 1
+    }
+    for additionalLibraryPath in additionalLibraryPaths {
+      guard dlopen((additionalLibraryPath as NSString).fileSystemRepresentation, RTLD_NOW | RTLD_GLOBAL) != nil else {
+        NSLog("Failed to load %@: %@", additionalLibraryPath, Self.lastLoaderError())
+        return 1
+      }
     }
     guard let symbol = dlsym(handle, "FBReplServeSocket") else {
       NSLog("libRepl is missing FBReplServeSocket: %@", Self.lastLoaderError())
@@ -174,7 +181,7 @@ public enum FBBridgeCommand {
         NSLog("repl start requires the libRepl path as its second argument")
         return 1
       }
-      return services.repl(arguments.first, libraryPath: arguments[1])
+      return services.repl(arguments.first, libraryPath: arguments[1], additionalLibraryPaths: Array(arguments.dropFirst(2)))
     case nil:
       NSLog("Unknown service: %@", service)
       NSLog("Available services: %@", serviceNames)
