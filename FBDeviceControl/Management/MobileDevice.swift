@@ -76,8 +76,8 @@ public final class MobileDevice: TargetInfo, DeviceCommands, CustomStringConvert
   public init(
     allValues: [String: Any],
     calls: AMDCalls,
-    connectionReuseTimeout: NSNumber?,
-    serviceReuseTimeout: NSNumber?,
+    connectionReuseTimeout: TimeInterval?,
+    serviceReuseTimeout: TimeInterval?,
     work workQueue: DispatchQueue,
     asyncQueue: DispatchQueue,
     logger: any ControlCoreLogger
@@ -90,9 +90,9 @@ public final class MobileDevice: TargetInfo, DeviceCommands, CustomStringConvert
     self.logger = logger.withName(udid)
     // The un-named logger: only this object's own logger is decorated with the udid.
     self.sessionStorage = AMDeviceSession(
-      device: self, reuseTimeout: connectionReuseTimeout?.doubleValue, logger: logger)
+      device: self, reuseTimeout: connectionReuseTimeout, logger: logger)
     self.serviceManagerStorage = AMDeviceServiceManager(
-      device: self, serviceTimeout: serviceReuseTimeout?.doubleValue)
+      device: self, serviceTimeout: serviceReuseTimeout)
   }
 
   // MARK: - TargetInfo

@@ -176,7 +176,7 @@ final class AMDeviceManager: DeviceManager<MobileDevice> {
       allValues: info ?? [:],
       calls: calls,
       connectionReuseTimeout: nil,
-      serviceReuseTimeout: NSNumber(value: serviceReuseTimeout),
+      serviceReuseTimeout: serviceReuseTimeout,
       work: workQueue,
       asyncQueue: asyncQueue,
       logger: logger)

@@ -139,7 +139,7 @@ final class MobileDeviceTests {
     return calls
   }
 
-  private static func makeDevice(connectionReuseTimeout: NSNumber?, serviceReuseTimeout: NSNumber?) -> MobileDevice {
+  private static func makeDevice(connectionReuseTimeout: TimeInterval?, serviceReuseTimeout: TimeInterval?) -> MobileDevice {
     sAMDeviceEvents.removeAll()
     #expect(sAMDeviceEvents.isEmpty)
 
