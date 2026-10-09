@@ -78,8 +78,7 @@ public final class DeviceDeveloperDiskImageCommands: DeveloperDiskImageCommands 
   // MARK: - DeveloperDiskImageCommands
 
   public func mountedDiskImages() async throws -> [DeveloperDiskImage] {
-    let mountInfo = try await mountInfoToDiskImage()
-    return Array(mountInfo.values)
+    try await diskImagesOfMountedEntries()
   }
 
   public func mountDiskImage(_ diskImage: DeveloperDiskImage) async throws -> DeveloperDiskImage {
@@ -123,7 +122,8 @@ public final class DeviceDeveloperDiskImageCommands: DeveloperDiskImageCommands 
 
   // MARK: - Private
 
-  private func mountInfoToDiskImage() async throws -> [NSDictionary: DeveloperDiskImage] {
+  /// The disk image behind each mounted entry, in the order the device reports them.
+  private func diskImagesOfMountedEntries() async throws -> [DeveloperDiskImage] {
     let logger = device?.logger
     let entries = try await mountedImageEntries()
     let images = diskImages.availableDiskImages
@@ -131,17 +131,14 @@ public final class DeviceDeveloperDiskImageCommands: DeveloperDiskImageCommands 
     for image in images {
       imagesBySignature[image.signature] = image
     }
-    var mountEntryToDiskImage: [NSDictionary: DeveloperDiskImage] = [:]
-    for mountEntry in entries {
+    return entries.map { mountEntry in
       let signature = mountEntry[ImageSignatureKey] as? Data
-      var image = signature.flatMap { imagesBySignature[$0] }
-      if image == nil {
-        logger?.log("Could not find the location of the image mounted on the device \(mountEntry)")
-        image = DeveloperDiskImage.unknownDiskImage(withSignature: signature ?? Data())
+      if let image = signature.flatMap({ imagesBySignature[$0] }) {
+        return image
       }
-      mountEntryToDiskImage[mountEntry as NSDictionary] = image
+      logger?.log("Could not find the location of the image mounted on the device \(mountEntry)")
+      return DeveloperDiskImage.unknownDiskImage(withSignature: signature ?? Data())
     }
-    return mountEntryToDiskImage
   }
 
   private func mountedImageEntries() async throws -> [[String: Any]] {
@@ -167,9 +164,8 @@ public final class DeviceDeveloperDiskImageCommands: DeveloperDiskImageCommands 
   }
 
   private func signatureToDiskImageOfMountedDisks() async throws -> [Data: DeveloperDiskImage] {
-    let mountInfo = try await mountInfoToDiskImage()
     var signatureToDiskImage: [Data: DeveloperDiskImage] = [:]
-    for image in mountInfo.values {
+    for image in try await diskImagesOfMountedEntries() {
       signatureToDiskImage[image.signature] = image
     }
     return signatureToDiskImage
