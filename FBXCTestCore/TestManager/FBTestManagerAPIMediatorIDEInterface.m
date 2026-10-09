@@ -39,7 +39,7 @@
 
 #pragma mark - Initializers
 
-- (instancetype)initWithMediator:(TestManagerAPIMediator *)mediator context:(TestManagerContext *)context reporter:(id<XCTestReporter>)reporter logger:(id<TestManagerLogSink>)logger
+- (instancetype)initWithMediator:(TestManagerAPIMediator *)mediator context:(TestManagerContext *)context reporter:(id<TestManagerReportSink>)reporter logger:(id<TestManagerLogSink>)logger
 {
   self = [super init];
   if (!self) {

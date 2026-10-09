@@ -19,18 +19,18 @@
 
 @interface FBTestReporterAdapter ()
 
-@property (nonatomic, readonly, strong) id<XCTestReporter> reporter;
+@property (nonatomic, readonly, strong) id<TestManagerReportSink> reporter;
 
 @end
 
 @implementation FBTestReporterAdapter
 
-+ (instancetype)withReporter:(id<XCTestReporter>)reporter;
++ (instancetype)withReporter:(id<TestManagerReportSink>)reporter;
 {
   return [[self alloc] initWithReporter:reporter];
 }
 
-- (instancetype)initWithReporter:(id<XCTestReporter>)reporter;
+- (instancetype)initWithReporter:(id<TestManagerReportSink>)reporter;
 {
   self = [super init];
   if (!self) {
@@ -101,18 +101,14 @@
 - (id)_XCT_testCase:(NSString *)testClass method:(NSString *)method didFinishActivity:(XCActivityRecord *)activity
 {
   FBActivityRecord *wrapped = [FBActivityRecord from:activity];
-  if ([self.reporter respondsToSelector:@selector(testCase:method:didFinishActivity:)]) {
-    [self.reporter testCase:testClass method:method didFinishActivity:wrapped];
-  }
+  [self.reporter testCase:testClass method:method didFinishActivity:wrapped];
   return nil;
 }
 
 - (id)_XCT_testCase:(NSString *)testClass method:(NSString *)method willStartActivity:(XCActivityRecord *)activity
 {
   FBActivityRecord *wrapped = [FBActivityRecord from:activity];
-  if ([self.reporter respondsToSelector:@selector(testCase:method:willStartActivity:)]) {
-    [self.reporter testCase:testClass method:method willStartActivity:wrapped];
-  }
+  [self.reporter testCase:testClass method:method willStartActivity:wrapped];
   return nil;
 }
 

@@ -8,7 +8,7 @@
 import FBXCTestCore
 import Foundation
 
-final class XCTestReporterDouble: NSObject, XCTestReporter {
+final class XCTestReporterDouble: XCTestReporter {
 
   private var mutableStartedSuites: [String] = []
   private var mutableEndedSuites: [String] = []

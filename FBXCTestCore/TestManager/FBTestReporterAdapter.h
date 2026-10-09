@@ -9,10 +9,10 @@
 
 #import <XCTestPrivate/XCTestManager_IDEInterface-Protocol.h>
 
-@protocol XCTestReporter;
+@protocol TestManagerReportSink;
 
 /**
- Converts Low-Level XCTestManager_IDEInterface Messages to their counterparts in XCTestReporter.
+ Converts Low-Level XCTestManager_IDEInterface Messages to their counterparts in TestManagerReportSink.
  */
 @interface FBTestReporterAdapter : NSObject <XCTestManager_IDEInterface>
 
@@ -22,6 +22,6 @@
  @param reporter the reporter to report to.
  @return a new adapter.
  */
-+ (nonnull instancetype)withReporter:(nonnull id<XCTestReporter>)reporter;
++ (nonnull instancetype)withReporter:(nonnull id<TestManagerReportSink>)reporter;
 
 @end

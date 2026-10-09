@@ -11,7 +11,7 @@
 @class TestManagerContext;
 
 @protocol TestManagerLogSink;
-@protocol XCTestReporter;
+@protocol TestManagerReportSink;
 
 NS_ASSUME_NONNULL_BEGIN
 
@@ -30,7 +30,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param reporter the delegate to report test progress to.
  @param logger the logger to log events to.
  */
-- (instancetype)initWithMediator:(TestManagerAPIMediator *)mediator context:(TestManagerContext *)context reporter:(id<XCTestReporter>)reporter logger:(nullable id<TestManagerLogSink>)logger;
+- (instancetype)initWithMediator:(TestManagerAPIMediator *)mediator context:(TestManagerContext *)context reporter:(id<TestManagerReportSink>)reporter logger:(nullable id<TestManagerLogSink>)logger;
 
 @end
 

@@ -11,7 +11,7 @@ import Foundation
 import Testing
 
 /// Records what the parser reports, in order, with the detail the shared reporter double drops.
-private final class RecordingReporter: NSObject, XCTestReporter, @unchecked Sendable {
+private final class RecordingReporter: XCTestReporter, @unchecked Sendable {
 
   enum Event: Equatable {
     case started(testClass: String, method: String)

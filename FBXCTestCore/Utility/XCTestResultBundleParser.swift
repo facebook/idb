@@ -193,7 +193,7 @@ final class XCTestResultBundleParser {
       return
     }
     guard let bundleFormatVersion = bundleInfo?.optionalRecord("version") else {
-      reporter.testPlanDidFail?(withMessage: "No test results were produced")
+      reporter.testPlanDidFail(withMessage: "No test results were produced")
       return
     }
     let majorVersion = try bundleFormatVersion.value("major", as: Int.self)

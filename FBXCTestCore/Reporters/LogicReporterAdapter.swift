@@ -86,9 +86,7 @@ public final class LogicReporterAdapter: LogicXCTestReporter {
   }
 
   public func didCrashDuringTest(_ error: Error) {
-    if reporter.responds(to: #selector(XCTestReporter.didCrashDuringTest(_:))) {
-      reporter.didCrashDuringTest(error as NSError)
-    }
+    reporter.didCrashDuringTest(error)
     reporter.processUnderTestDidExit()
   }
 

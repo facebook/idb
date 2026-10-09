@@ -46,7 +46,7 @@ public final class TestManagerAPIMediator: NSObject, @unchecked Sendable {
   private let tokenLock = NSLock()
   private var tokenToLaunchedApp: [NSNumber: LaunchedApplication] = [:]
 
-  private lazy var ideInterface = FBTestManagerAPIMediatorIDEInterface(mediator: self, context: context, reporter: reporter, logger: ControlCoreLoggerSink(logger))
+  private lazy var ideInterface = FBTestManagerAPIMediatorIDEInterface(mediator: self, context: context, reporter: XCTestReporterSink(reporter), logger: ControlCoreLoggerSink(logger))
 
   // MARK: - Initializers
 

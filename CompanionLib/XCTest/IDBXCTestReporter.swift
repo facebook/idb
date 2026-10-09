@@ -63,7 +63,7 @@ extension IDBXCTestReporterError: LocalizedError {
   }
 }
 
-final class IDBXCTestReporter: NSObject, XCTestReporter, DataConsumer, @unchecked Sendable {
+final class IDBXCTestReporter: XCTestReporter, DataConsumer, @unchecked Sendable {
 
   private let reportingTerminated = AsyncPromise<Int>()
 

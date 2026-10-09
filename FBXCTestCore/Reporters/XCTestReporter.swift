@@ -7,50 +7,45 @@
 
 import Foundation
 
-@objc public protocol XCTestReporter: NSObjectProtocol {
+public protocol XCTestReporter: AnyObject {
 
-  @objc(processWaitingForDebuggerWithProcessIdentifier:)
   func processWaitingForDebugger(withProcessIdentifier pid: pid_t)
 
-  @objc func didBeginExecutingTestPlan()
+  func didBeginExecutingTestPlan()
 
-  @objc func didFinishExecutingTestPlan()
+  func didFinishExecutingTestPlan()
 
-  @objc func processUnderTestDidExit()
+  func processUnderTestDidExit()
 
-  @objc(testSuite:didStartAt:)
   func testSuite(_ testSuite: String, didStartAt startTime: String)
 
-  @objc(testCaseDidFinishForTestClass:method:withStatus:duration:logs:)
   func testCaseDidFinish(forTestClass testClass: String, method: String, with status: FBTestReportStatus, duration: TimeInterval, logs: [String]?)
 
-  @objc(testCaseDidFailForTestClass:method:exceptions:)
   func testCaseDidFail(forTestClass testClass: String, method: String, exceptions: [TestExceptionInfo])
 
-  @objc(testCaseDidStartForTestClass:method:)
   func testCaseDidStart(forTestClass testClass: String, method: String)
 
-  @objc(finishedWithSummary:)
   func finished(with summary: TestManagerResultSummary)
 
-  @objc(testHadOutput:)
   func testHadOutput(_ output: String)
 
-  @objc(handleExternalEvent:)
   func handleExternalEvent(_ event: String)
 
-  @objc(printReportWithError:)
   func printReport() throws
 
-  @objc(didCrashDuringTest:)
   func didCrashDuringTest(_ error: Error)
 
-  @objc(testCase:method:willStartActivity:)
-  optional func testCase(_ testClass: String, method: String, willStartActivity activity: FBActivityRecord)
+  func testCase(_ testClass: String, method: String, willStartActivity activity: FBActivityRecord)
 
-  @objc(testCase:method:didFinishActivity:)
-  optional func testCase(_ testClass: String, method: String, didFinishActivity activity: FBActivityRecord)
+  func testCase(_ testClass: String, method: String, didFinishActivity activity: FBActivityRecord)
 
-  @objc(testPlanDidFailWithMessage:)
-  optional func testPlanDidFail(withMessage message: String)
+  func testPlanDidFail(withMessage message: String)
+}
+
+extension XCTestReporter {
+  public func testCase(_ testClass: String, method: String, willStartActivity activity: FBActivityRecord) {}
+
+  public func testCase(_ testClass: String, method: String, didFinishActivity activity: FBActivityRecord) {}
+
+  public func testPlanDidFail(withMessage message: String) {}
 }
