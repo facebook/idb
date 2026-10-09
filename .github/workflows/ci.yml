@@ -170,6 +170,38 @@ jobs:
           if-no-files-found: ignore
           retention-days: 14
 
+  simscope:
+    name: Build SimScope (macOS, experimental)
+    runs-on: macos-26
+    timeout-minutes: 90
+    env:
+      XCODEGEN_STRIP_XATTRS: 'false'
+    steps:
+      - uses: actions/checkout@v5
+      - name: Turn off Spotlight indexing
+        run: sudo mdutil -a -i off || true
+      - name: Install tools
+        run: brew install xcodegen protobuf xcbeautify
+      - name: Cache protoc plugins
+        uses: actions/cache@v5
+        with:
+          path: |
+            Build/Codegen
+          key: protoc-plugins-${{ hashFiles('Package.swift', 'Package.resolved') }}-${{ runner.os }}
+      - name: Build the standalone app
+        run: ./build.sh build simscope
+      - name: Smoke test the archived app
+        run: |
+          ditto -x -k Build/SimScope-macos-arm64.zip "$RUNNER_TEMP/simscope-download"
+          SIMSCOPE_APP="$RUNNER_TEMP/simscope-download/SimScope.app" python3 Tools/SimScope/smoke_test.py -v
+      - name: Upload SimScope app
+        uses: actions/upload-artifact@v5
+        with:
+          name: SimScope-experimental-macos-arm64
+          path: Build/SimScope-macos-arm64.zip
+          if-no-files-found: error
+          retention-days: 30
+
   # A larger runner, because the build is compile-bound and the end-to-end
   # shards and formulae wait on it.
   mac-companion:
