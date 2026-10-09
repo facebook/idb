@@ -397,11 +397,11 @@ extension MacDevice: XCTestExtendedCommands {
   }
 
   public func withTransportForTestManagerService<R>(
-    body: (NSNumber) async throws -> R
+    body: (Int32) async throws -> R
   ) async throws -> R {
     let transport = try makeTransportForTestManagerService()
     defer { transport.closeFile() }
-    return try await body(NSNumber(value: transport.fileDescriptor))
+    return try await body(transport.fileDescriptor)
   }
 }
 

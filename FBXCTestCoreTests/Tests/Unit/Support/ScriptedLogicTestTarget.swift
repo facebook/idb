@@ -130,7 +130,7 @@ struct ShimmedXCTest: XCTestExtendedCommands {
     fatalError("Not used by the strategies under test")
   }
 
-  func withTransportForTestManagerService<R>(body: (NSNumber) async throws -> R) async throws -> R {
+  func withTransportForTestManagerService<R>(body: (Int32) async throws -> R) async throws -> R {
     fatalError("Not used by the strategies under test")
   }
 }

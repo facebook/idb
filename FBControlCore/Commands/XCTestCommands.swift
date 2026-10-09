@@ -28,7 +28,7 @@ public protocol XCTestExtendedCommands: XCTestCommands {
   func extendedTestShim() async throws -> String
 
   func withTransportForTestManagerService<R>(
-    body: (NSNumber) async throws -> R
+    body: (Int32) async throws -> R
   ) async throws -> R
 
   var path: String { get }

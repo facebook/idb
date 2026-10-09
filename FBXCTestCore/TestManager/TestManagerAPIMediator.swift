@@ -114,7 +114,7 @@ public final class TestManagerAPIMediator: NSObject, @unchecked Sendable {
           let connection = TestBundleConnection(
             context: self.context,
             target: self.target,
-            socket: socket.int32Value,
+            socket: socket,
             interface: self.ideInterface,
             testHostApplication: launchedApplication,
             requestQueue: self.requestQueue,

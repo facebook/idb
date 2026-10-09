@@ -66,14 +66,14 @@ public final class SimulatorXCTestCommands: XCTestExtendedCommands {
 
   /// Resolves the testmanagerd unix-domain socket, connects to it, and hands the socket fd to
   /// `body` for the duration of the call, closing it on exit.
-  public func withTransportForTestManagerService<R>(body: (NSNumber) async throws -> R) async throws -> R {
+  public func withTransportForTestManagerService<R>(body: (Int32) async throws -> R) async throws -> R {
     guard self.simulator != nil else {
       throw WeakTargetError.simulator
     }
     let socketPath = try await testManagerDaemonSocketPath()
     let socketFD = try Self.connectedTestManagerSocket(atPath: socketPath)
     defer { close(socketFD) }
-    return try await body(NSNumber(value: socketFD))
+    return try await body(socketFD)
   }
 
   private static func connectedTestManagerSocket(atPath testManagerSocketString: String) throws -> Int32 {
