@@ -195,8 +195,6 @@ public actor SimulatorVideoStream: VideoStreamOperation {
   private var lazyTriggers: LazyFrameTriggers?
 
   var pixelBuffer: CVPixelBuffer?
-  /// Test seam: makes the stream's frame pushers in place of `framePusher(configuration:…)`.
-  var framePusherFactory: (() throws -> any FramePusher)?
   var timeAtFirstFrame: TimeInterval = 0
   var wallClockAtFirstFrame: TimeInterval = 0
   var timeAtLastPush: TimeInterval = 0
@@ -618,9 +616,6 @@ public actor SimulatorVideoStream: VideoStreamOperation {
   // MARK: - Frame Pusher
 
   private func newFramePusher(consumer: any DataConsumer) throws -> any FramePusher {
-    if let framePusherFactory {
-      return try framePusherFactory()
-    }
     return try Self.framePusher(
       configuration: configuration,
       cadence: cadence,
