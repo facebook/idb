@@ -1,0 +1,4 @@
+module ShimulatorAudioInjectionPrivate {
+  header "IDBAudioInjectionPrivate.h"
+  export *
+}
