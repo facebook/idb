@@ -136,7 +136,7 @@ final class XCTestBootstrapDescriptor: XCTestDescriptor, CustomStringConvertible
       testBundle: testBundle,
       applicationLaunchConfiguration: applicationLaunchConfiguration,
       testHostBundle: testApps.testHostApp?.bundle,
-      timeout: request.testTimeout?.doubleValue ?? 0,
+      timeout: request.testTimeout ?? 0,
       initializeUITesting: request.isUITest,
       useXcodebuild: false,
       testsToRun: request.testsToRun,

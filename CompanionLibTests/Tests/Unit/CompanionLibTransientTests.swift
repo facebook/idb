@@ -23,7 +23,7 @@ struct CompanionLibTransientTests {
       arguments: ["-arg1"],
       testsToRun: Set(["TestClass/testMethod"]),
       testsToSkip: Set<String>(),
-      testTimeout: NSNumber(value: 300),
+      testTimeout: 300,
       reportActivities: true,
       reportAttachments: false,
       coverageRequest: coverageRequest,
@@ -43,7 +43,7 @@ struct CompanionLibTransientTests {
     #expect((request.arguments) == (["-arg1"]))
     #expect((request.testsToRun) == (Set(["TestClass/testMethod"])))
     #expect((request.testsToSkip.isEmpty))
-    #expect((request.testTimeout) == (NSNumber(value: 300)))
+    #expect((request.testTimeout) == (300))
     #expect((request.reportActivities))
     #expect(!(request.reportAttachments))
     #expect(!(request.coverageRequest.collect))
@@ -62,7 +62,7 @@ struct CompanionLibTransientTests {
       arguments: [],
       testsToRun: nil,
       testsToSkip: Set<String>(),
-      testTimeout: NSNumber(value: 600),
+      testTimeout: 600,
       reportActivities: false,
       reportAttachments: true,
       coverageRequest: coverageRequest,
@@ -95,7 +95,7 @@ struct CompanionLibTransientTests {
       arguments: ["-ui"],
       testsToRun: Set(["UITestSuite"]),
       testsToSkip: Set(["UITestSuite/testSkipped"]),
-      testTimeout: NSNumber(value: 900),
+      testTimeout: 900,
       reportActivities: true,
       reportAttachments: true,
       coverageRequest: coverageRequest,
@@ -126,7 +126,7 @@ struct CompanionLibTransientTests {
       arguments: [],
       testsToRun: nil,
       testsToSkip: Set<String>(),
-      testTimeout: NSNumber(value: 60),
+      testTimeout: 60,
       reportActivities: false,
       reportAttachments: false,
       coverageRequest: coverageRequest,
