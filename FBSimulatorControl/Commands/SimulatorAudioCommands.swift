@@ -163,11 +163,7 @@ public struct SimulatorAudioCommands {
 
   // MARK: - Initializers
 
-  public static func commands(with simulator: Simulator) -> SimulatorAudioCommands {
-    SimulatorAudioCommands(simulator: simulator)
-  }
-
-  internal init(simulator: Simulator) {
+  public init(simulator: Simulator) {
     self.simulator = simulator
   }
 

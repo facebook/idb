@@ -11,11 +11,7 @@ import Foundation
 public struct DeviceInstrumentsCommands: InstrumentsCommands {
   private let device: Device
 
-  public static func commands(with device: Device) -> DeviceInstrumentsCommands {
-    DeviceInstrumentsCommands(device: device)
-  }
-
-  init(device: Device) {
+  public init(device: Device) {
     self.device = device
   }
 

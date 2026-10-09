@@ -33,8 +33,8 @@ extension DeviceSocketForwardingError: LocalizedError {
 public struct DeviceSocketForwardingCommands {
   let device: Device
 
-  public static func commands(with device: Device) -> DeviceSocketForwardingCommands {
-    DeviceSocketForwardingCommands(device: device)
+  public init(device: Device) {
+    self.device = device
   }
 
   // MARK: - Socket forwarding

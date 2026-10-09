@@ -15,7 +15,7 @@ import Foundation
 extension Simulator: LogicTestTarget {
 
   public var xctest: SimulatorXCTestCommands {
-    commandCache.resolve { SimulatorXCTestCommands.commands(with: self) }
+    commandCache.resolve { SimulatorXCTestCommands(simulator: self) }
   }
 
   public var subprocessLauncher: any SubprocessLauncher {

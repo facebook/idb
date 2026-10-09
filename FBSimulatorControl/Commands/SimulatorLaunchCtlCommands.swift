@@ -60,11 +60,7 @@ public final class SimulatorLaunchCtlCommands: LaunchCtlCommands {
     return binary.path
   }
 
-  public static func commands(with simulator: Simulator) -> SimulatorLaunchCtlCommands {
-    SimulatorLaunchCtlCommands(simulator: simulator)
-  }
-
-  private init(simulator: Simulator) {
+  public init(simulator: Simulator) {
     self.simulator = simulator
   }
 

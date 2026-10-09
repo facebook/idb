@@ -36,8 +36,8 @@ extension DeviceRecoveryError: LocalizedError {
 public struct DeviceRecoveryCommands {
   let device: Device
 
-  public static func commands(with device: Device) -> DeviceRecoveryCommands {
-    DeviceRecoveryCommands(device: device)
+  public init(device: Device) {
+    self.device = device
   }
 
   // MARK: - Recovery

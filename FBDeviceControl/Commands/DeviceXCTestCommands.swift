@@ -40,11 +40,7 @@ public final class DeviceXCTestCommands: XCTestCommands {
   private(set) var processFetcher: ProcessFetcher
   var runningXcodeBuildOperation = false
 
-  public static func commands(with device: Device) -> DeviceXCTestCommands {
-    DeviceXCTestCommands(device: device, workingDirectory: NSTemporaryDirectory())
-  }
-
-  init(device: Device, workingDirectory: String) {
+  public init(device: Device, workingDirectory: String = NSTemporaryDirectory()) {
     self.device = device
     self.workingDirectory = workingDirectory
     self.processFetcher = ProcessFetcher()

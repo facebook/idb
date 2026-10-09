@@ -40,11 +40,8 @@ public final class SimulatorDebugServerCommands: DebugServerCommands {
       .appendingPathComponent("SharedFrameworks/LLDB.framework/Resources/debugserver")
   }
 
-  public static func commands(with simulator: Simulator) -> SimulatorDebugServerCommands {
-    SimulatorDebugServerCommands(
-      simulator: simulator,
-      debugServerPath: resolveDebugServerPath()
-    )
+  public convenience init(simulator: Simulator) {
+    self.init(simulator: simulator, debugServerPath: Self.resolveDebugServerPath())
   }
 
   internal init(

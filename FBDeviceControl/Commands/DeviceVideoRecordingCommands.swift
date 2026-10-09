@@ -33,11 +33,7 @@ public final class DeviceVideoRecordingCommands: VideoRecordingCommands {
   private weak var device: Device?
   private var video: DeviceVideo?
 
-  public static func commands(with device: Device) -> DeviceVideoRecordingCommands {
-    DeviceVideoRecordingCommands(device: device)
-  }
-
-  init(device: Device) {
+  public init(device: Device) {
     self.device = device
   }
 

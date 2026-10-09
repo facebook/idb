@@ -195,35 +195,35 @@ extension Simulator {
   // MARK: - Shared accessors
 
   public var application: SimulatorApplicationCommands {
-    SimulatorApplicationCommands.commands(with: self)
+    SimulatorApplicationCommands(simulator: self)
   }
 
   public var crashLog: SimulatorCrashLogCommands {
-    commandCache.resolve { SimulatorCrashLogCommands.commands(with: self) }
+    commandCache.resolve { SimulatorCrashLogCommands(simulator: self) }
   }
 
   public var screenshot: SimulatorScreenshotCommands {
-    commandCache.resolve { SimulatorScreenshotCommands.commands(with: self) }
+    commandCache.resolve { SimulatorScreenshotCommands(simulator: self) }
   }
 
   public var location: SimulatorLocationCommands {
-    SimulatorLocationCommands.commands(with: self)
+    SimulatorLocationCommands(simulator: self)
   }
 
   public var debugServer: SimulatorDebugServerCommands {
-    commandCache.resolve { SimulatorDebugServerCommands.commands(with: self) }
+    commandCache.resolve { SimulatorDebugServerCommands(simulator: self) }
   }
 
   public var file: SimulatorFileCommands {
-    SimulatorFileCommands.commands(with: self)
+    SimulatorFileCommands(simulator: self)
   }
 
   public var log: SimulatorLogCommands {
-    SimulatorLogCommands.commands(with: self)
+    SimulatorLogCommands(simulator: self)
   }
 
   public var launchCtl: SimulatorLaunchCtlCommands {
-    SimulatorLaunchCtlCommands.commands(with: self)
+    SimulatorLaunchCtlCommands(simulator: self)
   }
 
   public var xctraceRecord: TargetXCTraceRecordCommands {
@@ -231,7 +231,7 @@ extension Simulator {
   }
 
   public var instruments: SimulatorInstrumentsCommands {
-    SimulatorInstrumentsCommands.commands(with: self)
+    SimulatorInstrumentsCommands(simulator: self)
   }
 
   // MARK: - Sim-only accessors
@@ -245,7 +245,7 @@ extension Simulator {
   }
 
   public var hid: SimulatorHIDCommands {
-    commandCache.resolve { SimulatorHIDCommands.commands(with: self) }
+    commandCache.resolve { SimulatorHIDCommands(simulator: self) }
   }
 
   /// The simulator's CoreDevice features. One client per simulator, so the installed CoreDevice
@@ -266,83 +266,83 @@ extension Simulator {
   }
 
   public var displays: SimulatorDisplayCommands {
-    commandCache.resolve { SimulatorDisplayCommands.commands(with: self) }
+    commandCache.resolve { SimulatorDisplayCommands(simulator: self) }
   }
 
   public var orientation: SimulatorOrientationCommands {
-    SimulatorOrientationCommands.commands(with: self)
+    SimulatorOrientationCommands(simulator: self)
   }
 
   public var hinge: SimulatorHingeCommands {
-    SimulatorHingeCommands.commands(with: self)
+    SimulatorHingeCommands(simulator: self)
   }
 
   public var hardware: SimulatorHardwareCommands {
-    SimulatorHardwareCommands.commands(with: self)
+    SimulatorHardwareCommands(simulator: self)
   }
 
   public var power: SimulatorPowerCommands {
-    SimulatorPowerCommands.commands(with: self)
+    SimulatorPowerCommands(simulator: self)
   }
 
   public var media: SimulatorMediaCommands {
-    SimulatorMediaCommands.commands(with: self)
+    SimulatorMediaCommands(simulator: self)
   }
 
   public var keychain: SimulatorKeychainCommands {
-    SimulatorKeychainCommands.commands(with: self)
+    SimulatorKeychainCommands(simulator: self)
   }
 
   public var privacy: SimulatorPrivacyCommands {
-    SimulatorPrivacyCommands.commands(with: self)
+    SimulatorPrivacyCommands(simulator: self)
   }
 
   public var preferences: SimulatorPreferencesCommands {
-    SimulatorPreferencesCommands.commands(with: self)
+    SimulatorPreferencesCommands(simulator: self)
   }
 
   public var statusBar: SimulatorStatusBarCommands {
-    SimulatorStatusBarCommands.commands(with: self)
+    SimulatorStatusBarCommands(simulator: self)
   }
 
   public var network: SimulatorNetworkCommands {
-    SimulatorNetworkCommands.commands(with: self)
+    SimulatorNetworkCommands(simulator: self)
   }
 
   public var health: SimulatorHealthCommands {
-    SimulatorHealthCommands.commands(with: self)
+    SimulatorHealthCommands(simulator: self)
   }
 
   public var contacts: SimulatorContactsCommands {
-    SimulatorContactsCommands.commands(with: self)
+    SimulatorContactsCommands(simulator: self)
   }
 
   public var photos: SimulatorPhotosCommands {
-    SimulatorPhotosCommands.commands(with: self)
+    SimulatorPhotosCommands(simulator: self)
   }
 
   public var dapServer: SimulatorDapServerCommand {
-    SimulatorDapServerCommand.commands(with: self)
+    SimulatorDapServerCommand(simulator: self)
   }
 
   public var notification: SimulatorNotificationCommands {
-    SimulatorNotificationCommands.commands(with: self)
+    SimulatorNotificationCommands(simulator: self)
   }
 
   public var memory: SimulatorMemoryCommands {
-    SimulatorMemoryCommands.commands(with: self)
+    SimulatorMemoryCommands(simulator: self)
   }
 
   public var audio: SimulatorAudioCommands {
-    SimulatorAudioCommands.commands(with: self)
+    SimulatorAudioCommands(simulator: self)
   }
 
   public var runtimeTools: SimulatorRuntimeToolCommands {
-    SimulatorRuntimeToolCommands.commands(with: self)
+    SimulatorRuntimeToolCommands(simulator: self)
   }
 
   public var bootstrapPorts: SimulatorBootstrapPortCommands {
-    SimulatorBootstrapPortCommands.commands(with: self)
+    SimulatorBootstrapPortCommands(simulator: self)
   }
 
   // MARK: - Command verbs

@@ -13,11 +13,7 @@ import Foundation
 public struct SimulatorVideoStreamCommands: VideoStreamCommands {
   private let simulator: Simulator
 
-  public static func commands(with simulator: Simulator) -> SimulatorVideoStreamCommands {
-    SimulatorVideoStreamCommands(simulator: simulator)
-  }
-
-  init(simulator: Simulator) {
+  public init(simulator: Simulator) {
     self.simulator = simulator
   }
 

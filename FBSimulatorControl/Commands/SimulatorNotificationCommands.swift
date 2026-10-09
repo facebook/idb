@@ -35,8 +35,8 @@ public struct SimulatorNotificationCommands {
 
   private let simulator: Simulator
 
-  public static func commands(with simulator: Simulator) -> SimulatorNotificationCommands {
-    SimulatorNotificationCommands(simulator: simulator)
+  public init(simulator: Simulator) {
+    self.simulator = simulator
   }
 
   public func sendPush(forBundleID bundleID: String, jsonPayload: String) async throws {

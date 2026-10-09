@@ -20,7 +20,7 @@ final class SimulatorReplCommandsTests: XCTestCase {
 
   func testSpawnsTheBridgeToServeTheReplSocket() async throws {
     let device = HeldSpawnDevice()
-    let commands = SimulatorReplCommands.commands(with: SimulatorTestSupport.testableSimulator(withDevice: device))
+    let commands = SimulatorReplCommands(simulator: SimulatorTestSupport.testableSimulator(withDevice: device))
 
     let repl = try await commands.startSimulator(bridgePath: "/bridge", libReplPath: "/libRepl.dylib", extraInterfacePaths: ["/IDB.swiftinterface"])
 
@@ -36,7 +36,7 @@ final class SimulatorReplCommandsTests: XCTestCase {
 
   func testLoadsAdditionalLibrariesIntoTheBridgeAfterTheShim() async throws {
     let device = HeldSpawnDevice()
-    let commands = SimulatorReplCommands.commands(with: SimulatorTestSupport.testableSimulator(withDevice: device))
+    let commands = SimulatorReplCommands(simulator: SimulatorTestSupport.testableSimulator(withDevice: device))
 
     let repl = try await commands.startSimulator(bridgePath: "/bridge", libReplPath: "/libRepl.dylib", additionalLibraries: ["/first.dylib", "/second.dylib"], extraInterfacePaths: [])
 
@@ -46,7 +46,7 @@ final class SimulatorReplCommandsTests: XCTestCase {
   }
 
   func testArmsAnAppLaunchWithTheShimThenAdditionalLibraries() async throws {
-    let commands = SimulatorReplCommands.commands(with: SimulatorTestSupport.testableSimulator(withDevice: HeldSpawnDevice()))
+    let commands = SimulatorReplCommands(simulator: SimulatorTestSupport.testableSimulator(withDevice: HeldSpawnDevice()))
 
     let environment = try await commands.appLaunchEnvironment(bundleID: "com.example.App", additionalLibraries: ["/first.dylib", "/second.dylib"])
 
@@ -56,7 +56,7 @@ final class SimulatorReplCommandsTests: XCTestCase {
 
   func testSessionRunsUntilTheBridgeExits() async throws {
     let device = HeldSpawnDevice()
-    let commands = SimulatorReplCommands.commands(with: SimulatorTestSupport.testableSimulator(withDevice: device))
+    let commands = SimulatorReplCommands(simulator: SimulatorTestSupport.testableSimulator(withDevice: device))
 
     let repl = try await commands.startSimulator(bridgePath: "/bridge", libReplPath: "/libRepl.dylib", extraInterfacePaths: [])
 

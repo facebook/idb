@@ -31,7 +31,7 @@ final class SimulatorXCTestCommandsTests: XCTestCase {
 
   func testTestManagerDaemonSocketPathReturnsGetenvValue() async throws {
     let simulator = SimulatorTestSupport.testableSimulator(withDevice: GetenvStubDevice(getenvValues: ["TESTMANAGERD_SIM_SOCK": "/tmp/testmanagerd.sock"]))
-    let commands = SimulatorXCTestCommands.commands(with: simulator)
+    let commands = SimulatorXCTestCommands(simulator: simulator)
 
     let path = try await commands.testManagerDaemonSocketPath()
 

@@ -54,6 +54,6 @@ extension Simulator {
   }
 
   var accessibility: SimulatorAccessibilityCommands {
-    commandCache.resolve { SimulatorAccessibilityCommands.commands(with: self) }
+    commandCache.resolve { SimulatorAccessibilityCommands(simulator: self) }
   }
 }

@@ -16,11 +16,11 @@ public actor SimulatorHIDCommands {
   /// The hinge, and rotation on a runtime that reports device motion.
   let vendorDefined: SimulatorVendorHIDTransport
 
-  public static func commands(with simulator: Simulator) -> SimulatorHIDCommands {
-    SimulatorHIDCommands(simulator: simulator)
+  public init(simulator: Simulator) {
+    self.init(simulator: simulator, vendorDefined: nil)
   }
 
-  init(simulator: Simulator?, vendorDefined: SimulatorVendorHIDTransport? = nil) {
+  init(simulator: Simulator?, vendorDefined: SimulatorVendorHIDTransport?) {
     input = SimulatorSharedConnection { [weak simulator] in
       guard let simulator else { throw WeakTargetError.simulator }
       return try await SimulatorHID(for: simulator)

@@ -11,11 +11,7 @@ import Foundation
 public struct SimulatorPowerCommands: PowerCommands {
   private let simulator: Simulator
 
-  public static func commands(with simulator: Simulator) -> SimulatorPowerCommands {
-    SimulatorPowerCommands(simulator: simulator)
-  }
-
-  init(simulator: Simulator) {
+  public init(simulator: Simulator) {
     self.simulator = simulator
   }
 

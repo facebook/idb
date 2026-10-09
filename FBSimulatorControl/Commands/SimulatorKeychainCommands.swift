@@ -12,8 +12,8 @@ public struct SimulatorKeychainCommands {
 
   private let simulator: Simulator
 
-  public static func commands(with simulator: Simulator) -> SimulatorKeychainCommands {
-    SimulatorKeychainCommands(simulator: simulator)
+  public init(simulator: Simulator) {
+    self.simulator = simulator
   }
 
   public func clear() async throws {

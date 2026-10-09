@@ -81,8 +81,8 @@ enum OrientationWrite: Equatable {
 public struct SimulatorOrientationCommands {
   private let simulator: Simulator
 
-  public static func commands(with simulator: Simulator) -> Self {
-    Self(simulator: simulator)
+  public init(simulator: Simulator) {
+    self.simulator = simulator
   }
 
   /// Sets physical device orientation using the same landscape convention as `current()`.

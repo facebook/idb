@@ -49,11 +49,7 @@ public final class DeviceLogOperation: LogOperation {
 public struct DeviceLogCommands: LogCommands {
   private let device: Device
 
-  public static func commands(with device: Device) -> DeviceLogCommands {
-    DeviceLogCommands(device: device)
-  }
-
-  init(device: Device) {
+  public init(device: Device) {
     self.device = device
   }
 

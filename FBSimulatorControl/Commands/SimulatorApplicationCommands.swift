@@ -113,8 +113,8 @@ public struct SimulatorApplicationCommands: ApplicationCommands {
 
   // MARK: - Initializers
 
-  public static func commands(with simulator: Simulator) -> SimulatorApplicationCommands {
-    return SimulatorApplicationCommands(simulator: simulator)
+  public init(simulator: Simulator) {
+    self.simulator = simulator
   }
 
   // MARK: - Async

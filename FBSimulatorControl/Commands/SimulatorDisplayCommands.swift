@@ -205,11 +205,7 @@ public final class SimulatorDisplayCommands: DisplayCommands, @unchecked Sendabl
   package let identities = DisplayIdentityCache()
   package let configurationTracker = DisplayConfigurationTracker()
 
-  public static func commands(with simulator: Simulator) -> SimulatorDisplayCommands {
-    SimulatorDisplayCommands(simulator: simulator)
-  }
-
-  private init(simulator: Simulator) {
+  public init(simulator: Simulator) {
     self.simulator = simulator
   }
 

@@ -14,7 +14,7 @@ final class SimulatorDisplayInteractionSmokeTests: ProvidedSimulatorTestCase {
   func testActiveDisplayHasIndependentAccessibilityAndTouchIdentities() async throws {
     let simulator = self.simulator!
     guard simulator.productFamily.hasTouchscreen else { throw XCTSkip("Requires a touchscreen simulator") }
-    let commands = SimulatorDisplayCommands.commands(with: simulator)
+    let commands = SimulatorDisplayCommands(simulator: simulator)
     let display: SimulatorDisplay
     let accessibilityID: UInt32
     let digitizerTarget: UInt32

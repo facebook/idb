@@ -66,11 +66,7 @@ public final class DeviceDeveloperDiskImageCommands: DeveloperDiskImageCommands 
 
   // MARK: - Initializers
 
-  public static func commands(with device: Device) -> DeviceDeveloperDiskImageCommands {
-    DeviceDeveloperDiskImageCommands(device: device)
-  }
-
-  init(device: Device, diskImages: any DeveloperDiskImageProviding = InstalledDeveloperDiskImages()) {
+  public init(device: Device, diskImages: any DeveloperDiskImageProviding = InstalledDeveloperDiskImages()) {
     self.device = device
     self.diskImages = diskImages
   }

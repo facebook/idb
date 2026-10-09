@@ -37,8 +37,8 @@ public struct SimulatorMediaCommands {
 
   private let simulator: Simulator
 
-  public static func commands(with simulator: Simulator) -> SimulatorMediaCommands {
-    SimulatorMediaCommands(simulator: simulator)
+  public init(simulator: Simulator) {
+    self.simulator = simulator
   }
 
   private static let videoTypes: [UTType] = [.movie, .mpeg4Movie, .quickTimeMovie]

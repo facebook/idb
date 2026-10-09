@@ -37,11 +37,7 @@ public struct SimulatorContactsCommands {
 
   // MARK: - Initializers
 
-  public static func commands(with simulator: Simulator) -> SimulatorContactsCommands {
-    SimulatorContactsCommands(simulator: simulator)
-  }
-
-  internal init(simulator: Simulator) {
+  public init(simulator: Simulator) {
     self.simulator = simulator
   }
 

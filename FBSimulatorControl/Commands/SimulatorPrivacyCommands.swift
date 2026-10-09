@@ -62,11 +62,7 @@ public struct SimulatorPrivacyCommands {
 
   // MARK: - Initializers
 
-  public static func commands(with simulator: Simulator) -> SimulatorPrivacyCommands {
-    SimulatorPrivacyCommands(simulator: simulator)
-  }
-
-  internal init(simulator: Simulator) {
+  public init(simulator: Simulator) {
     self.simulator = simulator
   }
 

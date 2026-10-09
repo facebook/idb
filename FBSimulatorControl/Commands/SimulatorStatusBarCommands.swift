@@ -16,11 +16,7 @@ public struct SimulatorStatusBarCommands {
 
   // MARK: - Initializers
 
-  public static func commands(with simulator: Simulator) -> SimulatorStatusBarCommands {
-    SimulatorStatusBarCommands(simulator: simulator)
-  }
-
-  internal init(simulator: Simulator) {
+  public init(simulator: Simulator) {
     self.simulator = simulator
   }
 

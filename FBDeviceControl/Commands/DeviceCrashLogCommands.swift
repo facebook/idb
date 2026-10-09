@@ -49,10 +49,9 @@ public final class DeviceCrashLogCommands: CrashLogCommands {
 
   // MARK: - Initializers
 
-  public static func commands(with device: Device) -> DeviceCrashLogCommands {
+  public convenience init(device: Device) {
     let storeDirectory = (device.auxillaryDirectory as NSString).appendingPathComponent("crash_store")
-    let store = CrashLogStore.store(forDirectories: [storeDirectory], logger: device.logger)
-    return DeviceCrashLogCommands(device: device, store: store)
+    self.init(device: device, store: CrashLogStore.store(forDirectories: [storeDirectory], logger: device.logger))
   }
 
   init(device: Device, store: CrashLogStore, afcCalls: AFCCalls? = nil) {

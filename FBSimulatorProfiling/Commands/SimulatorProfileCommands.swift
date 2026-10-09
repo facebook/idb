@@ -16,8 +16,8 @@ public struct SimulatorProfileCommands: ProfileCommands {
 
   private let simulator: Simulator
 
-  public static func commands(with simulator: Simulator) -> SimulatorProfileCommands {
-    SimulatorProfileCommands(simulator: simulator)
+  public init(simulator: Simulator) {
+    self.simulator = simulator
   }
 
   public func profile(_ configuration: ProfileConfiguration, target: ProfileTarget) async throws -> ProfileOperation {

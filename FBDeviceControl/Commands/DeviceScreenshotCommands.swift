@@ -26,11 +26,7 @@ extension DeviceScreenshotError: LocalizedError {
 public struct DeviceScreenshotCommands: ScreenshotCommands {
   private let device: Device
 
-  public static func commands(with device: Device) -> DeviceScreenshotCommands {
-    DeviceScreenshotCommands(device: device)
-  }
-
-  init(device: Device) {
+  public init(device: Device) {
     self.device = device
   }
 

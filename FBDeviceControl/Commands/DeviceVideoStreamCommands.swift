@@ -12,11 +12,7 @@ import Foundation
 public struct DeviceVideoStreamCommands: VideoStreamCommands {
   private let device: Device
 
-  public static func commands(with device: Device) -> DeviceVideoStreamCommands {
-    DeviceVideoStreamCommands(device: device)
-  }
-
-  init(device: Device) {
+  public init(device: Device) {
     self.device = device
   }
 

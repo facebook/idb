@@ -31,11 +31,7 @@ public final class SimulatorDapServerCommand {
 
   private let simulator: Simulator
 
-  public static func commands(with simulator: Simulator) -> SimulatorDapServerCommand {
-    SimulatorDapServerCommand(simulator: simulator)
-  }
-
-  private init(simulator: Simulator) {
+  public init(simulator: Simulator) {
     self.simulator = simulator
   }
 

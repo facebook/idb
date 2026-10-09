@@ -29,7 +29,7 @@ struct SimulatorMediaCommandsTests {
   }
 
   private func upload(_ urls: [URL]) throws {
-    try SimulatorMediaCommands.commands(with: SimulatorTestSupport.testableSimulator(withDevice: SimDeviceDouble())).upload(urls)
+    try SimulatorMediaCommands(simulator: SimulatorTestSupport.testableSimulator(withDevice: SimDeviceDouble())).upload(urls)
   }
 
   @Test

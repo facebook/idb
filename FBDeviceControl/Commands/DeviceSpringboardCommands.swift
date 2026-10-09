@@ -15,11 +15,7 @@ public struct DeviceSpringboardCommands {
 
   // MARK: - Initializers
 
-  public static func commands(with device: Device) -> DeviceSpringboardCommands {
-    DeviceSpringboardCommands(device: device)
-  }
-
-  internal init(device: Device) {
+  public init(device: Device) {
     self.device = device
   }
 

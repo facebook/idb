@@ -13,8 +13,8 @@ public struct SimulatorLocationCommands: LocationCommands {
 
   private let simulator: Simulator
 
-  public static func commands(with simulator: Simulator) -> SimulatorLocationCommands {
-    SimulatorLocationCommands(simulator: simulator)
+  public init(simulator: Simulator) {
+    self.simulator = simulator
   }
 
   public func set(longitude: Double, latitude: Double) async throws {

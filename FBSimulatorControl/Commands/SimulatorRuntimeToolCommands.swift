@@ -41,11 +41,7 @@ public struct SimulatorRuntimeToolCommands: Sendable {
 
   // MARK: - Initializers
 
-  public static func commands(with simulator: Simulator) -> SimulatorRuntimeToolCommands {
-    SimulatorRuntimeToolCommands(simulator: simulator)
-  }
-
-  internal init(simulator: Simulator) {
+  public init(simulator: Simulator) {
     self.simulator = simulator
   }
 

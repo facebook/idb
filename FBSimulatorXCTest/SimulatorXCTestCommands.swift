@@ -54,11 +54,7 @@ public final class SimulatorXCTestCommands: XCTestExtendedCommands {
 
   // MARK: - Initializers
 
-  public static func commands(with simulator: Simulator) -> SimulatorXCTestCommands {
-    return SimulatorXCTestCommands(simulator: simulator)
-  }
-
-  private init(simulator: Simulator) {
+  public init(simulator: Simulator) {
     self.simulator = simulator
   }
 

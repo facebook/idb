@@ -12,6 +12,6 @@
 extension Simulator {
 
   public var repl: SimulatorReplCommands {
-    SimulatorReplCommands.commands(with: self)
+    SimulatorReplCommands(simulator: self)
   }
 }

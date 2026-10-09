@@ -24,8 +24,8 @@ public struct SimulatorLogCommands: LogCommands {
 
   private let simulator: Simulator
 
-  public static func commands(with simulator: Simulator) -> SimulatorLogCommands {
-    SimulatorLogCommands(simulator: simulator)
+  public init(simulator: Simulator) {
+    self.simulator = simulator
   }
 
   public func tail(arguments: [String], consumer: any DataConsumer) async throws -> any LogOperation {

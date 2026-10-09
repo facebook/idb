@@ -13,8 +13,8 @@ public struct SimulatorHardwareCommands {
 
   private let simulator: Simulator
 
-  public static func commands(with simulator: Simulator) -> SimulatorHardwareCommands {
-    SimulatorHardwareCommands(simulator: simulator)
+  public init(simulator: Simulator) {
+    self.simulator = simulator
   }
 
   public func lock() async throws {

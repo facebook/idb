@@ -30,11 +30,7 @@ public final class SimulatorScreenshotCommands: ScreenshotCommands {
   private weak var simulator: Simulator?
   private var image: SimulatorImage?
 
-  public static func commands(with simulator: Simulator) -> SimulatorScreenshotCommands {
-    SimulatorScreenshotCommands(simulator: simulator)
-  }
-
-  private init(simulator: Simulator) {
+  public init(simulator: Simulator) {
     self.simulator = simulator
   }
 

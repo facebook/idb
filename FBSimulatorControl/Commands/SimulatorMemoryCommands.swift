@@ -24,8 +24,8 @@ public struct SimulatorMemoryCommands: MemoryCommands {
 
   private let simulator: Simulator
 
-  public static func commands(with simulator: Simulator) -> SimulatorMemoryCommands {
-    SimulatorMemoryCommands(simulator: simulator)
+  public init(simulator: Simulator) {
+    self.simulator = simulator
   }
 
   public func simulateWarning() async throws {

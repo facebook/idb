@@ -26,9 +26,9 @@ public final class SimulatorCrashLogCommands: CrashLogCommands {
   private let store: CrashLogStore
   private var hasPerformedInitialIngestion: Bool = false
 
-  public static func commands(with simulator: Simulator) -> SimulatorCrashLogCommands {
+  public convenience init(simulator: Simulator) {
     let notifier = CrashLogNotifier.sharedInstance
-    return SimulatorCrashLogCommands(simulator: simulator, notifier: notifier, store: notifier.store)
+    self.init(simulator: simulator, notifier: notifier, store: notifier.store)
   }
 
   init(simulator: Simulator, notifier: CrashLogNotifier, store: CrashLogStore) {

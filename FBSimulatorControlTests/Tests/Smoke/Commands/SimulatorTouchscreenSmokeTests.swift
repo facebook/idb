@@ -14,7 +14,7 @@ final class SimulatorTouchscreenSmokeTests: ProvidedSimulatorTestCase {
     let simulator = self.simulator!
     let touchscreens: [SimulatorTouchscreen]
     do {
-      touchscreens = try await SimulatorDisplayCommands.commands(with: simulator).touchscreens()
+      touchscreens = try await SimulatorDisplayCommands(simulator: simulator).touchscreens()
     } catch SimulatorCoreDeviceError.unsupported(let reason) {
       guard simulator.productFamily.hasTouchscreen else { throw SimulatorCoreDeviceError.unsupported(reason) }
       throw XCTSkip(reason)

@@ -11,11 +11,7 @@ import Foundation
 public struct DeviceLifecycleCommands: LifecycleCommands {
   private let device: Device
 
-  public static func commands(with device: Device) -> DeviceLifecycleCommands {
-    DeviceLifecycleCommands(device: device)
-  }
-
-  init(device: Device) {
+  public init(device: Device) {
     self.device = device
   }
 

@@ -12,6 +12,6 @@
 extension Simulator {
 
   public var profile: SimulatorProfileCommands {
-    SimulatorProfileCommands.commands(with: self)
+    SimulatorProfileCommands(simulator: self)
   }
 }

@@ -269,15 +269,7 @@ public final class DeviceFileCommands: FileCommands {
 
   // MARK: - Initializers
 
-  public static func commands(with device: Device) -> DeviceFileCommands {
-    DeviceFileCommands(device: device, afcCalls: FileConduit.defaultCalls)
-  }
-
-  public static func commands(with device: Device, afcCalls: AFCCalls) -> DeviceFileCommands {
-    DeviceFileCommands(device: device, afcCalls: afcCalls)
-  }
-
-  init(device: Device, afcCalls: AFCCalls) {
+  public init(device: Device, afcCalls: AFCCalls = FileConduit.defaultCalls) {
     self.device = device
     self.afcCalls = afcCalls
   }
@@ -341,7 +333,7 @@ public final class DeviceFileCommands: FileCommands {
     body: (any AsyncFileContainer) async throws -> R
   ) async throws -> R {
     let device = try requireDevice()
-    return try await body(FileContainer.ProvisioningProfile(commands: DeviceProvisioningProfileCommands.commands(with: device)))
+    return try await body(FileContainer.ProvisioningProfile(commands: DeviceProvisioningProfileCommands(device: device)))
   }
 
   public func withMDMProfiles<R>(

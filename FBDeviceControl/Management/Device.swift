@@ -258,39 +258,39 @@ extension Device {
   // MARK: - Shared accessors
 
   public var application: DeviceApplicationCommands {
-    commandCache.resolve { DeviceApplicationCommands.commands(with: self) }
+    commandCache.resolve { DeviceApplicationCommands(device: self) }
   }
 
   public var crashLog: DeviceCrashLogCommands {
-    commandCache.resolve { DeviceCrashLogCommands.commands(with: self) }
+    commandCache.resolve { DeviceCrashLogCommands(device: self) }
   }
 
   public var screenshot: DeviceScreenshotCommands {
-    DeviceScreenshotCommands.commands(with: self)
+    DeviceScreenshotCommands(device: self)
   }
 
   public var location: DeviceLocationCommands {
-    DeviceLocationCommands.commands(with: self)
+    DeviceLocationCommands(device: self)
   }
 
   public var debugServer: DeviceDebugServerCommands {
-    DeviceDebugServerCommands.commands(with: self)
+    DeviceDebugServerCommands(device: self)
   }
 
   public var file: DeviceFileCommands {
-    commandCache.resolve { DeviceFileCommands.commands(with: self) }
+    commandCache.resolve { DeviceFileCommands(device: self) }
   }
 
   public var lifecycle: DeviceLifecycleCommands {
-    DeviceLifecycleCommands.commands(with: self)
+    DeviceLifecycleCommands(device: self)
   }
 
   public var log: DeviceLogCommands {
-    DeviceLogCommands.commands(with: self)
+    DeviceLogCommands(device: self)
   }
 
   public var xctest: DeviceXCTestCommands {
-    commandCache.resolve { DeviceXCTestCommands.commands(with: self) }
+    commandCache.resolve { DeviceXCTestCommands(device: self) }
   }
 
   public var xctraceRecord: TargetXCTraceRecordCommands {
@@ -298,7 +298,7 @@ extension Device {
   }
 
   public var instruments: DeviceInstrumentsCommands {
-    DeviceInstrumentsCommands.commands(with: self)
+    DeviceInstrumentsCommands(device: self)
   }
 
   // MARK: - Device-only accessors
@@ -308,15 +308,15 @@ extension Device {
   }
 
   public var power: DevicePowerCommands {
-    DevicePowerCommands.commands(with: self)
+    DevicePowerCommands(device: self)
   }
 
   public var provisioningProfile: DeviceProvisioningProfileCommands {
-    DeviceProvisioningProfileCommands.commands(with: self)
+    DeviceProvisioningProfileCommands(device: self)
   }
 
   public var recovery: DeviceRecoveryCommands {
-    DeviceRecoveryCommands.commands(with: self)
+    DeviceRecoveryCommands(device: self)
   }
 
   public var debugSymbols: DeviceDebugSymbolsCommands {
@@ -324,15 +324,15 @@ extension Device {
   }
 
   public var developerDiskImage: DeviceDeveloperDiskImageCommands {
-    commandCache.resolve { DeviceDeveloperDiskImageCommands.commands(with: self) }
+    commandCache.resolve { DeviceDeveloperDiskImageCommands(device: self) }
   }
 
   public var socketForwarding: DeviceSocketForwardingCommands {
-    DeviceSocketForwardingCommands.commands(with: self)
+    DeviceSocketForwardingCommands(device: self)
   }
 
   public var springboard: DeviceSpringboardCommands {
-    DeviceSpringboardCommands.commands(with: self)
+    DeviceSpringboardCommands(device: self)
   }
 
   // MARK: - Command verbs
@@ -415,10 +415,10 @@ extension Device {
 extension Device: VideoTarget {
 
   public var videoRecording: DeviceVideoRecordingCommands {
-    commandCache.resolve { DeviceVideoRecordingCommands.commands(with: self) }
+    commandCache.resolve { DeviceVideoRecordingCommands(device: self) }
   }
 
   public var videoStream: DeviceVideoStreamCommands {
-    DeviceVideoStreamCommands.commands(with: self)
+    DeviceVideoStreamCommands(device: self)
   }
 }

@@ -15,10 +15,10 @@ import Foundation
 extension Simulator: VideoTarget {
 
   public var videoRecording: SimulatorVideoRecordingCommands {
-    commandCache.resolve { SimulatorVideoRecordingCommands.commands(with: self) }
+    commandCache.resolve { SimulatorVideoRecordingCommands(simulator: self) }
   }
 
   public var videoStream: SimulatorVideoStreamCommands {
-    SimulatorVideoStreamCommands.commands(with: self)
+    SimulatorVideoStreamCommands(simulator: self)
   }
 }

@@ -11,11 +11,7 @@ import Foundation
 public struct DevicePowerCommands: PowerCommands {
   private let device: Device
 
-  public static func commands(with device: Device) -> DevicePowerCommands {
-    DevicePowerCommands(device: device)
-  }
-
-  init(device: Device) {
+  public init(device: Device) {
     self.device = device
   }
 
