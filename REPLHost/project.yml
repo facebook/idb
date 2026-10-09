@@ -29,7 +29,7 @@ targets:
     settings:
       base:
         SDKROOT: iphonesimulator
-        IPHONEOS_DEPLOYMENT_TARGET: "15.0"
+        IPHONEOS_DEPLOYMENT_TARGET: "17.0"
         PRODUCT_NAME: ReplHost
         # Must match IDBCommandExecutor.replHostBundleID -- the companion
         # resolves the installed app by this bundle id.

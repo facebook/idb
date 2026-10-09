@@ -18,7 +18,7 @@ targets:
     settings:
       base:
         SDKROOT: iphonesimulator
-        IPHONEOS_DEPLOYMENT_TARGET: "15.0"
+        IPHONEOS_DEPLOYMENT_TARGET: "17.0"
         PRODUCT_NAME: Repl-iOS
         EXECUTABLE_PREFIX: lib
         CURRENT_PROJECT_VERSION: 1

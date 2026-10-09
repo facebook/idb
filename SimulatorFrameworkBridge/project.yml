@@ -91,7 +91,7 @@ targets:
     settings:
       base:
         SDKROOT: iphonesimulator
-        IPHONEOS_DEPLOYMENT_TARGET: "15.0"
+        IPHONEOS_DEPLOYMENT_TARGET: "17.0"
         PRODUCT_NAME: SimulatorFrameworkBridge-iOS
     dependencies:
       - target: FBSimulatorBridgeProtocol-iOS
@@ -112,7 +112,7 @@ targets:
     settings:
       base:
         SDKROOT: appletvsimulator
-        TVOS_DEPLOYMENT_TARGET: "15.0"
+        TVOS_DEPLOYMENT_TARGET: "17.0"
         PRODUCT_NAME: SimulatorFrameworkBridge-tvOS
     dependencies:
       - target: FBSimulatorBridgeProtocol-tvOS
