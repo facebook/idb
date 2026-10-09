@@ -90,6 +90,13 @@ jobs:
         run: brew install xcodegen xcbeautify
       - name: Build frameworks
         run: ./build.sh build frameworks
+      # Every product's size, and each linked image's by module, in the job log
+      # and the run summary, so a size change shows up on the commit that made it.
+      - name: Report binary sizes
+        # An explicit bash runs with pipefail, so a failed report fails the step
+        # rather than passing as tee's success.
+        shell: bash
+        run: python3 -m CI.binary_sizes --title "Frameworks" Build/Products/Release | tee -a "$GITHUB_STEP_SUMMARY"
       # The raw xcodebuild output build.sh keeps for every invocation; the
       # formatted job log shows only what the formatter recognised.
       - name: Upload xcodebuild logs on failure
@@ -227,6 +234,10 @@ jobs:
           key: protoc-plugins-${{ hashFiles('Package.swift', 'Package.resolved') }}-${{ runner.os }}
       - name: Build everything and assemble the distribution
         run: ./build.sh build all
+      - name: Report binary sizes
+        # See the frameworks job: pipefail keeps a failed report from passing.
+        shell: bash
+        run: python3 -m CI.binary_sizes --title "Distribution" Build/Distribution | tee -a "$GITHUB_STEP_SUMMARY"
       # The raw xcodebuild output build.sh keeps for every invocation; the
       # formatted job log shows only what the formatter recognised.
       - name: Upload xcodebuild logs on failure
