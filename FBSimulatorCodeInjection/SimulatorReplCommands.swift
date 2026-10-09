@@ -7,6 +7,7 @@
 
 import FBControlCore
 @preconcurrency import FBSimulatorControl
+import FBSimulatorXCTest
 @preconcurrency import FBXCTestCore
 import Foundation
 

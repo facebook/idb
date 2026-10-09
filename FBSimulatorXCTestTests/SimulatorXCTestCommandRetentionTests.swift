@@ -12,14 +12,11 @@ import Testing
 /// Every command accessor FBSimulatorXCTest adds to `Simulator`.
 enum SimulatorXCTestCommandAccessor: CaseIterable, Sendable {
   case xctest
-  case repl
 
   func resolve(on simulator: Simulator) {
     switch self {
     case .xctest:
       _ = simulator.xctest
-    case .repl:
-      _ = simulator.repl
     }
   }
 }

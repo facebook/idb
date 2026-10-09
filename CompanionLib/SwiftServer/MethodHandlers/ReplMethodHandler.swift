@@ -8,6 +8,7 @@
 import CompanionUtilities
 import FBArtifactStaging
 import FBControlCore
+import FBSimulatorCodeInjection
 import Foundation
 import GRPCCore
 import IDBGRPCSwift

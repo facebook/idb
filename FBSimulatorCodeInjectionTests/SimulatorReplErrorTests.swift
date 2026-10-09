@@ -5,8 +5,8 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+@testable import FBSimulatorCodeInjection
 @testable import FBSimulatorControl
-@testable import FBSimulatorXCTest
 import Foundation
 import Testing
 

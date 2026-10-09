@@ -11,17 +11,11 @@ import FBXCTestCore
 import Foundation
 
 // The simulator's test capability, added onto `Simulator` from outside `FBSimulatorControl` so
-// that consumers with no interest in running tests do not link FBXCTestCore. `repl` is here for
-// the same reason and not because the REPL is about testing: it hosts its control socket by running
-// the shim's single test under the logic-test runner.
+// that consumers with no interest in running tests do not link FBXCTestCore.
 extension Simulator: LogicTestTarget {
 
   public var xctest: SimulatorXCTestCommands {
     commandCache.resolve { SimulatorXCTestCommands.commands(with: self) }
-  }
-
-  public var repl: SimulatorReplCommands {
-    SimulatorReplCommands.commands(with: self)
   }
 
   public var subprocessLauncher: any SubprocessLauncher {

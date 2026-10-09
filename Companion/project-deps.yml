@@ -27,6 +27,8 @@ targets:
         embed: false
       - framework: ../Build/Products/Release/libFBSimulatorBridgeProtocol.a
         embed: false
+      - framework: ../Build/Products/Release/libFBSimulatorCodeInjection.a
+        embed: false
       - framework: ../Build/Products/Release/libFBSimulatorControl.a
         embed: false
       - framework: ../Build/Products/Release/libFBSimulatorVideo.a

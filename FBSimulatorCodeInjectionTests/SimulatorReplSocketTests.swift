@@ -5,8 +5,8 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+@testable import FBSimulatorCodeInjection
 @testable import FBSimulatorControl
-@testable import FBSimulatorXCTest
 import Foundation
 // Matches the existing XCTest-based FBSimulatorControl unit suite.
 // ast-grep-ignore: swift-testing/swift/no-new-xctest

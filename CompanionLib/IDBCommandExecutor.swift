@@ -11,6 +11,7 @@ import FBArtifactStaging
 import FBControlCore
 import FBDeviceControl
 import FBSimulatorAX
+import FBSimulatorCodeInjection
 import FBSimulatorControl
 import FBSimulatorXCTest
 import FBVideoCore
