@@ -8,6 +8,7 @@
 #pragma once
 
 #include <TargetConditionals.h>
+#include <stdbool.h>
 #include <stdint.h>
 
 #include <CoreAudio/CoreAudioTypes.h>
@@ -44,6 +45,11 @@ static inline uint64_t IDBAtomicExchange(uint64_t *value, uint64_t replacement)
 static inline uint64_t IDBAtomicAdd(uint64_t *value, int64_t delta)
 {
   return __atomic_fetch_add(value, (uint64_t)delta, __ATOMIC_SEQ_CST);
+}
+
+static inline bool IDBAtomicCompareExchange(uint64_t *value, uint64_t expected, uint64_t replacement)
+{
+  return __atomic_compare_exchange_n(value, &expected, replacement, false, __ATOMIC_SEQ_CST, __ATOMIC_SEQ_CST);
 }
 
 #if TARGET_OS_SIMULATOR

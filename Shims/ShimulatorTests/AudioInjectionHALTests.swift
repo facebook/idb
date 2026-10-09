@@ -12,6 +12,10 @@ import Foundation
 import Synchronization
 import XCTest
 
+private func fourCC(_ code: String) -> UInt32 {
+  code.utf8.reduce(0) { $0 << 8 | UInt32($1) }
+}
+
 private struct Recorded {
   var proc: IDBAudioDeviceIOProc?
   var clientData: UInt = 0
@@ -22,9 +26,16 @@ private struct Recorded {
   var destroyCount = 0
   var controllerStarts = 0
   var propertyRate: Double = 44_100
+  var inputStreamBytes: UInt32 = 0
+  var defaultInputDevice: IDBAudioObjectID = 0
+  var capturedInput: [Float] = []
+  var capturedInputBytes: UInt32 = 0
+  var hasPropertyAnswer = true
+  var defaultInputStatus: OSStatus = noErr
 }
 
 private let recorded = Mutex(Recorded())
+private let defaultOutputDevice: IDBAudioObjectID = 73
 
 private func withFake<Result: Sendable>(_ body: (inout Recorded) -> Result) -> Result {
   recorded.withLock { body(&$0) }
@@ -47,18 +58,46 @@ private let hal = AudioHAL(
       return $0.destroyStatus
     }
   },
-  getPropertyData: { _, _, _, _, size, data in
+  getPropertyData: { _, address, _, _, size, data in
     withFake {
-      if let size, size.pointee >= MemoryLayout<Double>.size {
-        data?.storeBytes(of: $0.propertyRate, as: Double.self)
+      switch address?.pointee.selector ?? 0 {
+      case fourCC("dOut"):
+        data?.storeBytes(of: defaultOutputDevice, as: IDBAudioObjectID.self)
+      case fourCC("dIn "):
+        guard $0.defaultInputStatus == noErr else { return $0.defaultInputStatus }
+        data?.storeBytes(of: $0.defaultInputDevice, as: IDBAudioObjectID.self)
+      default:
+        if let size, size.pointee >= MemoryLayout<Double>.size {
+          data?.storeBytes(of: $0.propertyRate, as: Double.self)
+        }
       }
       return noErr
     }
   },
+  getPropertyDataSize: { _, _, _, _, size in
+    size?.pointee = withFake { $0.inputStreamBytes }
+    return noErr
+  },
+  hasProperty: { _, _ in withFake { $0.hasPropertyAnswer } },
+  addPropertyListener: { _, _, _, _ in 31 },
+  addPropertyListenerBlock: { _, _, _, _ in 32 },
   startController: { withFake { $0.controllerStarts += 1 } })
 
 private let originalProc: IDBAudioDeviceIOProc = { _, _, _, _, _, _, _ in
   withFake { $0.originalCallbacks += 1 }
+  return 17
+}
+
+private let capturingProc: IDBAudioDeviceIOProc = { _, _, input, _, _, _, _ in
+  guard let buffer = input?.pointee.mBuffers, let data = buffer.mData else {
+    return -1
+  }
+  let samples = data.assumingMemoryBound(to: Float.self)
+  let captured = (0..<min(2, Int(buffer.mDataByteSize) / 4)).map { samples[$0] }
+  withFake {
+    $0.capturedInput = captured
+    $0.capturedInputBytes = buffer.mDataByteSize
+  }
   return 17
 }
 
@@ -102,6 +141,22 @@ final class AudioInjectionHALTests: XCTestCase {
         mNumberBuffers: 1,
         mBuffers: AudioBuffer(mNumberChannels: channels, mDataByteSize: UInt32(bytes.count), mData: bytes.baseAddress))
       return invoke(device, &list)
+    }
+  }
+
+  private func address(_ selector: String, _ scope: String = "glob") -> IDBAudioObjectPropertyAddress {
+    IDBAudioObjectPropertyAddress(selector: fourCC(selector), scope: fourCC(scope), element: 0)
+  }
+
+  private func property<Value>(
+    _ object: IDBAudioObjectID, _ address: IDBAudioObjectPropertyAddress, _ value: inout Value
+  )
+    -> Bool
+  {
+    var address = address
+    var size = UInt32(MemoryLayout<Value>.size)
+    return withUnsafeMutableBytes(of: &value) {
+      AudioInjectionHAL.syntheticProperty(hal, object: object, address: &address, dataSize: &size, data: $0.baseAddress)
     }
   }
 
@@ -274,5 +329,196 @@ final class AudioInjectionHALTests: XCTestCase {
 
     XCTAssertEqual(status, -50)
     XCTAssertNil(handle)
+  }
+
+  func testDeviceWithoutInputOffersTheSyntheticStream() {
+    var device: IDBAudioObjectID = 0
+    XCTAssertTrue(property(1, address("dIn "), &device))
+    XCTAssertEqual(device, defaultOutputDevice)
+
+    var stream: IDBAudioObjectID = 0
+    XCTAssertTrue(property(defaultOutputDevice, address("stm#", "inpt"), &stream))
+    XCTAssertTrue(AudioInjectionHAL.isSyntheticStream(stream))
+
+    var format = AudioStreamBasicDescription()
+    XCTAssertTrue(property(stream, address("sfmt"), &format))
+    XCTAssertEqual(format.mSampleRate, withFake { $0.propertyRate })
+    XCTAssertEqual(format.mFormatID, kAudioFormatLinearPCM)
+    XCTAssertEqual(format.mChannelsPerFrame, 1)
+    XCTAssertEqual(format.mBitsPerChannel, 32)
+
+    withFake { $0.inputStreamBytes = UInt32(MemoryLayout<IDBAudioObjectID>.size) }
+    XCTAssertFalse(property(defaultOutputDevice, address("stm#", "inpt"), &stream))
+  }
+
+  func testDeviceWithoutInputReceivesInjectedSamples() throws {
+    var stream: IDBAudioObjectID = 0
+    XCTAssertTrue(property(104, address("stm#", "inpt"), &stream))
+    var latency: UInt32 = 1
+    XCTAssertTrue(property(stream, address("ltnc"), &latency))
+    let (status, handle) = create(104, capturingProc)
+    XCTAssertEqual(status, noErr)
+    engine.replace(samples: [.max, .min], sampleRate: 44_100, generation: 1)
+    _ = engine.pollProgress()
+    var output: [Float] = [0, 0, 0, 0]
+
+    let result = output.withUnsafeMutableBytes { bytes in
+      var list = AudioBufferList(
+        mNumberBuffers: 1,
+        mBuffers: AudioBuffer(mNumberChannels: 2, mDataByteSize: UInt32(bytes.count), mData: bytes.baseAddress))
+      return invoke(104, output: &list)
+    }
+
+    XCTAssertEqual(result, 17)
+    XCTAssertEqual(withFake { $0.capturedInput }[0], 1, accuracy: 0.0001)
+    XCTAssertEqual(withFake { $0.capturedInput }[1], -1, accuracy: 0.0001)
+    XCTAssertEqual(withFake { $0.capturedInputBytes }, 2 * 4)
+    XCTAssertEqual(withFake { $0.controllerStarts }, 1)
+    XCTAssertEqual(destroy(104, handle), noErr)
+  }
+
+  func testPlaybackOnlyDeviceWithoutInputIsNotFilled() throws {
+    let (_, handle) = create(105, capturingProc)
+    engine.replace(samples: [.max, .min], sampleRate: 44_100, generation: 1)
+    _ = engine.pollProgress()
+
+    XCTAssertEqual(invoke(105), 17)
+    XCTAssertEqual(withFake { $0.capturedInput }.first, 0)
+    XCTAssertEqual(withFake { $0.controllerStarts }, 0)
+    XCTAssertFalse(engine.pollProgress().started)
+    XCTAssertEqual(destroy(105, handle), noErr)
+  }
+
+  func testHostWithAMicrophoneIsLeftAlone() {
+    withFake { $0.defaultInputDevice = 80 }
+    var answer: IDBAudioObjectID = 0
+
+    XCTAssertFalse(property(1, address("dIn "), &answer))
+    XCTAssertFalse(property(defaultOutputDevice, address("stm#", "inpt"), &answer))
+  }
+
+  func testFailedDefaultInputReadIsLeftAlone() {
+    withFake { $0.defaultInputStatus = -7 }
+    var answer: IDBAudioObjectID = 0
+
+    XCTAssertFalse(property(1, address("dIn "), &answer))
+    XCTAssertFalse(property(defaultOutputDevice, address("stm#", "inpt"), &answer))
+  }
+
+  func testLatencyProbeWithoutReadingItDoesNotMakeARecorder() throws {
+    var stream: IDBAudioObjectID = 0
+    XCTAssertTrue(property(106, address("stm#", "inpt"), &stream))
+    var latency = address("ltnc")
+    var size: UInt32 = 0
+    XCTAssertEqual(
+      AudioInjectionHAL.getPropertyDataSize(
+        hal, object: stream, address: &latency, qualifierDataSize: 0, qualifierData: nil, dataSize: &size),
+      noErr)
+    XCTAssertTrue(AudioInjectionHAL.hasProperty(hal, object: stream, address: &latency))
+    let (_, handle) = create(106, capturingProc)
+    engine.replace(samples: [.max, .min], sampleRate: 44_100, generation: 1)
+    _ = engine.pollProgress()
+
+    XCTAssertEqual(invoke(106), 17)
+    XCTAssertEqual(withFake { $0.capturedInput }.first, 0)
+    XCTAssertEqual(withFake { $0.controllerStarts }, 0)
+    XCTAssertEqual(destroy(106, handle), noErr)
+  }
+
+  func testRecordersThatAllReadLatencyBeforeCreatingAreAllFilled() throws {
+    var stream: IDBAudioObjectID = 0
+    XCTAssertTrue(property(109, address("stm#", "inpt"), &stream))
+    var latency: UInt32 = 1
+    for _ in 0..<9 {
+      XCTAssertTrue(property(stream, address("ltnc"), &latency))
+    }
+    var handles: [UnsafeMutableRawPointer?] = []
+    for _ in 0..<9 {
+      handles.append(create(109, capturingProc).1)
+    }
+    engine.replace(samples: [.max, .min], sampleRate: 44_100, generation: 1)
+    _ = engine.pollProgress()
+
+    XCTAssertEqual(invoke(109), 17)
+    XCTAssertEqual(withFake { $0.capturedInput }.first ?? 0, 1, accuracy: 0.0001)
+    for handle in handles {
+      XCTAssertEqual(destroy(109, handle), noErr)
+    }
+  }
+
+  func testARecorderIndicationEndsWithTheRecorder() throws {
+    var stream: IDBAudioObjectID = 0
+    XCTAssertTrue(property(107, address("stm#", "inpt"), &stream))
+    var latency: UInt32 = 1
+    XCTAssertTrue(property(stream, address("ltnc"), &latency))
+    let (_, recorder) = create(107, capturingProc)
+    XCTAssertEqual(destroy(107, recorder), noErr)
+
+    let (_, player) = create(107, capturingProc)
+    engine.replace(samples: [.max, .min], sampleRate: 44_100, generation: 1)
+    _ = engine.pollProgress()
+
+    XCTAssertEqual(invoke(107), 17)
+    XCTAssertEqual(withFake { $0.capturedInput }.first, 0)
+    XCTAssertFalse(engine.pollProgress().started)
+    XCTAssertEqual(destroy(107, player), noErr)
+  }
+
+  func testARecorderThatReadsLatencyAfterCreatingItsIOProcIsFilled() throws {
+    var stream: IDBAudioObjectID = 0
+    XCTAssertTrue(property(108, address("stm#", "inpt"), &stream))
+    let (_, handle) = create(108, capturingProc)
+    var latency: UInt32 = 1
+    XCTAssertTrue(property(stream, address("ltnc"), &latency))
+    engine.replace(samples: [.max, .min], sampleRate: 44_100, generation: 1)
+    _ = engine.pollProgress()
+
+    XCTAssertEqual(invoke(108), 17)
+    XCTAssertEqual(withFake { $0.capturedInput }.first ?? 0, 1, accuracy: 0.0001)
+    XCTAssertEqual(destroy(108, handle), noErr)
+  }
+
+  func testSyntheticStreamAnswersOnlyItsOwnProperties() {
+    var stream: IDBAudioObjectID = 0
+    XCTAssertTrue(property(defaultOutputDevice, address("stm#", "inpt"), &stream))
+    var rate = address("nsrt")
+    var value: Double = 0
+    var size = UInt32(MemoryLayout<Double>.size)
+    var format = address("sfmt")
+
+    XCTAssertEqual(
+      AudioInjectionHAL.getPropertyData(
+        hal, object: stream, address: &rate, qualifierDataSize: 0, qualifierData: nil, dataSize: &size, data: &value),
+      0x7768_6F3F)
+    XCTAssertEqual(
+      AudioInjectionHAL.getPropertyDataSize(
+        hal, object: stream, address: &rate, qualifierDataSize: 0, qualifierData: nil, dataSize: &size),
+      0x7768_6F3F)
+    XCTAssertTrue(AudioInjectionHAL.hasProperty(hal, object: stream, address: &format))
+    XCTAssertFalse(AudioInjectionHAL.hasProperty(hal, object: stream, address: &rate))
+    XCTAssertEqual(
+      AudioInjectionHAL.addPropertyListener(hal, object: stream, address: &rate, listener: nil, clientData: nil), noErr)
+    XCTAssertEqual(
+      AudioInjectionHAL.addPropertyListenerBlock(hal, object: stream, address: &rate, queue: nil, listener: nil), noErr)
+  }
+
+  func testOtherObjectsReachTheHAL() {
+    var rate = address("nsrt")
+    var value: Double = 0
+    var size = UInt32(MemoryLayout<Double>.size)
+
+    XCTAssertEqual(
+      AudioInjectionHAL.getPropertyData(
+        hal, object: defaultOutputDevice, address: &rate, qualifierDataSize: 0, qualifierData: nil, dataSize: &size,
+        data: &value),
+      noErr)
+    XCTAssertEqual(value, withFake { $0.propertyRate })
+    XCTAssertTrue(AudioInjectionHAL.hasProperty(hal, object: defaultOutputDevice, address: &rate))
+    XCTAssertEqual(
+      AudioInjectionHAL.addPropertyListener(hal, object: defaultOutputDevice, address: &rate, listener: nil, clientData: nil),
+      31)
+    XCTAssertEqual(
+      AudioInjectionHAL.addPropertyListenerBlock(hal, object: defaultOutputDevice, address: &rate, queue: nil, listener: nil),
+      32)
   }
 }

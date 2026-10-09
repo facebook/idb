@@ -21,10 +21,24 @@ public struct AudioHAL: Sendable {
       IDBAudioObjectID, UnsafePointer<IDBAudioObjectPropertyAddress>?, UInt32, UnsafeRawPointer?,
       UnsafeMutablePointer<UInt32>?, UnsafeMutableRawPointer?
     ) -> OSStatus
+  public typealias GetPropertyDataSize =
+    @convention(c) (
+      IDBAudioObjectID, UnsafePointer<IDBAudioObjectPropertyAddress>?, UInt32, UnsafeRawPointer?,
+      UnsafeMutablePointer<UInt32>?
+    ) -> OSStatus
+  public typealias HasProperty = @convention(c) (IDBAudioObjectID, UnsafePointer<IDBAudioObjectPropertyAddress>?) -> Bool
+  public typealias AddPropertyListener =
+    @convention(c) (
+      IDBAudioObjectID, UnsafePointer<IDBAudioObjectPropertyAddress>?, UnsafeMutableRawPointer?, UnsafeMutableRawPointer?
+    ) -> OSStatus
 
   public var createIOProcID: CreateIOProcID
   public var destroyIOProcID: DestroyIOProcID
   public var getPropertyData: GetPropertyData
+  public var getPropertyDataSize: GetPropertyDataSize
+  public var hasProperty: HasProperty
+  public var addPropertyListener: AddPropertyListener
+  public var addPropertyListenerBlock: AddPropertyListener
   /// Called on the audio thread, so it may only signal work prepared off it.
   public var startController: @convention(c) () -> Void
 
@@ -32,11 +46,19 @@ public struct AudioHAL: Sendable {
     createIOProcID: CreateIOProcID,
     destroyIOProcID: DestroyIOProcID,
     getPropertyData: GetPropertyData,
+    getPropertyDataSize: GetPropertyDataSize,
+    hasProperty: HasProperty,
+    addPropertyListener: AddPropertyListener,
+    addPropertyListenerBlock: AddPropertyListener,
     startController: @convention(c) () -> Void
   ) {
     self.createIOProcID = createIOProcID
     self.destroyIOProcID = destroyIOProcID
     self.getPropertyData = getPropertyData
+    self.getPropertyDataSize = getPropertyDataSize
+    self.hasProperty = hasProperty
+    self.addPropertyListener = addPropertyListener
+    self.addPropertyListenerBlock = addPropertyListenerBlock
     self.startController = startController
   }
 }
@@ -47,10 +69,26 @@ private func fourCC(_ code: StaticString) -> UInt32 {
 
 private enum Property {
   static let nominalSampleRate = fourCC("nsrt")
+  static let defaultInput = fourCC("dIn ")
+  static let defaultOutput = fourCC("dOut")
+  static let streams = fourCC("stm#")
+  static let streamConfiguration = fourCC("slay")
+  static let virtualFormat = fourCC("sfmt")
+  static let physicalFormat = fourCC("pft ")
+  static let direction = fourCC("sdir")
+  static let startingChannel = fourCC("stsc")
+  static let latency = fourCC("ltnc")
+  static let bufferFrameSize = fourCC("fsiz")
   static let globalScope = fourCC("glob")
+  static let inputScope = fourCC("inpt")
 }
 
+private let systemObject: IDBAudioObjectID = 1
+private let syntheticCapacityFrames: UInt32 = 4096
+private let defaultSyntheticFrames: UInt32 = 512
+private let syntheticStreamBase: IDBAudioObjectID = 0x7F00_0000
 private let parameterError: OSStatus = -50
+private let unknownPropertyError: OSStatus = 0x7768_6F3F // 'who?'
 private let defaultSampleRate: Double = 48_000
 private let int16ToFloat = 1 / Float(Int16.max)
 
@@ -70,6 +108,11 @@ private struct IOProcContext {
   var activeCallbacks: UInt64 = 0
   var retired: UInt64 = 0
   var controllerStarted: UInt64 = 0
+  let syntheticInput: Bool
+  var syntheticListening = false
+  let syntheticFrames: UInt32
+  let syntheticSamples: UnsafeMutablePointer<Float>
+  let syntheticList: UnsafeMutablePointer<AudioBufferList>
   var next: UnsafeMutablePointer<IOProcContext>?
 }
 
@@ -89,7 +132,15 @@ private struct State {
   /// Destroyed contexts, kept for the life of the process: a callback can hold one as `clientData`
   /// before it has counted itself in, and has to find it retired rather than freed.
   var retired: UnsafeMutablePointer<IOProcContext>?
+  /// One entry per read of a synthetic stream's latency, which a client makes only to record. The next
+  /// IO proc on that device to be created, or failing that the next to call back, claims the entry and
+  /// is the recorder. A playback-only IO proc on a device without input is also given a synthetic
+  /// buffer, but claims nothing, so it is never filled or counted as having heard the injection.
+  let listening = UnsafeMutablePointer<UInt64>.allocate(capacity: listeningSlots)
+  var listeningNext: UInt64 = 0
 }
+
+private let listeningSlots = 64
 
 // SAFETY: `State` is guarded by its two locks, apart from the atomics.
 // patternlint-disable-next-line swift-nonisolated-unsafe
@@ -98,13 +149,72 @@ private nonisolated(unsafe) let state: UnsafeMutablePointer<State> = {
   state.initialize(to: State())
   pthread_mutex_init(&state.pointee.injectionLock, nil)
   pthread_mutex_init(&state.pointee.ioProcLock, nil)
+  state.pointee.listening.initialize(repeating: 0, count: listeningSlots)
   return state
 }()
 
 public enum AudioInjectionHAL {
+  public static func isSyntheticStream(_ object: IDBAudioObjectID) -> Bool {
+    object & 0xFF00_0000 == syntheticStreamBase
+  }
+
   static func deviceSampleRate(_ getPropertyData: AudioHAL.GetPropertyData, device: IDBAudioObjectID) -> Double {
     var rate: Double = 0
     return read(getPropertyData, device, Property.nominalSampleRate, into: &rate) && rate > 0 ? rate : defaultSampleRate
+  }
+
+  /// Answers a property the synthetic input changes, returning false for any other. With `data` nil
+  /// it reports only the size.
+  public static func syntheticProperty(
+    _ hal: AudioHAL,
+    object: IDBAudioObjectID,
+    address: UnsafePointer<IDBAudioObjectPropertyAddress>?,
+    dataSize: UnsafeMutablePointer<UInt32>?,
+    data: UnsafeMutableRawPointer?
+  ) -> Bool {
+    guard let selector = address?.pointee.selector else {
+      return false
+    }
+    if isSyntheticStream(object) {
+      let device = object & ~syntheticStreamBase
+      switch selector {
+      case Property.virtualFormat, Property.physicalFormat:
+        let format = AudioStreamBasicDescription(
+          mSampleRate: deviceSampleRate(hal.getPropertyData, device: device), mFormatID: kAudioFormatLinearPCM,
+          mFormatFlags: kAudioFormatFlagIsFloat | kAudioFormatFlagIsPacked, mBytesPerPacket: 4, mFramesPerPacket: 1,
+          mBytesPerFrame: 4, mChannelsPerFrame: 1, mBitsPerChannel: 32, mReserved: 0)
+        return answer(format, dataSize, data)
+      case Property.direction, Property.startingChannel:
+        return answer(UInt32(1), dataSize, data)
+      case Property.latency:
+        let answered = answer(UInt32(0), dataSize, data)
+        if answered, data != nil {
+          markListening(device)
+        }
+        return answered
+      default:
+        return false
+      }
+    }
+    if object == systemObject, selector == Property.defaultInput, defaultDevice(hal, Property.defaultInput) == 0 {
+      guard let output = defaultDevice(hal, Property.defaultOutput), output != 0 else {
+        return false
+      }
+      return answer(output, dataSize, data)
+    }
+    guard address?.pointee.scope == Property.inputScope, needsSyntheticInput(hal, object) else {
+      return false
+    }
+    switch selector {
+    case Property.streams:
+      return answer(syntheticStreamBase | object, dataSize, data)
+    case Property.streamConfiguration:
+      let configuration = AudioBufferList(
+        mNumberBuffers: 1, mBuffers: AudioBuffer(mNumberChannels: 1, mDataByteSize: 0, mData: nil))
+      return answer(configuration, dataSize, data)
+    default:
+      return false
+    }
   }
 
   public static func createIOProcID(
@@ -121,11 +231,20 @@ public enum AudioInjectionHAL {
     // while an IO proc is being created disturbs the device.
     pthread_mutex_lock(&state.pointee.ioProcLock)
     defer { pthread_mutex_unlock(&state.pointee.ioProcLock) }
+    let synthetic = needsSyntheticInput(hal, device)
+    var frames: UInt32 = 0
+    if synthetic, !read(hal.getPropertyData, device, Property.bufferFrameSize, into: &frames) {
+      frames = 0
+    }
+    let samples = UnsafeMutablePointer<Float>.allocate(capacity: Int(syntheticCapacityFrames))
     let context = UnsafeMutablePointer<IOProcContext>.allocate(capacity: 1)
     context.initialize(
       to: IOProcContext(
         proc: proc, clientData: clientData, device: device, getPropertyData: hal.getPropertyData,
-        startController: hal.startController))
+        startController: hal.startController, syntheticInput: synthetic,
+        syntheticListening: synthetic && claimListening(device),
+        syntheticFrames: frames > 0 ? min(frames, syntheticCapacityFrames) : defaultSyntheticFrames,
+        syntheticSamples: samples, syntheticList: .allocate(capacity: 1)))
     var status = hal.createIOProcID(device, trampoline, context, outIOProcID)
     if status == noErr, outIOProcID.pointee == nil {
       status = parameterError
@@ -172,6 +291,9 @@ public enum AudioInjectionHAL {
     while IDBAtomicLoad(&found.pointee.activeCallbacks) > 0 {
       sched_yield()
     }
+    // Every later callback sees `retired` and returns before it touches the buffers.
+    found.pointee.syntheticSamples.deallocate()
+    found.pointee.syntheticList.deallocate()
     pthread_mutex_lock(&state.pointee.ioProcLock)
     found.pointee.next = state.pointee.retired
     state.pointee.retired = found
@@ -179,7 +301,72 @@ public enum AudioInjectionHAL {
     return status
   }
 
+  public static func getPropertyData(
+    _ hal: AudioHAL,
+    object: IDBAudioObjectID,
+    address: UnsafePointer<IDBAudioObjectPropertyAddress>?,
+    qualifierDataSize: UInt32,
+    qualifierData: UnsafeRawPointer?,
+    dataSize: UnsafeMutablePointer<UInt32>?,
+    data: UnsafeMutableRawPointer?
+  ) -> OSStatus {
+    if syntheticProperty(hal, object: object, address: address, dataSize: dataSize, data: data) {
+      return noErr
+    }
+    if isSyntheticStream(object) {
+      return unknownPropertyError
+    }
+    return hal.getPropertyData(object, address, qualifierDataSize, qualifierData, dataSize, data)
+  }
+
+  public static func getPropertyDataSize(
+    _ hal: AudioHAL,
+    object: IDBAudioObjectID,
+    address: UnsafePointer<IDBAudioObjectPropertyAddress>?,
+    qualifierDataSize: UInt32,
+    qualifierData: UnsafeRawPointer?,
+    dataSize: UnsafeMutablePointer<UInt32>?
+  ) -> OSStatus {
+    if syntheticProperty(hal, object: object, address: address, dataSize: dataSize, data: nil) {
+      return noErr
+    }
+    if isSyntheticStream(object) {
+      return unknownPropertyError
+    }
+    return hal.getPropertyDataSize(object, address, qualifierDataSize, qualifierData, dataSize)
+  }
+
+  public static func hasProperty(
+    _ hal: AudioHAL, object: IDBAudioObjectID, address: UnsafePointer<IDBAudioObjectPropertyAddress>?
+  ) -> Bool {
+    var size: UInt32 = 0
+    return syntheticProperty(hal, object: object, address: address, dataSize: &size, data: nil)
+      || (!isSyntheticStream(object) && hal.hasProperty(object, address))
+  }
+
+  public static func addPropertyListener(
+    _ hal: AudioHAL,
+    object: IDBAudioObjectID,
+    address: UnsafePointer<IDBAudioObjectPropertyAddress>?,
+    listener: UnsafeMutableRawPointer?,
+    clientData: UnsafeMutableRawPointer?
+  ) -> OSStatus {
+    return isSyntheticStream(object) ? noErr : hal.addPropertyListener(object, address, listener, clientData)
+  }
+
+  public static func addPropertyListenerBlock(
+    _ hal: AudioHAL,
+    object: IDBAudioObjectID,
+    address: UnsafePointer<IDBAudioObjectPropertyAddress>?,
+    queue: UnsafeMutableRawPointer?,
+    listener: UnsafeMutableRawPointer?
+  ) -> OSStatus {
+    return isSyntheticStream(object) ? noErr : hal.addPropertyListenerBlock(object, address, queue, listener)
+  }
+
   private static func release(_ context: UnsafeMutablePointer<IOProcContext>) {
+    context.pointee.syntheticSamples.deallocate()
+    context.pointee.syntheticList.deallocate()
     context.deinitialize(count: 1)
     context.deallocate()
   }
@@ -192,6 +379,48 @@ public enum AudioInjectionHAL {
     var size = UInt32(MemoryLayout<Value>.size)
     return withUnsafeMutableBytes(of: &value) { getPropertyData(object, &address, 0, nil, &size, $0.baseAddress) } == noErr
   }
+
+  /// Nil when the read fails, which is not the same as a host with no such device.
+  private static func defaultDevice(_ hal: AudioHAL, _ selector: UInt32) -> IDBAudioObjectID? {
+    var device: IDBAudioObjectID = 0
+    return read(hal.getPropertyData, systemObject, selector, into: &device) ? device : nil
+  }
+
+  private static func needsSyntheticInput(_ hal: AudioHAL, _ device: IDBAudioObjectID) -> Bool {
+    guard device != systemObject, !isSyntheticStream(device), defaultDevice(hal, Property.defaultInput) == 0 else {
+      return false
+    }
+    var address = IDBAudioObjectPropertyAddress(selector: Property.streams, scope: Property.inputScope, element: 0)
+    var size: UInt32 = 0
+    return hal.getPropertyDataSize(device, &address, 0, nil, &size) == noErr && size == 0
+  }
+
+  private static func answer<Value>(
+    _ value: Value, _ dataSize: UnsafeMutablePointer<UInt32>?, _ data: UnsafeMutableRawPointer?
+  ) -> Bool {
+    let size = UInt32(MemoryLayout<Value>.size)
+    guard let dataSize, data == nil || dataSize.pointee >= size else {
+      return false
+    }
+    data?.storeBytes(of: value, as: Value.self)
+    dataSize.pointee = size
+    return true
+  }
+
+  private static func markListening(_ device: IDBAudioObjectID) {
+    // A free slot is reserved, so an unclaimed mark is never overwritten while one remains. Only with
+    // every slot holding an unclaimed mark is the oldest-written one replaced.
+    if (0..<listeningSlots).contains(where: { IDBAtomicCompareExchange(state.pointee.listening + $0, 0, UInt64(device)) }) {
+      return
+    }
+    let slot = Int(IDBAtomicAdd(&state.pointee.listeningNext, 1) % UInt64(listeningSlots))
+    _ = IDBAtomicExchange(state.pointee.listening + slot, UInt64(device))
+  }
+}
+
+/// Lock-free, because the audio thread claims too.
+private func claimListening(_ device: IDBAudioObjectID) -> Bool {
+  (0..<listeningSlots).contains { IDBAtomicCompareExchange(state.pointee.listening + $0, UInt64(device), 0) }
 }
 
 private func frameCapacity(_ buffer: AudioBuffer) -> UInt32 {
@@ -273,8 +502,25 @@ private func trampoline(
     return noErr
   }
 
-  let input = UnsafeMutablePointer(mutating: inputData)
-  if let input, input.pointee.mNumberBuffers > 0 {
+  var input = UnsafeMutablePointer(mutating: inputData)
+  var listening = true
+  if context.pointee.syntheticInput, (input?.pointee.mNumberBuffers ?? 0) == 0 {
+    if !context.pointee.syntheticListening {
+      context.pointee.syntheticListening = claimListening(device)
+    }
+    listening = context.pointee.syntheticListening
+    // AudioToolbox drops an input buffer that is not exactly one IO cycle, which the output buffer is.
+    let outputFrames = outputData.map { $0.pointee.mNumberBuffers > 0 ? frameCapacity($0.pointee.mBuffers) : 0 } ?? 0
+    let frames = outputFrames > 0 ? min(outputFrames, syntheticCapacityFrames) : context.pointee.syntheticFrames
+    context.pointee.syntheticSamples.update(repeating: 0, count: Int(frames))
+    context.pointee.syntheticList.pointee = AudioBufferList(
+      mNumberBuffers: 1,
+      mBuffers: AudioBuffer(
+        mNumberChannels: 1, mDataByteSize: frames * UInt32(MemoryLayout<Float>.size),
+        mData: UnsafeMutableRawPointer(context.pointee.syntheticSamples)))
+    input = context.pointee.syntheticList
+  }
+  if listening, let input, input.pointee.mNumberBuffers > 0 {
     if IDBAtomicExchange(&context.pointee.controllerStarted, 1) == 0 {
       context.pointee.startController()
     }
