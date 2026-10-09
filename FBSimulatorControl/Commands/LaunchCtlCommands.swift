@@ -14,13 +14,14 @@ public protocol LaunchCtlCommands: AnyObject {
 
   func serviceName(forProcess process: RunningProcessInfo) async throws -> String
 
-  func serviceNamesAndProcessIdentifiers(matching regex: NSRegularExpression) async throws -> [String: NSNumber]
+  func serviceNamesAndProcessIdentifiers(matching regex: NSRegularExpression) async throws -> [String: pid_t]
 
   func firstServiceNameAndProcessIdentifier(matching regex: NSRegularExpression) async throws -> (serviceName: String, processIdentifier: pid_t)
 
   func processIsRunning(onSimulator process: RunningProcessInfo) async throws -> Bool
 
-  func listServices() async throws -> [String: Any]
+  /// Every loaded service, with its pid, or `nil` for one that is loaded but not running.
+  func listServices() async throws -> [String: pid_t?]
 
   func stopService(withName serviceName: String) async throws -> String
 
@@ -34,17 +35,17 @@ public protocol LaunchCtlCommands: AnyObject {
 public extension LaunchCtlCommands {
 
   /// True when `serviceName` is a launchctl service bound to a live pid. A loaded-but-stopped
-  /// service (the "-" placeholder, surfaced as `NSNull` by `listServices()`) reads as not running.
+  /// service (the "-" placeholder, a `nil` pid in `listServices()`) reads as not running.
   func serviceIsRunning(named serviceName: String) async throws -> Bool {
-    guard let processIdentifier = try await listServices()[serviceName] as? NSNumber else {
+    guard let processIdentifier = try await listServices()[serviceName] ?? nil else {
       return false
     }
-    return processIdentifier.int32Value > 0
+    return processIdentifier > 0
   }
 
   /// True when `pid` owns a live launchctl service. Unlike `serviceName(forProcessIdentifier:)`,
   /// returns `false` instead of throwing when the pid is not a registered service.
   func processIsRunning(withProcessIdentifier pid: pid_t) async throws -> Bool {
-    try await listServices().values.contains { ($0 as? NSNumber)?.int32Value == pid }
+    try await listServices().values.contains { $0 == pid }
   }
 }

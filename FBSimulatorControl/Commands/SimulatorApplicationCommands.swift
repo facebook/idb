@@ -199,7 +199,7 @@ public struct SimulatorApplicationCommands: ApplicationCommands {
     var mapping: [String: pid_t] = [:]
     for (serviceName, processIdentifier) in serviceNameToProcessIdentifier {
       if let bundleName = SimulatorLaunchCtlCommands.extractApplicationBundleIdentifier(fromServiceName: serviceName) {
-        mapping[bundleName] = processIdentifier.int32Value
+        mapping[bundleName] = processIdentifier
       }
     }
     return mapping

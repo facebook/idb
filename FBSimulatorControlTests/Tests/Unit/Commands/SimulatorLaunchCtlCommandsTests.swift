@@ -60,6 +60,13 @@ final class SimulatorLaunchCtlCommandsTests: XCTestCase {
     XCTAssertNil(map["line"], "malformed (non-three-column) lines are skipped")
   }
 
+  func testListedServicesKeepAStoppedServiceAsANilPid() {
+    let services = SimulatorLaunchCtlCommands.services(fromListOutput: Self.listOutput)
+    XCTAssertEqual(services.count, 2)
+    XCTAssertEqual(services["com.apple.SpringBoard"], .some(4321))
+    XCTAssertEqual(services["com.apple.stopped"], .some(nil), "a stopped service is present with no pid")
+  }
+
   // MARK: - Liveness queries (default protocol implementations over listServices())
 
   func testServiceIsRunningReflectsLivePid() async throws {

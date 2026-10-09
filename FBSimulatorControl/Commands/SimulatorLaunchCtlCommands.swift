@@ -12,7 +12,7 @@
 public enum SimulatorLaunchCtlError: Error {
   case searchPatternConstructionFailed(processIdentifier: pid_t)
   case noMatchingProcesses(pattern: String)
-  case multipleMatchingProcesses(pattern: String, matches: [String: NSNumber])
+  case multipleMatchingProcesses(pattern: String, matches: [String: pid_t])
   case insufficientOutput(output: String)
   case stopFailed(serviceName: String, underlying: Error)
   case startFailed(serviceName: String, underlying: Error)
@@ -79,10 +79,10 @@ public final class SimulatorLaunchCtlCommands: LaunchCtlCommands {
     return serviceName
   }
 
-  public func serviceNamesAndProcessIdentifiers(matching regex: NSRegularExpression) async throws -> [String: NSNumber] {
+  public func serviceNamesAndProcessIdentifiers(matching regex: NSRegularExpression) async throws -> [String: pid_t] {
     let text = try await run(.list)
     let lines = text.components(separatedBy: .newlines)
-    var mapping: [String: NSNumber] = [:]
+    var mapping: [String: pid_t] = [:]
     for line in lines {
       if regex.firstMatch(in: line, options: [], range: NSRange(location: 0, length: line.count)) == nil {
         continue
@@ -91,7 +91,7 @@ public final class SimulatorLaunchCtlCommands: LaunchCtlCommands {
       guard let serviceName = try? SimulatorLaunchCtlCommands.extractServiceName(fromListLine: line, processIdentifierOut: &processIdentifier) else {
         continue
       }
-      mapping[serviceName] = NSNumber(value: processIdentifier)
+      mapping[serviceName] = processIdentifier
     }
     return mapping
   }
@@ -104,7 +104,7 @@ public final class SimulatorLaunchCtlCommands: LaunchCtlCommands {
     if serviceNameToProcessIdentifier.count > 1 {
       throw SimulatorLaunchCtlError.multipleMatchingProcesses(pattern: regex.pattern, matches: serviceNameToProcessIdentifier)
     }
-    return (serviceName, processIdentifier.int32Value)
+    return (serviceName, processIdentifier)
   }
 
   public func serviceName(forProcess process: RunningProcessInfo) async throws -> String {
@@ -116,15 +116,21 @@ public final class SimulatorLaunchCtlCommands: LaunchCtlCommands {
     return true
   }
 
-  public func listServices() async throws -> [String: Any] {
+  public func listServices() async throws -> [String: pid_t?] {
     let text = try await run(.list)
     let lines = text.components(separatedBy: .newlines)
     if lines.count < 2 {
       throw SimulatorLaunchCtlError.insufficientOutput(output: text)
     }
-    var services: [String: Any] = [:]
-    for (serviceName, processIdentifier) in Self.serviceMap(fromListOutput: text) {
-      services[serviceName] = processIdentifier > 0 ? NSNumber(value: processIdentifier) : NSNull()
+    return Self.services(fromListOutput: text)
+  }
+
+  /// Every listed service with its pid, keeping a stopped service as a present `nil`.
+  static func services(fromListOutput text: String) -> [String: pid_t?] {
+    var services: [String: pid_t?] = [:]
+    for (serviceName, processIdentifier) in serviceMap(fromListOutput: text) {
+      // `updateValue` stores a nil pid; assigning `nil` through the subscript would remove the key.
+      services.updateValue(processIdentifier > 0 ? processIdentifier : nil, forKey: serviceName)
     }
     return services
   }

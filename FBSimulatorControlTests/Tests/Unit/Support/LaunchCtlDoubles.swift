@@ -15,8 +15,8 @@ import Foundation
 /// exercises the real decision logic. Methods the suites do not use trap.
 final class LaunchCtlDouble: LaunchCtlCommands {
 
-  /// Mirrors `listServices()`: service-name -> `NSNumber(pid)` for a live service, `NSNull` for stopped.
-  var servicesResult: [String: Any] = [:]
+  /// Mirrors `listServices()`: service-name -> pid for a live service, `nil` for stopped.
+  var servicesResult: [String: pid_t?] = [:]
 
   /// Service names passed to `stopService(withName:)`, in call order — lets tests assert remediation.
   private(set) var stoppedServices: [String] = []
@@ -24,22 +24,22 @@ final class LaunchCtlDouble: LaunchCtlCommands {
   /// Builds a double whose `listServices()` reports `running` as live pids and `stopped` as loaded-but-idle.
   static func with(running: [String: pid_t] = [:], stopped: [String] = []) -> LaunchCtlDouble {
     let double = LaunchCtlDouble()
-    var services: [String: Any] = [:]
+    var services: [String: pid_t?] = [:]
     for (name, pid) in running {
-      services[name] = NSNumber(value: pid)
+      services[name] = pid
     }
     for name in stopped {
-      services[name] = NSNull()
+      services[name] = .some(nil)
     }
     double.servicesResult = services
     return double
   }
 
-  func listServices() async throws -> [String: Any] { servicesResult }
+  func listServices() async throws -> [String: pid_t?] { servicesResult }
 
   func serviceName(forProcessIdentifier pid: pid_t) async throws -> String { fatalError("unused in tests") }
   func serviceName(forProcess process: RunningProcessInfo) async throws -> String { fatalError("unused in tests") }
-  func serviceNamesAndProcessIdentifiers(matching regex: NSRegularExpression) async throws -> [String: NSNumber] { fatalError("unused in tests") }
+  func serviceNamesAndProcessIdentifiers(matching regex: NSRegularExpression) async throws -> [String: pid_t] { fatalError("unused in tests") }
   func firstServiceNameAndProcessIdentifier(matching regex: NSRegularExpression) async throws -> (serviceName: String, processIdentifier: pid_t) { fatalError("unused in tests") }
   func processIsRunning(onSimulator process: RunningProcessInfo) async throws -> Bool { fatalError("unused in tests") }
   func stopService(withName serviceName: String) async throws -> String {
