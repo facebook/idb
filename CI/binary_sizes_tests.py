@@ -169,6 +169,13 @@ class BinarySizesTest(unittest.TestCase):
         self.assertEqual(product.code_and_data, 200)
         self.assertEqual(product.modules, {})
 
+    def test_a_static_library_of_one_object_says_so_in_the_singular(self) -> None:
+        member = macho(MH_OBJECT, [("__TEXT", "__text", 0, 100)])
+        path = self.write("libZstdDecompress.a", archive([("zstd.o", member)]))
+        product = binary_sizes.measure(path, path.name)
+        assert product is not None
+        self.assertEqual(product.kind, "static library (1 object)")
+
     def test_a_universal_binary_is_measured_by_its_arm64_slice(self) -> None:
         x86 = macho(MH_EXECUTE, [("__TEXT", "__text", 0, 9999)])
         path = self.write(
@@ -216,11 +223,53 @@ class BinarySizesTest(unittest.TestCase):
         report = binary_sizes.render("Distribution", binary_sizes.collect([self.root]))
         self.assertIn("## Binary sizes: Distribution", report)
         self.assertIn(
-            f"| `idb_companion` | executable | {binary_sizes.human(len(EXECUTABLE))} | 256 B |",
+            f"| `idb_companion` | unknown | executable | {binary_sizes.human(len(EXECUTABLE))} | 256 B |",
             report,
         )
-        self.assertIn("### `idb_companion` by module", report)
+        self.assertIn("### `idb_companion` by module (unknown)", report)
         self.assertIn("| FBSimulatorControl | 64 B | 25.0% |", report)
+
+    def test_a_binary_takes_its_configuration_from_its_products_directory(self) -> None:
+        self.write("Products/Debug/libFBSimulatorControl.a", archive([]))
+        self.write(
+            "Products/Release-iphonesimulator/libShimulator-iOS.dylib", EXECUTABLE
+        )
+        products = binary_sizes.collect(
+            [self.root / "Products"], configuration="Release"
+        )
+        self.assertEqual(
+            {p.path: p.configuration for p in products},
+            {
+                "Debug/libFBSimulatorControl.a": "Debug",
+                "Release-iphonesimulator/libShimulator-iOS.dylib": "Release",
+            },
+        )
+
+    def test_a_path_naming_no_configuration_takes_the_one_given(self) -> None:
+        self.write("Distribution/idb_companion", EXECUTABLE)
+        [given] = binary_sizes.collect(
+            [self.root / "Distribution"], configuration="Release"
+        )
+        [unnamed] = binary_sizes.collect([self.root / "Distribution"])
+        self.assertEqual(
+            (given.configuration, unnamed.configuration), ("Release", "unknown")
+        )
+
+    def test_a_report_with_a_debug_binary_warns_that_debug_sizes_overstate(
+        self,
+    ) -> None:
+        self.write("Products/Debug/idb_companion", EXECUTABLE)
+        self.write("Products/Release/sim-video", EXECUTABLE)
+        debug = binary_sizes.render(
+            "Frameworks", binary_sizes.collect([self.root / "Products"])
+        )
+        self.assertIn(binary_sizes.DEBUG_WARNING, debug)
+        self.assertIn("| `Debug/idb_companion` | Debug |", debug)
+        self.assertIn("| `Release/sim-video` | Release |", debug)
+        release = binary_sizes.render(
+            "Frameworks", binary_sizes.collect([self.root / "Products/Release"])
+        )
+        self.assertNotIn(binary_sizes.DEBUG_WARNING, release)
 
     def test_sizes_read_in_decimal_units(self) -> None:
         self.assertEqual(binary_sizes.human(512), "512 B")

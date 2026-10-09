@@ -46,6 +46,14 @@ SKIPPED_DIRECTORY_SUFFIXES = (".dSYM", ".xctest", ".swiftmodule")
 
 SWIFT_SYMBOL = re.compile(r"^_?\$[sS](\d+)")
 
+# Xcode's products directories: the configuration, with the SDK appended for any but macOS.
+CONFIGURATION_DIRECTORY = re.compile(r"^(Debug|Release)(-[a-z]+)?$")
+UNKNOWN_CONFIGURATION = "unknown"
+DEBUG_WARNING = (
+    "> **Debug sizes overstate what ships.** A Debug build is unoptimised and keeps code a "
+    "Release build strips, so compare Release sizes to judge how big a binary is."
+)
+
 # Modules this project owns, which a module table always lists by name.
 OWN_MODULE_PREFIXES = ("FB", "IDB", "Companion", "Simulator", "Repl", "Shimulator")
 # Below this share of an image, a module nobody here owns joins "everything else".
@@ -81,6 +89,7 @@ class Product:
     file_size: int
     code_and_data: int
     modules: dict[str, int] = field(default_factory=dict)
+    configuration: str = UNKNOWN_CONFIGURATION
 
 
 def thin(data: bytes) -> bytes:
@@ -194,7 +203,7 @@ def measure(path: Path, relative: str) -> Product | None:
         objects = [image for image in map(parse_image, archive_members(data)) if image]
         return Product(
             relative,
-            f"static library ({len(objects)} objects)",
+            f"static library ({len(objects)} object{'' if len(objects) == 1 else 's'})",
             len(data),
             sum(o.code_and_data for o in objects),
         )
@@ -206,12 +215,23 @@ def measure(path: Path, relative: str) -> Product | None:
     return Product(relative, kind, len(data), image.code_and_data, modules)
 
 
-def collect(roots: Sequence[Path]) -> list[Product]:
+def configuration_of(path: Path, fallback: str | None) -> str:
+    """The configuration a binary was built in, from the Xcode products directory it sits
+    in, or `fallback` when its path names none, as an assembled distribution's does not."""
+    for part in reversed(path.resolve().parts[:-1]):
+        match = CONFIGURATION_DIRECTORY.match(part)
+        if match:
+            return match.group(1)
+    return fallback or UNKNOWN_CONFIGURATION
+
+
+def collect(roots: Sequence[Path], configuration: str | None = None) -> list[Product]:
     products: list[Product] = []
     for root in roots:
         if root.is_file():
             product = measure(root, root.name)
             if product:
+                product.configuration = configuration_of(root, configuration)
                 products.append(product)
             continue
         for directory, subdirectories, files in os.walk(root):
@@ -225,6 +245,7 @@ def collect(roots: Sequence[Path]) -> list[Product]:
                     continue
                 product = measure(path, str(path.relative_to(root)))
                 if product:
+                    product.configuration = configuration_of(path, configuration)
                     products.append(product)
     return products
 
@@ -259,10 +280,15 @@ def render(title: str, products: Sequence[Product]) -> str:
     lines = [f"## Binary sizes: {title}", ""]
     if not products:
         return "\n".join(lines + ["No binaries found.", ""])
-    lines += ["| Product | Kind | File | Code and data |", "|---|---|---:|---:|"]
+    if any(product.configuration == "Debug" for product in products):
+        lines += [DEBUG_WARNING, ""]
+    lines += [
+        "| Product | Build | Kind | File | Code and data |",
+        "|---|---|---|---:|---:|",
+    ]
     for product in products:
         lines.append(
-            f"| `{product.path}` | {product.kind} | {human(product.file_size)} | {human(product.code_and_data)} |"
+            f"| `{product.path}` | {product.configuration} | {product.kind} | {human(product.file_size)} | {human(product.code_and_data)} |"
         )
     for product in products:
         if not product.modules:
@@ -270,7 +296,7 @@ def render(title: str, products: Sequence[Product]) -> str:
         total = sum(product.modules.values())
         lines += [
             "",
-            f"### `{product.path}` by module",
+            f"### `{product.path}` by module ({product.configuration})",
             "",
             "| Module | Size | Share |",
             "|---|---:|---:|",
@@ -286,13 +312,18 @@ def main(argv: Sequence[str] | None = None) -> None:
         "--title", required=True, help="what was built, for the report's heading"
     )
     parser.add_argument(
+        "--configuration",
+        choices=("Debug", "Release"),
+        help="the configuration of binaries whose path names none, such as an assembled distribution",
+    )
+    parser.add_argument(
         "paths",
         nargs="+",
         type=Path,
         help="binaries, or directories to search for them",
     )
     args = parser.parse_args(argv)
-    print(render(args.title, collect(args.paths)))
+    print(render(args.title, collect(args.paths, args.configuration)))
 
 
 if __name__ == "__main__":
