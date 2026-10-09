@@ -113,11 +113,12 @@ private final class OSLogLogger: NSObject, ControlCoreLogger, @unchecked Sendabl
 
 // MARK: - ConsumerLogger
 
-// SAFETY: all state is immutable; writes to the shared consumer are serialized on the consumer
-// itself, since loggers derived from one another share it.
+// SAFETY: all state is immutable; writes to the shared consumer are serialized by `writeLock`,
+// which loggers derived from one another share along with the consumer.
 private final class ConsumerLogger: NSObject, ControlCoreLogger, @unchecked Sendable {
 
   private let consumer: DataConsumer
+  private let writeLock: NSLock
   private let dateFormatter: DateFormatter?
   let name: String?
 
@@ -126,8 +127,9 @@ private final class ConsumerLogger: NSObject, ControlCoreLogger, @unchecked Send
     .info
   }
 
-  init(consumer: DataConsumer, name: String?, dateFormatter: DateFormatter?) {
+  init(consumer: DataConsumer, name: String?, dateFormatter: DateFormatter?, writeLock: NSLock = NSLock()) {
     self.consumer = consumer
+    self.writeLock = writeLock
     self.name = name
     self.dateFormatter = dateFormatter
     super.init()
@@ -146,9 +148,9 @@ private final class ConsumerLogger: NSObject, ControlCoreLogger, @unchecked Send
       line += "[\(name)] "
     }
     line += message + "\n"
-    objc_sync_enter(consumer)
-    defer { objc_sync_exit(consumer) }
-    consumer.consumeData(Data(line.utf8))
+    writeLock.withLock {
+      consumer.consumeData(Data(line.utf8))
+    }
     return self
   }
 
@@ -165,15 +167,15 @@ private final class ConsumerLogger: NSObject, ControlCoreLogger, @unchecked Send
   }
 
   func withName(_ name: String) -> ControlCoreLogger {
-    ConsumerLogger(consumer: consumer, name: name, dateFormatter: dateFormatter)
+    ConsumerLogger(consumer: consumer, name: name, dateFormatter: dateFormatter, writeLock: writeLock)
   }
 
   func withDateFormatEnabled(_ enabled: Bool) -> ControlCoreLogger {
     guard enabled else {
-      return ConsumerLogger(consumer: consumer, name: name, dateFormatter: nil)
+      return ConsumerLogger(consumer: consumer, name: name, dateFormatter: nil, writeLock: writeLock)
     }
     let dateFormatter = DateFormatter()
     dateFormatter.dateFormat = "yyyy-MM-dd HH:mm:ss.SSSZZZ"
-    return ConsumerLogger(consumer: consumer, name: name, dateFormatter: dateFormatter)
+    return ConsumerLogger(consumer: consumer, name: name, dateFormatter: dateFormatter, writeLock: writeLock)
   }
 }
