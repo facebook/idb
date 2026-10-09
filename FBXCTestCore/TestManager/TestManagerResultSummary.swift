@@ -9,13 +9,13 @@ import Foundation
 
 @objc public final class TestManagerResultSummary: NSObject {
 
-  @objc public let testSuite: String
-  @objc public let finishTime: Date
-  @objc public let runCount: Int
-  @objc public let failureCount: Int
-  @objc public let unexpected: Int
-  @objc public let testDuration: TimeInterval
-  @objc public let totalDuration: TimeInterval
+  public let testSuite: String
+  public let finishTime: Date
+  public let runCount: Int
+  public let failureCount: Int
+  public let unexpected: Int
+  public let testDuration: TimeInterval
+  public let totalDuration: TimeInterval
 
   @objc public class func from(
     testSuite: String,
@@ -37,7 +37,7 @@ import Foundation
     )
   }
 
-  @objc public init(
+  public init(
     testSuite: String,
     finishTime: Date,
     runCount: Int,
@@ -81,7 +81,7 @@ import Foundation
     return .unknown
   }
 
-  @objc public class func statusString(for status: FBTestReportStatus) -> String {
+  public class func statusString(for status: FBTestReportStatus) -> String {
     switch status {
     case .passed:
       return "Passed"

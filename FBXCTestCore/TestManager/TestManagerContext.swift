@@ -8,12 +8,12 @@
 import FBControlCore
 import Foundation
 
-@objc public final class TestManagerContext: NSObject, NSCopying {
+@objc public final class TestManagerContext: NSObject {
 
   @objc public let sessionIdentifier: UUID
-  @objc public let timeout: TimeInterval
+  public let timeout: TimeInterval
   public let testHostLaunchConfiguration: ApplicationLaunchConfiguration
-  @objc public let testedApplicationAdditionalEnvironment: [String: String]
+  public let testedApplicationAdditionalEnvironment: [String: String]
   @objc public let testConfiguration: FBTestConfiguration
 
   public init(
@@ -33,9 +33,5 @@ import Foundation
 
   public override var description: String {
     "Test Host \(testHostLaunchConfiguration) | Session ID \(sessionIdentifier.uuidString) | Timeout \(timeout)"
-  }
-
-  public func copy(with zone: NSZone? = nil) -> Any {
-    self
   }
 }

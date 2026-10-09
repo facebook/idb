@@ -9,9 +9,9 @@ import Foundation
 
 @objc public final class TestExceptionInfo: NSObject {
 
-  @objc public let message: String
-  @objc public let file: String?
-  @objc public let line: UInt
+  public let message: String
+  public let file: String?
+  public let line: UInt
 
   @objc public init(message: String, file: String?, line: UInt) {
     self.message = message
@@ -20,7 +20,7 @@ import Foundation
     super.init()
   }
 
-  @objc public convenience init(message: String) {
+  public convenience init(message: String) {
     self.init(message: message, file: nil, line: 0)
   }
 

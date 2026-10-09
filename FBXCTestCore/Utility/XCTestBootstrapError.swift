@@ -11,7 +11,7 @@ public let XCTestBootstrapErrorDomain = "com.facebook.XCTestBootstrap"
 
 public let FBTestErrorDomain = "com.facebook.FBTestError"
 
-@objc public enum XCTestBootstrapErrorCode: Int {
+public enum XCTestBootstrapErrorCode: Int {
   case startupFailure = 0x3
   case lostConnection = 0x4
   case startupTimeout = 0x5
