@@ -73,11 +73,11 @@ private let axTraitNames: [(AXTraits, String)] = [
   (.allowsLayoutChangeInStatusBar, "AllowsLayoutChangeInStatusBar"),
 ]
 
-private let axTraitToName: [NSNumber: String] =
-  Dictionary(uniqueKeysWithValues: axTraitNames.map { (NSNumber(value: $0.0.rawValue), $0.1) })
+private let axTraitToName: [UInt64: String] =
+  Dictionary(uniqueKeysWithValues: axTraitNames.map { ($0.0.rawValue, $0.1) })
 
 /// Mapping from single-bit accessibility trait values to their names.
-func AXTraitToNameMap() -> [NSNumber: String] {
+func AXTraitToNameMap() -> [UInt64: String] {
   axTraitToName
 }
 

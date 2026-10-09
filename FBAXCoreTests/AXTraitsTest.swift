@@ -13,8 +13,8 @@ import XCTest
 final class AXTraitsTest: XCTestCase {
   func testMappingNames() {
     let mapping = AXTraitToNameMap()
-    XCTAssertEqual(mapping[NSNumber(value: AXTraits.link.rawValue)], "Link")
-    XCTAssertEqual(mapping[NSNumber(value: AXTraits.button.rawValue)], "Button")
+    XCTAssertEqual(mapping[AXTraits.link.rawValue], "Link")
+    XCTAssertEqual(mapping[AXTraits.button.rawValue], "Button")
   }
 
   func testEmptyTraitExtraction() {
