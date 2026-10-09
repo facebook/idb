@@ -195,6 +195,8 @@ public actor SimulatorVideoStream: VideoStreamOperation {
   private var lazyTriggers: LazyFrameTriggers?
 
   var pixelBuffer: CVPixelBuffer?
+  /// Test seam: makes the stream's frame pushers in place of `framePusher(configuration:…)`.
+  var framePusherFactory: (() throws -> any FramePusher)?
   var timeAtFirstFrame: TimeInterval = 0
   var wallClockAtFirstFrame: TimeInterval = 0
   var timeAtLastPush: TimeInterval = 0
@@ -498,13 +500,7 @@ public actor SimulatorVideoStream: VideoStreamOperation {
       framePusher = spare
       logger.log("Mounting with the frame pusher prepared for a \(source) surface")
     } else {
-      framePusher = try Self.framePusher(
-        configuration: configuration,
-        cadence: cadence,
-        consumer: consumer,
-        encodedSampleConsumerOverride: encodedSampleConsumerOverride,
-        frameWriters: frameWriters,
-        logger: logger)
+      framePusher = try newFramePusher(consumer: consumer)
       try framePusher.setup(source: source, edgeInsets: edgeInsets)
     }
 
@@ -621,6 +617,19 @@ public actor SimulatorVideoStream: VideoStreamOperation {
 
   // MARK: - Frame Pusher
 
+  private func newFramePusher(consumer: any DataConsumer) throws -> any FramePusher {
+    if let framePusherFactory {
+      return try framePusherFactory()
+    }
+    return try Self.framePusher(
+      configuration: configuration,
+      cadence: cadence,
+      consumer: consumer,
+      encodedSampleConsumerOverride: encodedSampleConsumerOverride,
+      frameWriters: frameWriters,
+      logger: logger)
+  }
+
   /// The displaced pusher's VideoToolbox sessions are only released deterministically by `tearDown`; releasing
   /// the reference alone can leave them alive with encodes in flight into the same consumer.
   private func tearDown(_ framePusher: any FramePusher, after reason: String) {
@@ -653,13 +662,7 @@ public actor SimulatorVideoStream: VideoStreamOperation {
     let mounted = VideoFrameSource(pixelBuffer)
     for source in sources where source != mounted && !spareFramePushers.contains(source) {
       do {
-        let framePusher = try Self.framePusher(
-          configuration: configuration,
-          cadence: cadence,
-          consumer: consumer,
-          encodedSampleConsumerOverride: encodedSampleConsumerOverride,
-          frameWriters: frameWriters,
-          logger: logger)
+        let framePusher = try newFramePusher(consumer: consumer)
         try framePusher.setup(source: source, edgeInsets: edgeInsets)
         try framePusher.warm(with: try Self.blankPixelBuffer(source))
         if let displaced = spareFramePushers.keep(framePusher, for: source) {
