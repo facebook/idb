@@ -130,6 +130,9 @@ final class FakeAMDevice: NSObject {
 
   private var services: [String: FakeLockdownService] = [:]
 
+  /// What `LookupApplications` reports, keyed by bundle identifier.
+  var installedApplications: [String: [String: Any]] = [:]
+
   /// The scripted service of this name, created empty on first use so a test can set up a reply
   /// before the code under test starts it.
   func service(_ serviceName: String) -> FakeLockdownService {
@@ -252,6 +255,15 @@ final class FakeAMDevice: NSObject {
     }
 
     calls.MountImage = fakeMountImage
+
+    calls.LookupApplications = { deviceRef, _, attributesOut in
+      guard let device = FakeAMDevice.device(deviceRef) else {
+        return 1
+      }
+      // The caller takes this at +1.
+      attributesOut.pointee = Unmanaged.passRetained(device.installedApplications as CFDictionary)
+      return 0
+    }
 
     calls.ServiceConnectionGetSocket = { connectionRef in
       FakeAMDevice.service(connectionRef)?.afc?.socket ?? -1
