@@ -716,11 +716,13 @@ function build_target() {
     build
 }
 
+# Release, the configuration that ships: the test schemes already build every
+# framework in Debug, so a Debug build here would only repeat them.
 function build_all_frameworks() {
-  build_target FBControlCore
-  build_target FBXCTestCore
-  build_target FBSimulatorControl
-  build_target FBDeviceControl
+  build_target FBControlCore Release
+  build_target FBXCTestCore Release
+  build_target FBSimulatorControl Release
+  build_target FBDeviceControl Release
 }
 
 function build_shim() {
@@ -1140,7 +1142,7 @@ Commands:
       all             Build all targets
       simscope        Build and package SimScope.app with its bundled tools
       distribution    Assemble the distribution
-      frameworks      Build all frameworks only
+      frameworks      Build all frameworks only, in Release
       idb_companion   Build idb_companion only
       idb-repl        Build idb-repl only
       sim-video       Build the local video recorder

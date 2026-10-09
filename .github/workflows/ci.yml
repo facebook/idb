@@ -96,8 +96,8 @@ jobs:
         # An explicit bash runs with pipefail, so a failed report fails the step
         # rather than passing as tee's success.
         shell: bash
-        # The whole of Build/Products: `build.sh build frameworks` builds Debug, unlike the
-        # companion's Release build, and each row's path names the configuration.
+        # The whole of Build/Products, whatever configuration the build used; each row
+        # names it.
         run: python3 -m CI.binary_sizes --title "Frameworks" Build/Products | tee -a "$GITHUB_STEP_SUMMARY"
       # The raw xcodebuild output build.sh keeps for every invocation; the
       # formatted job log shows only what the formatter recognised.
