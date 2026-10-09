@@ -234,7 +234,7 @@ final class IDBXCTestReporter: NSObject, XCTestReporter, DataConsumer, @unchecke
   }
 
   private func translate(activity: FBActivityRecord) throws -> Idb_XctestRunResponse.TestRunInfo.TestActivity {
-    let subactivities = activity.subactivities.compactMap { $0 as? FBActivityRecord }
+    let subactivities = activity.subactivities
     let reportAttachments = configuration?.reportAttachments ?? false
     return try Idb_XctestRunResponse.TestRunInfo.TestActivity.with {
       $0.title = activity.title
@@ -279,7 +279,7 @@ final class IDBXCTestReporter: NSObject, XCTestReporter, DataConsumer, @unchecke
     while let firstRemaining = remaining.first, root.start <= firstRemaining.start && firstRemaining.finish <= root.finish {
       remaining.remove(at: 0)
       populateSubactivities(root: firstRemaining, remaining: &remaining)
-      root.subactivities.add(firstRemaining)
+      root.subactivities.append(firstRemaining)
     }
   }
 

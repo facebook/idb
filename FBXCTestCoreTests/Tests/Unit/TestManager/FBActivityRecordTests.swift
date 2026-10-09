@@ -63,14 +63,14 @@ final class FBActivityRecordTests: XCTestCase {
     XCTAssertEqual(fb.finish, finish)
   }
 
-  func testFromXCActivityRecord_InitializesSubactivitiesAsEmptyMutableArray() {
+  func testFromXCActivityRecord_InitializesSubactivitiesAsEmpty() {
     let record = makeXCActivityRecord()
 
     let fb = wrapActivity(record)
 
     XCTAssertEqual(fb.subactivities.count, 0, "Subactivities must start empty; from(_:) does not recursively wrap the source's nested records.")
-    fb.subactivities.add(fb)
-    XCTAssertEqual(fb.subactivities.count, 1, "from(_:) must seed subactivities with a mutable container, not an immutable copy.")
+    fb.subactivities.append(fb)
+    XCTAssertEqual(fb.subactivities.count, 1, "Reporters nest records into subactivities after from(_:).")
   }
 
   func testFromXCActivityRecord_WithoutAttachments_ProducesEmptyArray() {

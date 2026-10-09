@@ -8,16 +8,16 @@
 import Foundation
 
 /// An attachment recorded by an XCTest activity, copied out of XCTest's own `XCTAttachment`.
-@objc public final class FBAttachment: NSObject {
+public struct FBAttachment {
 
-  @objc public let payload: Data?
-  @objc public let timestamp: Date?
-  @objc public let name: String
-  @objc public let uniformTypeIdentifier: String
-  @objc public let userInfo: [String: Any]?
+  public let payload: Data?
+  public let timestamp: Date?
+  public let name: String
+  public let uniformTypeIdentifier: String
+  public let userInfo: [String: Any]?
 
   /// `XCTAttachment` is read through KVC because the XCTest private headers are not importable from Swift.
-  @objc(from:) public static func from(_ attachment: NSObject) -> FBAttachment {
+  public static func from(_ attachment: NSObject) -> FBAttachment {
     FBAttachment(attachment)
   }
 
@@ -28,6 +28,5 @@ import Foundation
     self.name = attachment.value(forKey: "name") as? String ?? ""
     self.uniformTypeIdentifier = attachment.value(forKey: "uniformTypeIdentifier") as? String ?? ""
     self.userInfo = attachment.value(forKey: "userInfo") as? [String: Any]
-    super.init()
   }
 }

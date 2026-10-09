@@ -8,19 +8,20 @@
 import Foundation
 
 /// An XCTest activity, copied out of XCTest's own `XCActivityRecord`.
+/// Objective-C only constructs it with `from(_:)` and hands it to reporters.
 @objc public final class FBActivityRecord: NSObject {
 
-  @objc public let title: String
-  @objc public let activityType: String
-  @objc public let uuid: UUID
-  @objc public let start: Date
+  public let title: String
+  public let activityType: String
+  public let uuid: UUID
+  public let start: Date
   /// Equal to `start` for an activity that has not finished, consistent with its zero `duration`.
-  @objc public let finish: Date
-  @objc public let attachments: [FBAttachment]
-  @objc public let duration: Double
-  @objc public let name: String
+  public let finish: Date
+  public let attachments: [FBAttachment]
+  public let duration: Double
+  public let name: String
   /// Starts empty; reporters nest records into it themselves.
-  @objc public var subactivities: NSMutableArray = []
+  public var subactivities: [FBActivityRecord] = []
 
   /// `XCActivityRecord` is read through KVC because the XCTest private headers are not importable from Swift.
   @objc(from:) public static func from(_ record: NSObject) -> FBActivityRecord {
