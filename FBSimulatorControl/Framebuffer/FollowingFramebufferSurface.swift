@@ -12,7 +12,8 @@ import os
 
 /// A surface that follows the simulator's display configuration, reporting each configuration to its
 /// consumers. One that follows the active display also moves to each display that becomes active, so its
-/// consumers keep rendering the display in use. A move re-registers every consumer on the new display's
+/// consumers keep rendering the display in use. It moves as soon as a transition names the display the layout
+/// has moved to, which already draws, rather than once the outgoing display's backlight has caught up. A move re-registers every consumer on the new display's
 /// screen and reports that screen's surface, after the configuration that caused it, which a consumer
 /// handles as it does any other surface change. A fixed surface stays on its display whatever becomes active;
 /// a framebuffer bound to a configuration is ended by its `Framebuffer`, never moved.
@@ -127,9 +128,7 @@ final class FollowingFramebufferSurface: FramebufferSurface, @unchecked Sendable
         registrations.values.forEach { $0.configurationChanged(configuration) }
         return screen.uniqueID
       }
-      guard movement == .followsActiveDisplay, configuration.phase == .settled, case let .identified(display) = configuration.active,
-        display.uniqueID != current
-      else {
+      guard movement == .followsActiveDisplay, let display = Self.displayToRead(in: configuration), display.uniqueID != current else {
         continue
       }
       do {
@@ -142,6 +141,17 @@ final class FollowingFramebufferSurface: FramebufferSurface, @unchecked Sendable
       } catch {
         logger.log("Framebuffer: staying on display \(current ?? "unidentified"), as display \(display.uniqueID) could not be captured: \(error)")
       }
+    }
+  }
+
+  private static func displayToRead(in configuration: SimulatorDisplayConfiguration) -> SimulatorDisplay? {
+    switch (configuration.phase, configuration.active) {
+    case let (.transitioning(incoming), _):
+      incoming
+    case let (.settled, .identified(display)):
+      display
+    case (.settled, _):
+      nil
     }
   }
 

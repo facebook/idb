@@ -210,9 +210,7 @@ final class FollowingFramebufferSurfaceTests: XCTestCase {
     continuation.yield(configuration(active: "inner"))
     try await waitUntil { !inner.registeredTokens.isEmpty }
 
-    // BUG: the incoming display already draws, but the framebuffer reads the outgoing one until the transition
-    // settles, about 3 seconds of black frames on an iPhone Duo close. Flipped in the following commit.
-    XCTAssertEqual(registeredWhenSettled, 0)
+    XCTAssertEqual(registeredWhenSettled, 1)
     XCTAssertEqual(inner.registeredTokens.count, 1)
   }
 
