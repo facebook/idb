@@ -94,6 +94,14 @@ final class SimulatorDisplayInteractionTests: XCTestCase {
     XCTAssertFalse(first.hasSameConfiguration(as: .selected(display(rotation: .clockwise), id: 82)))
   }
 
+  func testTheSurfacePixelSizeIsThePanelsWhateverTheRotation() {
+    for rotation in [SimulatorDisplayRotation.upright, .clockwise, .upsideDown, .counterclockwise] {
+      XCTAssertEqual(display(rotation: rotation, scale: 3).geometry.surfacePixelSize, CGSize(width: 1200, height: 800), "\(rotation)")
+    }
+    let fractional = SimulatorDisplayGeometry(bounds: CGRect(x: 0, y: 0, width: 2007.4, height: 2852.6), scale: 3, rotation: .upright)
+    XCTAssertEqual(fractional.surfacePixelSize, CGSize(width: 2007, height: 2853))
+  }
+
   func testInvalidPointDescriptionsNameTheProblem() {
     XCTAssertEqual(
       SimulatorDisplayInteractionError.invalidPoint(CGPoint(x: 401, y: 0), bounds: CGSize(width: 400, height: 300)).localizedDescription,

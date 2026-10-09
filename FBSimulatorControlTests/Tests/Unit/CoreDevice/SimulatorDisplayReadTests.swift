@@ -332,6 +332,7 @@ final class SimulatorDisplayReadTests: XCTestCase {
     XCTAssertEqual(display.activity, .active)
     XCTAssertTrue(display.isIntegrated)
     XCTAssertEqual(display.geometry.unrotatedPointSize, CGSize(width: 669, height: 951))
+    XCTAssertEqual(display.geometry.surfacePixelSize, CGSize(width: 2007, height: 2853))
     XCTAssertEqual(resolution([cover, inner]), .transitioning)
   }
 

@@ -26,6 +26,13 @@ public struct SimulatorDisplayGeometry: Equatable, Sendable {
     CGSize(width: bounds.width / scale, height: bounds.height / scale)
   }
 
+  /// The pixel size of the display's framebuffer surface: the `IOSurface` a framebuffer on this display hands its
+  /// consumers. Fixed to the panel whatever the interface rotation, so a consumer can prepare for a display, such
+  /// as with an encoder of this size, before it switches to it.
+  public var surfacePixelSize: CGSize {
+    CGSize(width: bounds.width.rounded(), height: bounds.height.rounded())
+  }
+
   public var pointSize: CGSize {
     let size = unrotatedPointSize
     switch rotation {
