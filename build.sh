@@ -817,7 +817,13 @@ function build_companion_archives() {
     name="${name#lib}"
     name="${name%.a}"
     build_target "$name" Release
-  done < <(sed -n 's|^ *- framework: \.\./Build/Products/Release/||p' Companion/project-deps.yml | sort -u)
+  done < <(awk -v target="$1" '
+    /^  [^ ]/ { selected = ($0 == "  " target ":") }
+    selected && $1 == "-" && $2 == "framework:" {
+      sub(/^.*\//, "", $3)
+      print $3
+    }
+  ' Companion/project-deps.yml | sort -u)
 }
 
 function build_idb_companion() {
@@ -826,7 +832,7 @@ function build_idb_companion() {
   generate_proto
   # XcodeGen expands source globs, so generate the project after the sources.
   generate_companion_project
-  build_companion_archives
+  build_companion_archives idb_companion
   # Build idb_companion from its own project
   invoke_xcodebuild \
     ONLY_ACTIVE_ARCH=NO \
@@ -857,7 +863,7 @@ function build_idb_repl() {
 }
 
 function build_sim_video() {
-  build_companion_archives
+  build_companion_archives sim-video
   invoke_xcodebuild \
     ONLY_ACTIVE_ARCH=NO \
     SWIFT_ENABLE_EXPLICIT_MODULES=NO \
@@ -959,6 +965,27 @@ function build_distribution() {
   echo "Distribution ready at $dist"
 }
 
+function build_simscope() {
+  build_companion_archives SimScope
+  for scheme in SimScope simscope-remote; do
+    invoke_xcodebuild \
+      ONLY_ACTIVE_ARCH=NO \
+      SWIFT_ENABLE_EXPLICIT_MODULES=NO \
+      -project Companion/idb_companion.xcodeproj \
+      -scheme "$scheme" \
+      -sdk macosx \
+      -derivedDataPath "$BUILD_DIRECTORY" \
+      -configuration Release \
+      build
+  done
+  local release="$BUILD_DIRECTORY/Products/Release"
+  local app="$BUILD_DIRECTORY/Applications/SimScope.app"
+  rm -rf "$app"
+  /bin/bash Tools/SimScope/package.sh "$release/SimScope.app" \
+    "$BUILD_DIRECTORY/Distribution" "$release/idb-repl" "$release/simscope-remote" "$app"
+  ditto -c -k --sequesterRsrc --keepParent "$app" "$BUILD_DIRECTORY/SimScope-macos-arm64.zip"
+}
+
 function build_all() {
   # build_idb_companion already builds frameworks first
   build_fbsimulatorcontrol_resources
@@ -979,6 +1006,9 @@ function build() {
     case $target in
       all)
         build_all;;
+      simscope)
+        build_all
+        build_simscope;;
       frameworks)
         build_all_frameworks;;
       shims)
@@ -1011,7 +1041,7 @@ function build() {
         build_target "$target";;
       *)
         echo "Unknown target: $target"
-        echo "Valid targets: all, frameworks, shims, fixtures, idb_companion, idb-repl, sim-video, FBControlCore, FBXCTestCore, FBSimulatorControl, FBSimulatorXCTest, FBDeviceControl, Shimulator-iOS, Shimulator-macOS, Repl-iOS, Repl-macOS, ReplHost, SimulatorFrameworkBridge-iOS, SimulatorFrameworkBridge-tvOS, distribution"
+        echo "Valid targets: all, simscope, frameworks, shims, fixtures, idb_companion, idb-repl, sim-video, FBControlCore, FBXCTestCore, FBSimulatorControl, FBSimulatorXCTest, FBDeviceControl, Shimulator-iOS, Shimulator-macOS, Repl-iOS, Repl-macOS, ReplHost, SimulatorFrameworkBridge-iOS, SimulatorFrameworkBridge-tvOS, distribution"
         exit 1;;
     esac
   fi
@@ -1108,6 +1138,7 @@ Commands:
     Targets:
       (none)          Build all targets
       all             Build all targets
+      simscope        Build and package SimScope.app with its bundled tools
       distribution    Assemble the distribution
       frameworks      Build all frameworks only
       idb_companion   Build idb_companion only

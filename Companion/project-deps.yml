@@ -61,3 +61,29 @@ targets:
         embed: false
       - framework: ../Build/Products/Release/libSimulatorIPC.a
         embed: false
+  SimScope:
+    dependencies:
+      - framework: ../Build/Products/Release/libCompanionUtilities.a
+        embed: false
+      - framework: ../Build/Products/Release/libFBAXCore.a
+        embed: false
+      - framework: ../Build/Products/Release/FBControlCore.framework
+        embed: false
+      - framework: ../Build/Products/Release/libFBSimulatorAX.a
+        embed: false
+      - framework: ../Build/Products/Release/libFBSimulatorBridgeProtocol.a
+        embed: false
+      - framework: ../Build/Products/Release/libFBSimulatorControl.a
+        embed: false
+      - framework: ../Build/Products/Release/libFBSimulatorVideo.a
+        embed: false
+      - framework: ../Build/Products/Release/libFBVideoCore.a
+        embed: false
+      - framework: ../Build/Products/Release/libSimScopeProtocol.a
+        embed: false
+      - framework: ../Build/Products/Release/libSimulatorIPC.a
+        embed: false
+  simscope-remote:
+    dependencies:
+      - framework: ../Build/Products/Release/libSimScopeProtocol.a
+        embed: false

@@ -84,6 +84,64 @@ packages:
     exactVersion: 1.3.1
 
 targets:
+  SimScope:
+    type: application
+    platform: macOS
+    deploymentTarget: "15.0"
+    sources:
+      - path: ../Tools/SimScope/SimScope
+      - path: ../Tools/SimScope/Assets.xcassets
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.facebook.simscope
+        PRODUCT_NAME: SimScope
+        EXECUTABLE_NAME: simscope
+        INFOPLIST_FILE: $(SRCROOT)/../Tools/SimScope/Info.plist
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        SWIFT_VERSION: "6.0"
+        SWIFT_ENABLE_EXPLICIT_MODULES: NO
+        SYSTEM_HEADER_SEARCH_PATHS: $(inherited) $(SRCROOT)/../PrivateHeaders
+        FRAMEWORK_SEARCH_PATHS: $(inherited) $(SRCROOT)/../Build/Products/Release
+        SWIFT_INCLUDE_PATHS: $(inherited) $(SRCROOT)/../Build/Products/Release
+        OTHER_LDFLAGS: $(inherited) -ObjC -weak_library $(SRCROOT)/../PrivateHeaders/CoreSimulator/CoreSimulator.tbd -weak_library $(SRCROOT)/../PrivateHeaders/AccessibilityPlatformTranslation/AccessibilityPlatformTranslation.tbd
+        CODE_SIGN_IDENTITY: "-"
+        CODE_SIGNING_ALLOWED: YES
+        ENABLE_APP_SANDBOX: NO
+      configs:
+        Release:
+          DEBUG_INFORMATION_FORMAT: dwarf-with-dsym
+          STRIP_INSTALLED_PRODUCT: YES
+    dependencies:
+      - sdk: AppKit.framework
+      - sdk: AVFoundation.framework
+      - sdk: CoreGraphics.framework
+      - sdk: CoreImage.framework
+      - sdk: CoreMedia.framework
+      - sdk: CoreVideo.framework
+      - sdk: IOKit.framework
+      - sdk: IOSurface.framework
+      - sdk: QuartzCore.framework
+      - sdk: ScreenCaptureKit.framework
+
+  simscope-remote:
+    type: tool
+    platform: macOS
+    deploymentTarget: "15.0"
+    sources:
+      - path: ../Tools/SimScope/SimScopeRemote
+    settings:
+      base:
+        PRODUCT_NAME: simscope-remote
+        SWIFT_VERSION: "6.0"
+        SWIFT_INCLUDE_PATHS: $(inherited) $(SRCROOT)/../Build/Products/Release
+        OTHER_SWIFT_FLAGS: $(inherited) -parse-as-library
+        CODE_SIGNING_ALLOWED: NO
+        GENERATE_INFOPLIST_FILE: YES
+    dependencies:
+      - package: swift-argument-parser
+        product: ArgumentParser
+      - sdk: Foundation.framework
+
   # Xcode folds linked SwiftPM products into static archives. Keep these package
   # edges compile-only; CompanionLib owns the package object code once below.
   IDBGRPCSwift:
