@@ -12,7 +12,7 @@ import Foundation
 
 /// Frame pusher abstraction. Concrete pushers convert + write frames to the consumer.
 protocol FramePusher: AnyObject {
-  func setup(with pixelBuffer: CVPixelBuffer, edgeInsets: VideoStreamEdgeInsets) throws
+  func setup(source: VideoFrameSource, edgeInsets: VideoStreamEdgeInsets) throws
   func tearDown() throws
   func writeEncodedFrame(
     _ pixelBuffer: CVPixelBuffer,

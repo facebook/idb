@@ -492,7 +492,7 @@ public actor SimulatorVideoStream: VideoStreamOperation {
     if frameWriters == nil {
       frameWriters = configuration.format.frameWriters()
     }
-    let source = FramePusherPool.Source(buffer)
+    let source = VideoFrameSource(buffer)
     let framePusher: any FramePusher
     if let spare = spareFramePushers.take(source) {
       framePusher = spare
@@ -505,14 +505,14 @@ public actor SimulatorVideoStream: VideoStreamOperation {
         encodedSampleConsumerOverride: encodedSampleConsumerOverride,
         frameWriters: frameWriters,
         logger: logger)
-      try framePusher.setup(with: buffer, edgeInsets: edgeInsets)
+      try framePusher.setup(source: source, edgeInsets: edgeInsets)
     }
 
     // Published only once every throwing step is past, so a mount is all-or-nothing: a failed one
     // leaves the previous surface installed rather than a new `pixelBuffer` behind a pusher never
     // set up for it.
     let previousFramePusher = self.framePusher
-    let previousSource = self.pixelBuffer.map(FramePusherPool.Source.init)
+    let previousSource = self.pixelBuffer.map(VideoFrameSource.init)
     self.pixelBuffer = buffer
     self.pixelBufferAttributes = attributes
     self.framePusher = framePusher
@@ -645,12 +645,12 @@ public actor SimulatorVideoStream: VideoStreamOperation {
     }
     // A simulator's framebuffer surfaces are BGRA; a surface in another format is not a spare's source, so its
     // mount sets up a pusher of its own.
-    let sources = Set(displays.compactMap { FramePusherPool.Source($0.geometry.surfacePixelSize, pixelFormat: kCVPixelFormatType_32BGRA) })
+    let sources = Set(displays.compactMap { VideoFrameSource($0.geometry.surfacePixelSize, pixelFormat: kCVPixelFormatType_32BGRA) })
     guard sources.count > 1 else {
       return
     }
     preparesForDisplaySwitches = true
-    let mounted = FramePusherPool.Source(pixelBuffer)
+    let mounted = VideoFrameSource(pixelBuffer)
     for source in sources where source != mounted && !spareFramePushers.contains(source) {
       do {
         let framePusher = try Self.framePusher(
@@ -660,9 +660,8 @@ public actor SimulatorVideoStream: VideoStreamOperation {
           encodedSampleConsumerOverride: encodedSampleConsumerOverride,
           frameWriters: frameWriters,
           logger: logger)
-        let blank = try Self.blankPixelBuffer(source)
-        try framePusher.setup(with: blank, edgeInsets: edgeInsets)
-        try framePusher.warm(with: blank)
+        try framePusher.setup(source: source, edgeInsets: edgeInsets)
+        try framePusher.warm(with: try Self.blankPixelBuffer(source))
         if let displaced = spareFramePushers.keep(framePusher, for: source) {
           tearDown(displaced, after: "being replaced by a prepared one")
         }
@@ -673,7 +672,7 @@ public actor SimulatorVideoStream: VideoStreamOperation {
     }
   }
 
-  private static func blankPixelBuffer(_ source: FramePusherPool.Source) throws -> CVPixelBuffer {
+  private static func blankPixelBuffer(_ source: VideoFrameSource) throws -> CVPixelBuffer {
     var buffer: CVPixelBuffer?
     let attributes: [String: Any] = [kCVPixelBufferIOSurfacePropertiesKey as String: [String: Any]()]
     let status = CVPixelBufferCreate(nil, source.width, source.height, source.pixelFormat, attributes as CFDictionary, &buffer)

@@ -103,11 +103,11 @@ final class VideoToolboxFramePusher: FramePusher, @unchecked Sendable {
     return .written(encodedBytes: encodedBytes)
   }
 
-  func setup(with pixelBuffer: CVPixelBuffer, edgeInsets: VideoStreamEdgeInsets) throws {
+  func setup(source: VideoFrameSource, edgeInsets: VideoStreamEdgeInsets) throws {
     let encoderSpecification = settings.encoderSpecification
 
-    let sourceWidth = CVPixelBufferGetWidth(pixelBuffer)
-    let sourceHeight = CVPixelBufferGetHeight(pixelBuffer)
+    let sourceWidth = source.width
+    let sourceHeight = source.height
     // The composited frame includes the edge insets, so the NV12 pool and compression session must
     // accommodate the full output size — the same `VideoOutputDimensions` the composited pool uses.
     let dimensions = VideoOutputDimensions.calculate(

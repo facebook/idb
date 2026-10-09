@@ -276,7 +276,7 @@ final class SimulatorVideoStreamBitmapPusherTests: XCTestCase {
     let pusher = BitmapFramePusher(consumer: consumer, scaleFactor: nil)
 
     let zeroInsets = VideoStreamEdgeInsets(top: 0, bottom: 0, left: 0, right: 0)
-    try pusher.setup(with: buffer, edgeInsets: zeroInsets)
+    try pusher.setup(source: VideoFrameSource(buffer), edgeInsets: zeroInsets)
     try pusher.writeEncodedFrame(
       buffer,
       frameNumber: 0,

@@ -23,14 +23,14 @@ final class BitmapFramePusher: FramePusher {
     self.scaleFactor = scaleFactor
   }
 
-  func setup(with pixelBuffer: CVPixelBuffer, edgeInsets: VideoStreamEdgeInsets) throws {
+  func setup(source: VideoFrameSource, edgeInsets: VideoStreamEdgeInsets) throws {
     guard let scaleFactor, scaleFactor > 0, scaleFactor < 1 else {
       return
     }
     scaler = try PixelBufferConverter(
-      outputWidth: Int(floor(scaleFactor * Double(CVPixelBufferGetWidth(pixelBuffer)))),
-      outputHeight: Int(floor(scaleFactor * Double(CVPixelBufferGetHeight(pixelBuffer)))),
-      pixelFormat: CVPixelBufferGetPixelFormatType(pixelBuffer))
+      outputWidth: Int(floor(scaleFactor * Double(source.width))),
+      outputHeight: Int(floor(scaleFactor * Double(source.height))),
+      pixelFormat: source.pixelFormat)
   }
 
   func tearDown() throws {

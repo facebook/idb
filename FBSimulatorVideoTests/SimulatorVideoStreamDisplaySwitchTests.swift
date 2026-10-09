@@ -16,15 +16,15 @@ import XCTest
 /// How a stream prepares frame pushers for the displays it may switch to, and uses them on a switch.
 final class SimulatorVideoStreamDisplaySwitchTests: XCTestCase {
 
-  private let cover = FramePusherPool.Source(width: 20, height: 30, pixelFormat: kCVPixelFormatType_32BGRA)
-  private let inner = FramePusherPool.Source(width: 40, height: 60, pixelFormat: kCVPixelFormatType_32BGRA)
+  private let cover = VideoFrameSource(width: 20, height: 30, pixelFormat: kCVPixelFormatType_32BGRA)
+  private let inner = VideoFrameSource(width: 40, height: 60, pixelFormat: kCVPixelFormatType_32BGRA)
 
   private struct Started {
     let stream: SimulatorVideoStream
     let surface: FakeFramebufferSurface
   }
 
-  private func display(_ id: String, _ size: FramePusherPool.Source, active: Bool) -> SimulatorDisplay {
+  private func display(_ id: String, _ size: VideoFrameSource, active: Bool) -> SimulatorDisplay {
     SimulatorDisplay(
       uniqueID: id, name: id, activity: active ? .active : .inactive, isPrimary: false, isIntegrated: true,
       bounds: CGRect(x: 0, y: 0, width: size.width, height: size.height), scale: 2, rotation: .upright)
@@ -161,11 +161,11 @@ extension SimulatorVideoStream {
     framePusher.map { ObjectIdentifier($0) }
   }
 
-  fileprivate var mountedSource: FramePusherPool.Source? {
-    pixelBuffer.map(FramePusherPool.Source.init)
+  fileprivate var mountedSource: VideoFrameSource? {
+    pixelBuffer.map(VideoFrameSource.init)
   }
 
-  fileprivate func spareFramePusher(for size: FramePusherPool.Source) -> ObjectIdentifier? {
+  fileprivate func spareFramePusher(for size: VideoFrameSource) -> ObjectIdentifier? {
     guard let pusher = spareFramePushers.take(size) else { return nil }
     _ = spareFramePushers.keep(pusher, for: size)
     return ObjectIdentifier(pusher)
@@ -176,7 +176,7 @@ extension SimulatorVideoStream {
     framePusher = pusher
   }
 
-  fileprivate func replaceSpareFramePusher(for size: FramePusherPool.Source, with pusher: any FramePusher & Sendable) {
+  fileprivate func replaceSpareFramePusher(for size: VideoFrameSource, with pusher: any FramePusher & Sendable) {
     try? spareFramePushers.keep(pusher, for: size)?.tearDown()
   }
 }
@@ -197,7 +197,7 @@ private final class KeyFrameRecordingPusher: FramePusher, @unchecked Sendable {
     lock.withLock { completions += 1 }
   }
 
-  func setup(with pixelBuffer: CVPixelBuffer, edgeInsets: VideoStreamEdgeInsets) throws {}
+  func setup(source: VideoFrameSource, edgeInsets: VideoStreamEdgeInsets) throws {}
 
   func tearDown() throws {
     lock.withLock { tornDownFlag = true }

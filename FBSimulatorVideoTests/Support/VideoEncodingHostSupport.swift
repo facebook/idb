@@ -70,7 +70,7 @@ enum VideoEncodingHostSupport {
         encodedSampleConsumerOverride: nil,
         frameWriters: nil,
         logger: logger)
-      try pusher.setup(with: pixelBuffer, edgeInsets: VideoStreamEdgeInsets(top: 0, bottom: 0, left: 0, right: 0))
+      try pusher.setup(source: VideoFrameSource(pixelBuffer), edgeInsets: VideoStreamEdgeInsets(top: 0, bottom: 0, left: 0, right: 0))
       try pusher.writeEncodedFrame(
         pixelBuffer,
         frameNumber: 0,

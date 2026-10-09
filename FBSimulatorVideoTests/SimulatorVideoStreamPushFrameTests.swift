@@ -200,7 +200,7 @@ private final class RecordingFramePusher: FramePusher, @unchecked Sendable {
     return stats
   }
 
-  func setup(with pixelBuffer: CVPixelBuffer, edgeInsets: VideoStreamEdgeInsets) throws {}
+  func setup(source: VideoFrameSource, edgeInsets: VideoStreamEdgeInsets) throws {}
 
   func tearDown() throws {}
 
