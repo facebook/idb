@@ -169,12 +169,25 @@ An `IOSurface` is an object that wraps a Framebuffer, with the contents of the F
 
 An iPhone Duo has two integrated displays, only one of which is active at a time; a hinge change moves the active display, and settles over a few seconds. [`DisplaySelection`](https://github.com/facebook/idb/blob/main/FBControlCore/Configuration/DisplaySelection.swift) chooses the display that framebuffers, video, screenshots, HID input and accessibility reach:
 
-- `.active`, the default, is resolved when the operation runs, once any transition has settled. A framebuffer follows it to each display that becomes active. Framebuffers and screenshots capture the main display when no active display can be identified; HID input and accessibility fail instead.
+- `.active`, the default, is resolved when the operation runs, once any transition has settled. A framebuffer follows it to each display that becomes active, as soon as the layout moves there (see below). Framebuffers and screenshots capture the main display when no active display can be identified; HID input and accessibility fail instead.
 - `.display(uniqueID:)` names a display. A framebuffer captures it even while it is inactive; HID input, accessibility and screenshots fail unless it is the active display.
 - `.configuration(generation:)` names a configuration read from `displays.configuration()` or `displays.configurations()`, so that coordinates computed against it cannot reach a display that has since changed. Operations fail with `SimulatorDisplayError.changed` once it is replaced, and a framebuffer bound to it ends.
 - `.main` is the display with `displayClass` 0, which is the cover display of an iPhone Duo. Framebuffers and screenshots only.
 
 Only `.active` falls back: every other selection fails rather than reaching a display other than the one selected.
+
+#### Switching displays
+
+A hinge change moves the layout to the other display a few seconds before the outgoing display's backlight turns off. The configuration reports this as `.transitioning(incoming:)`, still describing the outgoing displays, and `incoming` names the display the layout moved to, which already draws. HID input, accessibility and screenshots wait for `.settled`, as they act on the display the guest treats as lit. A framebuffer following `.active` moves to `incoming` straight away, so video shows the incoming display rather than the outgoing one going dark, which on an iPhone Duo close lasts about 3 seconds.
+
+`SimulatorVideoStream` prepares for a switch itself. Once a configuration has integrated displays of more than one size, it sets up and warms an encoder for each size it is not showing, and keeps the encoder it switches away from. The first frame after a switch is a keyframe.
+
+A consumer with its own encoder can build the same behaviour from public pieces:
+
+- **A framebuffer per display.** `framebuffer.connect(display: .display(uniqueID:))` gives a framebuffer that stays on its display, active or not, and several can be connected at once, alongside one following `.active`.
+- **When to switch.** `displays.configurations()` streams each configuration; `.transitioning(incoming:)` is the earliest moment a switch is safe for frames.
+- **What to prepare.** `SimulatorDisplayGeometry.surfacePixelSize` is the size of the `IOSurface` each display's framebuffer hands over, whatever the interface rotation, so an encoder can be set up for a display before switching to it.
+- **What a switch needs.** An encoder taken up after a switch should start with a keyframe, since anything it encoded before was never sent.
 
 ### HID: `IndigoHID` and `DTUHID`
 

@@ -244,7 +244,8 @@ public final class SimulatorDisplayCommands: DisplayCommands, @unchecked Sendabl
   }
 
   /// The current display configuration, then each change to it, until the stream is cancelled. Follows
-  /// CoreDevice's display pushes, and polls when the runtime does not push or its pushes stop.
+  /// CoreDevice's display pushes, and polls when the runtime does not push or its pushes stop. A consumer of
+  /// frames can move to a transition's `incoming` display at once; input should wait for `.settled`.
   public func configurations() -> AsyncStream<SimulatorDisplayConfiguration> {
     followConfigurations()
   }

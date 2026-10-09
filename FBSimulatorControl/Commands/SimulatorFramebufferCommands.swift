@@ -41,7 +41,8 @@ public struct SimulatorFramebufferCommands: Sendable {
   @usableFromInline static let defaultDisplay: DisplaySelection = .active
 
   /// A framebuffer for `display`. Each call connects anew; callers that need one connection across
-  /// several operations hold on to the result.
+  /// several operations hold on to the result. Framebuffers for several displays can be connected at once,
+  /// such as one per display to switch between them without waiting to connect.
   public func connect(display: DisplaySelection = defaultDisplay) async throws -> Framebuffer {
     try await Self.framebuffer(display: display, displays: simulator.displays, screens: SimulatorFramebufferScreens(simulator: simulator), logger: simulator.logger)
   }
