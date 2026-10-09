@@ -187,6 +187,7 @@ struct XCTestResultBundleParserTests {
       return
     }
     #expect(status == .unknown)
+    // BUG: a skipped test is logged as having failed — flipped in the following commit.
     #expect(logs.last == "Test Case '-[MyTests.MyTestClass testSkipped]' failed in 0.000 seconds")
   }
 
@@ -289,6 +290,20 @@ struct XCTestResultBundleParserTests {
     let events = try await parse(xcresult: xcresult)
     #expect(events.count == 3)
     #expect(events[1] == .failed(testClass: "MyTestClass", method: "testFails", messages: ["first\nsecond"]))
+  }
+
+  @Test
+  func aSkippedTestFinishesWithAnUnknownStatus() async throws {
+    let xcresult = try xcresult(methods: [method("testSkipped", status: "Skipped", duration: "0", summaryRef: "SUMMARY")], summaries: ["SUMMARY": [:]])
+
+    let events = try await parse(xcresult: xcresult)
+    guard case let .finished(_, _, status, _, logs) = events.last else {
+      Issue.record("Expected a finish, got \(events)")
+      return
+    }
+    #expect(status == .unknown)
+    // BUG: a skipped test is logged as having failed — flipped in the following commit.
+    #expect(logs.last == "Test Case '-[MyTests.MyTestClass testSkipped]' failed in 0.000 seconds")
   }
 
   @Test
