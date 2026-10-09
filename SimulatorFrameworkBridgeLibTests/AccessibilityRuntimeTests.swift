@@ -16,6 +16,7 @@ private let kAXLabel = "XC_kAXXCAttributeLabel"
 private let kAXValue = "XC_kAXXCAttributeValue"
 private let kAXChildren = "XC_kAXXCAttributeChildren"
 private let kAXFrame = "XC_kAXXCAttributeFrame"
+private let kAXAutomationType = "XC_kAXXCAttributeAutomationType"
 private let kAXVisiblePoint = "XC_kAXXCAttributeVisiblePoint"
 private let kNodeIsEnabled = "FBIsEnabled"
 private let kNodeTranslatorRole = "FBTranslatorRole"
@@ -202,6 +203,48 @@ final class AccessibilityRuntimeTests: XCTestCase {
     XCTAssertNil(runtime.lastHitTestDisplayIdentifier, "no displayID must use the unscoped hit-test")
     XCTAssertEqual(runtime.lastHitTestPoint.x, 10)
     XCTAssertEqual(runtime.lastHitTestPoint.y, 20)
+  }
+
+  func testHitOnAContainerOverAControl() {
+    func element(_ type: String, _ frame: CGRect, automationType: FBXCUIElementType? = nil, children: [FBAXFakeElement] = []) -> FBAXFakeElement {
+      let element = FBAXFakeElement.readable(type)
+      var attributes: [String: Any] = [kAXElementType: type, kAXLabel: type, kAXFrame: NSValue(cgRect: frame)]
+      attributes[kAXAutomationType] = automationType.map { NSNumber(value: $0.rawValue) }
+      element.attributes = attributes
+      element.children = children
+      return element
+    }
+    let title = element("FollowTitle", CGRect(x: 300, y: 256, width: 40, height: 16))
+    let follow = element("FollowButton", CGRect(x: 288, y: 248, width: 70, height: 32), automationType: .button, children: [title])
+    let name = element("NameButton", CGRect(x: 52, y: 248, width: 225, height: 18), automationType: .button)
+    let header = element("Header", CGRect(x: 0, y: 237, width: 402, height: 54), children: [name, follow])
+
+    runtime.hitTestOutcome = FBAXHitTestOutcome.hit(header, owningProcessIdentifier: kAppPid)
+    let onFollow = FBAccessibilityService.handleRequest(["verb": "hittest", "pid": NSNumber(value: kAppPid), "x": 323, "y": 264])
+    // BUG: Apple's hit-test answer is returned as it is, so the container answers for the button inside it — flipped in the following commit.
+    assertEqualObjects(axValue(axValue(onFollow, "tree"), kAXElementType), "Header", "a hit on a container names the control under the point, not the text inside it")
+
+    let besideEverything = FBAccessibilityService.handleRequest(["verb": "hittest", "pid": NSNumber(value: kAppPid), "x": 280, "y": 285])
+    assertEqualObjects(axValue(axValue(besideEverything, "tree"), kAXElementType), "Header", "a point under no child stays on the element the hit-test returned")
+  }
+
+  func testHitOnAContainerWithAChildThatRaises() {
+    let follow = FBAXFakeElement.readable("FollowButton")
+    follow.attributes = [kAXElementType: "FollowButton", kAXLabel: "FollowButton", kAXFrame: NSValue(cgRect: CGRect(x: 288, y: 248, width: 70, height: 32))]
+    let broken = FBAXFakeElement.readable("Broken")
+    broken.readRaiseReason = "a child that raises when read"
+    let header = FBAXFakeElement.readable("Header")
+    header.attributes = [kAXElementType: "Header", kAXLabel: "Header", kAXFrame: NSValue(cgRect: CGRect(x: 0, y: 237, width: 402, height: 54))]
+    header.children = [follow, broken]
+
+    runtime.hitTestOutcome = FBAXHitTestOutcome.hit(header, owningProcessIdentifier: kAppPid)
+    let pastBrokenChild = FBAccessibilityService.handleRequest(["verb": "hittest", "pid": NSNumber(value: kAppPid), "x": 323, "y": 264])
+    // BUG: Apple's hit-test answer is returned as it is, so the container answers for the button inside it — flipped in the following commit.
+    assertEqualObjects(axValue(axValue(pastBrokenChild, "tree"), kAXElementType), "Header", "a child that raises is skipped, not fatal to the hit-test")
+
+    header.readRaiseReason = "the hit element raises when read for its children"
+    let brokenHit = FBAccessibilityService.handleRequest(["verb": "hittest", "pid": NSNumber(value: kAppPid), "x": 323, "y": 264])
+    assertEqualObjects(axValue(brokenHit, "ok"), NSNumber(value: false), "the hit element's own attribute read still reports its failure")
   }
 
   func testDisplayHitTestAndWriteForwardIndependentDisplayIdentity() {

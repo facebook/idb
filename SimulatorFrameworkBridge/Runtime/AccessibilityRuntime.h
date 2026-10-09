@@ -71,6 +71,37 @@ typedef NS_ENUM(NSUInteger, FBAXReadStatus) {
 #pragma mark - Hit-tests
 
 /** How a hit-test at a point turned out. */
+/**
+ * XCTest's public `XCUIElementType`, restated for the cases the bridge names because the guest does not
+ * link XCTest. The values are copied from `XCUIAutomation.framework/Headers/XCUIElementTypes.h` in the
+ * simulator platform's `Developer/Library/Frameworks` (XCTest's own `XCUIElementTypes.h` forwards there),
+ * which states every case's value explicitly.
+ */
+typedef NS_ENUM(NSUInteger, FBXCUIElementType) {
+  FBXCUIElementTypeAny = 0,
+  FBXCUIElementTypeOther = 1,
+  FBXCUIElementTypeButton = 9,
+  FBXCUIElementTypeRadioButton = 10,
+  FBXCUIElementTypeCheckBox = 12,
+  FBXCUIElementTypeDisclosureTriangle = 13,
+  FBXCUIElementTypePopUpButton = 14,
+  FBXCUIElementTypeKey = 20,
+  FBXCUIElementTypeSlider = 33,
+  FBXCUIElementTypeSegmentedControl = 37,
+  FBXCUIElementTypePicker = 38,
+  FBXCUIElementTypePickerWheel = 39,
+  FBXCUIElementTypeSwitch = 40,
+  FBXCUIElementTypeToggle = 41,
+  FBXCUIElementTypeLink = 42,
+  FBXCUIElementTypeSearchField = 45,
+  FBXCUIElementTypeTextField = 49,
+  FBXCUIElementTypeSecureTextField = 50,
+  FBXCUIElementTypeTextView = 52,
+  FBXCUIElementTypeMenuItem = 54,
+  FBXCUIElementTypeStepper = 79,
+  FBXCUIElementTypeTab = 80,
+};
+
 typedef NS_ENUM(NSUInteger, FBAXHitTestStatus) {
   /** An element owns the point; `element` and `owningProcessIdentifier` describe it. */
   FBAXHitTestStatusHit,
