@@ -7,8 +7,6 @@
 
 #import <Foundation/Foundation.h>
 
-#import <FBControlCore/FBControlCore.h>
-
 @class TestManagerAPIMediator;
 @class TestManagerContext;
 

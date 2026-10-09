@@ -14,6 +14,7 @@
 #import <DTXConnectionServices/DTXRemoteInvocationReceipt.h>
 #import <DTXConnectionServices/DTXSocketTransport.h>
 #import <DTXConnectionServices/DTXTransport.h>
+#import <FBControlCore/FBControlCore.h>
 #import <FBXCTestCore/FBXCTestCore-Swift.h>
 #import <XCTestPrivate/DTXConnection-XCTestAdditions.h>
 #import <XCTestPrivate/DTXProxyChannel-XCTestAdditions.h>
