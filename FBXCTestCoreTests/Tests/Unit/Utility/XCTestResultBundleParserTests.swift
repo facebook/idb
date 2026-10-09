@@ -187,8 +187,7 @@ struct XCTestResultBundleParserTests {
       return
     }
     #expect(status == .unknown)
-    // BUG: a skipped test is logged as having failed — flipped in the following commit.
-    #expect(logs.last == "Test Case '-[MyTests.MyTestClass testSkipped]' failed in 0.000 seconds")
+    #expect(logs.last == "Test Case '-[MyTests.MyTestClass testSkipped]' skipped in 0.000 seconds")
   }
 
   @Test
@@ -302,8 +301,7 @@ struct XCTestResultBundleParserTests {
       return
     }
     #expect(status == .unknown)
-    // BUG: a skipped test is logged as having failed — flipped in the following commit.
-    #expect(logs.last == "Test Case '-[MyTests.MyTestClass testSkipped]' failed in 0.000 seconds")
+    #expect(logs.last == "Test Case '-[MyTests.MyTestClass testSkipped]' skipped in 0.000 seconds")
   }
 
   @Test

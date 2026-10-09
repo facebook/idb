@@ -214,6 +214,17 @@ final class XCTestResultBundleParser {
     }
   }
 
+  /// The word a test's closing log line uses for how it ended.
+  private static func logOutcome(_ testStatus: String, _ status: FBTestReportStatus) -> String {
+    if status == .passed {
+      return "passed"
+    }
+    if testStatus == "Skipped" {
+      return "skipped"
+    }
+    return "failed"
+  }
+
   // MARK: - Private: Legacy XCTest Result Parsing
 
   private static func reportResultsLegacy(_ results: ResultRecord, reporter: XCTestReporter) throws {
@@ -246,7 +257,7 @@ final class XCTestResultBundleParser {
     }
 
     let activitySummaries = try testMethod.records("ActivitySummaries")
-    let logs = try buildTestLogLegacy(activitySummaries, testBundleName: testBundleName, testClassName: testClassName, testMethodName: testMethodName, testPassed: status == .passed, duration: duration)
+    let logs = try buildTestLogLegacy(activitySummaries, testBundleName: testBundleName, testClassName: testClassName, testMethodName: testMethodName, outcome: logOutcome(testStatus, status), duration: duration)
 
     reporter.testCaseDidStart(forTestClass: testClassName, method: testMethodName)
     if status == .failed {
@@ -260,7 +271,7 @@ final class XCTestResultBundleParser {
     reporter.testCaseDidFinish(forTestClass: testClassName, method: testMethodName, with: status, duration: duration, logs: logs)
   }
 
-  private static func buildTestLogLegacy(_ activitySummaries: [ResultRecord], testBundleName: String, testClassName: String, testMethodName: String, testPassed: Bool, duration: Double) throws -> [String] {
+  private static func buildTestLogLegacy(_ activitySummaries: [ResultRecord], testBundleName: String, testClassName: String, testMethodName: String, outcome: String, duration: Double) throws -> [String] {
     var logs: [String] = []
     let testCaseFullName = "-[\(testBundleName).\(testClassName) \(testMethodName)]"
     logs.append("Test Case '\(testCaseFullName)' started.")
@@ -274,7 +285,7 @@ final class XCTestResultBundleParser {
       }
     }
 
-    logs.append("Test Case '\(testCaseFullName)' \(testPassed ? "passed" : "failed") in \(String(format: "%.3f", duration)) seconds")
+    logs.append("Test Case '\(testCaseFullName)' \(outcome) in \(String(format: "%.3f", duration)) seconds")
     return logs
   }
 
@@ -373,7 +384,7 @@ final class XCTestResultBundleParser {
     guard let summaryRefId = testMethod.optionalRecord("summaryRef")?.unwrappedString("id", logger: logger),
       let actionTestSummary = try? await tool.record(forId: summaryRefId, timeout: XCTestOperationTimeoutSecs)
     else {
-      let logs = buildTestLog(nil, testBundleName: testBundleName, testClassName: testClassName, testMethodName: testMethodIdentifier, testPassed: status == .passed, duration: duration, logger: logger)
+      let logs = buildTestLog(nil, testBundleName: testBundleName, testClassName: testClassName, testMethodName: testMethodIdentifier, outcome: logOutcome(testStatus, status), duration: duration, logger: logger)
       reporter.testCaseDidFinish(forTestClass: testClassName, method: testMethodIdentifier, with: status, duration: duration, logs: logs)
       return
     }
@@ -399,11 +410,11 @@ final class XCTestResultBundleParser {
       await extractScreenshotsFromActivities(activitySummaries, resultBundlePath: resultBundlePath, tool: tool, logger: logger)
     }
 
-    let logs = buildTestLog(actionTestSummary.unwrappedRecords("activitySummaries", logger: logger), testBundleName: testBundleName, testClassName: testClassName, testMethodName: testMethodIdentifier, testPassed: status == .passed, duration: duration, logger: logger)
+    let logs = buildTestLog(actionTestSummary.unwrappedRecords("activitySummaries", logger: logger), testBundleName: testBundleName, testClassName: testClassName, testMethodName: testMethodIdentifier, outcome: logOutcome(testStatus, status), duration: duration, logger: logger)
     reporter.testCaseDidFinish(forTestClass: testClassName, method: testMethodIdentifier, with: status, duration: duration, logs: logs)
   }
 
-  private static func buildTestLog(_ activitySummaries: [ResultRecord]?, testBundleName: String, testClassName: String, testMethodName: String, testPassed: Bool, duration: Double, logger: ControlCoreLogger) -> [String] {
+  private static func buildTestLog(_ activitySummaries: [ResultRecord]?, testBundleName: String, testClassName: String, testMethodName: String, outcome: String, duration: Double, logger: ControlCoreLogger) -> [String] {
     var logs: [String] = []
     let testCaseFullName = "-[\(testBundleName).\(testClassName) \(testMethodName)]"
     logs.append("Test Case '\(testCaseFullName)' started.")
@@ -418,7 +429,7 @@ final class XCTestResultBundleParser {
       }
     }
 
-    logs.append("Test Case '\(testCaseFullName)' \(testPassed ? "passed" : "failed") in \(String(format: "%.3f", duration)) seconds")
+    logs.append("Test Case '\(testCaseFullName)' \(outcome) in \(String(format: "%.3f", duration)) seconds")
     return logs
   }
 
