@@ -118,7 +118,7 @@ public final class SimulatorLaunchedApplication: LaunchedApplication, CustomStri
 
   // MARK: - Factory
 
-  public class func application(
+  public static func application(
     withSimulator simulator: Simulator,
     configuration: ApplicationLaunchConfiguration,
     outputs: [FileBackedOutput],
@@ -157,7 +157,7 @@ public final class SimulatorLaunchedApplication: LaunchedApplication, CustomStri
     }
   }
 
-  private class func armExitSource(forProcessIdentifier processIdentifier: pid_t, state: TerminationState) {
+  private static func armExitSource(forProcessIdentifier processIdentifier: pid_t, state: TerminationState) {
     let queue = DispatchQueue(label: "com.facebook.fbsimulatorcontrol.application_termination_notifier")
     let source = DispatchSource.makeProcessSource(
       identifier: processIdentifier,

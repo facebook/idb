@@ -35,12 +35,12 @@ public final class SimulatorDebugServerCommands: DebugServerCommands {
   /// How the host application is launched; defaults to the simulator itself.
   private let applicationLauncher: (any ApplicationLaunching)?
 
-  internal class func resolveDebugServerPath() -> String {
+  internal static func resolveDebugServerPath() -> String {
     (XcodeConfiguration.contentsDirectory as NSString)
       .appendingPathComponent("SharedFrameworks/LLDB.framework/Resources/debugserver")
   }
 
-  public class func commands(with simulator: Simulator) -> SimulatorDebugServerCommands {
+  public static func commands(with simulator: Simulator) -> SimulatorDebugServerCommands {
     SimulatorDebugServerCommands(
       simulator: simulator,
       debugServerPath: resolveDebugServerPath()

@@ -49,7 +49,7 @@ public final class VideoFileWriter: NSObject, AVCaptureFileOutputRecordingDelega
   private var startAwaiters: [CheckedContinuation<Void, Error>] = []
   private var finishAwaiters: [CheckedContinuation<Void, Error>] = []
 
-  public class func writer(withSession session: AVCaptureSession, filePath: String, logger: any ControlCoreLogger) throws -> Self {
+  public static func writer(withSession session: AVCaptureSession, filePath: String, logger: any ControlCoreLogger) throws -> Self {
     let output = AVCaptureMovieFileOutput()
     if !session.canAddOutput(output) {
       throw VideoFileWriterError.cannotAddFileOutput(filePath: filePath)

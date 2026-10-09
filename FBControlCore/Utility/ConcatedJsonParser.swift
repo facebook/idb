@@ -9,7 +9,7 @@ import Foundation
 
 final class ConcatedJsonParser {
 
-  public class func parseConcatenatedJSON(from str: String) throws -> [String: Any] {
+  public static func parseConcatenatedJSON(from str: String) throws -> [String: Any] {
     var bracketCounter = 0
     var characterEscaped = false
     var inString = false

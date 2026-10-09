@@ -52,7 +52,7 @@ public final class SimulatorLaunchCtlCommands: LaunchCtlCommands {
 
   // MARK: - Initializers
 
-  private class func launchCtlLaunchPath(for simulator: Simulator) throws -> String {
+  private static func launchCtlLaunchPath(for simulator: Simulator) throws -> String {
     let path = (simulator.device.runtime.root as NSString)
       .appendingPathComponent("bin")
       .appending("/launchctl")
@@ -60,7 +60,7 @@ public final class SimulatorLaunchCtlCommands: LaunchCtlCommands {
     return binary.path
   }
 
-  public class func commands(with simulator: Simulator) -> SimulatorLaunchCtlCommands {
+  public static func commands(with simulator: Simulator) -> SimulatorLaunchCtlCommands {
     SimulatorLaunchCtlCommands(simulator: simulator)
   }
 
@@ -151,7 +151,7 @@ public final class SimulatorLaunchCtlCommands: LaunchCtlCommands {
     }
   }
 
-  public class func extractApplicationBundleIdentifier(fromServiceName serviceName: String) -> String? {
+  public static func extractApplicationBundleIdentifier(fromServiceName serviceName: String) -> String? {
     guard let marker = serviceName.range(of: "UIKitApplication:") else {
       return nil
     }
@@ -160,7 +160,7 @@ public final class SimulatorLaunchCtlCommands: LaunchCtlCommands {
 
   // MARK: - Private
 
-  private class func extractServiceName(fromListLine line: String, processIdentifierOut: inout pid_t) throws -> String {
+  private static func extractServiceName(fromListLine line: String, processIdentifierOut: inout pid_t) throws -> String {
     let words = line.components(separatedBy: .whitespaces)
     guard words.count == 3, let processIdentifierString = words.first, let serviceName = words.last else {
       throw SimulatorLaunchCtlError.malformedListLine(words: words)

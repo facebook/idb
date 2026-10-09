@@ -43,7 +43,7 @@ public final class XCTraceRecordOperation: @unchecked Sendable {
     self.logger = logger
   }
 
-  public class func operation(with target: any Target, configuration: XCTraceRecordConfiguration, logger: ControlCoreLogger) async throws -> XCTraceRecordOperation {
+  public static func operation(with target: any Target, configuration: XCTraceRecordConfiguration, logger: ControlCoreLogger) async throws -> XCTraceRecordOperation {
     let traceDir = (target.auxillaryDirectory as NSString).appendingPathComponent("xctrace-" + UUID().uuidString)
     do {
       try FileManager.default.createDirectory(atPath: traceDir, withIntermediateDirectories: false, attributes: nil)
@@ -115,7 +115,7 @@ public final class XCTraceRecordOperation: @unchecked Sendable {
     }
   }
 
-  public class func xctracePath() throws -> String {
+  public static func xctracePath() throws -> String {
     let path = (XcodeConfiguration.developerDirectory as NSString).appendingPathComponent("/usr/bin/xctrace")
     if !FileManager.default.fileExists(atPath: path) {
       throw XCTraceError.xctraceMissing(path: path)

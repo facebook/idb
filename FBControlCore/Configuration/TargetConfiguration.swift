@@ -188,7 +188,7 @@ public final class TargetConfiguration {
 
   // MARK: - Public Methods
 
-  public class func baseArchsToCompatibleArch(_ architectures: [Architecture]) -> Set<Architecture> {
+  public static func baseArchsToCompatibleArch(_ architectures: [Architecture]) -> Set<Architecture> {
     let mapping: [Architecture: Set<Architecture>] = [
       .arm64e: [.arm64e, .arm64, .armv7s, .armv7],
       .arm64: [.arm64, .armv7s, .armv7],

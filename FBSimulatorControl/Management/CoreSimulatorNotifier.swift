@@ -73,14 +73,14 @@ public final class CoreSimulatorNotifier {
   private let handle: UInt64
   private let notifier: SimDeviceNotifier? // nil in test doubles
 
-  public class func notifier(for simDevice: SimDevice, queue: DispatchQueue, block: @escaping @Sendable ([String: Any]) -> Void) -> CoreSimulatorNotifier {
+  public static func notifier(for simDevice: SimDevice, queue: DispatchQueue, block: @escaping @Sendable ([String: Any]) -> Void) -> CoreSimulatorNotifier {
     let notifier = simDevice.notificationManager as AnyObject?
     return CoreSimulatorNotifier(notifier: notifier, queue: queue, block: block)
   }
 
   /// Suspends until `device` reports a state other than `state`. The CoreSimulator notification
   /// handler is unregistered whether the state change arrives or the calling task is cancelled.
-  public class func resolveLeavesState(_ state: TargetState, for device: SimDevice) async throws {
+  public static func resolveLeavesState(_ state: TargetState, for device: SimDevice) async throws {
     let waiter = StateChangeWaiter()
     try await withTaskCancellationHandler {
       try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
@@ -112,7 +112,7 @@ public final class CoreSimulatorNotifier {
     notifier?.unregisterNotificationHandler(handle, error: nil)
   }
 
-  class func notifier(for set: SimulatorSet, queue: DispatchQueue, block: @escaping @Sendable ([String: Any]) -> Void) -> CoreSimulatorNotifier {
+  static func notifier(for set: SimulatorSet, queue: DispatchQueue, block: @escaping @Sendable ([String: Any]) -> Void) -> CoreSimulatorNotifier {
     // notificationManager may be nil in test doubles (ObjC nil messaging returns nil).
     let notifier = (set.deviceSet as AnyObject).notificationManager as AnyObject?
     return CoreSimulatorNotifier(notifier: notifier, queue: queue, block: block)

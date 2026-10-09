@@ -101,7 +101,7 @@ public final class InstrumentsOperation {
   /// The instruments cli is unreliable and sometimes stops recording right after starting.
   /// To make it reliable, launches are retried until one succeeds or the launch-retry
   /// timeout elapses.
-  public class func operation(
+  public static func operation(
     target: any Target,
     configuration: InstrumentsConfiguration,
     logger: any ControlCoreLogger
@@ -143,7 +143,7 @@ public final class InstrumentsOperation {
     return arguments
   }
 
-  private class func startSingleAttempt(
+  private static func startSingleAttempt(
     target: any Target,
     configuration: InstrumentsConfiguration,
     logger: any ControlCoreLogger,
@@ -225,7 +225,7 @@ public final class InstrumentsOperation {
   }
 
   /// Post-processes an instruments trace, returning the post-processed trace URL.
-  public class func postProcess(
+  public static func postProcess(
     arguments: [String]?,
     traceFile: URL,
     logger: (any ControlCoreLogger)?

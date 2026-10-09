@@ -209,7 +209,7 @@ public final class MobileDevice: TargetInfo, DeviceCommands, CustomStringConvert
     "AMDevice \(udid) | \(name)"
   }
 
-  private class func osVersionName(deviceClass: String?, productVersion: String?) -> String {
+  private static func osVersionName(deviceClass: String?, productVersion: String?) -> String {
     guard let productVersion else {
       return UnknownValue
     }

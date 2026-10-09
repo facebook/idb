@@ -32,7 +32,7 @@ public final class SimulatorSet: TargetSet {
   /// - Parameter logger: nil means `ControlCoreGlobalConfiguration.defaultLogger`, which is
   ///   os_log-only unless the `FBCONTROLCORE_LOGGING`/`FBCONTROLCORE_DEBUG_LOGGING` environment
   ///   variables are set — see its documentation. The resolved logger is stored non-optionally.
-  public class func set(withConfiguration configuration: SimulatorControlConfiguration, deviceSet: SimDeviceSet, delegate: (any TargetSetDelegate)?, logger: (any ControlCoreLogger)?) throws -> SimulatorSet {
+  public static func set(withConfiguration configuration: SimulatorControlConfiguration, deviceSet: SimDeviceSet, delegate: (any TargetSetDelegate)?, logger: (any ControlCoreLogger)?) throws -> SimulatorSet {
     let resolvedLogger = logger ?? ControlCoreGlobalConfiguration.defaultLogger
     try SimulatorControlFrameworkLoader.essentialFrameworks.loadPrivateFrameworks(resolvedLogger)
     return SimulatorSet(configuration: configuration, deviceSet: deviceSet, delegate: delegate, logger: resolvedLogger)
@@ -133,7 +133,7 @@ public final class SimulatorSet: TargetSet {
     return _allSimulators
   }
 
-  private class func keySimulatorsByUDID(_ simulators: [Simulator]) -> [String: Simulator] {
+  private static func keySimulatorsByUDID(_ simulators: [Simulator]) -> [String: Simulator] {
     var dictionary: [String: Simulator] = [:]
     for simulator in simulators {
       dictionary[simulator.udid] = simulator

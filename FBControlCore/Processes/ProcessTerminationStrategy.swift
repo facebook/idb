@@ -79,7 +79,7 @@ public final class ProcessTerminationStrategy: @unchecked Sendable {
 
   // MARK: - Initializers
 
-  public class func strategy(
+  public static func strategy(
     withConfiguration configuration: ProcessTerminationStrategyConfiguration,
     processFetcher: ProcessFetcher,
     workQueue: DispatchQueue,
@@ -88,7 +88,7 @@ public final class ProcessTerminationStrategy: @unchecked Sendable {
     self.init(configuration: configuration, processFetcher: processFetcher, workQueue: workQueue, logger: logger)
   }
 
-  public class func strategy(
+  public static func strategy(
     withProcessFetcher processFetcher: ProcessFetcher,
     workQueue: DispatchQueue,
     logger: ControlCoreLogger

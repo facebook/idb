@@ -42,7 +42,7 @@ public final class Simulator: Target, Hashable, CustomStringConvertible, @unchec
 
   // MARK: - Initializers
 
-  public class func fromSimDevice(_ device: SimDevice, configuration: SimulatorConfiguration?, set: SimulatorSet) -> Simulator {
+  public static func fromSimDevice(_ device: SimDevice, configuration: SimulatorConfiguration?, set: SimulatorSet) -> Simulator {
     Simulator(
       device: device,
       configuration: configuration ?? SimulatorConfiguration.inferSimulatorConfiguration(fromDevice: device),
@@ -189,7 +189,7 @@ public final class Simulator: Target, Hashable, CustomStringConvertible, @unchec
     self.targetDescription
   }
 
-  private class func auxillaryDirectory(fromSimDevice device: SimDevice) -> String {
+  private static func auxillaryDirectory(fromSimDevice device: SimDevice) -> String {
     ((device.dataPath() ?? "") as NSString).appendingPathComponent("fbsimulatorcontrol")
   }
 }

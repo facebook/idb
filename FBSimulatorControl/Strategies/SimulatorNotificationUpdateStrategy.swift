@@ -14,7 +14,7 @@ final class SimulatorNotificationUpdateStrategy: @unchecked Sendable {
   private weak var set: SimulatorSet?
   private var notifier: CoreSimulatorNotifier?
 
-  class func strategy(with set: SimulatorSet) -> SimulatorNotificationUpdateStrategy {
+  static func strategy(with set: SimulatorSet) -> SimulatorNotificationUpdateStrategy {
     let strategy = SimulatorNotificationUpdateStrategy(set: set)
     strategy.startNotifyingOfStateChanges()
     return strategy

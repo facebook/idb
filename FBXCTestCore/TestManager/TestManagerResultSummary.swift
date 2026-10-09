@@ -17,7 +17,7 @@ import Foundation
   public let testDuration: TimeInterval
   public let totalDuration: TimeInterval
 
-  @objc public class func from(
+  @objc public static func from(
     testSuite: String,
     finishingAt finishTime: String,
     runCount: NSNumber,
@@ -72,7 +72,7 @@ import Foundation
       && finishTime == other.finishTime
   }
 
-  @objc public class func status(forStatusString statusString: String) -> FBTestReportStatus {
+  @objc public static func status(forStatusString statusString: String) -> FBTestReportStatus {
     if statusString == "passed" {
       return .passed
     } else if statusString == "failed" {
@@ -81,7 +81,7 @@ import Foundation
     return .unknown
   }
 
-  public class func statusString(for status: FBTestReportStatus) -> String {
+  public static func statusString(for status: FBTestReportStatus) -> String {
     switch status {
     case .passed:
       return "Passed"

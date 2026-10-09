@@ -67,7 +67,7 @@ final class SimulatorAccessibilityCommands: AccessibilityOperations {
     self.displays = displays
   }
 
-  class func commands(with target: Simulator) -> Self {
+  static func commands(with target: Simulator) -> Self {
     self.init(simulator: target)
   }
 

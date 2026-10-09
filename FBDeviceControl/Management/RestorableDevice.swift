@@ -126,7 +126,7 @@ public final class RestorableDevice: TargetInfo, DeviceProtocol {
   }
 
   /// `AMRestorableGetStringForState` is private, and the mapping is simple enough to restate.
-  public class func targetState(for state: AMRestorableDeviceState) -> TargetState {
+  public static func targetState(for state: AMRestorableDeviceState) -> TargetState {
     switch state {
     case .DFU:
       return .DFU

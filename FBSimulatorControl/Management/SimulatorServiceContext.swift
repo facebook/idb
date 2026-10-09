@@ -18,11 +18,11 @@ public final class SimulatorServiceContext {
   nonisolated(unsafe) private static var _sharedInstance: SimulatorServiceContext?
   private static let sharedLock = NSLock()
 
-  public class func sharedServiceContext() throws -> SimulatorServiceContext {
+  public static func sharedServiceContext() throws -> SimulatorServiceContext {
     return try sharedServiceContext(withLogger: ControlCoreGlobalConfiguration.defaultLogger)
   }
 
-  public class func sharedServiceContext(withLogger logger: (any ControlCoreLogger)?) throws -> SimulatorServiceContext {
+  public static func sharedServiceContext(withLogger logger: (any ControlCoreLogger)?) throws -> SimulatorServiceContext {
     sharedLock.lock()
     defer { sharedLock.unlock() }
     if let instance = _sharedInstance {
@@ -35,7 +35,7 @@ public final class SimulatorServiceContext {
 
   // MARK: - Private Initialization
 
-  private class func createServiceContext(withLogger logger: (any ControlCoreLogger)?) throws -> SimulatorServiceContext {
+  private static func createServiceContext(withLogger logger: (any ControlCoreLogger)?) throws -> SimulatorServiceContext {
     try SimulatorControlFrameworkLoader.essentialFrameworks.loadPrivateFrameworks(logger)
     guard
       let serviceContextClass = NSClassFromString("SimServiceContext") as? SimServiceContext.Type,
@@ -103,7 +103,7 @@ public final class SimulatorServiceContext {
     return deviceSet
   }
 
-  private class func fullyQualifiedDeviceSetPath(_ deviceSetPath: String) throws -> String {
+  private static func fullyQualifiedDeviceSetPath(_ deviceSetPath: String) throws -> String {
     do {
       try FileManager.default.createDirectory(atPath: deviceSetPath, withIntermediateDirectories: true, attributes: nil)
     } catch {

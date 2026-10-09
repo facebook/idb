@@ -269,11 +269,11 @@ public final class DeviceFileCommands: FileCommands {
 
   // MARK: - Initializers
 
-  public class func commands(with device: Device) -> DeviceFileCommands {
+  public static func commands(with device: Device) -> DeviceFileCommands {
     DeviceFileCommands(device: device, afcCalls: FileConduit.defaultCalls)
   }
 
-  public class func commands(with device: Device, afcCalls: AFCCalls) -> DeviceFileCommands {
+  public static func commands(with device: Device, afcCalls: AFCCalls) -> DeviceFileCommands {
     DeviceFileCommands(device: device, afcCalls: afcCalls)
   }
 

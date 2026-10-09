@@ -39,7 +39,7 @@ public final class CrashReport: CustomStringConvertible {
 
   // MARK: - Public
 
-  public class func dateFormatter() -> DateFormatter {
+  public static func dateFormatter() -> DateFormatter {
     CrashReportDateFormatter
   }
 }
@@ -137,7 +137,7 @@ public final class CrashLogInfo: CustomStringConvertible {
 
   // MARK: - Factory Methods
 
-  public class func fromCrashLog(atPath crashPath: String) throws -> CrashLogInfo {
+  public static func fromCrashLog(atPath crashPath: String) throws -> CrashLogInfo {
     let fileManager = FileManager.default
     if !fileManager.fileExists(atPath: crashPath) {
       throw CrashLogError.fileDoesNotExist(path: crashPath)
@@ -167,7 +167,7 @@ public final class CrashLogInfo: CustomStringConvertible {
     return try fromCrashLogData(crashFileData, crashPath: crashPath)
   }
 
-  private class func fromCrashLogData(_ crashFileData: Data, crashPath: String) throws -> CrashLogInfo {
+  private static func fromCrashLogData(_ crashFileData: Data, crashPath: String) throws -> CrashLogInfo {
     if crashFileData.isEmpty {
       throw CrashLogError.fileEmpty(path: crashPath)
     }
@@ -178,7 +178,7 @@ public final class CrashLogInfo: CustomStringConvertible {
     return try fromCrashLogString(crashString, crashPath: crashPath, parser: parser)
   }
 
-  public class func isParsableCrashLog(_ data: Data) -> Bool {
+  public static func isParsableCrashLog(_ data: Data) -> Bool {
     #if canImport(Darwin)
     guard let crashString = String(data: data, encoding: .utf8) else {
       return false
@@ -207,7 +207,7 @@ public final class CrashLogInfo: CustomStringConvertible {
 
   /// Directory listings and modification dates are read synchronously: Foundation has no async
   /// form of either, and both are metadata lookups rather than reads of a log's contents.
-  public class func crashInfo(afterDate date: Date, logger: ControlCoreLogger?) async -> [CrashLogInfo] {
+  public static func crashInfo(afterDate date: Date, logger: ControlCoreLogger?) async -> [CrashLogInfo] {
     var allCrashInfos: [CrashLogInfo] = []
     for basePath in diagnosticReportsPaths {
       let fileNames = (try? FileManager.default.contentsOfDirectory(atPath: basePath)) ?? []
@@ -234,7 +234,7 @@ public final class CrashLogInfo: CustomStringConvertible {
     return CrashReport(info: self, contents: contents)
   }
 
-  public class var diagnosticReportsPaths: [String] {
+  public static var diagnosticReportsPaths: [String] {
     [
       (NSHomeDirectory() as NSString).appendingPathComponent("Library/Logs/DiagnosticReports"),
       "/Library/Logs/DiagnosticReports",
@@ -243,7 +243,7 @@ public final class CrashLogInfo: CustomStringConvertible {
 
   // MARK: - Private
 
-  private class func getPreferredCrashLogParser(forCrashString crashString: String) -> CrashLogParser {
+  private static func getPreferredCrashLogParser(forCrashString crashString: String) -> CrashLogParser {
     if !crashString.isEmpty && crashString.first == "{" {
       return ConcatedJSONCrashLogParser()
     } else {
@@ -251,7 +251,7 @@ public final class CrashLogInfo: CustomStringConvertible {
     }
   }
 
-  private class func fromCrashLogString(_ crashString: String, crashPath: String, parser: CrashLogParser) throws -> CrashLogInfo {
+  private static func fromCrashLogString(_ crashString: String, crashPath: String, parser: CrashLogParser) throws -> CrashLogInfo {
     let parsed: ParsedCrashLog
     do {
       parsed = try parser.parse(crashString)
@@ -294,7 +294,7 @@ public final class CrashLogInfo: CustomStringConvertible {
     )
   }
 
-  private class func processType(forExecutablePath executablePath: String) -> CrashLogInfoProcessType {
+  private static func processType(forExecutablePath executablePath: String) -> CrashLogInfoProcessType {
     if executablePath.contains("Platforms/iPhoneSimulator.platform") {
       return .system
     }
@@ -304,7 +304,7 @@ public final class CrashLogInfo: CustomStringConvertible {
     return .custom
   }
 
-  private class func isCrashLog(_ fileName: String, inDirectory basePath: String, modifiedOnOrAfter date: Date) -> Bool {
+  private static func isCrashLog(_ fileName: String, inDirectory basePath: String, modifiedOnOrAfter date: Date) -> Bool {
     guard ["crash", "ips"].contains((fileName as NSString).pathExtension) else {
       return false
     }

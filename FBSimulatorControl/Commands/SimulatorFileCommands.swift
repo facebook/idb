@@ -34,7 +34,7 @@ public final class SimulatorFileCommands: FileCommands {
 
   // MARK: - Initializers
 
-  public class func commands(with simulator: Simulator) -> SimulatorFileCommands {
+  public static func commands(with simulator: Simulator) -> SimulatorFileCommands {
     SimulatorFileCommands(simulator: simulator)
   }
 

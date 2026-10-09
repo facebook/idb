@@ -17,7 +17,7 @@ public final class CrashLogStore {
   // Guarded by `lock`, keyed by crash log name.
   private var ingestedCrashLogs: [String: CrashLogInfo] = [:]
 
-  public class func store(forDirectories directories: [String], logger: any ControlCoreLogger) -> Self {
+  public static func store(forDirectories directories: [String], logger: any ControlCoreLogger) -> Self {
     return self.init(directories: directories, logger: logger)
   }
 

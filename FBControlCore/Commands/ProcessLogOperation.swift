@@ -34,7 +34,7 @@ public final class ProcessLogOperation: LogOperation {
     }
   }
 
-  public class func osLogArgumentsInsertStreamIfNeeded(_ arguments: [String]) -> [String] {
+  public static func osLogArgumentsInsertStreamIfNeeded(_ arguments: [String]) -> [String] {
     guard let firstArgument = arguments.first else {
       return ["stream"]
     }

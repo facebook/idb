@@ -31,7 +31,7 @@ public final class SimulatorVideoRecordingCommands: VideoRecordingCommands {
   private weak var simulator: Simulator?
   private var video: SimulatorVideo?
 
-  public class func commands(with simulator: Simulator) -> SimulatorVideoRecordingCommands {
+  public static func commands(with simulator: Simulator) -> SimulatorVideoRecordingCommands {
     SimulatorVideoRecordingCommands(simulator: simulator)
   }
 

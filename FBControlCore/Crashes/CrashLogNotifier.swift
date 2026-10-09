@@ -20,7 +20,7 @@ public final class CrashLogNotifier {
     self.sinceDate = Date()
   }
 
-  public class var sharedInstance: CrashLogNotifier {
+  public static var sharedInstance: CrashLogNotifier {
     _sharedInstance
   }
 

@@ -29,11 +29,11 @@ public final class CodesignProvider {
   public let identityName: String
   private let logger: ControlCoreLogger?
 
-  public class func codeSignCommand(withIdentityName identityName: String, logger: ControlCoreLogger?) -> Self {
+  public static func codeSignCommand(withIdentityName identityName: String, logger: ControlCoreLogger?) -> Self {
     self.init(identityName: identityName, logger: logger)
   }
 
-  public class func codeSignCommandWithAdHocIdentity(logger: ControlCoreLogger?) -> Self {
+  public static func codeSignCommandWithAdHocIdentity(logger: ControlCoreLogger?) -> Self {
     self.init(identityName: "-", logger: logger)
   }
 

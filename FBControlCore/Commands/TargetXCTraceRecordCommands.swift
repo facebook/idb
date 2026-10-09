@@ -11,7 +11,7 @@ public final class TargetXCTraceRecordCommands: TargetCommand, XCTraceRecordComm
 
   public let target: any Target
 
-  public class func commands(with target: any Target) -> Self {
+  public static func commands(with target: any Target) -> Self {
     self.init(target: target)
   }
 

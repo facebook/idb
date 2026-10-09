@@ -35,7 +35,7 @@ public final class DeviceVideo {
 
   // MARK: - Initialization Helpers
 
-  private class func allowAccessToScreenCaptureDevices() throws {
+  private static func allowAccessToScreenCaptureDevices() throws {
     var properties = CMIOObjectPropertyAddress(
       mSelector: CMIOObjectPropertySelector(kCMIOHardwarePropertyAllowScreenCaptureDevices),
       mScope: CMIOObjectPropertyScope(kCMIOObjectPropertyScopeGlobal),
@@ -55,7 +55,7 @@ public final class DeviceVideo {
     }
   }
 
-  private class func findCaptureDevice(for device: Device) async throws -> AVCaptureDevice {
+  private static func findCaptureDevice(for device: Device) async throws -> AVCaptureDevice {
     let timeout = ControlCoreGlobalConfiguration.fastTimeout
     let deadline = Date().addingTimeInterval(timeout)
     while true {
@@ -69,7 +69,7 @@ public final class DeviceVideo {
     }
   }
 
-  public class func captureSession(for device: Device) async throws -> AVCaptureSession {
+  public static func captureSession(for device: Device) async throws -> AVCaptureSession {
     try allowAccessToScreenCaptureDevices()
     let captureDevice = try await findCaptureDevice(for: device)
     let deviceInput = try AVCaptureDeviceInput(device: captureDevice)
@@ -81,7 +81,7 @@ public final class DeviceVideo {
     return session
   }
 
-  public class func video(for device: Device, filePath: String) async throws -> DeviceVideo {
+  public static func video(for device: Device, filePath: String) async throws -> DeviceVideo {
     let session = try await captureSession(for: device)
     let encoder = try VideoFileWriter.writer(withSession: session, filePath: filePath, logger: device.logger)
     return DeviceVideo(encoder: encoder)

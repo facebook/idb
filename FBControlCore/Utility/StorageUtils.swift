@@ -30,7 +30,7 @@ public final class StorageUtils {
 
   // MARK: - Finding Files
 
-  public class func bucketFiles(withExtensions extensions: Set<String>, inDirectory directory: URL) throws -> [String: Set<URL>] {
+  public static func bucketFiles(withExtensions extensions: Set<String>, inDirectory directory: URL) throws -> [String: Set<URL>] {
     var files: [String: Set<URL>] = [:]
     for ext in extensions {
       files[ext] = Set()
@@ -52,7 +52,7 @@ public final class StorageUtils {
     return files
   }
 
-  public class func findFile(withExtension ext: String, at url: URL) throws -> URL {
+  public static func findFile(withExtension ext: String, at url: URL) throws -> URL {
     let files = try findFiles(withExtension: ext, at: url)
     guard let file = files.first, files.count == 1 else {
       throw StorageUtilsError.notExactlyOneFileWithExtension(count: files.count, fileExtension: ext, url: url)
@@ -60,12 +60,12 @@ public final class StorageUtils {
     return file
   }
 
-  public class func findFiles(withExtension ext: String, at url: URL) throws -> Set<URL> {
+  public static func findFiles(withExtension ext: String, at url: URL) throws -> Set<URL> {
     let buckets = try bucketFiles(withExtensions: Set([ext]), inDirectory: url)
     return buckets[ext] ?? Set()
   }
 
-  public class func findUniqueFile(inDirectory directory: URL) throws -> URL {
+  public static func findUniqueFile(inDirectory directory: URL) throws -> URL {
     let filesInDirectory = try files(inDirectory: directory)
     if filesInDirectory.count != 1 {
       throw StorageUtilsError.notExactlyOneFile(found: filesInDirectory)
@@ -73,7 +73,7 @@ public final class StorageUtils {
     return filesInDirectory[0]
   }
 
-  public class func files(inDirectory directory: URL) throws -> [URL] {
+  public static func files(inDirectory directory: URL) throws -> [URL] {
     do {
       return try FileManager.default.contentsOfDirectory(at: directory, includingPropertiesForKeys: [.isDirectoryKey], options: [])
     } catch {
@@ -81,7 +81,7 @@ public final class StorageUtils {
     }
   }
 
-  public class func bundle(inDirectory directory: URL) throws -> BundleDescriptor {
+  public static func bundle(inDirectory directory: URL) throws -> BundleDescriptor {
     let uniqueFile = try findUniqueFile(inDirectory: directory)
     return try BundleDescriptor.bundle(fromPath: uniqueFile.path)
   }

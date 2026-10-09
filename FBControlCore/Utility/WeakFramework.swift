@@ -45,7 +45,7 @@ public final class WeakFramework: Sendable {
 
   // MARK: - Factory Methods
 
-  public class func xcodeFramework(withRelativePath relativePath: String, requiredClassNames: [String]) -> WeakFramework {
+  public static func xcodeFramework(withRelativePath relativePath: String, requiredClassNames: [String]) -> WeakFramework {
     WeakFramework(
       basePath: XcodeConfiguration.developerDirectory,
       relativePath: relativePath,
@@ -54,7 +54,7 @@ public final class WeakFramework: Sendable {
     )
   }
 
-  public class func framework(withPath absolutePath: String, requiredClassNames: [String], rootPermitted: Bool) -> WeakFramework {
+  public static func framework(withPath absolutePath: String, requiredClassNames: [String], rootPermitted: Bool) -> WeakFramework {
     WeakFramework(
       basePath: absolutePath,
       relativePath: "",

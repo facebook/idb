@@ -126,7 +126,7 @@ public final class DeviceApplicationCommands: ApplicationCommands {
 
   // MARK: - Initializers
 
-  public class func commands(with device: Device) -> DeviceApplicationCommands {
+  public static func commands(with device: Device) -> DeviceApplicationCommands {
     let deltaUpdateDirectory = device.temporaryDirectory.temporaryDirectory()
     return DeviceApplicationCommands(device: device, deltaUpdateDirectory: deltaUpdateDirectory)
   }

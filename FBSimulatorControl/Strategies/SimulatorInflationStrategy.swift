@@ -13,7 +13,7 @@ final class SimulatorInflationStrategy {
 
   private weak var set: SimulatorSet?
 
-  class func strategy(for set: SimulatorSet) -> SimulatorInflationStrategy {
+  static func strategy(for set: SimulatorSet) -> SimulatorInflationStrategy {
     SimulatorInflationStrategy(set: set)
   }
 
