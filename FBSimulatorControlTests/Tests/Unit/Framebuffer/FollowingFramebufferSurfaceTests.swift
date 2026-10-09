@@ -196,6 +196,26 @@ final class FollowingFramebufferSurfaceTests: XCTestCase {
     XCTAssertEqual(registeredDuringTransition, 0)
   }
 
+  func testAFollowingSurfaceDuringATransitionNamingItsIncomingDisplay() async throws {
+    let cover = FakeFramebufferSurface()
+    let inner = FakeFramebufferSurface()
+    let (configurations, continuation) = AsyncStream.makeStream(of: SimulatorDisplayConfiguration.self)
+    let following = surface(["cover": cover, "inner": inner], configurations: configurations)
+    var registeredWhenSettled: Int?
+    try following.registerCallbacks(
+      token: UUID(), ioSurfaceChanged: { _ in }, frameRendered: {},
+      configurationChanged: { if $0.phase == .settled { registeredWhenSettled = inner.registeredTokens.count } })
+
+    continuation.yield(configuration(active: "cover", phase: .transitioning(incoming: display("inner"))))
+    continuation.yield(configuration(active: "inner"))
+    try await waitUntil { !inner.registeredTokens.isEmpty }
+
+    // BUG: the incoming display already draws, but the framebuffer reads the outgoing one until the transition
+    // settles, about 3 seconds of black frames on an iPhone Duo close. Flipped in the following commit.
+    XCTAssertEqual(registeredWhenSettled, 0)
+    XCTAssertEqual(inner.registeredTokens.count, 1)
+  }
+
   func testASurfaceFixedToItsDisplayAnnouncesConfigurationsButNeverMoves() async throws {
     let cover = FakeFramebufferSurface()
     let inner = FakeFramebufferSurface()
