@@ -41,7 +41,7 @@ targets:
   iOSUnitTestFixture:
     type: bundle.unit-test
     platform: iOS
-    deploymentTarget: "15.0"
+    deploymentTarget: "17.0"
     sources:
       - path: Source/iOSUnitTestFixture
         excludes:

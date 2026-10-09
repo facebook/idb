@@ -8,7 +8,7 @@ targets:
   Repl-iOS:
     type: library.dynamic
     platform: iOS
-    deploymentTarget: "15.0"
+    deploymentTarget: "17.0"
     sources:
       - path: .
         excludes:

@@ -6,7 +6,7 @@ options:
 targetTemplates:
   Protocol:
     type: library.static
-    deploymentTarget: "15.0"
+    deploymentTarget: "17.0"
     sources:
       - path: ../FBSimulatorBridgeProtocol
     settings:
@@ -17,7 +17,7 @@ targetTemplates:
       - sdk: Foundation.framework
   IPC:
     type: library.static
-    deploymentTarget: "15.0"
+    deploymentTarget: "17.0"
     sources:
       - path: ../SimulatorIPC
     settings:
@@ -28,7 +28,7 @@ targetTemplates:
       - sdk: Foundation.framework
   Guest:
     type: tool
-    deploymentTarget: "15.0"
+    deploymentTarget: "17.0"
     settings:
       base:
         HEADER_SEARCH_PATHS: $(inherited) $(OBJECT_FILE_DIR_normal)/$(CURRENT_ARCH)

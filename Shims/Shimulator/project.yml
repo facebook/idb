@@ -7,7 +7,7 @@ targets:
   SimulatorIPC-iOS:
     type: library.static
     platform: iOS
-    deploymentTarget: "15.0"
+    deploymentTarget: "17.0"
     sources:
       - path: ../../SimulatorIPC
     settings:
@@ -21,7 +21,7 @@ targets:
   ShimulatorProtocol-iOS:
     type: library.static
     platform: iOS
-    deploymentTarget: "15.0"
+    deploymentTarget: "17.0"
     sources:
       - path: Protocol
     settings:
@@ -36,7 +36,7 @@ targets:
   ShimulatorAudioInjectionCore:
     type: library.static
     platform: iOS
-    deploymentTarget: "15.0"
+    deploymentTarget: "17.0"
     sources:
       - path: AudioInjection/AudioInjectionController.swift
     settings:
@@ -51,7 +51,7 @@ targets:
   ShimulatorAudioInjectionHAL:
     type: library.static
     platform: iOS
-    deploymentTarget: "15.0"
+    deploymentTarget: "17.0"
     sources:
       - path: AudioInjection/AudioInjectionHAL.swift
     settings:
@@ -68,7 +68,7 @@ targets:
   ShimulatorAudioInjectionInterpose:
     type: library.static
     platform: iOS
-    deploymentTarget: "15.0"
+    deploymentTarget: "17.0"
     sources:
       - path: AudioInjection/IDBAudioInjectionInterpose.c
     settings:
@@ -81,7 +81,7 @@ targets:
   ShimulatorAudioInjectionBootstrap:
     type: library.static
     platform: iOS
-    deploymentTarget: "15.0"
+    deploymentTarget: "17.0"
     sources:
       - path: AudioInjection/AudioInjectionBootstrap.swift
     settings:
@@ -99,7 +99,7 @@ targets:
   Shimulator-iOS:
     type: library.dynamic
     platform: iOS
-    deploymentTarget: "15.0"
+    deploymentTarget: "17.0"
     configFiles:
       Debug: Configs/Shimulator-iOS.xcconfig
       Release: Configs/Shimulator-iOS.xcconfig
