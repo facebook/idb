@@ -50,15 +50,15 @@ public struct SimulatorStatusBarCommands {
       showNotCharging: &showNotCharging)
     var override = StatusBarOverride()
     override.timeString = timeString as String?
-    override.dataNetworkType = dataNetworkType
-    override.wiFiMode = wiFiMode
-    override.wiFiBars = wiFiBars
-    override.cellularMode = cellularMode
-    override.cellularBars = cellularBars
+    override.dataNetworkType = dataNetworkType?.intValue
+    override.wiFiMode = wiFiMode?.intValue
+    override.wiFiBars = wiFiBars?.intValue
+    override.cellularMode = cellularMode?.intValue
+    override.cellularBars = cellularBars?.intValue
     override.operatorName = operatorName as String?
-    override.batteryState = batteryState
-    override.batteryLevel = batteryLevel
-    override.showNotCharging = showNotCharging
+    override.batteryState = batteryState?.intValue
+    override.batteryLevel = batteryLevel?.intValue
+    override.showNotCharging = showNotCharging?.boolValue
     return override
   }
 
@@ -73,23 +73,23 @@ public struct SimulatorStatusBarCommands {
       try simulator.device.overrideStatusBarTime(timeString)
     }
     if let dataNetworkType = override.dataNetworkType {
-      try simulator.device.overrideStatusBarDataNetworkType(dataNetworkType.intValue)
+      try simulator.device.overrideStatusBarDataNetworkType(dataNetworkType)
     }
     if override.wiFiMode != nil || override.wiFiBars != nil {
-      let mode = override.wiFiMode?.intValue ?? 3
-      let bars = override.wiFiBars?.intValue ?? 3
+      let mode = override.wiFiMode ?? 3
+      let bars = override.wiFiBars ?? 3
       try simulator.device.overrideStatusBarWiFiMode(mode, bars: bars)
     }
     if override.cellularMode != nil || override.operatorName != nil || override.cellularBars != nil {
-      let mode = override.cellularMode?.intValue ?? 3
+      let mode = override.cellularMode ?? 3
       let name = override.operatorName ?? ""
-      let bars = override.cellularBars?.intValue ?? 4
+      let bars = override.cellularBars ?? 4
       try simulator.device.overrideStatusBarCellularMode(mode, operatorName: name, bars: bars)
     }
     if override.batteryState != nil || override.batteryLevel != nil || override.showNotCharging != nil {
-      let state = override.batteryState?.intValue ?? 2
-      let level = override.batteryLevel?.intValue ?? 100
-      let notCharging = override.showNotCharging?.boolValue ?? false
+      let state = override.batteryState ?? 2
+      let level = override.batteryLevel ?? 100
+      let notCharging = override.showNotCharging ?? false
       try simulator.device.overrideStatusBarBatteryState(state, batteryLevel: level, showNotCharging: notCharging)
     }
   }

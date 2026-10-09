@@ -8,7 +8,7 @@
 import Foundation
 
 /// Represents a set of status bar overrides for deterministic screenshots.
-/// Non-nil NSNumber properties are applied as overrides; nil properties are left unchanged.
+/// Non-nil properties are applied as overrides; nil properties are left unchanged.
 /// All SimDevice status bar methods use raw NSInteger parameters (same as appearance/content size).
 public struct StatusBarOverride: Sendable {
 
@@ -16,31 +16,31 @@ public struct StatusBarOverride: Sendable {
   public var timeString: String?
 
   /// Data network type.
-  public var dataNetworkType: NSNumber?
+  public var dataNetworkType: Int?
 
   /// WiFi mode: 1=searching, 2=failed, 3=active.
-  public var wiFiMode: NSNumber?
+  public var wiFiMode: Int?
 
   /// WiFi signal bars (0-3).
-  public var wiFiBars: NSNumber?
+  public var wiFiBars: Int?
 
   /// Cellular mode: 0=notSupported, 1=searching, 2=failed, 3=active.
-  public var cellularMode: NSNumber?
+  public var cellularMode: Int?
 
   /// Cellular signal bars (0-4).
-  public var cellularBars: NSNumber?
+  public var cellularBars: Int?
 
   /// Cellular operator name.
   public var operatorName: String?
 
   /// Battery state.
-  public var batteryState: NSNumber?
+  public var batteryState: Int?
 
   /// Battery level (0-100).
-  public var batteryLevel: NSNumber?
+  public var batteryLevel: Int?
 
   /// Whether to show "not charging" indicator.
-  public var showNotCharging: NSNumber?
+  public var showNotCharging: Bool?
 
   public init() {}
 }
