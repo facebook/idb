@@ -242,6 +242,37 @@ final class VideoToolboxFramePusher: FramePusher, @unchecked Sendable {
     }
   }
 
+  /// A keyframe, so the session's next frame need not reference it; that frame is forced to a keyframe anyway.
+  /// Waits for the output, which is dropped rather than handed to the consumer or counted in the stats.
+  func warm(with pixelBuffer: CVPixelBuffer) throws {
+    guard let compressionSession else {
+      throw VideoToolboxFramePusherError.missingCompressionSession
+    }
+    var source = pixelBuffer
+    if let converter, case let .converted(nv12Buffer) = converter.convert(pixelBuffer) {
+      source = nv12Buffer
+    }
+    let status = VTCompressionSessionEncodeFrame(
+      compressionSession,
+      imageBuffer: source,
+      presentationTimeStamp: .zero,
+      duration: .invalid,
+      frameProperties: [kVTEncodeFrameOptionKey_ForceKeyFrame as String: true] as CFDictionary,
+      infoFlagsOut: nil,
+      outputHandler: { _, _, _ in }
+    )
+    if status != noErr {
+      throw VideoToolboxFramePusherError.failedToCompress(status: status)
+    }
+    VTCompressionSessionCompleteFrames(compressionSession, untilPresentationTimeStamp: .invalid)
+  }
+
+  func completeFrames() {
+    if let compressionSession {
+      VTCompressionSessionCompleteFrames(compressionSession, untilPresentationTimeStamp: .invalid)
+    }
+  }
+
   func recordTornFrame() {
     statsRecorder.recordTornFrame()
   }

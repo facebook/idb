@@ -87,7 +87,7 @@ final class FramebufferScreensDouble: FramebufferScreens, @unchecked Sendable {
 /// allocation size) makes the surface consumable by CoreImage and wrappable by
 /// `CVPixelBufferCreateWithIOSurface` (which rejects a surface with no pixel format), not just
 /// passable as a reference.
-func makeTestIOSurface(width: Int = 16, height: Int = 16) -> IOSurface {
+func makeTestIOSurface(width: Int = 16, height: Int = 16, pixelFormat: OSType = kCVPixelFormatType_32BGRA) -> IOSurface {
   let bytesPerElement = 4
   let bytesPerRow = IOSurfaceAlignProperty(kIOSurfaceBytesPerRow, width * bytesPerElement)
   let properties: [IOSurfacePropertyKey: Any] = [
@@ -95,7 +95,7 @@ func makeTestIOSurface(width: Int = 16, height: Int = 16) -> IOSurface {
     .height: height,
     .bytesPerElement: bytesPerElement,
     .bytesPerRow: bytesPerRow,
-    .pixelFormat: kCVPixelFormatType_32BGRA,
+    .pixelFormat: pixelFormat,
     .allocSize: bytesPerRow * height,
   ]
   guard let surface = IOSurface(properties: properties) else {

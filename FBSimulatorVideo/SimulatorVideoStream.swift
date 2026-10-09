@@ -210,6 +210,14 @@ public actor SimulatorVideoStream: VideoStreamOperation {
     }
   }
   var framePusher: (any FramePusher)?
+  /// Set up for the other displays a stream switches between, once a configuration has several surface sizes.
+  /// A displaced pusher is kept here rather than torn down while `preparesForDisplaySwitches`. A spare is set up
+  /// as a mount would set it up: the configuration and edge insets are fixed for the stream's life, so its source
+  /// is the only input that varies, and it is taken only for a surface of that source.
+  var spareFramePushers = FramePusherPool()
+  var preparesForDisplaySwitches = false
+  /// The newest display configuration, so pushers are prepared at the first mount if it arrived before.
+  var displayConfiguration: SimulatorDisplayConfiguration?
   /// The transport writers for compressed video, created on the first mount and shared by every
   /// pusher the stream creates: they carry per-stream state (MPEG-TS continuity counters, the fMP4
   /// init segment and sequence numbers) that must survive a surface swap. nil for other formats.
@@ -365,6 +373,9 @@ public actor SimulatorVideoStream: VideoStreamOperation {
     session.eventTask.cancel()
     session.consumer.consumeEndOfFile()
     var tearDownError: Error?
+    spareFramePushers.removeAll().forEach { tearDown($0, after: "the stream stopped") }
+    preparesForDisplaySwitches = false
+    displayConfiguration = nil
     if let framePusher {
       do {
         try framePusher.tearDown()
@@ -437,7 +448,11 @@ public actor SimulatorVideoStream: VideoStreamOperation {
         failPendingStart(with: error)
         return
       }
-      pushFrame(forceKeyFrame: false)
+      // A pusher taken from the spares has encoded before, so its next frame would reference one the consumer
+      // never received.
+      pushFrame(forceKeyFrame: true)
+      // After the push, so preparing for a configuration that arrived before the first mount does not delay it.
+      prepareSpareFramePushers()
     case .frameRendered:
       switch cadence {
       case .lazy:
@@ -445,8 +460,9 @@ public actor SimulatorVideoStream: VideoStreamOperation {
       case .eager:
         break
       }
-    case .configurationChanged:
-      break
+    case let .configurationChanged(displayConfiguration):
+      self.displayConfiguration = displayConfiguration
+      prepareSpareFramePushers()
     case let .ended(error):
       logger.log("Framebuffer ended: \(error)")
       failPendingStart(with: error)
@@ -476,33 +492,39 @@ public actor SimulatorVideoStream: VideoStreamOperation {
     if frameWriters == nil {
       frameWriters = configuration.format.frameWriters()
     }
-    let framePusher = try Self.framePusher(
-      configuration: configuration,
-      cadence: cadence,
-      consumer: consumer,
-      encodedSampleConsumerOverride: encodedSampleConsumerOverride,
-      frameWriters: frameWriters,
-      logger: logger)
-    try framePusher.setup(with: buffer, edgeInsets: edgeInsets)
+    let source = FramePusherPool.Source(buffer)
+    let framePusher: any FramePusher
+    if let spare = spareFramePushers.take(source) {
+      framePusher = spare
+      logger.log("Mounting with the frame pusher prepared for a \(source) surface")
+    } else {
+      framePusher = try Self.framePusher(
+        configuration: configuration,
+        cadence: cadence,
+        consumer: consumer,
+        encodedSampleConsumerOverride: encodedSampleConsumerOverride,
+        frameWriters: frameWriters,
+        logger: logger)
+      try framePusher.setup(with: buffer, edgeInsets: edgeInsets)
+    }
 
     // Published only once every throwing step is past, so a mount is all-or-nothing: a failed one
     // leaves the previous surface installed rather than a new `pixelBuffer` behind a pusher never
     // set up for it.
     let previousFramePusher = self.framePusher
+    let previousSource = self.pixelBuffer.map(FramePusherPool.Source.init)
     self.pixelBuffer = buffer
     self.pixelBufferAttributes = attributes
     self.framePusher = framePusher
-    // The displaced pusher's VideoToolbox sessions are only released deterministically by
-    // `tearDown`; releasing the reference alone can leave them alive with encodes in flight into
-    // the same consumer. Torn down after the new pusher is published so a swap never leaves the
-    // stream without a working pusher, and a teardown failure cannot fail an otherwise good mount.
-    if let previousFramePusher {
-      do {
-        try previousFramePusher.tearDown()
-        logger.log("Tore down the previous frame pusher after a surface swap")
-      } catch {
-        logger.log("Failed to tear down the previous frame pusher after a surface swap: \(error)")
+    // Torn down or kept after the new pusher is published so a swap never leaves the stream without
+    // a working pusher, and a teardown failure cannot fail an otherwise good mount.
+    if let previousFramePusher, preparesForDisplaySwitches, let previousSource, previousSource != source {
+      previousFramePusher.completeFrames()
+      if let displaced = spareFramePushers.keep(previousFramePusher, for: previousSource) {
+        tearDown(displaced, after: "being replaced by the previous one")
       }
+    } else if let previousFramePusher {
+      tearDown(previousFramePusher, after: "a surface swap")
     }
     // Resolve the timed-metadata (chapter) sink. A recording file writer that supports chapters
     // supplies its own consumer; otherwise the streaming transport writer (fMP4 emsg / MPEG-TS ID3)
@@ -598,6 +620,68 @@ public actor SimulatorVideoStream: VideoStreamOperation {
   }
 
   // MARK: - Frame Pusher
+
+  /// The displaced pusher's VideoToolbox sessions are only released deterministically by `tearDown`; releasing
+  /// the reference alone can leave them alive with encodes in flight into the same consumer.
+  private func tearDown(_ framePusher: any FramePusher, after reason: String) {
+    do {
+      try framePusher.tearDown()
+      logger.log("Tore down a frame pusher after \(reason)")
+    } catch {
+      logger.log("Failed to tear down a frame pusher after \(reason): \(error)")
+    }
+  }
+
+  /// Sets up and warms a pusher for each surface size of the integrated displays a stream may switch to, so a
+  /// switch does not start an encoder. Only once a configuration has several sizes, and once a surface is mounted,
+  /// as a pusher needs the consumer. Warming waits for one encode per size.
+  private func prepareSpareFramePushers() {
+    guard let displayConfiguration, let consumer, let pixelBuffer else {
+      return
+    }
+    var displays = displayConfiguration.displays.filter(\.isIntegrated)
+    if case let .transitioning(incoming?) = displayConfiguration.phase {
+      displays.append(incoming)
+    }
+    // A simulator's framebuffer surfaces are BGRA; a surface in another format is not a spare's source, so its
+    // mount sets up a pusher of its own.
+    let sources = Set(displays.compactMap { FramePusherPool.Source($0.geometry.surfacePixelSize, pixelFormat: kCVPixelFormatType_32BGRA) })
+    guard sources.count > 1 else {
+      return
+    }
+    preparesForDisplaySwitches = true
+    let mounted = FramePusherPool.Source(pixelBuffer)
+    for source in sources where source != mounted && !spareFramePushers.contains(source) {
+      do {
+        let framePusher = try Self.framePusher(
+          configuration: configuration,
+          cadence: cadence,
+          consumer: consumer,
+          encodedSampleConsumerOverride: encodedSampleConsumerOverride,
+          frameWriters: frameWriters,
+          logger: logger)
+        let blank = try Self.blankPixelBuffer(source)
+        try framePusher.setup(with: blank, edgeInsets: edgeInsets)
+        try framePusher.warm(with: blank)
+        if let displaced = spareFramePushers.keep(framePusher, for: source) {
+          tearDown(displaced, after: "being replaced by a prepared one")
+        }
+        logger.log("Prepared a frame pusher for a \(source) surface")
+      } catch {
+        logger.log("Failed to prepare a frame pusher for a \(source) surface: \(error)")
+      }
+    }
+  }
+
+  private static func blankPixelBuffer(_ source: FramePusherPool.Source) throws -> CVPixelBuffer {
+    var buffer: CVPixelBuffer?
+    let attributes: [String: Any] = [kCVPixelBufferIOSurfacePropertiesKey as String: [String: Any]()]
+    let status = CVPixelBufferCreate(nil, source.width, source.height, source.pixelFormat, attributes as CFDictionary, &buffer)
+    guard status == kCVReturnSuccess, let buffer else {
+      throw SimulatorVideoStreamError.failedToCreatePixelBufferFromSurface(status: status)
+    }
+    return buffer
+  }
 
   static func framePusher(
     configuration: VideoStreamConfiguration,
