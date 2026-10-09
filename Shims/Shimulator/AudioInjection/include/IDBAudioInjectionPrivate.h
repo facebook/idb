@@ -85,6 +85,10 @@ extern OSStatus AudioObjectAddPropertyListenerBlock(
   void *queue,
   void *listener);
 
+/// Whether this process's simulator was armed for injection when the shim loaded. Unarmed, every
+/// replacement below only calls the original.
+bool IDBAudioInjectionIsArmed(void);
+
 /// The replacements dyld is pointed at, implemented in `AudioInjectionBootstrap.swift`.
 OSStatus IDBAudioDeviceCreateIOProcID(
   IDBAudioObjectID device,

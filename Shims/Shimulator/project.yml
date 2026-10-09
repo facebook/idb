@@ -33,6 +33,69 @@ targets:
       - target: SimulatorIPC-iOS
       - sdk: Foundation.framework
 
+  ShimulatorAudioInjectionCore:
+    type: library.static
+    platform: iOS
+    deploymentTarget: "15.0"
+    sources:
+      - path: AudioInjection/AudioInjectionController.swift
+    settings:
+      base:
+        SDKROOT: iphonesimulator
+        PRODUCT_MODULE_NAME: ShimulatorAudioInjectionCore
+        SWIFT_VERSION: "6.0"
+    dependencies:
+      - target: ShimulatorProtocol-iOS
+      - sdk: Foundation.framework
+
+  ShimulatorAudioInjectionHAL:
+    type: library.static
+    platform: iOS
+    deploymentTarget: "15.0"
+    sources:
+      - path: AudioInjection/AudioInjectionHAL.swift
+    settings:
+      base:
+        SDKROOT: iphonesimulator
+        PRODUCT_MODULE_NAME: ShimulatorAudioInjectionHAL
+        SWIFT_INCLUDE_PATHS: $(SRCROOT)/AudioInjection/include
+        SWIFT_VERSION: "6.0"
+    dependencies:
+      - target: ShimulatorAudioInjectionCore
+      - sdk: CoreAudio.framework
+      - sdk: Foundation.framework
+
+  ShimulatorAudioInjectionInterpose:
+    type: library.static
+    platform: iOS
+    deploymentTarget: "15.0"
+    sources:
+      - path: AudioInjection/IDBAudioInjectionInterpose.c
+    settings:
+      base:
+        SDKROOT: iphonesimulator
+        HEADER_SEARCH_PATHS: $(SRCROOT)/AudioInjection/include
+    dependencies:
+      - sdk: CoreAudio.framework
+
+  ShimulatorAudioInjectionBootstrap:
+    type: library.static
+    platform: iOS
+    deploymentTarget: "15.0"
+    sources:
+      - path: AudioInjection/AudioInjectionBootstrap.swift
+    settings:
+      base:
+        SDKROOT: iphonesimulator
+        PRODUCT_MODULE_NAME: ShimulatorAudioInjectionBootstrap
+        SWIFT_INCLUDE_PATHS: $(SRCROOT)/AudioInjection/include
+        SWIFT_VERSION: "6.0"
+    dependencies:
+      - target: ShimulatorAudioInjectionCore
+      - target: ShimulatorAudioInjectionHAL
+      - target: ShimulatorProtocol-iOS
+      - sdk: Foundation.framework
+
   Shimulator-iOS:
     type: library.dynamic
     platform: iOS
@@ -56,8 +119,23 @@ targets:
         OTHER_CFLAGS: $(inherited) -Wno-deprecated-declarations
         # Package managers rewrite the dylib install ID to their install
         # prefix; leave header slack so the longer path fits without relinking.
-        OTHER_LDFLAGS: $(inherited) -headerpad_max_install_names
+        OTHER_LDFLAGS: $(inherited) -all_load -headerpad_max_install_names
+        # Nothing in this target is Swift, so Xcode does not add the Swift back-deployment libraries its archives link.
+        LIBRARY_SEARCH_PATHS: $(inherited) $(TOOLCHAIN_DIR)/usr/lib/swift/$(PLATFORM_NAME)
     dependencies:
+      - link: true
+        target: ShimulatorAudioInjectionBootstrap
+      - link: true
+        target: ShimulatorAudioInjectionCore
+      - link: true
+        target: ShimulatorAudioInjectionHAL
+      - link: true
+        target: ShimulatorAudioInjectionInterpose
+      - link: true
+        target: ShimulatorProtocol-iOS
+      - link: true
+        target: SimulatorIPC-iOS
+      - sdk: CoreAudio.framework
       - sdk: Foundation.framework
       - sdk: UIKit.framework
 

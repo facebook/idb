@@ -32,6 +32,7 @@ private struct Recorded {
   var capturedInputBytes: UInt32 = 0
   var hasPropertyAnswer = true
   var defaultInputStatus: OSStatus = noErr
+  var calls: [String] = []
 }
 
 private let recorded = Mutex(Recorded())
@@ -42,8 +43,10 @@ private func withFake<Result: Sendable>(_ body: (inout Recorded) -> Result) -> R
 }
 
 private let hal = AudioHAL(
+  armed: true,
   createIOProcID: { _, proc, clientData, handle in
     withFake {
+      $0.calls.append("create")
       $0.proc = proc
       $0.clientData = UInt(bitPattern: clientData)
       if $0.createStatus == noErr {
@@ -54,12 +57,14 @@ private let hal = AudioHAL(
   },
   destroyIOProcID: { _, _ in
     withFake {
+      $0.calls.append("destroy")
       $0.destroyCount += 1
       return $0.destroyStatus
     }
   },
   getPropertyData: { _, address, _, _, size, data in
     withFake {
+      $0.calls.append("get")
       switch address?.pointee.selector ?? 0 {
       case fourCC("dOut"):
         data?.storeBytes(of: defaultOutputDevice, as: IDBAudioObjectID.self)
@@ -75,12 +80,26 @@ private let hal = AudioHAL(
     }
   },
   getPropertyDataSize: { _, _, _, _, size in
-    size?.pointee = withFake { $0.inputStreamBytes }
+    size?.pointee = withFake {
+      $0.calls.append("size")
+      return $0.inputStreamBytes
+    }
     return noErr
   },
-  hasProperty: { _, _ in withFake { $0.hasPropertyAnswer } },
-  addPropertyListener: { _, _, _, _ in 31 },
-  addPropertyListenerBlock: { _, _, _, _ in 32 },
+  hasProperty: { _, _ in
+    withFake {
+      $0.calls.append("has")
+      return $0.hasPropertyAnswer
+    }
+  },
+  addPropertyListener: { _, _, _, _ in
+    withFake { $0.calls.append("listen") }
+    return 31
+  },
+  addPropertyListenerBlock: { _, _, _, _ in
+    withFake { $0.calls.append("listenBlock") }
+    return 32
+  },
   startController: { withFake { $0.controllerStarts += 1 } })
 
 private let originalProc: IDBAudioDeviceIOProc = { _, _, _, _, _, _, _ in
@@ -520,5 +539,72 @@ final class AudioInjectionHALTests: XCTestCase {
     XCTAssertEqual(
       AudioInjectionHAL.addPropertyListenerBlock(hal, object: defaultOutputDevice, address: &rate, queue: nil, listener: nil),
       32)
+  }
+
+  // The shim is loaded into every iOS test process idb runs, armed or not.
+
+  private var unarmed: AudioHAL {
+    var unarmed = hal
+    unarmed.armed = false
+    return unarmed
+  }
+
+  func testUnarmedCreateRegistersTheCallersOwnIOProc() {
+    var handle: UnsafeMutableRawPointer?
+    let clientData = UnsafeMutableRawPointer(bitPattern: 0xBEEF)
+
+    XCTAssertEqual(
+      AudioInjectionHAL.createIOProcID(
+        unarmed, device: 8, proc: originalProc, clientData: clientData, outIOProcID: &handle),
+      noErr)
+
+    XCTAssertEqual(withFake { $0.calls }, ["create"])
+    XCTAssertEqual(
+      withFake { $0.proc.map { unsafeBitCast($0, to: UInt.self) } }, unsafeBitCast(originalProc, to: UInt.self))
+    XCTAssertEqual(withFake { $0.clientData }, 0xBEEF)
+    XCTAssertEqual(handle, UnsafeMutableRawPointer(bitPattern: 0x1234))
+
+    engine.replace(samples: [.max, .min], sampleRate: 48_000, generation: 1)
+    var input: [Float] = [0, 0]
+    XCTAssertEqual(callback(8, input: &input), 17)
+    XCTAssertEqual(input, [0, 0])
+    XCTAssertEqual(withFake { $0.controllerStarts }, 0)
+
+    XCTAssertEqual(AudioInjectionHAL.destroyIOProcID(unarmed, device: 8, ioProcID: handle), noErr)
+    XCTAssertEqual(withFake { $0.calls }, ["create", "destroy"])
+  }
+
+  func testUnarmedPropertyCallsReachTheHALUnchanged() {
+    withFake { $0.hasPropertyAnswer = false }
+    var defaultInput = address("dIn ")
+    var device: IDBAudioObjectID = 99
+    var deviceSize = UInt32(MemoryLayout<IDBAudioObjectID>.size)
+    var inputStreams = address("stm#", "inpt")
+    var streamBytes: UInt32 = 7
+
+    XCTAssertEqual(
+      AudioInjectionHAL.getPropertyData(
+        unarmed, object: 1, address: &defaultInput, qualifierDataSize: 0, qualifierData: nil, dataSize: &deviceSize,
+        data: &device),
+      noErr)
+    XCTAssertEqual(
+      AudioInjectionHAL.getPropertyDataSize(
+        unarmed, object: defaultOutputDevice, address: &inputStreams, qualifierDataSize: 0, qualifierData: nil,
+        dataSize: &streamBytes),
+      noErr)
+    XCTAssertFalse(AudioInjectionHAL.hasProperty(unarmed, object: defaultOutputDevice, address: &inputStreams))
+    XCTAssertEqual(
+      AudioInjectionHAL.addPropertyListener(
+        unarmed, object: 0x7F00_0049, address: &inputStreams, listener: nil, clientData: nil),
+      31)
+    XCTAssertEqual(
+      AudioInjectionHAL.addPropertyListenerBlock(
+        unarmed, object: 0x7F00_0049, address: &inputStreams, queue: nil, listener: nil),
+      32)
+
+    // The host's own answers, where an armed process would see the synthetic microphone.
+    XCTAssertEqual(device, 0)
+    XCTAssertEqual(streamBytes, 0)
+    XCTAssertEqual(withFake { $0.calls }, ["get", "size", "has", "listen", "listenBlock"])
   }
 }

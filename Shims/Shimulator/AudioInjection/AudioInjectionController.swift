@@ -10,6 +10,8 @@ import ShimulatorProtocol
 
 public enum ShimulatorAudioInjection {
   public static let capability = "audio"
+  /// Set to `1` in an armed simulator's `launchd`. The shim does nothing in a process without it.
+  public static let armedEnvironmentVariable = "IDB_AUDIO_INJECTION"
   public static let maximumPayloadBytes = 32 * 1024 * 1024
 }
 

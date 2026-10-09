@@ -32,6 +32,9 @@ public struct AudioHAL: Sendable {
       IDBAudioObjectID, UnsafePointer<IDBAudioObjectPropertyAddress>?, UnsafeMutableRawPointer?, UnsafeMutableRawPointer?
     ) -> OSStatus
 
+  /// False unless the process was launched by an armed simulator. Every entry point then calls
+  /// straight through to the HAL, and nothing else in this file runs.
+  public var armed: Bool
   public var createIOProcID: CreateIOProcID
   public var destroyIOProcID: DestroyIOProcID
   public var getPropertyData: GetPropertyData
@@ -43,6 +46,7 @@ public struct AudioHAL: Sendable {
   public var startController: @convention(c) () -> Void
 
   public init(
+    armed: Bool,
     createIOProcID: CreateIOProcID,
     destroyIOProcID: DestroyIOProcID,
     getPropertyData: GetPropertyData,
@@ -52,6 +56,7 @@ public struct AudioHAL: Sendable {
     addPropertyListenerBlock: AddPropertyListener,
     startController: @convention(c) () -> Void
   ) {
+    self.armed = armed
     self.createIOProcID = createIOProcID
     self.destroyIOProcID = destroyIOProcID
     self.getPropertyData = getPropertyData
@@ -224,6 +229,9 @@ public enum AudioInjectionHAL {
     clientData: UnsafeMutableRawPointer?,
     outIOProcID: UnsafeMutablePointer<UnsafeMutableRawPointer?>?
   ) -> OSStatus {
+    guard hal.armed else {
+      return hal.createIOProcID(device, proc, clientData, outIOProcID)
+    }
     guard let proc, let outIOProcID else {
       return proc == nil ? hal.createIOProcID(device, proc, clientData, outIOProcID) : parameterError
     }
@@ -262,6 +270,9 @@ public enum AudioInjectionHAL {
   public static func destroyIOProcID(
     _ hal: AudioHAL, device: IDBAudioObjectID, ioProcID: UnsafeMutableRawPointer?
   ) -> OSStatus {
+    guard hal.armed else {
+      return hal.destroyIOProcID(device, ioProcID)
+    }
     // Held across the HAL's own destroy, so a concurrent creation cannot be handed the same opaque
     // ID until this one's context is unlinked.
     pthread_mutex_lock(&state.pointee.ioProcLock)
@@ -310,6 +321,9 @@ public enum AudioInjectionHAL {
     dataSize: UnsafeMutablePointer<UInt32>?,
     data: UnsafeMutableRawPointer?
   ) -> OSStatus {
+    guard hal.armed else {
+      return hal.getPropertyData(object, address, qualifierDataSize, qualifierData, dataSize, data)
+    }
     if syntheticProperty(hal, object: object, address: address, dataSize: dataSize, data: data) {
       return noErr
     }
@@ -327,6 +341,9 @@ public enum AudioInjectionHAL {
     qualifierData: UnsafeRawPointer?,
     dataSize: UnsafeMutablePointer<UInt32>?
   ) -> OSStatus {
+    guard hal.armed else {
+      return hal.getPropertyDataSize(object, address, qualifierDataSize, qualifierData, dataSize)
+    }
     if syntheticProperty(hal, object: object, address: address, dataSize: dataSize, data: nil) {
       return noErr
     }
@@ -339,6 +356,9 @@ public enum AudioInjectionHAL {
   public static func hasProperty(
     _ hal: AudioHAL, object: IDBAudioObjectID, address: UnsafePointer<IDBAudioObjectPropertyAddress>?
   ) -> Bool {
+    guard hal.armed else {
+      return hal.hasProperty(object, address)
+    }
     var size: UInt32 = 0
     return syntheticProperty(hal, object: object, address: address, dataSize: &size, data: nil)
       || (!isSyntheticStream(object) && hal.hasProperty(object, address))
@@ -351,6 +371,9 @@ public enum AudioInjectionHAL {
     listener: UnsafeMutableRawPointer?,
     clientData: UnsafeMutableRawPointer?
   ) -> OSStatus {
+    guard hal.armed else {
+      return hal.addPropertyListener(object, address, listener, clientData)
+    }
     return isSyntheticStream(object) ? noErr : hal.addPropertyListener(object, address, listener, clientData)
   }
 
@@ -361,6 +384,9 @@ public enum AudioInjectionHAL {
     queue: UnsafeMutableRawPointer?,
     listener: UnsafeMutableRawPointer?
   ) -> OSStatus {
+    guard hal.armed else {
+      return hal.addPropertyListenerBlock(object, address, queue, listener)
+    }
     return isSyntheticStream(object) ? noErr : hal.addPropertyListenerBlock(object, address, queue, listener)
   }
 
