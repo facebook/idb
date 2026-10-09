@@ -282,11 +282,6 @@ public final class MacDevice: Target {
     false
   }
 
-  public static func commands(with target: any Target) -> Self {
-    assertionFailure("commandsWithTarget is not yet supported")
-    return unsafeBitCast(NSNull(), to: Self.self)
-  }
-
   public func installApplication(withPath path: String) throws -> InstalledApplication {
     let bundle = try BundleDescriptor.bundle(fromPath: path)
     bundleIDToProductMap[bundle.identifier] = bundle

@@ -7,15 +7,6 @@
 
 import Foundation
 
-// MARK: - TargetCommand Protocol
-
-/// A protocol that defines a command class that can be instantiated for a target.
-/// Concrete command classes (e.g. `SimulatorApplicationCommands`) adopt this directly.
-public protocol TargetCommand: AnyObject {
-  /// Instantiates the Commands instance.
-  static func commands(with target: any Target) -> Self
-}
-
 // MARK: - TargetInfo Protocol
 
 /// A protocol that defines an informational target.
@@ -90,7 +81,7 @@ extension TargetInfo {
 // MARK: - Target Protocol
 
 /// A protocol that defines an interactible and informational target.
-public protocol Target: TargetInfo, TargetCommand {
+public protocol Target: TargetInfo {
 
   // MARK: - Command nouns
 

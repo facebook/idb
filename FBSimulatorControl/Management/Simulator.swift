@@ -129,15 +129,6 @@ public final class Simulator: Target, Hashable, CustomStringConvertible, @unchec
 
   public func requiresBundlesToBeSigned() -> Bool { true }
 
-  /// A simulator is its own command source. The protocol requires a non-throwing `Self`, so a mismatch can
-  /// only trap (not catchable by `FBObjCExceptionGuard`).
-  public static func commands(with target: any Target) -> Self {
-    guard let simulator = target as? Self else {
-      preconditionFailure("\(type(of: target)) is not a Simulator, so it cannot provide simulator commands")
-    }
-    return simulator
-  }
-
   // MARK: - Simulator Properties
 
   /// The Product Family of the Simulator.
@@ -236,7 +227,7 @@ extension Simulator {
   }
 
   public var xctraceRecord: TargetXCTraceRecordCommands {
-    TargetXCTraceRecordCommands.commands(with: self)
+    TargetXCTraceRecordCommands(target: self)
   }
 
   public var instruments: SimulatorInstrumentsCommands {

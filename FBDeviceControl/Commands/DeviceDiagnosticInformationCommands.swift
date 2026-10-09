@@ -27,17 +27,10 @@ extension DiagnosticsRelayError: LocalizedError {
   }
 }
 
-public final class DeviceDiagnosticInformationCommands: TargetCommand {
+public final class DeviceDiagnosticInformationCommands {
   private let device: Device
 
-  public static func commands(with target: any Target) -> Self {
-    guard let device = target as? Device else {
-      preconditionFailure("Expected Device target, got \(target)")
-    }
-    return self.init(device: device)
-  }
-
-  required init(device: Device) {
+  init(device: Device) {
     self.device = device
   }
 

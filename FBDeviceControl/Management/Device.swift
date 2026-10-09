@@ -107,13 +107,6 @@ public final class Device: Target, DeviceCommands, CustomStringConvertible {
     self.logger = logger.withName(udid)
   }
 
-  public static func commands(with target: any Target) -> Self {
-    guard let device = target as? Self else {
-      preconditionFailure("\(type(of: target)) is not a Device, so it cannot provide device commands")
-    }
-    return device
-  }
-
   // MARK: - Target
 
   public var workQueue: DispatchQueue {
@@ -301,7 +294,7 @@ extension Device {
   }
 
   public var xctraceRecord: TargetXCTraceRecordCommands {
-    TargetXCTraceRecordCommands.commands(with: self)
+    TargetXCTraceRecordCommands(target: self)
   }
 
   public var instruments: DeviceInstrumentsCommands {
@@ -311,7 +304,7 @@ extension Device {
   // MARK: - Device-only accessors
 
   public var diagnosticInformation: DeviceDiagnosticInformationCommands {
-    DeviceDiagnosticInformationCommands.commands(with: self)
+    DeviceDiagnosticInformationCommands(device: self)
   }
 
   public var power: DevicePowerCommands {

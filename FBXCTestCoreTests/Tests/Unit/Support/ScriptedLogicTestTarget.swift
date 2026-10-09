@@ -39,10 +39,6 @@ final class ScriptedLogicTestTarget: NSObject, LogicTestTarget {
     ["IDB_TARGET_ADDITION": "1"]
   }
 
-  static func commands(with target: any Target) -> Self {
-    fatalError("Not used by the strategies under test")
-  }
-
   var uniqueIdentifier: String { device.uniqueIdentifier }
   var udid: String { device.udid }
   var name: String { device.name }

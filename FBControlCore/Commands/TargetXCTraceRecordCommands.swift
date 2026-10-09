@@ -7,15 +7,11 @@
 
 import Foundation
 
-public final class TargetXCTraceRecordCommands: TargetCommand, XCTraceRecordCommands {
+public final class TargetXCTraceRecordCommands: XCTraceRecordCommands {
 
   public let target: any Target
 
-  public static func commands(with target: any Target) -> Self {
-    self.init(target: target)
-  }
-
-  required init(target: any Target) {
+  public init(target: any Target) {
     self.target = target
   }
 
