@@ -12,43 +12,28 @@ public final class XcodeConfiguration: NSObject {
 
   // MARK: - Public Properties
 
-  @objc public static let developerDirectory: String = {
+  public static let developerDirectory: String = {
     (try? XcodeDirectory.resolveDeveloperDirectory()) ?? ""
   }()
 
-  @objc public static let contentsDirectory: String = {
+  public static let contentsDirectory: String = {
     (developerDirectory as NSString).deletingLastPathComponent
   }()
 
-  @objc public static let xcodeVersionNumber: NSDecimalNumber = {
+  public static let xcodeVersionNumber: NSDecimalNumber = {
     let versionString = XcodeConfiguration.readValue(forKey: "CFBundleShortVersionString", fromPlistAtPath: XcodeConfiguration.xcodeInfoPlistPath)
     return NSDecimalNumber(string: versionString as? String)
   }()
 
-  @objc public static let xcodeVersion: OperatingSystemVersion = {
+  public static let xcodeVersion: OperatingSystemVersion = {
     return OSVersion.operatingSystemVersion(fromName: xcodeVersionNumber.stringValue)
   }()
 
-  @objc public static let iosSDKVersionNumber: NSDecimalNumber = {
-    NSDecimalNumber(string: iosSDKVersion)
-  }()
-
-  @objc public static let iosSDKVersionNumberFormatter: NumberFormatter = {
-    let formatter = NumberFormatter()
-    formatter.numberStyle = .decimal
-    formatter.minimumFractionDigits = 1
-    formatter.maximumFractionDigits = 3
-    return formatter
-  }()
-
-  @objc public static let iosSDKVersion: String = {
+  public static let iosSDKVersion: String = {
     return XcodeConfiguration.readValue(forKey: "Version", fromPlistAtPath: XcodeConfiguration.iPhoneSimulatorPlatformInfoPlistPath) as? String ?? ""
   }()
 
-  @objc public static let isXcode12OrGreater: Bool = {
-    xcodeVersionNumber.compare(NSDecimalNumber(string: "12.0")) != .orderedAscending
-  }()
-
+  // Read by the Objective-C test configuration.
   @objc public static let isXcode12_5OrGreater: Bool = {
     xcodeVersionNumber.compare(NSDecimalNumber(string: "12.5")) != .orderedAscending
   }()
@@ -67,15 +52,7 @@ public final class XcodeConfiguration: NSObject {
     return BundleDescriptor(name: name, identifier: identifier, path: path, binary: nil)
   }()
 
-  override public class func description() -> String {
-    "Developer Directory \(developerDirectory) | Xcode Version \(xcodeVersionNumber) | iOS SDK Version \(iosSDKVersionNumber)"
-  }
-
-  public override var description: String {
-    Self.description()
-  }
-
-  fileprivate class var simulatorApplicationPath: String {
+  private static var simulatorApplicationPath: String {
     // Xcode 27 renamed Simulator.app to DeviceHub.app and moved it from
     // Contents/Developer/Applications to Contents/Applications. Prefer the new
     // location, falling back to the legacy Simulator.app for Xcode <= 26.
@@ -86,17 +63,17 @@ public final class XcodeConfiguration: NSObject {
     return ((developerDirectory as NSString).appendingPathComponent("Applications") as NSString).appendingPathComponent("Simulator.app")
   }
 
-  fileprivate class var iPhoneSimulatorPlatformInfoPlistPath: String {
+  private static var iPhoneSimulatorPlatformInfoPlistPath: String {
     ((developerDirectory as NSString).appendingPathComponent("Platforms/iPhoneSimulator.platform") as NSString).appendingPathComponent("Info.plist")
   }
 
-  fileprivate class var xcodeInfoPlistPath: String {
+  private static var xcodeInfoPlistPath: String {
     ((developerDirectory as NSString).deletingLastPathComponent as NSString).appendingPathComponent("Info.plist")
   }
 
   // Must not assert: hosts without a full Xcode resolve an empty developer directory, and these
   // statics run at process startup.
-  class func readValue(forKey key: String, fromPlistAtPath plistPath: String) -> Any? {
+  static func readValue(forKey key: String, fromPlistAtPath plistPath: String) -> Any? {
     guard let infoPlist = NSDictionary(contentsOfFile: plistPath) else {
       return nil
     }
