@@ -16,7 +16,7 @@ private let OnlineTimeout: TimeInterval = 300
 
 // MARK: - DeviceEraseOperation
 
-private final class DeviceEraseOperation: NSObject, TargetSetDelegate, @unchecked Sendable {
+private final class DeviceEraseOperation: TargetSetDelegate, @unchecked Sendable {
 
   private let udid: String
   private let calls: AMDCalls
@@ -41,7 +41,6 @@ private final class DeviceEraseOperation: NSObject, TargetSetDelegate, @unchecke
       ecidFilter: device.uniqueIdentifier,
       logger: logger
     )
-    super.init()
     self.deviceManager.delegate = self
   }
 

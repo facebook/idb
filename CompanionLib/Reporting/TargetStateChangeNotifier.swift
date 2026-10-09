@@ -34,7 +34,7 @@ extension TargetStateChangeNotifierError: LocalizedError {
   }
 }
 
-public final class TargetStateChangeNotifier: NSObject, TargetSetDelegate {
+public final class TargetStateChangeNotifier: TargetSetDelegate {
 
   private let filePath: String?
   private let targetSets: [TargetSet]
@@ -81,7 +81,6 @@ public final class TargetStateChangeNotifier: NSObject, TargetSetDelegate {
     self.targetSets = targetSets
     self.logger = logger
     self.current = [:]
-    super.init()
   }
 
   public func startNotifier() throws {

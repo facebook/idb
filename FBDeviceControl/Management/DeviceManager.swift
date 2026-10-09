@@ -12,7 +12,7 @@ import Foundation
 ///
 /// Subclasses supply how to listen and how to turn a private device reference into a public one;
 /// this class owns the registry of what is currently attached and notifies the delegate.
-class DeviceManager<PublicDevice: AnyObject>: NSObject, TargetSet {
+class DeviceManager<PublicDevice: AnyObject>: TargetSet, CustomStringConvertible {
 
   let logger: any ControlCoreLogger
   let storage: DeviceStorage<PublicDevice>
@@ -21,7 +21,6 @@ class DeviceManager<PublicDevice: AnyObject>: NSObject, TargetSet {
   init(logger: any ControlCoreLogger) {
     self.logger = logger
     self.storage = DeviceStorage(logger: logger)
-    super.init()
   }
 
   deinit {
@@ -135,7 +134,7 @@ class DeviceManager<PublicDevice: AnyObject>: NSObject, TargetSet {
     allTargetInfos.first { $0.udid == udid }
   }
 
-  override var description: String {
+  var description: String {
     "\(type(of: self)): \(CollectionInformation.oneLineDescription(from: allTargetInfos))"
   }
 }

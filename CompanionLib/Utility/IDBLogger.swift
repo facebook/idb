@@ -35,14 +35,13 @@ private let globalLoggers = GlobalLoggers()
 
 // @unchecked Sendable: all stored properties are immutable lets wrapping
 // thread-safe ObjC objects.
-private final class IDBLoggerOperation: NSObject, LogOperation, @unchecked Sendable {
+private final class IDBLoggerOperation: LogOperation, @unchecked Sendable {
   let consumer: DataConsumer
   let logger: ControlCoreLogger
 
   init(consumer: DataConsumer, logger: ControlCoreLogger) {
     self.consumer = consumer
     self.logger = logger
-    super.init()
   }
 
   /// Tails until cancelled, then stops delivering to the consumer.

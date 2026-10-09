@@ -56,7 +56,7 @@ extension MacDeviceError: LocalizedError {
   }
 }
 
-public final class MacDevice: NSObject, Target {
+public final class MacDevice: Target {
 
   // MARK: - Target synthesized properties
 
@@ -111,7 +111,7 @@ public final class MacDevice: NSObject, Target {
 
   // MARK: - Initializers
 
-  public override init() {
+  public init() {
     architectures = Array(ArchitectureProcessAdapter.hostMachineSupportedArchitectures())
     asyncQueue = DispatchQueue.global(qos: .userInitiated)
     let explicitTmpDirectory = ProcessInfo.processInfo.environment["IDB_MAC_AUXILLIARY_DIR"]
@@ -133,7 +133,6 @@ public final class MacDevice: NSObject, Target {
     self.logger = ControlCoreGlobalConfiguration.defaultLogger
     self.catalyst = false
     temporaryDirectory = TemporaryDirectory(logger: ControlCoreGlobalConfiguration.defaultLogger)
-    super.init()
   }
 
   public convenience init(logger: ControlCoreLogger) {
@@ -162,7 +161,6 @@ public final class MacDevice: NSObject, Target {
     self.logger = logger
     self.catalyst = catalyst
     temporaryDirectory = TemporaryDirectory(logger: logger)
-    super.init()
   }
 
   // MARK: - Public
