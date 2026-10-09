@@ -83,12 +83,6 @@ final class XCTestReporterDouble: NSObject, XCTestReporter {
 
   func processWaitingForDebugger(withProcessIdentifier pid: pid_t) {}
 
-  func didRecordVideo(atPath videoRecordingPath: String) {}
-
-  func didSaveOSLog(atPath osLogPath: String) {}
-
-  func didCopiedTestArtifact(_ testArtifactFilename: String, toPath path: String) {}
-
   func processUnderTestDidExit() {}
 
   func testCaseDidFinish(forTestClass testClass: String, method: String, with status: FBTestReportStatus, duration: TimeInterval, logs: [String]?) {

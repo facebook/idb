@@ -53,13 +53,4 @@ import Foundation
 
   @objc(testPlanDidFailWithMessage:)
   optional func testPlanDidFail(withMessage message: String)
-
-  @objc(didRecordVideoAtPath:)
-  optional func didRecordVideo(atPath videoRecordingPath: String)
-
-  @objc(didSaveOSLogAtPath:)
-  optional func didSaveOSLog(atPath osLogPath: String)
-
-  @objc(didCopiedTestArtifact:toPath:)
-  optional func didCopiedTestArtifact(_ testArtifactFilename: String, toPath path: String)
 }
