@@ -225,14 +225,14 @@ public final class DeviceApplicationCommands: ApplicationCommands {
         bundleNameToBundleIdentifier[bundleName] = bundleIdentifier
       }
     }
-    var runningProcessNameToPID: [String: NSNumber] = [:]
+    var runningProcessNameToPID: [String: pid_t] = [:]
     for (pid, processName) in pidToRunningProcessName {
       runningProcessNameToPID[processName] = pid
     }
     var bundleNameToPID: [String: pid_t] = [:]
     for (processName, pid) in runningProcessNameToPID {
       if let bundleName = bundleNameToBundleIdentifier[processName] {
-        bundleNameToPID[bundleName] = pid.int32Value
+        bundleNameToPID[bundleName] = pid
       }
     }
     return bundleNameToPID
@@ -318,7 +318,7 @@ public final class DeviceApplicationCommands: ApplicationCommands {
     }
   }
 
-  private func pidToRunningProcessName() async throws -> [NSNumber: String] {
+  private func pidToRunningProcessName() async throws -> [pid_t: String] {
     guard let device else {
       throw DeviceNilError.deviceNil
     }
@@ -347,14 +347,14 @@ public final class DeviceApplicationCommands: ApplicationCommands {
         throw DeviceApplicationError.pidListRequestUnsuccessful
       }
       let payload = responseDict["Payload"] as? [NSNumber: Any] ?? [:]
-      var pidToRunningProcessName: [NSNumber: String] = [:]
+      var pidToRunningProcessName: [pid_t: String] = [:]
       for (processIdentifier, value) in payload {
         guard let contents = value as? [String: Any],
           let processName = contents["ProcessName"] as? String
         else {
           continue
         }
-        pidToRunningProcessName[processIdentifier] = processName
+        pidToRunningProcessName[processIdentifier.int32Value] = processName
       }
       return pidToRunningProcessName
     }
