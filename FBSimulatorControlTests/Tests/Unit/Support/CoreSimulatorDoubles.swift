@@ -52,8 +52,22 @@ class SimDeviceDouble: NSObject {
     }
   }
   @objc var state: UInt64 = 0
-  @objc var deviceType: SimDeviceTypeDouble?
+  @objc var available: Bool = true
   @objc var runtime: SimDeviceRuntimeDouble?
+
+  private var _deviceType: SimDeviceTypeDouble?
+  /// Inferring a `Simulator`'s configuration reads this exactly once, so it counts the wrappers
+  /// built around this device.
+  private(set) var deviceTypeReads = 0
+  @objc var deviceType: SimDeviceTypeDouble? {
+    get {
+      deviceTypeReads += 1
+      return _deviceType
+    }
+    set {
+      _deviceType = newValue
+    }
+  }
   @objc var notificationManager: AnyObject?
 
   override func isEqual(_ object: Any?) -> Bool {
@@ -69,7 +83,20 @@ class SimDeviceDouble: NSObject {
 }
 
 class SimDeviceSetDouble: NSObject {
-  @objc var availableDevices: [Any] = []
+  /// Every device in the set, available or not, as the real `devices`.
+  @objc var devices: [Any] = []
+  /// Setting this replaces `devices`, so a set built only from available devices reads naturally.
+  @objc var availableDevices: [Any] {
+    get { devices.filter { ($0 as? SimDeviceDouble)?.available ?? true } }
+    set { devices = newValue }
+  }
+  @objc var devicesByUDID: [NSUUID: Any] {
+    var byUDID: [NSUUID: Any] = [:]
+    for case let device as SimDeviceDouble in devices {
+      byUDID[device.UDID] = device
+    }
+    return byUDID
+  }
   @objc var notificationManager: AnyObject?
 }
 
