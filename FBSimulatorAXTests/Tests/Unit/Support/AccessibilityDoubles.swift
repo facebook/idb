@@ -215,6 +215,9 @@ class AXPTranslatorDouble: NSObject {
   /// test observe — or deliberately hold open — the window in which a resolution is
   /// inside the shared translator, so overlap between concurrent resolutions is testable.
   var resolutionEnterHook: (() -> Void)?
+  /// The `clientType` of each request to send through the bridge delegate during a frontmost resolution, as
+  /// the real translator does when it reads the application's attributes. Empty sends none.
+  var bridgeRequestClientTypes: [UInt64] = []
 
   @objc
   func frontmostApplication(withDisplayId displayId: Int32, bridgeDelegateToken token: String) -> AXPTranslationObjectDouble? {
@@ -223,9 +226,16 @@ class AXPTranslatorDouble: NSObject {
     if frontmostApplicationDelay > 0 {
       Thread.sleep(forTimeInterval: frontmostApplicationDelay)
     }
+    sendBridgeRequests(token: token)
     let result = frontmostApplicationResult
     result?.bridgeDelegateToken = token
     return result
+  }
+
+  private func sendBridgeRequests(token: String) {
+    for clientType in bridgeRequestClientTypes {
+      AccessibilityTranslatorRequests.send(AccessibilityTranslatorRequests.make(clientType: clientType), through: bridgeTokenDelegate, token: token)
+    }
   }
 
   @objc(objectAtPoint:displayId:bridgeDelegateToken:)
@@ -253,6 +263,37 @@ class AXPTranslatorDouble: NSObject {
     let translation = AXPTranslationObjectDouble()
     translation.pid = pid
     return translation
+  }
+}
+
+/// Builds, sends and reads real `AXPTranslatorRequest`s through the Objective-C runtime, as the translator
+/// does: the test bundle cannot link against the private framework's classes.
+enum AccessibilityTranslatorRequests {
+  private typealias BridgeCallback = @convention(block) (AnyObject?) -> AnyObject?
+
+  static func make(clientType: UInt64) -> NSObject? {
+    guard let requestClass = NSClassFromString("AXPTranslatorRequest") as? NSObject.Type else {
+      return nil
+    }
+    let request = requestClass.init()
+    request.setValue(clientType, forKey: "clientType")
+    return request
+  }
+
+  /// Sends `request` through the bridge-token delegate's callback for `token`, returning the response.
+  @discardableResult
+  static func send(_ request: NSObject?, through delegate: AnyObject?, token: String) -> AnyObject? {
+    let selector = NSSelectorFromString("accessibilityTranslationDelegateBridgeCallbackWithToken:")
+    guard let delegate = delegate as? NSObject, delegate.responds(to: selector),
+      let block = delegate.perform(selector, with: token)?.takeUnretainedValue()
+    else {
+      return nil
+    }
+    return unsafeBitCast(block, to: BridgeCallback.self)(request)
+  }
+
+  static func clientType(of request: Any) -> UInt64? {
+    ((request as AnyObject).value(forKey: "clientType") as? NSNumber)?.uint64Value
   }
 }
 

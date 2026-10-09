@@ -519,6 +519,17 @@ final class SimulatorAccessibilityCommandsTests: XCTestCase {
 
   // MARK: - Tests
 
+  func testTheDispatcherForwardsTranslatorRequestsWithTheClientTypeTheTranslatorStamped() async throws {
+    try setUp(withRootElement: defaultElementTree)
+    fixture!.translator.bridgeRequestClientTypes = [0, 5]
+
+    let element = try await simulator.accessibility.resolveElement(for: .frontmost)
+    element.close()
+
+    let forwarded = fixture!.device.accessibilityRequests.compactMap { AccessibilityTranslatorRequests.clientType(of: $0) }
+    XCTAssertEqual(forwarded, [0, 5])
+  }
+
   func testAccessibilityCommandsProducesCorrectFlatOutput() async throws {
     let children = [defaultTitleLabel, defaultOkButton, defaultCancelButton]
     try setUp(withRootElement: defaultRoot(withChildren: children))
