@@ -67,7 +67,7 @@ public final class SimulatorVideoRecordingCommands: VideoRecordingCommands {
     let video = SimulatorVideo.video(withFramebuffer: framebuffer, configuration: configuration, filePath: filePath, logger: simulator.logger)
     try await video.startRecording()
     self.video = video
-    return SimulatorVideoRecording(commands: self)
+    return SimulatorVideoRecording(commands: self, simulator: simulator)
   }
 
   public func stop() async throws -> URL {
@@ -82,6 +82,11 @@ public final class SimulatorVideoRecordingCommands: VideoRecordingCommands {
 
 private struct SimulatorVideoRecording: VideoRecording {
   let commands: SimulatorVideoRecordingCommands
+  // The active recording lives on `commands`, which its `Simulator` memoizes but only weakly
+  // points back to. Holding the simulator keeps it the device's live instance for as long as the
+  // recording can be stopped, so a later lookup reaches these commands rather than fresh ones
+  // that know nothing of the recording.
+  let simulator: Simulator
 
   func stop() async throws -> URL {
     try await commands.stop()
