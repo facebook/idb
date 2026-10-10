@@ -98,7 +98,7 @@ struct SimulatorSetIdentityTests {
     let set = Self.makeSet(deviceSet)
 
     _ = set.simulator(withUDID: target.UDID.uuidString)
-    #expect(devices.map(\.deviceTypeReads).reduce(0, +) == devices.count)
+    #expect(devices.map(\.deviceTypeReads).reduce(0, +) == 1)
   }
 
   @Test func vendedSimulatorCarriesTheSetsHIDEventLogging() {

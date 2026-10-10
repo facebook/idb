@@ -18,13 +18,10 @@ public final class SimulatorSet: TargetSet {
   public let workQueue: DispatchQueue
   public let asyncQueue: DispatchQueue
 
-  private var _allSimulators: [Simulator]
-  // Guards _allSimulators: the allSimulators getter re-inflates and swaps the
-  // backing array, and is called from arbitrary threads (lookups at companion
-  // startup, delegate notification, description). Unsynchronized, the swap
-  // races iteration in concurrent callers.
-  private let simulatorsLock = NSLock()
-  private lazy var inflationStrategy = SimulatorInflationStrategy.strategy(for: self)
+  // Keeps every `Simulator` the set has vended alive for the set's lifetime. Guarded by
+  // `vendedLock`, as lookups arrive from arbitrary threads.
+  private var vended: [String: Simulator] = [:]
+  private let vendedLock = NSLock()
 
   // Held only so that the strategy's notifier stays registered for the lifetime of the set; it is never read.
   private var notificationUpdateStrategy: SimulatorNotificationUpdateStrategy?
@@ -45,7 +42,6 @@ public final class SimulatorSet: TargetSet {
     self.logger = logger
     self.workQueue = DispatchQueue.main
     self.asyncQueue = DispatchQueue.global(qos: .default)
-    self._allSimulators = []
     self.notificationUpdateStrategy = SimulatorNotificationUpdateStrategy.strategy(with: self)
   }
 
@@ -56,7 +52,21 @@ public final class SimulatorSet: TargetSet {
   }
 
   public func simulator(withUDID udid: String) -> Simulator? {
-    return allSimulators.first { $0.udid == udid }
+    guard let uuid = NSUUID(uuidString: udid) else {
+      return nil
+    }
+    // `vended` is keyed by the canonical form, which the caller's spelling need not match.
+    let key = uuid.uuidString
+    guard let item = deviceSet.devicesByUDID?[uuid] else {
+      forget { $0 == key }
+      return nil
+    }
+    let device = Self.simDevice(item)
+    guard device.available else {
+      forget { $0 == key }
+      return nil
+    }
+    return vend(device)
   }
 
   // MARK: - Creation
@@ -123,26 +133,34 @@ public final class SimulatorSet: TargetSet {
   }
 
   public var allSimulators: [Simulator] {
-    simulatorsLock.lock()
-    defer { simulatorsLock.unlock() }
-    _allSimulators = inflationStrategy.inflate(
-      fromDevices: deviceSet.availableDevices,
-      exitingSimulators: _allSimulators
-    )
-    .sorted { ($0 as Simulator).compare($1 as any Target) == .orderedAscending }
-    return _allSimulators
+    let devices = (deviceSet.availableDevices ?? []).map(Self.simDevice)
+    let available = Set(devices.map { $0.udid.uuidString })
+    forget { !available.contains($0) }
+    return devices.map(vend).sorted { ($0 as Simulator).compare($1 as any Target) == .orderedAscending }
   }
 
-  private static func keySimulatorsByUDID(_ simulators: [Simulator]) -> [String: Simulator] {
-    var dictionary: [String: Simulator] = [:]
-    for simulator in simulators {
-      dictionary[simulator.udid] = simulator
-    }
-    return dictionary
+  // Unchecked because unit tests stand in doubles that respond to `SimDevice`'s selectors without
+  // being instances of it, which a checked cast rejects. A real `SimDeviceSet` vends only `SimDevice`s.
+  private static func simDevice(_ item: Any) -> SimDevice {
+    unsafeBitCast(item as AnyObject, to: SimDevice.self)
+  }
+
+  private func vend(_ device: SimDevice) -> Simulator {
+    let simulator = Simulator.fromSimDevice(device, set: self)
+    vendedLock.lock()
+    defer { vendedLock.unlock() }
+    vended[simulator.udid] = simulator
+    return simulator
+  }
+
+  private func forget(where departed: (String) -> Bool) {
+    vendedLock.lock()
+    defer { vendedLock.unlock() }
+    vended = vended.filter { !departed($0.key) }
   }
 
   private func fetchNewlyMadeSimulatorOrThrow(_ device: SimDevice) throws -> Simulator {
-    guard let simulator = SimulatorSet.keySimulatorsByUDID(allSimulators)[device.udid.uuidString] else {
+    guard let simulator = simulator(withUDID: device.udid.uuidString) else {
       throw SimulatorSetError.simulatorNotInflated(udid: device.udid.uuidString)
     }
     return simulator
