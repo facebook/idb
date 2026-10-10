@@ -55,7 +55,7 @@ final class SimulatorInflationStrategy {
     var inflated: [Simulator] = []
     for udid in udids {
       if let device = availableDevices[udid] {
-        let simulator = Simulator.fromSimDevice(device, configuration: nil, set: set)
+        let simulator = Simulator.fromSimDevice(device, set: set)
         inflated.append(simulator)
       }
     }

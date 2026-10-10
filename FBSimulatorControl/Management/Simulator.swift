@@ -45,17 +45,41 @@ public final class Simulator: Target, Hashable, CustomStringConvertible, @unchec
 
   // MARK: - Initializers
 
-  public static func fromSimDevice(_ device: SimDevice, configuration: SimulatorConfiguration?, set: SimulatorSet) -> Simulator {
-    Simulator(
-      device: device,
-      configuration: configuration ?? SimulatorConfiguration.inferSimulatorConfiguration(fromDevice: device),
-      set: set,
-      auxillaryDirectory: auxillaryDirectory(fromSimDevice: device),
-      logger: set.logger,
-      hidEventLogging: set.configuration.hidEventLogging)
+  /// The `Simulator` for `device`, without going through a `SimulatorSet`.
+  ///
+  /// There is at most one live `Simulator` per device in the process, whether it is obtained here
+  /// or from a `SimulatorSet`: if one is already held anywhere, it is returned and `logger` and
+  /// `hidEventLogging` are ignored. Once nothing holds it, the next request builds a fresh instance,
+  /// without the memoized commands or connections of the previous one.
+  public static func fromSimDevice(
+    _ device: SimDevice,
+    logger: (any ControlCoreLogger)? = nil,
+    hidEventLogging: SimulatorHIDEventLogging = .redacted
+  ) -> Simulator {
+    SimulatorRegistry.shared.simulator(for: device) { device in
+      Simulator(device: device, set: nil, logger: logger, hidEventLogging: hidEventLogging)
+    }
   }
 
-  public init(
+  static func fromSimDevice(_ device: SimDevice, set: SimulatorSet) -> Simulator {
+    SimulatorRegistry.shared.simulator(for: device) { device in
+      Simulator(device: device, set: set, logger: set.logger, hidEventLogging: set.configuration.hidEventLogging)
+    }
+  }
+
+  private convenience init(device: SimDevice, set: SimulatorSet?, logger: (any ControlCoreLogger)?, hidEventLogging: SimulatorHIDEventLogging) {
+    self.init(
+      device: device,
+      configuration: SimulatorConfiguration.inferSimulatorConfiguration(fromDevice: device),
+      set: set,
+      auxillaryDirectory: Self.auxillaryDirectory(fromSimDevice: device),
+      logger: logger,
+      hidEventLogging: hidEventLogging)
+  }
+
+  /// Bypasses `SimulatorRegistry`, so nothing guarantees this is the only live instance for
+  /// `device`. Only the registry's factories and tests construct through it.
+  init(
     device: SimDevice,
     configuration: SimulatorConfiguration,
     set: SimulatorSet?,

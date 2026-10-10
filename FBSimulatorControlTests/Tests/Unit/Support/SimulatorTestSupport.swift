@@ -7,7 +7,7 @@
 
 @preconcurrency import CoreSimulator
 import FBControlCore
-import FBSimulatorControl
+@testable import FBSimulatorControl
 import Foundation
 
 /// Bare-minimum `SimDevice` stand-in: `Simulator.init` reads only `UDID.uuidString` (to name the

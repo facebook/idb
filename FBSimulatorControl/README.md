@@ -47,6 +47,7 @@ For a high level overview:
 - `SimulatorControlBootstrap` is the entry point. It is the first object that you should create, with `SimulatorControlBootstrap.withConfiguration(_:)`. It creates a `SimulatorSet` upon creation, exposed as `set`.
 - `SimulatorSet` wraps `SimDeviceSet` and provides a resilient CRUD API for Deleting, Creating and Erasing Simulators.
 - `Simulator` is a reference type that represents an individual Simulator. It has a number of convenience methods for accessing information about a Simulator. Many of the possible actions you can perform on a Simulator are present on instances of this class.
+- A `Simulator` can also be obtained directly from a `SimDevice` you already have, with `Simulator.fromSimDevice(_:logger:hidEventLogging:)`, without creating a `SimulatorSet`. Either way there is at most one live `Simulator` per device in the process: state such as memoized commands and the HID connection hangs off the instance, so a second instance for the same device would split it. Once nothing holds a `Simulator`, the next request for its device builds a fresh one.
 - Configuration values: `ApplicationLaunchConfiguration`, `SimulatorControlConfiguration`, `SimulatorConfiguration` & `SimulatorBootConfiguration`, all structs.
 
 
