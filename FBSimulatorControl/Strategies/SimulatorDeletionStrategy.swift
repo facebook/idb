@@ -26,7 +26,7 @@ final class SimulatorDeletionStrategy {
     // Capture the Log Directory ahead of time as the Simulator will disappear on deletion.
     let coreSimulatorLogsDirectory = simulator.coreSimulatorLogsDirectory
     let udid = simulator.udid
-    guard let set = simulator.set else {
+    guard let deviceSet = simulator.device.deviceSet else {
       throw SimulatorSetError.simulatorHasNoSet(udid: simulator.udid)
     }
     let logger = simulator.logger
@@ -35,7 +35,7 @@ final class SimulatorDeletionStrategy {
     try await SimulatorShutdownStrategy.shutdown(simulator)
 
     logger.log("Deleting Simulator \(simulator)")
-    try await performDeletion(of: simulator.device, on: set.deviceSet, queue: simulator.asyncQueue)
+    try await performDeletion(of: simulator.device, on: deviceSet, queue: simulator.asyncQueue)
 
     logger.log("Simulator \(udid) Deleted")
 
@@ -50,7 +50,7 @@ final class SimulatorDeletionStrategy {
     }
 
     logger.log("Confirming \(udid) has been removed from set")
-    try await confirmSimulatorUDID(udid, isRemovedFromSet: set)
+    try await confirmSimulatorUDID(udid, isRemovedFromSet: deviceSet)
     logger.log("\(udid) has been removed from set")
   }
 
@@ -60,15 +60,15 @@ final class SimulatorDeletionStrategy {
     }
   }
 
-  private static func confirmSimulatorUDID(_ udid: String, isRemovedFromSet set: SimulatorSet) async throws {
+  private static func confirmSimulatorUDID(_ udid: String, isRemovedFromSet deviceSet: SimDeviceSet) async throws {
     // Deleting the device from the set can still leave it around for a few seconds.
     let timeout = ControlCoreGlobalConfiguration.regularTimeout
     let deadline = Date().addingTimeInterval(timeout)
     let pollIntervalNs = UInt64(0.1 * Double(NSEC_PER_SEC))
     while true {
       try Task.checkCancellation()
-      let simulatorsInSet = Set(set.allSimulators.map { $0.udid })
-      if !simulatorsInSet.contains(udid) {
+      let udidsInSet = (deviceSet.availableDevices ?? []).compactMap { ($0 as? SimDevice)?.udid.uuidString }
+      if !udidsInSet.contains(udid) {
         return
       }
       if Date() >= deadline {
