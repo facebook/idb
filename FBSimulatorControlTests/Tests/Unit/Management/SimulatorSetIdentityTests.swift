@@ -87,7 +87,7 @@ struct SimulatorSetIdentityTests {
     autoreleasepool {
       dropped = set.simulator(withUDID: device.UDID.uuidString)
     }
-    #expect(dropped != nil)
+    #expect(dropped == nil)
   }
 
   @Test func wrappersConstructedBySingleLookup() {

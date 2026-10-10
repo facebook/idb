@@ -9,6 +9,11 @@
 @preconcurrency import FBControlCore
 import Foundation
 
+/// Queries, creates and deletes the simulators in a `SimDeviceSet`, and reports their changes to its `delegate`.
+///
+/// A set does not own the `Simulator`s it returns: they come from the same process-wide registry as
+/// `Simulator.fromSimDevice(_:logger:hidEventLogging:)`, so a device has one live `Simulator`
+/// however it is reached, and the set keeps none alive.
 public final class SimulatorSet: TargetSet {
 
   public let configuration: SimulatorControlConfiguration
@@ -17,11 +22,6 @@ public final class SimulatorSet: TargetSet {
   public let logger: any ControlCoreLogger
   public let workQueue: DispatchQueue
   public let asyncQueue: DispatchQueue
-
-  // Keeps every `Simulator` the set has vended alive for the set's lifetime. Guarded by
-  // `vendedLock`, as lookups arrive from arbitrary threads.
-  private var vended: [String: Simulator] = [:]
-  private let vendedLock = NSLock()
 
   // Held only so that the strategy's notifier stays registered for the lifetime of the set; it is never read.
   private var notificationUpdateStrategy: SimulatorNotificationUpdateStrategy?
@@ -52,18 +52,11 @@ public final class SimulatorSet: TargetSet {
   }
 
   public func simulator(withUDID udid: String) -> Simulator? {
-    guard let uuid = NSUUID(uuidString: udid) else {
-      return nil
-    }
-    // `vended` is keyed by the canonical form, which the caller's spelling need not match.
-    let key = uuid.uuidString
-    guard let item = deviceSet.devicesByUDID?[uuid] else {
-      forget { $0 == key }
+    guard let uuid = NSUUID(uuidString: udid), let item = deviceSet.devicesByUDID?[uuid] else {
       return nil
     }
     let device = Self.simDevice(item)
     guard device.available else {
-      forget { $0 == key }
       return nil
     }
     return vend(device)
@@ -134,8 +127,6 @@ public final class SimulatorSet: TargetSet {
 
   public var allSimulators: [Simulator] {
     let devices = (deviceSet.availableDevices ?? []).map(Self.simDevice)
-    let available = Set(devices.map { $0.udid.uuidString })
-    forget { !available.contains($0) }
     return devices.map(vend).sorted { ($0 as Simulator).compare($1 as any Target) == .orderedAscending }
   }
 
@@ -146,17 +137,7 @@ public final class SimulatorSet: TargetSet {
   }
 
   private func vend(_ device: SimDevice) -> Simulator {
-    let simulator = Simulator.fromSimDevice(device, set: self)
-    vendedLock.lock()
-    defer { vendedLock.unlock() }
-    vended[simulator.udid] = simulator
-    return simulator
-  }
-
-  private func forget(where departed: (String) -> Bool) {
-    vendedLock.lock()
-    defer { vendedLock.unlock() }
-    vended = vended.filter { !departed($0.key) }
+    Simulator.fromSimDevice(device, logger: logger, hidEventLogging: configuration.hidEventLogging)
   }
 
   private func fetchNewlyMadeSimulatorOrThrow(_ device: SimDevice) throws -> Simulator {

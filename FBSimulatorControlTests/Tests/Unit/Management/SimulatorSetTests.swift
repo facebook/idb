@@ -29,42 +29,34 @@ final class SimulatorSetTests: SimulatorSetTestCase {
     var simulator = simulators[0]
     XCTAssertEqual(simulator.name, "iPhone 5")
     XCTAssertEqual(simulator.state, .creating)
-    XCTAssert(simulator.set === self.set)
 
     simulator = simulators[1]
     XCTAssertEqual(simulator.name, "iPhone 5")
     XCTAssertEqual(simulator.state, .shutdown)
-    XCTAssert(simulator.set === self.set)
 
     simulator = simulators[2]
     XCTAssertEqual(simulator.name, "iPhone 5")
     XCTAssertEqual(simulator.state, .booted)
-    XCTAssert(simulator.set === self.set)
 
     simulator = simulators[3]
     XCTAssertEqual(simulator.name, "iPhone 6s")
     XCTAssertEqual(simulator.state, .shuttingDown)
-    XCTAssert(simulator.set === self.set)
 
     simulator = simulators[4]
     XCTAssertEqual(simulator.name, "iPad 2")
     XCTAssertEqual(simulator.state, .booted)
-    XCTAssert(simulator.set === self.set)
 
     simulator = simulators[5]
     XCTAssertEqual(simulator.name, "iPad Air")
     XCTAssertEqual(simulator.state, .booted)
-    XCTAssert(simulator.set === self.set)
 
     simulator = simulators[6]
     XCTAssertEqual(simulator.name, "iPad Air 2")
     XCTAssertEqual(simulator.state, .creating)
-    XCTAssert(simulator.set === self.set)
 
     simulator = simulators[7]
     XCTAssertEqual(simulator.name, "iPhone 5")
     XCTAssertEqual(simulator.state, .shutdown)
-    XCTAssert(simulator.set === self.set)
   }
 
   func testReferencesForSimulatorsAreTheSame() {

@@ -51,8 +51,6 @@ final class SimulatorNotificationUpdateStrategy: @unchecked Sendable {
     Task {
       await simulator.hid.disconnect()
     }
-    if let simulatorSet = simulator.set {
-      set.delegate?.targetUpdated(simulator, in: simulatorSet)
-    }
+    set.delegate?.targetUpdated(simulator, in: set)
   }
 }

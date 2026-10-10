@@ -234,7 +234,10 @@ private func deviceForECID(_ ecid: String, logger: ControlCoreLogger) async thro
 }
 
 private func resolveSimulator(_ udid: String, userDefaults: UserDefaults, logger: ControlCoreLogger) async throws -> Simulator {
-  let set = try simulatorSet(userDefaults, logger: logger)
+  try resolveSimulator(udid, in: try simulatorSet(userDefaults, logger: logger), logger: logger)
+}
+
+private func resolveSimulator(_ udid: String, in set: SimulatorSet, logger: ControlCoreLogger) throws -> Simulator {
   let target = try TargetProvider.target(withUDID: udid, targetSets: [set], warmUp: false, logger: logger)
   guard let simulator = target as? Simulator else {
     throw IDBCompanionError.simulatorLifecycleUnsupported(targetDescription: String(describing: target))
@@ -347,12 +350,10 @@ private func runCreate(_ create: String, userDefaults: UserDefaults, logger: Con
 
 private func runClone(_ udid: String, userDefaults: UserDefaults, logger: ControlCoreLogger) async throws {
   let destinationSet = userDefaults.string(forKey: "-clone-destination-set")
-  let base = try await resolveSimulator(udid, userDefaults: userDefaults, logger: logger)
+  let sourceSet = try simulatorSet(userDefaults, logger: logger)
+  let base = try resolveSimulator(udid, in: sourceSet, logger: logger)
   let destination = try simulatorSetWithPath(destinationSet, userDefaults: userDefaults, logger: logger)
-  guard let baseSet = base.set else {
-    throw SimulatorSetError.simulatorHasNoSet(udid: base.udid)
-  }
-  let cloned = try await baseSet.cloneSimulator(base, toDeviceSet: destination)
+  let cloned = try await sourceSet.cloneSimulator(base, toDeviceSet: destination)
   writeTargetToStdOut(cloned)
 }
 

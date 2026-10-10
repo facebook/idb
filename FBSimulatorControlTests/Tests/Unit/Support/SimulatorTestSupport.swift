@@ -74,7 +74,6 @@ enum SimulatorTestSupport {
     return Simulator(
       device: asSimDevice(device),
       configuration: configuration,
-      set: nil,
       auxillaryDirectory: NSTemporaryDirectory(),
       logger: logger)
   }

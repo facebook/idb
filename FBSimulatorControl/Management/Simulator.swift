@@ -22,13 +22,6 @@ public final class Simulator: Target, Hashable, CustomStringConvertible, @unchec
   /// The underlying `SimDevice`.
   public let device: SimDevice
 
-  /// The Simulator Set that the Simulator belongs to. Nil for simulators created outside a set.
-  ///
-  /// Referencing `SimulatorSet` here forms a strong-strong reference cycle between the set and
-  /// the simulator. The set breaks it explicitly when a simulator is removed from the device set
-  /// it wraps.
-  public private(set) var set: SimulatorSet?
-
   /// The `SimulatorConfiguration` representing this Simulator.
   public let configuration: SimulatorConfiguration
 
@@ -57,21 +50,14 @@ public final class Simulator: Target, Hashable, CustomStringConvertible, @unchec
     hidEventLogging: SimulatorHIDEventLogging = .redacted
   ) -> Simulator {
     SimulatorRegistry.shared.simulator(for: device) { device in
-      Simulator(device: device, set: nil, logger: logger, hidEventLogging: hidEventLogging)
+      Simulator(device: device, logger: logger, hidEventLogging: hidEventLogging)
     }
   }
 
-  static func fromSimDevice(_ device: SimDevice, set: SimulatorSet) -> Simulator {
-    SimulatorRegistry.shared.simulator(for: device) { device in
-      Simulator(device: device, set: set, logger: set.logger, hidEventLogging: set.configuration.hidEventLogging)
-    }
-  }
-
-  private convenience init(device: SimDevice, set: SimulatorSet?, logger: (any ControlCoreLogger)?, hidEventLogging: SimulatorHIDEventLogging) {
+  private convenience init(device: SimDevice, logger: (any ControlCoreLogger)?, hidEventLogging: SimulatorHIDEventLogging) {
     self.init(
       device: device,
       configuration: SimulatorConfiguration.inferSimulatorConfiguration(fromDevice: device),
-      set: set,
       auxillaryDirectory: Self.auxillaryDirectory(fromSimDevice: device),
       logger: logger,
       hidEventLogging: hidEventLogging)
@@ -82,14 +68,12 @@ public final class Simulator: Target, Hashable, CustomStringConvertible, @unchec
   init(
     device: SimDevice,
     configuration: SimulatorConfiguration,
-    set: SimulatorSet?,
     auxillaryDirectory: String,
     logger: (any ControlCoreLogger)?,
     hidEventLogging: SimulatorHIDEventLogging = .redacted
   ) {
     self.device = device
     self.configuration = configuration
-    self.set = set
     self.auxillaryDirectory = auxillaryDirectory
     self.hidEventLogging = hidEventLogging
     self.logger = (logger ?? ControlCoreGlobalConfiguration.defaultLogger).withName(device.udid.uuidString)
