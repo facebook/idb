@@ -217,8 +217,8 @@ public enum Staging {
       try await download(
         url, extractingTo: file.path, totalStart: totalStart, configuration: downloadConfiguration,
         logger: logger, onProgress: onProgress, onReport: onReport
-      ) { pipe in
-        try await pipe.reading { source in
+      ) { spool in
+        try await spool.reading { source in
           try await FBArchiveOperations.extractGzip(from: source, toPath: file.path)
         }
       }
@@ -228,9 +228,9 @@ public enum Staging {
         try await download(
           url, extractingTo: extractPath, totalStart: totalStart, configuration: downloadConfiguration,
           logger: logger, onProgress: onProgress, onReport: onReport
-        ) { pipe in
+        ) { spool in
           try await extractDownload(
-            pipe, spoolingIn: spoolDirectory, to: extractPath, options: options, logger: logger, onReport: onReport)
+            spool, spoolingIn: spoolDirectory, to: extractPath, options: options, logger: logger, onReport: onReport)
         }
       }
     }
@@ -248,7 +248,7 @@ public enum Staging {
     logger: any ControlCoreLogger,
     onProgress: @escaping @Sendable (InstallProgressEvent) -> Void,
     onReport: @escaping @Sendable (StagingReport) -> Void,
-    extract: @escaping @Sendable (BytePipe) async throws -> Void
+    extract: @escaping @Sendable (DownloadSpool) async throws -> Void
   ) async throws {
     let downloadStart = Date()
     onProgress(.downloadStarted(timing: .measure(stageStart: downloadStart, totalStart: totalStart), url: url))
@@ -275,7 +275,7 @@ public enum Staging {
     }
 
     try await runExtractStage(to: extractPath, totalStart: totalStart, onProgress: onProgress) {
-      async let extraction: Void = extract(download.pipe)
+      async let extraction: Void = extract(download.spool)
       // The transfer's outcome first: the extractor only sees bytes and then an
       // end of file, so a failed transfer looks to it like a short archive.
       onReport(.download(try await download.completed()))
@@ -289,14 +289,14 @@ public enum Staging {
 
   /// A zip is spooled into `spoolDirectory` as it is extracted.
   private static func extractDownload(
-    _ pipe: BytePipe,
+    _ spool: DownloadSpool,
     spoolingIn spoolDirectory: URL,
     to extractPath: String,
     options: InstallOptions,
     logger: any ControlCoreLogger,
     onReport: @escaping @Sendable (StagingReport) -> Void
   ) async throws {
-    try await pipe.reading { source in
+    try await spool.reading { source in
       try await ArchiveExtractors.inProcess.extract(
         from: source, spoolingIn: spoolDirectory, to: extractPath, options: options.extractOptions, logger: logger
       ) { onReport(.route($0)) }

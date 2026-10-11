@@ -22,11 +22,11 @@ public enum DataDownloadEvent: Sendable {
 
 public final class DataDownloadInput: NSObject, @unchecked Sendable {
 
-  /// The downloaded bytes, written as they arrive and finished when the transfer ends.
-  public let pipe = BytePipe()
+  /// The downloaded bytes, written as they arrive and ended when the transfer ends.
+  public let spool = DownloadSpool()
 
   /// Waits for the transfer to finish, throwing if the server rejected the request or the connection
-  /// dropped. `pipe` alone cannot distinguish a failed download from a short one.
+  /// dropped. `spool` alone cannot distinguish a failed download from a short one.
   @discardableResult
   public func completed() async throws -> DownloadReport {
     try await finished.wait()
@@ -54,7 +54,7 @@ public final class DataDownloadInput: NSObject, @unchecked Sendable {
   /// caching policy and protocol handling are the caller's to decide.
   ///
   /// `onEvent` reports how many bytes have arrived, while the bytes themselves
-  /// still go only to `pipe`, so a caller can show progress without getting
+  /// still go only to `spool`, so a caller can show progress without getting
   /// between the download and whatever is consuming it.
   public static func dataDownload(
     withURL url: URL,
@@ -117,7 +117,7 @@ extension DataDownloadInput: URLSessionDataDelegate {
   }
 
   public func urlSession(_ session: URLSession, dataTask: URLSessionDataTask, didReceive data: Data) {
-    pipe.input.write(data)
+    spool.append(data)
     report.receivedBytes += Int64(data.count)
     onEvent?(.data(byteCount: data.count))
   }
@@ -135,7 +135,7 @@ extension DataDownloadInput: URLSessionDataDelegate {
     } else {
       finished.open()
     }
-    pipe.input.finish()
+    spool.end()
   }
 
   // The first failure wins, so a cancellation triggered by a rejected response

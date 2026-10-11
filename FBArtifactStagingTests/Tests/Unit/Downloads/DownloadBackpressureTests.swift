@@ -80,7 +80,7 @@ struct DownloadBackpressureTests {
     let configuration = URLSessionConfiguration.ephemeral
     configuration.timeoutIntervalForRequest = 600
     let download = DataDownloadInput.dataDownload(withURL: server.url, configuration: configuration, logger: logger)
-    try await download.pipe.reading { source in
+    try await download.spool.reading { source in
       let source = HandedOver(source)
       try await offCooperativePool { try reader.read(source.value, pause: 0.0005) }.get()
     }
@@ -89,14 +89,13 @@ struct DownloadBackpressureTests {
     return peak.withLock { $0 } - start
   }
 
-  /// BUG: nothing holds the download back from running ahead of the reader, and everything it is ahead by is held in
-  /// memory, so the footprint rises by most of the body -- flipped in the following commit. The footprint is the whole
-  /// process's, and other suites share it, so the body is large enough to stand well clear of what they add: a rise of
-  /// three quarters of it is the line either way.
+  /// What the download is ahead of its reader by is spooled to disk, so the footprint rises by far less than the body.
+  /// The footprint is the whole process's, and other suites share it, so the body is large enough to stand well clear
+  /// of what they add: a rise of three quarters of it is the line either way.
   @Test
   func aDownloadAheadOfItsReaderIsHeldInMemory() async throws {
     let size = 1 << 30
     let growth = try await peakFootprintGrowth(size: size)
-    #expect(growth > size / 4 * 3, "the footprint rose by at most \(growth >> 20) MB for a \(size >> 20) MB download")
+    #expect(growth < size / 4 * 3, "the footprint rose by at most \(growth >> 20) MB for a \(size >> 20) MB download")
   }
 }
