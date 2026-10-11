@@ -19,7 +19,10 @@
       "FBAXCoreTests"
     ],
     "FBArtifactStaging": [
-      "FBControlCoreTests"
+      "FBArtifactStagingTests"
+    ],
+    "FBArtifactStagingTests": [
+      "FBArtifactStagingTests"
     ],
     "FBControlCore": [
       "FBControlCoreTests"
@@ -136,6 +139,11 @@
       "runner": "standard"
     },
     "FBAXCoreTests": {
+      "bootedSimulator": false,
+      "prerequisites": [],
+      "runner": "standard"
+    },
+    "FBArtifactStagingTests": {
       "bootedSimulator": false,
       "prerequisites": [],
       "runner": "standard"
