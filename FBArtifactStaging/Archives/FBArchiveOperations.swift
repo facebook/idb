@@ -134,10 +134,17 @@ public enum FBArchiveOperations {
     } catch {
       // The writer reads `source`, which the caller may close once this returns.
       writer.stop()
-      _ = await written
+      // A source that fails ends the child's input early, so the child fails too; the source's failure is the cause.
+      if case .failure(let failure as StandardInputWriter.SourceFailure) = await written {
+        throw failure.underlying
+      }
       throw error
     }
-    try await written.get()
+    do {
+      try await written.get()
+    } catch let failure as StandardInputWriter.SourceFailure {
+      throw failure.underlying
+    }
   }
 
   /// Gzips the file at `path`, returning the compressed data.
@@ -253,12 +260,22 @@ private final class StandardInputWriter: Sendable {
   let input = InputSource()
   private let stopped = OSAllocatedUnfairLock(initialState: false)
 
+  /// What `source` threw, as distinct from the child refusing what was written to it.
+  struct SourceFailure: Error {
+    let underlying: any Error
+  }
+
   /// Blocks its thread until `source` ends, the child stops reading, or `stop()` is called.
   func write(from source: any ByteSource) throws {
     defer { input.finish() }
     var chunk = [UInt8](repeating: 0, count: 1 << 16)
     while !stopped.withLock({ $0 }) {
-      let count = try chunk.withUnsafeMutableBytes { try source.read(into: $0) }
+      let count: Int
+      do {
+        count = try chunk.withUnsafeMutableBytes { try source.read(into: $0) }
+      } catch {
+        throw SourceFailure(underlying: error)
+      }
       guard count > 0 else {
         return
       }

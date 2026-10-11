@@ -92,20 +92,7 @@ struct ExtractionUpstreamFailureTests {
     let error = await #expect(throws: (any Error).self) {
       try await extract(source, by: route)
     }
-    #expect(
-      Self.carriesInjectedFailure(error) == !Self.losesTheFailure(route, point),
-      "\(route) failing at \(point) threw \(String(describing: error))")
-  }
-
-  /// BUG: `bsdtar` sees a short archive and fails first, and its failure is reported in place of the source's -- flipped
-  /// in the following commit. Failing before `bsdtar` has read anything still reports the source's failure.
-  static func losesTheFailure(_ route: Route, _ point: Point) -> Bool {
-    switch (route, point) {
-    case (.bsdTar, .middle), (.bsdTar, .lastByte):
-      return true
-    case (.bsdTar, .start), (.bsdTar, .header), (.zipStream, _), (.inProcessTar, _):
-      return false
-    }
+    #expect(Self.carriesInjectedFailure(error), "\(route) failing at \(point) threw \(String(describing: error))")
   }
 
   @Test(arguments: Route.allCases)
