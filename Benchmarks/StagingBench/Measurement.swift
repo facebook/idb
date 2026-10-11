@@ -21,7 +21,7 @@ enum BenchSource: String, Codable, CaseIterable {
   case stream1M = "stream-1m"
   /// Over HTTP from a server on this host, as a URL install.
   case url
-  /// From a pipe that another thread writes the file into, as `cat app.ipa | idb2 install -`.
+  /// From a pipe that another thread writes the file into, read from its descriptor, as `cat app.ipa | idb2 install -`.
   case pipe
 
   static func parse(_ value: String) throws -> BenchSource {
@@ -175,7 +175,13 @@ final class PreparedSource: Sendable {
           continuation.finish()
         }, options: options, temporaryDirectory: temporaryDirectory, logger: logger, onReport: onReport)
     case .pipe:
-      try await stream(try Self.pipeChunks(of: archive), options: options, temporaryDirectory: temporaryDirectory, logger: logger, onReport: onReport)
+      // As sime2e reads standard input: straight from the descriptor.
+      let readEnd = try Self.pipe(of: archive)
+      defer { close(readEnd) }
+      try await Staging.withMaterialized(
+        .stream(FileDescriptorSource(readEnd)), as: .application, options: options, temporaryDirectory: temporaryDirectory, logger: logger,
+        onReport: onReport
+      ) { _ in }
     }
   }
 
@@ -201,11 +207,11 @@ final class PreparedSource: Sendable {
     } catch is ChunkSource.ReaderClosed {}
   }
 
-  /// The archive written into a kernel pipe by another thread, read back in 64 KiB chunks, as a shell pipeline feeds
-  /// standard input. A write that fails, which happens once staging stops reading, ends the archive there.
-  private static func pipeChunks(of archive: URL) throws -> AsyncThrowingStream<Data, any Error> {
+  /// The read end of a kernel pipe another thread writes the archive into, as a shell pipeline feeds standard input.
+  /// A write that fails, which happens once staging stops reading, ends the archive there.
+  private static func pipe(of archive: URL) throws -> Int32 {
     var descriptors: [Int32] = [0, 0]
-    guard pipe(&descriptors) == 0 else {
+    guard Darwin.pipe(&descriptors) == 0 else {
       throw POSIXError(POSIXErrorCode(rawValue: errno) ?? .EIO)
     }
     let (readEnd, writeEnd) = (descriptors[0], descriptors[1])
@@ -216,11 +222,7 @@ final class PreparedSource: Sendable {
       }
       while let chunk = try? input.read(upToCount: 1 << 16), !chunk.isEmpty, writeAll(chunk, to: writeEnd) {}
     }.start()
-    let handle = FileHandle(fileDescriptor: readEnd, closeOnDealloc: true)
-    return AsyncThrowingStream {
-      let chunk = handle.readData(ofLength: 1 << 16)
-      return chunk.isEmpty ? nil : chunk
-    }
+    return readEnd
   }
 
   private static func writeAll(_ chunk: Data, to descriptor: Int32) -> Bool {
