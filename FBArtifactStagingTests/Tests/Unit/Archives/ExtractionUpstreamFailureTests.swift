@@ -32,7 +32,7 @@ struct ExtractionUpstreamFailureTests {
       case .zipStream, .inProcessTar:
         return ArchiveExtractors.inProcess
       case .bsdTar:
-        return ArchiveExtractors.stream(.GZIP)
+        return SniffingExtractor(files: ArchiveExtractors.inProcessZip, tars: ArchiveExtractors.bsdTar)
       }
     }
   }

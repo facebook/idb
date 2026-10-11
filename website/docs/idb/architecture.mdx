@@ -191,7 +191,7 @@ Every `install` call reports one event, and ends its completion log line with th
 |---|---|---|
 | `size` | bytes | What reached the companion: streamed over the RPC for `data`, downloaded for `url`. For a failed download, what arrived before it failed. |
 | `payload_kind` | `data` \| `url` \| `file_path` | How the client handed over what to install. |
-| `stream_format` | `zip` \| `zip_zstd` \| `tar_gzip` \| `tar_zstd` \| `tar` \| `undetermined` | The archive format. For a streamed app it is what the client declared, falling back to what the first bytes say. |
+| `stream_format` | `zip` \| `zip_zstd` \| `tar_gzip` \| `tar_zstd` \| `tar` \| `undetermined` | The archive format, as its first bytes say, whatever the client declared. |
 | `extractor` | `zip_stream` \| `zip_spool` \| `tar_inprocess` \| `bsdtar` | The extractor that unpacked a streamed or downloaded archive. |
 | `zip_spool_fallback` | 0 \| 1 | For a zip, whether extracting it as it arrived failed and the spooled copy was extracted instead. |
 | `receive_ms` | ms | Time to receive a streamed payload, or to download a URL. |

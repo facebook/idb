@@ -210,18 +210,10 @@ public enum ArchiveExtractors {
   /// A zip file and every stream in-process, with `bsdtar` for anything they cannot read.
   public static let inProcess = SniffingExtractor(files: inProcessZip, tars: inProcessTar)
 
-  /// The extractor every extraction goes through unless a caller names another.
-  public static var `default`: any ArchiveExtractor { inProcess }
-
-  /// The extractor for a stream that a client compresses as it sends. `bsdtar`
-  /// reads a gzipped tar twice as fast as an in-process reader starved of input,
-  /// but macOS has no zstd decompressor for it to run.
-  public static func stream(_ compression: FBCompressionFormat) -> SniffingExtractor {
-    switch compression {
-    case .GZIP:
-      return SniffingExtractor(files: inProcessZip, tars: bsdTar)
-    case .ZSTD:
-      return inProcess
-    }
-  }
+  /// The extractor for a stream, unless a caller names another. Its route depends on the archive's first bytes alone,
+  /// never on what a client declared. A zip, a zstd zip or a zstd tar can only be read in-process. A plain tar is read
+  /// in-process, which is several times faster than `bsdtar` for one. A gzipped tar goes to `bsdtar`, which reads one
+  /// from a stream faster than the in-process extractor does for the archive an app usually is, of many files that
+  /// compress, though slower for a few large ones. A download, read from a file, is faster in-process throughout.
+  public static let `default` = SniffingExtractor(files: inProcessZip, tars: inProcessTar, gzippedTars: bsdTar)
 }

@@ -133,7 +133,7 @@ struct IDBCommandExecutorInstallTests {
     let app = try harness.makeBundle(named: "Sample", extension: "app", identifier: "com.example.sample")
     let archive = MacInstallHarness.zstd(try harness.tarData(of: app))
 
-    let artifact = try await harness.executor.install(.application(makeDebuggable: false), from: .stream(ChunkSource(archive)), options: InstallOptions(compression: .ZSTD))
+    let artifact = try await harness.executor.install(.application(makeDebuggable: false), from: .stream(ChunkSource(archive)))
 
     #expect(artifact.name == "com.example.sample")
   }
@@ -144,7 +144,7 @@ struct IDBCommandExecutorInstallTests {
     let dsym = try harness.makeBundle(named: "Sample", extension: "dSYM", identifier: "com.example.sample")
     let archive = MacInstallHarness.zstd(try harness.tarData(of: dsym))
 
-    let artifact = try await harness.executor.install(.dsym(linkTo: nil), from: .stream(ChunkSource(archive)), options: InstallOptions(compression: .ZSTD))
+    let artifact = try await harness.executor.install(.dsym(linkTo: nil), from: .stream(ChunkSource(archive)))
 
     #expect(artifact.name == "Sample.dSYM")
     #expect(FileManager.default.fileExists(atPath: artifact.path.appendingPathComponent("Info.plist").path))

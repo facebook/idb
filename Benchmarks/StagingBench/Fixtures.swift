@@ -52,6 +52,7 @@ enum BenchFormat: String, Codable, CaseIterable {
   case ipaDeflated = "ipa-deflated"
   /// A stored zip in a zstd frame behind the zstd-zip marker, as clients that negotiate it stream an `.ipa`.
   case zipZstd = "zip-zstd"
+  case tar
   case tarGzip = "tar-gz"
   case tarZstd = "tar-zst"
 
@@ -60,16 +61,6 @@ enum BenchFormat: String, Codable, CaseIterable {
       throw ValidationError("Unknown format \(value)")
     }
     return format
-  }
-
-  /// The compression a client that sent this format would declare.
-  var declaredCompression: FBCompressionFormat {
-    switch self {
-    case .tarZstd, .zipZstd:
-      return .ZSTD
-    case .ipaStored, .ipaDeflated, .tarGzip:
-      return .GZIP
-    }
   }
 }
 
@@ -95,6 +86,8 @@ struct Fixtures {
       try run("/usr/bin/zip", ["-qry0", partial.path, app.lastPathComponent], in: directory)
     case .ipaDeflated:
       try run("/usr/bin/zip", ["-qry", partial.path, app.lastPathComponent], in: directory)
+    case .tar:
+      try run("/usr/bin/tar", ["-cf", partial.path, app.lastPathComponent], in: directory)
     case .tarGzip:
       try run("/usr/bin/tar", ["-czf", partial.path, app.lastPathComponent], in: directory)
     case .zipZstd:

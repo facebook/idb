@@ -20,36 +20,19 @@ enum InstallPayloadKind: String {
   case filePath = "file_path"
 }
 
-/// The format of an app streamed over the RPC, which the client picks from what the companion advertises.
-enum InstallStreamFormat: String {
-  case zip
-  case zstdZip = "zip_zstd"
-  case gzipTar = "tar_gzip"
-  case zstdTar = "tar_zstd"
-
-  init(tarCompression: FBCompressionFormat) {
-    switch tarCompression {
-    case .GZIP:
-      self = .gzipTar
-    case .ZSTD:
-      self = .zstdTar
-    }
-  }
-}
-
 extension ArchiveFormat {
 
-  /// Named as `InstallStreamFormat` names what a client streams, for an archive told apart by its first bytes.
-  fileprivate var streamFormatName: String {
+  /// The `stream_format` column's name for an archive told apart by its first bytes.
+  var streamFormatName: String {
     switch self {
     case .zip:
-      InstallStreamFormat.zip.rawValue
+      "zip"
     case .zstdZip:
-      InstallStreamFormat.zstdZip.rawValue
+      "zip_zstd"
     case .gzip:
-      InstallStreamFormat.gzipTar.rawValue
+      "tar_gzip"
     case .zstd:
-      InstallStreamFormat.zstdTar.rawValue
+      "tar_zstd"
     case .other:
       "tar"
     case .undetermined:
@@ -92,7 +75,6 @@ final class InstallTelemetry: Sendable {
   }
 
   private struct State {
-    var streamFormat: InstallStreamFormat?
     var route: ExtractionRoute?
     var timeToFirstByte: TimeInterval?
     var receivedBytes: Int64?
@@ -109,10 +91,6 @@ final class InstallTelemetry: Sendable {
 
   init(payloadKind: InstallPayloadKind) {
     self.payloadKind = payloadKind
-  }
-
-  func streamed(_ format: InstallStreamFormat) {
-    state.withLock { $0.streamFormat = format }
   }
 
   func staged(_ report: StagingReport) {
@@ -195,8 +173,7 @@ final class InstallTelemetry: Sendable {
   func record(into call: CallTelemetry) {
     let state = self.state.withLock { $0 }
     call.setNormal(payloadKind.rawValue, forKey: "payload_kind")
-    // What a client declared it streamed is kept over what the first bytes said, as rows have always reported it.
-    if let streamFormat = state.streamFormat?.rawValue ?? state.route?.format.streamFormatName {
+    if let streamFormat = state.route?.format.streamFormatName {
       call.setNormal(streamFormat, forKey: "stream_format")
     }
     if let route = state.route {

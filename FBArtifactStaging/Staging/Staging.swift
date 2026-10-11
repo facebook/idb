@@ -31,12 +31,8 @@ public struct InstallOptions: Sendable {
   /// Discard the modification times recorded in the archive.
   public var overrideModificationTime: Bool
 
-  /// The compression the producer applied, where the container does not say.
-  public var compression: FBCompressionFormat
-
-  public init(overrideModificationTime: Bool = false, compression: FBCompressionFormat = .GZIP) {
+  public init(overrideModificationTime: Bool = false) {
     self.overrideModificationTime = overrideModificationTime
-    self.compression = compression
   }
 
   fileprivate var extractOptions: ArchiveExtractOptions {
@@ -227,7 +223,7 @@ public enum Staging {
       return try await temporaryDirectory.withTemporaryDirectory { spoolDirectory in
         try await runExtractStage(to: extractPath, totalStart: totalStart, onProgress: onProgress) {
           try await stagePayload(
-            source, as: kind, with: ArchiveExtractors.stream(options.compression), in: stagingDirectory, spoolingIn: spoolDirectory,
+            source, as: kind, with: ArchiveExtractors.default, in: stagingDirectory, spoolingIn: spoolDirectory,
             options: options, logger: logger, onReport: onReport)
         }
       }
@@ -252,6 +248,9 @@ public enum Staging {
 
   /// Stages what `source` reads with `extractor`, unless `kind` is a dylib that arrives as a single file. A zip is
   /// spooled into `spoolDirectory` as it is extracted.
+  ///
+  /// A download is read from its spool, a file the in-process extractors read faster than `bsdtar` whatever the
+  /// format, so downloads are extracted entirely in-process; a stream takes the default extractor's routes.
   private static func stagePayload(
     _ source: any ByteSource,
     as kind: ArtifactKind,

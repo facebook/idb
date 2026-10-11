@@ -13,12 +13,11 @@ extension TemporaryDirectory {
   /// Extracts the archive `source` reads into a temporary directory scoped to `body`.
   public func withArchiveExtracted<T>(
     fromStream source: any ByteSource,
-    compression: FBCompressionFormat,
     overrideModificationTime overrideMTime: Bool = false,
     _ body: (URL) async throws -> T
   ) async throws -> T {
     try await withTemporaryDirectory { tempDir in
-      try await ArchiveExtractors.stream(compression).extract(
+      try await ArchiveExtractors.default.extract(
         from: source, to: tempDir.path,
         options: ArchiveExtractOptions(overrideModificationTime: overrideMTime),
         logger: logger)
@@ -28,7 +27,7 @@ extension TemporaryDirectory {
 
   /// Extracts the gzipped tar in `tarData` into a temporary directory scoped to `body`.
   public func withArchiveExtracted<T>(_ tarData: Data, _ body: (URL) async throws -> T) async throws -> T {
-    try await withArchiveExtracted(fromStream: ChunkSource(tarData), compression: .GZIP, body)
+    try await withArchiveExtracted(fromStream: ChunkSource(tarData), body)
   }
 
   /// Extracts the archive at `filePath` into a temporary directory scoped to `body`.

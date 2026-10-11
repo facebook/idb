@@ -76,7 +76,6 @@ struct InstallMethodHandler {
         name: header.nameHint ?? UUID().uuidString,
         makeDebuggable: header.makeDebuggable,
         linkToBundle: header.linkDsymToBundle.map { readLinkBundleToDsym(from: $0) },
-        compression: header.compression,
         overrideModificationTime: header.overrideModificationTime,
         skipSigningBundles: header.skipSigningBundles,
         telemetry: telemetry,
@@ -93,7 +92,6 @@ struct InstallMethodHandler {
     name: String,
     makeDebuggable: Bool,
     linkToBundle: DsymInstallLinkToBundle?,
-    compression: FBCompressionFormat,
     overrideModificationTime: Bool,
     skipSigningBundles: Bool,
     telemetry: InstallTelemetry,
@@ -116,8 +114,8 @@ struct InstallMethodHandler {
       throw RPCError(code: .invalidArgument, message: "Unrecognized destination")
     }
 
-    func install(from source: InstallSource, compression: FBCompressionFormat = .GZIP) async throws -> InstalledArtifact {
-      let options = InstallOptions(overrideModificationTime: overrideModificationTime, compression: compression)
+    func install(from source: InstallSource) async throws -> InstalledArtifact {
+      let options = InstallOptions(overrideModificationTime: overrideModificationTime)
       return try await commandExecutor.install(
         installDestination, from: source, options: options,
         onProgress: { event in
@@ -127,40 +125,15 @@ struct InstallMethodHandler {
         onReport: telemetry.staged)
     }
 
-    func installStreamed(_ dataStream: any ByteSource, compression: FBCompressionFormat) async throws -> InstalledArtifact {
-      try await install(from: .stream(dataStream), compression: compression)
-    }
-
-    func installStream(_ dataStream: any ByteSource, format: InstallStreamFormat, head: Data) async throws -> InstalledArtifact {
-      let tarCompression: FBCompressionFormat
-      switch format {
-      case .zip, .zstdZip:
-        return try await installStreamed(dataStream, compression: compression)
-      case .gzipTar:
-        tarCompression = .GZIP
-      case .zstdTar:
-        tarCompression = .ZSTD
-      }
-      if tarCompression != compression {
-        let prefix = head.prefix(16).map { String(format: "%02x", $0) }.joined(separator: " ")
-        targetLogger.log("Extracting a stream declared \(compression) as \(tarCompression), as it does not start with a zstd frame: \(prefix)")
-      }
-      return try await installStreamed(dataStream, compression: tarCompression)
-    }
-
     switch payload {
     case let .data(head, rest):
-      let format = Self.streamFormat(initial: head, declared: compression)
-      if destination == .app {
-        telemetry.streamed(format)
-      }
       let source = ChunkSource()
       async let pumped: Void = telemetry.receive { receive in
         try await source.pump(rest, after: head) { receive.count($0) }
       }
       let artifact: InstalledArtifact
       do {
-        artifact = try await installStream(source, format: format, head: head)
+        artifact = try await install(from: .stream(source))
       } catch {
         source.abandon()
         // A client stream that fails truncates the archive, so extraction fails too; the client's failure is the cause.
@@ -181,39 +154,10 @@ struct InstallMethodHandler {
       return artifact
 
     case let .url(url):
-      return try await install(from: .remoteURL(url), compression: compression)
+      return try await install(from: .remoteURL(url))
 
     case let .filePath(filePath):
       return try await install(from: .localPath(filePath))
-    }
-  }
-
-  /// The format of a streamed payload, from its first bytes and the compression the client declared.
-  static func streamFormat(initial: Data, declared: FBCompressionFormat) -> InstallStreamFormat {
-    let format = ArchiveFormat.detect(initial)
-    switch format {
-    case .zip:
-      return .zip
-    case .zstdZip:
-      return .zstdZip
-    case .zstd, .gzip, .other, .undetermined:
-      return InstallStreamFormat(tarCompression: tarCompression(declared: declared, format: format))
-    }
-  }
-
-  /// The compression to extract a streamed tar with, given the one the client declared and the format of the stream's first bytes.
-  ///
-  /// A stream declared zstd that does not start with a zstd frame is extracted as if undeclared, which detects gzip
-  /// and plain tars from their contents, rather than by the zstd decompressor, which would reject it.
-  private static func tarCompression(declared: FBCompressionFormat, format: ArchiveFormat) -> FBCompressionFormat {
-    guard declared == .ZSTD else {
-      return declared
-    }
-    switch format {
-    case .zstd, .zstdZip, .undetermined:
-      return .ZSTD
-    case .zip, .gzip, .other:
-      return .GZIP
     }
   }
 

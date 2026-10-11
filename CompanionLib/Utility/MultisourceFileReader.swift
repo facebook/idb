@@ -30,10 +30,8 @@ enum MultisourceFileReader {
 
     var payload = try await readNextPayload()
 
-    var compression = FBCompressionFormat.GZIP
-
-    if case let .compression(payloadCompression) = payload.source {
-      compression = FBCompressionFormat(payloadCompression)
+    // What the client declared is skipped: the archive's first bytes say how it is compressed.
+    if case .compression = payload.source {
       payload = try await readNextPayload()
     }
 
@@ -42,7 +40,7 @@ enum MultisourceFileReader {
       let (readTaskFromStreamTask, source) = pumpToSource(initialData: data, requestStream: requestStream)
 
       do {
-        return try await temporaryDirectory.withArchiveExtracted(fromStream: source, compression: compression) { extractionDir in
+        return try await temporaryDirectory.withArchiveExtracted(fromStream: source) { extractionDir in
           let files: [URL]
           if extractFromSubdir {
             files = try temporaryDirectory.files(inSubdirectoriesOf: extractionDir)

@@ -97,7 +97,7 @@ struct Measurement: Codable {
         routes.withLock { $0.append(route.extractor.rawValue) }
       }
     }
-    let options = InstallOptions(compression: benchCase.format.declaredCompression)
+    let options = InstallOptions()
 
     // Everything a source needs before the clock starts: frames in memory, a server listening.
     let prepared = try await PreparedSource(benchCase.source, archive: archive)

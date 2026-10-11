@@ -57,16 +57,16 @@ private struct Refused: Error {}
   }
 
   @Test(arguments: [
-    (InstallStreamFormat.zip, "zip"),
-    (.zstdZip, "zip_zstd"),
-    (InstallStreamFormat(tarCompression: .GZIP), "tar_gzip"),
-    (InstallStreamFormat(tarCompression: .ZSTD), "tar_zstd"),
+    (ExtractionRoute(format: .zip, extractor: .zipStream), "zip"),
+    (ExtractionRoute(format: .zstdZip, extractor: .zipStream), "zip_zstd"),
+    (ExtractionRoute(format: .gzip, extractor: .bsdTar), "tar_gzip"),
+    (ExtractionRoute(format: .zstd, extractor: .inProcessTar), "tar_zstd"),
   ])
-  func aStreamedAppReportsItsFormat(format: InstallStreamFormat, column: String) {
+  func aStreamedAppReportsTheFormatItsFirstBytesNamed(route: ExtractionRoute, column: String) {
     let telemetry = InstallTelemetry(payloadKind: .data)
-    telemetry.streamed(format)
+    telemetry.staged(.route(route))
 
-    #expect(columns(of: telemetry) == ["payload_kind=data", "stream_format=\(column)"])
+    #expect(columns(of: telemetry).contains("stream_format=\(column)"))
   }
 
   @Test(arguments: [
@@ -82,12 +82,12 @@ private struct Refused: Error {}
     #expect(columns(of: telemetry) == (routeColumns + ["payload_kind=url"]).sorted())
   }
 
-  @Test func aStreamedAppKeepsTheFormatItsClientDeclared() {
+  /// What a client declared plays no part: the format is what the archive's first bytes say.
+  @Test func aStreamedAppReportsWhatItsFirstBytesSayNotWhatItsClientDeclared() {
     let telemetry = InstallTelemetry(payloadKind: .data)
-    telemetry.streamed(InstallStreamFormat(tarCompression: .ZSTD))
     telemetry.staged(.route(ExtractionRoute(format: .undetermined, extractor: .inProcessTar)))
 
-    #expect(columns(of: telemetry) == ["extractor=tar_inprocess", "payload_kind=data", "stream_format=tar_zstd"])
+    #expect(columns(of: telemetry) == ["extractor=tar_inprocess", "payload_kind=data", "stream_format=undetermined"])
   }
 
   @Test func aCompletedDownloadReportsTheTimeToItsFirstByte() {
@@ -284,7 +284,6 @@ private struct Refused: Error {}
     collect(downloaded)
 
     let spooled = InstallTelemetry(payloadKind: .data)
-    spooled.streamed(.zip)
     spooled.staged(.route(ExtractionRoute(format: .zip, extractor: .zipSpool)))
     await spooled.receive { $0.count(Data(count: 1)) }
     collect(spooled)
@@ -307,7 +306,9 @@ private struct Refused: Error {}
   /// The values of the enumerated columns, as documented.
   @Test func theEnumeratedColumnsTakeTheDocumentedValues() {
     #expect(Set([InstallPayloadKind.data, .url, .filePath].map(\.rawValue)) == ["data", "url", "file_path"])
-    #expect(Set([InstallStreamFormat.zip, .zstdZip, .gzipTar, .zstdTar].map(\.rawValue)) == ["zip", "zip_zstd", "tar_gzip", "tar_zstd"])
+    #expect(
+      Set([ArchiveFormat.zip, .zstdZip, .gzip, .zstd, .other, .undetermined].map(\.streamFormatName))
+        == ["zip", "zip_zstd", "tar_gzip", "tar_zstd", "tar", "undetermined"])
     #expect(
       Set([ExtractionRoute.Extractor.zipStream, .zipSpool, .inProcessTar, .bsdTar].map(\.rawValue)) == ["zip_stream", "zip_spool", "tar_inprocess", "bsdtar"])
     #expect(

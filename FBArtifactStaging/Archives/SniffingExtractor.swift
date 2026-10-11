@@ -41,10 +41,14 @@ public struct SniffingExtractor: ArchiveExtractor {
 
   private let fileExtractor: any ArchiveExtractor
   private let tarExtractor: any ArchiveExtractor
+  private let gzippedTarExtractor: any ArchiveExtractor
 
-  public init(files fileExtractor: any ArchiveExtractor, tars tarExtractor: any ArchiveExtractor) {
+  /// Streamed zips and zstd tars are always read in-process; `tars` reads plain tars and, unless `gzippedTars` is
+  /// given, gzipped ones.
+  public init(files fileExtractor: any ArchiveExtractor, tars tarExtractor: any ArchiveExtractor, gzippedTars: (any ArchiveExtractor)? = nil) {
     self.fileExtractor = fileExtractor
     self.tarExtractor = tarExtractor
+    self.gzippedTarExtractor = gzippedTars ?? tarExtractor
   }
 
   public func extract(
@@ -112,8 +116,9 @@ public struct SniffingExtractor: ArchiveExtractor {
       onRoute(ExtractionRoute(format: format, extractor: .inProcessTar))
       try await ArchiveExtractors.inProcessTar.extract(from: peekable.value, to: extractPath, options: options, logger: logger)
     case .gzip, .other, .undetermined:
-      onRoute(ExtractionRoute(format: format, extractor: tarExtractor is BSDTarExtractor ? .bsdTar : .inProcessTar))
-      try await tarExtractor.extract(from: peekable.value, to: extractPath, options: options, logger: logger)
+      let extractor = format == .gzip ? gzippedTarExtractor : tarExtractor
+      onRoute(ExtractionRoute(format: format, extractor: extractor is BSDTarExtractor ? .bsdTar : .inProcessTar))
+      try await extractor.extract(from: peekable.value, to: extractPath, options: options, logger: logger)
     }
   }
 
