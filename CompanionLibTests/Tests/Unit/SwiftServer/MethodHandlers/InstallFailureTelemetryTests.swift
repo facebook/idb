@@ -50,31 +50,30 @@ struct InstallFailureTelemetryTests {
     return file.deletingLastPathComponent()
   }
 
-  /// BUG: an archive with no app in it fails between extracting and installing, where no stage is in flight, so the
-  /// failure has no stage -- flipped in the following commit.
+  /// An archive with no app in it fails identifying one, between extracting and installing.
   @Test
   func anArchiveWithNoAppFailsWithNoStage() async throws {
     let (normals, failed) = try await columns(streaming: try directoryHolding("README"), as: .app)
     #expect(failed)
-    #expect(normals["failure_stage"] == nil)
+    #expect(normals["failure_stage"] == "identify")
     #expect(normals["failure_kind"] == "no_installable_bundle")
   }
 
-  /// BUG: as for an app, and the failure is named by the Swift type that refused it -- flipped in the following commit.
+  /// As for an app, and the failure is named for what it is rather than for the type that refused it.
   @Test
   func anArchiveWithNoTestBundleFailsWithNoStageAndATypeName() async throws {
     let (normals, failed) = try await columns(streaming: try directoryHolding("README"), as: .xctest)
     #expect(failed)
-    #expect(normals["failure_stage"] == nil)
-    #expect(normals["failure_kind"] == "ArtifactError")
+    #expect(normals["failure_stage"] == "identify")
+    #expect(normals["failure_kind"] == "unidentifiable")
   }
 
-  /// BUG: as for a test bundle -- flipped in the following commit.
+  /// As for a test bundle.
   @Test
   func anArchiveWithNoFrameworkFailsWithNoStageAndATypeName() async throws {
     let (normals, failed) = try await columns(streaming: try directoryHolding("README"), as: .framework)
     #expect(failed)
-    #expect(normals["failure_stage"] == nil)
-    #expect(normals["failure_kind"] == "BundleDescriptorError")
+    #expect(normals["failure_stage"] == "identify")
+    #expect(normals["failure_kind"] == "unidentifiable")
   }
 }

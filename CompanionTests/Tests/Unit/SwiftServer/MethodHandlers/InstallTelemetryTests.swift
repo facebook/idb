@@ -310,6 +310,8 @@ private struct Refused: Error {}
     #expect(Set([InstallStreamFormat.zip, .zstdZip, .gzipTar, .zstdTar].map(\.rawValue)) == ["zip", "zip_zstd", "tar_gzip", "tar_zstd"])
     #expect(
       Set([ExtractionRoute.Extractor.zipStream, .zipSpool, .inProcessTar, .bsdTar].map(\.rawValue)) == ["zip_stream", "zip_spool", "tar_inprocess", "bsdtar"])
-    #expect(Set([InstallFailureStage.receive, .stage(.download), .stage(.extract), .stage(.install)].map(\.name)) == ["receive", "download", "extract", "install"])
+    #expect(
+      Set([InstallFailureStage.receive, .stage(.download), .stage(.extract), .identify, .stage(.install)].map(\.name))
+        == ["receive", "download", "extract", "identify", "install"])
   }
 }

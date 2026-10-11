@@ -144,7 +144,16 @@ public enum Staging {
       source, as: kind, options: options, totalStart: totalStart, downloadConfiguration: downloadConfiguration,
       temporaryDirectory: temporaryDirectory, logger: logger, onProgress: onProgress, onReport: onReport
     ) { tree in
-      let artifact = try kind.identify(in: tree, logger: logger)
+      let artifact: Artifact
+      do {
+        artifact = try kind.identify(in: tree, logger: logger)
+      } catch let error as InstallError {
+        throw error
+      } catch {
+        // The kinds other than an application identify through storage helpers shared with callers that aren't
+        // installing anything, so they report failures unclassified; this is the boundary that knows better.
+        throw InstallError.unidentifiable(kind: kind, underlying: error)
+      }
       let installStart = Date()
       onProgress(.installStarted(timing: .measure(stageStart: installStart, totalStart: totalStart), artifactPath: artifact.url.path))
       let installed = try await install(artifact, tree.isInPlace)

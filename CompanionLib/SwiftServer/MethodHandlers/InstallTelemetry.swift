@@ -63,6 +63,8 @@ extension ArchiveFormat {
 enum InstallFailureStage: Equatable {
   case stage(InstallStage)
   case receive
+  /// Between staging and installing, finding the artifact in what was staged.
+  case identify
 
   var name: String {
     switch self {
@@ -70,6 +72,8 @@ enum InstallFailureStage: Equatable {
       stage.rawValue
     case .receive:
       "receive"
+    case .identify:
+      "identify"
     }
   }
 }
@@ -177,6 +181,7 @@ final class InstallTelemetry: Sendable {
       let stage =
         [InstallStage.download, .extract, .install].first(where: state.stagesInFlight.contains).map(InstallFailureStage.stage)
         ?? (state.receiving ? .receive : nil)
+        ?? (Self.isIdentification(error) ? .identify : nil)
       state.failure = Failure(stage: stage, kind: kind, cancelled: cancelled)
       if case .transferFailed(_, let underlying, let report) = error as? InstallError {
         // A download that fails never completes, so what it received is only known from here.
@@ -247,6 +252,18 @@ final class InstallTelemetry: Sendable {
       return "extraction_failed"
     case .noInstallableBundle:
       return "no_installable_bundle"
+    case .unidentifiable:
+      return "unidentifiable"
+    }
+  }
+
+  /// A failure to find the artifact in what was staged, which happens with no stage in flight.
+  private static func isIdentification(_ error: Error) -> Bool {
+    switch error as? InstallError {
+    case .noInstallableBundle, .unidentifiable:
+      return true
+    case .httpStatus, .transferFailed, .notAnHTTPResponse, .extractionFailed, nil:
+      return false
     }
   }
 }

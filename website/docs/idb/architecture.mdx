@@ -198,8 +198,8 @@ Every `install` call reports one event, and ends its completion log line with th
 | `ttfb_ms` | ms | For a download, the time from the request to the response. |
 | `extract_ms` | ms | Duration of the extract stage, which overlaps the download for a URL. |
 | `install_ms` | ms | Duration of the install stage. |
-| `failure_stage` | `receive` \| `download` \| `extract` \| `install` | The earliest stage still running when the call failed. `receive` means the streamed payload failed before any stage began. |
-| `failure_kind` | `http_status` \| `transfer_failed` \| `not_an_http_response` \| `extraction_failed` \| `no_installable_bundle` \| a type name | What failed: an `InstallError` by its case, anything else by its Swift type. |
+| `failure_stage` | `receive` \| `download` \| `extract` \| `identify` \| `install` | The earliest stage still running when the call failed. `receive` means the streamed payload failed before any stage began. `identify` means what was staged held no artifact of the kind asked for. |
+| `failure_kind` | `http_status` \| `transfer_failed` \| `not_an_http_response` \| `extraction_failed` \| `no_installable_bundle` \| `unidentifiable` \| a type name | What failed: an `InstallError` by its case, anything else by its Swift type. |
 | `cancel_source` | `client` | Set when the call failed after the client cancelled the RPC. |
 | `ns_error_code`, `ns_underlying_error` | `domain:code` | For a failed download, the error and the error beneath it. |
 | `cf_stream_error_code` | int | For a failed download, the CFNetwork stream error, which names a TLS failure. |

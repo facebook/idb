@@ -30,6 +30,9 @@ public enum InstallError: Error, CustomStringConvertible {
   /// The archive was unpacked, and did not hold exactly one loadable application.
   case noInstallableBundle(inDirectory: String, underlying: Error)
 
+  /// What was staged held no artifact of `kind` that could be identified: no test bundle, framework, dylib or dSYM.
+  case unidentifiable(kind: ArtifactKind, underlying: Error)
+
   public var description: String {
     switch self {
     case .httpStatus(let url, let statusCode):
@@ -44,6 +47,8 @@ public enum InstallError: Error, CustomStringConvertible {
       return "Could not extract the archive: \(underlying.localizedDescription)"
     case .noInstallableBundle(let directory, let underlying):
       return "No installable application in \(directory): \(underlying)"
+    case .unidentifiable(let kind, let underlying):
+      return "No \(kind) to install: \(underlying)"
     }
   }
 }
@@ -52,7 +57,7 @@ public enum InstallError: Error, CustomStringConvertible {
 
 extension InstallError: CustomNSError {
 
-  public static var errorDomain: String { "com.facebook.FBControlCore.install" }
+  public static var errorDomain: String { "com.facebook.FBArtifactStaging.install" }
 
   /// Carries the description across the Objective-C and gRPC boundaries, both of
   /// which report `localizedDescription` rather than the Swift error.
