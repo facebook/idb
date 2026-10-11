@@ -182,3 +182,29 @@ Each RPC in the `idb.proto` interface is implemented by its own Swift method han
 ### [`IDBCommandExecutor`](https://github.com/facebook/idb/blob/main/CompanionLib/IDBCommandExecutor.swift)
 
 This provides a facade over the many APIs in the underlying Frameworks, so that the method handlers do not need to be aware of how they operate. It lives in `CompanionLib`, which also contains the storage management for installed artifacts.
+
+### Install telemetry
+
+Every `install` call reports one event, and ends its completion log line with the same columns in braces, sorted by name after `size`: `install succeeded in 2.10s {size=4096, extract_ms=30000, install_ms=40000, payload_kind=url, receive_ms=20000}`. The column names and values below are stable. Dashboards and the install benchmark read them, so a change to any of them is a change to this contract. A column is absent when it doesn't apply, never zero.
+
+| Column | Type | Meaning |
+|---|---|---|
+| `size` | bytes | What reached the companion: streamed over the RPC for `data`, downloaded for `url`. For a failed download, what arrived before it failed. |
+| `payload_kind` | `data` \| `url` \| `file_path` | How the client handed over what to install. |
+| `stream_format` | `zip` \| `zip_zstd` \| `tar_gzip` \| `tar_zstd` \| `tar` \| `undetermined` | The archive format. For a streamed app it is what the client declared, falling back to what the first bytes say. |
+| `extractor` | `zip_stream` \| `zip_spool` \| `tar_inprocess` \| `bsdtar` | The extractor that unpacked a streamed or downloaded archive. |
+| `zip_spool_fallback` | 0 \| 1 | For a zip, whether extracting it as it arrived failed and the spooled copy was extracted instead. |
+| `receive_ms` | ms | Time to receive a streamed payload, or to download a URL. |
+| `ttfb_ms` | ms | For a download, the time from the request to the response. |
+| `extract_ms` | ms | Duration of the extract stage, which overlaps the download for a URL. |
+| `install_ms` | ms | Duration of the install stage. |
+| `failure_stage` | `receive` \| `download` \| `extract` \| `install` | The earliest stage still running when the call failed. `receive` means the streamed payload failed before any stage began. |
+| `failure_kind` | `http_status` \| `transfer_failed` \| `not_an_http_response` \| `extraction_failed` \| `no_installable_bundle` \| a type name | What failed: an `InstallError` by its case, anything else by its Swift type. |
+| `cancel_source` | `client` | Set when the call failed after the client cancelled the RPC. |
+| `ns_error_code`, `ns_underlying_error` | `domain:code` | For a failed download, the error and the error beneath it. |
+| `cf_stream_error_code` | int | For a failed download, the CFNetwork stream error, which names a TLS failure. |
+| `remote_address` | `host:port` | For a failed download, the address the connection reached. Nothing from the URL is recorded, as its query carries signatures. |
+| `proxy_used` | 0 \| 1 | For a failed download, whether the request went through a proxy. |
+| `tls_trust_error`, `tls_chain` | string, JSON | For a failed download whose server certificate was evaluated, why the host refused it and the chain it was shown. |
+
+The stages are those of an install's `InstallProgressEvent`s: `download` (URLs only), `extract` (anything that is unpacked), and `install`. A streamed install reports progress to its client as `InstallResponse.progress` messages, but only for apps, because clients print every response to any other install as an installed artifact.

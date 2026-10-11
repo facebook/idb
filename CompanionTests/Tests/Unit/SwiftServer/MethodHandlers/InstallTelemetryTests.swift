@@ -255,4 +255,61 @@ private struct Refused: Error {}
   func installErrorsAreNamedByCase(error: InstallError, kind: String) {
     #expect(InstallTelemetry.kind(of: error) == kind)
   }
+
+  /// The columns `website/docs/idb/architecture.mdx` documents under "Install telemetry", which dashboards and the install
+  /// benchmark read. A column added here or there has to be added to both.
+  static let documentedColumns: Set<String> = [
+    "size", "payload_kind", "stream_format", "extractor", "zip_spool_fallback", "receive_ms", "ttfb_ms", "extract_ms", "install_ms",
+    "failure_stage", "failure_kind", "cancel_source", "ns_error_code", "ns_underlying_error", "cf_stream_error_code", "remote_address",
+    "proxy_used", "tls_trust_error", "tls_chain",
+  ]
+
+  /// Every column any of these installs reports, between them: a downloaded app, a streamed zip that fell back to its
+  /// spool, a failed TLS download and a cancelled stream.
+  @Test func everyColumnAnInstallReportsIsDocumented() async {
+    var reported: Set<String> = []
+    func collect(_ telemetry: InstallTelemetry) {
+      let call = CallTelemetry()
+      telemetry.record(into: call)
+      reported.formUnion(call.columnDescriptions.map { String($0.prefix { $0 != "=" }) })
+    }
+
+    let downloaded = InstallTelemetry(payloadKind: .url)
+    downloaded.observe(.downloadStarted(timing: timing(seconds: 0), url: url))
+    downloaded.staged(.download(DownloadReport(receivedBytes: 1, timeToFirstByte: 0.5)))
+    downloaded.staged(.route(ExtractionRoute(format: .gzip, extractor: .inProcessTar)))
+    downloaded.observe(.downloadCompleted(timing: timing(seconds: 1), totalBytes: 1))
+    downloaded.observe(.extractCompleted(timing: timing(seconds: 1), destinationPath: "/tmp/x"))
+    downloaded.observe(.installCompleted(timing: timing(seconds: 1), artifactPath: "/tmp/x/A.app", name: "com.a"))
+    collect(downloaded)
+
+    let spooled = InstallTelemetry(payloadKind: .data)
+    spooled.streamed(.zip)
+    spooled.staged(.route(ExtractionRoute(format: .zip, extractor: .zipSpool)))
+    await spooled.receive { $0.count(Data(count: 1)) }
+    collect(spooled)
+
+    let failure = NSError(
+      domain: NSURLErrorDomain, code: NSURLErrorSecureConnectionFailed,
+      userInfo: [NSUnderlyingErrorKey: NSError(domain: "cause", code: 1), "_kCFStreamErrorCodeKey": -9807])
+    let report = DownloadReport(
+      receivedBytes: 0, remoteAddress: "192.0.2.1:443", proxied: false,
+      trust: DownloadReport.Trust(error: "untrusted", chain: [DownloadReport.Certificate(subject: "s", issuer: nil, notAfter: nil)]))
+    let tls = InstallTelemetry(payloadKind: .url)
+    tls.observe(.downloadStarted(timing: timing(seconds: 0), url: url))
+    tls.failed(InstallError.transferFailed(url: url, underlying: failure, report: report), rpcCancelled: true)
+    collect(tls)
+
+    #expect(reported.subtracting(Self.documentedColumns).isEmpty, "undocumented: \(reported.subtracting(Self.documentedColumns).sorted())")
+    #expect(Self.documentedColumns.subtracting(reported).isEmpty, "documented but never reported: \(Self.documentedColumns.subtracting(reported).sorted())")
+  }
+
+  /// The values of the enumerated columns, as documented.
+  @Test func theEnumeratedColumnsTakeTheDocumentedValues() {
+    #expect(Set([InstallPayloadKind.data, .url, .filePath].map(\.rawValue)) == ["data", "url", "file_path"])
+    #expect(Set([InstallStreamFormat.zip, .zstdZip, .gzipTar, .zstdTar].map(\.rawValue)) == ["zip", "zip_zstd", "tar_gzip", "tar_zstd"])
+    #expect(
+      Set([ExtractionRoute.Extractor.zipStream, .zipSpool, .inProcessTar, .bsdTar].map(\.rawValue)) == ["zip_stream", "zip_spool", "tar_inprocess", "bsdtar"])
+    #expect(Set([InstallFailureStage.receive, .stage(.download), .stage(.extract), .stage(.install)].map(\.name)) == ["receive", "download", "extract", "install"])
+  }
 }
