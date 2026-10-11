@@ -7,6 +7,7 @@
 
 import FBControlCore
 import Foundation
+import os
 
 /// What a download reports about its own progress, as distinct from the bytes it
 /// is delivering.
@@ -38,6 +39,7 @@ public final class DataDownloadInput: NSObject, @unchecked Sendable {
   }
 
   private let finished = AsyncLatch()
+  private let task = OSAllocatedUnfairLock<URLSessionDataTask?>(initialState: nil)
   // Written only from the session's delegate queue, which is serial.
   private var report = DownloadReport()
   private var failure: Error?
@@ -45,6 +47,11 @@ public final class DataDownloadInput: NSObject, @unchecked Sendable {
   private let requestStart = Date()
   private let onEvent: (@Sendable (DataDownloadEvent) -> Void)?
   private let logger: ControlCoreLogger
+
+  /// Stops the transfer, which then completes failed and ends `spool`. For a reader that has no use for the rest.
+  public func cancel() {
+    task.withLock { $0 }?.cancel()
+  }
 
   public static func dataDownload(withURL url: URL, logger: ControlCoreLogger) -> DataDownloadInput {
     return dataDownload(withURL: url, configuration: .default, logger: logger)
@@ -86,7 +93,9 @@ public final class DataDownloadInput: NSObject, @unchecked Sendable {
     // unless told otherwise.
     delegateQueue.maxConcurrentOperationCount = 1
     let session = URLSession(configuration: configuration, delegate: self, delegateQueue: delegateQueue)
-    session.dataTask(with: url).resume()
+    let dataTask = session.dataTask(with: url)
+    task.withLock { $0 = dataTask }
+    dataTask.resume()
     session.finishTasksAndInvalidate()
   }
 }

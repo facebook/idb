@@ -61,22 +61,20 @@ struct StagingCancellationTests {
       stoppedEarly: transfer?.stopped == true && transfer?.finished != true)
   }
 
-  /// BUG: a cancelled URL install returns only once its whole transfer has arrived, and the transfer is never stopped
-  /// -- flipped in the following commit.
+  /// A cancelled URL install stops its transfer and returns without waiting for the rest of it.
   @Test
   func aCancelledURLInstallWaitsForItsTransfer() async throws {
     let ending = try await stage(try tar(ofFileSized: 400 * 64 * 1024), cancelAfter: .milliseconds(300))
-    #expect(ending.delivered == ending.total, "delivered \(ending.delivered) of \(ending.total)")
-    #expect(!ending.stoppedEarly, "returned after \(ending.returnedAfter)")
+    #expect(ending.delivered < ending.total, "delivered \(ending.delivered) of \(ending.total)")
+    #expect(ending.stoppedEarly, "returned after \(ending.returnedAfter)")
   }
 
-  /// BUG: a URL install whose payload fails extraction from its first bytes still waits for the whole transfer, which
-  /// is never stopped -- flipped in the following commit.
+  /// A URL install whose payload fails extraction stops its transfer and returns without waiting for the rest of it.
   @Test
   func aURLInstallThatCannotBeExtractedWaitsForItsTransfer() async throws {
     let garbage = Data((0..<(400 * 64 * 1024)).map { UInt8(truncatingIfNeeded: $0 &* 2_654_435_761 >> 7) })
     let ending = try await stage(garbage, cancelAfter: nil)
-    #expect(ending.delivered == ending.total, "delivered \(ending.delivered) of \(ending.total)")
-    #expect(!ending.stoppedEarly, "returned after \(ending.returnedAfter)")
+    #expect(ending.delivered < ending.total, "delivered \(ending.delivered) of \(ending.total)")
+    #expect(ending.stoppedEarly, "returned after \(ending.returnedAfter)")
   }
 }

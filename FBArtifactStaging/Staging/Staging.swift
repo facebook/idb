@@ -7,6 +7,7 @@
 
 import FBControlCore
 import Foundation
+import os
 
 /// Where an artifact to install comes from.
 public enum InstallSource {
@@ -283,16 +284,39 @@ public enum Staging {
       }
     }
 
+    let extractionFailure = OSAllocatedUnfairLock<(any Error)?>(initialState: nil)
+    // An extraction that has failed has no use for the rest of the transfer.
+    @Sendable func extractStoppingTheDownloadOnFailure() async throws {
+      do {
+        try await extract(download.spool)
+      } catch {
+        extractionFailure.withLock { $0 = error }
+        download.cancel()
+        throw error
+      }
+    }
+
     try await runExtractStage(to: extractPath, totalStart: totalStart, onProgress: onProgress) {
-      async let extraction: Void = extract(download.spool)
-      // The transfer's outcome first: the extractor only sees bytes and then an
-      // end of file, so a failed transfer looks to it like a short archive.
-      onReport(.download(try await download.completed()))
-      onProgress(
-        .downloadCompleted(
-          timing: .measure(stageStart: downloadStart, totalStart: totalStart),
-          totalBytes: progress.downloadedBytes))
-      try await extraction
+      try await withTaskCancellationHandler {
+        async let extraction: Void = extractStoppingTheDownloadOnFailure()
+        // The transfer's outcome first: the extractor only sees bytes and then an
+        // end of file, so a failed transfer looks to it like a short archive. A
+        // transfer stopped because the extraction failed reports the extraction.
+        let report: DownloadReport
+        do {
+          report = try await download.completed()
+        } catch {
+          throw extractionFailure.withLock { $0 } ?? error
+        }
+        onReport(.download(report))
+        onProgress(
+          .downloadCompleted(
+            timing: .measure(stageStart: downloadStart, totalStart: totalStart),
+            totalBytes: progress.downloadedBytes))
+        try await extraction
+      } onCancel: {
+        download.cancel()
+      }
     }
   }
 
