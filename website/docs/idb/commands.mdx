@@ -199,9 +199,21 @@ Lists the targets installed applications and their metadata, including:
 
 ```
 idb install /path/to/testApp.app
+idb install https://example.com/builds/testApp.ipa
+curl -s https://example.com/builds/testApp.tar.gz | idb install -
 ```
 
-Installs the given `.app` or `.ipa`. The app target architecture should match that of the target.
+Installs an app from a local path, a URL, or `-` for standard input. The app can be an `.app` bundle, an `.ipa`, or a tar holding an `.app`, plain or compressed with gzip or zstd. The companion identifies an archive by its first bytes, not its file name. The app's architecture should match the target's.
+
+- **A path** is passed to a local companion by its path. For a remote companion, the client streams it: an `.app` as a tar and an `.ipa` as the zip it already is. Bundles usually install faster than `.ipa`s.
+- **A URL** is downloaded by the companion, not the client, and extracted as it arrives.
+- **`-`** streams standard input to the companion as is.
+
+When streaming a bundle, the client compresses it with zstd if the companion supports it and a zstd compressor is available on the client's host, and with gzip otherwise. `--compression GZIP` or `--compression ZSTD` picks one explicitly. It has no effect on URLs or standard input, which are sent as they are.
+
+`--override-mtime` ignores the modification times recorded in the archive and uses the time of installation instead. Use it when your build system normalises archive timestamps, otherwise an updated app can look unchanged to the target. `--make-debuggable` keeps the app bundle alongside the target, which `debugserver` needs.
+
+An upload that takes more than two seconds reports its progress on standard error: how much has been sent, the percentage for an `.ipa` or a regular file on standard input, and the rate. Standard output, including `--json`, is unchanged.
 
 ### Launch an app
 
