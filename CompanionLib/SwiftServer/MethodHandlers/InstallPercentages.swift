@@ -39,20 +39,12 @@ final class InstallPercentages: Sendable {
     continuation.finish()
   }
 
-  /// A download of unknown length has no percentage.
+  /// Reported only while a download is in progress; a download of unknown length has no percentage.
   static func percent(of event: InstallProgressEvent) -> Int? {
-    switch event {
-    case .downloadProgress(_, let bytesDownloaded, let totalBytes?) where totalBytes > 0:
-      return Int(min(max(bytesDownloaded, 0), totalBytes) * 100 / totalBytes)
-    case .downloadProgress,
-      .downloadStarted,
-      .downloadCompleted,
-      .extractStarted,
-      .extractCompleted,
-      .installStarted,
-      .installCompleted:
+    guard case .downloadProgress = event else {
       return nil
     }
+    return event.downloadPercent
   }
 }
 

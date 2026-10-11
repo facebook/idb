@@ -106,6 +106,17 @@ public enum InstallProgressEvent: Sendable {
     }
   }
 
+  /// How much of a download has arrived, as a whole percentage, for a progress event that says both how much has and
+  /// how much to expect.
+  public var downloadPercent: Int? {
+    switch self {
+    case .downloadProgress(_, let bytesDownloaded, let totalBytes?) where totalBytes > 0:
+      return Int(min(max(bytesDownloaded, 0), totalBytes) * 100 / totalBytes)
+    case .downloadStarted, .downloadProgress, .downloadCompleted, .extractStarted, .extractCompleted, .installStarted, .installCompleted:
+      return nil
+    }
+  }
+
   public var elapsedMs: Int64 { timing.elapsedMs }
 
   public var totalElapsedMs: Int64 { timing.totalElapsedMs }
