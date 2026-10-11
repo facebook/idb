@@ -36,6 +36,34 @@ final class MultisourceFileReaderTests: XCTestCase {
     XCTAssertEqual(pulled.withLock { $0 }, 0)
   }
 
+  private struct ClientFailed: Error {}
+
+  /// BUG: a client stream that fails part way truncates the archive, the extraction fails first, and that is what the
+  /// call reports; the client's own failure is lost -- flipped in the following commit.
+  func testAClientStreamFailingPartWayReportsTheExtractionNotTheClient() async throws {
+    let directory = URL(fileURLWithPath: NSTemporaryDirectory()).appendingPathComponent(UUID().uuidString)
+    try FileManager.default.createDirectory(at: directory.appendingPathComponent("payload"), withIntermediateDirectories: true)
+    var random = Data(count: 1 << 20)
+    random.withUnsafeMutableBytes { arc4random_buf($0.baseAddress!, $0.count) }
+    try random.write(to: directory.appendingPathComponent("payload/file"))
+    let logger = FBControlCoreLoggerFactory.systemLoggerWriting(toStderr: false, withDebugLogging: false)
+    let archive = try await FBArchiveOperations.createGzippedTarData(forPath: directory.appendingPathComponent("payload").path, logger: logger)
+    let source = AsyncThrowingStream<Idb_PushRequest, any Error> { continuation in
+      continuation.yield(Idb_PushRequest.with { $0.payload = .with { $0.data = archive.prefix(archive.count / 2) } })
+      continuation.finish(throwing: ClientFailed())
+    }
+
+    do {
+      _ = try await MultisourceFileReader.withFilePathURLs(
+        from: RequestStreamReader(RPCAsyncSequence(wrapping: source)), temporaryDirectory: TemporaryDirectory(logger: logger),
+        extractFromSubdir: false
+      ) { $0 }
+      XCTFail("Expected a truncated push to fail")
+    } catch {
+      XCTAssertFalse(error is ClientFailed, "\(error)")
+    }
+  }
+
   private static func requestStream(chunkCount: Int, pulled: OSAllocatedUnfairLock<Int>) -> RequestStreamReader<Idb_PushRequest> {
     let source = AsyncThrowingStream<Idb_PushRequest, any Error> {
       let index = pulled.withLock { count -> Int in
