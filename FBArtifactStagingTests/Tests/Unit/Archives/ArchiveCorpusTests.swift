@@ -19,7 +19,7 @@ struct ArchiveCorpusTests {
   private let root = TemporaryDirectory(logger: ControlCoreGlobalConfiguration.defaultLogger).temporaryDirectory()
   private let temporaryDirectory = TemporaryDirectory(logger: ControlCoreGlobalConfiguration.defaultLogger)
   private let logger = ControlCoreGlobalConfiguration.defaultLogger
-  private var corpus: ArchiveCorpus { ArchiveCorpus(root: root) }
+  private var corpus: ArchiveCorpus.Shared { ArchiveCorpus.shared }
 
   /// How an archive reaches an extractor.
   enum Route: String, CaseIterable, CustomTestStringConvertible {
@@ -89,7 +89,6 @@ struct ArchiveCorpusTests {
   }
 
   private func extractorMatchesBSDTar(_ producer: Producer, _ route: Route) async throws {
-    try corpus.makeApp()
     let archive = try corpus.archive(producer)
     let extracted = root.appendingPathComponent("extracted").path
     try FileManager.default.createDirectory(atPath: extracted, withIntermediateDirectories: true)
@@ -184,7 +183,6 @@ struct ArchiveCorpusTests {
 
   @Test(arguments: installCases)
   func anInstallMatchesBSDTar(_ producer: Producer, _ source: Source) async throws {
-    try corpus.makeApp()
     let archive = try corpus.archive(producer)
     let directoryTimes = !producer.isZip
 
@@ -259,7 +257,6 @@ struct ArchiveCorpusTests {
   /// An install of a damaged archive ends as `bsdtar` does: failing, or with the same tree. It may also fail as corrupt where `bsdtar` extracts regardless, as `bsdtar` does not check a gzip's CRC and skips a damaged header, and it may extract the undamaged tree where `bsdtar` refuses a damaged field the install doesn't read.
   @Test(arguments: damageCases)
   func aDamagedInstallEndsAsBSDTarDoes(_ producer: Producer, _ damage: Damage) async throws {
-    try corpus.makeApp()
     let damaged = damage.apply(to: try Data(contentsOf: try corpus.archive(producer)))
     let archive = root.appendingPathComponent("damaged")
     try damaged.write(to: archive)
@@ -300,7 +297,6 @@ struct ArchiveCorpusTests {
   /// A stored zstd block carries no checksum, so the only damage that has to be caught is an archive that ends early.
   @Test(arguments: truncatedZstdCases)
   func aTruncatedZstdInstallFails(_ producer: Producer, _ fraction: Double) async throws {
-    try corpus.makeApp()
     let archive = try corpus.archive(producer)
     let contents = try Data(contentsOf: archive)
     let damaged = contents.prefix(Int(Double(contents.count) * fraction))

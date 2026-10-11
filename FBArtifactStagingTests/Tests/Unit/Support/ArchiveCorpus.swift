@@ -162,13 +162,19 @@ struct ArchiveCorpus {
     return archive
   }
 
+  /// `producer`'s archive, written only if it isn't already, so a shared corpus never rewrites a file another test reads.
+  func existingArchive(_ producer: Producer) throws -> URL {
+    let url = root.appendingPathComponent("A.\(producer.rawValue).\(producer.isZip ? "zip" : "tar")")
+    return fileManager.fileExists(atPath: url.path) ? url : try archive(producer)
+  }
+
   /// What `bsdtar` reads in place of `producer`'s archive: the archive itself, or for zstd the one it compresses.
   func reference(_ producer: Producer) throws -> URL {
     switch producer {
     case .tarZstd:
-      return try archive(.tarUncompressed)
+      return try existingArchive(.tarUncompressed)
     case .zipZstd:
-      return try archive(.dittoZip)
+      return try existingArchive(.dittoZip)
     case .dittoZip, .dittoZipWithResourceForks, .zipDeflated, .zipStored, .zip64, .zipToAPipe, .tarGzip, .tarUncompressed, .tarGzipGNU, .tarGzipUstar, .tarGzipPax,
       .tarGzipWithoutMacMetadata, .tarGzipInTwoMembers:
       return root.appendingPathComponent("A.\(producer.rawValue).\(producer.isZip ? "zip" : "tar")")
@@ -180,6 +186,50 @@ struct ArchiveCorpus {
     try data.write(to: input)
     try run("/usr/bin/gzip", ["-nf", input.path])
     return try Data(contentsOf: root.appendingPathComponent("member.gz"))
+  }
+}
+
+extension ArchiveCorpus {
+
+  /// One corpus for the whole bundle. Its app and each producer's archive are written once, on first use, rather than
+  /// for every case. Writing them runs `ditto`, `zip` and `tar` and waits on each, and a few hundred cases doing that at
+  /// once held up every other suite in the process for minutes.
+  static let shared = Shared()
+
+  // SAFETY: `madeApp` and `archives` are only touched under `lock`, which is held while an archive is written so that
+  // no case reads one half made.
+  // patternlint-disable-next-line unchecked-sendable
+  final class Shared: @unchecked Sendable {
+
+    private let lock = NSLock()
+    private let corpus = ArchiveCorpus(root: FileManager.default.temporaryDirectory.appendingPathComponent("ArchiveCorpus-\(UUID().uuidString)"))
+    private var madeApp = false
+    private var archives: [Producer: URL] = [:]
+
+    /// `producer`'s archive, which no test may change.
+    func archive(_ producer: Producer) throws -> URL {
+      try lock.withLock {
+        if !madeApp {
+          try FileManager.default.createDirectory(at: corpus.root, withIntermediateDirectories: true)
+          try corpus.makeApp()
+          madeApp = true
+        }
+        if let archive = archives[producer] {
+          return archive
+        }
+        // A zstd producer writes the archive it compresses as it goes, so that one may already be on disk; writing it
+        // again would change a file a case may be reading.
+        let archive = try corpus.existingArchive(producer)
+        archives[producer] = archive
+        return archive
+      }
+    }
+
+    /// What `bsdtar` reads in place of `producer`'s archive.
+    func reference(_ producer: Producer) throws -> URL {
+      _ = try archive(producer)
+      return try lock.withLock { try corpus.reference(producer) }
+    }
   }
 }
 
