@@ -610,3 +610,29 @@ targets:
         product: ArgumentParser
       - sdk: AVFoundation.framework
       - sdk: Foundation.framework
+
+  staging-bench:
+    type: tool
+    platform: macOS
+    deploymentTarget: "15.0"
+    sources:
+      - path: ../Benchmarks/StagingBench
+    settings:
+      base:
+        MACOSX_DEPLOYMENT_TARGET: "15.0"
+        PRODUCT_NAME: staging-bench
+        SWIFT_VERSION: "6.0"
+        GENERATE_INFOPLIST_FILE: YES
+        OTHER_SWIFT_FLAGS: $(inherited) -parse-as-library
+        CODE_SIGN_IDENTITY: "-"
+        CODE_SIGNING_REQUIRED: NO
+        CODE_SIGNING_ALLOWED: NO
+        SYSTEM_HEADER_SEARCH_PATHS: $(inherited) $(SRCROOT)/../PrivateHeaders
+        FRAMEWORK_SEARCH_PATHS: $(inherited) $(SRCROOT)/../Build/Products/Release
+        SWIFT_INCLUDE_PATHS: $(inherited) $(SRCROOT)/../Build/Products/Release
+        OTHER_LDFLAGS: $(inherited) -ObjC
+    dependencies:
+      - package: swift-argument-parser
+        product: ArgumentParser
+      - sdk: Network.framework
+      - sdk: Foundation.framework

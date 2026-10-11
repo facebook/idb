@@ -887,6 +887,20 @@ function build_sim_video() {
     build
 }
 
+# The archive staging benchmark (Benchmarks/README.md); not part of the distribution.
+function build_staging_bench() {
+  build_companion_archives
+  invoke_xcodebuild \
+    ONLY_ACTIVE_ARCH=NO \
+    SWIFT_ENABLE_EXPLICIT_MODULES=NO \
+    -project Companion/idb_companion.xcodeproj \
+    -scheme staging-bench \
+    -sdk macosx \
+    -derivedDataPath "$BUILD_DIRECTORY" \
+    -configuration Release \
+    build
+}
+
 # Assemble the runtime layout idb_companion expects:
 #
 #   <dist>/
@@ -1047,6 +1061,8 @@ function build() {
         build_idb_repl;;
       sim-video)
         build_sim_video;;
+      staging-bench)
+        build_staging_bench;;
       distribution)
         build_distribution;;
       FBControlCore|FBXCTestCore|FBSimulatorControl|FBSimulatorXCTest|FBDeviceControl)
@@ -1156,6 +1172,7 @@ Commands:
       idb_companion   Build idb_companion only
       idb-repl        Build idb-repl only
       sim-video       Build the local video recorder
+      staging-bench   Build the archive staging benchmark
       shims           Build all shim dylibs (Shimulator + Repl, iOS + macOS)
       fixtures        Build the test fixtures (MacUnitTestFixture, MacCommonApp, iOSUnitTestFixture)
       FBControlCore   Build FBControlCore framework

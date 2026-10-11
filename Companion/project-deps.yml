@@ -89,6 +89,14 @@ targets:
     dependencies:
       - framework: ../Build/Products/Release/libSimScopeProtocol.a
         embed: false
+  staging-bench:
+    dependencies:
+      - framework: ../Build/Products/Release/libFBArtifactStaging.a
+        embed: false
+      - framework: ../Build/Products/Release/FBControlCore.framework
+        embed: false
+      - framework: ../Build/Products/Release/libZstdDecompress.a
+        embed: false
   CompanionLibTests:
     dependencies:
       - framework: ../Build/Products/Release/libCompanionUtilities.a

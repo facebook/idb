@@ -1,0 +1,42 @@
+name: Staging benchmark
+on:
+  schedule:
+    # Nightly, after the day's commits have landed.
+    - cron: '0 6 * * *'
+  workflow_dispatch:
+    inputs:
+      quick:
+        description: 'Run the quick matrix'
+        type: boolean
+        default: true
+
+permissions:
+  contents: read
+
+# Reports throughput for every source and format, and fails only on an order-of-magnitude regression: hosted runners
+# are too noisy to gate on a few percent. The real gate is `staging-bench ab` on one host, against the parent commit
+# (Benchmarks/README.md).
+jobs:
+  mac-staging-bench:
+    name: Staging benchmark (macOS)
+    runs-on: macos-26
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v5
+      - name: Install tools
+        run: brew install xcodegen protobuf xcbeautify zstd
+      - name: Build
+        run: ./build.sh build staging-bench
+      - name: Run
+        run: |
+          quick=""
+          if [ "${{ github.event_name }}" = "schedule" ] || [ "${{ inputs.quick }}" = "true" ]; then quick="--quick"; fi
+          Build/Products/Release/staging-bench run $quick --label "${GITHUB_SHA::12}" --output staging-bench.jsonl
+      - name: Check against the floor
+        run: python3 -m Benchmarks.floor staging-bench.jsonl
+      - uses: actions/upload-artifact@v5
+        if: always()
+        with:
+          name: staging-bench
+          path: staging-bench.jsonl
+          retention-days: 90
