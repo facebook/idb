@@ -196,8 +196,11 @@ struct IDBCommandExecutorInstallTests {
 
     var stages: [String] { all.map { "\($0.stage.rawValue).\($0.phase.rawValue)" } }
 
-    func append(_ event: InstallProgressEvent) {
-      events.withLock { $0.append(event) }
+    func append(_ event: InstallEvent) {
+      guard case .progress(let progress) = event else {
+        return
+      }
+      events.withLock { $0.append(progress) }
     }
   }
 
@@ -207,7 +210,7 @@ struct IDBCommandExecutorInstallTests {
     let framework = try harness.makeBundle(named: "Sample", extension: "framework", identifier: "com.example.sample")
     let progress = ProgressEvents()
 
-    let artifact = try await harness.executor.install(.framework, from: .stream(try await harness.gzippedTar(of: framework)), onProgress: progress.append)
+    let artifact = try await harness.executor.install(.framework, from: .stream(try await harness.gzippedTar(of: framework)), onEvent: progress.append)
 
     #expect(progress.stages == ["extract.started", "extract.completed", "install.started", "install.completed"])
     guard case .installCompleted(_, let artifactPath, let name)? = progress.all.last else {
@@ -224,7 +227,7 @@ struct IDBCommandExecutorInstallTests {
     let framework = try harness.makeBundle(named: "Sample", extension: "framework", identifier: "com.example.sample")
     let progress = ProgressEvents()
 
-    _ = try await harness.executor.install(.framework, from: .localPath(framework.path), onProgress: progress.append)
+    _ = try await harness.executor.install(.framework, from: .localPath(framework.path), onEvent: progress.append)
 
     #expect(progress.stages == ["install.started", "install.completed"])
   }
@@ -235,7 +238,7 @@ struct IDBCommandExecutorInstallTests {
     let dylib = try harness.makeFile(named: "libSample.dylib")
     let progress = ProgressEvents()
 
-    _ = try await harness.executor.install(.dylib(name: "libSample.dylib"), from: .stream(try await harness.gzipped(dylib)), onProgress: progress.append)
+    _ = try await harness.executor.install(.dylib(name: "libSample.dylib"), from: .stream(try await harness.gzipped(dylib)), onEvent: progress.append)
 
     #expect(progress.stages == ["extract.started", "extract.completed", "install.started", "install.completed"])
   }

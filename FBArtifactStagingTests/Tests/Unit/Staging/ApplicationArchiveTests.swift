@@ -450,7 +450,7 @@ final class ApplicationArchiveTests: XCTestCase {
     let collected = EventCollector()
 
     let installed = try await target.install(
-      from: .localPath(app), temporaryDirectory: temporaryDirectory, logger: logger, onProgress: collected.append)
+      from: .localPath(app), temporaryDirectory: temporaryDirectory, logger: logger, onEvent: collected.append(event:))
 
     XCTAssertEqual(installed.bundle.identifier, "com.example.sample")
     XCTAssertEqual(target.installedPaths, [app])
@@ -473,7 +473,7 @@ final class ApplicationArchiveTests: XCTestCase {
     let collected = EventCollector()
 
     let installed = try await target.install(
-      from: .localPath(archive), temporaryDirectory: temporaryDirectory, logger: logger, onProgress: collected.append)
+      from: .localPath(archive), temporaryDirectory: temporaryDirectory, logger: logger, onEvent: collected.append(event:))
 
     XCTAssertEqual(installed.bundle.identifier, "com.example.sample")
     XCTAssertEqual(target.installedPaths.count, 1)
@@ -491,7 +491,7 @@ final class ApplicationArchiveTests: XCTestCase {
 
     do {
       _ = try await target.install(
-        from: .localPath(archive), temporaryDirectory: temporaryDirectory, logger: logger, onProgress: collected.append)
+        from: .localPath(archive), temporaryDirectory: temporaryDirectory, logger: logger, onEvent: collected.append(event:))
       XCTFail("Expected the target's failure to propagate")
     } catch {
       XCTAssertTrue(error is TargetFailure, "Got: \(error)")
@@ -617,6 +617,12 @@ private final class EventCollector: @unchecked Sendable {
 
   @Sendable func append(_ event: InstallProgressEvent) {
     lock.withLock { storage.append(event) }
+  }
+
+  @Sendable func append(event: InstallEvent) {
+    if case .progress(let progress) = event {
+      append(progress)
+    }
   }
 }
 

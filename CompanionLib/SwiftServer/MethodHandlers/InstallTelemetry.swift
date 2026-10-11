@@ -93,14 +93,14 @@ final class InstallTelemetry: Sendable {
     self.payloadKind = payloadKind
   }
 
-  func staged(_ report: StagingReport) {
-    state.withLock { state in
-      switch report {
-      case .route(let route):
-        state.route = route
-      case .download(let report):
-        state.timeToFirstByte = report.timeToFirstByte
-      }
+  func observe(_ event: InstallEvent) {
+    switch event {
+    case .progress(let progress):
+      observe(progress)
+    case .route(let route):
+      state.withLock { $0.route = route }
+    case .download(let report):
+      state.withLock { $0.timeToFirstByte = report.timeToFirstByte }
     }
   }
 

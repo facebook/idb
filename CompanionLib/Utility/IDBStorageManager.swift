@@ -5,6 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+import FBArtifactStaging
 import FBControlCore
 import FBXCTestCore
 import Foundation
@@ -55,6 +56,10 @@ public final class InstalledArtifact {
     self.uuid = uuid
     self.path = path
   }
+}
+
+extension InstalledArtifact: InstalledName {
+  public var installedName: String { name }
 }
 
 // MARK: - IDBStorage

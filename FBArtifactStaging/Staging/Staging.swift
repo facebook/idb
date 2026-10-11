@@ -41,7 +41,7 @@ public struct InstallOptions: Sendable {
 }
 
 /// What staging an install source leaves on disk while its body runs.
-public enum StagedTree: Sendable {
+enum StagedTree: Sendable {
 
   /// A directory holding what an archive held, removed once the body returns.
   case extracted(URL)
@@ -52,7 +52,7 @@ public enum StagedTree: Sendable {
   /// The caller's own item, which staging leaves where it is.
   case inPlace(URL)
 
-  public var url: URL {
+  var url: URL {
     switch self {
     case .extracted(let url), .file(let url), .inPlace(let url):
       return url
@@ -60,7 +60,7 @@ public enum StagedTree: Sendable {
   }
 
   /// Whether the item outlives the body, so storage can link to it rather than move it.
-  public var isInPlace: Bool {
+  var isInPlace: Bool {
     switch self {
     case .inPlace:
       return true
@@ -71,10 +71,26 @@ public enum StagedTree: Sendable {
 }
 
 /// What staging learned about how it fetched and unpacked a source, beyond the progress of its stages.
-public enum StagingReport: Equatable, Sendable {
+enum StagingReport: Equatable, Sendable {
   case route(ExtractionRoute)
   /// A download that completed. One that failed carries its report in its `InstallError.transferFailed`.
   case download(DownloadReport)
+}
+
+/// Everything an install reports as it goes, in order.
+public enum InstallEvent: Sendable {
+  /// A stage started, made progress or finished. A stage that fails reports no terminal event; the failure is the
+  /// thrown error.
+  case progress(InstallProgressEvent)
+  /// How a streamed or downloaded archive is unpacked, once decided, and again if it changes.
+  case route(ExtractionRoute)
+  /// A download that completed. One that failed carries its report in its `InstallError.transferFailed`.
+  case download(DownloadReport)
+}
+
+/// What an installed artifact is known by on the target, for the install stage's completion.
+public protocol InstalledName {
+  var installedName: String { get }
 }
 
 /// Gets an install source onto disk for every kind of artifact: fetching,
@@ -89,7 +105,7 @@ public enum Staging {
   ///
   /// `onReport` reports how a streamed or downloaded archive is unpacked once that is
   /// decided, so a failed extraction has reported it too, and again if it changes.
-  public static func withMaterialized<T>(
+  static func withMaterialized<T>(
     _ source: InstallSource,
     as kind: ArtifactKind,
     options: InstallOptions = InstallOptions(),
@@ -113,27 +129,33 @@ public enum Staging {
     }
   }
 
-  /// Stages `source`, identifies the artifact of `kind` in it and installs that with `install`, reporting the install
-  /// stage alongside the ones staging reports.
+  /// Stages `source`, identifies the artifact of `kind` in it and installs that with `install`, reporting every stage,
+  /// how an archive was unpacked and how a download went through `onEvent`.
   ///
-  /// `install` is told whether the artifact is in place; one that is not is deleted once `install` returns. `name` is
-  /// what the installed artifact is known by on the target, for the stage's completion.
-  public static func install<Installed>(
+  /// `install` is told whether the artifact is in place; one that is not is deleted once `install` returns.
+  public static func install<Installed: InstalledName>(
     _ source: InstallSource,
     as kind: ArtifactKind,
     options: InstallOptions = InstallOptions(),
-    totalStart: Date = Date(),
     downloadConfiguration: URLSessionConfiguration = .default,
     temporaryDirectory: TemporaryDirectory,
     logger: any ControlCoreLogger,
-    onProgress: @escaping @Sendable (InstallProgressEvent) -> Void = { _ in },
-    onReport: @escaping @Sendable (StagingReport) -> Void = { _ in },
-    name: (Installed) -> String,
+    onEvent: @escaping @Sendable (InstallEvent) -> Void = { _ in },
     _ install: (_ artifact: Artifact, _ inPlace: Bool) async throws -> Installed
   ) async throws -> Installed {
-    try await withMaterialized(
+    let totalStart = Date()
+    let onProgress: @Sendable (InstallProgressEvent) -> Void = { onEvent(.progress($0)) }
+    return try await withMaterialized(
       source, as: kind, options: options, totalStart: totalStart, downloadConfiguration: downloadConfiguration,
-      temporaryDirectory: temporaryDirectory, logger: logger, onProgress: onProgress, onReport: onReport
+      temporaryDirectory: temporaryDirectory, logger: logger, onProgress: onProgress,
+      onReport: { report in
+        switch report {
+        case .route(let route):
+          onEvent(.route(route))
+        case .download(let download):
+          onEvent(.download(download))
+        }
+      }
     ) { tree in
       let artifact: Artifact
       do {
@@ -150,7 +172,7 @@ public enum Staging {
       let installed = try await install(artifact, tree.isInPlace)
       onProgress(
         .installCompleted(
-          timing: .measure(stageStart: installStart, totalStart: totalStart), artifactPath: artifact.url.path, name: name(installed)))
+          timing: .measure(stageStart: installStart, totalStart: totalStart), artifactPath: artifact.url.path, name: installed.installedName))
       return installed
     }
   }
@@ -162,7 +184,7 @@ public enum Staging {
   /// The same rule for every kind: a directory is the artifact, and so is a file
   /// for a kind whose artifact can be one -- a dylib or a test run -- unless its
   /// first bytes say it is an archive or compressed. Any other file is an archive.
-  public static func unpacks(_ source: InstallSource, as kind: ArtifactKind) -> Bool {
+  static func unpacks(_ source: InstallSource, as kind: ArtifactKind) -> Bool {
     guard case .localPath(let path) = source else {
       return true
     }

@@ -112,18 +112,16 @@ public final class IDBCommandExecutor {
     return listing
   }
 
-  /// Stages `source`, finds the artifact `destination` names in it and installs that, reporting each stage through `onProgress`
-  /// and how an archive was unpacked through `onReport`.
+  /// Stages `source`, finds the artifact `destination` names in it and installs that, reporting each stage, how an archive
+  /// was unpacked and how a download went through `onEvent`.
   public func install(
     _ destination: InstallDestination,
     from source: InstallSource,
     options: InstallOptions = InstallOptions(),
-    onProgress: @escaping @Sendable (InstallProgressEvent) -> Void = { _ in },
-    onReport: @escaping @Sendable (StagingReport) -> Void = { _ in }
+    onEvent: @escaping @Sendable (InstallEvent) -> Void = { _ in }
   ) async throws -> InstalledArtifact {
     return try await Staging.install(
-      source, as: destination.kind, options: options, temporaryDirectory: temporaryDirectory, logger: target.logger, onProgress: onProgress,
-      onReport: onReport, name: \.name
+      source, as: destination.kind, options: options, temporaryDirectory: temporaryDirectory, logger: target.logger, onEvent: onEvent
     ) { artifact, inPlace in
       try await install(artifact, as: destination, inPlace: inPlace)
     }

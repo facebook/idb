@@ -64,7 +64,7 @@ private struct Refused: Error {}
   ])
   func aStreamedAppReportsTheFormatItsFirstBytesNamed(route: ExtractionRoute, column: String) {
     let telemetry = InstallTelemetry(payloadKind: .data)
-    telemetry.staged(.route(route))
+    telemetry.observe(.route(route))
 
     #expect(columns(of: telemetry).contains("stream_format=\(column)"))
   }
@@ -77,7 +77,7 @@ private struct Refused: Error {}
   ])
   func aDownloadedAppReportsTheFormatItsFirstBytesNamedAndItsExtractor(route: ExtractionRoute, routeColumns: [String]) {
     let telemetry = InstallTelemetry(payloadKind: .url)
-    telemetry.staged(.route(route))
+    telemetry.observe(.route(route))
 
     #expect(columns(of: telemetry) == (routeColumns + ["payload_kind=url"]).sorted())
   }
@@ -85,14 +85,14 @@ private struct Refused: Error {}
   /// What a client declared plays no part: the format is what the archive's first bytes say.
   @Test func aStreamedAppReportsWhatItsFirstBytesSayNotWhatItsClientDeclared() {
     let telemetry = InstallTelemetry(payloadKind: .data)
-    telemetry.staged(.route(ExtractionRoute(format: .undetermined, extractor: .inProcessTar)))
+    telemetry.observe(.route(ExtractionRoute(format: .undetermined, extractor: .inProcessTar)))
 
     #expect(columns(of: telemetry) == ["extractor=tar_inprocess", "payload_kind=data", "stream_format=undetermined"])
   }
 
   @Test func aCompletedDownloadReportsTheTimeToItsFirstByte() {
     let telemetry = InstallTelemetry(payloadKind: .url)
-    telemetry.staged(.download(DownloadReport(receivedBytes: 4096, timeToFirstByte: 0.25)))
+    telemetry.observe(.download(DownloadReport(receivedBytes: 4096, timeToFirstByte: 0.25)))
 
     #expect(columns(of: telemetry) == ["payload_kind=url", "ttfb_ms=250"])
   }
@@ -276,15 +276,15 @@ private struct Refused: Error {}
 
     let downloaded = InstallTelemetry(payloadKind: .url)
     downloaded.observe(.downloadStarted(timing: timing(seconds: 0), url: url))
-    downloaded.staged(.download(DownloadReport(receivedBytes: 1, timeToFirstByte: 0.5)))
-    downloaded.staged(.route(ExtractionRoute(format: .gzip, extractor: .inProcessTar)))
+    downloaded.observe(.download(DownloadReport(receivedBytes: 1, timeToFirstByte: 0.5)))
+    downloaded.observe(.route(ExtractionRoute(format: .gzip, extractor: .inProcessTar)))
     downloaded.observe(.downloadCompleted(timing: timing(seconds: 1), totalBytes: 1))
     downloaded.observe(.extractCompleted(timing: timing(seconds: 1), destinationPath: "/tmp/x"))
     downloaded.observe(.installCompleted(timing: timing(seconds: 1), artifactPath: "/tmp/x/A.app", name: "com.a"))
     collect(downloaded)
 
     let spooled = InstallTelemetry(payloadKind: .data)
-    spooled.staged(.route(ExtractionRoute(format: .zip, extractor: .zipSpool)))
+    spooled.observe(.route(ExtractionRoute(format: .zip, extractor: .zipSpool)))
     await spooled.receive { $0.count(Data(count: 1)) }
     collect(spooled)
 

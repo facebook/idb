@@ -92,8 +92,8 @@ struct Measurement: Codable {
     let temporaryDirectory = TemporaryDirectory(logger: logger)
     let archiveBytes = try FileManager.default.attributesOfItem(atPath: archive.path)[.size] as? Int ?? 0
     let routes = OSAllocatedUnfairLock<[String]>(initialState: [])
-    let onReport: @Sendable (StagingReport) -> Void = { report in
-      if case .route(let route) = report {
+    let onEvent: @Sendable (InstallEvent) -> Void = { event in
+      if case .route(let route) = event {
         routes.withLock { $0.append(route.extractor.rawValue) }
       }
     }
@@ -107,7 +107,7 @@ struct Measurement: Codable {
     let start = ContinuousClock.now
     var failure: String?
     do {
-      try await prepared.stage(options: options, temporaryDirectory: temporaryDirectory, logger: logger, onReport: onReport)
+      try await prepared.stage(options: options, temporaryDirectory: temporaryDirectory, logger: logger, onEvent: onEvent)
     } catch {
       failure = "\(error)"
     }
@@ -153,49 +153,65 @@ final class PreparedSource: Sendable {
   }
 
   func stage(
-    options: InstallOptions, temporaryDirectory: TemporaryDirectory, logger: any ControlCoreLogger, onReport: @escaping @Sendable (StagingReport) -> Void
+    options: InstallOptions, temporaryDirectory: TemporaryDirectory, logger: any ControlCoreLogger, onEvent: @escaping @Sendable (InstallEvent) -> Void
   ) async throws {
     switch source {
     case .path:
-      try await Staging.withMaterialized(
-        .localPath(archive.path), as: .application, options: options, temporaryDirectory: temporaryDirectory, logger: logger, onReport: onReport
-      ) { _ in }
+      try await Self.stage(
+        .localPath(archive.path), options: options, temporaryDirectory: temporaryDirectory, logger: logger, onEvent: onEvent
+      )
     case .url:
       guard let server else {
         throw ValidationError("the URL source has no server")
       }
-      try await Staging.withMaterialized(
-        .remoteURL(server.url), as: .application, options: options, temporaryDirectory: temporaryDirectory, logger: logger, onReport: onReport
-      ) { _ in }
+      try await Self.stage(
+        .remoteURL(server.url), options: options, temporaryDirectory: temporaryDirectory, logger: logger, onEvent: onEvent
+      )
     case .stream64K, .stream1M:
       let frames = self.frames
       try await stream(
         AsyncThrowingStream { continuation in
           frames.forEach { continuation.yield($0) }
           continuation.finish()
-        }, options: options, temporaryDirectory: temporaryDirectory, logger: logger, onReport: onReport)
+        }, options: options, temporaryDirectory: temporaryDirectory, logger: logger, onEvent: onEvent)
     case .pipe:
       // As sime2e reads standard input: straight from the descriptor.
       let readEnd = try Self.pipe(of: archive)
       defer { close(readEnd) }
-      try await Staging.withMaterialized(
-        .stream(FileDescriptorSource(readEnd)), as: .application, options: options, temporaryDirectory: temporaryDirectory, logger: logger,
-        onReport: onReport
-      ) { _ in }
+      try await Self.stage(
+        .stream(FileDescriptorSource(readEnd)), options: options, temporaryDirectory: temporaryDirectory, logger: logger,
+        onEvent: onEvent
+      )
     }
+  }
+
+  /// What the benchmark installs: nothing, so that the time is staging's alone.
+  private struct Staged: InstalledName {
+    var installedName: String { "staged" }
+  }
+
+  /// Stages `source` with no install after it. Staged as a dSYM, whose identification is a listing of what was
+  /// extracted, so the measurement is fetch, decompress and extract.
+  private static func stage(
+    _ source: InstallSource, options: InstallOptions, temporaryDirectory: TemporaryDirectory, logger: any ControlCoreLogger,
+    onEvent: @escaping @Sendable (InstallEvent) -> Void
+  ) async throws {
+    _ = try await Staging.install(
+      source, as: .dsym, options: options, temporaryDirectory: temporaryDirectory, logger: logger, onEvent: onEvent
+    ) { _, _ in Staged() }
   }
 
   /// Pumps `chunks` into staging as the companion and sime2e do: concurrently, through the source staging reads.
   private func stream(
     _ chunks: AsyncThrowingStream<Data, any Error>, options: InstallOptions, temporaryDirectory: TemporaryDirectory, logger: any ControlCoreLogger,
-    onReport: @escaping @Sendable (StagingReport) -> Void
+    onEvent: @escaping @Sendable (InstallEvent) -> Void
   ) async throws {
     let source = ChunkSource()
     async let pumped: Void = source.pump(chunks)
     do {
-      try await Staging.withMaterialized(
-        .stream(source), as: .application, options: options, temporaryDirectory: temporaryDirectory, logger: logger, onReport: onReport
-      ) { _ in }
+      try await Self.stage(
+        .stream(source), options: options, temporaryDirectory: temporaryDirectory, logger: logger, onEvent: onEvent
+      )
     } catch {
       source.abandon()
       try? await pumped

@@ -11,7 +11,7 @@ import os
 
 /// What a download reports about its own progress, as distinct from the bytes it
 /// is delivering.
-public enum DataDownloadEvent: Sendable {
+enum DataDownloadEvent: Sendable {
 
   /// The server accepted the request. A length of zero or less means it did not
   /// say how much to expect.
@@ -21,15 +21,15 @@ public enum DataDownloadEvent: Sendable {
   case data(byteCount: Int)
 }
 
-public final class DataDownloadInput: NSObject, @unchecked Sendable {
+final class DataDownloadInput: NSObject, @unchecked Sendable {
 
   /// The downloaded bytes, written as they arrive and ended when the transfer ends.
-  public let spool = DownloadSpool()
+  let spool = DownloadSpool()
 
   /// Waits for the transfer to finish, throwing if the server rejected the request or the connection
   /// dropped. `spool` alone cannot distinguish a failed download from a short one.
   @discardableResult
-  public func completed() async throws -> DownloadReport {
+  func completed() async throws -> DownloadReport {
     try await finished.wait()
     // The latch opens on the delegate queue after the last write to `report` and `failure`.
     if let failure {
@@ -49,11 +49,11 @@ public final class DataDownloadInput: NSObject, @unchecked Sendable {
   private let logger: ControlCoreLogger
 
   /// Stops the transfer, which then completes failed and ends `spool`. For a reader that has no use for the rest.
-  public func cancel() {
+  func cancel() {
     task.withLock { $0 }?.cancel()
   }
 
-  public static func dataDownload(withURL url: URL, logger: ControlCoreLogger) -> DataDownloadInput {
+  static func dataDownload(withURL url: URL, logger: ControlCoreLogger) -> DataDownloadInput {
     return dataDownload(withURL: url, configuration: .default, logger: logger)
   }
 
@@ -63,7 +63,7 @@ public final class DataDownloadInput: NSObject, @unchecked Sendable {
   /// `onEvent` reports how many bytes have arrived, while the bytes themselves
   /// still go only to `spool`, so a caller can show progress without getting
   /// between the download and whatever is consuming it.
-  public static func dataDownload(
+  static func dataDownload(
     withURL url: URL,
     configuration: URLSessionConfiguration,
     logger: ControlCoreLogger,
@@ -104,7 +104,7 @@ public final class DataDownloadInput: NSObject, @unchecked Sendable {
 
 extension DataDownloadInput: URLSessionDataDelegate {
 
-  public func urlSession(_ session: URLSession, dataTask: URLSessionDataTask, didReceive response: URLResponse, completionHandler: @escaping (URLSession.ResponseDisposition) -> Void) {
+  func urlSession(_ session: URLSession, dataTask: URLSessionDataTask, didReceive response: URLResponse, completionHandler: @escaping (URLSession.ResponseDisposition) -> Void) {
     report.timeToFirstByte = Date().timeIntervalSince(requestStart)
     guard let httpResponse = response as? HTTPURLResponse else {
       completionHandler(.allow)
@@ -125,18 +125,18 @@ extension DataDownloadInput: URLSessionDataDelegate {
     completionHandler(.allow)
   }
 
-  public func urlSession(_ session: URLSession, dataTask: URLSessionDataTask, didReceive data: Data) {
+  func urlSession(_ session: URLSession, dataTask: URLSessionDataTask, didReceive data: Data) {
     spool.append(data)
     report.receivedBytes += Int64(data.count)
     onEvent?(.data(byteCount: data.count))
   }
 
   // Delivered before the task completes.
-  public func urlSession(_ session: URLSession, task: URLSessionTask, didFinishCollecting metrics: URLSessionTaskMetrics) {
+  func urlSession(_ session: URLSession, task: URLSessionTask, didFinishCollecting metrics: URLSessionTaskMetrics) {
     report.observe(metrics)
   }
 
-  public func urlSession(_ session: URLSession, task: URLSessionTask, didCompleteWithError error: Error?) {
+  func urlSession(_ session: URLSession, task: URLSessionTask, didCompleteWithError error: Error?) {
     if let error {
       logger.error().log("Download task \(task) failed with error \(error)")
       report.trust = DownloadReport.Trust.evaluating(failure: error)

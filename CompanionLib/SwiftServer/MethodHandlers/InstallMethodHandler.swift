@@ -118,11 +118,12 @@ struct InstallMethodHandler {
       let options = InstallOptions(overrideModificationTime: overrideModificationTime)
       return try await commandExecutor.install(
         installDestination, from: source, options: options,
-        onProgress: { event in
+        onEvent: { event in
           telemetry.observe(event)
-          onProgress(event)
-        },
-        onReport: telemetry.staged)
+          if case .progress(let progress) = event {
+            onProgress(progress)
+          }
+        })
     }
 
     switch payload {

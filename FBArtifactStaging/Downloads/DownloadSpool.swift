@@ -17,7 +17,7 @@ import Foundation
 ///
 /// The file is unlinked as soon as it is open, so it goes when the download and its reader are done with it, however
 /// they end.
-public final class DownloadSpool: @unchecked Sendable {
+final class DownloadSpool: @unchecked Sendable {
 
   private let condition = NSCondition()
   // Guarded by `condition`.
@@ -85,7 +85,7 @@ public final class DownloadSpool: @unchecked Sendable {
 
   /// Calls `body` with a source reading the spool from its start, blocking its thread until more is written, and lets
   /// the writer stop spooling once `body` returns. A spool is read once.
-  public func reading<T>(_ body: (any ByteSource) async throws -> T) async throws -> T {
+  func reading<T>(_ body: (any ByteSource) async throws -> T) async throws -> T {
     defer { condition.withLock { readerGone = true } }
     return try await body(Reader(spool: self))
   }

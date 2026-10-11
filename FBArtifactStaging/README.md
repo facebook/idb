@@ -6,8 +6,8 @@ The target frameworks only install what is already a bundle: `ApplicationCommand
 
 ## What it provides
 
-- **Installing from a source.** `ApplicationCommands.install(from:)` downloads, extracts and installs an `InstallSource` in one call, reporting each stage as an `InstallProgressEvent`.
-- **Staging.** `Staging.withMaterialized` stages a source into a temporary directory for the duration of a closure, and `Artifact` identifies the application, test bundle, framework, dylib or dSYM inside the result.
+- **Installing from a source.** `ApplicationCommands.install(from:)` downloads, extracts and installs an application from an `InstallSource` in one call, reporting what happens as `InstallEvent`s: each stage's progress, how an archive was unpacked, and how a download went.
+- **Staging.** `Staging.install` stages a source of any kind (application, test bundle, framework, dylib or dSYM), identifies the `Artifact` in it and hands that to the caller's install, removing whatever it unpacked afterwards.
 - **Downloads.** URL sources are fetched with `URLSession` and extracted as they arrive (a zip is spooled to disk first, since its index is at the end), with progress and a `DownloadReport` of the transfer.
 - **Archive extraction.** Tar (plain, gzip or zstd) and zip archives are extracted in process, sniffing the format from the first bytes rather than trusting what the client declared. Zip archives keep their file modes and symlinks, including when they arrive as a stream. `bsdtar` remains as a fallback for archives the in-process extractors do not support.
 - **Archive creation.** `TarSource`, `GzippingSource` and `FBArchiveOperations` write the archives the companion sends back to clients, such as pulled files and test results.

@@ -113,16 +113,11 @@ public enum InstallProgressEvent: Sendable {
 
 /// A reportable download update, once the raw byte count has crossed a
 /// threshold worth telling anyone about.
-public struct DownloadProgressUpdate: Sendable {
-  public let bytesDownloaded: Int64
+struct DownloadProgressUpdate: Sendable {
+  let bytesDownloaded: Int64
 
   /// Absent when the server did not say how much to expect.
-  public let totalBytes: Int64?
-
-  public init(bytesDownloaded: Int64, totalBytes: Int64?) {
-    self.bytesDownloaded = bytesDownloaded
-    self.totalBytes = totalBytes
-  }
+  let totalBytes: Int64?
 }
 
 /// Turns a stream of arbitrarily sized chunks into occasional updates.
@@ -131,27 +126,27 @@ public struct DownloadProgressUpdate: Sendable {
 /// each one would emit thousands of events for a single archive. An update is
 /// produced once enough bytes have accumulated, or enough time has passed that a
 /// slow transfer still looks alive.
-public struct DownloadProgressState {
+struct DownloadProgressState {
 
   /// Report after this many bytes, absent a caller saying otherwise.
-  public static let defaultByteThreshold: Int64 = 10_000_000
+  static let defaultByteThreshold: Int64 = 10_000_000
 
   /// Report after this long, absent a caller saying otherwise.
-  public static let defaultTimeThreshold: TimeInterval = 2.0
+  static let defaultTimeThreshold: TimeInterval = 2.0
 
-  public private(set) var downloadedBytes: Int64 = 0
-  public private(set) var totalBytes: Int64?
+  private(set) var downloadedBytes: Int64 = 0
+  private(set) var totalBytes: Int64?
 
   private var lastReportedBytes: Int64 = 0
   private var lastReportedAt: Date
 
-  public init(startedAt: Date) {
+  init(startedAt: Date) {
     self.lastReportedAt = startedAt
   }
 
   /// Records what the server said to expect. A length of zero or less means it
   /// did not say, and is recorded as unknown rather than as a total.
-  public mutating func observe(expectedContentLength: Int64) {
+  mutating func observe(expectedContentLength: Int64) {
     totalBytes = expectedContentLength > 0 ? expectedContentLength : nil
   }
 
@@ -159,7 +154,7 @@ public struct DownloadProgressState {
   ///
   /// Takes the size rather than the bytes, because it is called once per network
   /// chunk and never has any use for their contents.
-  public mutating func track(
+  mutating func track(
     byteCount: Int,
     now: Date = Date(),
     byteThreshold: Int64 = DownloadProgressState.defaultByteThreshold,

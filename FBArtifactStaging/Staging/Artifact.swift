@@ -56,7 +56,7 @@ extension Artifact {
 
   /// The application bundle in `tree`, which is the item itself if it is in place, or else the first `.app` found in
   /// what was staged.
-  public static func applicationBundle(in tree: StagedTree, logger: (any ControlCoreLogger)? = nil) throws -> BundleDescriptor {
+  static func applicationBundle(in tree: StagedTree, logger: (any ControlCoreLogger)? = nil) throws -> BundleDescriptor {
     let directory: URL
     switch tree {
     case .inPlace(let bundle):
@@ -112,7 +112,7 @@ public enum ArtifactKind: Sendable, CustomStringConvertible {
   ///
   /// An item left in place is the artifact itself. Anything staged is searched for it: an archive's extraction directory, or
   /// the directory holding a decompressed file.
-  public func identify(in tree: StagedTree, logger: (any ControlCoreLogger)? = nil) throws -> Artifact {
+  func identify(in tree: StagedTree, logger: (any ControlCoreLogger)? = nil) throws -> Artifact {
     switch self {
     case .application:
       return .application(try Artifact.applicationBundle(in: tree, logger: logger))

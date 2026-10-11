@@ -181,24 +181,30 @@ struct InstallMatrixTests {
     }
   }
 
+  /// What the install closure saw.
+  private struct Staged: InstalledName {
+    let artifact: String
+    let inPlace: Bool
+    var installedName: String { artifact }
+  }
+
   private func stage(_ kind: Kind, from sourceCase: Source) async throws -> Outcome {
     let (installSource, configuration) = try source(sourceCase, for: kind)
     let stages = OSAllocatedUnfairLock<[String]>(initialState: [])
     do {
-      let (artifact, inPlace) = try await Staging.install(
+      let staged = try await Staging.install(
         installSource, as: kind.artifactKind, downloadConfiguration: configuration,
         temporaryDirectory: TemporaryDirectory(rootDirectory: root.appendingPathComponent("staging"), logger: logger), logger: logger,
-        onProgress: { event in
-          guard event.phase == .started || event.phase == .completed else {
+        onEvent: { event in
+          guard case .progress(let progress) = event, progress.phase == .started || progress.phase == .completed else {
             return
           }
-          stages.withLock { $0.append("\(event.stage.rawValue).\(event.phase.rawValue)") }
-        },
-        name: { (installed: (String, Bool)) in installed.0 }
+          stages.withLock { $0.append("\(progress.stage.rawValue).\(progress.phase.rawValue)") }
+        }
       ) { artifact, inPlace in
-        (Self.describe(artifact), inPlace)
+        Staged(artifact: Self.describe(artifact), inPlace: inPlace)
       }
-      return .installed(artifact: artifact, inPlace: inPlace, stages: stages.withLock { $0 })
+      return .installed(artifact: staged.artifact, inPlace: staged.inPlace, stages: stages.withLock { $0 })
     } catch {
       return .failed("\(type(of: error))")
     }
