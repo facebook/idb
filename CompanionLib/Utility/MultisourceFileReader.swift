@@ -41,16 +41,25 @@ enum MultisourceFileReader {
     case let .data(data):
       let (readTaskFromStreamTask, pipe) = pipeToInput(initialData: data, requestStream: requestStream)
 
-      return try await temporaryDirectory.withArchiveExtracted(fromStream: pipe, compression: compression) { extractionDir in
-        let files: [URL]
-        if extractFromSubdir {
-          files = try temporaryDirectory.files(inSubdirectoriesOf: extractionDir)
-        } else {
-          files = try FileManager.default.contentsOfDirectory(at: extractionDir, includingPropertiesForKeys: [.isDirectoryKey], options: [])
+      do {
+        return try await temporaryDirectory.withArchiveExtracted(fromStream: pipe, compression: compression) { extractionDir in
+          let files: [URL]
+          if extractFromSubdir {
+            files = try temporaryDirectory.files(inSubdirectoriesOf: extractionDir)
+          } else {
+            files = try FileManager.default.contentsOfDirectory(at: extractionDir, includingPropertiesForKeys: [.isDirectoryKey], options: [])
+          }
+          // We just check that read from request stream did not produce any errors
+          _ = try await readTaskFromStreamTask.value
+          return try await body(files)
         }
-        // We just check that read from request stream did not produce any errors
-        _ = try await readTaskFromStreamTask.value
-        return try await body(files)
+      } catch {
+        // A client stream that fails truncates the archive, so extraction fails too; the client's failure is the cause.
+        // A write that failed only because extraction had stopped reading is the extraction's failure, not the client's.
+        if case .failure(let clientFailure) = await readTaskFromStreamTask.result, !(clientFailure is PayloadWriteError) {
+          throw clientFailure
+        }
+        throw error
       }
 
     case let .filePath(filePath):

@@ -38,8 +38,8 @@ final class MultisourceFileReaderTests: XCTestCase {
 
   private struct ClientFailed: Error {}
 
-  /// BUG: a client stream that fails part way truncates the archive, the extraction fails first, and that is what the
-  /// call reports; the client's own failure is lost -- flipped in the following commit.
+  /// A client stream that fails part way truncates the archive, so the extraction fails too, and the client's failure is
+  /// what the call reports.
   func testAClientStreamFailingPartWayReportsTheExtractionNotTheClient() async throws {
     let directory = URL(fileURLWithPath: NSTemporaryDirectory()).appendingPathComponent(UUID().uuidString)
     try FileManager.default.createDirectory(at: directory.appendingPathComponent("payload"), withIntermediateDirectories: true)
@@ -60,7 +60,7 @@ final class MultisourceFileReaderTests: XCTestCase {
       ) { $0 }
       XCTFail("Expected a truncated push to fail")
     } catch {
-      XCTAssertFalse(error is ClientFailed, "\(error)")
+      XCTAssertTrue(error is ClientFailed, "\(error)")
     }
   }
 
