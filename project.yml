@@ -456,6 +456,7 @@ targets:
       - target: FBArtifactStaging
       - target: FBControlCore
       - target: ZstdDecompress
+      - sdk: Network.framework
       - sdk: XCTest.framework
   FBControlCoreTests:
     type: bundle.unit-test
