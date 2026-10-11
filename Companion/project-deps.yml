@@ -89,3 +89,67 @@ targets:
     dependencies:
       - framework: ../Build/Products/Release/libSimScopeProtocol.a
         embed: false
+  CompanionLibTests:
+    dependencies:
+      - framework: ../Build/Products/Release/libCompanionUtilities.a
+        embed: false
+      - framework: ../Build/Products/Release/libFBAXCore.a
+        embed: false
+      - framework: ../Build/Products/Release/libFBArtifactStaging.a
+        embed: false
+      - framework: ../Build/Products/Release/FBControlCore.framework
+        embed: false
+      - framework: ../Build/Products/Release/libFBDeviceControl.a
+        embed: false
+      - framework: ../Build/Products/Release/libFBSimulatorAX.a
+        embed: false
+      - framework: ../Build/Products/Release/libFBSimulatorBridgeProtocol.a
+        embed: false
+      - framework: ../Build/Products/Release/libFBSimulatorCodeInjection.a
+        embed: false
+      - framework: ../Build/Products/Release/libFBSimulatorControl.a
+        embed: false
+      - framework: ../Build/Products/Release/libFBSimulatorVideo.a
+        embed: false
+      - framework: ../Build/Products/Release/libFBSimulatorXCTest.a
+        embed: false
+      - framework: ../Build/Products/Release/libFBVideoCore.a
+        embed: false
+      - framework: ../Build/Products/Release/FBXCTestCore.framework
+        embed: false
+      - framework: ../Build/Products/Release/libSimulatorIPC.a
+        embed: false
+      - framework: ../Build/Products/Release/libZstdDecompress.a
+        embed: false
+  CompanionTests:
+    dependencies:
+      - framework: ../Build/Products/Release/libCompanionUtilities.a
+        embed: false
+      - framework: ../Build/Products/Release/libFBAXCore.a
+        embed: false
+      - framework: ../Build/Products/Release/libFBArtifactStaging.a
+        embed: false
+      - framework: ../Build/Products/Release/FBControlCore.framework
+        embed: false
+      - framework: ../Build/Products/Release/libFBDeviceControl.a
+        embed: false
+      - framework: ../Build/Products/Release/libFBSimulatorAX.a
+        embed: false
+      - framework: ../Build/Products/Release/libFBSimulatorBridgeProtocol.a
+        embed: false
+      - framework: ../Build/Products/Release/libFBSimulatorCodeInjection.a
+        embed: false
+      - framework: ../Build/Products/Release/libFBSimulatorControl.a
+        embed: false
+      - framework: ../Build/Products/Release/libFBSimulatorVideo.a
+        embed: false
+      - framework: ../Build/Products/Release/libFBSimulatorXCTest.a
+        embed: false
+      - framework: ../Build/Products/Release/libFBVideoCore.a
+        embed: false
+      - framework: ../Build/Products/Release/FBXCTestCore.framework
+        embed: false
+      - framework: ../Build/Products/Release/libSimulatorIPC.a
+        embed: false
+      - framework: ../Build/Products/Release/libZstdDecompress.a
+        embed: false

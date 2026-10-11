@@ -69,6 +69,35 @@ class TestPlanTest(unittest.TestCase):
         )
         self.assertEqual(plan.prerequisites("FBControlCore"), [])
 
+    def test_a_test_target_runs_from_the_generated_project_unless_the_plan_names_another(
+        self,
+    ) -> None:
+        document = json.loads(json.dumps(PLAN))
+        document["schemes"]["CompanionTests"] = ["CompanionTests"]
+        document["testTargets"]["CompanionTests"] = {
+            "bootedSimulator": False,
+            "runner": "standard",
+            "prerequisites": ["companion_tests"],
+            "project": "Companion/idb_companion.xcodeproj",
+        }
+        self.path.write_text(json.dumps(document))
+        self.assertEqual(
+            self._run("project", "FBControlCore"), (0, "FBSimulatorControl.xcodeproj\n")
+        )
+        self.assertEqual(
+            self._run("project", "CompanionTests"),
+            (0, "Companion/idb_companion.xcodeproj\n"),
+        )
+
+    def test_a_scheme_spanning_two_projects_is_refused(self) -> None:
+        document = json.loads(json.dumps(PLAN))
+        document["testTargets"]["FBSimulatorControlSmokeTests"]["project"] = (
+            "Other.xcodeproj"
+        )
+        self.path.write_text(json.dumps(document))
+        with self.assertRaises(ValueError):
+            TestPlan.load(self.path).project("FBSimulatorControl")
+
     def test_the_matrix_has_one_job_per_test_target(self) -> None:
         status, output = self._run("matrix")
         self.assertEqual(status, 0)

@@ -1,5 +1,11 @@
 {
   "schemes": {
+    "CompanionLibTests": [
+      "CompanionLibTests"
+    ],
+    "CompanionTests": [
+      "CompanionTests"
+    ],
     "CompanionUtilities": [
       "CompanionUtilitiesTests"
     ],
@@ -108,6 +114,22 @@
     ]
   },
   "testTargets": {
+    "CompanionLibTests": {
+      "bootedSimulator": false,
+      "prerequisites": [
+        "companion_tests"
+      ],
+      "project": "Companion/idb_companion.xcodeproj",
+      "runner": "large"
+    },
+    "CompanionTests": {
+      "bootedSimulator": false,
+      "prerequisites": [
+        "companion_tests"
+      ],
+      "project": "Companion/idb_companion.xcodeproj",
+      "runner": "large"
+    },
     "CompanionUtilitiesTests": {
       "bootedSimulator": false,
       "prerequisites": [],

@@ -371,6 +371,91 @@ targets:
         embed: false
       - sdk: Foundation.framework
 
+  # The companion's own unit tests. Like the tools, each bundle is a link step
+  # over static archives, so project-deps.yml lists the generated project's
+  # products in its Buck closure.
+  CompanionLibTests:
+    type: bundle.unit-test
+    platform: macOS
+    deploymentTarget: "15.0"
+    scheme:
+      testTargets:
+        - CompanionLibTests
+    sources:
+      - path: ../CompanionLibTests
+    settings:
+      base:
+        MACOSX_DEPLOYMENT_TARGET: "15.0"
+        SWIFT_VERSION: "5.0"
+        GENERATE_INFOPLIST_FILE: YES
+        SYSTEM_HEADER_SEARCH_PATHS: $(inherited) $(SRCROOT)/../PrivateHeaders
+        FRAMEWORK_SEARCH_PATHS: $(inherited) $(SRCROOT)/../Build/Products/Release
+        SWIFT_INCLUDE_PATHS: $(inherited) $(SRCROOT)/../Build/Products/Release
+        OTHER_LDFLAGS: $(inherited) -ObjC -weak_library $(SRCROOT)/../PrivateHeaders/CoreSimulator/CoreSimulator.tbd -weak_library $(SRCROOT)/../PrivateHeaders/AccessibilityPlatformTranslation/AccessibilityPlatformTranslation.tbd
+        CODE_SIGN_IDENTITY: "-"
+        CODE_SIGNING_REQUIRED: NO
+        CODE_SIGNING_ALLOWED: NO
+        PRODUCT_BUNDLE_IDENTIFIER: com.facebook.CompanionLibTests
+        PRODUCT_NAME: CompanionLibTests
+    dependencies:
+      - target: CompanionLib
+        embed: false
+      - target: IDBGRPCSwift
+        embed: false
+      - target: ReplProtocol
+        embed: false
+      - package: grpc-swift-2
+        product: GRPCCore
+      - package: grpc-swift-nio-transport
+        product: GRPCNIOTransportHTTP2Posix
+      - package: swift-nio
+        product: NIOCore
+      - package: swift-nio
+        product: NIOPosix
+      - sdk: Foundation.framework
+      - sdk: XCTest.framework
+
+  CompanionTests:
+    type: bundle.unit-test
+    platform: macOS
+    deploymentTarget: "15.0"
+    scheme:
+      testTargets:
+        - CompanionTests
+    sources:
+      - path: ../CompanionTests
+    settings:
+      base:
+        MACOSX_DEPLOYMENT_TARGET: "15.0"
+        SWIFT_VERSION: "5.0"
+        GENERATE_INFOPLIST_FILE: YES
+        SYSTEM_HEADER_SEARCH_PATHS: $(inherited) $(SRCROOT)/../PrivateHeaders
+        FRAMEWORK_SEARCH_PATHS: $(inherited) $(SRCROOT)/../Build/Products/Release
+        SWIFT_INCLUDE_PATHS: $(inherited) $(SRCROOT)/../Build/Products/Release
+        OTHER_LDFLAGS: $(inherited) -ObjC -weak_library $(SRCROOT)/../PrivateHeaders/CoreSimulator/CoreSimulator.tbd -weak_library $(SRCROOT)/../PrivateHeaders/AccessibilityPlatformTranslation/AccessibilityPlatformTranslation.tbd
+        CODE_SIGN_IDENTITY: "-"
+        CODE_SIGNING_REQUIRED: NO
+        CODE_SIGNING_ALLOWED: NO
+        PRODUCT_BUNDLE_IDENTIFIER: com.facebook.CompanionTests
+        PRODUCT_NAME: CompanionTests
+    dependencies:
+      - target: CompanionLib
+        embed: false
+      - target: IDBGRPCSwift
+        embed: false
+      - target: ReplProtocol
+        embed: false
+      - package: grpc-swift-2
+        product: GRPCCore
+      - package: grpc-swift-nio-transport
+        product: GRPCNIOTransportHTTP2Posix
+      - package: swift-nio
+        product: NIOCore
+      - package: swift-nio
+        product: NIOPosix
+      - sdk: Foundation.framework
+      - sdk: XCTest.framework
+
   CompanionDiscovery:
     type: framework
     platform: macOS

@@ -19,6 +19,8 @@ from dataclasses import dataclass
 from pathlib import Path
 
 DEFAULT_PLAN = Path("TestPlan.json")
+# The generated spec's project, where every test target runs unless the plan names another.
+DEFAULT_PROJECT = "FBSimulatorControl.xcodeproj"
 
 # The GitHub-hosted runner each runner class in the plan runs on.
 RUNNER_LABELS: Mapping[str, str] = {"standard": "macos-26", "large": "macos-26-xlarge"}
@@ -30,6 +32,7 @@ class TestTarget:
     booted_simulator: bool
     prerequisites: tuple[str, ...]
     runner: str
+    project: str = DEFAULT_PROJECT
 
 
 @dataclass(frozen=True)
@@ -50,6 +53,7 @@ class TestPlan:
                     booted_simulator=fields["bootedSimulator"],
                     prerequisites=tuple(fields["prerequisites"]),
                     runner=fields["runner"],
+                    project=fields.get("project", DEFAULT_PROJECT),
                 )
                 for name, fields in document["testTargets"].items()
             },
@@ -64,6 +68,15 @@ class TestPlan:
                 for step in self.test_targets[target].prerequisites
             }
         )
+
+    def project(self, scheme: str) -> str:
+        """The Xcode project the scheme's bundles are in, which has to be one project."""
+        projects = {
+            self.test_targets[target].project for target in self.schemes[scheme]
+        }
+        if len(projects) != 1:
+            raise ValueError(f"{scheme} spans several projects: {sorted(projects)}")
+        return projects.pop()
 
     def display_name(self, target: str) -> str:
         """The framework a test target tests, then its suite when it has one.
@@ -109,6 +122,10 @@ def main(argv: Sequence[str] | None = None) -> int:
         help="the build.sh steps that build what the scheme's bundles copy",
     )
     prerequisites.add_argument("scheme")
+    project = commands.add_parser(
+        "project", help="the Xcode project the scheme runs from"
+    )
+    project.add_argument("scheme")
     arguments = parser.parse_args(argv)
     plan = TestPlan.load(arguments.plan)
     if arguments.command == "schemes":
@@ -119,6 +136,8 @@ def main(argv: Sequence[str] | None = None) -> int:
         print(f"targets={json.dumps(plan.matrix())}")
     elif arguments.scheme not in plan.schemes:
         parser.error(f"unknown scheme: {arguments.scheme}")
+    elif arguments.command == "project":
+        print(plan.project(arguments.scheme))
     else:
         print("\n".join(plan.prerequisites(arguments.scheme)))
     return 0

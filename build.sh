@@ -828,6 +828,16 @@ function build_companion_archives() {
   ' Companion/project-deps.yml | sort -u)
 }
 
+# The companion's test bundles link the same archives as the companion itself,
+# from the companion's own project.
+function build_companion_tests() {
+  check_protobuf
+  build_idb_deps
+  generate_proto
+  generate_companion_project
+  build_companion_archives
+}
+
 function build_idb_companion() {
   check_protobuf
   build_idb_deps
@@ -1076,7 +1086,7 @@ function test_target() {
   # a hosted runner, so those raise their own allowance (up to the maximum here)
   # via `executionTimeAllowance`.
   invoke_xcodebuild \
-    -project FBSimulatorControl.xcodeproj \
+    -project "$(test_plan project "$name")" \
     -scheme "$name" \
     -sdk macosx \
     -derivedDataPath "$BUILD_DIRECTORY" \
