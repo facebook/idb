@@ -50,7 +50,7 @@ struct StagingCleanupTests {
       try contents.write(to: path)
       return (.localPath(path.path), .default)
     case .stream:
-      return (.stream(BytePipe(contents)), .default)
+      return (.stream(ChunkSource(contents)), .default)
     case .remoteURL:
       return (.remoteURL(CorpusURLProtocol.serving(contents)), CorpusURLProtocol.configuration)
     }
@@ -125,17 +125,20 @@ struct StagingCleanupTests {
   /// A stream whose producer ends once staging is cancelled: staging returns promptly and cleans up.
   @Test
   func aCancelledStreamInstallReturnsAndCleansUp() async throws {
-    let pipe = BytePipe()
+    let source = ChunkSource()
     let contents = try appArchive()
-    pipe.input.write(contents.prefix(contents.count / 2))
+    let (chunks, producer) = AsyncThrowingStream.makeStream(of: Data.self)
+    producer.yield(contents.prefix(contents.count / 2))
+    let pumped = Task { try await source.pump(chunks) }
     let task = Task {
       try await Staging.withMaterialized(
-        .stream(pipe), as: .application, temporaryDirectory: TemporaryDirectory(rootDirectory: stagingRoot, logger: logger), logger: logger
+        .stream(source), as: .application, temporaryDirectory: TemporaryDirectory(rootDirectory: stagingRoot, logger: logger), logger: logger
       ) { _ in }
     }
     try await Task.sleep(for: .milliseconds(300))
     task.cancel()
-    pipe.input.finish()
+    producer.finish()
+    _ = await pumped.result
     let start = ContinuousClock.now
     _ = await task.result
     // Generous for a loaded host; a cancellation that did not end the read would wait on the producer indefinitely.

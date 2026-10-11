@@ -134,14 +134,14 @@ struct InstallMethodHandler {
     }
 
     /// A dylib arrives as a single gzipped file; everything else as an archive.
-    func installStreamed(_ dataStream: BytePipe, compression: FBCompressionFormat) async throws -> InstalledArtifact {
+    func installStreamed(_ dataStream: any ByteSource, compression: FBCompressionFormat) async throws -> InstalledArtifact {
       if case .dylib = installDestination {
         return try await install(from: .gzippedFile(dataStream, name: name))
       }
       return try await install(from: .stream(dataStream), compression: compression)
     }
 
-    func installStream(_ dataStream: BytePipe, format: InstallStreamFormat, head: Data) async throws -> InstalledArtifact {
+    func installStream(_ dataStream: any ByteSource, format: InstallStreamFormat, head: Data) async throws -> InstalledArtifact {
       let tarCompression: FBCompressionFormat
       switch format {
       case .zip, .zstdZip:
@@ -164,18 +164,30 @@ struct InstallMethodHandler {
       if destination == .app {
         telemetry.streamed(format)
       }
-      let pipe = BytePipe()
-      let clientFailure = OSAllocatedUnfairLock<(any Error)?>(initialState: nil)
-      async let writePayload: Void = writePayload(head: head, rest: rest, to: pipe.input, telemetry: telemetry, clientFailure: clientFailure)
+      let source = ChunkSource()
+      async let pumped: Void = telemetry.receive { receive in
+        try await source.pump(rest, after: head) { receive.count($0) }
+      }
       let artifact: InstalledArtifact
       do {
-        artifact = try await installStream(pipe, format: format, head: head)
+        artifact = try await installStream(source, format: format, head: head)
       } catch {
+        source.abandon()
         // A client stream that fails truncates the archive, so extraction fails too; the client's failure is the cause.
-        try? await writePayload
-        throw clientFailure.withLock { $0 } ?? error
+        // A pump stopped only because the extraction had stopped reading is the extraction's failure.
+        do {
+          try await pumped
+        } catch let clientFailure where !(clientFailure is ChunkSource.ReaderClosed) {
+          throw clientFailure
+        } catch {}
+        throw error
       }
-      try await writePayload
+      // The extractor may stop before the stream does -- `bsdtar` exits at the end of the archive -- and a client still
+      // sending would otherwise wait for room forever. What it sends past a finished install doesn't matter.
+      source.abandon()
+      do {
+        try await pumped
+      } catch is ChunkSource.ReaderClosed {}
       return artifact
 
     case let .url(url):
@@ -222,24 +234,6 @@ struct InstallMethodHandler {
       return .ZSTD
     case .zip, .gzip, .other:
       return .GZIP
-    }
-  }
-
-  /// Writes the payload to `input`, recording in `clientFailure` an error thrown by `rest` rather than by the write.
-  private func writePayload(
-    head: Data,
-    rest: AsyncThrowingStream<Data, any Error>,
-    to input: InputSource,
-    telemetry: InstallTelemetry,
-    clientFailure: OSAllocatedUnfairLock<(any Error)?>
-  ) async throws {
-    defer { input.finish() }
-
-    try await telemetry.receive { receive in
-      try await PayloadPump.write(
-        head: head, frames: rest, to: input,
-        onWrite: { receive.count($0) },
-        onClientFailure: { error in clientFailure.withLock { $0 = error } })
     }
   }
 

@@ -192,7 +192,7 @@ final class FBArchiveOperationsTests: XCTestCase {
   ) async throws -> String {
     let destination = try makeExtractionDirectory()
     let data = try Data(contentsOf: URL(fileURLWithPath: archive))
-    try await BytePipe(data).reading {
+    try await ChunkSource(data).reading {
       try await ArchiveExtractors.default.extract(
         from: $0,
         to: destination,
@@ -338,7 +338,7 @@ final class FBArchiveOperationsTests: XCTestCase {
   }
 
   func testBSDTarExtractingAStream_WhenItIsCorrupt_FailsWithBSDTarsStandardError() async throws {
-    let input = BytePipe(Data("not an archive at all".utf8))
+    let input = ChunkSource(Data("not an archive at all".utf8))
     let root = try makeExtractionDirectory()
 
     do {
@@ -351,7 +351,7 @@ final class FBArchiveOperationsTests: XCTestCase {
   }
 
   func testBSDTarExtractingAStream_WhenItStopsReadingEarly_FailsRatherThanWaiting() async throws {
-    let input = BytePipe(Self.randomData(count: 8 << 20))
+    let input = ChunkSource(Self.randomData(count: 8 << 20))
     let root = try makeExtractionDirectory()
 
     do {
@@ -369,7 +369,7 @@ final class FBArchiveOperationsTests: XCTestCase {
     let contents = Self.randomData(count: 8 << 20)
     try contents.write(to: URL(fileURLWithPath: (source as NSString).appendingPathComponent("Payload/Sample.app/Large")))
     let archive = try makeArchive(from: source, format: .gzippedTar)
-    let input = BytePipe(try Data(contentsOf: URL(fileURLWithPath: archive)))
+    let input = ChunkSource(try Data(contentsOf: URL(fileURLWithPath: archive)))
     let root = try makeExtractionDirectory()
 
     try await input.reading { try await BSDTarExtractor().extract(from: $0, to: root, options: ArchiveExtractOptions(), logger: logger) }

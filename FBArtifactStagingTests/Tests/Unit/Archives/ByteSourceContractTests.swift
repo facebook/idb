@@ -139,9 +139,8 @@ struct ByteSourceContractTests {
   }
 
   @Test
-  func aPipeReadsWhatWasWrittenThenEnds() async throws {
-    let contents = try await BytePipe(Self.payload).reading { source in try source.readAll() }
-    #expect(contents == Self.payload)
+  func aChunkSourceOfDataReadsItThenEnds() throws {
+    #expect(try ChunkSource(Self.payload).readAll() == Self.payload)
   }
 
   // MARK: - Draining

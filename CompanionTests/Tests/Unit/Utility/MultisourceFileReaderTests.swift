@@ -17,20 +17,20 @@ import os
 final class MultisourceFileReaderTests: XCTestCase {
 
   func testWritePayloadsStopsWhenTheReaderHasGone() async throws {
-    let pipe = BytePipe()
-    try await pipe.reading { _ in }
+    let source = ChunkSource()
+    source.abandon()
     let pulled = OSAllocatedUnfairLock(initialState: 0)
 
     do {
       try await MultisourceFileReader.writePayloads(
         initialData: Data([0xFF]),
         from: Self.requestStream(chunkCount: 4, pulled: pulled),
-        to: pipe.input)
+        to: source)
       XCTFail("Expected the failed write to end the transfer")
     } catch {
       let status = ErrorMapping.rpcError(from: error)
       XCTAssertEqual(status.code, .aborted)
-      XCTAssertTrue(status.message.hasPrefix("Failed to write 1 bytes to the extraction pipe"), status.message)
+      XCTAssertEqual(status.message, "The reader stopped before the input ended")
     }
 
     XCTAssertEqual(pulled.withLock { $0 }, 0)

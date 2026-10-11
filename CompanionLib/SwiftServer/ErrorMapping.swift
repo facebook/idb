@@ -34,8 +34,8 @@ enum ErrorMapping {
     if let rpcError = error as? RPCError {
       return rpcError
     }
-    if let writeError = error as? PayloadWriteError {
-      return RPCError(code: .aborted, message: writeError.description)
+    if let readerClosed = error as? ChunkSource.ReaderClosed {
+      return RPCError(code: .aborted, message: readerClosed.description)
     }
 
     var message = error.localizedDescription

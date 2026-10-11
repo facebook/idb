@@ -39,7 +39,7 @@ struct IDBCommandExecutorInstallTests {
   @Test
   func aStreamedDylibThatIsNotAGzipFailsAsCorrupt() async throws {
     let harness = try MacInstallHarness()
-    let input = BytePipe(Data("not a gzip at all".utf8))
+    let input = ChunkSource(Data("not a gzip at all".utf8))
 
     let error = await #expect(throws: (any Error).self) {
       try await harness.executor.install(.dylib, from: .gzippedFile(input, name: "libSample.dylib"))
@@ -132,7 +132,7 @@ struct IDBCommandExecutorInstallTests {
     let app = try harness.makeBundle(named: "Sample", extension: "app", identifier: "com.example.sample")
     let archive = MacInstallHarness.zstd(try harness.tarData(of: app))
 
-    let artifact = try await harness.executor.install(.application(makeDebuggable: false), from: .stream(BytePipe(archive)), options: InstallOptions(compression: .ZSTD))
+    let artifact = try await harness.executor.install(.application(makeDebuggable: false), from: .stream(ChunkSource(archive)), options: InstallOptions(compression: .ZSTD))
 
     #expect(artifact.name == "com.example.sample")
   }
@@ -143,7 +143,7 @@ struct IDBCommandExecutorInstallTests {
     let dsym = try harness.makeBundle(named: "Sample", extension: "dSYM", identifier: "com.example.sample")
     let archive = MacInstallHarness.zstd(try harness.tarData(of: dsym))
 
-    let artifact = try await harness.executor.install(.dsym(linkTo: nil), from: .stream(BytePipe(archive)), options: InstallOptions(compression: .ZSTD))
+    let artifact = try await harness.executor.install(.dsym(linkTo: nil), from: .stream(ChunkSource(archive)), options: InstallOptions(compression: .ZSTD))
 
     #expect(artifact.name == "Sample.dSYM")
     #expect(FileManager.default.fileExists(atPath: artifact.path.appendingPathComponent("Info.plist").path))

@@ -250,11 +250,11 @@ struct TarStreamExtractorTests {
     try fileManager.createDirectory(atPath: expected, withIntermediateDirectories: true)
     // Streamed, as a zip read without its central directory extracts differently.
     let data = try Data(contentsOf: URL(fileURLWithPath: archive))
-    try await BytePipe(data).reading { try await BSDTarExtractor().extract(from: $0, to: expected, options: ArchiveExtractOptions(), logger: logger) }
+    try await ChunkSource(data).reading { try await BSDTarExtractor().extract(from: $0, to: expected, options: ArchiveExtractOptions(), logger: logger) }
     let extracted = root.appendingPathComponent("inprocess").path
     try fileManager.createDirectory(atPath: extracted, withIntermediateDirectories: true)
 
-    try await BytePipe(data).reading {
+    try await ChunkSource(data).reading {
       try await InProcessTarExtractor(fallback: BSDTarExtractor()).extract(from: $0, to: extracted, options: ArchiveExtractOptions(), logger: logger)
     }
 
@@ -270,7 +270,7 @@ struct TarStreamExtractorTests {
     let (outcomes, outcome) = AsyncStream<Result<Void, Error>>.makeStream()
     Task {
       do {
-        try await BytePipe(Data(repeating: 0x41, count: 4096)).reading {
+        try await ChunkSource(Data(repeating: 0x41, count: 4096)).reading {
           try await InProcessTarExtractor(fallback: FailingBeforeReading()).extract(
             from: $0, to: extracted, options: ArchiveExtractOptions(), logger: ControlCoreGlobalConfiguration.defaultLogger)
         }
@@ -310,7 +310,7 @@ struct TarStreamExtractorTests {
     try await BSDTarExtractor().extract(fromFile: archive.path, to: expected, options: ArchiveExtractOptions(), logger: logger)
     let extracted = root.appendingPathComponent("inprocess").path
     try fileManager.createDirectory(atPath: extracted, withIntermediateDirectories: true)
-    let stream = BytePipe(ZstdFrame.stored(try Data(contentsOf: archive)))
+    let stream = ChunkSource(ZstdFrame.stored(try Data(contentsOf: archive)))
 
     try await stream.reading {
       try await InProcessTarExtractor(fallback: RefusingExtractor()).extract(from: $0, to: extracted, options: ArchiveExtractOptions(), logger: logger)

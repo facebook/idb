@@ -179,25 +179,26 @@ final class PreparedSource: Sendable {
     }
   }
 
-  /// Pumps `chunks` into staging as the companion and sime2e do: concurrently, through the pipe staging reads.
+  /// Pumps `chunks` into staging as the companion and sime2e do: concurrently, through the source staging reads.
   private func stream(
     _ chunks: AsyncThrowingStream<Data, any Error>, options: InstallOptions, temporaryDirectory: TemporaryDirectory, logger: any ControlCoreLogger,
     onReport: @escaping @Sendable (StagingReport) -> Void
   ) async throws {
-    let pipe = BytePipe()
-    async let pumped: Void = {
-      defer { pipe.input.finish() }
-      try await PayloadPump.write(head: Data(), frames: chunks, to: pipe.input)
-    }()
+    let source = ChunkSource()
+    async let pumped: Void = source.pump(chunks)
     do {
       try await Staging.withMaterialized(
-        .stream(pipe), as: .application, options: options, temporaryDirectory: temporaryDirectory, logger: logger, onReport: onReport
+        .stream(source), as: .application, options: options, temporaryDirectory: temporaryDirectory, logger: logger, onReport: onReport
       ) { _ in }
     } catch {
+      source.abandon()
       try? await pumped
       throw error
     }
-    try await pumped
+    source.abandon()
+    do {
+      try await pumped
+    } catch is ChunkSource.ReaderClosed {}
   }
 
   /// The archive written into a kernel pipe by another thread, read back in 64 KiB chunks, as a shell pipeline feeds

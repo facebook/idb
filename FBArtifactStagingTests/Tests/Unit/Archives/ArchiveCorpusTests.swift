@@ -100,11 +100,11 @@ struct ArchiveCorpusTests {
     case .file:
       try await extractor.extract(fromFile: archive.path, to: extracted, options: ArchiveExtractOptions(), logger: logger)
     case .stream:
-      try await BytePipe(try Data(contentsOf: archive)).reading {
+      try await ChunkSource(try Data(contentsOf: archive)).reading {
         try await extractor.extract(from: $0, to: extracted, options: ArchiveExtractOptions(), logger: logger)
       }
     case .zipStream:
-      try await BytePipe(try Data(contentsOf: archive)).reading { source in
+      try await ChunkSource(try Data(contentsOf: archive)).reading { source in
         let source = HandedOver(source)
         _ = try await offCooperativePool { try ZipStreamExtractor.extract(from: source.value, to: extracted) }.get()
       }
@@ -154,7 +154,7 @@ struct ArchiveCorpusTests {
     case .localPath:
       return (.localPath(archive.path), .default)
     case .stream:
-      return (.stream(BytePipe(contents)), .default)
+      return (.stream(ChunkSource(contents)), .default)
     case .remoteURL:
       return (.remoteURL(CorpusURLProtocol.serving(contents)), CorpusURLProtocol.configuration)
     }

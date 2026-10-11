@@ -149,16 +149,16 @@ struct InstallMatrixTests {
     case .pathToZip:
       return (.localPath(zip.path), .default)
     case .streamedZip:
-      return (.stream(BytePipe(try Data(contentsOf: zip))), .default)
+      return (.stream(ChunkSource(try Data(contentsOf: zip))), .default)
     case .streamedTarGzip:
-      return (.stream(BytePipe(try Data(contentsOf: tarGzip))), .default)
+      return (.stream(ChunkSource(try Data(contentsOf: tarGzip))), .default)
     case .remoteZip:
       return (.remoteURL(CorpusURLProtocol.serving(try Data(contentsOf: zip))), CorpusURLProtocol.configuration)
     case .remoteTarGzip:
       return (.remoteURL(CorpusURLProtocol.serving(try Data(contentsOf: tarGzip))), CorpusURLProtocol.configuration)
     case .streamedGzippedFile:
       let gzipped = try GzippingSource(DataSource(try Data(contentsOf: item))).readAll()
-      return (.gzippedFile(BytePipe(gzipped), name: kind.itemName), .default)
+      return (.gzippedFile(ChunkSource(gzipped), name: kind.itemName), .default)
     case .remoteGzippedFile:
       let gzipped = try GzippingSource(DataSource(try Data(contentsOf: item))).readAll()
       return (.remoteGzippedFile(CorpusURLProtocol.serving(gzipped), name: kind.itemName), CorpusURLProtocol.configuration)

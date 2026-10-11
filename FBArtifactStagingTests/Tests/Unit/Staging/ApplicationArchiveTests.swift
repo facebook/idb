@@ -197,7 +197,7 @@ final class ApplicationArchiveTests: XCTestCase {
   func testResolve_WhenGivenAStream_ExtractsAndFindsTheBundle() async throws {
     let payload = try await makePayloadArchive()
 
-    let (identifier, _, events) = try await resolve(.stream(BytePipe(payload)))
+    let (identifier, _, events) = try await resolve(.stream(ChunkSource(payload)))
 
     XCTAssertEqual(identifier, "com.example.sample")
     XCTAssertEqual(events.map(\.stage), [.extract, .extract])
@@ -205,7 +205,7 @@ final class ApplicationArchiveTests: XCTestCase {
   }
 
   private func zipStream(_ zip: Data) -> InstallSource {
-    .stream(BytePipe(zip))
+    .stream(ChunkSource(zip))
   }
 
   /// A reader of the stream cannot handle a stored entry with its size after it.
@@ -228,7 +228,7 @@ final class ApplicationArchiveTests: XCTestCase {
   }
 
   func testResolve_WhenGivenAGzippedStream_RoutesItToBSDTar() async throws {
-    let routes = try await routes(resolving: .stream(BytePipe(try await makePayloadArchive())))
+    let routes = try await routes(resolving: .stream(ChunkSource(try await makePayloadArchive())))
 
     XCTAssertEqual(routes, [ExtractionRoute(format: .gzip, extractor: .bsdTar)])
   }

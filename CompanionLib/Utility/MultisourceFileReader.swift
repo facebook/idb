@@ -39,24 +39,29 @@ enum MultisourceFileReader {
 
     switch payload.source {
     case let .data(data):
-      let (readTaskFromStreamTask, pipe) = pipeToInput(initialData: data, requestStream: requestStream)
+      let (readTaskFromStreamTask, source) = pumpToSource(initialData: data, requestStream: requestStream)
 
       do {
-        return try await temporaryDirectory.withArchiveExtracted(fromStream: pipe, compression: compression) { extractionDir in
+        return try await temporaryDirectory.withArchiveExtracted(fromStream: source, compression: compression) { extractionDir in
           let files: [URL]
           if extractFromSubdir {
             files = try temporaryDirectory.files(inSubdirectoriesOf: extractionDir)
           } else {
             files = try FileManager.default.contentsOfDirectory(at: extractionDir, includingPropertiesForKeys: [.isDirectoryKey], options: [])
           }
-          // We just check that read from request stream did not produce any errors
-          _ = try await readTaskFromStreamTask.value
+          // The extractor may stop before the stream does, and a client still sending would otherwise wait for room
+          // forever; what it sends past a finished extraction doesn't matter. Any other failure of the stream does.
+          source.abandon()
+          do {
+            _ = try await readTaskFromStreamTask.value
+          } catch is ChunkSource.ReaderClosed {}
           return try await body(files)
         }
       } catch {
+        source.abandon()
         // A client stream that fails truncates the archive, so extraction fails too; the client's failure is the cause.
-        // A write that failed only because extraction had stopped reading is the extraction's failure, not the client's.
-        if case .failure(let clientFailure) = await readTaskFromStreamTask.result, !(clientFailure is PayloadWriteError) {
+        // A pump stopped only because extraction had stopped reading is the extraction's failure, not the client's.
+        if case .failure(let clientFailure) = await readTaskFromStreamTask.result, !(clientFailure is ChunkSource.ReaderClosed) {
           throw clientFailure
         }
         throw error
@@ -87,23 +92,20 @@ enum MultisourceFileReader {
     return filePaths
   }
 
-  private static func pipeToInput<Request: PayloadExtractable>(initialData: Data, requestStream: RequestStreamReader<Request>) -> (Task<Void, Error>, BytePipe) {
-    let pipe = BytePipe()
-
-    let readFromStreamTask = Task {
-      defer { pipe.input.finish() }
-      try await writePayloads(initialData: initialData, from: requestStream, to: pipe.input)
+  private static func pumpToSource<Request: PayloadExtractable>(initialData: Data, requestStream: RequestStreamReader<Request>) -> (Task<Void, Error>, ChunkSource) {
+    let source = ChunkSource()
+    let pumpTask = Task {
+      try await writePayloads(initialData: initialData, from: requestStream, to: source)
     }
-
-    return (readFromStreamTask, pipe)
+    return (pumpTask, source)
   }
 
-  /// Writes `initialData` and then every payload in `requestStream` to `input`, each write awaited so
-  /// the request stream is read no faster than the extractor reads the pipe.
+  /// Pumps `initialData` and then every payload in `requestStream` into `source`, so the request stream
+  /// is read no faster than the extractor reads.
   static func writePayloads<Request: PayloadExtractable>(
     initialData: Data,
     from requestStream: RequestStreamReader<Request>,
-    to input: InputSource
+    to source: ChunkSource
   ) async throws {
     let frames = requestStream.map { request -> Data in
       guard let payload = request.extractPayload()
@@ -114,6 +116,6 @@ enum MultisourceFileReader {
 
       return data
     }
-    try await PayloadPump.write(head: initialData, frames: frames, to: input)
+    try await source.pump(frames, after: initialData)
   }
 }
