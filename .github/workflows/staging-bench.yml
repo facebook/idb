@@ -1,4 +1,4 @@
-name: Staging benchmark
+name: Benchmarks
 on:
   schedule:
     # Nightly, after the day's commits have landed.
@@ -39,4 +39,45 @@ jobs:
         with:
           name: staging-bench
           path: staging-bench.jsonl
+          retention-days: 90
+
+  # Whole installs: client, gRPC, companion and installd, onto a simulator, over a shaped localhost link.
+  # Run by hand, as it takes a simulator and much longer; the results are the artifact.
+  mac-install-bench:
+    name: Install benchmark (macOS)
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: macos-26-xlarge
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - name: Install tools
+        run: brew install xcodegen protobuf xcbeautify zstd
+      - name: Install fb-idb from source
+        run: FB_IDB_VERSION=0.0.0 pip install .
+      # Built into the runner's temporary directory: `pip install .` leaves a lowercase `build/` in the checkout, which
+      # on a case-insensitive filesystem is the `Build` the distribution would otherwise land in.
+      - name: Build the distribution
+        run: |
+          ./build.sh build distribution
+          mkdir -p "$RUNNER_TEMP/artifacts"
+          cp -R Build/Distribution "$RUNNER_TEMP/artifacts/Distribution"
+      - name: Turn off Spotlight indexing
+        run: sudo mdutil -a -i off || true
+      - name: Run
+        run: |
+          quick=""
+          if [ "${{ inputs.quick }}" = "true" ]; then quick="--quick"; fi
+          python3 -m Benchmarks.install_bench run $quick \
+            --companion "$RUNNER_TEMP/artifacts/Distribution/idb_companion" \
+            --idb "$(command -v idb)" \
+            --label "${GITHUB_SHA::12}" \
+            --output install-bench.jsonl
+      - uses: actions/upload-artifact@v5
+        if: always()
+        with:
+          name: install-bench
+          path: install-bench.jsonl
           retention-days: 90
