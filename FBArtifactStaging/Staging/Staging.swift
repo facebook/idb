@@ -177,6 +177,29 @@ public enum Staging {
     }
   }
 
+  /// Extracts the archive `source` reads into a temporary directory that lives as long as `body`, for a payload of files
+  /// rather than an artifact, such as a push. The extractor is chosen from the archive's first bytes as an install's is,
+  /// a failure is an `InstallError`, and the extract stage and route are reported through `onEvent`.
+  public static func extract<T>(
+    _ source: any ByteSource,
+    temporaryDirectory: TemporaryDirectory,
+    logger: any ControlCoreLogger,
+    onEvent: @escaping @Sendable (InstallEvent) -> Void = { _ in },
+    _ body: (URL) async throws -> T
+  ) async throws -> T {
+    let totalStart = Date()
+    return try await temporaryDirectory.withTemporaryDirectory { directory in
+      try await temporaryDirectory.withTemporaryDirectory { spoolDirectory in
+        try await runExtractStage(to: directory.path, totalStart: totalStart, onProgress: { onEvent(.progress($0)) }) {
+          try await ArchiveExtractors.default.extract(
+            from: source, spoolingIn: spoolDirectory, to: directory.path, options: ArchiveExtractOptions(), logger: logger
+          ) { onEvent(.route($0)) }
+        }
+      }
+      return try await body(directory)
+    }
+  }
+
   /// Whether staging `source` unpacks it. What is unpacked belongs to staging,
   /// which removes it afterwards, so the body may move it away; anything else is
   /// the caller's own, and must be left where it is.

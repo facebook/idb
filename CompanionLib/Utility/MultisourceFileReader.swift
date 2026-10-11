@@ -40,7 +40,7 @@ enum MultisourceFileReader {
       let (readTaskFromStreamTask, source) = pumpToSource(initialData: data, requestStream: requestStream)
 
       do {
-        return try await temporaryDirectory.withArchiveExtracted(fromStream: source) { extractionDir in
+        return try await Staging.extract(source, temporaryDirectory: temporaryDirectory, logger: temporaryDirectory.logger) { extractionDir in
           let files: [URL]
           if extractFromSubdir {
             files = try temporaryDirectory.files(inSubdirectoriesOf: extractionDir)
