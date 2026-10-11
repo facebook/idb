@@ -109,7 +109,7 @@ struct InstallMethodHandler {
     case .dsym:
       installDestination = .dsym(linkTo: linkToBundle)
     case .dylib:
-      installDestination = .dylib
+      installDestination = .dylib(name: name)
     case .framework:
       installDestination = .framework
     case .UNRECOGNIZED:
@@ -117,13 +117,7 @@ struct InstallMethodHandler {
     }
 
     func install(from source: InstallSource, compression: FBCompressionFormat = .GZIP) async throws -> InstalledArtifact {
-      let options: InstallOptions
-      switch installDestination {
-      case .application:
-        options = InstallOptions(overrideModificationTime: overrideModificationTime, compression: compression)
-      case .dsym, .xctest, .framework, .dylib:
-        options = InstallOptions(compression: compression)
-      }
+      let options = InstallOptions(overrideModificationTime: overrideModificationTime, compression: compression)
       return try await commandExecutor.install(
         installDestination, from: source, options: options,
         onProgress: { event in
@@ -133,12 +127,8 @@ struct InstallMethodHandler {
         onReport: telemetry.staged)
     }
 
-    /// A dylib arrives as a single gzipped file; everything else as an archive.
     func installStreamed(_ dataStream: any ByteSource, compression: FBCompressionFormat) async throws -> InstalledArtifact {
-      if case .dylib = installDestination {
-        return try await install(from: .gzippedFile(dataStream, name: name))
-      }
-      return try await install(from: .stream(dataStream), compression: compression)
+      try await install(from: .stream(dataStream), compression: compression)
     }
 
     func installStream(_ dataStream: any ByteSource, format: InstallStreamFormat, head: Data) async throws -> InstalledArtifact {
@@ -191,20 +181,10 @@ struct InstallMethodHandler {
       return artifact
 
     case let .url(url):
-      return try await install(from: Self.urlSource(url, for: installDestination, name: name), compression: compression)
+      return try await install(from: .remoteURL(url), compression: compression)
 
     case let .filePath(filePath):
       return try await install(from: .localPath(filePath))
-    }
-  }
-
-  /// A dylib arrives as a single gzipped file; everything else as an archive.
-  static func urlSource(_ url: URL, for destination: InstallDestination, name: String) -> InstallSource {
-    switch destination {
-    case .application, .xctest, .dsym, .framework:
-      return .remoteURL(url)
-    case .dylib:
-      return .remoteGzippedFile(url, name: name)
     }
   }
 

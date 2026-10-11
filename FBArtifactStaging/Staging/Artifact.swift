@@ -75,12 +75,38 @@ extension Artifact {
 }
 
 /// The kind of artifact a client asked to install.
-public enum ArtifactKind: Sendable {
+public enum ArtifactKind: Sendable, CustomStringConvertible {
   case application
   case xctest
   case framework
-  case dylib
+  /// A dylib, written as `name` when it arrives as a single file rather than at a path of its own.
+  case dylib(name: String)
   case dsym
+
+  /// Whether the artifact itself can be a single file, rather than only ever a directory: a dylib, or a test run.
+  var canBeAFile: Bool {
+    switch self {
+    case .xctest, .dylib:
+      return true
+    case .application, .framework, .dsym:
+      return false
+    }
+  }
+
+  public var description: String {
+    switch self {
+    case .application:
+      return "application"
+    case .xctest:
+      return "test bundle"
+    case .framework:
+      return "framework"
+    case .dylib:
+      return "dylib"
+    case .dsym:
+      return "dSYM"
+    }
+  }
 
   /// Finds the artifact of this kind in `tree`.
   ///

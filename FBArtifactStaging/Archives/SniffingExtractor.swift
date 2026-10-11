@@ -98,7 +98,7 @@ public struct SniffingExtractor: ArchiveExtractor {
     logger: any ControlCoreLogger,
     onRoute: (ExtractionRoute) -> Void
   ) async throws {
-    let peekable = HandedOver(PeekableSource(source))
+    let peekable = HandedOver(source as? PeekableSource ?? PeekableSource(source))
     let head = try await offCooperativePool { try peekable.value.peek(ArchiveFormat.sniffLength) }.get()
     let format = ArchiveFormat.detect(head)
     switch format {

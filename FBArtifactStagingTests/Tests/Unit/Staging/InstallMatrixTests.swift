@@ -12,8 +12,7 @@ import Testing
 import os
 
 /// Every kind of artifact through every way staging can get it: what it identifies, whether it is in place, and the
-/// stages it reports. Where kinds behave differently today the difference is spelt out, so that making them uniform
-/// shows up as a change to an expectation here.
+/// stages it reports. Every kind behaves the same way; only a dylib may also arrive as a single file.
 @Suite
 struct InstallMatrixTests {
 
@@ -31,14 +30,14 @@ struct InstallMatrixTests {
     case remoteZip
     /// A gzipped tar over HTTP.
     case remoteTarGzip
-    /// A single gzipped file on a pipe, staged under its name.
+    /// A single gzipped file arriving as a stream, staged under the name the kind gives it.
     case streamedGzippedFile
-    /// A single gzipped file over HTTP, staged under its name.
+    /// A single gzipped file over HTTP, staged under the name the kind gives it.
     case remoteGzippedFile
 
     var testDescription: String { rawValue }
 
-    /// The single-file sources exist for dylibs alone.
+    /// Only a dylib arrives as a single file.
     func applies(to kind: Kind) -> Bool {
       switch self {
       case .streamedGzippedFile, .remoteGzippedFile:
@@ -67,7 +66,7 @@ struct InstallMatrixTests {
       case .framework:
         return .framework
       case .dylib:
-        return .dylib
+        return .dylib(name: itemName)
       case .dsym:
         return .dsym
       }
@@ -158,10 +157,10 @@ struct InstallMatrixTests {
       return (.remoteURL(CorpusURLProtocol.serving(try Data(contentsOf: tarGzip))), CorpusURLProtocol.configuration)
     case .streamedGzippedFile:
       let gzipped = try GzippingSource(DataSource(try Data(contentsOf: item))).readAll()
-      return (.gzippedFile(ChunkSource(gzipped), name: kind.itemName), .default)
+      return (.stream(ChunkSource(gzipped)), .default)
     case .remoteGzippedFile:
       let gzipped = try GzippingSource(DataSource(try Data(contentsOf: item))).readAll()
-      return (.remoteGzippedFile(CorpusURLProtocol.serving(gzipped), name: kind.itemName), CorpusURLProtocol.configuration)
+      return (.remoteURL(CorpusURLProtocol.serving(gzipped)), CorpusURLProtocol.configuration)
     }
   }
 
@@ -228,18 +227,8 @@ struct InstallMatrixTests {
     switch (kind, source) {
     case (_, .path):
       return .installed(artifact: artifactName(kind), inPlace: true, stages: ["install.started", "install.completed"])
-    case (.application, .pathToZip):
+    case (_, .pathToZip):
       return .installed(artifact: artifactName(kind), inPlace: false, stages: unpacked)
-    // CURRENT: only an application's local path may be an archive. Any other kind takes the zip itself as the
-    // artifact, in place: a dylib or dSYM is "identified" as the zip, a test bundle or framework is refused.
-    case (.dylib, .pathToZip):
-      return .installed(artifact: "dylib item.zip", inPlace: true, stages: ["install.started", "install.completed"])
-    case (.dsym, .pathToZip):
-      return .installed(artifact: "dsym item.zip", inPlace: true, stages: ["install.started", "install.completed"])
-    case (.xctest, .pathToZip):
-      return .failed("ArtifactError")
-    case (.framework, .pathToZip):
-      return .failed("BundleError")
     case (_, .streamedZip), (_, .streamedTarGzip), (.dylib, .streamedGzippedFile):
       return .installed(artifact: artifactName(kind), inPlace: false, stages: unpacked)
     case (_, .remoteZip), (_, .remoteTarGzip), (.dylib, .remoteGzippedFile):

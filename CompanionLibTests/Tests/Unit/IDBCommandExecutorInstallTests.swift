@@ -20,7 +20,7 @@ struct IDBCommandExecutorInstallTests {
     let harness = try MacInstallHarness()
     let dylib = try harness.makeFile(named: "libSample.dylib")
 
-    let artifact = try await harness.executor.install(.dylib, from: .gzippedFile(try await harness.gzipped(dylib), name: "libSample.dylib"))
+    let artifact = try await harness.executor.install(.dylib(name: "libSample.dylib"), from: .stream(try await harness.gzipped(dylib)))
 
     #expect(artifact.name == "libSample.dylib")
     #expect(FileManager.default.contentsEqual(atPath: artifact.path.path, andPath: dylib.path))
@@ -31,7 +31,7 @@ struct IDBCommandExecutorInstallTests {
     let harness = try MacInstallHarness()
     let dylib = try harness.makeFile(named: "libSample.dylib", padding: 8 << 20)
 
-    let artifact = try await harness.executor.install(.dylib, from: .gzippedFile(try await harness.gzipped(dylib), name: "libSample.dylib"))
+    let artifact = try await harness.executor.install(.dylib(name: "libSample.dylib"), from: .stream(try await harness.gzipped(dylib)))
 
     #expect(FileManager.default.contentsEqual(atPath: artifact.path.path, andPath: dylib.path))
   }
@@ -42,11 +42,12 @@ struct IDBCommandExecutorInstallTests {
     let input = ChunkSource(Data("not a gzip at all".utf8))
 
     let error = await #expect(throws: (any Error).self) {
-      try await harness.executor.install(.dylib, from: .gzippedFile(input, name: "libSample.dylib"))
+      try await harness.executor.install(.dylib(name: "libSample.dylib"), from: .stream(input))
     }
 
     let description = error?.localizedDescription
-    #expect(description == "Could not extract the archive: Corrupt archive: the gzip does not inflate")
+    // Neither gzipped nor a Mach-O, so it is taken for an archive, which it isn't either.
+    #expect(description?.hasPrefix("Could not extract the archive: ") == true, "\(String(describing: description))")
   }
 
   @Test
@@ -234,7 +235,7 @@ struct IDBCommandExecutorInstallTests {
     let dylib = try harness.makeFile(named: "libSample.dylib")
     let progress = ProgressEvents()
 
-    _ = try await harness.executor.install(.dylib, from: .gzippedFile(try await harness.gzipped(dylib), name: "libSample.dylib"), onProgress: progress.append)
+    _ = try await harness.executor.install(.dylib(name: "libSample.dylib"), from: .stream(try await harness.gzipped(dylib)), onProgress: progress.append)
 
     #expect(progress.stages == ["extract.started", "extract.completed", "install.started", "install.completed"])
   }

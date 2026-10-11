@@ -12,23 +12,17 @@ import os
 /// Where an artifact to install comes from.
 public enum InstallSource {
 
-  /// A path to the artifact itself, which needs no unpacking, or, for an
-  /// application, to an archive containing one.
+  /// A path to the artifact itself, which needs no unpacking, or to an archive
+  /// containing it.
   case localPath(String)
 
-  /// An archive to fetch over HTTP.
+  /// An artifact or an archive containing it, to fetch over HTTP.
   case remoteURL(URL)
 
-  /// An archive the caller's source reads as it arrives: a zip or a tar, either
-  /// of them compressed or not, told apart by its first bytes.
+  /// An artifact or an archive containing it, which the caller's source reads as
+  /// it arrives: a zip or a tar, either of them compressed or not, told apart by
+  /// its first bytes. A dylib may also be the file itself, or the file gzipped.
   case stream(any ByteSource)
-
-  /// A single file, gzipped, that the caller's source reads as it arrives; it
-  /// is staged as `name`.
-  case gzippedFile(any ByteSource, name: String)
-
-  /// A single file, gzipped, to fetch over HTTP; it is staged as `name`.
-  case remoteGzippedFile(URL, name: String)
 }
 
 /// How to get from a source to an installable bundle.
@@ -116,7 +110,7 @@ public enum Staging {
     }
     return try await temporaryDirectory.withTemporaryDirectory { stagingDirectory in
       let tree = try await stage(
-        source, in: stagingDirectory, options: options, totalStart: totalStart,
+        source, as: kind, in: stagingDirectory, options: options, totalStart: totalStart,
         downloadConfiguration: downloadConfiguration, temporaryDirectory: temporaryDirectory,
         logger: logger, onProgress: onProgress, onReport: onReport)
       return try await body(tree)
@@ -167,16 +161,33 @@ public enum Staging {
 
   /// Whether staging `source` unpacks it. What is unpacked belongs to staging,
   /// which removes it afterwards, so the body may move it away; anything else is
-  /// the caller's own, and must be left where it is. Only an application's local
-  /// path may be an archive.
+  /// the caller's own, and must be left where it is.
+  ///
+  /// The same rule for every kind: a directory is the artifact, and so is a file
+  /// for a kind whose artifact can be one -- a dylib or a test run -- unless its
+  /// first bytes say it is an archive or compressed. Any other file is an archive.
   public static func unpacks(_ source: InstallSource, as kind: ArtifactKind) -> Bool {
     guard case .localPath(let path) = source else {
       return true
     }
-    switch kind {
-    case .application:
-      return !BundleDescriptor.isApplication(atPath: path)
-    case .xctest, .framework, .dylib, .dsym:
+    var isDirectory: ObjCBool = false
+    guard FileManager.default.fileExists(atPath: path, isDirectory: &isDirectory), !isDirectory.boolValue else {
+      return false
+    }
+    guard kind.canBeAFile else {
+      return true
+    }
+    guard let handle = FileHandle(forReadingAtPath: path) else {
+      return false
+    }
+    defer { try? handle.close() }
+    let head = (try? handle.read(upToCount: 512)) ?? Data()
+    switch ArchiveFormat.detect(head) {
+    case .zip, .zstdZip, .zstd, .gzip:
+      return true
+    case .other:
+      return head.count >= 263 && head[head.startIndex + 257..<head.startIndex + 262].elementsEqual(Array("ustar".utf8))
+    case .undetermined:
       return false
     }
   }
@@ -185,6 +196,7 @@ public enum Staging {
 
   private static func stage(
     _ source: InstallSource,
+    as kind: ArtifactKind,
     in stagingDirectory: URL,
     options: InstallOptions,
     totalStart: Date,
@@ -196,48 +208,103 @@ public enum Staging {
   ) async throws -> StagedTree {
     let extractPath = stagingDirectory.path
     switch source {
-    case .gzippedFile(let source, let name):
-      let file = stagingDirectory.appendingPathComponent(name)
-      try await runExtractStage(to: file.path, totalStart: totalStart, onProgress: onProgress) {
-        try await FBArchiveOperations.extractGzip(from: source, toPath: file.path)
-      }
-      return .file(file)
     case .localPath(let path):
-      try await runExtractStage(to: extractPath, totalStart: totalStart, onProgress: onProgress) {
-        try await ArchiveExtractors.default.extract(
-          fromFile: path, to: extractPath, options: options.extractOptions, logger: logger)
+      return try await runExtractStage(to: extractPath, totalStart: totalStart, onProgress: onProgress) {
+        if case .dylib(let name) = kind {
+          let descriptor = open(path, O_RDONLY | O_CLOEXEC)
+          guard descriptor >= 0 else {
+            throw POSIXError.current
+          }
+          defer { close(descriptor) }
+          if let file = try await stageSingleFile(PeekableSource(FileDescriptorSource(descriptor)), named: name, in: stagingDirectory) {
+            return .file(file)
+          }
+        }
+        try await ArchiveExtractors.default.extract(fromFile: path, to: extractPath, options: options.extractOptions, logger: logger)
+        return .extracted(stagingDirectory)
       }
     case .stream(let source):
-      try await temporaryDirectory.withTemporaryDirectory { spoolDirectory in
+      return try await temporaryDirectory.withTemporaryDirectory { spoolDirectory in
         try await runExtractStage(to: extractPath, totalStart: totalStart, onProgress: onProgress) {
-          try await ArchiveExtractors.stream(options.compression).extract(
-            from: source, spoolingIn: spoolDirectory, to: extractPath, options: options.extractOptions, logger: logger
-          ) { onReport(.route($0)) }
+          try await stagePayload(
+            source, as: kind, with: ArchiveExtractors.stream(options.compression), in: stagingDirectory, spoolingIn: spoolDirectory,
+            options: options, logger: logger, onReport: onReport)
         }
       }
-    case .remoteGzippedFile(let url, let name):
-      let file = stagingDirectory.appendingPathComponent(name)
-      try await download(
-        url, extractingTo: file.path, totalStart: totalStart, configuration: downloadConfiguration,
-        logger: logger, onProgress: onProgress, onReport: onReport
-      ) { spool in
-        try await spool.reading { source in
-          try await FBArchiveOperations.extractGzip(from: source, toPath: file.path)
-        }
-      }
-      return .file(file)
     case .remoteURL(let url):
-      try await temporaryDirectory.withTemporaryDirectory { spoolDirectory in
+      return try await temporaryDirectory.withTemporaryDirectory { spoolDirectory in
+        let staged = OSAllocatedUnfairLock<StagedTree?>(initialState: nil)
         try await download(
           url, extractingTo: extractPath, totalStart: totalStart, configuration: downloadConfiguration,
           logger: logger, onProgress: onProgress, onReport: onReport
         ) { spool in
-          try await extractDownload(
-            spool, spoolingIn: spoolDirectory, to: extractPath, options: options, logger: logger, onReport: onReport)
+          let tree = try await spool.reading { source in
+            try await stagePayload(
+              source, as: kind, with: ArchiveExtractors.inProcess, in: stagingDirectory, spoolingIn: spoolDirectory,
+              options: options, logger: logger, onReport: onReport)
+          }
+          staged.withLock { $0 = tree }
         }
+        return staged.withLock { $0 } ?? .extracted(stagingDirectory)
       }
     }
+  }
+
+  /// Stages what `source` reads with `extractor`, unless `kind` is a dylib that arrives as a single file. A zip is
+  /// spooled into `spoolDirectory` as it is extracted.
+  private static func stagePayload(
+    _ source: any ByteSource,
+    as kind: ArtifactKind,
+    with extractor: SniffingExtractor,
+    in stagingDirectory: URL,
+    spoolingIn spoolDirectory: URL,
+    options: InstallOptions,
+    logger: any ControlCoreLogger,
+    onReport: @escaping @Sendable (StagingReport) -> Void
+  ) async throws -> StagedTree {
+    let peekable = PeekableSource(source)
+    if case .dylib(let name) = kind, let file = try await stageSingleFile(peekable, named: name, in: stagingDirectory) {
+      return .file(file)
+    }
+    try await extractor.extract(
+      from: peekable, spoolingIn: spoolDirectory, to: stagingDirectory.path, options: options.extractOptions, logger: logger
+    ) { onReport(.route($0)) }
     return .extracted(stagingDirectory)
+  }
+
+  /// A dylib arrives as the file itself or gzipped, which writes it into `directory` as `name`; anything else is an
+  /// archive holding it, and `nil`. A gzip can't be told from a gzipped tar by its first bytes, so for a dylib a gzip
+  /// is taken to be the one file, as clients send them.
+  private static func stageSingleFile(_ source: PeekableSource, named name: String, in directory: URL) async throws -> URL? {
+    let handedOver = HandedOver(source)
+    let head = try await offCooperativePool { try handedOver.value.peek(ArchiveFormat.sniffLength) }.get()
+    let file = directory.appendingPathComponent(name)
+    if ArchiveFormat.detect(head) == .gzip {
+      try await FBArchiveOperations.extractGzip(from: source, toPath: file.path)
+      return file
+    }
+    guard isMachO(head) else {
+      return nil
+    }
+    try await offCooperativePool {
+      FileManager.default.createFile(atPath: file.path, contents: nil)
+      let output = try FileHandle(forWritingTo: file)
+      defer { try? output.close() }
+      var chunk = [UInt8](repeating: 0, count: 1 << 16)
+      while case let count = try chunk.withUnsafeMutableBytes({ try handedOver.value.read(into: $0) }), count > 0 {
+        try output.write(contentsOf: chunk[..<count])
+      }
+    }.get()
+    return file
+  }
+
+  /// Whether `head` starts a Mach-O file, thin or fat, of either byte order.
+  private static func isMachO(_ head: Data) -> Bool {
+    guard head.count >= 4 else {
+      return false
+    }
+    let magic = head.prefix(4).reduce(UInt32(0)) { $0 << 8 | UInt32($1) }
+    return [0xFEED_FACE, 0xFEED_FACF, 0xCEFA_EDFE, 0xCFFA_EDFE, 0xCAFE_BABE, 0xBEBA_FECA, 0xCAFE_BABF, 0xBFBA_FECA].contains(magic)
   }
 
   /// `extract` reads the transfer as it arrives rather than waiting for a
@@ -313,32 +380,18 @@ public enum Staging {
     }
   }
 
-  /// A zip is spooled into `spoolDirectory` as it is extracted.
-  private static func extractDownload(
-    _ spool: DownloadSpool,
-    spoolingIn spoolDirectory: URL,
-    to extractPath: String,
-    options: InstallOptions,
-    logger: any ControlCoreLogger,
-    onReport: @escaping @Sendable (StagingReport) -> Void
-  ) async throws {
-    try await spool.reading { source in
-      try await ArchiveExtractors.inProcess.extract(
-        from: source, spoolingIn: spoolDirectory, to: extractPath, options: options.extractOptions, logger: logger
-      ) { onReport(.route($0)) }
-    }
-  }
-
-  private static func runExtractStage(
+  @discardableResult
+  private static func runExtractStage<T>(
     to extractPath: String,
     totalStart: Date,
     onProgress: @escaping @Sendable (InstallProgressEvent) -> Void,
-    operation: () async throws -> Void
-  ) async throws {
+    operation: () async throws -> T
+  ) async throws -> T {
     let stageStart = Date()
     onProgress(.extractStarted(timing: .measure(stageStart: stageStart, totalStart: totalStart), destinationPath: extractPath))
+    let result: T
     do {
-      try await operation()
+      result = try await operation()
     } catch let error as InstallError {
       // Already classified: the transfer is awaited inside this stage, and a
       // dropped connection is not a corrupt archive.
@@ -349,5 +402,6 @@ public enum Staging {
       throw InstallError.extractionFailed(underlying: error)
     }
     onProgress(.extractCompleted(timing: .measure(stageStart: stageStart, totalStart: totalStart), destinationPath: extractPath))
+    return result
   }
 }

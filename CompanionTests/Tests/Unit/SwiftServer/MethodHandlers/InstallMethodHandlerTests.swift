@@ -95,18 +95,4 @@ final class InstallMethodHandlerTests: XCTestCase {
       }
     }
   }
-
-  func testEveryKindButADylibIsStagedFromItsURLAsAnArchive() throws {
-    // patternlint-disable-next-line use-meta-url-wrapper-for-url
-    let url = try XCTUnwrap(URL(string: "https://example.invalid/artifact"))
-    let archives: [InstallDestination] = [.application(makeDebuggable: false), .xctest(skipSigningBundles: false), .dsym(linkTo: nil), .framework]
-    for destination in archives {
-      guard case .remoteURL(url) = InstallMethodHandler.urlSource(url, for: destination, name: "Artifact") else {
-        return XCTFail("Expected \(destination) to be staged as an archive")
-      }
-    }
-    guard case .remoteGzippedFile(url, name: "libSample.dylib") = InstallMethodHandler.urlSource(url, for: .dylib, name: "libSample.dylib") else {
-      return XCTFail("Expected a dylib to be staged as a gzipped file")
-    }
-  }
 }

@@ -13,7 +13,8 @@ public enum InstallDestination: Sendable {
   case application(makeDebuggable: Bool)
   case xctest(skipSigningBundles: Bool)
   case framework
-  case dylib
+  /// A dylib, stored as `name` when it arrives as a single file.
+  case dylib(name: String)
   case dsym(linkTo: DsymInstallLinkToBundle?)
 
   var kind: ArtifactKind {
@@ -24,8 +25,8 @@ public enum InstallDestination: Sendable {
       return .xctest
     case .framework:
       return .framework
-    case .dylib:
-      return .dylib
+    case .dylib(let name):
+      return .dylib(name: name)
     case .dsym:
       return .dsym
     }

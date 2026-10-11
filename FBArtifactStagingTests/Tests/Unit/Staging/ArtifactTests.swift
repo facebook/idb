@@ -195,7 +195,7 @@ struct ArtifactTests {
   @Test
   func aDecompressedDylibIsTheFile() throws {
     let dylib = try file("libSample.dylib", in: directory("staged"))
-    guard case .dylib(let found) = try ArtifactKind.dylib.identify(in: .file(dylib)) else {
+    guard case .dylib(let found) = try ArtifactKind.dylib(name: "libSample.dylib").identify(in: .file(dylib)) else {
       Issue.record("Not identified as a dylib")
       return
     }
@@ -206,7 +206,7 @@ struct ArtifactTests {
   func anExtractedDylibIsItsOnlyItem() throws {
     let extracted = try directory("extracted")
     let dylib = try file("libSample.dylib", in: extracted)
-    guard case .dylib(let found) = try ArtifactKind.dylib.identify(in: .extracted(extracted)) else {
+    guard case .dylib(let found) = try ArtifactKind.dylib(name: "libSample.dylib").identify(in: .extracted(extracted)) else {
       Issue.record("Not identified as a dylib")
       return
     }

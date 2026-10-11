@@ -103,4 +103,25 @@ struct InstallMethodHandlerStreamTests {
       error is StreamFailed
     }
   }
+
+  /// Asking for the archive's modification times to be discarded applies to every kind, not only to an application.
+  @Test
+  func aStreamedDsymCanHaveItsArchivedModificationTimesDiscarded() async throws {
+    let dsym = try harness.makeBundle(named: "Times", extension: "dSYM", identifier: "com.example.times")
+    let old = Date(timeIntervalSince1970: 1_000_000_000)
+    try FileManager.default.setAttributes([.modificationDate: old], ofItemAtPath: dsym.appendingPathComponent("Info.plist").path)
+    var request = Self.request(.dsym, streaming: try harness.tarData(of: dsym))
+    request.header.overrideModificationTime = true
+
+    let artifact = try await handler.install(request)
+
+    let storage = harness.executor.storageManager.dsym.basePath
+    let plists = (FileManager.default.enumerator(atPath: storage.path)?.allObjects as? [String] ?? [])
+      .filter { $0.hasSuffix("\(artifact.name)/Info.plist") }
+    #expect(!plists.isEmpty, "no \(artifact.name)/Info.plist under \(storage.path)")
+    for plist in plists {
+      let modified = try FileManager.default.attributesOfItem(atPath: storage.appendingPathComponent(plist).path)[.modificationDate] as? Date
+      #expect(modified.map { $0 > old.addingTimeInterval(86_400) } == true, "\(plist) kept \(String(describing: modified))")
+    }
+  }
 }

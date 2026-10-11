@@ -42,8 +42,8 @@ final class StagingTests: XCTestCase {
     configuration.protocolClasses = [StubURLProtocol.self]
     let events = OSAllocatedUnfairLock<[InstallProgressEvent]>(initialState: [])
     let staged = try await Staging.withMaterialized(
-      .remoteGzippedFile(Self.stubbedURL, name: "libSample.dylib"),
-      as: .dylib,
+      .remoteURL(Self.stubbedURL),
+      as: .dylib(name: "libSample.dylib"),
       downloadConfiguration: configuration,
       temporaryDirectory: TemporaryDirectory(rootDirectory: scratchRoot, logger: logger),
       logger: logger,
