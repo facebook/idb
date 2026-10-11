@@ -50,7 +50,9 @@ struct ArchiveCorpusTests {
     /// Whether the archive is extracted in-process, rather than handed on to `bsdtar`.
     func extractsInProcess(_ producer: Producer) -> Bool {
       switch self {
-      case .file, .zipStream:
+      case .file:
+        return producer.isZip || producer.isZstd
+      case .zipStream:
         return producer.isZip
       case .stream:
         return true
@@ -79,32 +81,11 @@ struct ArchiveCorpusTests {
 
   @Test(arguments: extractorCases)
   func anExtractorMatchesBSDTar(_ producer: Producer, _ route: Route) async throws {
-    if Self.cannotExtractZstd(producer, route) {
-      await #expect(throws: (any Error).self, "\(producer) \(route)") { try await extractorMatchesBSDTar(producer, route) }
-      return
-    }
     do {
       try await extractorMatchesBSDTar(producer, route)
     } catch {
       Issue.record("\(producer) \(route): \(error)")
     }
-  }
-
-  /// BUG: a zstd archive at a local path goes to `bsdtar`, as does a zstd tar streamed with the default declared
-  /// compression, and `bsdtar` on macOS cannot decompress zstd -- flipped in the following commit.
-  static func cannotInstallZstd(_ producer: Producer, _ source: Source) -> Bool {
-    switch (producer, source) {
-    case (.tarZstd, .localPath), (.zipZstd, .localPath), (.tarZstd, .stream):
-      return true
-    case (_, .localPath), (_, .stream), (_, .remoteURL):
-      return false
-    }
-  }
-
-  /// BUG: a zstd archive given by its path goes to `bsdtar`, which on macOS cannot decompress zstd -- flipped in the
-  /// following commit.
-  static func cannotExtractZstd(_ producer: Producer, _ route: Route) -> Bool {
-    producer.isZstd && route == .file
   }
 
   private func extractorMatchesBSDTar(_ producer: Producer, _ route: Route) async throws {
@@ -208,13 +189,6 @@ struct ArchiveCorpusTests {
     let directoryTimes = !producer.isZip
 
     let actual = try await resolve(source, archive: archive, contents: try Data(contentsOf: archive), keepHardLinks: producer.keepsHardLinks, directoryTimes: directoryTimes)
-    if Self.cannotInstallZstd(producer, source) {
-      guard case .failed = actual else {
-        Issue.record("\(producer) \(source) was expected to fail: \(actual)")
-        return
-      }
-      return
-    }
 
     let expected = await bsdtarOutcome(try corpus.reference(producer), keepHardLinks: producer.keepsHardLinks, directoryTimes: directoryTimes)
     guard case .extracted(let expectedTree) = expected, case .extracted(let actualTree) = actual else {

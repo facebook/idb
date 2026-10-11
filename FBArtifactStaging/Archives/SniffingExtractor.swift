@@ -53,7 +53,27 @@ public struct SniffingExtractor: ArchiveExtractor {
     options: ArchiveExtractOptions,
     logger: any ControlCoreLogger
   ) async throws {
-    try await fileExtractor.extract(fromFile: path, to: extractPath, options: options, logger: logger)
+    switch Self.format(ofFileAt: path) {
+    case .zstd, .zstdZip:
+      // `bsdtar` on macOS cannot decompress zstd, so a zstd file is read as the stream it holds.
+      let descriptor = open(path, O_RDONLY | O_CLOEXEC)
+      guard descriptor >= 0 else {
+        throw POSIXError.current
+      }
+      defer { close(descriptor) }
+      try await extract(from: FileDescriptorSource(descriptor), to: extractPath, options: options, logger: logger)
+    case .zip, .gzip, .other, .undetermined, nil:
+      try await fileExtractor.extract(fromFile: path, to: extractPath, options: options, logger: logger)
+    }
+  }
+
+  /// Nothing for a file that cannot be read, which the file extractor reports as it would any other.
+  private static func format(ofFileAt path: String) -> ArchiveFormat? {
+    guard let handle = FileHandle(forReadingAtPath: path) else {
+      return nil
+    }
+    defer { try? handle.close() }
+    return (try? handle.read(upToCount: ArchiveFormat.sniffLength)).map(ArchiveFormat.detect)
   }
 
   public func extract(
@@ -87,7 +107,11 @@ public struct SniffingExtractor: ArchiveExtractor {
       try await extractZipStream(peekable.value, spoolingIn: spoolDirectory, to: extractPath, options: options, logger: logger) {
         onRoute(ExtractionRoute(format: format, extractor: .zipSpool))
       }
-    case .zstd, .gzip, .other, .undetermined:
+    case .zstd:
+      // `bsdtar` on macOS cannot decompress zstd, whichever extractor other tars go to.
+      onRoute(ExtractionRoute(format: format, extractor: .inProcessTar))
+      try await ArchiveExtractors.inProcessTar.extract(from: peekable.value, to: extractPath, options: options, logger: logger)
+    case .gzip, .other, .undetermined:
       onRoute(ExtractionRoute(format: format, extractor: tarExtractor is BSDTarExtractor ? .bsdTar : .inProcessTar))
       try await tarExtractor.extract(from: peekable.value, to: extractPath, options: options, logger: logger)
     }
