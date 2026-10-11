@@ -37,7 +37,8 @@ struct ArchiveCorpusTests {
       case .file, .stream:
         return true
       case .zipStream:
-        return producer.isZip
+        // `ZipStreamExtractor` reads a zip as it is; decompressing it first is the sniffing extractor's job.
+        return producer.isZip && !producer.isZstd
       }
     }
 
@@ -78,11 +79,32 @@ struct ArchiveCorpusTests {
 
   @Test(arguments: extractorCases)
   func anExtractorMatchesBSDTar(_ producer: Producer, _ route: Route) async throws {
+    if Self.cannotExtractZstd(producer, route) {
+      await #expect(throws: (any Error).self, "\(producer) \(route)") { try await extractorMatchesBSDTar(producer, route) }
+      return
+    }
     do {
       try await extractorMatchesBSDTar(producer, route)
     } catch {
       Issue.record("\(producer) \(route): \(error)")
     }
+  }
+
+  /// BUG: a zstd archive at a local path goes to `bsdtar`, as does a zstd tar streamed with the default declared
+  /// compression, and `bsdtar` on macOS cannot decompress zstd -- flipped in the following commit.
+  static func cannotInstallZstd(_ producer: Producer, _ source: Source) -> Bool {
+    switch (producer, source) {
+    case (.tarZstd, .localPath), (.zipZstd, .localPath), (.tarZstd, .stream):
+      return true
+    case (_, .localPath), (_, .stream), (_, .remoteURL):
+      return false
+    }
+  }
+
+  /// BUG: a zstd archive given by its path goes to `bsdtar`, which on macOS cannot decompress zstd -- flipped in the
+  /// following commit.
+  static func cannotExtractZstd(_ producer: Producer, _ route: Route) -> Bool {
+    producer.isZstd && route == .file
   }
 
   private func extractorMatchesBSDTar(_ producer: Producer, _ route: Route) async throws {
@@ -111,7 +133,7 @@ struct ArchiveCorpusTests {
 
     // The repair removes AppleDouble files after the fact, which moves their directories' times.
     let directoryTimes = !route.repairsAZip(producer)
-    let expected = await bsdtarOutcome(archive, keepHardLinks: producer.keepsHardLinks, directoryTimes: directoryTimes)
+    let expected = await bsdtarOutcome(try corpus.reference(producer), keepHardLinks: producer.keepsHardLinks, directoryTimes: directoryTimes)
     let actual = try ArchiveFixtures.tree(at: extracted, keepHardLinks: producer.keepsHardLinks, directoryTimes: directoryTimes)
     guard case .extracted(let expectedTree) = expected else {
       Issue.record("bsdtar could not extract \(producer)")
@@ -186,8 +208,15 @@ struct ArchiveCorpusTests {
     let directoryTimes = !producer.isZip
 
     let actual = try await resolve(source, archive: archive, contents: try Data(contentsOf: archive), keepHardLinks: producer.keepsHardLinks, directoryTimes: directoryTimes)
+    if Self.cannotInstallZstd(producer, source) {
+      guard case .failed = actual else {
+        Issue.record("\(producer) \(source) was expected to fail: \(actual)")
+        return
+      }
+      return
+    }
 
-    let expected = await bsdtarOutcome(archive, keepHardLinks: producer.keepsHardLinks, directoryTimes: directoryTimes)
+    let expected = await bsdtarOutcome(try corpus.reference(producer), keepHardLinks: producer.keepsHardLinks, directoryTimes: directoryTimes)
     guard case .extracted(let expectedTree) = expected, case .extracted(let actualTree) = actual else {
       Issue.record("\(producer): bsdtar \(expected), \(source) \(actual)")
       return
@@ -230,8 +259,9 @@ struct ArchiveCorpusTests {
     return [0.0, 0.01, 0.5, 0.99, 0.999_9].map(Damage.truncated) + (0..<6).map { _ in .flipped(Double.random(in: 0..<1, using: &generator)) } + [.flipped(0.999_9)]
   }
 
+  /// `bsdtar` cannot read zstd, so a zstd producer is damaged by truncation alone, in `aTruncatedZstdInstallFails`.
   private static var damageCases: [(Producer, Damage)] {
-    [Producer.dittoZip, .zipToAPipe, .tarGzip, .tarUncompressed].flatMap { producer in damages.map { (producer, $0) } }
+    Producer.allCases.filter { !$0.isZstd }.flatMap { producer in damages.map { (producer, $0) } }
   }
 
   /// A zip records each time in both its local header and its central directory, checking neither, so a byte flipped in one copy leaves `bsdtar`, which reads the local header, and the in-process extractor, which reads the central directory, disagreeing on the time.
@@ -246,7 +276,13 @@ struct ArchiveCorpusTests {
     }
   }
 
-  /// An install of a damaged archive ends as `bsdtar` does: failing, or with the same tree. It may also fail as corrupt where `bsdtar` extracts regardless, as `bsdtar` does not check a gzip's CRC and skips a damaged header.
+  /// CURRENT: a truncated zip with sequestered resource forks falls back to `bsdtar`, which keeps `__MACOSX` beside the
+  /// app, so the install fails finding the bundle rather than as corrupt. It fails either way.
+  static func findsTwoBundles(_ producer: Producer, _ reason: String) -> Bool {
+    producer == .dittoZipWithResourceForks && reason.contains("No installable application")
+  }
+
+  /// An install of a damaged archive ends as `bsdtar` does: failing, or with the same tree. It may also fail as corrupt where `bsdtar` extracts regardless, as `bsdtar` does not check a gzip's CRC and skips a damaged header, and it may extract the undamaged tree where `bsdtar` refuses a damaged field the install doesn't read.
   @Test(arguments: damageCases)
   func aDamagedInstallEndsAsBSDTarDoes(_ producer: Producer, _ damage: Damage) async throws {
     try corpus.makeApp()
@@ -265,9 +301,42 @@ struct ArchiveCorpusTests {
       case (.failed, .failed):
         break
       case (.extracted, .failed(let reason)):
-        #expect(reason.hasPrefix("corrupt("), "\(producer) \(damage) \(source): bsdtar extracted it, install \(actual)")
-      case (.failed, .extracted):
-        Issue.record("\(producer) \(damage) \(source): bsdtar \(expected), install \(actual)")
+        #expect(
+          reason.hasPrefix("corrupt(") || Self.findsTwoBundles(producer, reason),
+          "\(producer) \(damage) \(source): bsdtar extracted it, install \(actual)")
+      case (.failed, .extracted(let actualTree)):
+        // A byte damaged in a field the in-process extractor doesn't read -- a zip64 end record's, say -- can leave
+        // `bsdtar` refusing an archive the install extracts whole. That is right only if what it extracted is exactly
+        // what the undamaged archive holds.
+        let undamaged = await bsdtarOutcome(try corpus.archive(producer), keepHardLinks: producer.keepsHardLinks, directoryTimes: directoryTimes)
+        guard case .extracted(let undamagedTree) = undamaged else {
+          Issue.record("\(producer) \(damage) \(source): bsdtar \(expected), install \(actual)")
+          continue
+        }
+        let compared = producer.isZip ? (Self.withoutTimes(undamagedTree), Self.withoutTimes(actualTree)) : (undamagedTree, actualTree)
+        #expect(ArchiveFixtures.differences(compared.0, compared.1) == "", "\(producer) \(damage) \(source): bsdtar \(expected), install \(actual)")
+      }
+    }
+  }
+
+  private static var truncatedZstdCases: [(Producer, Double)] {
+    Producer.allCases.filter(\.isZstd).flatMap { producer in [0.0, 0.01, 0.5, 0.99, 0.999_9].map { (producer, $0) } }
+  }
+
+  /// A stored zstd block carries no checksum, so the only damage that has to be caught is an archive that ends early.
+  @Test(arguments: truncatedZstdCases)
+  func aTruncatedZstdInstallFails(_ producer: Producer, _ fraction: Double) async throws {
+    try corpus.makeApp()
+    let archive = try corpus.archive(producer)
+    let contents = try Data(contentsOf: archive)
+    let damaged = contents.prefix(Int(Double(contents.count) * fraction))
+    let path = root.appendingPathComponent("damaged")
+    try damaged.write(to: path)
+    for source in Source.allCases {
+      let actual = try await resolve(source, archive: path, contents: damaged, keepHardLinks: false, directoryTimes: false)
+      guard case .failed = actual else {
+        Issue.record("\(producer) truncated to \(fraction) \(source): \(actual)")
+        continue
       }
     }
   }

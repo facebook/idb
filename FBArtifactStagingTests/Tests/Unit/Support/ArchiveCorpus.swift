@@ -29,12 +29,27 @@ struct ArchiveCorpus {
     case tarGzipPax
     case tarGzipWithoutMacMetadata
     case tarGzipInTwoMembers
+    /// A tar in a zstd frame, as clients that negotiate zstd send an app.
+    case tarZstd
+    /// A zip in a zstd frame behind `ArchiveFormat.zstdZipMarker`, as clients that negotiate zstd zip streams send one.
+    case zipZstd
 
     var isZip: Bool {
       switch self {
-      case .dittoZip, .dittoZipWithResourceForks, .zipDeflated, .zipStored, .zip64, .zipToAPipe:
+      case .dittoZip, .dittoZipWithResourceForks, .zipDeflated, .zipStored, .zip64, .zipToAPipe, .zipZstd:
         return true
-      case .tarGzip, .tarUncompressed, .tarGzipGNU, .tarGzipUstar, .tarGzipPax, .tarGzipWithoutMacMetadata, .tarGzipInTwoMembers:
+      case .tarGzip, .tarUncompressed, .tarGzipGNU, .tarGzipUstar, .tarGzipPax, .tarGzipWithoutMacMetadata, .tarGzipInTwoMembers, .tarZstd:
+        return false
+      }
+    }
+
+    /// Compressed with zstd, which `bsdtar` on macOS cannot read, so it is compared against the archive it compresses.
+    var isZstd: Bool {
+      switch self {
+      case .tarZstd, .zipZstd:
+        return true
+      case .dittoZip, .dittoZipWithResourceForks, .zipDeflated, .zipStored, .zip64, .zipToAPipe, .tarGzip, .tarUncompressed, .tarGzipGNU, .tarGzipUstar, .tarGzipPax,
+        .tarGzipWithoutMacMetadata, .tarGzipInTwoMembers:
         return false
       }
     }
@@ -139,8 +154,25 @@ struct ArchiveCorpus {
       let contents = try Data(contentsOf: tar)
       let half = contents.count / 2
       try (try gzip(contents.prefix(half)) + gzip(contents.suffix(from: half))).write(to: archive)
+    case .tarZstd:
+      try ZstdFrame.stored(try Data(contentsOf: reference(producer))).write(to: archive)
+    case .zipZstd:
+      try (ArchiveFormat.zstdZipMarker + ZstdFrame.stored(try Data(contentsOf: reference(producer)))).write(to: archive)
     }
     return archive
+  }
+
+  /// What `bsdtar` reads in place of `producer`'s archive: the archive itself, or for zstd the one it compresses.
+  func reference(_ producer: Producer) throws -> URL {
+    switch producer {
+    case .tarZstd:
+      return try archive(.tarUncompressed)
+    case .zipZstd:
+      return try archive(.dittoZip)
+    case .dittoZip, .dittoZipWithResourceForks, .zipDeflated, .zipStored, .zip64, .zipToAPipe, .tarGzip, .tarUncompressed, .tarGzipGNU, .tarGzipUstar, .tarGzipPax,
+      .tarGzipWithoutMacMetadata, .tarGzipInTwoMembers:
+      return root.appendingPathComponent("A.\(producer.rawValue).\(producer.isZip ? "zip" : "tar")")
+    }
   }
 
   private func gzip(_ data: Data) throws -> Data {
