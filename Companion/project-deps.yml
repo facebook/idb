@@ -15,7 +15,9 @@ targets:
     dependencies:
       - framework: ../Build/Products/Release/libFBArtifactStaging.a
         embed: false
-      - framework: ../Build/Products/Release/FBControlCore.framework
+      - framework: ../Build/Products/Release/libFBControlCore.a
+        embed: false
+      - framework: ../Build/Products/Release/libFBControlCoreObjC.a
         embed: false
       - framework: ../Build/Products/Release/libFBDeviceControl.a
         embed: false
@@ -53,7 +55,9 @@ targets:
         embed: false
   sim-video:
     dependencies:
-      - framework: ../Build/Products/Release/FBControlCore.framework
+      - framework: ../Build/Products/Release/libFBControlCore.a
+        embed: false
+      - framework: ../Build/Products/Release/libFBControlCoreObjC.a
         embed: false
       - framework: ../Build/Products/Release/libFBSimulatorBridgeProtocol.a
         embed: false
@@ -73,7 +77,9 @@ targets:
         embed: false
   SimScope:
     dependencies:
-      - framework: ../Build/Products/Release/FBControlCore.framework
+      - framework: ../Build/Products/Release/libFBControlCore.a
+        embed: false
+      - framework: ../Build/Products/Release/libFBControlCoreObjC.a
         embed: false
       - framework: ../Build/Products/Release/libFBSimulatorAX.a
         embed: false
@@ -103,7 +109,9 @@ targets:
     dependencies:
       - framework: ../Build/Products/Release/libFBArtifactStaging.a
         embed: false
-      - framework: ../Build/Products/Release/FBControlCore.framework
+      - framework: ../Build/Products/Release/libFBControlCore.a
+        embed: false
+      - framework: ../Build/Products/Release/libFBControlCoreObjC.a
         embed: false
       - framework: ../Build/Products/Release/libZstdDecompress.a
         embed: false
@@ -111,7 +119,9 @@ targets:
     dependencies:
       - framework: ../Build/Products/Release/libFBArtifactStaging.a
         embed: false
-      - framework: ../Build/Products/Release/FBControlCore.framework
+      - framework: ../Build/Products/Release/libFBControlCore.a
+        embed: false
+      - framework: ../Build/Products/Release/libFBControlCoreObjC.a
         embed: false
       - framework: ../Build/Products/Release/libFBDeviceControl.a
         embed: false
@@ -147,7 +157,9 @@ targets:
     dependencies:
       - framework: ../Build/Products/Release/libFBArtifactStaging.a
         embed: false
-      - framework: ../Build/Products/Release/FBControlCore.framework
+      - framework: ../Build/Products/Release/libFBControlCore.a
+        embed: false
+      - framework: ../Build/Products/Release/libFBControlCoreObjC.a
         embed: false
       - framework: ../Build/Products/Release/libFBDeviceControl.a
         embed: false

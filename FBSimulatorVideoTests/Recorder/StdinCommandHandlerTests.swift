@@ -8,6 +8,7 @@
 import FBControlCore
 import FBSimulatorControl
 @testable import FBSimulatorVideo
+import Foundation
 import Testing
 
 @Suite struct StdinCommandHandlerTests {

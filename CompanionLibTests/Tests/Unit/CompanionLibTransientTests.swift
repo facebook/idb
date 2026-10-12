@@ -7,6 +7,7 @@
 
 @preconcurrency @testable import CompanionLib
 @preconcurrency import FBControlCore
+import Foundation
 import Testing
 
 @Suite

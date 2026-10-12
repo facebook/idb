@@ -9,6 +9,7 @@
 @preconcurrency import FBControlCore
 import FBSimulatorAX
 import FBSimulatorControl
+import Foundation
 import GRPCCore
 import GRPCNIOTransportCore
 import GRPCProtobuf

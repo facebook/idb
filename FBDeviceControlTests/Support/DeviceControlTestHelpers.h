@@ -5,7 +5,6 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#import <FBControlCore/FBControlCore.h>
 #import <FBDeviceControl/AMDefines.h>
 
 /// Returns a zero-initialized AMDCalls struct (needed because Swift can't zero-init

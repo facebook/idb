@@ -1,0 +1,4 @@
+module FBControlCoreObjC {
+  header "FBObjCExceptionGuard.h"
+  export *
+}

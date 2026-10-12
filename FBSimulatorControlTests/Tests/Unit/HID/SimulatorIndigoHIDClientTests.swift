@@ -7,6 +7,7 @@
 
 import Darwin
 import FBControlCore
+import FBControlCoreObjC
 @testable import FBSimulatorControl
 import Foundation
 import Testing

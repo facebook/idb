@@ -8,6 +8,7 @@
 @preconcurrency internal import CoreSimDeviceIO
 @preconcurrency import CoreSimulator
 @preconcurrency import FBControlCore
+import FBControlCoreObjC
 import Foundation
 import IOSurface
 import os

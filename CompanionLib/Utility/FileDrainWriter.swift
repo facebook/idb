@@ -6,6 +6,7 @@
  */
 
 import FBControlCore
+import Foundation
 import GRPCCore
 
 struct FileDrainWriter {

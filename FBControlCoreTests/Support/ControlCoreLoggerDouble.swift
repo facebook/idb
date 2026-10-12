@@ -6,6 +6,7 @@
  */
 
 import FBControlCore
+import Foundation
 
 // SAFETY: stateless no-op.
 final class ControlCoreLoggerDouble: NSObject, ControlCoreLogger, @unchecked Sendable {

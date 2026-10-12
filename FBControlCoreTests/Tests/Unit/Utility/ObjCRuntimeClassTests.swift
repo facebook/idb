@@ -6,6 +6,7 @@
  */
 
 @testable import FBControlCore
+import FBControlCoreObjC
 import Foundation
 import ObjectiveC
 import Testing

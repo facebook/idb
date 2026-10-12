@@ -8,6 +8,7 @@
 @preconcurrency import CoreSimulator
 import Darwin
 @preconcurrency import FBControlCore
+import FBControlCoreObjC
 import Foundation
 
 /// Informal protocol for messaging the runtime-only `SimDeviceLegacyHIDClient`. The class has moved
