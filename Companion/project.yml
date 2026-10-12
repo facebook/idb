@@ -412,14 +412,20 @@ targets:
         embed: false
       - target: ReplProtocol
         embed: false
+      # Imported by the tests, and linked already: libCompanionLib.a carries the
+      # packages it depends on, so linking them here too defines every symbol twice.
       - package: grpc-swift-2
         product: GRPCCore
+        link: false
       - package: grpc-swift-nio-transport
         product: GRPCNIOTransportHTTP2Posix
+        link: false
       - package: swift-nio
         product: NIOCore
+        link: false
       - package: swift-nio
         product: NIOPosix
+        link: false
       - sdk: Foundation.framework
       - sdk: XCTest.framework
 
@@ -453,14 +459,20 @@ targets:
         embed: false
       - target: ReplProtocol
         embed: false
+      # Imported by the tests, and linked already: libCompanionLib.a carries the
+      # packages it depends on, so linking them here too defines every symbol twice.
       - package: grpc-swift-2
         product: GRPCCore
+        link: false
       - package: grpc-swift-nio-transport
         product: GRPCNIOTransportHTTP2Posix
+        link: false
       - package: swift-nio
         product: NIOCore
+        link: false
       - package: swift-nio
         product: NIOPosix
+        link: false
       - sdk: Foundation.framework
       - sdk: XCTest.framework
 
