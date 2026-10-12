@@ -29,8 +29,6 @@ struct ParallelFileWriterTests {
     for _ in 0..<3 {
       #expect(queue.take() != nil)
     }
-    // BUG: taken files stay in the queue until it empties, so it holds all four rather than the one waiting — flipped
-    // in the following commit.
-    #expect(queue.heldBytes == 4 * size)
+    #expect(queue.heldBytes == size)
   }
 }

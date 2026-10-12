@@ -168,9 +168,15 @@ final class ParallelFileWriter {
         return nil
       }
       let file = files[head]
+      // A file is let go as soon as it is taken: a decoder that keeps ahead of the writers never lets the queue empty,
+      // so waiting for it to would hold every file decoded.
+      files[head].contents = Data()
       head += 1
       if head == files.count {
         files.removeAll(keepingCapacity: true)
+        head = 0
+      } else if head >= 64 && head * 2 >= files.count {
+        files.removeFirst(head)
         head = 0
       }
       bytes -= file.contents.count
