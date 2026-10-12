@@ -16,7 +16,7 @@ public enum ScreenshotImageFormat: String, Hashable, Sendable, CaseIterable {
 }
 
 /// A JPEG quality on PNG or TIFF is rejected where the request is decoded, not silently ignored.
-public enum ScreenshotEncoding: Hashable, Sendable {
+public enum ScreenshotEncoding: Equatable, Sendable {
   case png
   /// Uncompressed: preserves the pixels and color space with no codec cost.
   case tiff
