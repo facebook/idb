@@ -1689,6 +1689,37 @@ final class AXBridgeReadsTests: XCTestCase {
     XCTAssertEqual(element.label, .some("General Settings"))
   }
 
+  func testDescribeTreeReadsAsTheNamedClientAndReportsIt() async throws {
+    for query in [AccessibilityElementQuery.frontmost, .marker(value: "General", key: .label, depth: 10)] {
+      let named = StubAXBridgeTreeReader(read: Self.stubRead())
+      let response = try await named.describeTree(query, options: AccessibilityRequestOptions(clientType: .xctest))
+      XCTAssertEqual(named.clientTypes, [.xctest], "\(query)")
+      XCTAssertEqual(response.client, AccessibilityClientReport(clientType: .xctest), "\(query)")
+
+      let unnamed = StubAXBridgeTreeReader(read: Self.stubRead())
+      let defaultResponse = try await unnamed.describeTree(query, options: AccessibilityRequestOptions())
+      XCTAssertEqual(unnamed.clientTypes, [.noClient], "\(query)")
+      XCTAssertNil(defaultResponse.client, "\(query)")
+    }
+  }
+
+  func testAPointReadSendsTheNamedClientWithTheHitTestAndReportsIt() async throws {
+    for clientType in [AXClientType?.none, .voiceOver] {
+      let transport = try StubAXBridgeWaitTransport(responses: [
+        envelope(["ok": true, "pid": 42, "tree": [AXWire.Node.label.rawValue: "target"]])
+      ])
+      let reader = AXBridgeUIAutomation(
+        simulator: SimulatorTestSupport.testableSimulator(withDevice: AXBridgeWaitDevice()),
+        transport: transport, persistence: .exclusive, displays: displays())
+      let response = try await reader.describe(.point(CGPoint(x: 80, y: 180)), options: AccessibilityRequestOptions(clientType: clientType))
+      guard case let .hitTest(_, _, _, sent, _, _) = await transport.requests.first else {
+        return XCTFail("a point read must hit-test")
+      }
+      XCTAssertEqual(sent, clientType ?? .noClient)
+      XCTAssertEqual(response.client, clientType.map(AccessibilityClientReport.init))
+    }
+  }
+
   func testDescribeTreeCarriesTheModalDescriptorOutOfTheRead() async throws {
     let modal = AccessibilityModalInfo(kind: .system, elementType: "SBAlertItemWindow", label: "Allow")
     for query in [AccessibilityElementQuery.frontmost, .marker(value: "General", key: .label, depth: 10)] {
@@ -2975,6 +3006,7 @@ private final class StubAXBridgeTreeReader: AXBridgeTreeReader, @unchecked Senda
   /// The traversal each read was performed with — how a test asserts a caller's choice reached the wire,
   /// and what an unchosen one resolved to.
   private(set) var traversals: [AXTraversal] = []
+  private(set) var clientTypes: [AXClientType] = []
   /// The traversal each profile was built for, so a test can assert the profile is told the same thing
   /// the read was rather than working it out for itself.
   private(set) var profiledTraversals: [AXTraversal] = []
@@ -2990,9 +3022,11 @@ private final class StubAXBridgeTreeReader: AXBridgeTreeReader, @unchecked Senda
     for query: AccessibilityElementQuery,
     attributes: [String]?,
     explainUnreachable: Bool,
-    traversal: AXTraversal
+    traversal: AXTraversal,
+    clientType: AXClientType
   ) async throws -> AXTreeRead {
     readCount += 1
+    clientTypes.append(clientType)
     readAttributes.append(attributes)
     explainRequests.append(explainUnreachable)
     traversals.append(traversal)

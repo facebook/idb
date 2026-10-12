@@ -206,11 +206,13 @@ final class AXBridgeUIAutomation: AXBridgeTreeReader, @unchecked Sendable {
     for query: AccessibilityElementQuery,
     attributes: [String]?,
     explainUnreachable: Bool,
-    traversal: AXTraversal
+    traversal: AXTraversal,
+    clientType: AXClientType
   ) async throws -> AXTreeRead {
     if needsDisplay {
       return try await withDisplay {
-        try await $0.readRawTree(for: query, attributes: attributes, explainUnreachable: explainUnreachable, traversal: traversal)
+        try await $0.readRawTree(
+          for: query, attributes: attributes, explainUnreachable: explainUnreachable, traversal: traversal, clientType: clientType)
       }
     }
     return try await translatingBackendErrors {
@@ -222,7 +224,7 @@ final class AXBridgeUIAutomation: AXBridgeTreeReader, @unchecked Sendable {
           explainUnreachable: explainUnreachable,
           traversal: traversal,
           automationMode: requestedAutomationMode,
-          clientType: .noClient
+          clientType: clientType
         )
         let sent = CFAbsoluteTimeGetCurrent()
         let response = try await transport.send(.read(pid: pid, options: options, displayID: display?.accessibilityID))
@@ -240,7 +242,7 @@ final class AXBridgeUIAutomation: AXBridgeTreeReader, @unchecked Sendable {
         explainUnreachable: explainUnreachable,
         traversal: traversal,
         automationMode: requestedAutomationMode,
-        clientType: .noClient
+        clientType: clientType
       )
       let sent = CFAbsoluteTimeGetCurrent()
       let response = try await transport.send(
@@ -267,7 +269,7 @@ final class AXBridgeUIAutomation: AXBridgeTreeReader, @unchecked Sendable {
         .hitTest(
           x: Double(lookupPoint.x), y: Double(lookupPoint.y),
           attributes: AXWire.Node.fetchList(for: options.serializationKeys),
-          clientType: .noClient,
+          clientType: options.resolvedClientType,
           displayID: display?.accessibilityID)
       )
       guard let hit = try AXTreeRead(hitTestResponse: response) else {
@@ -299,7 +301,9 @@ final class AXBridgeUIAutomation: AXBridgeTreeReader, @unchecked Sendable {
         // Raw read (not `describeTree`) so truncation is not warned per poll. `.viewHierarchy` because the
         // single fetch is unmeasured on a transitioning screen.
         let read = try await Self.$namesFailedApplication.withValue(false) {
-          try await self.readRawTree(for: .frontmost, attributes: nil, explainUnreachable: false, traversal: .viewHierarchy)
+          try await self.readRawTree(
+            for: .frontmost, attributes: nil, explainUnreachable: false, traversal: .viewHierarchy,
+            clientType: AccessibilityRequestOptions.unconfiguredClientType)
         }
         let elements = AXTreeWalk.describeAllElements(
           fromTree: read.tree, keys: AXKeys.defaultSet.union([key.serializationKey]), nestedFormat: false, pid: read.pid

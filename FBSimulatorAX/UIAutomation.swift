@@ -311,3 +311,11 @@ public extension Simulator {
     try await hid.connect().send(event: event, logger: logger)
   }
 }
+
+extension AccessibilityRequestOptions {
+  /// The client for operations that take no request options — actions, frames, waits and the reads that
+  /// resolve a write's target: the one a default read resolves to.
+  static var unconfiguredClientType: AXClientType {
+    AccessibilityRequestOptions().resolvedClientType
+  }
+}

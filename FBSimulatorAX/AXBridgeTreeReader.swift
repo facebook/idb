@@ -18,13 +18,14 @@ protocol AXBridgeTreeReader: UIAutomation {
 
   /// Reads the whole bounded tree the query targets. `.marker` reads the frontmost tree; the match is
   /// found in the serialized result. `attributes` is what the guest fetches per element (nil = its
-  /// default list); `traversal` is already resolved. `AXTreeRead` also carries the modal descriptor
-  /// and whether the guest's walk was truncated.
+  /// default list); `traversal` and `clientType` are already resolved. `AXTreeRead` also carries the
+  /// modal descriptor and whether the guest's walk was truncated.
   func readRawTree(
     for query: AccessibilityElementQuery,
     attributes: [String]?,
     explainUnreachable: Bool,
-    traversal: AXTraversal
+    traversal: AXTraversal,
+    clientType: AXClientType
   ) async throws -> AXTreeRead
 
   /// The traversal axbridge performs when the request does not select one.
@@ -114,11 +115,12 @@ extension AXBridgeTreeReader {
       // A hit-test resolves one element with no tree behind it, so there is no screen or truncation to
       // report — only which backend answered and what was asked for.
       return response.withProvenance(backend: backend.name, target: query.targetDescriptor)
+        .withClient(options.clientType.map(AccessibilityClientReport.init))
     case let .marker(value, key, _, ignoresCase):
       let plan = Self.readPlan(for: options, including: [key.serializationKey], explainUnreachable: false)
       let read = try await readRawTree(
         for: query, attributes: plan.attributes,
-        explainUnreachable: plan.explainUnreachable, traversal: plan.traversal
+        explainUnreachable: plan.explainUnreachable, traversal: plan.traversal, clientType: options.resolvedClientType
       )
       await warnIfTruncated(read.truncated)
       await warnIfUnsatisfiable(plan.unsatisfiableKeys, traversal: plan.traversal)
@@ -145,6 +147,7 @@ extension AXBridgeTreeReader {
           screen: read.screen ?? AXTreeWalk.screenInfo(fromTree: read.tree),
           truncated: read.truncated
         )
+        .withClient(options.clientType.map(AccessibilityClientReport.init))
     case .frontmost, .application:
       let plan = Self.readPlan(
         for: options,
@@ -164,7 +167,8 @@ extension AXBridgeTreeReader {
         for: query,
         attributes: plan.attributes,
         explainUnreachable: plan.explainUnreachable,
-        traversal: plan.traversal
+        traversal: plan.traversal,
+        clientType: options.resolvedClientType
       )
       await warnIfTruncated(read.truncated)
       await warnIfUnsatisfiable(plan.unsatisfiableKeys, traversal: plan.traversal)
@@ -209,6 +213,7 @@ extension AXBridgeTreeReader {
         truncated: read.truncated
       )
       .withNarrowing(options.narrowingReport(walked: walked, reported: elements))
+      .withClient(options.clientType.map(AccessibilityClientReport.init))
     }
   }
 

@@ -19,9 +19,6 @@ import Foundation
 // patternlint-disable-next-line unchecked-sendable
 final class AccessibilityUIAutomation: UIAutomation, @unchecked Sendable {
 
-  /// The client for operations that take no `AccessibilityRequestOptions` — actions, frames and waits.
-  private static let unconfiguredClientType = AccessibilityRequestOptions().resolvedClientType
-
   private let simulator: Simulator
 
   private var operations: any AccessibilityOperations { simulator.accessibility }
@@ -99,7 +96,7 @@ final class AccessibilityUIAutomation: UIAutomation, @unchecked Sendable {
       throw UIAutomationError.operationUnsupported(backend: .accessibility, operation: "A tap with a hold duration")
     }
     try await Self.translatingBackendErrors(query) {
-      let element = try await operations.resolveElement(for: query, clientType: Self.unconfiguredClientType)
+      let element = try await operations.resolveElement(for: query, clientType: AccessibilityRequestOptions.unconfiguredClientType)
       defer { element.close() }
       if let assertion = options.assertion {
         let actual = try await element.stringValue(forSearchableKey: assertion.key)
@@ -115,7 +112,7 @@ final class AccessibilityUIAutomation: UIAutomation, @unchecked Sendable {
 
   func setValue(_ value: String, for query: AccessibilityElementQuery) async throws {
     try await Self.translatingBackendErrors(query) {
-      let element = try await operations.resolveElement(for: query, clientType: Self.unconfiguredClientType)
+      let element = try await operations.resolveElement(for: query, clientType: AccessibilityRequestOptions.unconfiguredClientType)
       defer { element.close() }
       try await element.setValue(value)
     }
@@ -129,7 +126,7 @@ final class AccessibilityUIAutomation: UIAutomation, @unchecked Sendable {
     try await UIAutomationPolling.waitForMarker(
       query, backend: .accessibility, timeout: timeout, pollInterval: pollInterval
     ) { markerValue, key, depth in
-      let root = try await operations.resolveElement(for: .frontmost, clientType: Self.unconfiguredClientType)
+      let root = try await operations.resolveElement(for: .frontmost, clientType: AccessibilityRequestOptions.unconfiguredClientType)
       defer { root.close() }
       let result = try await root.searchElement(withValue: markerValue, forKey: key, depth: depth)
       result.match?.close()
@@ -140,7 +137,7 @@ final class AccessibilityUIAutomation: UIAutomation, @unchecked Sendable {
   func scroll(_ query: AccessibilityElementQuery, direction: AccessibilityScrollDirection) async throws {
     let query = try await scrollTarget(for: query, backend: .accessibility)
     try await Self.translatingBackendErrors(query) {
-      let element = try await operations.resolveElement(for: query, clientType: Self.unconfiguredClientType)
+      let element = try await operations.resolveElement(for: query, clientType: AccessibilityRequestOptions.unconfiguredClientType)
       defer { element.close() }
       try await element.scroll(with: direction)
     }
@@ -148,7 +145,7 @@ final class AccessibilityUIAutomation: UIAutomation, @unchecked Sendable {
 
   func frame(_ query: AccessibilityElementQuery) async throws -> CGRect {
     try await Self.translatingBackendErrors(query) {
-      let element = try await operations.resolveElement(for: query, clientType: Self.unconfiguredClientType)
+      let element = try await operations.resolveElement(for: query, clientType: AccessibilityRequestOptions.unconfiguredClientType)
       defer { element.close() }
       return try await element.frame()
     }
