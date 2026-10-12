@@ -15,6 +15,7 @@ targets:
           - "**/*.xcodeproj"
           - "project.yml"
           - "Build"
+          - "RuntimeProbe"
     settings:
       base:
         SDKROOT: iphonesimulator
@@ -36,8 +37,12 @@ targets:
         # install ID to their install prefix; leave header slack so the longer
         # path fits without relinking.
         OTHER_LDFLAGS: $(inherited) -undefined dynamic_lookup -headerpad_max_install_names
+        # Nothing in this target is Swift, so Xcode does not add the Swift back-deployment libraries ReplRuntimeProbe links.
+        LIBRARY_SEARCH_PATHS: $(inherited) $(DEVELOPER_DIR)/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/$(PLATFORM_NAME)
     dependencies:
       - sdk: Foundation.framework
+      - link: true
+        target: ReplRuntimeProbe-iOS
 
   Repl-macOS:
     type: library.dynamic
@@ -49,6 +54,7 @@ targets:
           - "**/*.xcodeproj"
           - "project.yml"
           - "Build"
+          - "RuntimeProbe"
     settings:
       base:
         SDKROOT: macosx
@@ -66,5 +72,35 @@ targets:
         # See Repl-iOS: XCTestCase is provided by the injected xctest host, and
         # the headerpad leaves room for install-name rewriting.
         OTHER_LDFLAGS: $(inherited) -undefined dynamic_lookup -headerpad_max_install_names
+        # Nothing in this target is Swift, so Xcode does not add the Swift back-deployment libraries ReplRuntimeProbe links.
+        LIBRARY_SEARCH_PATHS: $(inherited) $(DEVELOPER_DIR)/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/$(PLATFORM_NAME)
     dependencies:
       - sdk: Foundation.framework
+      - link: true
+        target: ReplRuntimeProbe-macOS
+
+  # The Swift interface generator the shims' Objective-C calls through
+  # FBReplGenerateSwiftInterface, as a static library so each shim is Objective-C alone.
+  ReplRuntimeProbe-iOS:
+    type: library.static
+    platform: iOS
+    deploymentTarget: "17.0"
+    sources:
+      - path: RuntimeProbe
+    settings:
+      base:
+        SDKROOT: iphonesimulator
+        IPHONEOS_DEPLOYMENT_TARGET: "17.0"
+        PRODUCT_MODULE_NAME: ReplRuntimeProbe
+
+  ReplRuntimeProbe-macOS:
+    type: library.static
+    platform: macOS
+    deploymentTarget: "15.0"
+    sources:
+      - path: RuntimeProbe
+    settings:
+      base:
+        SDKROOT: macosx
+        MACOSX_DEPLOYMENT_TARGET: "15.0"
+        PRODUCT_MODULE_NAME: ReplRuntimeProbe
