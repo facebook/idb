@@ -99,7 +99,7 @@ extension ScreenshotScale: CustomStringConvertible {
 }
 
 /// Describes a screenshot: what to capture, how much of it, at what size, in what encoding.
-public struct ScreenshotConfiguration: Hashable, Sendable {
+public struct ScreenshotConfiguration: Sendable {
 
   public let encoding: ScreenshotEncoding
   /// The region to capture, in `unit`, with a top-left origin. `nil` captures the whole screen.
