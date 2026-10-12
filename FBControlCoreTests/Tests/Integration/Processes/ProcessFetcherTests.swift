@@ -127,7 +127,7 @@ final class ProcessFetcherTests: XCTestCase {
   }
 
   func testProcessesWithProcessNameForAnUnknownName() {
-    XCTAssertEqual(ProcessFetcher().processes(withProcessName: "idb-no-such-process-\(getpid())"), [])
+    XCTAssertTrue(ProcessFetcher().processes(withProcessName: "idb-no-such-process-\(getpid())").isEmpty)
   }
 
   func testWaitForStopSignalResolvesOnceTheProcessIsStopped() async throws {

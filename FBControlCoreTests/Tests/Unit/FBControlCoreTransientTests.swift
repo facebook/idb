@@ -135,32 +135,10 @@ final class FBControlCoreTransientTests: XCTestCase {
     XCTAssertEqual(info.processName, "some_tool")
   }
 
-  func testProcessInfoEquality() {
-    let a = RunningProcessInfo(processIdentifier: 10, launchPath: "/usr/bin/ls", arguments: ["-la"], environment: ["A": "B"])
-    let b = RunningProcessInfo(processIdentifier: 10, launchPath: "/usr/bin/ls", arguments: ["-la"], environment: ["A": "B"])
-    let c = RunningProcessInfo(processIdentifier: 11, launchPath: "/usr/bin/ls", arguments: ["-la"], environment: ["A": "B"])
-
-    XCTAssertEqual(a, b)
-    XCTAssertNotEqual(a, c)
-  }
-
-  func testProcessInfoEqualityIgnoresEnvironment() {
-    let a = RunningProcessInfo(processIdentifier: 10, launchPath: "/usr/bin/ls", arguments: [], environment: ["X": "1"])
-    let b = RunningProcessInfo(processIdentifier: 10, launchPath: "/usr/bin/ls", arguments: [], environment: ["Y": "2"])
-
-    XCTAssertEqual(a, b)
-  }
-
   func testProcessInfoDescription() {
     let info = RunningProcessInfo(processIdentifier: 99, launchPath: "/usr/bin/ruby", arguments: [], environment: [:])
     XCTAssertTrue(info.description.contains("ruby"))
     XCTAssertTrue(info.description.contains("99"))
-  }
-
-  func testProcessInfoHash() {
-    let a = RunningProcessInfo(processIdentifier: 10, launchPath: "/usr/bin/ls", arguments: ["-la"], environment: [:])
-    let b = RunningProcessInfo(processIdentifier: 10, launchPath: "/usr/bin/ls", arguments: ["-la"], environment: [:])
-    XCTAssertEqual(a.hashValue, b.hashValue)
   }
 
   // MARK: - ApplicationLaunchConfiguration

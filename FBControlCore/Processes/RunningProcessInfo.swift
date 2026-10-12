@@ -8,7 +8,7 @@
 import Foundation
 
 /// A process in the host's process table, as read by `ProcessFetcher`.
-public struct RunningProcessInfo: Hashable, Sendable, CustomStringConvertible {
+public struct RunningProcessInfo: Sendable, CustomStringConvertible {
 
   public let processIdentifier: pid_t
   public let launchPath: String
@@ -24,20 +24,6 @@ public struct RunningProcessInfo: Hashable, Sendable, CustomStringConvertible {
     self.launchPath = launchPath
     self.arguments = arguments
     self.environment = environment
-  }
-
-  // The environment takes no part in equality or hashing.
-
-  public static func == (lhs: RunningProcessInfo, rhs: RunningProcessInfo) -> Bool {
-    lhs.processIdentifier == rhs.processIdentifier
-      && lhs.launchPath == rhs.launchPath
-      && lhs.arguments == rhs.arguments
-  }
-
-  public func hash(into hasher: inout Hasher) {
-    hasher.combine(processIdentifier)
-    hasher.combine(launchPath)
-    hasher.combine(arguments)
   }
 
   public var description: String {
