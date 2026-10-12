@@ -8,7 +8,7 @@
 import Foundation
 
 /// Thrown by the `Subprocess` entrypoints.
-public enum SubprocessError: Error, Equatable {
+public enum SubprocessError: Error {
   /// `errorMessage` is the tail of a `.loggerCapturingErrorMessage` capture of stderr; other
   /// captures are the caller's to read and may be arbitrarily large, so are never quoted.
   case unacceptableTermination(status: TerminationStatus, policy: ExitPolicy, executable: String, processIdentifier: pid_t, errorMessage: String? = nil)

@@ -32,15 +32,15 @@ struct SubprocessLauncherTests {
   func exitStatusIsCheckedAgainstThePolicy() async throws {
     let launcher = ScriptedLauncher(statLoc: SIGKILL)
 
-    await #expect(
-      throws: SubprocessError.unacceptableTermination(
-        status: .signalled(SIGKILL),
-        policy: .mustExitZero,
-        executable: Self.spec.executable,
-        processIdentifier: ScriptedLauncher.processIdentifier)
-    ) {
+    let error = await #expect(throws: SubprocessError.self) {
       _ = try await Self.spec.run(on: launcher, output: .closed, error: .closed)
     }
+    let expected = SubprocessError.unacceptableTermination(
+      status: .signalled(SIGKILL),
+      policy: .mustExitZero,
+      executable: Self.spec.executable,
+      processIdentifier: ScriptedLauncher.processIdentifier)
+    #expect(error.map { String(reflecting: $0) } == String(reflecting: expected))
   }
 
   @Test("Output written just before an immediate exit is fully captured")
@@ -57,9 +57,10 @@ struct SubprocessLauncherTests {
   func unsupportedInputIsRejectedBeforeSpawning() async throws {
     let launcher = ScriptedLauncher(statLoc: 0, supportsStandardInput: false)
 
-    await #expect(throws: SubprocessError.inputUnsupported(executable: Self.spec.executable)) {
+    let error = await #expect(throws: SubprocessError.self) {
       _ = try await Self.spec.run(on: launcher, output: .closed, error: .closed, input: .data(Data("in".utf8)))
     }
+    #expect(error.map { String(reflecting: $0) } == String(reflecting: SubprocessError.inputUnsupported(executable: Self.spec.executable)))
     #expect(await launcher.spawned.isEmpty)
   }
 
