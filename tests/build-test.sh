@@ -737,9 +737,7 @@ explicit_modules_off='
     test_target "$scheme" | grep -c "^SWIFT_ENABLE_EXPLICIT_MODULES=NO$"
 '
 output="$(in_package "$dir" "scheme=CompanionLibTests; $explicit_modules_off")"
-# BUG: the companion's tests build with explicit modules on, where scanning
-# FBDeviceControl's bridging header fails -- flipped in the following commit.
-assert_equal "the companion's tests build with explicit modules off" 0 "$output"
+assert_equal "the companion's tests build with explicit modules off" 1 "$output"
 output="$(in_package "$dir" "scheme=FBControlCoreTests; $explicit_modules_off")"
 assert_equal "the generated project's tests keep Xcode's default" 0 "$output"
 

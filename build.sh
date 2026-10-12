@@ -1094,6 +1094,14 @@ function test_target() {
   for step in $(test_plan prerequisites "$name"); do
     "build_$step"
   done
+  local project settings=()
+  project="$(test_plan project "$name")"
+  # As for every other build from the companion's project: the libFBDeviceControl
+  # it links carries a bridging header that explicit module scanning cannot
+  # resolve from there.
+  if [[ $project == Companion/idb_companion.xcodeproj ]]; then
+    settings+=(SWIFT_ENABLE_EXPLICIT_MODULES=NO)
+  fi
   # Per-test time allowances turn a hung test into a named failure in about a
   # minute; without them a single hang stalls the suite until the CI job's
   # 60-minute timeout cancels it with no indication of which test hung. Most
@@ -1102,7 +1110,8 @@ function test_target() {
   # a hosted runner, so those raise their own allowance (up to the maximum here)
   # via `executionTimeAllowance`.
   invoke_xcodebuild \
-    -project "$(test_plan project "$name")" \
+    ${settings[@]+"${settings[@]}"} \
+    -project "$project" \
     -scheme "$name" \
     -sdk macosx \
     -derivedDataPath "$BUILD_DIRECTORY" \
