@@ -34,16 +34,43 @@ extension BundleDescriptorError: LocalizedError {
 
 public struct BundleDescriptor: Hashable, Sendable, CustomStringConvertible {
 
-  public let name: String
-  public let identifier: String
-  public let path: String
-  public let binary: BinaryDescriptor?
+  // Boxed so that the many types embedding a descriptor copy one reference rather than every field;
+  // inline, the fields' value witnesses are expanded into each embedding type.
+  private final class Storage: Sendable {
+    let name: String
+    let identifier: String
+    let path: String
+    let binary: BinaryDescriptor?
+
+    init(name: String, identifier: String, path: String, binary: BinaryDescriptor?) {
+      self.name = name
+      self.identifier = identifier
+      self.path = path
+      self.binary = binary
+    }
+  }
+
+  private let storage: Storage
+
+  public var name: String { storage.name }
+  public var identifier: String { storage.identifier }
+  public var path: String { storage.path }
+  public var binary: BinaryDescriptor? { storage.binary }
 
   public init(name: String, identifier: String, path: String, binary: BinaryDescriptor?) {
-    self.name = name
-    self.identifier = identifier
-    self.path = path
-    self.binary = binary
+    storage = Storage(name: name, identifier: identifier, path: path, binary: binary)
+  }
+
+  public static func == (lhs: BundleDescriptor, rhs: BundleDescriptor) -> Bool {
+    lhs.storage === rhs.storage
+      || (lhs.name == rhs.name && lhs.identifier == rhs.identifier && lhs.path == rhs.path && lhs.binary == rhs.binary)
+  }
+
+  public func hash(into hasher: inout Hasher) {
+    hasher.combine(name)
+    hasher.combine(identifier)
+    hasher.combine(path)
+    hasher.combine(binary)
   }
 
   public static func bundle(fromPath path: String) throws -> BundleDescriptor {
