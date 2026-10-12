@@ -538,6 +538,20 @@ idb add-media cat.jpg dog.mov
 Files supplied to this command will be placed in the targets camera roll.
 Most common image and video file formats are supported.
 
+### Inject audio
+
+```
+idb audio inject speech.wav
+```
+
+Plays a recorded audio file into the microphone input of the apps running in a
+booted simulator, so an app under test hears the recording wherever it would
+have heard the microphone. The file must be a 16-bit PCM WAV.
+
+An app hears injected audio only while it is recording, and only if it was
+launched after the first injection into that simulator -- so an app that was
+already running when you injected for the first time has to be relaunched once.
+
 ### Clear the photo library
 
 ```

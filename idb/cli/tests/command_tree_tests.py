@@ -40,6 +40,7 @@ from idb.common.command import Command, CommandGroup, CompositeCommand
 BUILT_IN_ROOT_ENTRIES: tuple[str, ...] = (
     "add-media",
     "approve",
+    "audio",
     "boot",
     "clear-keychain",
     "clone",
@@ -94,6 +95,7 @@ BUILT_IN_ROOT_ENTRIES: tuple[str, ...] = (
 )
 
 BUILT_IN_GROUP_CHILDREN: dict[str, tuple[str, ...]] = {
+    "audio": ("inject",),
     "companion": ("log",),
     "contacts": ("update", "clear"),
     "crash": ("list", "show", "delete"),
@@ -141,8 +143,8 @@ BUILT_IN_GROUP_CHILDREN: dict[str, tuple[str, ...]] = {
     "xctrace": ("record",),
 }
 
-BUILT_IN_TERMINAL_COUNT = 91
-BUILT_IN_NODE_COUNT = 107
+BUILT_IN_TERMINAL_COUNT = 92
+BUILT_IN_NODE_COUNT = 109
 
 BUILT_IN_ALIAS_PATHS: tuple[tuple[str, ...], ...] = (
     ("file", "mv"),

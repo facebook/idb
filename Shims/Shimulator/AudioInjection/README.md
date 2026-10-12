@@ -1,8 +1,9 @@
 # Microphone injection
 
-The audio capability of `libShimulator-iOS` plays an audio file into the
-microphone input of the apps running in a booted simulator, so an app under test
-hears a recording wherever it would hear the microphone.
+`idb audio inject <file>` plays an audio file into the microphone input of the
+apps running in a booted simulator, so an app under test hears a recording
+wherever it would hear the microphone. One command is the whole interface: it
+arms the simulator itself.
 
 ## The pieces
 

@@ -28,3 +28,27 @@ class MediaAddCommand(ClientCommand):
 
     async def run_with_client(self, args: Namespace, client: Client) -> None:
         await client.add_media(file_paths=args.file_paths)
+
+
+class AudioInjectCommand(ClientCommand):
+    @property
+    def description(self) -> str:
+        return "Inject a 16-bit PCM WAV file into the target's microphone input"
+
+    @property
+    def name(self) -> str:
+        return "inject"
+
+    def add_parser_arguments(self, parser: ArgumentParser) -> None:
+        parser.add_argument(
+            "file",
+            help=(
+                "Path to the audio file to inject; it must be a 16-bit PCM WAV. An app hears it "
+                "only while recording, and only if it was launched after the simulator was first "
+                "armed"
+            ),
+        )
+        super().add_parser_arguments(parser)
+
+    async def run_with_client(self, args: Namespace, client: Client) -> None:
+        await client.inject_audio(audio_file_path=args.file)

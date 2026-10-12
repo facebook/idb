@@ -1319,6 +1319,10 @@ class Client(ABC):
         pass
 
     @abstractmethod
+    async def inject_audio(self, audio_file_path: str) -> None:
+        pass
+
+    @abstractmethod
     async def focus(self) -> None:
         pass
 

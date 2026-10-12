@@ -31,7 +31,7 @@ import idb.common.plugin as plugin
 from grpclib.client import Channel
 from grpclib.exceptions import GRPCError, ProtocolError, StreamTerminatedError
 from idb.common.constants import TESTS_POLL_INTERVAL
-from idb.common.file import drain_to_file
+from idb.common.file import drain_to_file, generate_file_chunks
 from idb.common.format import json_format_debugger_info
 from idb.common.gzip import drain_gzip_decompress, gunzip
 from idb.common.hid import (
@@ -138,6 +138,7 @@ from idb.grpc.idb_pb2 import (
     GetOrientationResponse,
     GetSettingRequest,
     HingeAngleRequest,
+    InjectAudioRequest,
     InstallRequest,
     InstrumentsRunRequest,
     LaunchRequest,
@@ -322,6 +323,15 @@ def log_and_handle_exceptions(grpc_method_name: str):  # pyre-ignore
             return func_wrapper
 
     return decorating
+
+
+async def _read_audio_chunks(file_path: str) -> AsyncIterator[bytes]:
+    """Reports a failure to read the local file as such, not as a lost companion connection."""
+    try:
+        async for chunk in generate_file_chunks(file_path):
+            yield chunk
+    except OSError as error:
+        raise IdbException(f"Could not read {file_path}: {error}") from error
 
 
 class Client(ClientBase):
@@ -868,6 +878,30 @@ class Client(ClientBase):
                 await drain_to_stream(
                     stream=stream, generator=generator, logger=self.logger
                 )
+
+    @log_and_handle_exceptions("inject_audio")
+    async def inject_audio(self, audio_file_path: str) -> None:
+        file_path = os.path.realpath(audio_file_path)
+        if not os.path.isfile(file_path):
+            raise IdbException(
+                f"Audio injection input is not a regular file: {file_path}"
+            )
+        async with self.stub.inject_audio.open() as stream:
+            if self.is_local:
+                await stream.send_message(
+                    InjectAudioRequest(payload=Payload(file_path=file_path))
+                )
+                await stream.end()
+                await stream.recv_message()
+                return
+
+            generator = stream_map(
+                _read_audio_chunks(file_path),
+                lambda chunk: InjectAudioRequest(payload=Payload(data=chunk)),
+            )
+            await drain_to_stream(
+                stream=stream, generator=generator, logger=self.logger
+            )
 
     @log_and_handle_exceptions("approve")
     async def approve(

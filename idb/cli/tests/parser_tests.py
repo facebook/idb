@@ -3265,6 +3265,14 @@ class TestParser(TestCase):
         await cli_main(cmd_input=["add-media"] + file_paths)
         self.client_mock.add_media.assert_called_once_with(file_paths=file_paths)
 
+    async def test_inject_audio(self) -> None:
+        self.client_mock.inject_audio = AsyncMock()
+        audio_file_path = "sound.wav"
+        await cli_main(cmd_input=["audio", "inject", audio_file_path])
+        self.client_mock.inject_audio.assert_called_once_with(
+            audio_file_path=audio_file_path
+        )
+
     async def test_focus(self) -> None:
         self.client_mock.focus = AsyncMock(return_value=["aaa", "bbb"])
         await cli_main(cmd_input=["focus"])

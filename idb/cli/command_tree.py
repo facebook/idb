@@ -95,7 +95,7 @@ from idb.cli.commands.kill import KillCommand
 from idb.cli.commands.launch import LaunchCommand
 from idb.cli.commands.location import LocationSetCommand
 from idb.cli.commands.log import CompanionLogCommand, LogCommand
-from idb.cli.commands.media import MediaAddCommand
+from idb.cli.commands.media import AudioInjectCommand, MediaAddCommand
 from idb.cli.commands.memory import SimulateMemoryWarningCommand
 from idb.cli.commands.notification import (
     NotificationClearCommand,
@@ -348,6 +348,11 @@ def build_builtin_commands(shell_command: ShellCommand) -> list[Command]:
         InstrumentsCommand(),
         KillCommand(),
         MediaAddCommand(),
+        CommandGroup(
+            name="audio",
+            description="Operations on the target's audio",
+            commands=[AudioInjectCommand()],
+        ),
         FocusCommand(),
         DapCommand(),
         CommandGroup(
