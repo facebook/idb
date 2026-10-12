@@ -49,13 +49,22 @@ final class BridgeAXRequestTests: XCTestCase {
     XCTAssertEqual(request, .read(pid: 5, options: defaults))
   }
 
-  func testASingleFetchOutranksTheTranslatorAndStringFlagsReadAsFoundationDoes() throws {
-    let request = try BridgeAXRequest(payload: [
-      "verb": .string("describe"), "pid": .integer(5), "snapshotTree": .string("YES"), "translatorVocabulary": .bool(true), "explainUnreachable": .null,
-    ])
-    guard case let .read(_, options, _) = request else { return XCTFail("\(request)") }
-    XCTAssertEqual(options.traversal, .singleFetch)
-    XCTAssertFalse(options.explainUnreachable)
+  func testEachTraversalDecodesFromItsNameAndStringFlagsReadAsFoundationDoes() throws {
+    for traversal in BridgeAXTraversal.allCases {
+      let request = try BridgeAXRequest(payload: [
+        "verb": .string("describe"), "pid": .integer(5), "traversal": .string(traversal.rawValue), "explainUnreachable": .string("NO"),
+      ])
+      guard case let .read(_, options, _) = request else { return XCTFail("\(request)") }
+      XCTAssertEqual(options.traversal, traversal)
+      XCTAssertFalse(options.explainUnreachable)
+    }
+  }
+
+  func testAReadWithoutATraversalWalksTheViewHierarchy() throws {
+    guard case let .read(_, options, _) = try BridgeAXRequest(payload: ["verb": .string("describe"), "pid": .integer(5)]) else {
+      return XCTFail("not a read")
+    }
+    XCTAssertEqual(options.traversal, .viewHierarchy)
   }
 
   func testNonStringAttributesAreDropped() throws {
@@ -89,8 +98,8 @@ final class BridgeAXRequestTests: XCTestCase {
       (["verb": .string("settings-get")], .missingSetting),
       (["verb": .string("settings-set"), "setting": .string("voiceover"), "enabled": .string("yes")], .missingEnabled),
       (["verb": .string("quiet"), "busyThresholdMs": .integer(-1)], .negativeTunable(.busyThresholdMs, -1)),
-      (["verb": .string("describe"), "pid": .integer(5), "snapshotTree": .null], .malformedFlag(.snapshotTree)),
-      (["verb": .string("describe"), "pid": .integer(5), "translatorVocabulary": .array([])], .malformedFlag(.translatorVocabulary)),
+      (["verb": .string("describe"), "pid": .integer(5), "traversal": .null], .unsupportedTraversal(.null)),
+      (["verb": .string("describe"), "pid": .integer(5), "traversal": .string("sideways")], .unsupportedTraversal(.string("sideways"))),
       (["verb": .string("describe"), "pid": .integer(5), "explainUnreachable": .object([:])], .malformedFlag(.explainUnreachable)),
     ]
     for (payload, expected) in cases {
@@ -101,7 +110,7 @@ final class BridgeAXRequestTests: XCTestCase {
   }
 
   func testAnUndecodableRequestFailsTheFrameButKeepsItsParameters() throws {
-    let frame = Data(#"{"command":{"accessibility":{"_0":{"verb":"quiet","quietWindowMs":-1}}},"id":"bad","version":1}"#.utf8)
+    let frame = Data(#"{"command":{"accessibility":{"_0":{"verb":"quiet","quietWindowMs":-1}}},"id":"bad","version":2}"#.utf8)
     XCTAssertThrowsError(try BridgeRequest.decode(frame))
     XCTAssertEqual(BridgeRequest.identity(of: frame), "bad")
     XCTAssertEqual(BridgeRequest.accessibilityParameters(of: frame), ["verb": .string("quiet"), "quietWindowMs": .integer(-1)])
@@ -113,9 +122,9 @@ final class BridgeAXRequestTests: XCTestCase {
   func testTheDefaultReadPayloadsAreUnchanged() {
     let base: [String: Any] = ["verb": "describe", "pid": 42, "maxDepth": 100, "maxNodes": 5000, "automationMode": true]
     let traversalKeys: [BridgeAXTraversal: [String: Any]] = [
-      .viewHierarchy: [:],
-      .semantic: ["translatorVocabulary": true],
-      .singleFetch: ["snapshotTree": true],
+      .viewHierarchy: ["traversal": "view-hierarchy"],
+      .semantic: ["traversal": "semantic"],
+      .singleFetch: ["traversal": "single-fetch"],
     ]
     for traversal in BridgeAXTraversal.allCases {
       let options = BridgeAXReadOptions(
@@ -133,7 +142,7 @@ final class BridgeAXRequestTests: XCTestCase {
     XCTAssertEqual(
       NSDictionary(dictionary: BridgeAXRequest.readFrontmost(x: 195, y: 422, method: .windowServer, options: options).payload),
       NSDictionary(dictionary: [
-        "verb": "describe", "x": 195.0, "y": 422.0, "method": "window-server", "maxDepth": 100, "maxNodes": 5000, "snapshotTree": true,
+        "verb": "describe", "x": 195.0, "y": 422.0, "method": "window-server", "maxDepth": 100, "maxNodes": 5000, "traversal": "single-fetch",
         "automationMode": true,
       ]))
   }

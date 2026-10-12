@@ -77,7 +77,7 @@ final class AccessibilityDisplayTests: XCTestCase {
       runtime.applicationElements[123] = root
       FBAXClientProvider.setRuntimeForTesting(runtime)
       let response = FBAccessibilityService.handleRequest([
-        "verb": "describe", "pid": 123, "displayID": 71, "snapshotTree": snapshot,
+        "verb": "describe", "pid": 123, "displayID": 71, "traversal": snapshot ? "single-fetch" : "view-hierarchy",
       ])
       XCTAssertEqual(response["ok"] as? Bool, true, "\(response)")
       let tree = try XCTUnwrap(response["tree"] as? [String: Any])
@@ -100,7 +100,7 @@ final class AccessibilityDisplayTests: XCTestCase {
     ]
     FBAXClientProvider.setRuntimeForTesting(runtime)
     let response = FBAccessibilityService.handleRequest([
-      "verb": "describe", "pid": 123, "displayID": 71, "translatorVocabulary": true,
+      "verb": "describe", "pid": 123, "displayID": 71, "traversal": "semantic",
     ])
     XCTAssertEqual(response["ok"] as? Bool, true, "\(response)")
     let tree = try XCTUnwrap(response["tree"] as? [String: Any])

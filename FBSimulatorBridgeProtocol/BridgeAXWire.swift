@@ -178,10 +178,9 @@ public enum BridgeAXWire {
     /// observe without touching the device, which is what a host predating the field sends; `true` and
     /// `false` each assert that state. Omitted and `false` are different requests.
     case automationMode
-    /// Reads through the accessibility translator's vocabulary rather than XCTest's. Off unless asked
-    /// for: the two disagree on some screens, and which one a caller wants is not the reader's choice.
-    case translatorVocabulary
-    case snapshotTree
+    /// Which walk a read runs: a `BridgeAXTraversal` raw value. The host always sends it; a read without one
+    /// walks the view hierarchy.
+    case traversal
     /// The attributes the guest fetches per element. Omitted for a default read; the guest falls back
     /// to `Node.defaultFetchList`.
     case attributes
@@ -217,8 +216,7 @@ public enum BridgeAXWire {
       case .maxDepth: "--max-depth"
       case .maxNodes: "--max-nodes"
       case .automationMode: "--automation-mode"
-      case .translatorVocabulary: "--translator-vocabulary"
-      case .snapshotTree: "--snapshot-tree"
+      case .traversal: "--traversal"
       case .attributes: "--attributes"
       case .explainUnreachable: "--explain-unreachable"
       case .x: "--x"

@@ -61,6 +61,8 @@ ARTIFACTS_ENV = "IDB_E2E_ARTIFACTS_DIR"
 ROUTE_ATTESTATION_ENV = "IDB_E2E_ROUTER_ATTESTATION"
 EXPECTED_IMPLEMENTATION_ENV = "IDB_E2E_EXPECTED_IMPLEMENTATION"
 CLAIM_KIND_ENV = "IDB_E2E_CLAIM_KIND"
+# The bridge protocol version a guest speaks: `BridgeRequest.currentVersion`. A guest refuses any other.
+GUEST_PROTOCOL_VERSION = 2
 
 T = TypeVar("T")
 
@@ -3199,7 +3201,11 @@ class GuestRPC:
 
     async def send_result(self, command: dict[str, Any]) -> dict[str, Any]:
         self._sequence += 1
-        request = {"version": 1, "id": f"test-{self._sequence}", "command": command}
+        request = {
+            "version": GUEST_PROTOCOL_VERSION,
+            "id": f"test-{self._sequence}",
+            "command": command,
+        }
         payload = json.dumps(request).encode()
         if self.persistent:
             assert self._reader is not None and self._writer is not None
@@ -3216,7 +3222,7 @@ class GuestRPC:
             response = json.loads(
                 (await self.test.guest("rpc", payload.decode())).stdout
             )
-        self.test.assertEqual(response["version"], 1)
+        self.test.assertEqual(response["version"], GUEST_PROTOCOL_VERSION)
         self.test.assertEqual(response["id"], request["id"])
         self.test.assertEqual(response["result"]["exitCode"], 0, response)
         return response["result"]

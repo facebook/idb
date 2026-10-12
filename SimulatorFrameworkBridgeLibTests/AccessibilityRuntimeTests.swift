@@ -436,7 +436,7 @@ final class AccessibilityRuntimeTests: XCTestCase {
 
   private func FBAXTestsSnapshotRequest(_ extra: [String: Any]) -> [String: Any] {
     var request: [String: Any] =
-      ["verb": "describe", "pid": NSNumber(value: kAppPid), "snapshotTree": NSNumber(value: true)]
+      ["verb": "describe", "pid": NSNumber(value: kAppPid), "traversal": "single-fetch"]
     request.merge(extra) { _, new in new }
     return request
   }
@@ -1705,7 +1705,7 @@ final class AccessibilityRuntimeTests: XCTestCase {
       [
         "verb": "describe",
         "pid": NSNumber(value: kAppPid),
-        "translatorVocabulary": NSNumber(value: true),
+        "traversal": "semantic",
         "maxDepth": NSNumber(value: 0),
       ]
     )
@@ -1726,7 +1726,7 @@ final class AccessibilityRuntimeTests: XCTestCase {
       [
         "verb": "describe",
         "pid": NSNumber(value: kAppPid),
-        "translatorVocabulary": NSNumber(value: true),
+        "traversal": "semantic",
         "maxDepth": NSNumber(value: 1),
       ]
     )
@@ -1741,7 +1741,7 @@ final class AccessibilityRuntimeTests: XCTestCase {
     runtime.translatorAttributeValues = [NSNumber(value: FBAXPAttribute.attributeLabel.rawValue): "General", NSNumber(value: FBAXPAttribute.attributeIsEnabled.rawValue): NSNumber(value: false)]
 
     let response =
-      FBAccessibilityService.handleRequest(["verb": "describe", "pid": NSNumber(value: kAppPid), "translatorVocabulary": NSNumber(value: true)])
+      FBAccessibilityService.handleRequest(["verb": "describe", "pid": NSNumber(value: kAppPid), "traversal": "semantic"])
 
     assertEqualObjects(axValue(response, "ok"), NSNumber(value: true))
     assertEqualObjects(axValue(axValue(response, "tree"), kNodeIsEnabled), NSNumber(value: false), "the fetched enabled answer must reach the wire")
@@ -1752,7 +1752,7 @@ final class AccessibilityRuntimeTests: XCTestCase {
     runtime.translatorAttributeValues = [NSNumber(value: FBAXPAttribute.attributeRole.rawValue): NSNumber(value: 9)]
 
     let tree =
-      axValue(FBAccessibilityService.handleRequest(["verb": "describe", "pid": NSNumber(value: kAppPid), "translatorVocabulary": NSNumber(value: true)]), "tree")
+      axValue(FBAccessibilityService.handleRequest(["verb": "describe", "pid": NSNumber(value: kAppPid), "traversal": "semantic"]), "tree")
 
     assertEqualObjects(axValue(tree, kNodeTranslatorRole), NSNumber(value: 9))
     XCTAssertNil(axValue(tree, kAXElementType), "the translator role must not be emitted under the elementType key")
@@ -1766,7 +1766,7 @@ final class AccessibilityRuntimeTests: XCTestCase {
     ]
 
     let tree =
-      axValue(FBAccessibilityService.handleRequest(["verb": "describe", "pid": NSNumber(value: kAppPid), "translatorVocabulary": NSNumber(value: true)]), "tree")
+      axValue(FBAccessibilityService.handleRequest(["verb": "describe", "pid": NSNumber(value: kAppPid), "traversal": "semantic"]), "tree")
 
     assertEqualObjects(axValue(axValue(tree, "XC_kAXXCAttributeVisiblePoint"), "X"), NSNumber(value: 201))
     assertEqualObjects(axValue(axValue(tree, "XC_kAXXCAttributeVisiblePoint"), "Y"), NSNumber(value: 311))
@@ -1777,7 +1777,7 @@ final class AccessibilityRuntimeTests: XCTestCase {
     runtime.translatorAttributeValues = [NSNumber(value: FBAXPAttribute.attributeTraits.rawValue): NSNumber(value: 1 << 6)]
 
     let tree =
-      axValue(FBAccessibilityService.handleRequest(["verb": "describe", "pid": NSNumber(value: kAppPid), "translatorVocabulary": NSNumber(value: true)]), "tree")
+      axValue(FBAccessibilityService.handleRequest(["verb": "describe", "pid": NSNumber(value: kAppPid), "traversal": "semantic"]), "tree")
 
     assertEqualObjects(axValue(tree, "FBTraits"), NSNumber(value: 1 << 6))
   }
@@ -1787,7 +1787,7 @@ final class AccessibilityRuntimeTests: XCTestCase {
     runtime.translatorAttributeValues = [NSNumber(value: FBAXPAttribute.attributeMemoryAddress.rawValue): NSNumber(value: 0x600001234560)]
 
     let tree =
-      axValue(FBAccessibilityService.handleRequest(["verb": "describe", "pid": NSNumber(value: kAppPid), "translatorVocabulary": NSNumber(value: true)]), "tree")
+      axValue(FBAccessibilityService.handleRequest(["verb": "describe", "pid": NSNumber(value: kAppPid), "traversal": "semantic"]), "tree")
 
     assertEqualObjects(axValue(tree, "FBElementIdentity"), NSNumber(value: 0x600001234560))
   }
@@ -1797,7 +1797,7 @@ final class AccessibilityRuntimeTests: XCTestCase {
     runtime.translatorAttributeValues = nil
 
     let response =
-      FBAccessibilityService.handleRequest(["verb": "describe", "pid": NSNumber(value: kAppPid), "translatorVocabulary": NSNumber(value: true)])
+      FBAccessibilityService.handleRequest(["verb": "describe", "pid": NSNumber(value: kAppPid), "traversal": "semantic"])
 
     assertEqualObjects(axValue(response, "ok"), NSNumber(value: false))
     XCTAssertNil(axValue(response, "tree"), "a read that could not be performed must not answer with a tree")
@@ -1810,7 +1810,7 @@ final class AccessibilityRuntimeTests: XCTestCase {
     runtime.translatorAttributeValues = [NSNumber(value: FBAXPAttribute.attributeRole.rawValue): NSNumber(value: 1), NSNumber(value: FBAXPAttribute.attributeIsEnabled.rawValue): NSNumber(value: true)]
 
     let response =
-      FBAccessibilityService.handleRequest(["verb": "describe", "pid": NSNumber(value: kAppPid), "translatorVocabulary": NSNumber(value: true)])
+      FBAccessibilityService.handleRequest(["verb": "describe", "pid": NSNumber(value: kAppPid), "traversal": "semantic"])
 
     assertEqualObjects(axValue(response, "ok"), NSNumber(value: false))
     assertEqualObjects(axValue(response, "error_kind"), "application_unavailable")
@@ -1823,7 +1823,7 @@ final class AccessibilityRuntimeTests: XCTestCase {
     runtime.translatorAttributeValues = [NSNumber(value: FBAXPAttribute.attributeLabel.rawValue): "SampleApp"]
 
     let response =
-      FBAccessibilityService.handleRequest(["verb": "describe", "x": NSNumber(value: 201), "y": NSNumber(value: 437), "translatorVocabulary": NSNumber(value: true)])
+      FBAccessibilityService.handleRequest(["verb": "describe", "x": NSNumber(value: 201), "y": NSNumber(value: 437), "traversal": "semantic"])
 
     assertEqualObjects(axValue(response, "ok"), NSNumber(value: true))
     assertEqualObjects(axValue(response, "pid"), NSNumber(value: kAppPid))
@@ -1831,7 +1831,7 @@ final class AccessibilityRuntimeTests: XCTestCase {
   }
 
   private func translatorRequest(_ extra: [String: Any] = [:]) -> [String: Any] {
-    var request: [String: Any] = ["verb": "describe", "pid": kAppPid, "translatorVocabulary": true]
+    var request: [String: Any] = ["verb": "describe", "pid": kAppPid, "traversal": "semantic"]
     request.merge(extra) { _, new in new }
     return request
   }
@@ -2524,30 +2524,25 @@ final class AccessibilityRuntimeTests: XCTestCase {
     [("YES", true), ("1", true), ("false", false), ("0", false), (NSNumber(value: 2), true), (NSNumber(value: -1), true), (NSNumber(value: 0), false)]
   }
 
-  func testSnapshotFlagPreservesFoundationBooleanCoercion() {
-    runtime.applicationElements[NSNumber(value: kAppPid)] = FBAXFakeElement.readable("root")
-    for (value, enabled) in flagCoercionCases {
-      let before = runtime.snapshotCount
-
-      let response = FBAccessibilityService.handleRequest(["verb": "describe", "pid": kAppPid, "snapshotTree": value])
-
-      assertEqualObjects(response["ok"], true)
-      assertEqualObjects(axValue(response["tree"], kAXLabel), "root")
-      XCTAssertEqual(runtime.snapshotCount - before, enabled ? 1 : 0)
-    }
-  }
-
-  func testTranslatorFlagPreservesFoundationBooleanCoercion() {
+  func testEachTraversalSelectsItsWalk() {
     runtime.applicationElements[NSNumber(value: kAppPid)] = FBAXFakeElement.readable("original")
     runtime.translatorAttributeValues = [33: "translated"]
-    for (value, enabled) in flagCoercionCases {
-      let before = runtime.translatorReadCount
+    // traversal, label read, snapshots taken, translator reads made
+    let expected: [(String, String, Int, Int)] = [
+      ("view-hierarchy", "original", 0, 0),
+      ("single-fetch", "original", 1, 0),
+      ("semantic", "translated", 0, 2),
+    ]
+    for (traversal, label, snapshots, translatorReads) in expected {
+      let snapshotsBefore = runtime.snapshotCount
+      let translatorReadsBefore = runtime.translatorReadCount
 
-      let response = FBAccessibilityService.handleRequest(["verb": "describe", "pid": kAppPid, "translatorVocabulary": value])
+      let response = FBAccessibilityService.handleRequest(["verb": "describe", "pid": kAppPid, "traversal": traversal])
 
       assertEqualObjects(response["ok"], true)
-      assertEqualObjects(axValue(response["tree"], kAXLabel), enabled ? "translated" : "original")
-      XCTAssertEqual(runtime.translatorReadCount - before, enabled ? 2 : 0)
+      assertEqualObjects(axValue(response["tree"], kAXLabel), label)
+      XCTAssertEqual(Int(runtime.snapshotCount) - Int(snapshotsBefore), snapshots, traversal)
+      XCTAssertEqual(Int(runtime.translatorReadCount) - Int(translatorReadsBefore), translatorReads, traversal)
     }
   }
 
@@ -2567,13 +2562,21 @@ final class AccessibilityRuntimeTests: XCTestCase {
 
   func testMalformedTraversalFlagsAreRefusedAndRecover() {
     runtime.applicationElements[NSNumber(value: kAppPid)] = FBAXFakeElement.readable("root")
-    for flag in ["snapshotTree", "translatorVocabulary", "explainUnreachable"] {
-      for value in [NSNull(), [], [:]] as [Any] {
-        let response = FBAccessibilityService.handleRequest(["verb": "describe", "pid": kAppPid, flag: value])
+    for value in [NSNull(), [], [:]] as [Any] {
+      let response = FBAccessibilityService.handleRequest(["verb": "describe", "pid": kAppPid, "explainUnreachable": value])
 
-        assertEqualObjects(response, ["ok": false, "error_kind": "bad_request", "error": "\(flag) must be a boolean"])
-        assertEqualObjects(FBAccessibilityService.handleRequest(["verb": "describe", "pid": kAppPid])["ok"], true)
-      }
+      assertEqualObjects(response, ["ok": false, "error_kind": "bad_request", "error": "explainUnreachable must be a boolean"])
+      assertEqualObjects(FBAccessibilityService.handleRequest(["verb": "describe", "pid": kAppPid])["ok"], true)
+    }
+    for value in [NSNull(), [], [:], true, "sideways"] as [Any] {
+      let response = FBAccessibilityService.handleRequest(["verb": "describe", "pid": kAppPid, "traversal": value])
+
+      assertEqualObjects(response["ok"], false)
+      assertEqualObjects(response["error_kind"], "bad_request")
+      let error = response["error"] as? String ?? ""
+      XCTAssertTrue(error.hasPrefix("unsupported traversal: "), error)
+      XCTAssertTrue(error.hasSuffix("; expected one of view-hierarchy, semantic, single-fetch"), error)
+      assertEqualObjects(FBAccessibilityService.handleRequest(["verb": "describe", "pid": kAppPid])["ok"], true)
     }
     XCTAssertEqual(runtime.snapshotCount, 0)
     XCTAssertEqual(runtime.translatorReadCount, 0)
@@ -2583,7 +2586,7 @@ final class AccessibilityRuntimeTests: XCTestCase {
   func testSnapshotSelectionDoesNotInterpretUnusedTraversalFlags() {
     runtime.applicationElements[NSNumber(value: kAppPid)] = FBAXFakeElement.readable("root")
 
-    let response = FBAccessibilityService.handleRequest(["verb": "describe", "pid": kAppPid, "snapshotTree": "YES", "translatorVocabulary": NSNull(), "explainUnreachable": NSNull()])
+    let response = FBAccessibilityService.handleRequest(["verb": "describe", "pid": kAppPid, "traversal": "single-fetch", "explainUnreachable": NSNull()])
 
     assertEqualObjects(response["ok"], true)
     assertEqualObjects(axValue(response["tree"], kAXLabel), "root")

@@ -91,23 +91,23 @@ final class BridgeProtocolTests: XCTestCase {
   func testRejectsUnsupportedVersionsAndMalformedRequests() throws {
     let request = BridgeRequest(command: .ping)
     var object = try XCTUnwrap(JSONSerialization.jsonObject(with: request.encoded()) as? [String: Any])
-    object["version"] = 2
+    object["version"] = BridgeRequest.currentVersion + 1
     XCTAssertThrowsError(try BridgeRequest.decode(JSONSerialization.data(withJSONObject: object))) {
-      XCTAssertEqual($0 as? BridgeProtocolError, .unsupportedVersion(2))
+      XCTAssertEqual($0 as? BridgeProtocolError, .unsupportedVersion(BridgeRequest.currentVersion + 1))
     }
-    for text in ["", "null", "[]", "{}", "{", "{\"version\":1,\"id\":\"x\",\"command\":{\"future\":{}}}"] {
+    for text in ["", "null", "[]", "{}", "{", "{\"version\":2,\"id\":\"x\",\"command\":{\"future\":{}}}"] {
       XCTAssertThrowsError(try BridgeRequest.decode(Data(text.utf8)), text)
     }
     for text in ["", "null", "[]", "{}", "{"] {
       XCTAssertNil(BridgeRequest.identity(of: Data(text.utf8)), text)
     }
     // A newer peer's command shape is a version gap, not a malformed request.
-    XCTAssertThrowsError(try BridgeRequest.decode(Data(#"{"version":2,"id":"x","command":{"future":{}}}"#.utf8))) {
-      XCTAssertEqual($0 as? BridgeProtocolError, .unsupportedVersion(2))
+    XCTAssertThrowsError(try BridgeRequest.decode(Data(#"{"version":3,"id":"x","command":{"future":{}}}"#.utf8))) {
+      XCTAssertEqual($0 as? BridgeProtocolError, .unsupportedVersion(3))
     }
-    XCTAssertEqual(BridgeRequest.identity(of: Data(#"{"version":1,"id":"x","command":{"future":{}}}"#.utf8)), "x")
-    XCTAssertEqual(BridgeRequest.identity(of: Data(#"{"version":2,"id":"x"}"#.utf8)), "x")
-    XCTAssertNil(BridgeRequest.identity(of: Data(#"{"version":1,"id":7,"command":{"ping":{}}}"#.utf8)))
+    XCTAssertEqual(BridgeRequest.identity(of: Data(#"{"version":2,"id":"x","command":{"future":{}}}"#.utf8)), "x")
+    XCTAssertEqual(BridgeRequest.identity(of: Data(#"{"version":3,"id":"x"}"#.utf8)), "x")
+    XCTAssertNil(BridgeRequest.identity(of: Data(#"{"version":2,"id":7,"command":{"ping":{}}}"#.utf8)))
   }
 
   func testLiteralWireFixturesPinEveryTopLevelCommand() throws {
@@ -126,13 +126,13 @@ final class BridgeProtocolTests: XCTestCase {
       (#"{"notifications":{"_0":{"delivered":{"bundleID":"app"}}}}"#, .notifications(.delivered(bundleID: "app"))),
       (#"{"notifications":{"_0":{"clearDelivered":{"bundleID":"app"}}}}"#, .notifications(.clearDelivered(bundleID: "app"))),
       (#"{"health":{"_0":{"approve":{"bundleID":"app","typeIDs":["step"]}}}}"#, .health(.approve(bundleID: "app", typeIDs: ["step"]))),
-      (#"{"accessibility":{"_0":{"maxDepth":5,"maxNodes":10,"pid":42,"verb":"describe"}}}"#, .accessibility(.read(pid: 42, options: Self.readOptions(maxDepth: 5, maxNodes: 10)))),
+      (#"{"accessibility":{"_0":{"maxDepth":5,"maxNodes":10,"pid":42,"traversal":"view-hierarchy","verb":"describe"}}}"#, .accessibility(.read(pid: 42, options: Self.readOptions(maxDepth: 5, maxNodes: 10)))),
       (#"{"accessibility":{"_0":{"verb":"hittest","x":1.5,"y":2}}}"#, .accessibility(.hitTest(x: 1.5, y: 2, attributes: nil))),
       (#"{"ping":{}}"#, .ping),
       (#"{"shutdown":{}}"#, .shutdown),
     ]
     for (text, command) in fixtures {
-      let literal = #"{"command":"# + text + #","id":"fixture","version":1}"#
+      let literal = #"{"command":"# + text + #","id":"fixture","version":2}"#
       XCTAssertEqual(try BridgeRequest.decode(Data(literal.utf8)).command, command, text)
       XCTAssertEqual(String(decoding: try BridgeRequest(command: command, id: "fixture").encoded(), as: UTF8.self), literal, text)
     }
@@ -183,15 +183,15 @@ final class BridgeProtocolTests: XCTestCase {
   }
 
   func testLiteralWireFixturesAndResponseVersionBoundary() throws {
-    let request = try BridgeRequest.decode(Data(#"{"version":1,"id":"fixture","command":{"dns":{"_0":{"set":{"servers":["::1","1.1.1.1"]}}}}}"#.utf8))
+    let request = try BridgeRequest.decode(Data(#"{"version":2,"id":"fixture","command":{"dns":{"_0":{"set":{"servers":["::1","1.1.1.1"]}}}}}"#.utf8))
     XCTAssertEqual(request.command, .dns(.set(servers: ["::1", "1.1.1.1"])))
-    let success = Data(#"{"version":1,"id":"fixture","result":{"exitCode":0,"values":[{"ok":true},null,42]}}"#.utf8)
+    let success = Data(#"{"version":2,"id":"fixture","result":{"exitCode":0,"values":[{"ok":true},null,42]}}"#.utf8)
     XCTAssertEqual(try BridgeResponse.decode(success, for: request).result, BridgeResult(exitCode: 0, values: [.object(["ok": .bool(true)]), .null, .integer(42)]))
-    let future = Data(#"{"version":2,"id":"fixture","result":{"exitCode":0,"values":[]}}"#.utf8)
+    let future = Data(#"{"version":3,"id":"fixture","result":{"exitCode":0,"values":[]}}"#.utf8)
     XCTAssertThrowsError(try BridgeResponse.decode(future, for: request)) {
-      XCTAssertEqual($0 as? BridgeProtocolError, .unsupportedVersion(2))
+      XCTAssertEqual($0 as? BridgeProtocolError, .unsupportedVersion(3))
     }
-    for text in [#"{"version":1,"result":{"exitCode":0,"values":[]}}"#, #"{"version":1,"id":"different","result":{"exitCode":0,"values":[]}}"#] {
+    for text in [#"{"version":2,"result":{"exitCode":0,"values":[]}}"#, #"{"version":2,"id":"different","result":{"exitCode":0,"values":[]}}"#] {
       XCTAssertThrowsError(try BridgeResponse.decode(Data(text.utf8), for: request)) {
         XCTAssertEqual($0 as? BridgeProtocolError, .mismatchedResponse)
       }

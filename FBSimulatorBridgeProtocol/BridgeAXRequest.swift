@@ -138,12 +138,7 @@ public struct BridgeAXReadOptions: Sendable, Equatable {
     if explainUnreachable {
       payload[BridgeAXWire.Request.explainUnreachable.key] = true
     }
-    if traversal == .semantic {
-      payload[BridgeAXWire.Request.translatorVocabulary.key] = true
-    }
-    if traversal == .singleFetch {
-      payload[BridgeAXWire.Request.snapshotTree.key] = true
-    }
+    payload[BridgeAXWire.Request.traversal.key] = traversal.rawValue
     if let automationMode {
       payload[BridgeAXWire.Request.automationMode.key] = automationMode
     }

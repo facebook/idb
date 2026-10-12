@@ -24,6 +24,8 @@ public enum BridgeAXRequestError: Error, Equatable, Sendable {
   case missingSetting
   case missingEnabled
   case unsupportedFrontmostMethod(String)
+  /// The traversal is not a string, or not one the bridge runs.
+  case unsupportedTraversal(BridgeJSONValue)
   /// A flag that is neither a boolean, a number nor a string.
   case malformedFlag(BridgeAXWire.Request)
   case negativeTunable(BridgeAXWire.Request, Int)
@@ -131,6 +133,16 @@ private struct Fields {
     }
   }
 
+  func traversal() throws(BridgeAXRequestError) -> BridgeAXTraversal {
+    guard let value = self[.traversal] else {
+      return .viewHierarchy
+    }
+    guard case let .string(name) = value, let traversal = BridgeAXTraversal(rawValue: name) else {
+      throw .unsupportedTraversal(value)
+    }
+    return traversal
+  }
+
   func string(_ key: BridgeAXWire.Request) -> String? {
     guard case let .string(value) = self[key] else { return nil }
     return value
@@ -178,14 +190,7 @@ private struct Fields {
 
   /// A flag the selected traversal does not use is not read, so a malformed one does not fail the read.
   func readOptions() throws(BridgeAXRequestError) -> BridgeAXReadOptions {
-    let traversal: BridgeAXTraversal =
-      if try flag(.snapshotTree) {
-        .singleFetch
-      } else if try flag(.translatorVocabulary) {
-        .semantic
-      } else {
-        .viewHierarchy
-      }
+    let traversal = try traversal()
     let explainUnreachable = traversal == .viewHierarchy ? try flag(.explainUnreachable) : (try? flag(.explainUnreachable)) ?? false
     return BridgeAXReadOptions(
       maxDepth: measure(.maxDepth).map { Int($0.int32Value) } ?? BridgeAXReadOptions.defaultMaxDepth,

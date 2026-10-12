@@ -19,7 +19,7 @@ final class AccessibilityExceptionTests: XCTestCase {
   func testEveryRuntimeExceptionStopsTheRequestAndAllowsTheNextRequest() {
     let describe: [String: Any] = ["verb": "describe", "pid": 4321]
     let snapshot: [String: Any] = [
-      "verb": "describe", "pid": 4321, "snapshotTree": true,
+      "verb": "describe", "pid": 4321, "traversal": "single-fetch",
       "attributes": ["XC_kAXXCAttributeLabel", "XC_kAXXCAttributeFrame", "XC_kAXXCAttributeVisiblePoint"],
     ]
     let cases: [(String, [String: Any])] = [
@@ -35,7 +35,7 @@ final class AccessibilityExceptionTests: XCTestCase {
       ("setValue", ["verb": "setvalue", "x": 1, "y": 2, "value": "changed"]),
       ("windowServerFrontmost", ["verb": "describe", "x": 1, "y": 2, "method": "window-server"]),
       ("runningBoardFrontmost", ["verb": "describe", "x": 1, "y": 2, "method": "runningboard"]),
-      ("translatorAttributes", ["verb": "describe", "pid": 4321, "translatorVocabulary": true]),
+      ("translatorAttributes", ["verb": "describe", "pid": 4321, "traversal": "semantic"]),
       ("automationRead", describe),
       ("automationWrite", ["verb": "describe", "pid": 4321, "automationMode": true]),
       ("settingRead", ["verb": "settings-get", "setting": "reduce-motion"]),

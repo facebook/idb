@@ -2847,24 +2847,23 @@ final class AXAutoTraversalTests: XCTestCase {
   func testADefaultGuestReadAsksTheGuestForASnapshot() throws {
     let traversal = AXBridgeUIAutomation.autoTraversal(for: AccessibilityRequestOptions())
     let request = Self.readRequest(traversal: traversal)
-    XCTAssertEqual(try decodedBridgeAXArguments(request)["snapshotTree"] as? Bool, true)
-    XCTAssertEqual(request.payload["snapshotTree"] as? Bool, true)
+    XCTAssertEqual(try decodedBridgeAXArguments(request)["traversal"] as? String, "single-fetch")
+    XCTAssertEqual(request.payload["traversal"] as? String, "single-fetch")
   }
 
-  // The same wire pin for a reachability read: it resolves to the walk, so its argv and payload stay
-  // empty.
+  // The same wire pin for a reachability read: it resolves to the walk, and says so.
   func testAReachabilityReadAsksTheGuestForNoSnapshot() throws {
     let traversal = AXBridgeUIAutomation.autoTraversal(for: AccessibilityRequestOptions(keys: [.interactable]))
     let request = Self.readRequest(traversal: traversal)
-    XCTAssertNil(try decodedBridgeAXArguments(request)["snapshotTree"])
-    XCTAssertNil(request.payload["snapshotTree"])
+    XCTAssertEqual(try decodedBridgeAXArguments(request)["traversal"] as? String, "view-hierarchy")
+    XCTAssertEqual(request.payload["traversal"] as? String, "view-hierarchy")
   }
 
   // Pinned in its own right, not only as the current default.
   func testTheSingleFetchAsksTheGuestForASnapshot() throws {
     let request = Self.readRequest(traversal: .singleFetch)
-    XCTAssertEqual(try decodedBridgeAXArguments(request)["snapshotTree"] as? Bool, true)
-    XCTAssertEqual(request.payload["snapshotTree"] as? Bool, true)
+    XCTAssertEqual(try decodedBridgeAXArguments(request)["traversal"] as? String, "single-fetch")
+    XCTAssertEqual(request.payload["traversal"] as? String, "single-fetch")
   }
 
   func testANamedTraversalOverridesTheBackendDefault() {

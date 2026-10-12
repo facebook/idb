@@ -46,6 +46,7 @@ from .harness import (
     Deadline,
     expected_implementation,
     EXPECTED_IMPLEMENTATION_ENV,
+    GUEST_PROTOCOL_VERSION,
     HarnessError,
     HostLoad,
     IDB_E2E_REPL_PATH_ENV,
@@ -2804,7 +2805,11 @@ class GuestRPCLifecycleTests(unittest.IsolatedAsyncioTestCase):
     async def test_body_failure_survives_disconnect_cleanup_failure(self) -> None:
         reader = asyncio.StreamReader()
         payload = json.dumps(
-            {"version": 1, "id": "test-1", "result": {"exitCode": 0, "values": []}}
+            {
+                "version": GUEST_PROTOCOL_VERSION,
+                "id": "test-1",
+                "result": {"exitCode": 0, "values": []},
+            }
         ).encode()
         reader.feed_data(len(payload).to_bytes(4, "big") + payload)
         writer = mock.Mock(spec=asyncio.StreamWriter)

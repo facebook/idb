@@ -14,7 +14,7 @@ public enum BridgeProtocolError: Error, Equatable {
 }
 
 public struct BridgeRequest: Codable, Equatable, Sendable {
-  public static let currentVersion = 1
+  public static let currentVersion = 2
   public let version: Int
   public let id: String
   public let command: BridgeCommand

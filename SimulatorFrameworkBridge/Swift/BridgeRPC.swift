@@ -67,7 +67,7 @@ public enum BridgeRPC {
   private static func failure(id: String?, message: String) -> BridgeRPCReply {
     let response = BridgeResponse(id: id, result: BridgeResult(exitCode: 1, error: message))
     let encoded = try? response.encoded()
-    let data = encoded.flatMap { $0.count <= IPCFrame.maximumSize ? $0 : nil } ?? Data(#"{"version":1,"result":{"exitCode":1,"values":[]}}"#.utf8)
+    let data = encoded.flatMap { $0.count <= IPCFrame.maximumSize ? $0 : nil } ?? Data(#"{"version":\#(BridgeRequest.currentVersion),"result":{"exitCode":1,"values":[]}}"#.utf8)
     return BridgeRPCReply(data: data, exitCode: 1, shutdown: false)
   }
 
