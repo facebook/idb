@@ -39,7 +39,19 @@ extension TargetProviderError: LocalizedError {
   }
 }
 
+/// Creates a target set when a lookup needs it.
+public typealias TargetSetMaker = () async throws -> any TargetSet
+
 public final class TargetProvider {
+
+  /// Resolves `udid` against the target sets `makers` create, in order.
+  public static func target(withUDID udid: String, makingTargetSets makers: [TargetSetMaker], warmUp: Bool, logger: ControlCoreLogger) async throws -> CompanionTarget {
+    var targetSets: [TargetSet] = []
+    for make in makers {
+      targetSets.append(try await make())
+    }
+    return try target(withUDID: udid, targetSets: targetSets, warmUp: warmUp, logger: logger)
+  }
 
   public static func target(withUDID udid: String, targetSets: [TargetSet], warmUp: Bool, logger: ControlCoreLogger) throws -> CompanionTarget {
     switch udid.lowercased() {

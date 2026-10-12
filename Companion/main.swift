@@ -190,38 +190,46 @@ private func awaitDevicePopulation(of set: DeviceSet, logger: ControlCoreLogger)
   }
 }
 
-private func defaultTargetSets(_ userDefaults: UserDefaults, xcodeAvailable: Bool, waitForDevices: Bool = false, logger: ControlCoreLogger) async throws -> [TargetSet] {
+private func defaultTargetSetMakers(_ userDefaults: UserDefaults, xcodeAvailable: Bool, waitForDevices: Bool = false, logger: ControlCoreLogger) throws -> [TargetSetMaker] {
   let only = userDefaults.string(forKey: "-only")
   if let only {
     if only.lowercased().contains("simulator") {
       logger.log("'--only' set for Simulators")
-      return [try simulatorSet(userDefaults, logger: logger)]
+      return [{ try simulatorSet(userDefaults, logger: logger) }]
     }
     if only.lowercased().contains("device") {
       logger.log("'--only' set for Devices")
-      return [try await deviceSet(logger, ecidFilter: nil, waitForDevices: true)]
+      return [{ try await deviceSet(logger, ecidFilter: nil, waitForDevices: true) }]
     }
     if only.lowercased().hasPrefix("ecid:") {
       let ecid = only.lowercased().replacingOccurrences(of: "ecid:", with: "")
       logger.log("ECID filter of \(ecid)")
-      return [try await deviceSet(logger, ecidFilter: ecid, waitForDevices: true)]
+      return [{ try await deviceSet(logger, ecidFilter: ecid, waitForDevices: true) }]
     }
     throw IDBCompanionError.invalidOnlyArgument(argument: only)
   }
   if !xcodeAvailable {
     logger.log("Xcode is not available, only Devices will be provided")
-    return [try await deviceSet(logger, ecidFilter: nil, waitForDevices: true)]
+    return [{ try await deviceSet(logger, ecidFilter: nil, waitForDevices: true) }]
   }
   logger.log("Providing targets across Simulator and Device sets.")
   return [
-    try simulatorSet(userDefaults, logger: logger),
-    try await deviceSet(logger, ecidFilter: nil, waitForDevices: waitForDevices),
+    { try simulatorSet(userDefaults, logger: logger) },
+    { try await deviceSet(logger, ecidFilter: nil, waitForDevices: waitForDevices) },
   ]
 }
 
+private func defaultTargetSets(_ userDefaults: UserDefaults, xcodeAvailable: Bool, waitForDevices: Bool = false, logger: ControlCoreLogger) async throws -> [TargetSet] {
+  var targetSets: [TargetSet] = []
+  for make in try defaultTargetSetMakers(userDefaults, xcodeAvailable: xcodeAvailable, waitForDevices: waitForDevices, logger: logger) {
+    targetSets.append(try await make())
+  }
+  return targetSets
+}
+
 private func targetForUDID(_ udid: String, userDefaults: UserDefaults, xcodeAvailable: Bool, warmUp: Bool, logger: ControlCoreLogger) async throws -> CompanionTarget {
-  let targetSets = try await defaultTargetSets(userDefaults, xcodeAvailable: xcodeAvailable, logger: logger)
-  return try TargetProvider.target(withUDID: udid, targetSets: targetSets, warmUp: warmUp, logger: logger)
+  let makers = try defaultTargetSetMakers(userDefaults, xcodeAvailable: xcodeAvailable, logger: logger)
+  return try await TargetProvider.target(withUDID: udid, makingTargetSets: makers, warmUp: warmUp, logger: logger)
 }
 
 private func deviceForECID(_ ecid: String, logger: ControlCoreLogger) async throws -> Device {
