@@ -28,7 +28,7 @@ public extension DataConsumer {
 }
 
 /// When a consumer is done with the data it is handed.
-public enum DataConsumption: Equatable, Sendable {
+public enum DataConsumption: Sendable {
   /// Each chunk is consumed before `consumeData` returns, so the caller may hand over bytes it does not own.
   case synchronous
   /// Chunks are consumed later, and `unprocessed` are still waiting.

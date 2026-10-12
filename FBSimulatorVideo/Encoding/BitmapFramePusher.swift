@@ -56,7 +56,7 @@ final class BitmapFramePusher: FramePusher {
     guard let baseAddress = CVPixelBufferGetBaseAddress(bufferToWrite) else { return }
     let size = CVPixelBufferGetDataSize(bufferToWrite)
 
-    if consumer.consumption == .synchronous {
+    if case .synchronous = consumer.consumption {
       let data = Data(bytesNoCopy: baseAddress, count: size, deallocator: .none)
       consumer.consumeData(data)
     } else {
