@@ -41,7 +41,7 @@ public enum ArchitectureProcessAdapter {
 
   /// A single-architecture copy of an executable, and the environment it must be launched with
   /// for its dynamic library imports to resolve from its new location.
-  public struct ThinnedExecutable: Sendable, Equatable {
+  public struct ThinnedExecutable: Sendable {
     public let path: String
     public let environment: [String: String]
   }
