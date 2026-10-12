@@ -40,11 +40,12 @@ targets:
   SimScopeProtocol:
     type: library.static
     platform: macOS
+    deploymentTarget: "15.0"
     sources:
       - path: Tools/SimScope/SimScopeProtocol
     settings:
       base:
-        INFOPLIST_FILE: $(SRCROOT)/SimScopeProtocol/SimScopeProtocol-Info.plist
+        MACOSX_DEPLOYMENT_TARGET: "15.0"
         PRODUCT_BUNDLE_IDENTIFIER: com.facebook.SimScopeProtocol
         PRODUCT_NAME: SimScopeProtocol
         DEFINES_MODULE: "YES"
@@ -63,11 +64,12 @@ targets:
   SimulatorIPC:
     type: library.static
     platform: macOS
+    deploymentTarget: "15.0"
     sources:
       - path: SimulatorIPC
     settings:
       base:
-        INFOPLIST_FILE: $(SRCROOT)/SimulatorIPC/SimulatorIPC-Info.plist
+        MACOSX_DEPLOYMENT_TARGET: "15.0"
         PRODUCT_BUNDLE_IDENTIFIER: com.facebook.SimulatorIPC
         PRODUCT_NAME: SimulatorIPC
         DEFINES_MODULE: "YES"
@@ -82,6 +84,7 @@ targets:
   SimulatorIPCTests:
     type: bundle.unit-test
     platform: macOS
+    deploymentTarget: "15.0"
     scheme:
       testTargets:
         - SimulatorIPCTests
@@ -92,6 +95,7 @@ targets:
           - "**/*.xcconfig"
     settings:
       base:
+        MACOSX_DEPLOYMENT_TARGET: "15.0"
         INFOPLIST_FILE: $(SRCROOT)/SimulatorIPCTests/SimulatorIPCTests-Info.plist
         PRODUCT_BUNDLE_IDENTIFIER: com.facebook.SimulatorIPCTests
         PRODUCT_NAME: SimulatorIPCTests
@@ -112,11 +116,12 @@ targets:
   FBSimulatorBridgeProtocol:
     type: library.static
     platform: macOS
+    deploymentTarget: "15.0"
     sources:
       - path: FBSimulatorBridgeProtocol
     settings:
       base:
-        INFOPLIST_FILE: $(SRCROOT)/FBSimulatorBridgeProtocol/FBSimulatorBridgeProtocol-Info.plist
+        MACOSX_DEPLOYMENT_TARGET: "15.0"
         PRODUCT_BUNDLE_IDENTIFIER: com.facebook.FBSimulatorBridgeProtocol
         PRODUCT_NAME: FBSimulatorBridgeProtocol
         DEFINES_MODULE: "YES"
@@ -131,6 +136,7 @@ targets:
   FBSimulatorBridgeProtocolTests:
     type: bundle.unit-test
     platform: macOS
+    deploymentTarget: "15.0"
     scheme:
       testTargets:
         - FBSimulatorBridgeProtocolTests
@@ -141,6 +147,7 @@ targets:
           - "**/*.xcconfig"
     settings:
       base:
+        MACOSX_DEPLOYMENT_TARGET: "15.0"
         INFOPLIST_FILE: $(SRCROOT)/FBSimulatorBridgeProtocolTests/FBSimulatorBridgeProtocolTests-Info.plist
         PRODUCT_BUNDLE_IDENTIFIER: com.facebook.FBSimulatorBridgeProtocolTests
         PRODUCT_NAME: FBSimulatorBridgeProtocolTests
@@ -161,6 +168,7 @@ targets:
   FBSimulatorVideo:
     type: library.static
     platform: macOS
+    deploymentTarget: "15.0"
     scheme:
       testTargets:
         - FBSimulatorVideoTests
@@ -170,7 +178,7 @@ targets:
         buildPhase: resources
     settings:
       base:
-        INFOPLIST_FILE: $(SRCROOT)/FBSimulatorVideo/FBSimulatorVideo-Info.plist
+        MACOSX_DEPLOYMENT_TARGET: "15.0"
         PRODUCT_BUNDLE_IDENTIFIER: com.facebook.FBSimulatorVideo
         PRODUCT_NAME: FBSimulatorVideo
         DEFINES_MODULE: "YES"
@@ -219,6 +227,7 @@ targets:
   FBSimulatorVideoTests:
     type: bundle.unit-test
     platform: macOS
+    deploymentTarget: "15.0"
     scheme:
       testTargets:
         - FBSimulatorVideoTests
@@ -267,11 +276,12 @@ targets:
           - $(TARGET_BUILD_DIR)/$(UNLOCALIZED_RESOURCES_FOLDER_PATH)/libShimulator-macOS.dylib
     settings:
       base:
+        MACOSX_DEPLOYMENT_TARGET: "15.0"
+        GENERATE_INFOPLIST_FILE: "YES"
         PRODUCT_BUNDLE_IDENTIFIER: com.facebook.FBSimulatorVideoTests
         PRODUCT_NAME: FBSimulatorVideoTests
         SWIFT_VERSION: "5.0"
         SWIFT_PACKAGE_NAME: idb
-        GENERATE_INFOPLIST_FILE: "YES"
         FRAMEWORK_SEARCH_PATHS: $(inherited) $(DEVELOPER_DIR)/Library/PrivateFrameworks
         CLANG_ENABLE_OBJC_ARC: "YES"
         OTHER_CFLAGS: $(inherited) -Werror -Wall -Warray-bounds-pointer-arithmetic -Wassign-enum -Wcompare-distinct-pointer-types -Wconversion -Wdeprecated -Wduplicate-method-match -Wglobal-constructors -Wimplicit-fallthrough -Wimplicit-retain-self -Wint-in-bool-context -Wmissing-prototypes -Wnonportable-include-path -Wnonportable-system-include-path -Wnull-pointer-arithmetic -Wnull-pointer-subtraction -Wnullable-to-nonnull-conversion -Wobjc-signed-char-bool -Wrange-loop-analysis -Wshadow -Wstrict-prototypes -Wstring-concatenation -Wundeclared-selector -Wunguarded-availability -Wunterminated-string-initialization -Wunreachable-code-return -Wunused-function -Wno-error=conditional-uninitialized -Wno-error=objc-designated-initializers -Wno-error=objc-dictionary-duplicate-keys -Wno-error=pointer-to-enum-cast -Wno-error=pointer-to-int-cast -Werror=void-pointer-to-int-cast -Wno-error=tautological-bitwise-compare -Wno-error=tautological-compare -Wno-error=tautological-constant-compare -Wno-error=tautological-constant-in-range-compare -Wno-error=tautological-constant-out-of-range-compare -Wno-error=tautological-negation-compare -Wno-error=tautological-objc-bool-compare -Wno-error=tautological-overlap-compare -Wno-error=tautological-pointer-compare -Wno-error=tautological-type-limit-compare -Wno-error=tautological-undefined-compare -Wno-error=tautological-unsigned-char-zero-compare -Wno-error=tautological-unsigned-enum-zero-compare -Wno-error=tautological-unsigned-zero-compare -Wno-error=tautological-value-range-compare -Wno-error=unreachable-code-break -Wno-error=unreachable-code-fallthrough -Wno-error=unreachable-code-loop-increment -Wno-error=unreachable-code -Wno-error=unused-but-set-parameter -Wno-error=unused-but-set-variable -Wno-error=void-pointer-to-enum-cast -Wno-error=suggest-override -Wno-error=extra-semi -Wno-error=missing-noreturn -Wno-error=format-nonliteral -Wno-error=non-virtual-dtor -Wno-covered-switch-default -Wswitch-enum -Wswitch-default -Wno-error=c23-extensions -Wno-error=vla-cxx-extension -Wmissing-field-initializers -Wno-error=missing-field-initializers -Wbitwise-conditional-parentheses -Wno-error=bitwise-conditional-parentheses -Wlogical-not-parentheses -Wno-error=logical-not-parentheses -Wlogical-op-parentheses -Wno-error=logical-op-parentheses -Wno-float-conversion -Wno-implicit-float-conversion -Wno-implicit-int-float-conversion -Wno-implicit-int-conversion -Wno-shorten-64-to-32 -Wno-sign-conversion -Wfloat-overflow-conversion -Wfloat-zero-conversion -Wobjc-signed-char-bool-implicit-float-conversion -Wobjc-signed-char-bool-implicit-int-conversion -Wno-deprecated-declarations -Wno-deprecated-copy-dtor -Wno-deprecated-copy-with-dtor -Wno-deprecated-dynamic-exception-spec -Wno-deprecated-implementations -Wno-deprecated-redundant-constexpr-static-def -Wno-non-c-typedef-for-linkage -Wno-psabi -Wno-gnu-folding-constant -Wno-c99-designator -Wno-deprecated-copy -Wno-final-dtor-non-final-class -Wno-gnu-inline-cpp-without-extern -Wno-range-loop-construct -Wno-reorder-init-list -Wno-deprecated-this-capture -Wno-error=ambiguous-reversed-operator -Wno-error=deprecated-anon-enum-enum-conversion -Wenum-enum-conversion -Wmisleading-indentation -Wno-unknown-warning-option -Wno-module-conflict -Wno-deprecated-copy-with-user-provided-dtor -Wno-deprecated-experimental-coroutine -Wundef-prefix=__IPHONE_1,__IPHONE_2,__IPHONE_3,FB_AT_LEAST_IOS,META_AT_LEAST,FB_IOS,META_IOS,FB_64,META_64,META_TARGET,FBReport,FB_SWITCH -DDEFAULT_WARNING_FLAGS_SENTINEL=1 -Wno-error=assign-enum -Wno-error=deprecated -Wno-error=deprecated-anon-enum-enum-conversion -Wno-error=deprecated-array-compare -Wno-error=deprecated-attributes -Wno-error=deprecated-comma-subscript -Wno-error=deprecated-copy -Wno-error=deprecated-copy-with-user-provided-copy -Wno-error=deprecated-copy-with-dtor -Wno-error=deprecated-copy-with-user-provided-dtor -Wno-error=deprecated-declarations -Wno-error=deprecated-dynamic-exception-spec -Wno-error=deprecated-enum-compare -Wno-error=deprecated-enum-compare-conditional -Wno-error=deprecated-enum-enum-conversion -Wno-error=deprecated-enum-float-conversion -Wno-error=deprecated-increment-bool -Wno-error=deprecated-pragma -Wno-error=deprecated-register -Wno-error=deprecated-this-capture -Wno-error=deprecated-volatile -Wno-error=deprecated-writable-strings -Wno-error=conversion -Wno-error=constant-conversion -Wno-error=bitfield-constant-conversion -Wno-error=objc-bool-constant-conversion -Wno-error=enum-conversion -Wno-error=enum-compare-conditional -Wno-error=enum-enum-conversion -Wno-error=enum-float-conversion -Wno-error=float-conversion -Wno-error=float-overflow-conversion -Wno-error=float-zero-conversion -Wno-error=implicit-fallthrough -Wno-error=implicit-float-conversion -Wno-error=implicit-int-float-conversion -Wno-error=implicit-const-int-float-conversion -Wno-error=objc-signed-char-bool-implicit-float-conversion -Wno-error=implicit-int-conversion -Wno-error=objc-signed-char-bool-implicit-int-conversion -Wno-error=int-conversion -Wno-error=literal-conversion -Wno-error=non-literal-null-conversion -Wno-error=nonnull -Wno-error=null-conversion -Wno-error=objc-literal-conversion -Wno-error=shorten-64-to-32 -Wno-error=string-conversion -Wno-error=nullable-to-nonnull-conversion -Wno-error=switch-enum -Wno-error=switch-default -Wno-mismatched-tags -Wno-objc-designated-initializers -Wno-reorder -Wno-sign-conversion -Wno-unused-lambda-capture -Wno-unused-private-field -Wno-unused-property-ivar -DDEFAULT_TEST_WARNING_FLAGS_SENTINEL=1 -Werror=sign-conversion -Werror=shorten-64-to-32 -Wno-nullability-completeness -Wno-global-constructors -fobjc-arc-exceptions -Wno-deprecated-declarations -Wno-error=unused-command-line-argument
@@ -309,7 +319,6 @@ targets:
         DEFINES_MODULE: "YES"
         MACH_O_TYPE: staticlib
         SWIFT_VERSION: "6.0"
-        GENERATE_INFOPLIST_FILE: "YES"
       configs:
         Release:
           DEBUG_INFORMATION_FORMAT: dwarf
@@ -321,6 +330,7 @@ targets:
   ShimulatorProtocolTests:
     type: bundle.unit-test
     platform: macOS
+    deploymentTarget: "15.0"
     scheme:
       testTargets:
         - ShimulatorProtocolTests
@@ -328,11 +338,12 @@ targets:
       - path: Shims/ShimulatorProtocolTests
     settings:
       base:
+        MACOSX_DEPLOYMENT_TARGET: "15.0"
+        GENERATE_INFOPLIST_FILE: "YES"
         PRODUCT_BUNDLE_IDENTIFIER: com.facebook.ShimulatorProtocolTests
         PRODUCT_NAME: ShimulatorProtocolTests
         SWIFT_VERSION: "6.0"
         SWIFT_PACKAGE_NAME: idb
-        GENERATE_INFOPLIST_FILE: "YES"
         CLANG_ENABLE_OBJC_ARC: "YES"
         OTHER_CFLAGS: $(inherited) -Werror -Wall -Warray-bounds-pointer-arithmetic -Wassign-enum -Wcompare-distinct-pointer-types -Wconversion -Wdeprecated -Wduplicate-method-match -Wglobal-constructors -Wimplicit-fallthrough -Wimplicit-retain-self -Wint-in-bool-context -Wmissing-prototypes -Wnonportable-include-path -Wnonportable-system-include-path -Wnull-pointer-arithmetic -Wnull-pointer-subtraction -Wnullable-to-nonnull-conversion -Wobjc-signed-char-bool -Wrange-loop-analysis -Wshadow -Wstrict-prototypes -Wstring-concatenation -Wundeclared-selector -Wunguarded-availability -Wunterminated-string-initialization -Wunreachable-code-return -Wunused-function -Wno-error=conditional-uninitialized -Wno-error=objc-designated-initializers -Wno-error=objc-dictionary-duplicate-keys -Wno-error=pointer-to-enum-cast -Wno-error=pointer-to-int-cast -Werror=void-pointer-to-int-cast -Wno-error=tautological-bitwise-compare -Wno-error=tautological-compare -Wno-error=tautological-constant-compare -Wno-error=tautological-constant-in-range-compare -Wno-error=tautological-constant-out-of-range-compare -Wno-error=tautological-negation-compare -Wno-error=tautological-objc-bool-compare -Wno-error=tautological-overlap-compare -Wno-error=tautological-pointer-compare -Wno-error=tautological-type-limit-compare -Wno-error=tautological-undefined-compare -Wno-error=tautological-unsigned-char-zero-compare -Wno-error=tautological-unsigned-enum-zero-compare -Wno-error=tautological-unsigned-zero-compare -Wno-error=tautological-value-range-compare -Wno-error=unreachable-code-break -Wno-error=unreachable-code-fallthrough -Wno-error=unreachable-code-loop-increment -Wno-error=unreachable-code -Wno-error=unused-but-set-parameter -Wno-error=unused-but-set-variable -Wno-error=void-pointer-to-enum-cast -Wno-error=suggest-override -Wno-error=extra-semi -Wno-error=missing-noreturn -Wno-error=format-nonliteral -Wno-error=non-virtual-dtor -Wno-covered-switch-default -Wswitch-enum -Wswitch-default -Wno-error=c23-extensions -Wno-error=vla-cxx-extension -Wmissing-field-initializers -Wno-error=missing-field-initializers -Wbitwise-conditional-parentheses -Wno-error=bitwise-conditional-parentheses -Wlogical-not-parentheses -Wno-error=logical-not-parentheses -Wlogical-op-parentheses -Wno-error=logical-op-parentheses -Wno-float-conversion -Wno-implicit-float-conversion -Wno-implicit-int-float-conversion -Wno-implicit-int-conversion -Wno-shorten-64-to-32 -Wno-sign-conversion -Wfloat-overflow-conversion -Wfloat-zero-conversion -Wobjc-signed-char-bool-implicit-float-conversion -Wobjc-signed-char-bool-implicit-int-conversion -Wno-deprecated-declarations -Wno-deprecated-copy-dtor -Wno-deprecated-copy-with-dtor -Wno-deprecated-dynamic-exception-spec -Wno-deprecated-implementations -Wno-deprecated-redundant-constexpr-static-def -Wno-non-c-typedef-for-linkage -Wno-psabi -Wno-gnu-folding-constant -Wno-c99-designator -Wno-deprecated-copy -Wno-final-dtor-non-final-class -Wno-gnu-inline-cpp-without-extern -Wno-range-loop-construct -Wno-reorder-init-list -Wno-deprecated-this-capture -Wno-error=ambiguous-reversed-operator -Wno-error=deprecated-anon-enum-enum-conversion -Wenum-enum-conversion -Wmisleading-indentation -Wno-unknown-warning-option -Wno-module-conflict -Wno-deprecated-copy-with-user-provided-dtor -Wno-deprecated-experimental-coroutine -Wundef-prefix=__IPHONE_1,__IPHONE_2,__IPHONE_3,FB_AT_LEAST_IOS,META_AT_LEAST,FB_IOS,META_IOS,FB_64,META_64,META_TARGET,FBReport,FB_SWITCH -DDEFAULT_WARNING_FLAGS_SENTINEL=1 -Wno-error=assign-enum -Wno-error=deprecated -Wno-error=deprecated-anon-enum-enum-conversion -Wno-error=deprecated-array-compare -Wno-error=deprecated-attributes -Wno-error=deprecated-comma-subscript -Wno-error=deprecated-copy -Wno-error=deprecated-copy-with-user-provided-copy -Wno-error=deprecated-copy-with-dtor -Wno-error=deprecated-copy-with-user-provided-dtor -Wno-error=deprecated-declarations -Wno-error=deprecated-dynamic-exception-spec -Wno-error=deprecated-enum-compare -Wno-error=deprecated-enum-compare-conditional -Wno-error=deprecated-enum-enum-conversion -Wno-error=deprecated-enum-float-conversion -Wno-error=deprecated-increment-bool -Wno-error=deprecated-pragma -Wno-error=deprecated-register -Wno-error=deprecated-this-capture -Wno-error=deprecated-volatile -Wno-error=deprecated-writable-strings -Wno-error=conversion -Wno-error=constant-conversion -Wno-error=bitfield-constant-conversion -Wno-error=objc-bool-constant-conversion -Wno-error=enum-conversion -Wno-error=enum-compare-conditional -Wno-error=enum-enum-conversion -Wno-error=enum-float-conversion -Wno-error=float-conversion -Wno-error=float-overflow-conversion -Wno-error=float-zero-conversion -Wno-error=implicit-fallthrough -Wno-error=implicit-float-conversion -Wno-error=implicit-int-float-conversion -Wno-error=implicit-const-int-float-conversion -Wno-error=objc-signed-char-bool-implicit-float-conversion -Wno-error=implicit-int-conversion -Wno-error=objc-signed-char-bool-implicit-int-conversion -Wno-error=int-conversion -Wno-error=literal-conversion -Wno-error=non-literal-null-conversion -Wno-error=nonnull -Wno-error=null-conversion -Wno-error=objc-literal-conversion -Wno-error=shorten-64-to-32 -Wno-error=string-conversion -Wno-error=nullable-to-nonnull-conversion -Wno-error=switch-enum -Wno-error=switch-default -Wno-mismatched-tags -Wno-objc-designated-initializers -Wno-reorder -Wno-sign-conversion -Wno-unused-lambda-capture -Wno-unused-private-field -Wno-unused-property-ivar -DDEFAULT_TEST_WARNING_FLAGS_SENTINEL=1 -Werror=sign-conversion -Werror=shorten-64-to-32 -Wno-nullability-completeness -Wno-global-constructors -fobjc-arc-exceptions -Wno-deprecated-declarations -Wno-error=unused-command-line-argument
         OTHER_SWIFT_FLAGS: $(inherited) -no-warnings-as-errors
@@ -359,7 +370,6 @@ targets:
         DEFINES_MODULE: "YES"
         MACH_O_TYPE: staticlib
         SWIFT_VERSION: "6.0"
-        GENERATE_INFOPLIST_FILE: "YES"
       configs:
         Release:
           DEBUG_INFORMATION_FORMAT: dwarf
@@ -373,6 +383,7 @@ targets:
   ZstdDecompress:
     type: library.static
     platform: macOS
+    deploymentTarget: "15.0"
     sources:
       - path: ZstdDecompress
         excludes:
@@ -381,7 +392,7 @@ targets:
           - "**/*.modulemap"
     settings:
       base:
-        INFOPLIST_FILE: $(SRCROOT)/ZstdDecompress/ZstdDecompress-Info.plist
+        MACOSX_DEPLOYMENT_TARGET: "15.0"
         PRODUCT_BUNDLE_IDENTIFIER: com.facebook.ZstdDecompress
         PRODUCT_NAME: ZstdDecompress
         DEFINES_MODULE: "YES"
@@ -395,19 +406,20 @@ targets:
   FBControlCoreObjC:
     type: library.static
     platform: macOS
+    deploymentTarget: "15.0"
     sources:
       - path: FBControlCoreObjC
         excludes:
           - "**/*.modulemap"
     settings:
       base:
+        MACOSX_DEPLOYMENT_TARGET: "15.0"
         PRODUCT_BUNDLE_IDENTIFIER: com.facebook.FBControlCoreObjC
         PRODUCT_NAME: FBControlCoreObjC
         DEFINES_MODULE: "YES"
         MACH_O_TYPE: staticlib
         SWIFT_VERSION: "6.0"
         SWIFT_PACKAGE_NAME: idb
-        GENERATE_INFOPLIST_FILE: "YES"
         CLANG_ENABLE_OBJC_ARC: "YES"
         OTHER_CFLAGS: $(inherited) -Werror -Wall -Warray-bounds-pointer-arithmetic -Wassign-enum -Wcompare-distinct-pointer-types -Wconversion -Wdeprecated -Wduplicate-method-match -Wglobal-constructors -Wimplicit-fallthrough -Wimplicit-retain-self -Wint-in-bool-context -Wmissing-prototypes -Wnonportable-include-path -Wnonportable-system-include-path -Wnull-pointer-arithmetic -Wnull-pointer-subtraction -Wnullable-to-nonnull-conversion -Wobjc-signed-char-bool -Wrange-loop-analysis -Wshadow -Wstrict-prototypes -Wstring-concatenation -Wundeclared-selector -Wunguarded-availability -Wunterminated-string-initialization -Wunreachable-code-return -Wunused-function -Wno-error=conditional-uninitialized -Wno-error=objc-designated-initializers -Wno-error=objc-dictionary-duplicate-keys -Wno-error=pointer-to-enum-cast -Wno-error=pointer-to-int-cast -Werror=void-pointer-to-int-cast -Wno-error=tautological-bitwise-compare -Wno-error=tautological-compare -Wno-error=tautological-constant-compare -Wno-error=tautological-constant-in-range-compare -Wno-error=tautological-constant-out-of-range-compare -Wno-error=tautological-negation-compare -Wno-error=tautological-objc-bool-compare -Wno-error=tautological-overlap-compare -Wno-error=tautological-pointer-compare -Wno-error=tautological-type-limit-compare -Wno-error=tautological-undefined-compare -Wno-error=tautological-unsigned-char-zero-compare -Wno-error=tautological-unsigned-enum-zero-compare -Wno-error=tautological-unsigned-zero-compare -Wno-error=tautological-value-range-compare -Wno-error=unreachable-code-break -Wno-error=unreachable-code-fallthrough -Wno-error=unreachable-code-loop-increment -Wno-error=unreachable-code -Wno-error=unused-but-set-parameter -Wno-error=unused-but-set-variable -Wno-error=void-pointer-to-enum-cast -Wno-error=suggest-override -Wno-error=extra-semi -Wno-error=missing-noreturn -Wno-error=format-nonliteral -Wno-error=non-virtual-dtor -Wno-covered-switch-default -Wswitch-enum -Wswitch-default -Wno-error=c23-extensions -Wno-error=vla-cxx-extension -Wmissing-field-initializers -Wno-error=missing-field-initializers -Wbitwise-conditional-parentheses -Wno-error=bitwise-conditional-parentheses -Wlogical-not-parentheses -Wno-error=logical-not-parentheses -Wlogical-op-parentheses -Wno-error=logical-op-parentheses -Wno-float-conversion -Wno-implicit-float-conversion -Wno-implicit-int-float-conversion -Wno-implicit-int-conversion -Wno-shorten-64-to-32 -Wno-sign-conversion -Wfloat-overflow-conversion -Wfloat-zero-conversion -Wobjc-signed-char-bool-implicit-float-conversion -Wobjc-signed-char-bool-implicit-int-conversion -Wno-deprecated-declarations -Wno-deprecated-copy-dtor -Wno-deprecated-copy-with-dtor -Wno-deprecated-dynamic-exception-spec -Wno-deprecated-implementations -Wno-deprecated-redundant-constexpr-static-def -Wno-non-c-typedef-for-linkage -Wno-psabi -Wno-gnu-folding-constant -Wno-c99-designator -Wno-deprecated-copy -Wno-final-dtor-non-final-class -Wno-gnu-inline-cpp-without-extern -Wno-range-loop-construct -Wno-reorder-init-list -Wno-deprecated-this-capture -Wno-error=ambiguous-reversed-operator -Wno-error=deprecated-anon-enum-enum-conversion -Wenum-enum-conversion -Wmisleading-indentation -Wno-unknown-warning-option -Wno-module-conflict -Wno-deprecated-copy-with-user-provided-dtor -Wno-deprecated-experimental-coroutine -Wundef-prefix=__IPHONE_1,__IPHONE_2,__IPHONE_3,FB_AT_LEAST_IOS,META_AT_LEAST,FB_IOS,META_IOS,FB_64,META_64,META_TARGET,FBReport,FB_SWITCH -DDEFAULT_WARNING_FLAGS_SENTINEL=1 -Werror=sign-conversion -Werror=shorten-64-to-32 -Wnullability-completeness -fobjc-arc-exceptions -Wno-deprecated-declarations -Wno-error=unused-command-line-argument
       configs:
@@ -419,20 +431,15 @@ targets:
   FBControlCore:
     type: library.static
     platform: macOS
+    deploymentTarget: "15.0"
     scheme:
       testTargets:
         - FBControlCoreTests
-    configFiles:
-      Debug: FBControlCore/FBControlCore.xcconfig
-      Release: FBControlCore/FBControlCore.xcconfig
     sources:
       - path: FBControlCore
-        excludes:
-          - "**/*-Info.plist"
-          - "**/*.xcconfig"
     settings:
       base:
-        INFOPLIST_FILE: $(SRCROOT)/FBControlCore/FBControlCore-Info.plist
+        MACOSX_DEPLOYMENT_TARGET: "15.0"
         PRODUCT_BUNDLE_IDENTIFIER: com.facebook.FBControlCore
         PRODUCT_NAME: FBControlCore
         DEFINES_MODULE: "YES"
@@ -471,7 +478,6 @@ targets:
         MACH_O_TYPE: staticlib
         SWIFT_VERSION: "6.0"
         SWIFT_PACKAGE_NAME: idb
-        GENERATE_INFOPLIST_FILE: "YES"
         CLANG_ENABLE_OBJC_ARC: "YES"
         OTHER_CFLAGS: $(inherited) -Werror -Wall -Warray-bounds-pointer-arithmetic -Wassign-enum -Wcompare-distinct-pointer-types -Wconversion -Wdeprecated -Wduplicate-method-match -Wglobal-constructors -Wimplicit-fallthrough -Wimplicit-retain-self -Wint-in-bool-context -Wmissing-prototypes -Wnonportable-include-path -Wnonportable-system-include-path -Wnull-pointer-arithmetic -Wnull-pointer-subtraction -Wnullable-to-nonnull-conversion -Wobjc-signed-char-bool -Wrange-loop-analysis -Wshadow -Wstrict-prototypes -Wstring-concatenation -Wundeclared-selector -Wunguarded-availability -Wunterminated-string-initialization -Wunreachable-code-return -Wunused-function -Wno-error=conditional-uninitialized -Wno-error=objc-designated-initializers -Wno-error=objc-dictionary-duplicate-keys -Wno-error=pointer-to-enum-cast -Wno-error=pointer-to-int-cast -Werror=void-pointer-to-int-cast -Wno-error=tautological-bitwise-compare -Wno-error=tautological-compare -Wno-error=tautological-constant-compare -Wno-error=tautological-constant-in-range-compare -Wno-error=tautological-constant-out-of-range-compare -Wno-error=tautological-negation-compare -Wno-error=tautological-objc-bool-compare -Wno-error=tautological-overlap-compare -Wno-error=tautological-pointer-compare -Wno-error=tautological-type-limit-compare -Wno-error=tautological-undefined-compare -Wno-error=tautological-unsigned-char-zero-compare -Wno-error=tautological-unsigned-enum-zero-compare -Wno-error=tautological-unsigned-zero-compare -Wno-error=tautological-value-range-compare -Wno-error=unreachable-code-break -Wno-error=unreachable-code-fallthrough -Wno-error=unreachable-code-loop-increment -Wno-error=unreachable-code -Wno-error=unused-but-set-parameter -Wno-error=unused-but-set-variable -Wno-error=void-pointer-to-enum-cast -Wno-error=suggest-override -Wno-error=extra-semi -Wno-error=missing-noreturn -Wno-error=format-nonliteral -Wno-error=non-virtual-dtor -Wno-covered-switch-default -Wswitch-enum -Wswitch-default -Wno-error=c23-extensions -Wno-error=vla-cxx-extension -Wmissing-field-initializers -Wno-error=missing-field-initializers -Wbitwise-conditional-parentheses -Wno-error=bitwise-conditional-parentheses -Wlogical-not-parentheses -Wno-error=logical-not-parentheses -Wlogical-op-parentheses -Wno-error=logical-op-parentheses -Wno-float-conversion -Wno-implicit-float-conversion -Wno-implicit-int-float-conversion -Wno-implicit-int-conversion -Wno-shorten-64-to-32 -Wno-sign-conversion -Wfloat-overflow-conversion -Wfloat-zero-conversion -Wobjc-signed-char-bool-implicit-float-conversion -Wobjc-signed-char-bool-implicit-int-conversion -Wno-deprecated-declarations -Wno-deprecated-copy-dtor -Wno-deprecated-copy-with-dtor -Wno-deprecated-dynamic-exception-spec -Wno-deprecated-implementations -Wno-deprecated-redundant-constexpr-static-def -Wno-non-c-typedef-for-linkage -Wno-psabi -Wno-gnu-folding-constant -Wno-c99-designator -Wno-deprecated-copy -Wno-final-dtor-non-final-class -Wno-gnu-inline-cpp-without-extern -Wno-range-loop-construct -Wno-reorder-init-list -Wno-deprecated-this-capture -Wno-error=ambiguous-reversed-operator -Wno-error=deprecated-anon-enum-enum-conversion -Wenum-enum-conversion -Wmisleading-indentation -Wno-unknown-warning-option -Wno-module-conflict -Wno-deprecated-copy-with-user-provided-dtor -Wno-deprecated-experimental-coroutine -Wundef-prefix=__IPHONE_1,__IPHONE_2,__IPHONE_3,FB_AT_LEAST_IOS,META_AT_LEAST,FB_IOS,META_IOS,FB_64,META_64,META_TARGET,FBReport,FB_SWITCH -DDEFAULT_WARNING_FLAGS_SENTINEL=1 -Werror=sign-conversion -Werror=shorten-64-to-32 -Wnullability-completeness -fobjc-arc-exceptions -Wno-deprecated-declarations -Wno-error=unused-command-line-argument
       configs:
@@ -490,6 +496,7 @@ targets:
   FBArtifactStagingTests:
     type: bundle.unit-test
     platform: macOS
+    deploymentTarget: "15.0"
     scheme:
       testTargets:
         - FBArtifactStagingTests
@@ -498,11 +505,12 @@ targets:
       - path: FBControlCoreTests/Support/ControlCoreLoggerDouble.swift
     settings:
       base:
+        MACOSX_DEPLOYMENT_TARGET: "15.0"
+        GENERATE_INFOPLIST_FILE: "YES"
         PRODUCT_BUNDLE_IDENTIFIER: com.facebook.FBArtifactStagingTests
         PRODUCT_NAME: FBArtifactStagingTests
         SWIFT_VERSION: "5.0"
         SWIFT_PACKAGE_NAME: idb
-        GENERATE_INFOPLIST_FILE: "YES"
         CLANG_ENABLE_OBJC_ARC: "YES"
         OTHER_CFLAGS: $(inherited) -Werror -Wall -Warray-bounds-pointer-arithmetic -Wassign-enum -Wcompare-distinct-pointer-types -Wconversion -Wdeprecated -Wduplicate-method-match -Wglobal-constructors -Wimplicit-fallthrough -Wimplicit-retain-self -Wint-in-bool-context -Wmissing-prototypes -Wnonportable-include-path -Wnonportable-system-include-path -Wnull-pointer-arithmetic -Wnull-pointer-subtraction -Wnullable-to-nonnull-conversion -Wobjc-signed-char-bool -Wrange-loop-analysis -Wshadow -Wstrict-prototypes -Wstring-concatenation -Wundeclared-selector -Wunguarded-availability -Wunterminated-string-initialization -Wunreachable-code-return -Wunused-function -Wno-error=conditional-uninitialized -Wno-error=objc-designated-initializers -Wno-error=objc-dictionary-duplicate-keys -Wno-error=pointer-to-enum-cast -Wno-error=pointer-to-int-cast -Werror=void-pointer-to-int-cast -Wno-error=tautological-bitwise-compare -Wno-error=tautological-compare -Wno-error=tautological-constant-compare -Wno-error=tautological-constant-in-range-compare -Wno-error=tautological-constant-out-of-range-compare -Wno-error=tautological-negation-compare -Wno-error=tautological-objc-bool-compare -Wno-error=tautological-overlap-compare -Wno-error=tautological-pointer-compare -Wno-error=tautological-type-limit-compare -Wno-error=tautological-undefined-compare -Wno-error=tautological-unsigned-char-zero-compare -Wno-error=tautological-unsigned-enum-zero-compare -Wno-error=tautological-unsigned-zero-compare -Wno-error=tautological-value-range-compare -Wno-error=unreachable-code-break -Wno-error=unreachable-code-fallthrough -Wno-error=unreachable-code-loop-increment -Wno-error=unreachable-code -Wno-error=unused-but-set-parameter -Wno-error=unused-but-set-variable -Wno-error=void-pointer-to-enum-cast -Wno-error=suggest-override -Wno-error=extra-semi -Wno-error=missing-noreturn -Wno-error=format-nonliteral -Wno-error=non-virtual-dtor -Wno-covered-switch-default -Wswitch-enum -Wswitch-default -Wno-error=c23-extensions -Wno-error=vla-cxx-extension -Wmissing-field-initializers -Wno-error=missing-field-initializers -Wbitwise-conditional-parentheses -Wno-error=bitwise-conditional-parentheses -Wlogical-not-parentheses -Wno-error=logical-not-parentheses -Wlogical-op-parentheses -Wno-error=logical-op-parentheses -Wno-float-conversion -Wno-implicit-float-conversion -Wno-implicit-int-float-conversion -Wno-implicit-int-conversion -Wno-shorten-64-to-32 -Wno-sign-conversion -Wfloat-overflow-conversion -Wfloat-zero-conversion -Wobjc-signed-char-bool-implicit-float-conversion -Wobjc-signed-char-bool-implicit-int-conversion -Wno-deprecated-declarations -Wno-deprecated-copy-dtor -Wno-deprecated-copy-with-dtor -Wno-deprecated-dynamic-exception-spec -Wno-deprecated-implementations -Wno-deprecated-redundant-constexpr-static-def -Wno-non-c-typedef-for-linkage -Wno-psabi -Wno-gnu-folding-constant -Wno-c99-designator -Wno-deprecated-copy -Wno-final-dtor-non-final-class -Wno-gnu-inline-cpp-without-extern -Wno-range-loop-construct -Wno-reorder-init-list -Wno-deprecated-this-capture -Wno-error=ambiguous-reversed-operator -Wno-error=deprecated-anon-enum-enum-conversion -Wenum-enum-conversion -Wmisleading-indentation -Wno-unknown-warning-option -Wno-module-conflict -Wno-deprecated-copy-with-user-provided-dtor -Wno-deprecated-experimental-coroutine -Wundef-prefix=__IPHONE_1,__IPHONE_2,__IPHONE_3,FB_AT_LEAST_IOS,META_AT_LEAST,FB_IOS,META_IOS,FB_64,META_64,META_TARGET,FBReport,FB_SWITCH -DDEFAULT_WARNING_FLAGS_SENTINEL=1 -Wno-error=assign-enum -Wno-error=deprecated -Wno-error=deprecated-anon-enum-enum-conversion -Wno-error=deprecated-array-compare -Wno-error=deprecated-attributes -Wno-error=deprecated-comma-subscript -Wno-error=deprecated-copy -Wno-error=deprecated-copy-with-user-provided-copy -Wno-error=deprecated-copy-with-dtor -Wno-error=deprecated-copy-with-user-provided-dtor -Wno-error=deprecated-declarations -Wno-error=deprecated-dynamic-exception-spec -Wno-error=deprecated-enum-compare -Wno-error=deprecated-enum-compare-conditional -Wno-error=deprecated-enum-enum-conversion -Wno-error=deprecated-enum-float-conversion -Wno-error=deprecated-increment-bool -Wno-error=deprecated-pragma -Wno-error=deprecated-register -Wno-error=deprecated-this-capture -Wno-error=deprecated-volatile -Wno-error=deprecated-writable-strings -Wno-error=conversion -Wno-error=constant-conversion -Wno-error=bitfield-constant-conversion -Wno-error=objc-bool-constant-conversion -Wno-error=enum-conversion -Wno-error=enum-compare-conditional -Wno-error=enum-enum-conversion -Wno-error=enum-float-conversion -Wno-error=float-conversion -Wno-error=float-overflow-conversion -Wno-error=float-zero-conversion -Wno-error=implicit-fallthrough -Wno-error=implicit-float-conversion -Wno-error=implicit-int-float-conversion -Wno-error=implicit-const-int-float-conversion -Wno-error=objc-signed-char-bool-implicit-float-conversion -Wno-error=implicit-int-conversion -Wno-error=objc-signed-char-bool-implicit-int-conversion -Wno-error=int-conversion -Wno-error=literal-conversion -Wno-error=non-literal-null-conversion -Wno-error=nonnull -Wno-error=null-conversion -Wno-error=objc-literal-conversion -Wno-error=shorten-64-to-32 -Wno-error=string-conversion -Wno-error=nullable-to-nonnull-conversion -Wno-error=switch-enum -Wno-error=switch-default -Wno-mismatched-tags -Wno-objc-designated-initializers -Wno-reorder -Wno-sign-conversion -Wno-unused-lambda-capture -Wno-unused-private-field -Wno-unused-property-ivar -DDEFAULT_TEST_WARNING_FLAGS_SENTINEL=1 -Werror=sign-conversion -Werror=shorten-64-to-32 -Wno-nullability-completeness -Wno-global-constructors -fobjc-arc-exceptions -Wno-deprecated-declarations -Wno-error=unused-command-line-argument
         OTHER_SWIFT_FLAGS: $(inherited) -no-warnings-as-errors
@@ -521,12 +529,10 @@ targets:
   FBControlCoreTests:
     type: bundle.unit-test
     platform: macOS
+    deploymentTarget: "15.0"
     scheme:
       testTargets:
         - FBControlCoreTests
-    configFiles:
-      Debug: FBControlCoreTests/FBControlCoreTests.xcconfig
-      Release: FBControlCoreTests/FBControlCoreTests.xcconfig
     sources:
       - path: FBControlCoreTests
         excludes:
@@ -534,6 +540,7 @@ targets:
           - "**/*.xcconfig"
     settings:
       base:
+        MACOSX_DEPLOYMENT_TARGET: "15.0"
         INFOPLIST_FILE: $(SRCROOT)/FBControlCoreTests/FBControlCoreTests-Info.plist
         PRODUCT_BUNDLE_IDENTIFIER: com.facebook.FBControlCoreTests
         PRODUCT_NAME: FBControlCoreTests
@@ -569,7 +576,6 @@ targets:
         MACH_O_TYPE: staticlib
         SWIFT_VERSION: "6.0"
         SWIFT_PACKAGE_NAME: idb
-        GENERATE_INFOPLIST_FILE: "YES"
         CLANG_ENABLE_OBJC_ARC: "YES"
         OTHER_CFLAGS: $(inherited) -Werror -Wall -Warray-bounds-pointer-arithmetic -Wassign-enum -Wcompare-distinct-pointer-types -Wconversion -Wdeprecated -Wduplicate-method-match -Wglobal-constructors -Wimplicit-fallthrough -Wimplicit-retain-self -Wint-in-bool-context -Wmissing-prototypes -Wnonportable-include-path -Wnonportable-system-include-path -Wnull-pointer-arithmetic -Wnull-pointer-subtraction -Wnullable-to-nonnull-conversion -Wobjc-signed-char-bool -Wrange-loop-analysis -Wshadow -Wstrict-prototypes -Wstring-concatenation -Wundeclared-selector -Wunguarded-availability -Wunterminated-string-initialization -Wunreachable-code-return -Wunused-function -Wno-error=conditional-uninitialized -Wno-error=objc-designated-initializers -Wno-error=objc-dictionary-duplicate-keys -Wno-error=pointer-to-enum-cast -Wno-error=pointer-to-int-cast -Werror=void-pointer-to-int-cast -Wno-error=tautological-bitwise-compare -Wno-error=tautological-compare -Wno-error=tautological-constant-compare -Wno-error=tautological-constant-in-range-compare -Wno-error=tautological-constant-out-of-range-compare -Wno-error=tautological-negation-compare -Wno-error=tautological-objc-bool-compare -Wno-error=tautological-overlap-compare -Wno-error=tautological-pointer-compare -Wno-error=tautological-type-limit-compare -Wno-error=tautological-undefined-compare -Wno-error=tautological-unsigned-char-zero-compare -Wno-error=tautological-unsigned-enum-zero-compare -Wno-error=tautological-unsigned-zero-compare -Wno-error=tautological-value-range-compare -Wno-error=unreachable-code-break -Wno-error=unreachable-code-fallthrough -Wno-error=unreachable-code-loop-increment -Wno-error=unreachable-code -Wno-error=unused-but-set-parameter -Wno-error=unused-but-set-variable -Wno-error=void-pointer-to-enum-cast -Wno-error=suggest-override -Wno-error=extra-semi -Wno-error=missing-noreturn -Wno-error=format-nonliteral -Wno-error=non-virtual-dtor -Wno-covered-switch-default -Wswitch-enum -Wswitch-default -Wno-error=c23-extensions -Wno-error=vla-cxx-extension -Wmissing-field-initializers -Wno-error=missing-field-initializers -Wbitwise-conditional-parentheses -Wno-error=bitwise-conditional-parentheses -Wlogical-not-parentheses -Wno-error=logical-not-parentheses -Wlogical-op-parentheses -Wno-error=logical-op-parentheses -Wno-float-conversion -Wno-implicit-float-conversion -Wno-implicit-int-float-conversion -Wno-implicit-int-conversion -Wno-shorten-64-to-32 -Wno-sign-conversion -Wfloat-overflow-conversion -Wfloat-zero-conversion -Wobjc-signed-char-bool-implicit-float-conversion -Wobjc-signed-char-bool-implicit-int-conversion -Wno-deprecated-declarations -Wno-deprecated-copy-dtor -Wno-deprecated-copy-with-dtor -Wno-deprecated-dynamic-exception-spec -Wno-deprecated-implementations -Wno-deprecated-redundant-constexpr-static-def -Wno-non-c-typedef-for-linkage -Wno-psabi -Wno-gnu-folding-constant -Wno-c99-designator -Wno-deprecated-copy -Wno-final-dtor-non-final-class -Wno-gnu-inline-cpp-without-extern -Wno-range-loop-construct -Wno-reorder-init-list -Wno-deprecated-this-capture -Wno-error=ambiguous-reversed-operator -Wno-error=deprecated-anon-enum-enum-conversion -Wenum-enum-conversion -Wmisleading-indentation -Wno-unknown-warning-option -Wno-module-conflict -Wno-deprecated-copy-with-user-provided-dtor -Wno-deprecated-experimental-coroutine -Wundef-prefix=__IPHONE_1,__IPHONE_2,__IPHONE_3,FB_AT_LEAST_IOS,META_AT_LEAST,FB_IOS,META_IOS,FB_64,META_64,META_TARGET,FBReport,FB_SWITCH -DDEFAULT_WARNING_FLAGS_SENTINEL=1 -Werror=sign-conversion -Werror=shorten-64-to-32 -Wnullability-completeness -fobjc-arc-exceptions -Wno-deprecated-declarations -Wno-error=unused-command-line-argument
       configs:
@@ -588,6 +594,7 @@ targets:
   FBVideoCoreTests:
     type: bundle.unit-test
     platform: macOS
+    deploymentTarget: "15.0"
     scheme:
       testTargets:
         - FBVideoCoreTests
@@ -596,11 +603,12 @@ targets:
       - path: FBControlCoreTests/Support/ControlCoreLoggerDouble.swift
     settings:
       base:
+        MACOSX_DEPLOYMENT_TARGET: "15.0"
+        GENERATE_INFOPLIST_FILE: "YES"
         PRODUCT_BUNDLE_IDENTIFIER: com.facebook.FBVideoCoreTests
         PRODUCT_NAME: FBVideoCoreTests
         SWIFT_VERSION: "5.0"
         SWIFT_PACKAGE_NAME: idb
-        GENERATE_INFOPLIST_FILE: "YES"
         CLANG_ENABLE_OBJC_ARC: "YES"
         OTHER_CFLAGS: $(inherited) -Werror -Wall -Warray-bounds-pointer-arithmetic -Wassign-enum -Wcompare-distinct-pointer-types -Wconversion -Wdeprecated -Wduplicate-method-match -Wglobal-constructors -Wimplicit-fallthrough -Wimplicit-retain-self -Wint-in-bool-context -Wmissing-prototypes -Wnonportable-include-path -Wnonportable-system-include-path -Wnull-pointer-arithmetic -Wnull-pointer-subtraction -Wnullable-to-nonnull-conversion -Wobjc-signed-char-bool -Wrange-loop-analysis -Wshadow -Wstrict-prototypes -Wstring-concatenation -Wundeclared-selector -Wunguarded-availability -Wunterminated-string-initialization -Wunreachable-code-return -Wunused-function -Wno-error=conditional-uninitialized -Wno-error=objc-designated-initializers -Wno-error=objc-dictionary-duplicate-keys -Wno-error=pointer-to-enum-cast -Wno-error=pointer-to-int-cast -Werror=void-pointer-to-int-cast -Wno-error=tautological-bitwise-compare -Wno-error=tautological-compare -Wno-error=tautological-constant-compare -Wno-error=tautological-constant-in-range-compare -Wno-error=tautological-constant-out-of-range-compare -Wno-error=tautological-negation-compare -Wno-error=tautological-objc-bool-compare -Wno-error=tautological-overlap-compare -Wno-error=tautological-pointer-compare -Wno-error=tautological-type-limit-compare -Wno-error=tautological-undefined-compare -Wno-error=tautological-unsigned-char-zero-compare -Wno-error=tautological-unsigned-enum-zero-compare -Wno-error=tautological-unsigned-zero-compare -Wno-error=tautological-value-range-compare -Wno-error=unreachable-code-break -Wno-error=unreachable-code-fallthrough -Wno-error=unreachable-code-loop-increment -Wno-error=unreachable-code -Wno-error=unused-but-set-parameter -Wno-error=unused-but-set-variable -Wno-error=void-pointer-to-enum-cast -Wno-error=suggest-override -Wno-error=extra-semi -Wno-error=missing-noreturn -Wno-error=format-nonliteral -Wno-error=non-virtual-dtor -Wno-covered-switch-default -Wswitch-enum -Wswitch-default -Wno-error=c23-extensions -Wno-error=vla-cxx-extension -Wmissing-field-initializers -Wno-error=missing-field-initializers -Wbitwise-conditional-parentheses -Wno-error=bitwise-conditional-parentheses -Wlogical-not-parentheses -Wno-error=logical-not-parentheses -Wlogical-op-parentheses -Wno-error=logical-op-parentheses -Wno-float-conversion -Wno-implicit-float-conversion -Wno-implicit-int-float-conversion -Wno-implicit-int-conversion -Wno-shorten-64-to-32 -Wno-sign-conversion -Wfloat-overflow-conversion -Wfloat-zero-conversion -Wobjc-signed-char-bool-implicit-float-conversion -Wobjc-signed-char-bool-implicit-int-conversion -Wno-deprecated-declarations -Wno-deprecated-copy-dtor -Wno-deprecated-copy-with-dtor -Wno-deprecated-dynamic-exception-spec -Wno-deprecated-implementations -Wno-deprecated-redundant-constexpr-static-def -Wno-non-c-typedef-for-linkage -Wno-psabi -Wno-gnu-folding-constant -Wno-c99-designator -Wno-deprecated-copy -Wno-final-dtor-non-final-class -Wno-gnu-inline-cpp-without-extern -Wno-range-loop-construct -Wno-reorder-init-list -Wno-deprecated-this-capture -Wno-error=ambiguous-reversed-operator -Wno-error=deprecated-anon-enum-enum-conversion -Wenum-enum-conversion -Wmisleading-indentation -Wno-unknown-warning-option -Wno-module-conflict -Wno-deprecated-copy-with-user-provided-dtor -Wno-deprecated-experimental-coroutine -Wundef-prefix=__IPHONE_1,__IPHONE_2,__IPHONE_3,FB_AT_LEAST_IOS,META_AT_LEAST,FB_IOS,META_IOS,FB_64,META_64,META_TARGET,FBReport,FB_SWITCH -DDEFAULT_WARNING_FLAGS_SENTINEL=1 -Wno-error=assign-enum -Wno-error=deprecated -Wno-error=deprecated-anon-enum-enum-conversion -Wno-error=deprecated-array-compare -Wno-error=deprecated-attributes -Wno-error=deprecated-comma-subscript -Wno-error=deprecated-copy -Wno-error=deprecated-copy-with-user-provided-copy -Wno-error=deprecated-copy-with-dtor -Wno-error=deprecated-copy-with-user-provided-dtor -Wno-error=deprecated-declarations -Wno-error=deprecated-dynamic-exception-spec -Wno-error=deprecated-enum-compare -Wno-error=deprecated-enum-compare-conditional -Wno-error=deprecated-enum-enum-conversion -Wno-error=deprecated-enum-float-conversion -Wno-error=deprecated-increment-bool -Wno-error=deprecated-pragma -Wno-error=deprecated-register -Wno-error=deprecated-this-capture -Wno-error=deprecated-volatile -Wno-error=deprecated-writable-strings -Wno-error=conversion -Wno-error=constant-conversion -Wno-error=bitfield-constant-conversion -Wno-error=objc-bool-constant-conversion -Wno-error=enum-conversion -Wno-error=enum-compare-conditional -Wno-error=enum-enum-conversion -Wno-error=enum-float-conversion -Wno-error=float-conversion -Wno-error=float-overflow-conversion -Wno-error=float-zero-conversion -Wno-error=implicit-fallthrough -Wno-error=implicit-float-conversion -Wno-error=implicit-int-float-conversion -Wno-error=implicit-const-int-float-conversion -Wno-error=objc-signed-char-bool-implicit-float-conversion -Wno-error=implicit-int-conversion -Wno-error=objc-signed-char-bool-implicit-int-conversion -Wno-error=int-conversion -Wno-error=literal-conversion -Wno-error=non-literal-null-conversion -Wno-error=nonnull -Wno-error=null-conversion -Wno-error=objc-literal-conversion -Wno-error=shorten-64-to-32 -Wno-error=string-conversion -Wno-error=nullable-to-nonnull-conversion -Wno-error=switch-enum -Wno-error=switch-default -Wno-mismatched-tags -Wno-objc-designated-initializers -Wno-reorder -Wno-sign-conversion -Wno-unused-lambda-capture -Wno-unused-private-field -Wno-unused-property-ivar -DDEFAULT_TEST_WARNING_FLAGS_SENTINEL=1 -Werror=sign-conversion -Werror=shorten-64-to-32 -Wno-nullability-completeness -Wno-global-constructors -fobjc-arc-exceptions -Wno-deprecated-declarations -Wno-error=unused-command-line-argument
         OTHER_SWIFT_FLAGS: $(inherited) -no-warnings-as-errors
@@ -632,7 +640,6 @@ targets:
         MACH_O_TYPE: staticlib
         SWIFT_VERSION: "6.0"
         SWIFT_PACKAGE_NAME: idb
-        GENERATE_INFOPLIST_FILE: "YES"
         CLANG_ENABLE_OBJC_ARC: "YES"
         OTHER_CFLAGS: $(inherited) -Werror -Wall -Warray-bounds-pointer-arithmetic -Wassign-enum -Wcompare-distinct-pointer-types -Wconversion -Wdeprecated -Wduplicate-method-match -Wglobal-constructors -Wimplicit-fallthrough -Wimplicit-retain-self -Wint-in-bool-context -Wmissing-prototypes -Wnonportable-include-path -Wnonportable-system-include-path -Wnull-pointer-arithmetic -Wnull-pointer-subtraction -Wnullable-to-nonnull-conversion -Wobjc-signed-char-bool -Wrange-loop-analysis -Wshadow -Wstrict-prototypes -Wstring-concatenation -Wundeclared-selector -Wunguarded-availability -Wunterminated-string-initialization -Wunreachable-code-return -Wunused-function -Wno-error=conditional-uninitialized -Wno-error=objc-designated-initializers -Wno-error=objc-dictionary-duplicate-keys -Wno-error=pointer-to-enum-cast -Wno-error=pointer-to-int-cast -Werror=void-pointer-to-int-cast -Wno-error=tautological-bitwise-compare -Wno-error=tautological-compare -Wno-error=tautological-constant-compare -Wno-error=tautological-constant-in-range-compare -Wno-error=tautological-constant-out-of-range-compare -Wno-error=tautological-negation-compare -Wno-error=tautological-objc-bool-compare -Wno-error=tautological-overlap-compare -Wno-error=tautological-pointer-compare -Wno-error=tautological-type-limit-compare -Wno-error=tautological-undefined-compare -Wno-error=tautological-unsigned-char-zero-compare -Wno-error=tautological-unsigned-enum-zero-compare -Wno-error=tautological-unsigned-zero-compare -Wno-error=tautological-value-range-compare -Wno-error=unreachable-code-break -Wno-error=unreachable-code-fallthrough -Wno-error=unreachable-code-loop-increment -Wno-error=unreachable-code -Wno-error=unused-but-set-parameter -Wno-error=unused-but-set-variable -Wno-error=void-pointer-to-enum-cast -Wno-error=suggest-override -Wno-error=extra-semi -Wno-error=missing-noreturn -Wno-error=format-nonliteral -Wno-error=non-virtual-dtor -Wno-covered-switch-default -Wswitch-enum -Wswitch-default -Wno-error=c23-extensions -Wno-error=vla-cxx-extension -Wmissing-field-initializers -Wno-error=missing-field-initializers -Wbitwise-conditional-parentheses -Wno-error=bitwise-conditional-parentheses -Wlogical-not-parentheses -Wno-error=logical-not-parentheses -Wlogical-op-parentheses -Wno-error=logical-op-parentheses -Wno-float-conversion -Wno-implicit-float-conversion -Wno-implicit-int-float-conversion -Wno-implicit-int-conversion -Wno-shorten-64-to-32 -Wno-sign-conversion -Wfloat-overflow-conversion -Wfloat-zero-conversion -Wobjc-signed-char-bool-implicit-float-conversion -Wobjc-signed-char-bool-implicit-int-conversion -Wno-deprecated-declarations -Wno-deprecated-copy-dtor -Wno-deprecated-copy-with-dtor -Wno-deprecated-dynamic-exception-spec -Wno-deprecated-implementations -Wno-deprecated-redundant-constexpr-static-def -Wno-non-c-typedef-for-linkage -Wno-psabi -Wno-gnu-folding-constant -Wno-c99-designator -Wno-deprecated-copy -Wno-final-dtor-non-final-class -Wno-gnu-inline-cpp-without-extern -Wno-range-loop-construct -Wno-reorder-init-list -Wno-deprecated-this-capture -Wno-error=ambiguous-reversed-operator -Wno-error=deprecated-anon-enum-enum-conversion -Wenum-enum-conversion -Wmisleading-indentation -Wno-unknown-warning-option -Wno-module-conflict -Wno-deprecated-copy-with-user-provided-dtor -Wno-deprecated-experimental-coroutine -Wundef-prefix=__IPHONE_1,__IPHONE_2,__IPHONE_3,FB_AT_LEAST_IOS,META_AT_LEAST,FB_IOS,META_IOS,FB_64,META_64,META_TARGET,FBReport,FB_SWITCH -DDEFAULT_WARNING_FLAGS_SENTINEL=1 -Werror=sign-conversion -Werror=shorten-64-to-32 -Wnullability-completeness -fobjc-arc-exceptions -Wno-deprecated-declarations -Wno-error=unused-command-line-argument
       configs:
@@ -648,6 +655,7 @@ targets:
   FBProfilingCoreTests:
     type: bundle.unit-test
     platform: macOS
+    deploymentTarget: "15.0"
     scheme:
       testTargets:
         - FBProfilingCoreTests
@@ -673,11 +681,12 @@ targets:
         buildPhase: resources
     settings:
       base:
+        MACOSX_DEPLOYMENT_TARGET: "15.0"
+        GENERATE_INFOPLIST_FILE: "YES"
         PRODUCT_BUNDLE_IDENTIFIER: com.facebook.FBProfilingCoreTests
         PRODUCT_NAME: FBProfilingCoreTests
         SWIFT_VERSION: "5.0"
         SWIFT_PACKAGE_NAME: idb
-        GENERATE_INFOPLIST_FILE: "YES"
         CLANG_ENABLE_OBJC_ARC: "YES"
         OTHER_CFLAGS: $(inherited) -Werror -Wall -Warray-bounds-pointer-arithmetic -Wassign-enum -Wcompare-distinct-pointer-types -Wconversion -Wdeprecated -Wduplicate-method-match -Wglobal-constructors -Wimplicit-fallthrough -Wimplicit-retain-self -Wint-in-bool-context -Wmissing-prototypes -Wnonportable-include-path -Wnonportable-system-include-path -Wnull-pointer-arithmetic -Wnull-pointer-subtraction -Wnullable-to-nonnull-conversion -Wobjc-signed-char-bool -Wrange-loop-analysis -Wshadow -Wstrict-prototypes -Wstring-concatenation -Wundeclared-selector -Wunguarded-availability -Wunterminated-string-initialization -Wunreachable-code-return -Wunused-function -Wno-error=conditional-uninitialized -Wno-error=objc-designated-initializers -Wno-error=objc-dictionary-duplicate-keys -Wno-error=pointer-to-enum-cast -Wno-error=pointer-to-int-cast -Werror=void-pointer-to-int-cast -Wno-error=tautological-bitwise-compare -Wno-error=tautological-compare -Wno-error=tautological-constant-compare -Wno-error=tautological-constant-in-range-compare -Wno-error=tautological-constant-out-of-range-compare -Wno-error=tautological-negation-compare -Wno-error=tautological-objc-bool-compare -Wno-error=tautological-overlap-compare -Wno-error=tautological-pointer-compare -Wno-error=tautological-type-limit-compare -Wno-error=tautological-undefined-compare -Wno-error=tautological-unsigned-char-zero-compare -Wno-error=tautological-unsigned-enum-zero-compare -Wno-error=tautological-unsigned-zero-compare -Wno-error=tautological-value-range-compare -Wno-error=unreachable-code-break -Wno-error=unreachable-code-fallthrough -Wno-error=unreachable-code-loop-increment -Wno-error=unreachable-code -Wno-error=unused-but-set-parameter -Wno-error=unused-but-set-variable -Wno-error=void-pointer-to-enum-cast -Wno-error=suggest-override -Wno-error=extra-semi -Wno-error=missing-noreturn -Wno-error=format-nonliteral -Wno-error=non-virtual-dtor -Wno-covered-switch-default -Wswitch-enum -Wswitch-default -Wno-error=c23-extensions -Wno-error=vla-cxx-extension -Wmissing-field-initializers -Wno-error=missing-field-initializers -Wbitwise-conditional-parentheses -Wno-error=bitwise-conditional-parentheses -Wlogical-not-parentheses -Wno-error=logical-not-parentheses -Wlogical-op-parentheses -Wno-error=logical-op-parentheses -Wno-float-conversion -Wno-implicit-float-conversion -Wno-implicit-int-float-conversion -Wno-implicit-int-conversion -Wno-shorten-64-to-32 -Wno-sign-conversion -Wfloat-overflow-conversion -Wfloat-zero-conversion -Wobjc-signed-char-bool-implicit-float-conversion -Wobjc-signed-char-bool-implicit-int-conversion -Wno-deprecated-declarations -Wno-deprecated-copy-dtor -Wno-deprecated-copy-with-dtor -Wno-deprecated-dynamic-exception-spec -Wno-deprecated-implementations -Wno-deprecated-redundant-constexpr-static-def -Wno-non-c-typedef-for-linkage -Wno-psabi -Wno-gnu-folding-constant -Wno-c99-designator -Wno-deprecated-copy -Wno-final-dtor-non-final-class -Wno-gnu-inline-cpp-without-extern -Wno-range-loop-construct -Wno-reorder-init-list -Wno-deprecated-this-capture -Wno-error=ambiguous-reversed-operator -Wno-error=deprecated-anon-enum-enum-conversion -Wenum-enum-conversion -Wmisleading-indentation -Wno-unknown-warning-option -Wno-module-conflict -Wno-deprecated-copy-with-user-provided-dtor -Wno-deprecated-experimental-coroutine -Wundef-prefix=__IPHONE_1,__IPHONE_2,__IPHONE_3,FB_AT_LEAST_IOS,META_AT_LEAST,FB_IOS,META_IOS,FB_64,META_64,META_TARGET,FBReport,FB_SWITCH -DDEFAULT_WARNING_FLAGS_SENTINEL=1 -Wno-error=assign-enum -Wno-error=deprecated -Wno-error=deprecated-anon-enum-enum-conversion -Wno-error=deprecated-array-compare -Wno-error=deprecated-attributes -Wno-error=deprecated-comma-subscript -Wno-error=deprecated-copy -Wno-error=deprecated-copy-with-user-provided-copy -Wno-error=deprecated-copy-with-dtor -Wno-error=deprecated-copy-with-user-provided-dtor -Wno-error=deprecated-declarations -Wno-error=deprecated-dynamic-exception-spec -Wno-error=deprecated-enum-compare -Wno-error=deprecated-enum-compare-conditional -Wno-error=deprecated-enum-enum-conversion -Wno-error=deprecated-enum-float-conversion -Wno-error=deprecated-increment-bool -Wno-error=deprecated-pragma -Wno-error=deprecated-register -Wno-error=deprecated-this-capture -Wno-error=deprecated-volatile -Wno-error=deprecated-writable-strings -Wno-error=conversion -Wno-error=constant-conversion -Wno-error=bitfield-constant-conversion -Wno-error=objc-bool-constant-conversion -Wno-error=enum-conversion -Wno-error=enum-compare-conditional -Wno-error=enum-enum-conversion -Wno-error=enum-float-conversion -Wno-error=float-conversion -Wno-error=float-overflow-conversion -Wno-error=float-zero-conversion -Wno-error=implicit-fallthrough -Wno-error=implicit-float-conversion -Wno-error=implicit-int-float-conversion -Wno-error=implicit-const-int-float-conversion -Wno-error=objc-signed-char-bool-implicit-float-conversion -Wno-error=implicit-int-conversion -Wno-error=objc-signed-char-bool-implicit-int-conversion -Wno-error=int-conversion -Wno-error=literal-conversion -Wno-error=non-literal-null-conversion -Wno-error=nonnull -Wno-error=null-conversion -Wno-error=objc-literal-conversion -Wno-error=shorten-64-to-32 -Wno-error=string-conversion -Wno-error=nullable-to-nonnull-conversion -Wno-error=switch-enum -Wno-error=switch-default -Wno-mismatched-tags -Wno-objc-designated-initializers -Wno-reorder -Wno-sign-conversion -Wno-unused-lambda-capture -Wno-unused-private-field -Wno-unused-property-ivar -DDEFAULT_TEST_WARNING_FLAGS_SENTINEL=1 -Werror=sign-conversion -Werror=shorten-64-to-32 -Wno-nullability-completeness -Wno-global-constructors -fobjc-arc-exceptions -Wno-deprecated-declarations -Wno-error=unused-command-line-argument
         OTHER_SWIFT_FLAGS: $(inherited) -no-warnings-as-errors
@@ -694,21 +703,17 @@ targets:
   FBXCTestCore:
     type: library.static
     platform: macOS
+    deploymentTarget: "15.0"
     scheme:
       testTargets:
         - FBXCTestCoreTests
-    configFiles:
-      Debug: FBXCTestCore/FBXCTestCore.xcconfig
-      Release: FBXCTestCore/FBXCTestCore.xcconfig
     sources:
       - path: FBXCTestCore
         excludes:
-          - "**/*-Info.plist"
-          - "**/*.xcconfig"
           - "**/*.md"
     settings:
       base:
-        INFOPLIST_FILE: $(SRCROOT)/FBXCTestCore/FBXCTestCore-Info.plist
+        MACOSX_DEPLOYMENT_TARGET: "15.0"
         PRODUCT_BUNDLE_IDENTIFIER: com.facebook.FBXCTestCore
         PRODUCT_NAME: FBXCTestCore
         DEFINES_MODULE: "YES"
@@ -732,12 +737,10 @@ targets:
   FBXCTestCoreTests:
     type: bundle.unit-test
     platform: macOS
+    deploymentTarget: "15.0"
     scheme:
       testTargets:
         - FBXCTestCoreTests
-    configFiles:
-      Debug: FBXCTestCoreTests/FBXCTestCoreTests.xcconfig
-      Release: FBXCTestCoreTests/FBXCTestCoreTests.xcconfig
     sources:
       - path: FBXCTestCoreTests
         excludes:
@@ -754,6 +757,7 @@ targets:
           - $(TARGET_BUILD_DIR)/$(UNLOCALIZED_RESOURCES_FOLDER_PATH)/MacUnitTestFixture.xctest
     settings:
       base:
+        MACOSX_DEPLOYMENT_TARGET: "15.0"
         INFOPLIST_FILE: $(SRCROOT)/FBXCTestCoreTests/FBXCTestCoreTests-Info.plist
         PRODUCT_BUNDLE_IDENTIFIER: com.facebook.FBXCTestCoreTests
         PRODUCT_NAME: FBXCTestCoreTests
@@ -777,24 +781,19 @@ targets:
   FBSimulatorControl:
     type: library.static
     platform: macOS
+    deploymentTarget: "15.0"
     scheme:
       testTargets:
         - FBSimulatorControlBootTests
         - FBSimulatorControlSmokeTests
         - FBSimulatorControlUnitTests
-    configFiles:
-      Debug: FBSimulatorControl/FBSimulatorControl.xcconfig
-      Release: FBSimulatorControl/FBSimulatorControl.xcconfig
     sources:
       - path: FBSimulatorControl
-        excludes:
-          - "**/*-Info.plist"
-          - "**/*.xcconfig"
       - path: REPL/IDB/IDBAPI.swiftinterface
         buildPhase: resources
     settings:
       base:
-        INFOPLIST_FILE: $(SRCROOT)/FBSimulatorControl/FBSimulatorControl-Info.plist
+        MACOSX_DEPLOYMENT_TARGET: "15.0"
         PRODUCT_BUNDLE_IDENTIFIER: com.facebook.FBSimulatorControl
         PRODUCT_NAME: FBSimulatorControl
         DEFINES_MODULE: "YES"
@@ -855,7 +854,6 @@ targets:
         MACH_O_TYPE: staticlib
         SWIFT_VERSION: "6.0"
         SWIFT_PACKAGE_NAME: idb
-        GENERATE_INFOPLIST_FILE: "YES"
         FRAMEWORK_SEARCH_PATHS: $(inherited) $(DEVELOPER_DIR)/Library/PrivateFrameworks
         CLANG_ENABLE_OBJC_ARC: "YES"
         OTHER_CFLAGS: $(inherited) -Werror -Wall -Warray-bounds-pointer-arithmetic -Wassign-enum -Wcompare-distinct-pointer-types -Wconversion -Wdeprecated -Wduplicate-method-match -Wglobal-constructors -Wimplicit-fallthrough -Wimplicit-retain-self -Wint-in-bool-context -Wmissing-prototypes -Wnonportable-include-path -Wnonportable-system-include-path -Wnull-pointer-arithmetic -Wnull-pointer-subtraction -Wnullable-to-nonnull-conversion -Wobjc-signed-char-bool -Wrange-loop-analysis -Wshadow -Wstrict-prototypes -Wstring-concatenation -Wundeclared-selector -Wunguarded-availability -Wunterminated-string-initialization -Wunreachable-code-return -Wunused-function -Wno-error=conditional-uninitialized -Wno-error=objc-designated-initializers -Wno-error=objc-dictionary-duplicate-keys -Wno-error=pointer-to-enum-cast -Wno-error=pointer-to-int-cast -Werror=void-pointer-to-int-cast -Wno-error=tautological-bitwise-compare -Wno-error=tautological-compare -Wno-error=tautological-constant-compare -Wno-error=tautological-constant-in-range-compare -Wno-error=tautological-constant-out-of-range-compare -Wno-error=tautological-negation-compare -Wno-error=tautological-objc-bool-compare -Wno-error=tautological-overlap-compare -Wno-error=tautological-pointer-compare -Wno-error=tautological-type-limit-compare -Wno-error=tautological-undefined-compare -Wno-error=tautological-unsigned-char-zero-compare -Wno-error=tautological-unsigned-enum-zero-compare -Wno-error=tautological-unsigned-zero-compare -Wno-error=tautological-value-range-compare -Wno-error=unreachable-code-break -Wno-error=unreachable-code-fallthrough -Wno-error=unreachable-code-loop-increment -Wno-error=unreachable-code -Wno-error=unused-but-set-parameter -Wno-error=unused-but-set-variable -Wno-error=void-pointer-to-enum-cast -Wno-error=suggest-override -Wno-error=extra-semi -Wno-error=missing-noreturn -Wno-error=format-nonliteral -Wno-error=non-virtual-dtor -Wno-covered-switch-default -Wswitch-enum -Wswitch-default -Wno-error=c23-extensions -Wno-error=vla-cxx-extension -Wmissing-field-initializers -Wno-error=missing-field-initializers -Wbitwise-conditional-parentheses -Wno-error=bitwise-conditional-parentheses -Wlogical-not-parentheses -Wno-error=logical-not-parentheses -Wlogical-op-parentheses -Wno-error=logical-op-parentheses -Wno-float-conversion -Wno-implicit-float-conversion -Wno-implicit-int-float-conversion -Wno-implicit-int-conversion -Wno-shorten-64-to-32 -Wno-sign-conversion -Wfloat-overflow-conversion -Wfloat-zero-conversion -Wobjc-signed-char-bool-implicit-float-conversion -Wobjc-signed-char-bool-implicit-int-conversion -Wno-deprecated-declarations -Wno-deprecated-copy-dtor -Wno-deprecated-copy-with-dtor -Wno-deprecated-dynamic-exception-spec -Wno-deprecated-implementations -Wno-deprecated-redundant-constexpr-static-def -Wno-non-c-typedef-for-linkage -Wno-psabi -Wno-gnu-folding-constant -Wno-c99-designator -Wno-deprecated-copy -Wno-final-dtor-non-final-class -Wno-gnu-inline-cpp-without-extern -Wno-range-loop-construct -Wno-reorder-init-list -Wno-deprecated-this-capture -Wno-error=ambiguous-reversed-operator -Wno-error=deprecated-anon-enum-enum-conversion -Wenum-enum-conversion -Wmisleading-indentation -Wno-unknown-warning-option -Wno-module-conflict -Wno-deprecated-copy-with-user-provided-dtor -Wno-deprecated-experimental-coroutine -Wundef-prefix=__IPHONE_1,__IPHONE_2,__IPHONE_3,FB_AT_LEAST_IOS,META_AT_LEAST,FB_IOS,META_IOS,FB_64,META_64,META_TARGET,FBReport,FB_SWITCH -DDEFAULT_WARNING_FLAGS_SENTINEL=1 -Werror=sign-conversion -Werror=shorten-64-to-32 -Wnullability-completeness -fobjc-arc-exceptions -Wno-deprecated-declarations -Wno-error=unused-command-line-argument
@@ -886,6 +884,7 @@ targets:
   FBSimulatorAXTests:
     type: bundle.unit-test
     platform: macOS
+    deploymentTarget: "15.0"
     scheme:
       testTargets:
         - FBSimulatorAXTests
@@ -917,11 +916,12 @@ targets:
           - $(TARGET_BUILD_DIR)/$(UNLOCALIZED_RESOURCES_FOLDER_PATH)/libShimulator-macOS.dylib
     settings:
       base:
+        MACOSX_DEPLOYMENT_TARGET: "15.0"
+        GENERATE_INFOPLIST_FILE: "YES"
         PRODUCT_BUNDLE_IDENTIFIER: com.facebook.FBSimulatorAXTests
         PRODUCT_NAME: FBSimulatorAXTests
         SWIFT_VERSION: "5.0"
         SWIFT_PACKAGE_NAME: idb
-        GENERATE_INFOPLIST_FILE: "YES"
         FRAMEWORK_SEARCH_PATHS: $(inherited) $(DEVELOPER_DIR)/Library/PrivateFrameworks
         CLANG_ENABLE_OBJC_ARC: "YES"
         OTHER_CFLAGS: $(inherited) -Werror -Wall -Warray-bounds-pointer-arithmetic -Wassign-enum -Wcompare-distinct-pointer-types -Wconversion -Wdeprecated -Wduplicate-method-match -Wglobal-constructors -Wimplicit-fallthrough -Wimplicit-retain-self -Wint-in-bool-context -Wmissing-prototypes -Wnonportable-include-path -Wnonportable-system-include-path -Wnull-pointer-arithmetic -Wnull-pointer-subtraction -Wnullable-to-nonnull-conversion -Wobjc-signed-char-bool -Wrange-loop-analysis -Wshadow -Wstrict-prototypes -Wstring-concatenation -Wundeclared-selector -Wunguarded-availability -Wunterminated-string-initialization -Wunreachable-code-return -Wunused-function -Wno-error=conditional-uninitialized -Wno-error=objc-designated-initializers -Wno-error=objc-dictionary-duplicate-keys -Wno-error=pointer-to-enum-cast -Wno-error=pointer-to-int-cast -Werror=void-pointer-to-int-cast -Wno-error=tautological-bitwise-compare -Wno-error=tautological-compare -Wno-error=tautological-constant-compare -Wno-error=tautological-constant-in-range-compare -Wno-error=tautological-constant-out-of-range-compare -Wno-error=tautological-negation-compare -Wno-error=tautological-objc-bool-compare -Wno-error=tautological-overlap-compare -Wno-error=tautological-pointer-compare -Wno-error=tautological-type-limit-compare -Wno-error=tautological-undefined-compare -Wno-error=tautological-unsigned-char-zero-compare -Wno-error=tautological-unsigned-enum-zero-compare -Wno-error=tautological-unsigned-zero-compare -Wno-error=tautological-value-range-compare -Wno-error=unreachable-code-break -Wno-error=unreachable-code-fallthrough -Wno-error=unreachable-code-loop-increment -Wno-error=unreachable-code -Wno-error=unused-but-set-parameter -Wno-error=unused-but-set-variable -Wno-error=void-pointer-to-enum-cast -Wno-error=suggest-override -Wno-error=extra-semi -Wno-error=missing-noreturn -Wno-error=format-nonliteral -Wno-error=non-virtual-dtor -Wno-covered-switch-default -Wswitch-enum -Wswitch-default -Wno-error=c23-extensions -Wno-error=vla-cxx-extension -Wmissing-field-initializers -Wno-error=missing-field-initializers -Wbitwise-conditional-parentheses -Wno-error=bitwise-conditional-parentheses -Wlogical-not-parentheses -Wno-error=logical-not-parentheses -Wlogical-op-parentheses -Wno-error=logical-op-parentheses -Wno-float-conversion -Wno-implicit-float-conversion -Wno-implicit-int-float-conversion -Wno-implicit-int-conversion -Wno-shorten-64-to-32 -Wno-sign-conversion -Wfloat-overflow-conversion -Wfloat-zero-conversion -Wobjc-signed-char-bool-implicit-float-conversion -Wobjc-signed-char-bool-implicit-int-conversion -Wno-deprecated-declarations -Wno-deprecated-copy-dtor -Wno-deprecated-copy-with-dtor -Wno-deprecated-dynamic-exception-spec -Wno-deprecated-implementations -Wno-deprecated-redundant-constexpr-static-def -Wno-non-c-typedef-for-linkage -Wno-psabi -Wno-gnu-folding-constant -Wno-c99-designator -Wno-deprecated-copy -Wno-final-dtor-non-final-class -Wno-gnu-inline-cpp-without-extern -Wno-range-loop-construct -Wno-reorder-init-list -Wno-deprecated-this-capture -Wno-error=ambiguous-reversed-operator -Wno-error=deprecated-anon-enum-enum-conversion -Wenum-enum-conversion -Wmisleading-indentation -Wno-unknown-warning-option -Wno-module-conflict -Wno-deprecated-copy-with-user-provided-dtor -Wno-deprecated-experimental-coroutine -Wundef-prefix=__IPHONE_1,__IPHONE_2,__IPHONE_3,FB_AT_LEAST_IOS,META_AT_LEAST,FB_IOS,META_IOS,FB_64,META_64,META_TARGET,FBReport,FB_SWITCH -DDEFAULT_WARNING_FLAGS_SENTINEL=1 -Wno-error=assign-enum -Wno-error=deprecated -Wno-error=deprecated-anon-enum-enum-conversion -Wno-error=deprecated-array-compare -Wno-error=deprecated-attributes -Wno-error=deprecated-comma-subscript -Wno-error=deprecated-copy -Wno-error=deprecated-copy-with-user-provided-copy -Wno-error=deprecated-copy-with-dtor -Wno-error=deprecated-copy-with-user-provided-dtor -Wno-error=deprecated-declarations -Wno-error=deprecated-dynamic-exception-spec -Wno-error=deprecated-enum-compare -Wno-error=deprecated-enum-compare-conditional -Wno-error=deprecated-enum-enum-conversion -Wno-error=deprecated-enum-float-conversion -Wno-error=deprecated-increment-bool -Wno-error=deprecated-pragma -Wno-error=deprecated-register -Wno-error=deprecated-this-capture -Wno-error=deprecated-volatile -Wno-error=deprecated-writable-strings -Wno-error=conversion -Wno-error=constant-conversion -Wno-error=bitfield-constant-conversion -Wno-error=objc-bool-constant-conversion -Wno-error=enum-conversion -Wno-error=enum-compare-conditional -Wno-error=enum-enum-conversion -Wno-error=enum-float-conversion -Wno-error=float-conversion -Wno-error=float-overflow-conversion -Wno-error=float-zero-conversion -Wno-error=implicit-fallthrough -Wno-error=implicit-float-conversion -Wno-error=implicit-int-float-conversion -Wno-error=implicit-const-int-float-conversion -Wno-error=objc-signed-char-bool-implicit-float-conversion -Wno-error=implicit-int-conversion -Wno-error=objc-signed-char-bool-implicit-int-conversion -Wno-error=int-conversion -Wno-error=literal-conversion -Wno-error=non-literal-null-conversion -Wno-error=nonnull -Wno-error=null-conversion -Wno-error=objc-literal-conversion -Wno-error=shorten-64-to-32 -Wno-error=string-conversion -Wno-error=nullable-to-nonnull-conversion -Wno-error=switch-enum -Wno-error=switch-default -Wno-mismatched-tags -Wno-objc-designated-initializers -Wno-reorder -Wno-sign-conversion -Wno-unused-lambda-capture -Wno-unused-private-field -Wno-unused-property-ivar -DDEFAULT_TEST_WARNING_FLAGS_SENTINEL=1 -Werror=sign-conversion -Werror=shorten-64-to-32 -Wno-nullability-completeness -Wno-global-constructors -fobjc-arc-exceptions -Wno-deprecated-declarations -Wno-error=unused-command-line-argument
@@ -945,6 +945,7 @@ targets:
   FBSimulatorAXSmokeTests:
     type: bundle.unit-test
     platform: macOS
+    deploymentTarget: "15.0"
     scheme:
       testTargets:
         - FBSimulatorAXSmokeTests
@@ -972,11 +973,12 @@ targets:
           - $(TARGET_BUILD_DIR)/$(UNLOCALIZED_RESOURCES_FOLDER_PATH)/libShimulator-macOS.dylib
     settings:
       base:
+        MACOSX_DEPLOYMENT_TARGET: "15.0"
+        GENERATE_INFOPLIST_FILE: "YES"
         PRODUCT_BUNDLE_IDENTIFIER: com.facebook.FBSimulatorAXSmokeTests
         PRODUCT_NAME: FBSimulatorAXSmokeTests
         SWIFT_VERSION: "5.0"
         SWIFT_PACKAGE_NAME: idb
-        GENERATE_INFOPLIST_FILE: "YES"
         FRAMEWORK_SEARCH_PATHS: $(inherited) $(DEVELOPER_DIR)/Library/PrivateFrameworks
         CLANG_ENABLE_OBJC_ARC: "YES"
         OTHER_CFLAGS: $(inherited) -Werror -Wall -Warray-bounds-pointer-arithmetic -Wassign-enum -Wcompare-distinct-pointer-types -Wconversion -Wdeprecated -Wduplicate-method-match -Wglobal-constructors -Wimplicit-fallthrough -Wimplicit-retain-self -Wint-in-bool-context -Wmissing-prototypes -Wnonportable-include-path -Wnonportable-system-include-path -Wnull-pointer-arithmetic -Wnull-pointer-subtraction -Wnullable-to-nonnull-conversion -Wobjc-signed-char-bool -Wrange-loop-analysis -Wshadow -Wstrict-prototypes -Wstring-concatenation -Wundeclared-selector -Wunguarded-availability -Wunterminated-string-initialization -Wunreachable-code-return -Wunused-function -Wno-error=conditional-uninitialized -Wno-error=objc-designated-initializers -Wno-error=objc-dictionary-duplicate-keys -Wno-error=pointer-to-enum-cast -Wno-error=pointer-to-int-cast -Werror=void-pointer-to-int-cast -Wno-error=tautological-bitwise-compare -Wno-error=tautological-compare -Wno-error=tautological-constant-compare -Wno-error=tautological-constant-in-range-compare -Wno-error=tautological-constant-out-of-range-compare -Wno-error=tautological-negation-compare -Wno-error=tautological-objc-bool-compare -Wno-error=tautological-overlap-compare -Wno-error=tautological-pointer-compare -Wno-error=tautological-type-limit-compare -Wno-error=tautological-undefined-compare -Wno-error=tautological-unsigned-char-zero-compare -Wno-error=tautological-unsigned-enum-zero-compare -Wno-error=tautological-unsigned-zero-compare -Wno-error=tautological-value-range-compare -Wno-error=unreachable-code-break -Wno-error=unreachable-code-fallthrough -Wno-error=unreachable-code-loop-increment -Wno-error=unreachable-code -Wno-error=unused-but-set-parameter -Wno-error=unused-but-set-variable -Wno-error=void-pointer-to-enum-cast -Wno-error=suggest-override -Wno-error=extra-semi -Wno-error=missing-noreturn -Wno-error=format-nonliteral -Wno-error=non-virtual-dtor -Wno-covered-switch-default -Wswitch-enum -Wswitch-default -Wno-error=c23-extensions -Wno-error=vla-cxx-extension -Wmissing-field-initializers -Wno-error=missing-field-initializers -Wbitwise-conditional-parentheses -Wno-error=bitwise-conditional-parentheses -Wlogical-not-parentheses -Wno-error=logical-not-parentheses -Wlogical-op-parentheses -Wno-error=logical-op-parentheses -Wno-float-conversion -Wno-implicit-float-conversion -Wno-implicit-int-float-conversion -Wno-implicit-int-conversion -Wno-shorten-64-to-32 -Wno-sign-conversion -Wfloat-overflow-conversion -Wfloat-zero-conversion -Wobjc-signed-char-bool-implicit-float-conversion -Wobjc-signed-char-bool-implicit-int-conversion -Wno-deprecated-declarations -Wno-deprecated-copy-dtor -Wno-deprecated-copy-with-dtor -Wno-deprecated-dynamic-exception-spec -Wno-deprecated-implementations -Wno-deprecated-redundant-constexpr-static-def -Wno-non-c-typedef-for-linkage -Wno-psabi -Wno-gnu-folding-constant -Wno-c99-designator -Wno-deprecated-copy -Wno-final-dtor-non-final-class -Wno-gnu-inline-cpp-without-extern -Wno-range-loop-construct -Wno-reorder-init-list -Wno-deprecated-this-capture -Wno-error=ambiguous-reversed-operator -Wno-error=deprecated-anon-enum-enum-conversion -Wenum-enum-conversion -Wmisleading-indentation -Wno-unknown-warning-option -Wno-module-conflict -Wno-deprecated-copy-with-user-provided-dtor -Wno-deprecated-experimental-coroutine -Wundef-prefix=__IPHONE_1,__IPHONE_2,__IPHONE_3,FB_AT_LEAST_IOS,META_AT_LEAST,FB_IOS,META_IOS,FB_64,META_64,META_TARGET,FBReport,FB_SWITCH -DDEFAULT_WARNING_FLAGS_SENTINEL=1 -Wno-error=assign-enum -Wno-error=deprecated -Wno-error=deprecated-anon-enum-enum-conversion -Wno-error=deprecated-array-compare -Wno-error=deprecated-attributes -Wno-error=deprecated-comma-subscript -Wno-error=deprecated-copy -Wno-error=deprecated-copy-with-user-provided-copy -Wno-error=deprecated-copy-with-dtor -Wno-error=deprecated-copy-with-user-provided-dtor -Wno-error=deprecated-declarations -Wno-error=deprecated-dynamic-exception-spec -Wno-error=deprecated-enum-compare -Wno-error=deprecated-enum-compare-conditional -Wno-error=deprecated-enum-enum-conversion -Wno-error=deprecated-enum-float-conversion -Wno-error=deprecated-increment-bool -Wno-error=deprecated-pragma -Wno-error=deprecated-register -Wno-error=deprecated-this-capture -Wno-error=deprecated-volatile -Wno-error=deprecated-writable-strings -Wno-error=conversion -Wno-error=constant-conversion -Wno-error=bitfield-constant-conversion -Wno-error=objc-bool-constant-conversion -Wno-error=enum-conversion -Wno-error=enum-compare-conditional -Wno-error=enum-enum-conversion -Wno-error=enum-float-conversion -Wno-error=float-conversion -Wno-error=float-overflow-conversion -Wno-error=float-zero-conversion -Wno-error=implicit-fallthrough -Wno-error=implicit-float-conversion -Wno-error=implicit-int-float-conversion -Wno-error=implicit-const-int-float-conversion -Wno-error=objc-signed-char-bool-implicit-float-conversion -Wno-error=implicit-int-conversion -Wno-error=objc-signed-char-bool-implicit-int-conversion -Wno-error=int-conversion -Wno-error=literal-conversion -Wno-error=non-literal-null-conversion -Wno-error=nonnull -Wno-error=null-conversion -Wno-error=objc-literal-conversion -Wno-error=shorten-64-to-32 -Wno-error=string-conversion -Wno-error=nullable-to-nonnull-conversion -Wno-error=switch-enum -Wno-error=switch-default -Wno-mismatched-tags -Wno-objc-designated-initializers -Wno-reorder -Wno-sign-conversion -Wno-unused-lambda-capture -Wno-unused-private-field -Wno-unused-property-ivar -DDEFAULT_TEST_WARNING_FLAGS_SENTINEL=1 -Werror=sign-conversion -Werror=shorten-64-to-32 -Wno-nullability-completeness -Wno-global-constructors -fobjc-arc-exceptions -Wno-deprecated-declarations -Wno-error=unused-command-line-argument
@@ -1018,7 +1020,6 @@ targets:
         MACH_O_TYPE: staticlib
         SWIFT_VERSION: "6.0"
         SWIFT_PACKAGE_NAME: idb
-        GENERATE_INFOPLIST_FILE: "YES"
         FRAMEWORK_SEARCH_PATHS: $(inherited) $(DEVELOPER_DIR)/Library/PrivateFrameworks
         CLANG_ENABLE_OBJC_ARC: "YES"
         OTHER_CFLAGS: $(inherited) -Werror -Wall -Warray-bounds-pointer-arithmetic -Wassign-enum -Wcompare-distinct-pointer-types -Wconversion -Wdeprecated -Wduplicate-method-match -Wglobal-constructors -Wimplicit-fallthrough -Wimplicit-retain-self -Wint-in-bool-context -Wmissing-prototypes -Wnonportable-include-path -Wnonportable-system-include-path -Wnull-pointer-arithmetic -Wnull-pointer-subtraction -Wnullable-to-nonnull-conversion -Wobjc-signed-char-bool -Wrange-loop-analysis -Wshadow -Wstrict-prototypes -Wstring-concatenation -Wundeclared-selector -Wunguarded-availability -Wunterminated-string-initialization -Wunreachable-code-return -Wunused-function -Wno-error=conditional-uninitialized -Wno-error=objc-designated-initializers -Wno-error=objc-dictionary-duplicate-keys -Wno-error=pointer-to-enum-cast -Wno-error=pointer-to-int-cast -Werror=void-pointer-to-int-cast -Wno-error=tautological-bitwise-compare -Wno-error=tautological-compare -Wno-error=tautological-constant-compare -Wno-error=tautological-constant-in-range-compare -Wno-error=tautological-constant-out-of-range-compare -Wno-error=tautological-negation-compare -Wno-error=tautological-objc-bool-compare -Wno-error=tautological-overlap-compare -Wno-error=tautological-pointer-compare -Wno-error=tautological-type-limit-compare -Wno-error=tautological-undefined-compare -Wno-error=tautological-unsigned-char-zero-compare -Wno-error=tautological-unsigned-enum-zero-compare -Wno-error=tautological-unsigned-zero-compare -Wno-error=tautological-value-range-compare -Wno-error=unreachable-code-break -Wno-error=unreachable-code-fallthrough -Wno-error=unreachable-code-loop-increment -Wno-error=unreachable-code -Wno-error=unused-but-set-parameter -Wno-error=unused-but-set-variable -Wno-error=void-pointer-to-enum-cast -Wno-error=suggest-override -Wno-error=extra-semi -Wno-error=missing-noreturn -Wno-error=format-nonliteral -Wno-error=non-virtual-dtor -Wno-covered-switch-default -Wswitch-enum -Wswitch-default -Wno-error=c23-extensions -Wno-error=vla-cxx-extension -Wmissing-field-initializers -Wno-error=missing-field-initializers -Wbitwise-conditional-parentheses -Wno-error=bitwise-conditional-parentheses -Wlogical-not-parentheses -Wno-error=logical-not-parentheses -Wlogical-op-parentheses -Wno-error=logical-op-parentheses -Wno-float-conversion -Wno-implicit-float-conversion -Wno-implicit-int-float-conversion -Wno-implicit-int-conversion -Wno-shorten-64-to-32 -Wno-sign-conversion -Wfloat-overflow-conversion -Wfloat-zero-conversion -Wobjc-signed-char-bool-implicit-float-conversion -Wobjc-signed-char-bool-implicit-int-conversion -Wno-deprecated-declarations -Wno-deprecated-copy-dtor -Wno-deprecated-copy-with-dtor -Wno-deprecated-dynamic-exception-spec -Wno-deprecated-implementations -Wno-deprecated-redundant-constexpr-static-def -Wno-non-c-typedef-for-linkage -Wno-psabi -Wno-gnu-folding-constant -Wno-c99-designator -Wno-deprecated-copy -Wno-final-dtor-non-final-class -Wno-gnu-inline-cpp-without-extern -Wno-range-loop-construct -Wno-reorder-init-list -Wno-deprecated-this-capture -Wno-error=ambiguous-reversed-operator -Wno-error=deprecated-anon-enum-enum-conversion -Wenum-enum-conversion -Wmisleading-indentation -Wno-unknown-warning-option -Wno-module-conflict -Wno-deprecated-copy-with-user-provided-dtor -Wno-deprecated-experimental-coroutine -Wundef-prefix=__IPHONE_1,__IPHONE_2,__IPHONE_3,FB_AT_LEAST_IOS,META_AT_LEAST,FB_IOS,META_IOS,FB_64,META_64,META_TARGET,FBReport,FB_SWITCH -DDEFAULT_WARNING_FLAGS_SENTINEL=1 -Werror=sign-conversion -Werror=shorten-64-to-32 -Wnullability-completeness -fobjc-arc-exceptions -Wno-deprecated-declarations -Wno-error=unused-command-line-argument
@@ -1049,6 +1050,7 @@ targets:
   FBSimulatorProfilingTests:
     type: bundle.unit-test
     platform: macOS
+    deploymentTarget: "15.0"
     scheme:
       testTargets:
         - FBSimulatorProfilingTests
@@ -1075,11 +1077,12 @@ targets:
           - $(TARGET_BUILD_DIR)/$(UNLOCALIZED_RESOURCES_FOLDER_PATH)/libShimulator-macOS.dylib
     settings:
       base:
+        MACOSX_DEPLOYMENT_TARGET: "15.0"
+        GENERATE_INFOPLIST_FILE: "YES"
         PRODUCT_BUNDLE_IDENTIFIER: com.facebook.FBSimulatorProfilingTests
         PRODUCT_NAME: FBSimulatorProfilingTests
         SWIFT_VERSION: "5.0"
         SWIFT_PACKAGE_NAME: idb
-        GENERATE_INFOPLIST_FILE: "YES"
         FRAMEWORK_SEARCH_PATHS: $(inherited) $(DEVELOPER_DIR)/Library/PrivateFrameworks
         CLANG_ENABLE_OBJC_ARC: "YES"
         OTHER_CFLAGS: $(inherited) -Werror -Wall -Warray-bounds-pointer-arithmetic -Wassign-enum -Wcompare-distinct-pointer-types -Wconversion -Wdeprecated -Wduplicate-method-match -Wglobal-constructors -Wimplicit-fallthrough -Wimplicit-retain-self -Wint-in-bool-context -Wmissing-prototypes -Wnonportable-include-path -Wnonportable-system-include-path -Wnull-pointer-arithmetic -Wnull-pointer-subtraction -Wnullable-to-nonnull-conversion -Wobjc-signed-char-bool -Wrange-loop-analysis -Wshadow -Wstrict-prototypes -Wstring-concatenation -Wundeclared-selector -Wunguarded-availability -Wunterminated-string-initialization -Wunreachable-code-return -Wunused-function -Wno-error=conditional-uninitialized -Wno-error=objc-designated-initializers -Wno-error=objc-dictionary-duplicate-keys -Wno-error=pointer-to-enum-cast -Wno-error=pointer-to-int-cast -Werror=void-pointer-to-int-cast -Wno-error=tautological-bitwise-compare -Wno-error=tautological-compare -Wno-error=tautological-constant-compare -Wno-error=tautological-constant-in-range-compare -Wno-error=tautological-constant-out-of-range-compare -Wno-error=tautological-negation-compare -Wno-error=tautological-objc-bool-compare -Wno-error=tautological-overlap-compare -Wno-error=tautological-pointer-compare -Wno-error=tautological-type-limit-compare -Wno-error=tautological-undefined-compare -Wno-error=tautological-unsigned-char-zero-compare -Wno-error=tautological-unsigned-enum-zero-compare -Wno-error=tautological-unsigned-zero-compare -Wno-error=tautological-value-range-compare -Wno-error=unreachable-code-break -Wno-error=unreachable-code-fallthrough -Wno-error=unreachable-code-loop-increment -Wno-error=unreachable-code -Wno-error=unused-but-set-parameter -Wno-error=unused-but-set-variable -Wno-error=void-pointer-to-enum-cast -Wno-error=suggest-override -Wno-error=extra-semi -Wno-error=missing-noreturn -Wno-error=format-nonliteral -Wno-error=non-virtual-dtor -Wno-covered-switch-default -Wswitch-enum -Wswitch-default -Wno-error=c23-extensions -Wno-error=vla-cxx-extension -Wmissing-field-initializers -Wno-error=missing-field-initializers -Wbitwise-conditional-parentheses -Wno-error=bitwise-conditional-parentheses -Wlogical-not-parentheses -Wno-error=logical-not-parentheses -Wlogical-op-parentheses -Wno-error=logical-op-parentheses -Wno-float-conversion -Wno-implicit-float-conversion -Wno-implicit-int-float-conversion -Wno-implicit-int-conversion -Wno-shorten-64-to-32 -Wno-sign-conversion -Wfloat-overflow-conversion -Wfloat-zero-conversion -Wobjc-signed-char-bool-implicit-float-conversion -Wobjc-signed-char-bool-implicit-int-conversion -Wno-deprecated-declarations -Wno-deprecated-copy-dtor -Wno-deprecated-copy-with-dtor -Wno-deprecated-dynamic-exception-spec -Wno-deprecated-implementations -Wno-deprecated-redundant-constexpr-static-def -Wno-non-c-typedef-for-linkage -Wno-psabi -Wno-gnu-folding-constant -Wno-c99-designator -Wno-deprecated-copy -Wno-final-dtor-non-final-class -Wno-gnu-inline-cpp-without-extern -Wno-range-loop-construct -Wno-reorder-init-list -Wno-deprecated-this-capture -Wno-error=ambiguous-reversed-operator -Wno-error=deprecated-anon-enum-enum-conversion -Wenum-enum-conversion -Wmisleading-indentation -Wno-unknown-warning-option -Wno-module-conflict -Wno-deprecated-copy-with-user-provided-dtor -Wno-deprecated-experimental-coroutine -Wundef-prefix=__IPHONE_1,__IPHONE_2,__IPHONE_3,FB_AT_LEAST_IOS,META_AT_LEAST,FB_IOS,META_IOS,FB_64,META_64,META_TARGET,FBReport,FB_SWITCH -DDEFAULT_WARNING_FLAGS_SENTINEL=1 -Wno-error=assign-enum -Wno-error=deprecated -Wno-error=deprecated-anon-enum-enum-conversion -Wno-error=deprecated-array-compare -Wno-error=deprecated-attributes -Wno-error=deprecated-comma-subscript -Wno-error=deprecated-copy -Wno-error=deprecated-copy-with-user-provided-copy -Wno-error=deprecated-copy-with-dtor -Wno-error=deprecated-copy-with-user-provided-dtor -Wno-error=deprecated-declarations -Wno-error=deprecated-dynamic-exception-spec -Wno-error=deprecated-enum-compare -Wno-error=deprecated-enum-compare-conditional -Wno-error=deprecated-enum-enum-conversion -Wno-error=deprecated-enum-float-conversion -Wno-error=deprecated-increment-bool -Wno-error=deprecated-pragma -Wno-error=deprecated-register -Wno-error=deprecated-this-capture -Wno-error=deprecated-volatile -Wno-error=deprecated-writable-strings -Wno-error=conversion -Wno-error=constant-conversion -Wno-error=bitfield-constant-conversion -Wno-error=objc-bool-constant-conversion -Wno-error=enum-conversion -Wno-error=enum-compare-conditional -Wno-error=enum-enum-conversion -Wno-error=enum-float-conversion -Wno-error=float-conversion -Wno-error=float-overflow-conversion -Wno-error=float-zero-conversion -Wno-error=implicit-fallthrough -Wno-error=implicit-float-conversion -Wno-error=implicit-int-float-conversion -Wno-error=implicit-const-int-float-conversion -Wno-error=objc-signed-char-bool-implicit-float-conversion -Wno-error=implicit-int-conversion -Wno-error=objc-signed-char-bool-implicit-int-conversion -Wno-error=int-conversion -Wno-error=literal-conversion -Wno-error=non-literal-null-conversion -Wno-error=nonnull -Wno-error=null-conversion -Wno-error=objc-literal-conversion -Wno-error=shorten-64-to-32 -Wno-error=string-conversion -Wno-error=nullable-to-nonnull-conversion -Wno-error=switch-enum -Wno-error=switch-default -Wno-mismatched-tags -Wno-objc-designated-initializers -Wno-reorder -Wno-sign-conversion -Wno-unused-lambda-capture -Wno-unused-private-field -Wno-unused-property-ivar -DDEFAULT_TEST_WARNING_FLAGS_SENTINEL=1 -Werror=sign-conversion -Werror=shorten-64-to-32 -Wno-nullability-completeness -Wno-global-constructors -fobjc-arc-exceptions -Wno-deprecated-declarations -Wno-error=unused-command-line-argument
@@ -1103,6 +1106,7 @@ targets:
   FBSimulatorProfilingSmokeTests:
     type: bundle.unit-test
     platform: macOS
+    deploymentTarget: "15.0"
     scheme:
       testTargets:
         - FBSimulatorProfilingSmokeTests
@@ -1130,11 +1134,12 @@ targets:
           - $(TARGET_BUILD_DIR)/$(UNLOCALIZED_RESOURCES_FOLDER_PATH)/libShimulator-macOS.dylib
     settings:
       base:
+        MACOSX_DEPLOYMENT_TARGET: "15.0"
+        GENERATE_INFOPLIST_FILE: "YES"
         PRODUCT_BUNDLE_IDENTIFIER: com.facebook.FBSimulatorProfilingSmokeTests
         PRODUCT_NAME: FBSimulatorProfilingSmokeTests
         SWIFT_VERSION: "5.0"
         SWIFT_PACKAGE_NAME: idb
-        GENERATE_INFOPLIST_FILE: "YES"
         FRAMEWORK_SEARCH_PATHS: $(inherited) $(DEVELOPER_DIR)/Library/PrivateFrameworks
         CLANG_ENABLE_OBJC_ARC: "YES"
         OTHER_CFLAGS: $(inherited) -Werror -Wall -Warray-bounds-pointer-arithmetic -Wassign-enum -Wcompare-distinct-pointer-types -Wconversion -Wdeprecated -Wduplicate-method-match -Wglobal-constructors -Wimplicit-fallthrough -Wimplicit-retain-self -Wint-in-bool-context -Wmissing-prototypes -Wnonportable-include-path -Wnonportable-system-include-path -Wnull-pointer-arithmetic -Wnull-pointer-subtraction -Wnullable-to-nonnull-conversion -Wobjc-signed-char-bool -Wrange-loop-analysis -Wshadow -Wstrict-prototypes -Wstring-concatenation -Wundeclared-selector -Wunguarded-availability -Wunterminated-string-initialization -Wunreachable-code-return -Wunused-function -Wno-error=conditional-uninitialized -Wno-error=objc-designated-initializers -Wno-error=objc-dictionary-duplicate-keys -Wno-error=pointer-to-enum-cast -Wno-error=pointer-to-int-cast -Werror=void-pointer-to-int-cast -Wno-error=tautological-bitwise-compare -Wno-error=tautological-compare -Wno-error=tautological-constant-compare -Wno-error=tautological-constant-in-range-compare -Wno-error=tautological-constant-out-of-range-compare -Wno-error=tautological-negation-compare -Wno-error=tautological-objc-bool-compare -Wno-error=tautological-overlap-compare -Wno-error=tautological-pointer-compare -Wno-error=tautological-type-limit-compare -Wno-error=tautological-undefined-compare -Wno-error=tautological-unsigned-char-zero-compare -Wno-error=tautological-unsigned-enum-zero-compare -Wno-error=tautological-unsigned-zero-compare -Wno-error=tautological-value-range-compare -Wno-error=unreachable-code-break -Wno-error=unreachable-code-fallthrough -Wno-error=unreachable-code-loop-increment -Wno-error=unreachable-code -Wno-error=unused-but-set-parameter -Wno-error=unused-but-set-variable -Wno-error=void-pointer-to-enum-cast -Wno-error=suggest-override -Wno-error=extra-semi -Wno-error=missing-noreturn -Wno-error=format-nonliteral -Wno-error=non-virtual-dtor -Wno-covered-switch-default -Wswitch-enum -Wswitch-default -Wno-error=c23-extensions -Wno-error=vla-cxx-extension -Wmissing-field-initializers -Wno-error=missing-field-initializers -Wbitwise-conditional-parentheses -Wno-error=bitwise-conditional-parentheses -Wlogical-not-parentheses -Wno-error=logical-not-parentheses -Wlogical-op-parentheses -Wno-error=logical-op-parentheses -Wno-float-conversion -Wno-implicit-float-conversion -Wno-implicit-int-float-conversion -Wno-implicit-int-conversion -Wno-shorten-64-to-32 -Wno-sign-conversion -Wfloat-overflow-conversion -Wfloat-zero-conversion -Wobjc-signed-char-bool-implicit-float-conversion -Wobjc-signed-char-bool-implicit-int-conversion -Wno-deprecated-declarations -Wno-deprecated-copy-dtor -Wno-deprecated-copy-with-dtor -Wno-deprecated-dynamic-exception-spec -Wno-deprecated-implementations -Wno-deprecated-redundant-constexpr-static-def -Wno-non-c-typedef-for-linkage -Wno-psabi -Wno-gnu-folding-constant -Wno-c99-designator -Wno-deprecated-copy -Wno-final-dtor-non-final-class -Wno-gnu-inline-cpp-without-extern -Wno-range-loop-construct -Wno-reorder-init-list -Wno-deprecated-this-capture -Wno-error=ambiguous-reversed-operator -Wno-error=deprecated-anon-enum-enum-conversion -Wenum-enum-conversion -Wmisleading-indentation -Wno-unknown-warning-option -Wno-module-conflict -Wno-deprecated-copy-with-user-provided-dtor -Wno-deprecated-experimental-coroutine -Wundef-prefix=__IPHONE_1,__IPHONE_2,__IPHONE_3,FB_AT_LEAST_IOS,META_AT_LEAST,FB_IOS,META_IOS,FB_64,META_64,META_TARGET,FBReport,FB_SWITCH -DDEFAULT_WARNING_FLAGS_SENTINEL=1 -Wno-error=assign-enum -Wno-error=deprecated -Wno-error=deprecated-anon-enum-enum-conversion -Wno-error=deprecated-array-compare -Wno-error=deprecated-attributes -Wno-error=deprecated-comma-subscript -Wno-error=deprecated-copy -Wno-error=deprecated-copy-with-user-provided-copy -Wno-error=deprecated-copy-with-dtor -Wno-error=deprecated-copy-with-user-provided-dtor -Wno-error=deprecated-declarations -Wno-error=deprecated-dynamic-exception-spec -Wno-error=deprecated-enum-compare -Wno-error=deprecated-enum-compare-conditional -Wno-error=deprecated-enum-enum-conversion -Wno-error=deprecated-enum-float-conversion -Wno-error=deprecated-increment-bool -Wno-error=deprecated-pragma -Wno-error=deprecated-register -Wno-error=deprecated-this-capture -Wno-error=deprecated-volatile -Wno-error=deprecated-writable-strings -Wno-error=conversion -Wno-error=constant-conversion -Wno-error=bitfield-constant-conversion -Wno-error=objc-bool-constant-conversion -Wno-error=enum-conversion -Wno-error=enum-compare-conditional -Wno-error=enum-enum-conversion -Wno-error=enum-float-conversion -Wno-error=float-conversion -Wno-error=float-overflow-conversion -Wno-error=float-zero-conversion -Wno-error=implicit-fallthrough -Wno-error=implicit-float-conversion -Wno-error=implicit-int-float-conversion -Wno-error=implicit-const-int-float-conversion -Wno-error=objc-signed-char-bool-implicit-float-conversion -Wno-error=implicit-int-conversion -Wno-error=objc-signed-char-bool-implicit-int-conversion -Wno-error=int-conversion -Wno-error=literal-conversion -Wno-error=non-literal-null-conversion -Wno-error=nonnull -Wno-error=null-conversion -Wno-error=objc-literal-conversion -Wno-error=shorten-64-to-32 -Wno-error=string-conversion -Wno-error=nullable-to-nonnull-conversion -Wno-error=switch-enum -Wno-error=switch-default -Wno-mismatched-tags -Wno-objc-designated-initializers -Wno-reorder -Wno-sign-conversion -Wno-unused-lambda-capture -Wno-unused-private-field -Wno-unused-property-ivar -DDEFAULT_TEST_WARNING_FLAGS_SENTINEL=1 -Werror=sign-conversion -Werror=shorten-64-to-32 -Wno-nullability-completeness -Wno-global-constructors -fobjc-arc-exceptions -Wno-deprecated-declarations -Wno-error=unused-command-line-argument
@@ -1175,7 +1180,6 @@ targets:
         MACH_O_TYPE: staticlib
         SWIFT_VERSION: "6.0"
         SWIFT_PACKAGE_NAME: idb
-        GENERATE_INFOPLIST_FILE: "YES"
         FRAMEWORK_SEARCH_PATHS: $(inherited) $(DEVELOPER_DIR)/Library/PrivateFrameworks
         CLANG_ENABLE_OBJC_ARC: "YES"
         OTHER_CFLAGS: $(inherited) -Werror -Wall -Warray-bounds-pointer-arithmetic -Wassign-enum -Wcompare-distinct-pointer-types -Wconversion -Wdeprecated -Wduplicate-method-match -Wglobal-constructors -Wimplicit-fallthrough -Wimplicit-retain-self -Wint-in-bool-context -Wmissing-prototypes -Wnonportable-include-path -Wnonportable-system-include-path -Wnull-pointer-arithmetic -Wnull-pointer-subtraction -Wnullable-to-nonnull-conversion -Wobjc-signed-char-bool -Wrange-loop-analysis -Wshadow -Wstrict-prototypes -Wstring-concatenation -Wundeclared-selector -Wunguarded-availability -Wunterminated-string-initialization -Wunreachable-code-return -Wunused-function -Wno-error=conditional-uninitialized -Wno-error=objc-designated-initializers -Wno-error=objc-dictionary-duplicate-keys -Wno-error=pointer-to-enum-cast -Wno-error=pointer-to-int-cast -Werror=void-pointer-to-int-cast -Wno-error=tautological-bitwise-compare -Wno-error=tautological-compare -Wno-error=tautological-constant-compare -Wno-error=tautological-constant-in-range-compare -Wno-error=tautological-constant-out-of-range-compare -Wno-error=tautological-negation-compare -Wno-error=tautological-objc-bool-compare -Wno-error=tautological-overlap-compare -Wno-error=tautological-pointer-compare -Wno-error=tautological-type-limit-compare -Wno-error=tautological-undefined-compare -Wno-error=tautological-unsigned-char-zero-compare -Wno-error=tautological-unsigned-enum-zero-compare -Wno-error=tautological-unsigned-zero-compare -Wno-error=tautological-value-range-compare -Wno-error=unreachable-code-break -Wno-error=unreachable-code-fallthrough -Wno-error=unreachable-code-loop-increment -Wno-error=unreachable-code -Wno-error=unused-but-set-parameter -Wno-error=unused-but-set-variable -Wno-error=void-pointer-to-enum-cast -Wno-error=suggest-override -Wno-error=extra-semi -Wno-error=missing-noreturn -Wno-error=format-nonliteral -Wno-error=non-virtual-dtor -Wno-covered-switch-default -Wswitch-enum -Wswitch-default -Wno-error=c23-extensions -Wno-error=vla-cxx-extension -Wmissing-field-initializers -Wno-error=missing-field-initializers -Wbitwise-conditional-parentheses -Wno-error=bitwise-conditional-parentheses -Wlogical-not-parentheses -Wno-error=logical-not-parentheses -Wlogical-op-parentheses -Wno-error=logical-op-parentheses -Wno-float-conversion -Wno-implicit-float-conversion -Wno-implicit-int-float-conversion -Wno-implicit-int-conversion -Wno-shorten-64-to-32 -Wno-sign-conversion -Wfloat-overflow-conversion -Wfloat-zero-conversion -Wobjc-signed-char-bool-implicit-float-conversion -Wobjc-signed-char-bool-implicit-int-conversion -Wno-deprecated-declarations -Wno-deprecated-copy-dtor -Wno-deprecated-copy-with-dtor -Wno-deprecated-dynamic-exception-spec -Wno-deprecated-implementations -Wno-deprecated-redundant-constexpr-static-def -Wno-non-c-typedef-for-linkage -Wno-psabi -Wno-gnu-folding-constant -Wno-c99-designator -Wno-deprecated-copy -Wno-final-dtor-non-final-class -Wno-gnu-inline-cpp-without-extern -Wno-range-loop-construct -Wno-reorder-init-list -Wno-deprecated-this-capture -Wno-error=ambiguous-reversed-operator -Wno-error=deprecated-anon-enum-enum-conversion -Wenum-enum-conversion -Wmisleading-indentation -Wno-unknown-warning-option -Wno-module-conflict -Wno-deprecated-copy-with-user-provided-dtor -Wno-deprecated-experimental-coroutine -Wundef-prefix=__IPHONE_1,__IPHONE_2,__IPHONE_3,FB_AT_LEAST_IOS,META_AT_LEAST,FB_IOS,META_IOS,FB_64,META_64,META_TARGET,FBReport,FB_SWITCH -DDEFAULT_WARNING_FLAGS_SENTINEL=1 -Werror=sign-conversion -Werror=shorten-64-to-32 -Wnullability-completeness -fobjc-arc-exceptions -Wno-deprecated-declarations -Wno-error=unused-command-line-argument
@@ -1206,6 +1210,7 @@ targets:
   FBSimulatorXCTestTests:
     type: bundle.unit-test
     platform: macOS
+    deploymentTarget: "15.0"
     scheme:
       testTargets:
         - FBSimulatorXCTestTests
@@ -1234,11 +1239,12 @@ targets:
           - $(TARGET_BUILD_DIR)/$(UNLOCALIZED_RESOURCES_FOLDER_PATH)/libShimulator-macOS.dylib
     settings:
       base:
+        MACOSX_DEPLOYMENT_TARGET: "15.0"
+        GENERATE_INFOPLIST_FILE: "YES"
         PRODUCT_BUNDLE_IDENTIFIER: com.facebook.FBSimulatorXCTestTests
         PRODUCT_NAME: FBSimulatorXCTestTests
         SWIFT_VERSION: "5.0"
         SWIFT_PACKAGE_NAME: idb
-        GENERATE_INFOPLIST_FILE: "YES"
         FRAMEWORK_SEARCH_PATHS: $(inherited) $(DEVELOPER_DIR)/Library/PrivateFrameworks
         CLANG_ENABLE_OBJC_ARC: "YES"
         OTHER_CFLAGS: $(inherited) -Werror -Wall -Warray-bounds-pointer-arithmetic -Wassign-enum -Wcompare-distinct-pointer-types -Wconversion -Wdeprecated -Wduplicate-method-match -Wglobal-constructors -Wimplicit-fallthrough -Wimplicit-retain-self -Wint-in-bool-context -Wmissing-prototypes -Wnonportable-include-path -Wnonportable-system-include-path -Wnull-pointer-arithmetic -Wnull-pointer-subtraction -Wnullable-to-nonnull-conversion -Wobjc-signed-char-bool -Wrange-loop-analysis -Wshadow -Wstrict-prototypes -Wstring-concatenation -Wundeclared-selector -Wunguarded-availability -Wunterminated-string-initialization -Wunreachable-code-return -Wunused-function -Wno-error=conditional-uninitialized -Wno-error=objc-designated-initializers -Wno-error=objc-dictionary-duplicate-keys -Wno-error=pointer-to-enum-cast -Wno-error=pointer-to-int-cast -Werror=void-pointer-to-int-cast -Wno-error=tautological-bitwise-compare -Wno-error=tautological-compare -Wno-error=tautological-constant-compare -Wno-error=tautological-constant-in-range-compare -Wno-error=tautological-constant-out-of-range-compare -Wno-error=tautological-negation-compare -Wno-error=tautological-objc-bool-compare -Wno-error=tautological-overlap-compare -Wno-error=tautological-pointer-compare -Wno-error=tautological-type-limit-compare -Wno-error=tautological-undefined-compare -Wno-error=tautological-unsigned-char-zero-compare -Wno-error=tautological-unsigned-enum-zero-compare -Wno-error=tautological-unsigned-zero-compare -Wno-error=tautological-value-range-compare -Wno-error=unreachable-code-break -Wno-error=unreachable-code-fallthrough -Wno-error=unreachable-code-loop-increment -Wno-error=unreachable-code -Wno-error=unused-but-set-parameter -Wno-error=unused-but-set-variable -Wno-error=void-pointer-to-enum-cast -Wno-error=suggest-override -Wno-error=extra-semi -Wno-error=missing-noreturn -Wno-error=format-nonliteral -Wno-error=non-virtual-dtor -Wno-covered-switch-default -Wswitch-enum -Wswitch-default -Wno-error=c23-extensions -Wno-error=vla-cxx-extension -Wmissing-field-initializers -Wno-error=missing-field-initializers -Wbitwise-conditional-parentheses -Wno-error=bitwise-conditional-parentheses -Wlogical-not-parentheses -Wno-error=logical-not-parentheses -Wlogical-op-parentheses -Wno-error=logical-op-parentheses -Wno-float-conversion -Wno-implicit-float-conversion -Wno-implicit-int-float-conversion -Wno-implicit-int-conversion -Wno-shorten-64-to-32 -Wno-sign-conversion -Wfloat-overflow-conversion -Wfloat-zero-conversion -Wobjc-signed-char-bool-implicit-float-conversion -Wobjc-signed-char-bool-implicit-int-conversion -Wno-deprecated-declarations -Wno-deprecated-copy-dtor -Wno-deprecated-copy-with-dtor -Wno-deprecated-dynamic-exception-spec -Wno-deprecated-implementations -Wno-deprecated-redundant-constexpr-static-def -Wno-non-c-typedef-for-linkage -Wno-psabi -Wno-gnu-folding-constant -Wno-c99-designator -Wno-deprecated-copy -Wno-final-dtor-non-final-class -Wno-gnu-inline-cpp-without-extern -Wno-range-loop-construct -Wno-reorder-init-list -Wno-deprecated-this-capture -Wno-error=ambiguous-reversed-operator -Wno-error=deprecated-anon-enum-enum-conversion -Wenum-enum-conversion -Wmisleading-indentation -Wno-unknown-warning-option -Wno-module-conflict -Wno-deprecated-copy-with-user-provided-dtor -Wno-deprecated-experimental-coroutine -Wundef-prefix=__IPHONE_1,__IPHONE_2,__IPHONE_3,FB_AT_LEAST_IOS,META_AT_LEAST,FB_IOS,META_IOS,FB_64,META_64,META_TARGET,FBReport,FB_SWITCH -DDEFAULT_WARNING_FLAGS_SENTINEL=1 -Wno-error=assign-enum -Wno-error=deprecated -Wno-error=deprecated-anon-enum-enum-conversion -Wno-error=deprecated-array-compare -Wno-error=deprecated-attributes -Wno-error=deprecated-comma-subscript -Wno-error=deprecated-copy -Wno-error=deprecated-copy-with-user-provided-copy -Wno-error=deprecated-copy-with-dtor -Wno-error=deprecated-copy-with-user-provided-dtor -Wno-error=deprecated-declarations -Wno-error=deprecated-dynamic-exception-spec -Wno-error=deprecated-enum-compare -Wno-error=deprecated-enum-compare-conditional -Wno-error=deprecated-enum-enum-conversion -Wno-error=deprecated-enum-float-conversion -Wno-error=deprecated-increment-bool -Wno-error=deprecated-pragma -Wno-error=deprecated-register -Wno-error=deprecated-this-capture -Wno-error=deprecated-volatile -Wno-error=deprecated-writable-strings -Wno-error=conversion -Wno-error=constant-conversion -Wno-error=bitfield-constant-conversion -Wno-error=objc-bool-constant-conversion -Wno-error=enum-conversion -Wno-error=enum-compare-conditional -Wno-error=enum-enum-conversion -Wno-error=enum-float-conversion -Wno-error=float-conversion -Wno-error=float-overflow-conversion -Wno-error=float-zero-conversion -Wno-error=implicit-fallthrough -Wno-error=implicit-float-conversion -Wno-error=implicit-int-float-conversion -Wno-error=implicit-const-int-float-conversion -Wno-error=objc-signed-char-bool-implicit-float-conversion -Wno-error=implicit-int-conversion -Wno-error=objc-signed-char-bool-implicit-int-conversion -Wno-error=int-conversion -Wno-error=literal-conversion -Wno-error=non-literal-null-conversion -Wno-error=nonnull -Wno-error=null-conversion -Wno-error=objc-literal-conversion -Wno-error=shorten-64-to-32 -Wno-error=string-conversion -Wno-error=nullable-to-nonnull-conversion -Wno-error=switch-enum -Wno-error=switch-default -Wno-mismatched-tags -Wno-objc-designated-initializers -Wno-reorder -Wno-sign-conversion -Wno-unused-lambda-capture -Wno-unused-private-field -Wno-unused-property-ivar -DDEFAULT_TEST_WARNING_FLAGS_SENTINEL=1 -Werror=sign-conversion -Werror=shorten-64-to-32 -Wno-nullability-completeness -Wno-global-constructors -fobjc-arc-exceptions -Wno-deprecated-declarations -Wno-error=unused-command-line-argument
@@ -1279,7 +1285,6 @@ targets:
         MACH_O_TYPE: staticlib
         SWIFT_VERSION: "6.0"
         SWIFT_PACKAGE_NAME: idb
-        GENERATE_INFOPLIST_FILE: "YES"
         FRAMEWORK_SEARCH_PATHS: $(inherited) $(DEVELOPER_DIR)/Library/PrivateFrameworks
         CLANG_ENABLE_OBJC_ARC: "YES"
         OTHER_CFLAGS: $(inherited) -Werror -Wall -Warray-bounds-pointer-arithmetic -Wassign-enum -Wcompare-distinct-pointer-types -Wconversion -Wdeprecated -Wduplicate-method-match -Wglobal-constructors -Wimplicit-fallthrough -Wimplicit-retain-self -Wint-in-bool-context -Wmissing-prototypes -Wnonportable-include-path -Wnonportable-system-include-path -Wnull-pointer-arithmetic -Wnull-pointer-subtraction -Wnullable-to-nonnull-conversion -Wobjc-signed-char-bool -Wrange-loop-analysis -Wshadow -Wstrict-prototypes -Wstring-concatenation -Wundeclared-selector -Wunguarded-availability -Wunterminated-string-initialization -Wunreachable-code-return -Wunused-function -Wno-error=conditional-uninitialized -Wno-error=objc-designated-initializers -Wno-error=objc-dictionary-duplicate-keys -Wno-error=pointer-to-enum-cast -Wno-error=pointer-to-int-cast -Werror=void-pointer-to-int-cast -Wno-error=tautological-bitwise-compare -Wno-error=tautological-compare -Wno-error=tautological-constant-compare -Wno-error=tautological-constant-in-range-compare -Wno-error=tautological-constant-out-of-range-compare -Wno-error=tautological-negation-compare -Wno-error=tautological-objc-bool-compare -Wno-error=tautological-overlap-compare -Wno-error=tautological-pointer-compare -Wno-error=tautological-type-limit-compare -Wno-error=tautological-undefined-compare -Wno-error=tautological-unsigned-char-zero-compare -Wno-error=tautological-unsigned-enum-zero-compare -Wno-error=tautological-unsigned-zero-compare -Wno-error=tautological-value-range-compare -Wno-error=unreachable-code-break -Wno-error=unreachable-code-fallthrough -Wno-error=unreachable-code-loop-increment -Wno-error=unreachable-code -Wno-error=unused-but-set-parameter -Wno-error=unused-but-set-variable -Wno-error=void-pointer-to-enum-cast -Wno-error=suggest-override -Wno-error=extra-semi -Wno-error=missing-noreturn -Wno-error=format-nonliteral -Wno-error=non-virtual-dtor -Wno-covered-switch-default -Wswitch-enum -Wswitch-default -Wno-error=c23-extensions -Wno-error=vla-cxx-extension -Wmissing-field-initializers -Wno-error=missing-field-initializers -Wbitwise-conditional-parentheses -Wno-error=bitwise-conditional-parentheses -Wlogical-not-parentheses -Wno-error=logical-not-parentheses -Wlogical-op-parentheses -Wno-error=logical-op-parentheses -Wno-float-conversion -Wno-implicit-float-conversion -Wno-implicit-int-float-conversion -Wno-implicit-int-conversion -Wno-shorten-64-to-32 -Wno-sign-conversion -Wfloat-overflow-conversion -Wfloat-zero-conversion -Wobjc-signed-char-bool-implicit-float-conversion -Wobjc-signed-char-bool-implicit-int-conversion -Wno-deprecated-declarations -Wno-deprecated-copy-dtor -Wno-deprecated-copy-with-dtor -Wno-deprecated-dynamic-exception-spec -Wno-deprecated-implementations -Wno-deprecated-redundant-constexpr-static-def -Wno-non-c-typedef-for-linkage -Wno-psabi -Wno-gnu-folding-constant -Wno-c99-designator -Wno-deprecated-copy -Wno-final-dtor-non-final-class -Wno-gnu-inline-cpp-without-extern -Wno-range-loop-construct -Wno-reorder-init-list -Wno-deprecated-this-capture -Wno-error=ambiguous-reversed-operator -Wno-error=deprecated-anon-enum-enum-conversion -Wenum-enum-conversion -Wmisleading-indentation -Wno-unknown-warning-option -Wno-module-conflict -Wno-deprecated-copy-with-user-provided-dtor -Wno-deprecated-experimental-coroutine -Wundef-prefix=__IPHONE_1,__IPHONE_2,__IPHONE_3,FB_AT_LEAST_IOS,META_AT_LEAST,FB_IOS,META_IOS,FB_64,META_64,META_TARGET,FBReport,FB_SWITCH -DDEFAULT_WARNING_FLAGS_SENTINEL=1 -Werror=sign-conversion -Werror=shorten-64-to-32 -Wnullability-completeness -fobjc-arc-exceptions -Wno-deprecated-declarations -Wno-error=unused-command-line-argument
@@ -1312,6 +1317,7 @@ targets:
   FBSimulatorCodeInjectionTests:
     type: bundle.unit-test
     platform: macOS
+    deploymentTarget: "15.0"
     scheme:
       testTargets:
         - FBSimulatorCodeInjectionTests
@@ -1340,11 +1346,12 @@ targets:
           - $(TARGET_BUILD_DIR)/$(UNLOCALIZED_RESOURCES_FOLDER_PATH)/libShimulator-macOS.dylib
     settings:
       base:
+        MACOSX_DEPLOYMENT_TARGET: "15.0"
+        GENERATE_INFOPLIST_FILE: "YES"
         PRODUCT_BUNDLE_IDENTIFIER: com.facebook.FBSimulatorCodeInjectionTests
         PRODUCT_NAME: FBSimulatorCodeInjectionTests
         SWIFT_VERSION: "5.0"
         SWIFT_PACKAGE_NAME: idb
-        GENERATE_INFOPLIST_FILE: "YES"
         FRAMEWORK_SEARCH_PATHS: $(inherited) $(DEVELOPER_DIR)/Library/PrivateFrameworks
         CLANG_ENABLE_OBJC_ARC: "YES"
         OTHER_CFLAGS: $(inherited) -Werror -Wall -Warray-bounds-pointer-arithmetic -Wassign-enum -Wcompare-distinct-pointer-types -Wconversion -Wdeprecated -Wduplicate-method-match -Wglobal-constructors -Wimplicit-fallthrough -Wimplicit-retain-self -Wint-in-bool-context -Wmissing-prototypes -Wnonportable-include-path -Wnonportable-system-include-path -Wnull-pointer-arithmetic -Wnull-pointer-subtraction -Wnullable-to-nonnull-conversion -Wobjc-signed-char-bool -Wrange-loop-analysis -Wshadow -Wstrict-prototypes -Wstring-concatenation -Wundeclared-selector -Wunguarded-availability -Wunterminated-string-initialization -Wunreachable-code-return -Wunused-function -Wno-error=conditional-uninitialized -Wno-error=objc-designated-initializers -Wno-error=objc-dictionary-duplicate-keys -Wno-error=pointer-to-enum-cast -Wno-error=pointer-to-int-cast -Werror=void-pointer-to-int-cast -Wno-error=tautological-bitwise-compare -Wno-error=tautological-compare -Wno-error=tautological-constant-compare -Wno-error=tautological-constant-in-range-compare -Wno-error=tautological-constant-out-of-range-compare -Wno-error=tautological-negation-compare -Wno-error=tautological-objc-bool-compare -Wno-error=tautological-overlap-compare -Wno-error=tautological-pointer-compare -Wno-error=tautological-type-limit-compare -Wno-error=tautological-undefined-compare -Wno-error=tautological-unsigned-char-zero-compare -Wno-error=tautological-unsigned-enum-zero-compare -Wno-error=tautological-unsigned-zero-compare -Wno-error=tautological-value-range-compare -Wno-error=unreachable-code-break -Wno-error=unreachable-code-fallthrough -Wno-error=unreachable-code-loop-increment -Wno-error=unreachable-code -Wno-error=unused-but-set-parameter -Wno-error=unused-but-set-variable -Wno-error=void-pointer-to-enum-cast -Wno-error=suggest-override -Wno-error=extra-semi -Wno-error=missing-noreturn -Wno-error=format-nonliteral -Wno-error=non-virtual-dtor -Wno-covered-switch-default -Wswitch-enum -Wswitch-default -Wno-error=c23-extensions -Wno-error=vla-cxx-extension -Wmissing-field-initializers -Wno-error=missing-field-initializers -Wbitwise-conditional-parentheses -Wno-error=bitwise-conditional-parentheses -Wlogical-not-parentheses -Wno-error=logical-not-parentheses -Wlogical-op-parentheses -Wno-error=logical-op-parentheses -Wno-float-conversion -Wno-implicit-float-conversion -Wno-implicit-int-float-conversion -Wno-implicit-int-conversion -Wno-shorten-64-to-32 -Wno-sign-conversion -Wfloat-overflow-conversion -Wfloat-zero-conversion -Wobjc-signed-char-bool-implicit-float-conversion -Wobjc-signed-char-bool-implicit-int-conversion -Wno-deprecated-declarations -Wno-deprecated-copy-dtor -Wno-deprecated-copy-with-dtor -Wno-deprecated-dynamic-exception-spec -Wno-deprecated-implementations -Wno-deprecated-redundant-constexpr-static-def -Wno-non-c-typedef-for-linkage -Wno-psabi -Wno-gnu-folding-constant -Wno-c99-designator -Wno-deprecated-copy -Wno-final-dtor-non-final-class -Wno-gnu-inline-cpp-without-extern -Wno-range-loop-construct -Wno-reorder-init-list -Wno-deprecated-this-capture -Wno-error=ambiguous-reversed-operator -Wno-error=deprecated-anon-enum-enum-conversion -Wenum-enum-conversion -Wmisleading-indentation -Wno-unknown-warning-option -Wno-module-conflict -Wno-deprecated-copy-with-user-provided-dtor -Wno-deprecated-experimental-coroutine -Wundef-prefix=__IPHONE_1,__IPHONE_2,__IPHONE_3,FB_AT_LEAST_IOS,META_AT_LEAST,FB_IOS,META_IOS,FB_64,META_64,META_TARGET,FBReport,FB_SWITCH -DDEFAULT_WARNING_FLAGS_SENTINEL=1 -Wno-error=assign-enum -Wno-error=deprecated -Wno-error=deprecated-anon-enum-enum-conversion -Wno-error=deprecated-array-compare -Wno-error=deprecated-attributes -Wno-error=deprecated-comma-subscript -Wno-error=deprecated-copy -Wno-error=deprecated-copy-with-user-provided-copy -Wno-error=deprecated-copy-with-dtor -Wno-error=deprecated-copy-with-user-provided-dtor -Wno-error=deprecated-declarations -Wno-error=deprecated-dynamic-exception-spec -Wno-error=deprecated-enum-compare -Wno-error=deprecated-enum-compare-conditional -Wno-error=deprecated-enum-enum-conversion -Wno-error=deprecated-enum-float-conversion -Wno-error=deprecated-increment-bool -Wno-error=deprecated-pragma -Wno-error=deprecated-register -Wno-error=deprecated-this-capture -Wno-error=deprecated-volatile -Wno-error=deprecated-writable-strings -Wno-error=conversion -Wno-error=constant-conversion -Wno-error=bitfield-constant-conversion -Wno-error=objc-bool-constant-conversion -Wno-error=enum-conversion -Wno-error=enum-compare-conditional -Wno-error=enum-enum-conversion -Wno-error=enum-float-conversion -Wno-error=float-conversion -Wno-error=float-overflow-conversion -Wno-error=float-zero-conversion -Wno-error=implicit-fallthrough -Wno-error=implicit-float-conversion -Wno-error=implicit-int-float-conversion -Wno-error=implicit-const-int-float-conversion -Wno-error=objc-signed-char-bool-implicit-float-conversion -Wno-error=implicit-int-conversion -Wno-error=objc-signed-char-bool-implicit-int-conversion -Wno-error=int-conversion -Wno-error=literal-conversion -Wno-error=non-literal-null-conversion -Wno-error=nonnull -Wno-error=null-conversion -Wno-error=objc-literal-conversion -Wno-error=shorten-64-to-32 -Wno-error=string-conversion -Wno-error=nullable-to-nonnull-conversion -Wno-error=switch-enum -Wno-error=switch-default -Wno-mismatched-tags -Wno-objc-designated-initializers -Wno-reorder -Wno-sign-conversion -Wno-unused-lambda-capture -Wno-unused-private-field -Wno-unused-property-ivar -DDEFAULT_TEST_WARNING_FLAGS_SENTINEL=1 -Werror=sign-conversion -Werror=shorten-64-to-32 -Wno-nullability-completeness -Wno-global-constructors -fobjc-arc-exceptions -Wno-deprecated-declarations -Wno-error=unused-command-line-argument
@@ -1369,12 +1376,10 @@ targets:
   FBSimulatorControlUnitTests:
     type: bundle.unit-test
     platform: macOS
+    deploymentTarget: "15.0"
     scheme:
       testTargets:
         - FBSimulatorControlUnitTests
-    configFiles:
-      Debug: FBSimulatorControlTests/FBSimulatorControlTests.xcconfig
-      Release: FBSimulatorControlTests/FBSimulatorControlTests.xcconfig
     sources:
       - path: FBSimulatorControlTests/Tests/Unit
         excludes:
@@ -1407,6 +1412,7 @@ targets:
           - $(TARGET_BUILD_DIR)/$(UNLOCALIZED_RESOURCES_FOLDER_PATH)/libShimulator-macOS.dylib
     settings:
       base:
+        MACOSX_DEPLOYMENT_TARGET: "15.0"
         INFOPLIST_FILE: $(SRCROOT)/FBSimulatorControlTests/FBSimulatorControlTests-Info.plist
         PRODUCT_BUNDLE_IDENTIFIER: com.facebook.FBSimulatorControlUnitTests
         PRODUCT_NAME: FBSimulatorControlUnitTests
@@ -1437,12 +1443,10 @@ targets:
   FBSimulatorControlBootTests:
     type: bundle.unit-test
     platform: macOS
+    deploymentTarget: "15.0"
     scheme:
       testTargets:
         - FBSimulatorControlBootTests
-    configFiles:
-      Debug: FBSimulatorControlTests/FBSimulatorControlTests.xcconfig
-      Release: FBSimulatorControlTests/FBSimulatorControlTests.xcconfig
     sources:
       - path: FBSimulatorControlTests/Tests/Boot
         excludes:
@@ -1475,6 +1479,7 @@ targets:
           - $(TARGET_BUILD_DIR)/$(UNLOCALIZED_RESOURCES_FOLDER_PATH)/libShimulator-macOS.dylib
     settings:
       base:
+        MACOSX_DEPLOYMENT_TARGET: "15.0"
         INFOPLIST_FILE: $(SRCROOT)/FBSimulatorControlTests/FBSimulatorControlTests-Info.plist
         PRODUCT_BUNDLE_IDENTIFIER: com.facebook.FBSimulatorControlBootTests
         PRODUCT_NAME: FBSimulatorControlBootTests
@@ -1505,12 +1510,10 @@ targets:
   FBSimulatorControlSmokeTests:
     type: bundle.unit-test
     platform: macOS
+    deploymentTarget: "15.0"
     scheme:
       testTargets:
         - FBSimulatorControlSmokeTests
-    configFiles:
-      Debug: FBSimulatorControlTests/FBSimulatorControlTests.xcconfig
-      Release: FBSimulatorControlTests/FBSimulatorControlTests.xcconfig
     sources:
       - path: FBSimulatorControlTests/Tests/Smoke
         excludes:
@@ -1543,6 +1546,7 @@ targets:
           - $(TARGET_BUILD_DIR)/$(UNLOCALIZED_RESOURCES_FOLDER_PATH)/libShimulator-macOS.dylib
     settings:
       base:
+        MACOSX_DEPLOYMENT_TARGET: "15.0"
         INFOPLIST_FILE: $(SRCROOT)/FBSimulatorControlTests/FBSimulatorControlTests-Info.plist
         PRODUCT_BUNDLE_IDENTIFIER: com.facebook.FBSimulatorControlSmokeTests
         PRODUCT_NAME: FBSimulatorControlSmokeTests
@@ -1573,21 +1577,17 @@ targets:
   FBDeviceControl:
     type: library.static
     platform: macOS
+    deploymentTarget: "15.0"
     scheme:
       testTargets:
         - FBDeviceControlTests
-    configFiles:
-      Debug: FBDeviceControl/FBDeviceControl.xcconfig
-      Release: FBDeviceControl/FBDeviceControl.xcconfig
     sources:
       - path: FBDeviceControl
         excludes:
-          - "**/*-Info.plist"
-          - "**/*.xcconfig"
           - "**/*.md"
     settings:
       base:
-        INFOPLIST_FILE: $(SRCROOT)/FBDeviceControl/FBDeviceControl-Info.plist
+        MACOSX_DEPLOYMENT_TARGET: "15.0"
         PRODUCT_BUNDLE_IDENTIFIER: com.facebook.FBDeviceControl
         PRODUCT_NAME: FBDeviceControl
         DEFINES_MODULE: "YES"
@@ -1620,12 +1620,10 @@ targets:
   FBDeviceControlTests:
     type: bundle.unit-test
     platform: macOS
+    deploymentTarget: "15.0"
     scheme:
       testTargets:
         - FBDeviceControlTests
-    configFiles:
-      Debug: FBDeviceControlTests/FBDeviceControlTests.xcconfig
-      Release: FBDeviceControlTests/FBDeviceControlTests.xcconfig
     sources:
       - path: FBDeviceControlTests
         excludes:
@@ -1633,6 +1631,7 @@ targets:
           - "**/*.xcconfig"
     settings:
       base:
+        MACOSX_DEPLOYMENT_TARGET: "15.0"
         INFOPLIST_FILE: $(SRCROOT)/FBDeviceControlTests/FBDeviceControlTests-Info.plist
         PRODUCT_BUNDLE_IDENTIFIER: com.facebook.FBDeviceControlTests
         PRODUCT_NAME: FBDeviceControlTests
@@ -1673,7 +1672,6 @@ targets:
         MACH_O_TYPE: staticlib
         SWIFT_VERSION: "6.0"
         SWIFT_PACKAGE_NAME: idb
-        GENERATE_INFOPLIST_FILE: "YES"
         CLANG_ENABLE_OBJC_ARC: "YES"
         OTHER_CFLAGS: $(inherited) -Werror -Wall -Warray-bounds-pointer-arithmetic -Wassign-enum -Wcompare-distinct-pointer-types -Wconversion -Wdeprecated -Wduplicate-method-match -Wglobal-constructors -Wimplicit-fallthrough -Wimplicit-retain-self -Wint-in-bool-context -Wmissing-prototypes -Wnonportable-include-path -Wnonportable-system-include-path -Wnull-pointer-arithmetic -Wnull-pointer-subtraction -Wnullable-to-nonnull-conversion -Wobjc-signed-char-bool -Wrange-loop-analysis -Wshadow -Wstrict-prototypes -Wstring-concatenation -Wundeclared-selector -Wunguarded-availability -Wunterminated-string-initialization -Wunreachable-code-return -Wunused-function -Wno-error=conditional-uninitialized -Wno-error=objc-designated-initializers -Wno-error=objc-dictionary-duplicate-keys -Wno-error=pointer-to-enum-cast -Wno-error=pointer-to-int-cast -Werror=void-pointer-to-int-cast -Wno-error=tautological-bitwise-compare -Wno-error=tautological-compare -Wno-error=tautological-constant-compare -Wno-error=tautological-constant-in-range-compare -Wno-error=tautological-constant-out-of-range-compare -Wno-error=tautological-negation-compare -Wno-error=tautological-objc-bool-compare -Wno-error=tautological-overlap-compare -Wno-error=tautological-pointer-compare -Wno-error=tautological-type-limit-compare -Wno-error=tautological-undefined-compare -Wno-error=tautological-unsigned-char-zero-compare -Wno-error=tautological-unsigned-enum-zero-compare -Wno-error=tautological-unsigned-zero-compare -Wno-error=tautological-value-range-compare -Wno-error=unreachable-code-break -Wno-error=unreachable-code-fallthrough -Wno-error=unreachable-code-loop-increment -Wno-error=unreachable-code -Wno-error=unused-but-set-parameter -Wno-error=unused-but-set-variable -Wno-error=void-pointer-to-enum-cast -Wno-error=suggest-override -Wno-error=extra-semi -Wno-error=missing-noreturn -Wno-error=format-nonliteral -Wno-error=non-virtual-dtor -Wno-covered-switch-default -Wswitch-enum -Wswitch-default -Wno-error=c23-extensions -Wno-error=vla-cxx-extension -Wmissing-field-initializers -Wno-error=missing-field-initializers -Wbitwise-conditional-parentheses -Wno-error=bitwise-conditional-parentheses -Wlogical-not-parentheses -Wno-error=logical-not-parentheses -Wlogical-op-parentheses -Wno-error=logical-op-parentheses -Wno-float-conversion -Wno-implicit-float-conversion -Wno-implicit-int-float-conversion -Wno-implicit-int-conversion -Wno-shorten-64-to-32 -Wno-sign-conversion -Wfloat-overflow-conversion -Wfloat-zero-conversion -Wobjc-signed-char-bool-implicit-float-conversion -Wobjc-signed-char-bool-implicit-int-conversion -Wno-deprecated-declarations -Wno-deprecated-copy-dtor -Wno-deprecated-copy-with-dtor -Wno-deprecated-dynamic-exception-spec -Wno-deprecated-implementations -Wno-deprecated-redundant-constexpr-static-def -Wno-non-c-typedef-for-linkage -Wno-psabi -Wno-gnu-folding-constant -Wno-c99-designator -Wno-deprecated-copy -Wno-final-dtor-non-final-class -Wno-gnu-inline-cpp-without-extern -Wno-range-loop-construct -Wno-reorder-init-list -Wno-deprecated-this-capture -Wno-error=ambiguous-reversed-operator -Wno-error=deprecated-anon-enum-enum-conversion -Wenum-enum-conversion -Wmisleading-indentation -Wno-unknown-warning-option -Wno-module-conflict -Wno-deprecated-copy-with-user-provided-dtor -Wno-deprecated-experimental-coroutine -Wundef-prefix=__IPHONE_1,__IPHONE_2,__IPHONE_3,FB_AT_LEAST_IOS,META_AT_LEAST,FB_IOS,META_IOS,FB_64,META_64,META_TARGET,FBReport,FB_SWITCH -DDEFAULT_WARNING_FLAGS_SENTINEL=1 -Werror=sign-conversion -Werror=shorten-64-to-32 -Wnullability-completeness -fobjc-arc-exceptions -Wno-deprecated-declarations -Wno-error=unused-command-line-argument
         # The @TaskLocal macro lives in the SwiftMacros plugin and sometimes
@@ -1699,11 +1697,11 @@ targets:
     settings:
       base:
         MACOSX_DEPLOYMENT_TARGET: "15.0"
+        GENERATE_INFOPLIST_FILE: "YES"
         PRODUCT_BUNDLE_IDENTIFIER: com.facebook.IDBConcurrencyTests
         PRODUCT_NAME: IDBConcurrencyTests
         SWIFT_VERSION: "5.0"
         SWIFT_PACKAGE_NAME: idb
-        GENERATE_INFOPLIST_FILE: "YES"
         CLANG_ENABLE_OBJC_ARC: "YES"
         OTHER_CFLAGS: $(inherited) -Werror -Wall -Warray-bounds-pointer-arithmetic -Wassign-enum -Wcompare-distinct-pointer-types -Wconversion -Wdeprecated -Wduplicate-method-match -Wglobal-constructors -Wimplicit-fallthrough -Wimplicit-retain-self -Wint-in-bool-context -Wmissing-prototypes -Wnonportable-include-path -Wnonportable-system-include-path -Wnull-pointer-arithmetic -Wnull-pointer-subtraction -Wnullable-to-nonnull-conversion -Wobjc-signed-char-bool -Wrange-loop-analysis -Wshadow -Wstrict-prototypes -Wstring-concatenation -Wundeclared-selector -Wunguarded-availability -Wunterminated-string-initialization -Wunreachable-code-return -Wunused-function -Wno-error=conditional-uninitialized -Wno-error=objc-designated-initializers -Wno-error=objc-dictionary-duplicate-keys -Wno-error=pointer-to-enum-cast -Wno-error=pointer-to-int-cast -Werror=void-pointer-to-int-cast -Wno-error=tautological-bitwise-compare -Wno-error=tautological-compare -Wno-error=tautological-constant-compare -Wno-error=tautological-constant-in-range-compare -Wno-error=tautological-constant-out-of-range-compare -Wno-error=tautological-negation-compare -Wno-error=tautological-objc-bool-compare -Wno-error=tautological-overlap-compare -Wno-error=tautological-pointer-compare -Wno-error=tautological-type-limit-compare -Wno-error=tautological-undefined-compare -Wno-error=tautological-unsigned-char-zero-compare -Wno-error=tautological-unsigned-enum-zero-compare -Wno-error=tautological-unsigned-zero-compare -Wno-error=tautological-value-range-compare -Wno-error=unreachable-code-break -Wno-error=unreachable-code-fallthrough -Wno-error=unreachable-code-loop-increment -Wno-error=unreachable-code -Wno-error=unused-but-set-parameter -Wno-error=unused-but-set-variable -Wno-error=void-pointer-to-enum-cast -Wno-error=suggest-override -Wno-error=extra-semi -Wno-error=missing-noreturn -Wno-error=format-nonliteral -Wno-error=non-virtual-dtor -Wno-covered-switch-default -Wswitch-enum -Wswitch-default -Wno-error=c23-extensions -Wno-error=vla-cxx-extension -Wmissing-field-initializers -Wno-error=missing-field-initializers -Wbitwise-conditional-parentheses -Wno-error=bitwise-conditional-parentheses -Wlogical-not-parentheses -Wno-error=logical-not-parentheses -Wlogical-op-parentheses -Wno-error=logical-op-parentheses -Wno-float-conversion -Wno-implicit-float-conversion -Wno-implicit-int-float-conversion -Wno-implicit-int-conversion -Wno-shorten-64-to-32 -Wno-sign-conversion -Wfloat-overflow-conversion -Wfloat-zero-conversion -Wobjc-signed-char-bool-implicit-float-conversion -Wobjc-signed-char-bool-implicit-int-conversion -Wno-deprecated-declarations -Wno-deprecated-copy-dtor -Wno-deprecated-copy-with-dtor -Wno-deprecated-dynamic-exception-spec -Wno-deprecated-implementations -Wno-deprecated-redundant-constexpr-static-def -Wno-non-c-typedef-for-linkage -Wno-psabi -Wno-gnu-folding-constant -Wno-c99-designator -Wno-deprecated-copy -Wno-final-dtor-non-final-class -Wno-gnu-inline-cpp-without-extern -Wno-range-loop-construct -Wno-reorder-init-list -Wno-deprecated-this-capture -Wno-error=ambiguous-reversed-operator -Wno-error=deprecated-anon-enum-enum-conversion -Wenum-enum-conversion -Wmisleading-indentation -Wno-unknown-warning-option -Wno-module-conflict -Wno-deprecated-copy-with-user-provided-dtor -Wno-deprecated-experimental-coroutine -Wundef-prefix=__IPHONE_1,__IPHONE_2,__IPHONE_3,FB_AT_LEAST_IOS,META_AT_LEAST,FB_IOS,META_IOS,FB_64,META_64,META_TARGET,FBReport,FB_SWITCH -DDEFAULT_WARNING_FLAGS_SENTINEL=1 -Wno-error=assign-enum -Wno-error=deprecated -Wno-error=deprecated-anon-enum-enum-conversion -Wno-error=deprecated-array-compare -Wno-error=deprecated-attributes -Wno-error=deprecated-comma-subscript -Wno-error=deprecated-copy -Wno-error=deprecated-copy-with-user-provided-copy -Wno-error=deprecated-copy-with-dtor -Wno-error=deprecated-copy-with-user-provided-dtor -Wno-error=deprecated-declarations -Wno-error=deprecated-dynamic-exception-spec -Wno-error=deprecated-enum-compare -Wno-error=deprecated-enum-compare-conditional -Wno-error=deprecated-enum-enum-conversion -Wno-error=deprecated-enum-float-conversion -Wno-error=deprecated-increment-bool -Wno-error=deprecated-pragma -Wno-error=deprecated-register -Wno-error=deprecated-this-capture -Wno-error=deprecated-volatile -Wno-error=deprecated-writable-strings -Wno-error=conversion -Wno-error=constant-conversion -Wno-error=bitfield-constant-conversion -Wno-error=objc-bool-constant-conversion -Wno-error=enum-conversion -Wno-error=enum-compare-conditional -Wno-error=enum-enum-conversion -Wno-error=enum-float-conversion -Wno-error=float-conversion -Wno-error=float-overflow-conversion -Wno-error=float-zero-conversion -Wno-error=implicit-fallthrough -Wno-error=implicit-float-conversion -Wno-error=implicit-int-float-conversion -Wno-error=implicit-const-int-float-conversion -Wno-error=objc-signed-char-bool-implicit-float-conversion -Wno-error=implicit-int-conversion -Wno-error=objc-signed-char-bool-implicit-int-conversion -Wno-error=int-conversion -Wno-error=literal-conversion -Wno-error=non-literal-null-conversion -Wno-error=nonnull -Wno-error=null-conversion -Wno-error=objc-literal-conversion -Wno-error=shorten-64-to-32 -Wno-error=string-conversion -Wno-error=nullable-to-nonnull-conversion -Wno-error=switch-enum -Wno-error=switch-default -Wno-mismatched-tags -Wno-objc-designated-initializers -Wno-reorder -Wno-sign-conversion -Wno-unused-lambda-capture -Wno-unused-private-field -Wno-unused-property-ivar -DDEFAULT_TEST_WARNING_FLAGS_SENTINEL=1 -Werror=sign-conversion -Werror=shorten-64-to-32 -Wno-nullability-completeness -Wno-global-constructors -fobjc-arc-exceptions -Wno-deprecated-declarations -Wno-error=unused-command-line-argument
         OTHER_SWIFT_FLAGS: $(inherited) -no-warnings-as-errors
@@ -1733,7 +1731,6 @@ targets:
         MACH_O_TYPE: staticlib
         SWIFT_VERSION: "6.0"
         SWIFT_PACKAGE_NAME: idb
-        GENERATE_INFOPLIST_FILE: "YES"
         CLANG_ENABLE_OBJC_ARC: "YES"
         OTHER_CFLAGS: $(inherited) -Werror -Wall -Warray-bounds-pointer-arithmetic -Wassign-enum -Wcompare-distinct-pointer-types -Wconversion -Wdeprecated -Wduplicate-method-match -Wglobal-constructors -Wimplicit-fallthrough -Wimplicit-retain-self -Wint-in-bool-context -Wmissing-prototypes -Wnonportable-include-path -Wnonportable-system-include-path -Wnull-pointer-arithmetic -Wnull-pointer-subtraction -Wnullable-to-nonnull-conversion -Wobjc-signed-char-bool -Wrange-loop-analysis -Wshadow -Wstrict-prototypes -Wstring-concatenation -Wundeclared-selector -Wunguarded-availability -Wunterminated-string-initialization -Wunreachable-code-return -Wunused-function -Wno-error=conditional-uninitialized -Wno-error=objc-designated-initializers -Wno-error=objc-dictionary-duplicate-keys -Wno-error=pointer-to-enum-cast -Wno-error=pointer-to-int-cast -Werror=void-pointer-to-int-cast -Wno-error=tautological-bitwise-compare -Wno-error=tautological-compare -Wno-error=tautological-constant-compare -Wno-error=tautological-constant-in-range-compare -Wno-error=tautological-constant-out-of-range-compare -Wno-error=tautological-negation-compare -Wno-error=tautological-objc-bool-compare -Wno-error=tautological-overlap-compare -Wno-error=tautological-pointer-compare -Wno-error=tautological-type-limit-compare -Wno-error=tautological-undefined-compare -Wno-error=tautological-unsigned-char-zero-compare -Wno-error=tautological-unsigned-enum-zero-compare -Wno-error=tautological-unsigned-zero-compare -Wno-error=tautological-value-range-compare -Wno-error=unreachable-code-break -Wno-error=unreachable-code-fallthrough -Wno-error=unreachable-code-loop-increment -Wno-error=unreachable-code -Wno-error=unused-but-set-parameter -Wno-error=unused-but-set-variable -Wno-error=void-pointer-to-enum-cast -Wno-error=suggest-override -Wno-error=extra-semi -Wno-error=missing-noreturn -Wno-error=format-nonliteral -Wno-error=non-virtual-dtor -Wno-covered-switch-default -Wswitch-enum -Wswitch-default -Wno-error=c23-extensions -Wno-error=vla-cxx-extension -Wmissing-field-initializers -Wno-error=missing-field-initializers -Wbitwise-conditional-parentheses -Wno-error=bitwise-conditional-parentheses -Wlogical-not-parentheses -Wno-error=logical-not-parentheses -Wlogical-op-parentheses -Wno-error=logical-op-parentheses -Wno-float-conversion -Wno-implicit-float-conversion -Wno-implicit-int-float-conversion -Wno-implicit-int-conversion -Wno-shorten-64-to-32 -Wno-sign-conversion -Wfloat-overflow-conversion -Wfloat-zero-conversion -Wobjc-signed-char-bool-implicit-float-conversion -Wobjc-signed-char-bool-implicit-int-conversion -Wno-deprecated-declarations -Wno-deprecated-copy-dtor -Wno-deprecated-copy-with-dtor -Wno-deprecated-dynamic-exception-spec -Wno-deprecated-implementations -Wno-deprecated-redundant-constexpr-static-def -Wno-non-c-typedef-for-linkage -Wno-psabi -Wno-gnu-folding-constant -Wno-c99-designator -Wno-deprecated-copy -Wno-final-dtor-non-final-class -Wno-gnu-inline-cpp-without-extern -Wno-range-loop-construct -Wno-reorder-init-list -Wno-deprecated-this-capture -Wno-error=ambiguous-reversed-operator -Wno-error=deprecated-anon-enum-enum-conversion -Wenum-enum-conversion -Wmisleading-indentation -Wno-unknown-warning-option -Wno-module-conflict -Wno-deprecated-copy-with-user-provided-dtor -Wno-deprecated-experimental-coroutine -Wundef-prefix=__IPHONE_1,__IPHONE_2,__IPHONE_3,FB_AT_LEAST_IOS,META_AT_LEAST,FB_IOS,META_IOS,FB_64,META_64,META_TARGET,FBReport,FB_SWITCH -DDEFAULT_WARNING_FLAGS_SENTINEL=1 -Werror=sign-conversion -Werror=shorten-64-to-32 -Wnullability-completeness -fobjc-arc-exceptions -Wno-deprecated-declarations -Wno-error=unused-command-line-argument
       configs:
@@ -1754,11 +1751,11 @@ targets:
     settings:
       base:
         MACOSX_DEPLOYMENT_TARGET: "15.0"
+        GENERATE_INFOPLIST_FILE: "YES"
         PRODUCT_BUNDLE_IDENTIFIER: com.facebook.IDBTelemetryTests
         PRODUCT_NAME: IDBTelemetryTests
         SWIFT_VERSION: "5.0"
         SWIFT_PACKAGE_NAME: idb
-        GENERATE_INFOPLIST_FILE: "YES"
         CLANG_ENABLE_OBJC_ARC: "YES"
         OTHER_CFLAGS: $(inherited) -Werror -Wall -Warray-bounds-pointer-arithmetic -Wassign-enum -Wcompare-distinct-pointer-types -Wconversion -Wdeprecated -Wduplicate-method-match -Wglobal-constructors -Wimplicit-fallthrough -Wimplicit-retain-self -Wint-in-bool-context -Wmissing-prototypes -Wnonportable-include-path -Wnonportable-system-include-path -Wnull-pointer-arithmetic -Wnull-pointer-subtraction -Wnullable-to-nonnull-conversion -Wobjc-signed-char-bool -Wrange-loop-analysis -Wshadow -Wstrict-prototypes -Wstring-concatenation -Wundeclared-selector -Wunguarded-availability -Wunterminated-string-initialization -Wunreachable-code-return -Wunused-function -Wno-error=conditional-uninitialized -Wno-error=objc-designated-initializers -Wno-error=objc-dictionary-duplicate-keys -Wno-error=pointer-to-enum-cast -Wno-error=pointer-to-int-cast -Werror=void-pointer-to-int-cast -Wno-error=tautological-bitwise-compare -Wno-error=tautological-compare -Wno-error=tautological-constant-compare -Wno-error=tautological-constant-in-range-compare -Wno-error=tautological-constant-out-of-range-compare -Wno-error=tautological-negation-compare -Wno-error=tautological-objc-bool-compare -Wno-error=tautological-overlap-compare -Wno-error=tautological-pointer-compare -Wno-error=tautological-type-limit-compare -Wno-error=tautological-undefined-compare -Wno-error=tautological-unsigned-char-zero-compare -Wno-error=tautological-unsigned-enum-zero-compare -Wno-error=tautological-unsigned-zero-compare -Wno-error=tautological-value-range-compare -Wno-error=unreachable-code-break -Wno-error=unreachable-code-fallthrough -Wno-error=unreachable-code-loop-increment -Wno-error=unreachable-code -Wno-error=unused-but-set-parameter -Wno-error=unused-but-set-variable -Wno-error=void-pointer-to-enum-cast -Wno-error=suggest-override -Wno-error=extra-semi -Wno-error=missing-noreturn -Wno-error=format-nonliteral -Wno-error=non-virtual-dtor -Wno-covered-switch-default -Wswitch-enum -Wswitch-default -Wno-error=c23-extensions -Wno-error=vla-cxx-extension -Wmissing-field-initializers -Wno-error=missing-field-initializers -Wbitwise-conditional-parentheses -Wno-error=bitwise-conditional-parentheses -Wlogical-not-parentheses -Wno-error=logical-not-parentheses -Wlogical-op-parentheses -Wno-error=logical-op-parentheses -Wno-float-conversion -Wno-implicit-float-conversion -Wno-implicit-int-float-conversion -Wno-implicit-int-conversion -Wno-shorten-64-to-32 -Wno-sign-conversion -Wfloat-overflow-conversion -Wfloat-zero-conversion -Wobjc-signed-char-bool-implicit-float-conversion -Wobjc-signed-char-bool-implicit-int-conversion -Wno-deprecated-declarations -Wno-deprecated-copy-dtor -Wno-deprecated-copy-with-dtor -Wno-deprecated-dynamic-exception-spec -Wno-deprecated-implementations -Wno-deprecated-redundant-constexpr-static-def -Wno-non-c-typedef-for-linkage -Wno-psabi -Wno-gnu-folding-constant -Wno-c99-designator -Wno-deprecated-copy -Wno-final-dtor-non-final-class -Wno-gnu-inline-cpp-without-extern -Wno-range-loop-construct -Wno-reorder-init-list -Wno-deprecated-this-capture -Wno-error=ambiguous-reversed-operator -Wno-error=deprecated-anon-enum-enum-conversion -Wenum-enum-conversion -Wmisleading-indentation -Wno-unknown-warning-option -Wno-module-conflict -Wno-deprecated-copy-with-user-provided-dtor -Wno-deprecated-experimental-coroutine -Wundef-prefix=__IPHONE_1,__IPHONE_2,__IPHONE_3,FB_AT_LEAST_IOS,META_AT_LEAST,FB_IOS,META_IOS,FB_64,META_64,META_TARGET,FBReport,FB_SWITCH -DDEFAULT_WARNING_FLAGS_SENTINEL=1 -Wno-error=assign-enum -Wno-error=deprecated -Wno-error=deprecated-anon-enum-enum-conversion -Wno-error=deprecated-array-compare -Wno-error=deprecated-attributes -Wno-error=deprecated-comma-subscript -Wno-error=deprecated-copy -Wno-error=deprecated-copy-with-user-provided-copy -Wno-error=deprecated-copy-with-dtor -Wno-error=deprecated-copy-with-user-provided-dtor -Wno-error=deprecated-declarations -Wno-error=deprecated-dynamic-exception-spec -Wno-error=deprecated-enum-compare -Wno-error=deprecated-enum-compare-conditional -Wno-error=deprecated-enum-enum-conversion -Wno-error=deprecated-enum-float-conversion -Wno-error=deprecated-increment-bool -Wno-error=deprecated-pragma -Wno-error=deprecated-register -Wno-error=deprecated-this-capture -Wno-error=deprecated-volatile -Wno-error=deprecated-writable-strings -Wno-error=conversion -Wno-error=constant-conversion -Wno-error=bitfield-constant-conversion -Wno-error=objc-bool-constant-conversion -Wno-error=enum-conversion -Wno-error=enum-compare-conditional -Wno-error=enum-enum-conversion -Wno-error=enum-float-conversion -Wno-error=float-conversion -Wno-error=float-overflow-conversion -Wno-error=float-zero-conversion -Wno-error=implicit-fallthrough -Wno-error=implicit-float-conversion -Wno-error=implicit-int-float-conversion -Wno-error=implicit-const-int-float-conversion -Wno-error=objc-signed-char-bool-implicit-float-conversion -Wno-error=implicit-int-conversion -Wno-error=objc-signed-char-bool-implicit-int-conversion -Wno-error=int-conversion -Wno-error=literal-conversion -Wno-error=non-literal-null-conversion -Wno-error=nonnull -Wno-error=null-conversion -Wno-error=objc-literal-conversion -Wno-error=shorten-64-to-32 -Wno-error=string-conversion -Wno-error=nullable-to-nonnull-conversion -Wno-error=switch-enum -Wno-error=switch-default -Wno-mismatched-tags -Wno-objc-designated-initializers -Wno-reorder -Wno-sign-conversion -Wno-unused-lambda-capture -Wno-unused-private-field -Wno-unused-property-ivar -DDEFAULT_TEST_WARNING_FLAGS_SENTINEL=1 -Werror=sign-conversion -Werror=shorten-64-to-32 -Wno-nullability-completeness -Wno-global-constructors -fobjc-arc-exceptions -Wno-deprecated-declarations -Wno-error=unused-command-line-argument
         OTHER_SWIFT_FLAGS: $(inherited) -no-warnings-as-errors
