@@ -1,0 +1,454 @@
+{
+  "libraries": {
+    "FBArtifactStaging": {
+      "archives": [
+        "libFBArtifactStaging.a",
+        "libFBControlCore.a",
+        "libZstdDecompress.a",
+        "libFBControlCoreObjC.a"
+      ],
+      "frameworks": [
+        "Cocoa.framework",
+        "CoreGraphics.framework",
+        "Foundation.framework",
+        "Security.framework",
+        "ServiceManagement.framework",
+        "UniformTypeIdentifiers.framework"
+      ],
+      "linker_flags": [],
+      "resources": [],
+      "search_paths": []
+    },
+    "FBControlCore": {
+      "archives": [
+        "libFBControlCore.a",
+        "libFBControlCoreObjC.a"
+      ],
+      "frameworks": [
+        "Cocoa.framework",
+        "CoreGraphics.framework",
+        "Foundation.framework",
+        "ServiceManagement.framework",
+        "UniformTypeIdentifiers.framework"
+      ],
+      "linker_flags": [],
+      "resources": [],
+      "search_paths": []
+    },
+    "FBControlCoreObjC": {
+      "archives": [
+        "libFBControlCoreObjC.a"
+      ],
+      "frameworks": [
+        "Foundation.framework"
+      ],
+      "linker_flags": [],
+      "resources": [],
+      "search_paths": []
+    },
+    "FBDeviceControl": {
+      "archives": [
+        "libFBDeviceControl.a",
+        "libFBControlCore.a",
+        "libFBXCTestCore.a",
+        "libFBVideoCore.a",
+        "libFBControlCoreObjC.a"
+      ],
+      "frameworks": [
+        "AVFoundation.framework",
+        "Cocoa.framework",
+        "CoreGraphics.framework",
+        "CoreMedia.framework",
+        "CoreMediaIO.framework",
+        "CoreVideo.framework",
+        "Foundation.framework",
+        "IOKit.framework",
+        "ServiceManagement.framework",
+        "UniformTypeIdentifiers.framework"
+      ],
+      "linker_flags": [],
+      "resources": [],
+      "search_paths": [
+        "PrivateHeaders"
+      ]
+    },
+    "FBProfilingCore": {
+      "archives": [
+        "libFBProfilingCore.a",
+        "libFBControlCore.a",
+        "libFBControlCoreObjC.a"
+      ],
+      "frameworks": [
+        "Cocoa.framework",
+        "CoreGraphics.framework",
+        "Foundation.framework",
+        "ServiceManagement.framework",
+        "UniformTypeIdentifiers.framework"
+      ],
+      "linker_flags": [],
+      "resources": [],
+      "search_paths": []
+    },
+    "FBSimulatorAX": {
+      "archives": [
+        "libFBSimulatorAX.a",
+        "libFBSimulatorBridgeProtocol.a",
+        "libFBControlCore.a",
+        "libFBSimulatorControl.a",
+        "libFBControlCoreObjC.a",
+        "libShimulatorProtocol.a",
+        "libShimulatorAudioInjectionCore.a",
+        "libSimulatorIPC.a"
+      ],
+      "frameworks": [
+        "AppKit.framework",
+        "Cocoa.framework",
+        "CoreGraphics.framework",
+        "CoreImage.framework",
+        "Foundation.framework",
+        "IOSurface.framework",
+        "ServiceManagement.framework",
+        "UniformTypeIdentifiers.framework"
+      ],
+      "linker_flags": [
+        "-weak_library",
+        "PrivateHeaders/AccessibilityPlatformTranslation/AccessibilityPlatformTranslation.tbd",
+        "-weak_library",
+        "PrivateHeaders/CoreSimulator/CoreSimulator.tbd"
+      ],
+      "resources": [
+        "SimulatorFrameworkBridge-tvOS",
+        "SimulatorFrameworkBridge-iOS",
+        "libRepl-iOS.dylib",
+        "libShimulator-iOS.dylib",
+        "libRepl-macOS.dylib",
+        "libShimulator-macOS.dylib"
+      ],
+      "search_paths": [
+        "PrivateHeaders"
+      ]
+    },
+    "FBSimulatorBridgeProtocol": {
+      "archives": [
+        "libFBSimulatorBridgeProtocol.a"
+      ],
+      "frameworks": [
+        "Foundation.framework"
+      ],
+      "linker_flags": [],
+      "resources": [],
+      "search_paths": []
+    },
+    "FBSimulatorCodeInjection": {
+      "archives": [
+        "libFBSimulatorCodeInjection.a",
+        "libFBControlCore.a",
+        "libFBSimulatorControl.a",
+        "libFBSimulatorXCTest.a",
+        "libFBXCTestCore.a",
+        "libFBControlCoreObjC.a",
+        "libShimulatorProtocol.a",
+        "libShimulatorAudioInjectionCore.a",
+        "libFBSimulatorBridgeProtocol.a",
+        "libSimulatorIPC.a"
+      ],
+      "frameworks": [
+        "Cocoa.framework",
+        "CoreGraphics.framework",
+        "CoreImage.framework",
+        "Foundation.framework",
+        "IOKit.framework",
+        "IOSurface.framework",
+        "ServiceManagement.framework",
+        "UniformTypeIdentifiers.framework"
+      ],
+      "linker_flags": [
+        "-weak_library",
+        "PrivateHeaders/CoreSimulator/CoreSimulator.tbd"
+      ],
+      "resources": [
+        "SimulatorFrameworkBridge-tvOS",
+        "SimulatorFrameworkBridge-iOS",
+        "libRepl-iOS.dylib",
+        "libShimulator-iOS.dylib",
+        "libRepl-macOS.dylib",
+        "libShimulator-macOS.dylib"
+      ],
+      "search_paths": [
+        "PrivateHeaders"
+      ]
+    },
+    "FBSimulatorControl": {
+      "archives": [
+        "libFBSimulatorControl.a",
+        "libShimulatorProtocol.a",
+        "libShimulatorAudioInjectionCore.a",
+        "libFBControlCore.a",
+        "libFBSimulatorBridgeProtocol.a",
+        "libSimulatorIPC.a",
+        "libFBControlCoreObjC.a"
+      ],
+      "frameworks": [
+        "Cocoa.framework",
+        "CoreGraphics.framework",
+        "CoreImage.framework",
+        "Foundation.framework",
+        "IOSurface.framework",
+        "ServiceManagement.framework",
+        "UniformTypeIdentifiers.framework"
+      ],
+      "linker_flags": [
+        "-weak_library",
+        "PrivateHeaders/CoreSimulator/CoreSimulator.tbd"
+      ],
+      "resources": [
+        "SimulatorFrameworkBridge-tvOS",
+        "SimulatorFrameworkBridge-iOS",
+        "libRepl-iOS.dylib",
+        "libShimulator-iOS.dylib",
+        "libRepl-macOS.dylib",
+        "libShimulator-macOS.dylib"
+      ],
+      "search_paths": [
+        "PrivateHeaders"
+      ]
+    },
+    "FBSimulatorProfiling": {
+      "archives": [
+        "libFBSimulatorProfiling.a",
+        "libFBControlCore.a",
+        "libFBProfilingCore.a",
+        "libFBSimulatorControl.a",
+        "libFBControlCoreObjC.a",
+        "libShimulatorProtocol.a",
+        "libShimulatorAudioInjectionCore.a",
+        "libFBSimulatorBridgeProtocol.a",
+        "libSimulatorIPC.a"
+      ],
+      "frameworks": [
+        "Cocoa.framework",
+        "CoreGraphics.framework",
+        "CoreImage.framework",
+        "Foundation.framework",
+        "IOSurface.framework",
+        "ServiceManagement.framework",
+        "UniformTypeIdentifiers.framework"
+      ],
+      "linker_flags": [
+        "-weak_library",
+        "PrivateHeaders/CoreSimulator/CoreSimulator.tbd"
+      ],
+      "resources": [
+        "SimulatorFrameworkBridge-tvOS",
+        "SimulatorFrameworkBridge-iOS",
+        "libRepl-iOS.dylib",
+        "libShimulator-iOS.dylib",
+        "libRepl-macOS.dylib",
+        "libShimulator-macOS.dylib"
+      ],
+      "search_paths": [
+        "PrivateHeaders"
+      ]
+    },
+    "FBSimulatorVideo": {
+      "archives": [
+        "libFBSimulatorVideo.a",
+        "libFBControlCore.a",
+        "libFBSimulatorControl.a",
+        "libFBVideoCore.a",
+        "libFBControlCoreObjC.a",
+        "libShimulatorProtocol.a",
+        "libShimulatorAudioInjectionCore.a",
+        "libFBSimulatorBridgeProtocol.a",
+        "libSimulatorIPC.a"
+      ],
+      "frameworks": [
+        "AVFoundation.framework",
+        "Cocoa.framework",
+        "CoreGraphics.framework",
+        "CoreImage.framework",
+        "CoreMedia.framework",
+        "CoreText.framework",
+        "CoreVideo.framework",
+        "Foundation.framework",
+        "IOSurface.framework",
+        "ImageIO.framework",
+        "Metal.framework",
+        "QuartzCore.framework",
+        "ServiceManagement.framework",
+        "UniformTypeIdentifiers.framework",
+        "VideoToolbox.framework"
+      ],
+      "linker_flags": [
+        "-weak_library",
+        "PrivateHeaders/CoreSimulator/CoreSimulator.tbd"
+      ],
+      "resources": [
+        "SimulatorFrameworkBridge-tvOS",
+        "SimulatorFrameworkBridge-iOS",
+        "libRepl-iOS.dylib",
+        "libShimulator-iOS.dylib",
+        "libRepl-macOS.dylib",
+        "libShimulator-macOS.dylib"
+      ],
+      "search_paths": [
+        "PrivateHeaders"
+      ]
+    },
+    "FBSimulatorXCTest": {
+      "archives": [
+        "libFBSimulatorXCTest.a",
+        "libFBControlCore.a",
+        "libFBSimulatorControl.a",
+        "libFBXCTestCore.a",
+        "libFBControlCoreObjC.a",
+        "libShimulatorProtocol.a",
+        "libShimulatorAudioInjectionCore.a",
+        "libFBSimulatorBridgeProtocol.a",
+        "libSimulatorIPC.a"
+      ],
+      "frameworks": [
+        "Cocoa.framework",
+        "CoreGraphics.framework",
+        "CoreImage.framework",
+        "Foundation.framework",
+        "IOKit.framework",
+        "IOSurface.framework",
+        "ServiceManagement.framework",
+        "UniformTypeIdentifiers.framework"
+      ],
+      "linker_flags": [
+        "-weak_library",
+        "PrivateHeaders/CoreSimulator/CoreSimulator.tbd"
+      ],
+      "resources": [
+        "SimulatorFrameworkBridge-tvOS",
+        "SimulatorFrameworkBridge-iOS",
+        "libRepl-iOS.dylib",
+        "libShimulator-iOS.dylib",
+        "libRepl-macOS.dylib",
+        "libShimulator-macOS.dylib"
+      ],
+      "search_paths": [
+        "PrivateHeaders"
+      ]
+    },
+    "FBVideoCore": {
+      "archives": [
+        "libFBVideoCore.a",
+        "libFBControlCore.a",
+        "libFBControlCoreObjC.a"
+      ],
+      "frameworks": [
+        "AVFoundation.framework",
+        "Cocoa.framework",
+        "CoreGraphics.framework",
+        "CoreMedia.framework",
+        "CoreVideo.framework",
+        "Foundation.framework",
+        "ServiceManagement.framework",
+        "UniformTypeIdentifiers.framework"
+      ],
+      "linker_flags": [],
+      "resources": [],
+      "search_paths": []
+    },
+    "FBXCTestCore": {
+      "archives": [
+        "libFBXCTestCore.a",
+        "libFBControlCore.a",
+        "libFBControlCoreObjC.a"
+      ],
+      "frameworks": [
+        "Cocoa.framework",
+        "CoreGraphics.framework",
+        "Foundation.framework",
+        "IOKit.framework",
+        "ServiceManagement.framework",
+        "UniformTypeIdentifiers.framework"
+      ],
+      "linker_flags": [],
+      "resources": [],
+      "search_paths": []
+    },
+    "IDBConcurrency": {
+      "archives": [
+        "libIDBConcurrency.a"
+      ],
+      "frameworks": [
+        "Foundation.framework"
+      ],
+      "linker_flags": [],
+      "resources": [],
+      "search_paths": []
+    },
+    "IDBTelemetry": {
+      "archives": [
+        "libIDBTelemetry.a"
+      ],
+      "frameworks": [
+        "Foundation.framework"
+      ],
+      "linker_flags": [],
+      "resources": [],
+      "search_paths": []
+    },
+    "ShimulatorAudioInjectionCore": {
+      "archives": [
+        "libShimulatorAudioInjectionCore.a",
+        "libShimulatorProtocol.a",
+        "libSimulatorIPC.a"
+      ],
+      "frameworks": [
+        "Foundation.framework"
+      ],
+      "linker_flags": [],
+      "resources": [],
+      "search_paths": []
+    },
+    "ShimulatorProtocol": {
+      "archives": [
+        "libShimulatorProtocol.a",
+        "libSimulatorIPC.a"
+      ],
+      "frameworks": [
+        "Foundation.framework"
+      ],
+      "linker_flags": [],
+      "resources": [],
+      "search_paths": []
+    },
+    "SimScopeProtocol": {
+      "archives": [
+        "libSimScopeProtocol.a"
+      ],
+      "frameworks": [
+        "CoreGraphics.framework",
+        "Foundation.framework"
+      ],
+      "linker_flags": [],
+      "resources": [],
+      "search_paths": []
+    },
+    "SimulatorIPC": {
+      "archives": [
+        "libSimulatorIPC.a"
+      ],
+      "frameworks": [
+        "Foundation.framework"
+      ],
+      "linker_flags": [],
+      "resources": [],
+      "search_paths": []
+    },
+    "ZstdDecompress": {
+      "archives": [
+        "libZstdDecompress.a"
+      ],
+      "frameworks": [],
+      "linker_flags": [],
+      "resources": [],
+      "search_paths": []
+    }
+  }
+}
