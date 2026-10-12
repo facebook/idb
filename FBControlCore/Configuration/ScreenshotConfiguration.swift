@@ -71,7 +71,7 @@ public enum ScreenshotUnit: String, Hashable, Sendable {
 }
 
 /// Shrinks only; a factor or fit bound never enlarges.
-public enum ScreenshotScale: Hashable, Sendable {
+public enum ScreenshotScale: Sendable {
   /// Capture at the target's native resolution.
   case native
   /// Multiply both dimensions by a factor in (0, 1].

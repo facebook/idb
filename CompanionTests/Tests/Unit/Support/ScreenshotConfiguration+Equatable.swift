@@ -7,8 +7,23 @@
 
 @preconcurrency import FBControlCore
 
-// FBControlCore does not compare screenshot configurations, so it does not carry the conformance;
-// the translation tests compare whole values, so they declare it here.
+// FBControlCore does not compare screenshot configurations, so it does not carry these conformances;
+// the translation tests compare whole values, so they declare them here.
+
+extension ScreenshotScale: @retroactive Equatable {
+  public static func == (lhs: ScreenshotScale, rhs: ScreenshotScale) -> Bool {
+    switch (lhs, rhs) {
+    case (.native, .native):
+      return true
+    case let (.factor(left), .factor(right)):
+      return left == right
+    case let (.fit(leftWidth, leftHeight), .fit(rightWidth, rightHeight)):
+      return leftWidth == rightWidth && leftHeight == rightHeight
+    case (.native, _), (.factor, _), (.fit, _):
+      return false
+    }
+  }
+}
 
 extension ScreenshotConfiguration: @retroactive Equatable {
   public static func == (lhs: ScreenshotConfiguration, rhs: ScreenshotConfiguration) -> Bool {
