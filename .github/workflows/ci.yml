@@ -149,8 +149,17 @@ jobs:
       # and its indexer competes for CPU with everything the job writes.
       - name: Turn off Spotlight indexing
         run: sudo mdutil -a -i off || true
+      # The companion's test bundles generate the gRPC sources first, which needs
+      # protoc and the codegen plugins the companion build caches.
       - name: Install tools
-        run: brew install xcodegen xcbeautify
+        run: brew install xcodegen xcbeautify ${{ matrix.codegen && 'protobuf' || '' }}
+      - name: Cache protoc plugins
+        if: matrix.codegen
+        uses: actions/cache@v5
+        with:
+          path: |
+            Build/Codegen
+          key: protoc-plugins-${{ hashFiles('Package.swift', 'Package.resolved') }}-${{ runner.os }}
       # A suite that takes a booted simulator from its environment does not
       # boot one itself, so this job is the harness that supplies it, named by
       # DEVICE_UDID (forwarded through xcodebuild's TEST_RUNNER_ prefix).

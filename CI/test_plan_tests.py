@@ -89,6 +89,34 @@ class TestPlanTest(unittest.TestCase):
             (0, "Companion/idb_companion.xcodeproj\n"),
         )
 
+    def test_a_test_target_that_generates_the_grpc_sources_asks_its_job_for_codegen(
+        self,
+    ) -> None:
+        document = json.loads(json.dumps(PLAN))
+        document["schemes"]["CompanionTests"] = ["CompanionTests"]
+        document["testTargets"]["CompanionTests"] = {
+            "bootedSimulator": False,
+            "runner": "large",
+            "prerequisites": ["companion_tests"],
+            "project": "Companion/idb_companion.xcodeproj",
+        }
+        self.path.write_text(json.dumps(document))
+        status, output = self._run("matrix")
+        self.assertEqual(status, 0)
+        codegen = {
+            job["target"]: job["codegen"]
+            for job in json.loads(output.removeprefix("targets="))
+        }
+        self.assertEqual(
+            codegen,
+            {
+                "CompanionTests": True,
+                "FBControlCoreTests": False,
+                "FBSimulatorControlSmokeTests": False,
+                "FBSimulatorControlUnitTests": False,
+            },
+        )
+
     def test_a_scheme_spanning_two_projects_is_refused(self) -> None:
         document = json.loads(json.dumps(PLAN))
         document["testTargets"]["FBSimulatorControlSmokeTests"]["project"] = (
@@ -109,18 +137,21 @@ class TestPlanTest(unittest.TestCase):
                     "name": "FBControlCore",
                     "target": "FBControlCoreTests",
                     "bootedSimulator": False,
+                    "codegen": False,
                     "runsOn": "macos-26",
                 },
                 {
                     "name": "FBSimulatorControl Smoke",
                     "target": "FBSimulatorControlSmokeTests",
                     "bootedSimulator": True,
+                    "codegen": False,
                     "runsOn": "macos-26-xlarge",
                 },
                 {
                     "name": "FBSimulatorControl Unit",
                     "target": "FBSimulatorControlUnitTests",
                     "bootedSimulator": False,
+                    "codegen": False,
                     "runsOn": "macos-26",
                 },
             ],

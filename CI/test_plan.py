@@ -24,6 +24,9 @@ DEFAULT_PROJECT = "FBSimulatorControl.xcodeproj"
 
 # The GitHub-hosted runner each runner class in the plan runs on.
 RUNNER_LABELS: Mapping[str, str] = {"standard": "macos-26", "large": "macos-26-xlarge"}
+# The build.sh steps that generate the gRPC sources, so a job that runs one needs
+# protoc and the codegen plugins the companion build uses.
+CODEGEN_PREREQUISITES: frozenset[str] = frozenset({"companion_tests"})
 
 
 @dataclass(frozen=True)
@@ -104,6 +107,9 @@ class TestPlan:
                 "name": self.display_name(target.name),
                 "target": target.name,
                 "bootedSimulator": target.booted_simulator,
+                "codegen": bool(
+                    CODEGEN_PREREQUISITES.intersection(target.prerequisites)
+                ),
                 "runsOn": RUNNER_LABELS[target.runner],
             }
             for target in sorted(self.test_targets.values(), key=lambda t: t.name)
