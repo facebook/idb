@@ -6,19 +6,34 @@
  */
 
 import Foundation
+import os
 
 /// Locates the `Resources/` directory that ships alongside the running binary and
 /// holds its bundled helper tools and shims (`SimulatorFrameworkBridge`,
 /// `libRepl-*.dylib`, `libShimulator-*.dylib`, `IDBAPI.swiftinterface`, `ReplHost.app`).
 public struct BundledResources {
 
+  /// Where a host keeps the resources itself. A host that links idb's libraries rather than
+  /// running idb's own binaries sets this to wherever it put the libraries' `Resources/`, and it
+  /// is used in place of the layouts `directoryPath()` otherwise derives from the running bundle.
+  public static var hostDirectoryPath: String? {
+    get { hostDirectory.withLock { $0 } }
+    set { hostDirectory.withLock { $0 = newValue } }
+  }
+
+  private static let hostDirectory = OSAllocatedUnfairLock<String?>(initialState: nil)
+
   /// The path to the bundled `Resources/` directory, or `nil` when it cannot be
   /// determined from the running bundle.
   ///
-  /// Two packaging layouts are supported, each with its own resources location:
+  /// `hostDirectoryPath`, when a host has set it, wins. Otherwise two packaging layouts are
+  /// supported, each with its own resources location:
   /// - an `.app` bundle, where the resources are the bundle's own resources;
   /// - a standalone binary with a sibling `Resources/` directory next to it.
   public static func directoryPath() -> String? {
+    if let hostDirectoryPath {
+      return hostDirectoryPath
+    }
     let bundle = Bundle.main
     let bundleURL = bundle.bundleURL.standardizedFileURL
     if bundleURL.pathExtension == "app", let resourceURL = bundle.resourceURL {
