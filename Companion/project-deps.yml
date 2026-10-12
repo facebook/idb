@@ -35,7 +35,7 @@ targets:
         embed: false
       - framework: ../Build/Products/Release/libFBVideoCore.a
         embed: false
-      - framework: ../Build/Products/Release/FBXCTestCore.framework
+      - framework: ../Build/Products/Release/libFBXCTestCore.a
         embed: false
       - framework: ../Build/Products/Release/libIDBConcurrency.a
         embed: false
@@ -139,7 +139,7 @@ targets:
         embed: false
       - framework: ../Build/Products/Release/libFBVideoCore.a
         embed: false
-      - framework: ../Build/Products/Release/FBXCTestCore.framework
+      - framework: ../Build/Products/Release/libFBXCTestCore.a
         embed: false
       - framework: ../Build/Products/Release/libIDBConcurrency.a
         embed: false
@@ -177,7 +177,7 @@ targets:
         embed: false
       - framework: ../Build/Products/Release/libFBVideoCore.a
         embed: false
-      - framework: ../Build/Products/Release/FBXCTestCore.framework
+      - framework: ../Build/Products/Release/libFBXCTestCore.a
         embed: false
       - framework: ../Build/Products/Release/libIDBConcurrency.a
         embed: false

@@ -1,6 +1,0 @@
-framework module FBXCTestCore {
-    umbrella header "FBXCTestCore.h"
-
-    export *
-    module * { export * }
-}
