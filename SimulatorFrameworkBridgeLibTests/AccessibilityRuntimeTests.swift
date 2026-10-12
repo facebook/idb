@@ -2633,6 +2633,23 @@ final class AccessibilityRuntimeTests: XCTestCase {
     }
   }
 
+  func testAClientTypeOnAnXCTestTraversalIsRefused() {
+    runtime.applicationElements[NSNumber(value: kAppPid)] = FBAXFakeElement.readable("root")
+    for traversal in [nil, "view-hierarchy", "single-fetch"] as [String?] {
+      var request: [String: Any] = ["verb": "describe", "pid": kAppPid, "clientType": 4]
+      request["traversal"] = traversal
+      let response = FBAccessibilityService.handleRequest(request)
+
+      assertEqualObjects(response["ok"], false)
+      assertEqualObjects(response["error_kind"], "bad_request")
+      XCTAssertEqual(
+        response["error"] as? String,
+        "a client type applies only to the semantic traversal: \(traversal ?? "view-hierarchy") makes no translator request")
+    }
+    XCTAssertEqual(runtime.snapshotCount, 0)
+    XCTAssertEqual(runtime.translatorReadCount, 0)
+  }
+
   func testSnapshotSelectionDoesNotInterpretUnusedTraversalFlags() {
     runtime.applicationElements[NSNumber(value: kAppPid)] = FBAXFakeElement.readable("root")
 

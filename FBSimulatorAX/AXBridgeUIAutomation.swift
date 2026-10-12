@@ -191,9 +191,13 @@ final class AXBridgeUIAutomation: AXBridgeTreeReader, @unchecked Sendable {
     )
   }
 
-  /// A single fetch that asks for reachability hit-tests every node and times out rather than
+  /// A read that names a client walks the translator vocabulary, the only one a client changes. Otherwise a
+  /// single fetch, except that one asking for reachability hit-tests every node and times out rather than
   /// answering, so those keys force the per-node walk.
   static func autoTraversal(for options: AccessibilityRequestOptions) -> AXTraversal {
+    if options.clientType != nil {
+      return .semantic
+    }
     guard options.serializationKeys.isDisjoint(with: AXKeys.reachabilityKeys) else {
       return .viewHierarchy
     }
@@ -319,7 +323,8 @@ final class AXBridgeUIAutomation: AXBridgeTreeReader, @unchecked Sendable {
           return AccessibilitySearchResult(match: nil, diagnostics: AccessibilitySearchDiagnostics(readError: error.localizedDescription))
         case .elementNotFound, .elementNotOnScreen, .frameUnavailable, .noElementAtPoint,
           .timedOut, .markerRequired, .pointOrMarkerRequired, .invalidPollInterval,
-          .operationUnsupported, .valueMismatch, .elementMoved, .writeUnconfirmed, .traversalCannotAnswer:
+          .operationUnsupported, .valueMismatch, .elementMoved, .writeUnconfirmed, .traversalCannotAnswer,
+          .clientNeedsTranslatorVocabulary:
           throw error
         }
       } catch let error as AXBridgeError {

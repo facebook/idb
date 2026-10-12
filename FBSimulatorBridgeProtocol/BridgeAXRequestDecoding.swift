@@ -28,6 +28,8 @@ public enum BridgeAXRequestError: Error, Equatable, Sendable {
   case unsupportedTraversal(BridgeJSONValue)
   /// The client type is not an integer, or not one the translator carries.
   case unsupportedClientType(BridgeJSONValue)
+  /// A read named a client but a traversal that makes no translator request.
+  case clientTypeNeedsSemanticTraversal(BridgeAXTraversal)
   /// A flag that is neither a boolean, a number nor a string.
   case malformedFlag(BridgeAXWire.Request)
   case negativeTunable(BridgeAXWire.Request, Int)
@@ -209,6 +211,10 @@ private struct Fields {
   /// A flag the selected traversal does not use is not read, so a malformed one does not fail the read.
   func readOptions() throws(BridgeAXRequestError) -> BridgeAXReadOptions {
     let traversal = try traversal()
+    let clientType = try clientType()
+    if clientType != .noClient, traversal != .semantic {
+      throw .clientTypeNeedsSemanticTraversal(traversal)
+    }
     let explainUnreachable = traversal == .viewHierarchy ? try flag(.explainUnreachable) : (try? flag(.explainUnreachable)) ?? false
     return BridgeAXReadOptions(
       maxDepth: measure(.maxDepth).map { Int($0.int32Value) } ?? BridgeAXReadOptions.defaultMaxDepth,
@@ -217,7 +223,7 @@ private struct Fields {
       explainUnreachable: explainUnreachable,
       traversal: traversal,
       automationMode: number(.automationMode)?.boolValue,
-      clientType: try clientType()
+      clientType: clientType
     )
   }
 

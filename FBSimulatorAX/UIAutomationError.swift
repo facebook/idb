@@ -73,6 +73,9 @@ public enum UIAutomationError: LocalizedError, CustomStringConvertible, Sendable
   /// The caller explicitly named a traversal that cannot answer keys they also asked for. Refused up
   /// front rather than attempted: the read would time out in the guest, not fail cleanly.
   case traversalCannotAnswer(backend: UIAutomationBackend, traversal: String, keys: [String])
+  /// A read named a client but also a traversal that builds no translator request, so the client could not
+  /// be applied.
+  case clientNeedsTranslatorVocabulary(backend: UIAutomationBackend, traversal: String)
 
   public var description: String { errorDescription ?? "UIAutomationError" }
 
@@ -109,6 +112,8 @@ public enum UIAutomationError: LocalizedError, CustomStringConvertible, Sendable
       return underlying.localizedDescription
     case let .traversalCannotAnswer(_, traversal, keys):
       return "the \(traversal) traversal cannot read \(keys.joined(separator: ", ")); drop --traversal to let the backend choose, or name view-hierarchy"
+    case let .clientNeedsTranslatorVocabulary(_, traversal):
+      return "a client applies only to the semantic traversal: the \(traversal) traversal reads XCTest's attributes and makes no translator request; drop --traversal to let the backend choose, or name semantic"
     }
   }
 

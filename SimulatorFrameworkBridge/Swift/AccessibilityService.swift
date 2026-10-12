@@ -1408,6 +1408,8 @@ private final class AccessibilityRequest {
       return badRequest("\(key.key) must not be negative, got \(value)")
     case let .malformedFlag(key):
       return badRequest("\(key.key) must be a boolean")
+    case let .clientTypeNeedsSemanticTraversal(traversal):
+      return badRequest("a client type applies only to the semantic traversal: \(traversal.rawValue) makes no translator request")
     case let .unsupportedClientType(value):
       return badRequest("unsupported client type: \(describe(value)); expected an integer from 0 to \(BridgeAXClientType.allCases.count - 1)")
     case let .unsupportedTraversal(value):

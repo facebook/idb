@@ -63,7 +63,7 @@ final class BridgeAXRequestTests: XCTestCase {
   func testEachClientTypeDecodesFromItsIntegerOnReadsAndHitTests() throws {
     for clientType in BridgeAXClientType.allCases {
       let raw = BridgeJSONValue.integer(Int64(clientType.rawValue))
-      guard case let .read(_, options, _) = try BridgeAXRequest(payload: ["verb": .string("describe"), "pid": .integer(5), "clientType": raw]) else {
+      guard case let .read(_, options, _) = try BridgeAXRequest(payload: ["verb": .string("describe"), "pid": .integer(5), "traversal": .string("semantic"), "clientType": raw]) else {
         return XCTFail("not a read")
       }
       XCTAssertEqual(options.clientType, clientType)
@@ -72,6 +72,19 @@ final class BridgeAXRequestTests: XCTestCase {
         return XCTFail("not a hit-test")
       }
       XCTAssertEqual(hitClient, clientType)
+    }
+  }
+
+  func testAnXCTestTraversalAcceptsOnlyNoClient() throws {
+    for traversal in [BridgeAXTraversal.viewHierarchy, .singleFetch] {
+      guard
+        case let .read(_, options, _) = try BridgeAXRequest(payload: [
+          "verb": .string("describe"), "pid": .integer(5), "traversal": .string(traversal.rawValue), "clientType": .integer(0),
+        ])
+      else {
+        return XCTFail("not a read")
+      }
+      XCTAssertEqual(options.clientType, .noClient)
     }
   }
 
@@ -123,6 +136,8 @@ final class BridgeAXRequestTests: XCTestCase {
       (["verb": .string("describe"), "pid": .integer(5), "traversal": .null], .unsupportedTraversal(.null)),
       (["verb": .string("describe"), "pid": .integer(5), "traversal": .string("sideways")], .unsupportedTraversal(.string("sideways"))),
       (["verb": .string("describe"), "pid": .integer(5), "clientType": .integer(12)], .unsupportedClientType(.integer(12))),
+      (["verb": .string("describe"), "pid": .integer(5), "clientType": .integer(4)], .clientTypeNeedsSemanticTraversal(.viewHierarchy)),
+      (["verb": .string("describe"), "pid": .integer(5), "traversal": .string("single-fetch"), "clientType": .integer(4)], .clientTypeNeedsSemanticTraversal(.singleFetch)),
       (["verb": .string("describe"), "pid": .integer(5), "clientType": .string("xctest")], .unsupportedClientType(.string("xctest"))),
       (["verb": .string("hittest"), "x": .integer(1), "y": .integer(2), "clientType": .integer(-1)], .unsupportedClientType(.integer(-1))),
       (["verb": .string("describe"), "pid": .integer(5), "explainUnreachable": .object([:])], .malformedFlag(.explainUnreachable)),

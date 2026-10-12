@@ -102,6 +102,15 @@ private struct AXBridgeReadPlan {
 
 extension AXBridgeTreeReader {
 
+  /// A named client is carried only by translator requests; an explicit XCTest-vocabulary traversal makes
+  /// none, so the read is refused rather than silently ignoring the client.
+  func refuseClientWithoutTranslatorVocabulary(_ options: AccessibilityRequestOptions, traversal: AXTraversal) throws {
+    guard options.clientType != nil, traversal != .semantic else {
+      return
+    }
+    throw UIAutomationError.clientNeedsTranslatorVocabulary(backend: backend, traversal: traversal.rawValue)
+  }
+
   /// Resolves the query, reads the raw tree, serializes it, and attaches response metadata.
   func describeTree(
     _ query: AccessibilityElementQuery,
@@ -118,6 +127,7 @@ extension AXBridgeTreeReader {
         .withClient(options.clientType.map(AccessibilityClientReport.init))
     case let .marker(value, key, _, ignoresCase):
       let plan = Self.readPlan(for: options, including: [key.serializationKey], explainUnreachable: false)
+      try refuseClientWithoutTranslatorVocabulary(options, traversal: plan.traversal)
       let read = try await readRawTree(
         for: query, attributes: plan.attributes,
         explainUnreachable: plan.explainUnreachable, traversal: plan.traversal, clientType: options.resolvedClientType
@@ -153,6 +163,7 @@ extension AXBridgeTreeReader {
         for: options,
         explainUnreachable: options.keys.contains(.occludedBy)
       )
+      try refuseClientWithoutTranslatorVocabulary(options, traversal: plan.traversal)
       // A single fetch cannot answer reachability (the app hit-tests every node and times out). `.auto`
       // never routes here, so only an explicit choice can; refuse rather than time out in the guest.
       let unanswerable = plan.serializationKeys.intersection(AXKeys.reachabilityKeys)

@@ -80,7 +80,8 @@ public extension UIAutomationError {
       return .rereadFirst
     case let .writeUnconfirmed(_, idempotent, _):
       return idempotent ? .idempotent : .outcomeUnknown
-    case .markerRequired, .pointOrMarkerRequired, .invalidPollInterval, .operationUnsupported, .traversalCannotAnswer:
+    case .markerRequired, .pointOrMarkerRequired, .invalidPollInterval, .operationUnsupported, .traversalCannotAnswer,
+      .clientNeedsTranslatorVocabulary:
       return .willNotChange
     }
   }

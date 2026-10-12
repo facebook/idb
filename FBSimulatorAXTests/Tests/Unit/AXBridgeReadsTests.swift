@@ -1692,7 +1692,7 @@ final class AXBridgeReadsTests: XCTestCase {
   func testDescribeTreeReadsAsTheNamedClientAndReportsIt() async throws {
     for query in [AccessibilityElementQuery.frontmost, .marker(value: "General", key: .label, depth: 10)] {
       let named = StubAXBridgeTreeReader(read: Self.stubRead())
-      let response = try await named.describeTree(query, options: AccessibilityRequestOptions(clientType: .xctest))
+      let response = try await named.describeTree(query, options: AccessibilityRequestOptions(traversalStrategy: .semantic, clientType: .xctest))
       XCTAssertEqual(named.clientTypes, [.xctest], "\(query)")
       XCTAssertEqual(response.client, AccessibilityClientReport(clientType: .xctest), "\(query)")
 
@@ -1717,6 +1717,30 @@ final class AXBridgeReadsTests: XCTestCase {
       }
       XCTAssertEqual(sent, clientType ?? .noClient)
       XCTAssertEqual(response.client, clientType.map(AccessibilityClientReport.init))
+    }
+  }
+
+  func testANamedClientAutoResolvesToTheSemanticWalk() {
+    for keys in [AXKeys.defaultSet, [.interactable]] {
+      XCTAssertEqual(AXBridgeUIAutomation.resolvedTraversal(for: AccessibilityRequestOptions(keys: keys, clientType: .xctest)), .semantic)
+      XCTAssertEqual(AXBridgeUIAutomation.resolvedTraversal(for: AccessibilityRequestOptions(keys: keys, clientType: .noClient)), .semantic)
+    }
+    XCTAssertEqual(AXBridgeUIAutomation.resolvedTraversal(for: AccessibilityRequestOptions()), .singleFetch)
+    XCTAssertEqual(AXBridgeUIAutomation.resolvedTraversal(for: AccessibilityRequestOptions(keys: [.interactable])), .viewHierarchy)
+  }
+
+  func testAClientWithAnExplicitXCTestTraversalIsRefusedBeforeReading() async throws {
+    for strategy in [AXTraversalStrategy.viewHierarchy, .singleFetch] {
+      for query in [AccessibilityElementQuery.frontmost, .marker(value: "General", key: .label, depth: 10)] {
+        let reader = StubAXBridgeTreeReader(read: Self.stubRead())
+        do {
+          _ = try await reader.describeTree(query, options: AccessibilityRequestOptions(traversalStrategy: strategy, clientType: .xctest))
+          XCTFail("\(strategy) with a client must be refused")
+        } catch let UIAutomationError.clientNeedsTranslatorVocabulary(_, traversal) {
+          XCTAssertEqual(traversal, strategy.rawValue)
+        }
+        XCTAssertEqual(reader.readCount, 0, "\(strategy) \(query)")
+      }
     }
   }
 
