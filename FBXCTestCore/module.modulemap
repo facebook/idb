@@ -3,7 +3,4 @@ framework module FBXCTestCore {
 
     export *
     module * { export * }
-
-    // Explicitly exclude headers that import private frameworks
-    exclude header "FBTestReporterAdapter.h"
 }

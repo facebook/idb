@@ -713,9 +713,6 @@ targets:
           - "**/*.xcconfig"
           - "**/*.md"
           - "**/*.modulemap"
-          - "**/FBTestReporterAdapter.h"
-      - path: FBXCTestCore/TestManager/FBTestReporterAdapter.h
-        headerVisibility: project
       - path: Shims/Shimulator/Tools/FBXCTestConstants.h
         headerVisibility: project
     settings:
