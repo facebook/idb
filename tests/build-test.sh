@@ -722,6 +722,27 @@ output="$(in_package "$dir" '
 assert_equal "building for the companion's tests builds the companion's archives" 'built FBControlCore Release
 built FBSimulatorControl Release' "$output"
 
+# Every build from the companion's project turns Swift's explicit modules off,
+# and testing the companion's schemes is a build from that project too. The
+# generated project's own schemes are left at Xcode's default.
+# shellcheck disable=SC2016
+explicit_modules_off='
+    set +u
+    test_plan() {
+        case "$1" in
+            project) [ "$2" = CompanionLibTests ] && echo Companion/idb_companion.xcodeproj || echo FBSimulatorControl.xcodeproj ;;
+        esac
+    }
+    invoke_xcodebuild() { printf "%s\n" "$@"; }
+    test_target "$scheme" | grep -c "^SWIFT_ENABLE_EXPLICIT_MODULES=NO$"
+'
+output="$(in_package "$dir" "scheme=CompanionLibTests; $explicit_modules_off")"
+# BUG: the companion's tests build with explicit modules on, where scanning
+# FBDeviceControl's bridging header fails -- flipped in the following commit.
+assert_equal "the companion's tests build with explicit modules off" 0 "$output"
+output="$(in_package "$dir" "scheme=FBControlCoreTests; $explicit_modules_off")"
+assert_equal "the generated project's tests keep Xcode's default" 0 "$output"
+
 if [ "$FAILURES" -ne 0 ]; then
     echo "$FAILURES assertion(s) failed"
     exit 1
