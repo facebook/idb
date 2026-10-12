@@ -196,10 +196,31 @@ public actor SimulatorVideoStream: VideoStreamOperation {
   private var lazyTriggers: LazyFrameTriggers?
 
   var pixelBuffer: CVPixelBuffer?
-  /// The frames the mounted pusher is set up for: the mounted surface as the interface shows it.
+  /// The mounted surface as the interface shows it.
   var mountedSource: VideoFrameSource?
   /// The surface the framebuffer last reported: the one the stream should show, whether or not it mounted.
   private var latestSurface: IOSurface?
+
+  /// What the encoder's frames are sized to. A live stream follows the mounted surface. A file's frame size cannot
+  /// change mid-recording (players show every frame at the first one's size), so a recording keeps the canvas of its
+  /// first mount and letterboxes any later surface into it.
+  private enum CanvasPolicy {
+    case followsSurface
+    case fixedAtFirstMount
+    case fixed(VideoFrameSource)
+  }
+
+  private var canvasPolicy: CanvasPolicy
+
+  /// The frames the mounted pusher is set up for: the mounted source, or the canvas a recording keeps.
+  var canvas: VideoFrameSource? {
+    switch canvasPolicy {
+    case .followsSurface, .fixedAtFirstMount:
+      return mountedSource
+    case let .fixed(canvas):
+      return canvas
+    }
+  }
   var timeAtFirstFrame: TimeInterval = 0
   var wallClockAtFirstFrame: TimeInterval = 0
   var timeAtLastPush: TimeInterval = 0
@@ -290,6 +311,7 @@ public actor SimulatorVideoStream: VideoStreamOperation {
     self.edgeInsets = edgeInsets
     self.cadence = cadence
     self.encodedSampleConsumerOverride = encodedSampleConsumerOverride
+    self.canvasPolicy = encodedSampleConsumerOverride == nil ? .followsSurface : .fixedAtFirstMount
     self.logger = logger
     self.clock = clock
     self.compositor = OverlayCompositor(edgeInsets: edgeInsets)
@@ -338,6 +360,8 @@ public actor SimulatorVideoStream: VideoStreamOperation {
     lifecycle = .starting(Session(consumer: consumer, attachment: attachment, eventTask: eventTask), startAwaiters: [])
     // When a surface is already available this mounts it synchronously (transitioning to
     // `.streaming`), otherwise the first surface event does.
+    // So the first mount is in the interface's orientation, which a recording's canvas is fixed by.
+    displayConfiguration = attachment.initialConfiguration
     if let surface = attachment.initialSurface {
       latestSurface = surface
       do {
@@ -551,13 +575,19 @@ public actor SimulatorVideoStream: VideoStreamOperation {
     }
     let rotation = interfaceRotation(of: buffer)
     let source = VideoFrameSource(buffer).rotated(rotation)
+    let canvas: VideoFrameSource
     let framePusher: any FramePusher
-    if let spare = spareFramePushers.take(source) {
+    if case let .fixed(fixed) = canvasPolicy, let mounted = self.framePusher {
+      canvas = fixed
+      framePusher = mounted
+    } else if let spare = spareFramePushers.take(source) {
+      canvas = source
       framePusher = spare
       logger.log("Mounting with the frame pusher prepared for a \(source) surface")
     } else {
+      canvas = source
       framePusher = try newFramePusher(consumer: consumer)
-      try framePusher.setup(source: source, edgeInsets: edgeInsets)
+      try framePusher.setup(source: canvas, edgeInsets: edgeInsets)
     }
 
     // Published only once every throwing step is past, so a mount is all-or-nothing: a failed one
@@ -569,15 +599,20 @@ public actor SimulatorVideoStream: VideoStreamOperation {
     self.pixelBufferAttributes = attributes
     self.framePusher = framePusher
     self.mountedSource = source
+    if case .fixedAtFirstMount = canvasPolicy {
+      canvasPolicy = .fixed(canvas)
+    }
     // Torn down or kept after the new pusher is published so a swap never leaves the stream without
     // a working pusher, and a teardown failure cannot fail an otherwise good mount.
-    if let previousFramePusher, preparesForDisplaySwitches, let previousSource, previousSource != source {
-      previousFramePusher.completeFrames()
-      if let displaced = spareFramePushers.keep(previousFramePusher, for: previousSource) {
-        tearDown(displaced, after: "being replaced by the previous one")
+    if let previousFramePusher, previousFramePusher !== framePusher {
+      if preparesForDisplaySwitches, let previousSource, previousSource != source {
+        previousFramePusher.completeFrames()
+        if let displaced = spareFramePushers.keep(previousFramePusher, for: previousSource) {
+          tearDown(displaced, after: "being replaced by the previous one")
+        }
+      } else {
+        tearDown(previousFramePusher, after: "a surface swap")
       }
-    } else if let previousFramePusher {
-      tearDown(previousFramePusher, after: "a surface swap")
     }
     // Resolve the timed-metadata (chapter) sink. A recording file writer that supports chapters
     // supplies its own consumer; otherwise the streaming transport writer (fMP4 emsg / MPEG-TS ID3)
@@ -589,7 +624,7 @@ public actor SimulatorVideoStream: VideoStreamOperation {
     }
 
     compositor.configure(
-      sourceWidth: CVPixelBufferGetWidth(buffer), sourceHeight: CVPixelBufferGetHeight(buffer), rotation: rotation,
+      sourceWidth: CVPixelBufferGetWidth(buffer), sourceHeight: CVPixelBufferGetHeight(buffer), rotation: rotation, canvas: canvas,
       scaleFactor: configuration.scaleFactor)
     layOutOverlay()
     let insets = edgeInsets
@@ -682,10 +717,12 @@ public actor SimulatorVideoStream: VideoStreamOperation {
   }
 
   private func layOutOverlay() {
-    guard let layout = overlayLayout.withLock({ $0 }), let mountedSource else {
+    guard let layout = overlayLayout.withLock({ $0 }), let mountedSource, let canvas else {
       return
     }
-    let buffer = layout.layOut(screenPixelWidth: mountedSource.width, screenPixelHeight: mountedSource.height)
+    let buffer = layout.layOut(
+      screenPixelWidth: mountedSource.width, screenPixelHeight: mountedSource.height, canvasPixelWidth: canvas.width,
+      canvasPixelHeight: canvas.height)
     overlaySize = (CVPixelBufferGetWidth(buffer), CVPixelBufferGetHeight(buffer))
     updateOverlayBuffer(buffer)
   }
@@ -715,9 +752,9 @@ public actor SimulatorVideoStream: VideoStreamOperation {
 
   /// Sets up and warms a pusher for each surface size of the integrated displays a stream may switch to, so a
   /// switch does not start an encoder. Only once a configuration has several sizes, and once a surface is mounted,
-  /// as a pusher needs the consumer. Warming waits for one encode per size.
+  /// as a pusher needs the consumer. Warming waits for one encode per size. A recording keeps its one pusher.
   private func prepareSpareFramePushers() {
-    guard let displayConfiguration, let consumer, let mounted = mountedSource else {
+    guard case .followsSurface = canvasPolicy, let displayConfiguration, let consumer, let mounted = mountedSource else {
       return
     }
     var displays = displayConfiguration.displays.filter(\.isIntegrated)

@@ -166,15 +166,20 @@ public final class OverlayRenderer: VideoOverlayLayout, @unchecked Sendable {
     return createdBuffer
   }
 
-  /// Lays the overlay out for a screen of this size, keeping its shapes and bars, and returns the buffer they are
-  /// drawn in: a new one when the size changed.
-  public func layOut(screenPixelWidth: Int, screenPixelHeight: Int) -> CVPixelBuffer {
+  /// Lays the overlay out for a screen of this size in a canvas of this size, keeping its shapes and bars, and returns
+  /// the buffer they are drawn in: a new one when either size changed.
+  public func layOut(screenPixelWidth: Int, screenPixelHeight: Int, canvasPixelWidth: Int, canvasPixelHeight: Int) -> CVPixelBuffer {
     stateLock.lock()
     defer { stateLock.unlock() }
-    guard screenPixelWidth != layout.screenPixelWidth || screenPixelHeight != layout.screenPixelHeight else {
+    guard
+      screenPixelWidth != layout.screenPixelWidth || screenPixelHeight != layout.screenPixelHeight
+        || canvasPixelWidth != layout.canvasPixelWidth || canvasPixelHeight != layout.canvasPixelHeight
+    else {
       return storage
     }
-    layout = layout.resized(screenPixelWidth: screenPixelWidth, screenPixelHeight: screenPixelHeight)
+    layout = layout.resized(
+      screenPixelWidth: screenPixelWidth, screenPixelHeight: screenPixelHeight, canvasPixelWidth: canvasPixelWidth,
+      canvasPixelHeight: canvasPixelHeight)
     width = layout.bufferWidth
     height = layout.bufferHeight
     storage = Self.makeBuffer(width: width, height: height)

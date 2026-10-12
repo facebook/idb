@@ -97,9 +97,8 @@ final class SimulatorVideoStreamOrientationTests: XCTestCase {
 
     let canvas = await started.stream.canvasSize
     let screenshot = try pngSize(try await started.stream.captureCompositedScreenshot())
-    // BUG: the recording's canvas follows the rotation, so its file changes frame size mid-recording — flipped in the following commit
-    XCTAssertEqual(canvas, CGSize(width: 30, height: 28))
-    XCTAssertEqual(screenshot, CGSize(width: 30, height: 20))
+    XCTAssertEqual(canvas, CGSize(width: 20, height: 38))
+    XCTAssertEqual(screenshot, CGSize(width: 20, height: 30))
     try await started.stream.stopStreaming()
   }
 
@@ -112,9 +111,8 @@ final class SimulatorVideoStreamOrientationTests: XCTestCase {
 
     let canvas = await started.stream.canvasSize
     let screenshot = try pngSize(try await started.stream.captureCompositedScreenshot())
-    // BUG: the recording's canvas follows the larger surface, so its file changes frame size mid-recording — flipped in the following commit
-    XCTAssertEqual(canvas, CGSize(width: 40, height: 68))
-    XCTAssertEqual(screenshot, CGSize(width: 40, height: 60))
+    XCTAssertEqual(canvas, CGSize(width: 20, height: 38))
+    XCTAssertEqual(screenshot, CGSize(width: 20, height: 30))
     try await started.stream.stopStreaming()
   }
 

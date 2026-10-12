@@ -101,10 +101,10 @@ final class VideoSessionOverlayLayoutTests: XCTestCase {
 
     let composited = await size(session.stream.compositor.overlayBuffer)
     let screenOrigin = session.renderer.transform.bufferPoint(x: 0, y: 4)
-    // BUG: the overlay follows the recording's changing canvas rather than placing the turned screen within a fixed one — flipped in the following commit
-    XCTAssertEqual(size(session.renderer.buffer), CGSize(width: 30, height: 28))
-    XCTAssertEqual(composited, CGSize(width: 30, height: 28))
-    XCTAssertEqual(screenOrigin, CGPoint(x: 0, y: 4))
+    XCTAssertEqual(size(session.renderer.buffer), CGSize(width: 20, height: 38))
+    XCTAssertEqual(composited, CGSize(width: 20, height: 38))
+    XCTAssertEqual(screenOrigin.x, 0, accuracy: 0.001)
+    XCTAssertEqual(screenOrigin.y, 4 + (30 - 20 * 2.0 / 3) / 2, accuracy: 0.001)
     try await session.stream.stopStreaming()
   }
 }

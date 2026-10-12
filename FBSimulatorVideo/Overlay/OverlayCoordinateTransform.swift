@@ -37,6 +37,16 @@ public struct OverlayCoordinateTransform {
   /// The screen this transform lays overlays out on, in pixels as the interface shows it.
   let screenPixelWidth: Int
   let screenPixelHeight: Int
+  /// The screen area of the canvas the screen is shown in, in pixels. It differs from the screen when a recording
+  /// letterboxes a screen of another shape into the canvas it started with.
+  let canvasPixelWidth: Int
+  let canvasPixelHeight: Int
+  /// Map shape coordinates into the screen as the canvas shows it, scaled to fit and centred. Bars and the header
+  /// label span the canvas, so they keep `overlayScale`.
+  private let shapeScale: CGFloat
+  private let shapeCorrection: CGPoint
+  /// Where the screen sits within the canvas, in buffer pixels: zero unless the screen is letterboxed.
+  private let letterboxOffset: CGPoint
   private let retinaScale: CGFloat
   private let videoScale: CGFloat
   private let borders: (top: Int, scaledTop: Int, bottom: Int, scaledBottom: Int)
@@ -51,19 +61,25 @@ public struct OverlayCoordinateTransform {
     scaledBorderTop: Int,
     borderBottom: Int,
     scaledBorderBottom: Int,
-    coordSpace: OverlayCoordSpace = .composed
+    coordSpace: OverlayCoordSpace = .composed,
+    canvasPixelWidth: Int? = nil,
+    canvasPixelHeight: Int? = nil
   ) {
+    let canvasPixelWidth = canvasPixelWidth ?? screenPixelWidth
+    let canvasPixelHeight = canvasPixelHeight ?? screenPixelHeight
     self.screenPixelWidth = screenPixelWidth
     self.screenPixelHeight = screenPixelHeight
+    self.canvasPixelWidth = canvasPixelWidth
+    self.canvasPixelHeight = canvasPixelHeight
     self.retinaScale = retinaScale
     self.videoScale = videoScale
     self.borders = (borderTop, scaledBorderTop, borderBottom, scaledBorderBottom)
     self.coordSpace = coordSpace
-    self.bufferWidth = Int(Double(screenPixelWidth) * Double(videoScale))
+    self.bufferWidth = Int(Double(canvasPixelWidth) * Double(videoScale))
     // Must include both scaled insets so the overlay buffer matches the video frame; a shorter overlay is
     // shifted down by the compositor.
     self.bufferHeight =
-      Int(Double(screenPixelHeight) * Double(videoScale)) + scaledBorderTop + scaledBorderBottom
+      Int(Double(canvasPixelHeight) * Double(videoScale)) + scaledBorderTop + scaledBorderBottom
     self.overlayScale = videoScale * retinaScale
     self.headerHeight = CGFloat(scaledBorderTop)
     switch coordSpace {
@@ -75,41 +91,52 @@ public struct OverlayCoordinateTransform {
     case .device:
       self.insetCorrection = CGPoint(x: 0, y: CGFloat(scaledBorderTop))
     }
+    let fit =
+      screenPixelWidth > 0 && screenPixelHeight > 0
+      ? min(CGFloat(canvasPixelWidth) / CGFloat(screenPixelWidth), CGFloat(canvasPixelHeight) / CGFloat(screenPixelHeight)) : 1
+    self.shapeScale = overlayScale * fit
+    // A composed-space shape is pre-shifted by the unscaled header, which has to come off before the shape is fitted.
+    let headerShift = coordSpace == .composed ? CGFloat(borderTop) * (overlayScale - shapeScale) : 0
+    self.letterboxOffset = CGPoint(
+      x: (CGFloat(canvasPixelWidth) - CGFloat(screenPixelWidth) * fit) * videoScale / 2,
+      y: (CGFloat(canvasPixelHeight) - CGFloat(screenPixelHeight) * fit) * videoScale / 2)
+    self.shapeCorrection = CGPoint(x: insetCorrection.x + letterboxOffset.x, y: insetCorrection.y + headerShift + letterboxOffset.y)
   }
 
-  /// The same transform for a screen of another size, as after a rotation or a switch to another display.
-  func resized(screenPixelWidth: Int, screenPixelHeight: Int) -> OverlayCoordinateTransform {
+  /// The same transform for a screen of another size shown in a canvas of this size, as after a rotation or a
+  /// switch to another display.
+  func resized(screenPixelWidth: Int, screenPixelHeight: Int, canvasPixelWidth: Int, canvasPixelHeight: Int) -> OverlayCoordinateTransform {
     OverlayCoordinateTransform(
       screenPixelWidth: screenPixelWidth, screenPixelHeight: screenPixelHeight, retinaScale: retinaScale, videoScale: videoScale,
       borderTop: borders.top, scaledBorderTop: borders.scaledTop, borderBottom: borders.bottom, scaledBorderBottom: borders.scaledBottom,
-      coordSpace: coordSpace)
+      coordSpace: coordSpace, canvasPixelWidth: canvasPixelWidth, canvasPixelHeight: canvasPixelHeight)
   }
 
   func bufferPoint(x: CGFloat, y: CGFloat) -> CGPoint {
     CGPoint(
-      x: x * overlayScale + insetCorrection.x,
-      y: y * overlayScale + insetCorrection.y
+      x: x * shapeScale + shapeCorrection.x,
+      y: y * shapeScale + shapeCorrection.y
     )
   }
 
   public func bufferSize(width: CGFloat, height: CGFloat) -> CGSize {
-    CGSize(width: width * overlayScale, height: height * overlayScale)
+    CGSize(width: width * shapeScale, height: height * shapeScale)
   }
 
   func bufferRect(x: CGFloat, y: CGFloat, width: CGFloat, height: CGFloat) -> CGRect {
-    let bx = x * overlayScale + insetCorrection.x
-    let by = y * overlayScale + insetCorrection.y
-    var bw = width < 0 ? width : width * overlayScale
-    var bh = height < 0 ? height : height * overlayScale
-    if bw < 0 { bw = CGFloat(bufferWidth) + bw - bx }
-    if bh < 0 { bh = CGFloat(bufferHeight) + bh - by }
+    let bx = x * shapeScale + shapeCorrection.x
+    let by = y * shapeScale + shapeCorrection.y
+    var bw = width < 0 ? width : width * shapeScale
+    var bh = height < 0 ? height : height * shapeScale
+    if bw < 0 { bw = CGFloat(bufferWidth) - letterboxOffset.x + bw - bx }
+    if bh < 0 { bh = CGFloat(bufferHeight) - letterboxOffset.y + bh - by }
     return CGRect(x: bx, y: by, width: bw, height: bh)
   }
 
   func translateTarget(x: CGFloat, y: CGFloat) -> CGPoint {
     CGPoint(
-      x: x * overlayScale + insetCorrection.x,
-      y: y * overlayScale + insetCorrection.y
+      x: x * shapeScale + shapeCorrection.x,
+      y: y * shapeScale + shapeCorrection.y
     )
   }
 

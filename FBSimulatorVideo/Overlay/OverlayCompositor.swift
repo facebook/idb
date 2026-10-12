@@ -45,6 +45,8 @@ final class OverlayCompositor {
   private(set) var outputHeight = 0
   /// The interface rotation the source is turned by before it is scaled and padded.
   private(set) var rotation = SimulatorDisplayRotation.upright
+  /// Whether the turned source has another shape than the canvas, and so is fitted into it with black around it.
+  private var letterboxes = false
 
   init(edgeInsets: VideoStreamEdgeInsets) {
     self.edgeInsets = edgeInsets
@@ -54,9 +56,10 @@ final class OverlayCompositor {
     edgeInsets.top + edgeInsets.bottom + edgeInsets.left + edgeInsets.right > 0
   }
 
-  /// Sizes the output for a newly mounted source, shown turned by `rotation`. The Core Image context is created
-  /// once and kept (its GPU pipeline is expensive to build); the pool is remade for the new size.
-  func configure(sourceWidth: Int, sourceHeight: Int, rotation: SimulatorDisplayRotation, scaleFactor: Double?) {
+  /// Sizes the output for `canvas`, into which a newly mounted source, shown turned by `rotation`, is fitted. The
+  /// Core Image context is created once and kept (its GPU pipeline is expensive to build); the pool is remade for the
+  /// new size.
+  func configure(sourceWidth: Int, sourceHeight: Int, rotation: SimulatorDisplayRotation, canvas: VideoFrameSource, scaleFactor: Double?) {
     if context == nil {
       if let device = MTLCreateSystemDefaultDevice() {
         context = CIContext(mtlDevice: device, options: [.cacheIntermediates: false])
@@ -66,8 +69,9 @@ final class OverlayCompositor {
     }
     self.rotation = rotation
     let shown = VideoFrameSource(width: sourceWidth, height: sourceHeight, pixelFormat: kCVPixelFormatType_32BGRA).rotated(rotation)
+    letterboxes = shown.width != canvas.width || shown.height != canvas.height
     let dimensions = VideoOutputDimensions.calculate(
-      sourceWidth: shown.width, sourceHeight: shown.height, scaleFactor: scaleFactor, edgeInsets: edgeInsets)
+      sourceWidth: canvas.width, sourceHeight: canvas.height, scaleFactor: scaleFactor, edgeInsets: edgeInsets)
     outputWidth = dimensions.width
     outputHeight = dimensions.height
     let attributes: [String: Any] = [
@@ -120,10 +124,10 @@ final class OverlayCompositor {
     return png as Data
   }
 
-  /// The source turned into the interface's orientation and scaled into the inset frame, with the overlay over
-  /// it; nil when no rotation, insets or overlay call for compositing, or before `configure`.
+  /// The source turned into the interface's orientation and scaled into the inset frame, letterboxed when its shape
+  /// differs from the canvas, with the overlay over it; nil when nothing calls for compositing, or before `configure`.
   private func compositedImage(of source: CVPixelBuffer) -> CIImage? {
-    guard hasInsets || overlayBuffer != nil || rotation != .upright, context != nil, pool != nil else {
+    guard hasInsets || overlayBuffer != nil || rotation != .upright || letterboxes, context != nil, pool != nil else {
       return nil
     }
     var sourceImage = CIImage(cvPixelBuffer: source)
@@ -136,7 +140,9 @@ final class OverlayCompositor {
     // and right by the bottom and left insets.
     let sourceWidth = Int(sourceImage.extent.width)
     let targetWidth = outputWidth - Int(edgeInsets.left) - Int(edgeInsets.right)
-    if targetWidth != sourceWidth && sourceWidth > 0 {
+    if letterboxes {
+      sourceImage = letterboxed(sourceImage, width: targetWidth, height: outputHeight - Int(edgeInsets.top) - Int(edgeInsets.bottom))
+    } else if targetWidth != sourceWidth && sourceWidth > 0 {
       let scale = CGFloat(targetWidth) / CGFloat(sourceWidth)
       sourceImage = sourceImage.transformed(by: CGAffineTransform(scaleX: scale, y: scale))
     }
@@ -147,5 +153,17 @@ final class OverlayCompositor {
       return sourceImage
     }
     return CIImage(cvPixelBuffer: overlayBuffer).composited(over: sourceImage)
+  }
+
+  /// The image scaled to fit a `width` by `height` frame and centred in it over black, with its origin at zero.
+  private func letterboxed(_ image: CIImage, width: Int, height: Int) -> CIImage {
+    guard image.extent.width > 0, image.extent.height > 0 else {
+      return image
+    }
+    let scale = min(CGFloat(width) / image.extent.width, CGFloat(height) / image.extent.height)
+    let fitted = image.transformed(by: CGAffineTransform(scaleX: scale, y: scale))
+    let centred = fitted.transformed(
+      by: CGAffineTransform(translationX: (CGFloat(width) - fitted.extent.width) / 2, y: (CGFloat(height) - fitted.extent.height) / 2))
+    return centred.composited(over: CIImage(color: .black).cropped(to: CGRect(x: 0, y: 0, width: width, height: height)))
   }
 }
