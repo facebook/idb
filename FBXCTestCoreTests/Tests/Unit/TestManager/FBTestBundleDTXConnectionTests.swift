@@ -40,7 +40,7 @@ final class FBTestBundleDTXConnectionTests: XCTestCase {
   private let interface = RecordingIDEInterface()
   private let events = TestBundleEvents()
 
-  private func makeConnection() throws -> FBTestBundleDTXConnection {
+  private func makeConnection(socket: Int32 = -1) throws -> FBTestBundleDTXConnection {
     let sessionIdentifier = UUID()
     let testConfiguration = try FBTestConfiguration(
       byWritingToFileWithSessionIdentifier: sessionIdentifier,
@@ -69,7 +69,7 @@ final class FBTestBundleDTXConnectionTests: XCTestCase {
     return FBTestBundleDTXConnection(
       context: context,
       work: DispatchQueue(label: "com.facebook.xctestbootstrap.tests.work"),
-      socket: -1,
+      socket: socket,
       interface: interface,
       delegate: events,
       request: DispatchQueue(label: "com.facebook.xctestbootstrap.tests.request"),
@@ -208,6 +208,25 @@ final class FBTestBundleDTXConnectionTests: XCTestCase {
 
     XCTAssertThrowsError(try connection.connect()) { error in
       XCTAssertEqual((error as NSError).domain, FBTestErrorDomain)
+    }
+  }
+
+  /// DTX raises when the object a channel exports does not conform to the channel's exported
+  /// interface, so starting a session over a live connection would end the process.
+  func testStartingASessionExportsTheConnectionAsEachInterfaceItConformsTo() throws {
+    try XCTestBootstrapFrameworkLoader.allDependentFrameworks.loadPrivateFrameworks(nil)
+    var sockets: [Int32] = [-1, -1]
+    XCTAssertEqual(socketpair(AF_UNIX, SOCK_STREAM, 0, &sockets), 0)
+    // The connection owns the other end once wrapped.
+    defer { close(sockets[1]) }
+    let connection = try makeConnection(socket: sockets[0])
+    try connection.connect()
+    defer { connection.disconnect() }
+
+    connection.setupAndStartSession()
+
+    for name in ["XCTestManager_IDEInterface", "XCTMessagingChannel_DaemonToIDE", "XCTMessagingChannel_RunnerToIDE"] {
+      XCTAssertTrue(connection.conforms(to: try XCTUnwrap(objc_getProtocol(name))), name)
     }
   }
 
