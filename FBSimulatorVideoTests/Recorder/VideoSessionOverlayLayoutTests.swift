@@ -11,6 +11,7 @@ import FBControlCore
 @testable import FBSimulatorVideo
 import FBVideoCore
 import IOSurface
+import ImageIO
 import XCTest
 
 /// How a recording session's overlays and bars are laid out when the stream's canvas changes.
@@ -66,6 +67,19 @@ final class VideoSessionOverlayLayoutTests: XCTestCase {
     }
   }
 
+  /// The screenshot's size, and whether its pixel at `point` (from the top left) is opaque red.
+  private func screenshot(_ data: Data, isRedAt point: CGPoint) throws -> (size: CGSize, isRed: Bool) {
+    let source = try XCTUnwrap(CGImageSourceCreateWithData(data as CFData, nil))
+    let image = try XCTUnwrap(CGImageSourceCreateImageAtIndex(source, 0, nil))
+    var pixel = [UInt8](repeating: 0, count: 4)
+    let context = try XCTUnwrap(
+      CGContext(
+        data: &pixel, width: 1, height: 1, bitsPerComponent: 8, bytesPerRow: 4, space: CGColorSpaceCreateDeviceRGB(),
+        bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue))
+    context.draw(image, in: CGRect(x: -point.x, y: point.y - CGFloat(image.height) + 1, width: CGFloat(image.width), height: CGFloat(image.height)))
+    return (CGSize(width: image.width, height: image.height), pixel[0] > 200 && pixel[1] < 50 && pixel[2] < 50)
+  }
+
   private func size(_ buffer: CVPixelBuffer?) -> CGSize? {
     buffer.map { CGSize(width: CVPixelBufferGetWidth($0), height: CVPixelBufferGetHeight($0)) }
   }
@@ -105,6 +119,23 @@ final class VideoSessionOverlayLayoutTests: XCTestCase {
     XCTAssertEqual(composited, CGSize(width: 20, height: 38))
     XCTAssertEqual(screenOrigin.x, 0, accuracy: 0.001)
     XCTAssertEqual(screenOrigin.y, 4 + (30 - 20 * 2.0 / 3) / 2, accuracy: 0.001)
+    try await session.stream.stopStreaming()
+  }
+
+  func testARecordingsScreenshotAfterARotation() async throws {
+    let session = try await startSession(recording: true)
+    let turned = display(width: 20, height: 30, rotation: .clockwise)
+    session.surface.configurationChanged?(SimulatorDisplayConfiguration(generation: 2, displays: [turned], active: .identified(turned), phase: .settled))
+    try await waitUntil { await session.stream.mountedSource?.width == 30 }
+    // The session's bar is taller than its border, so it would cover the shape.
+    session.renderer.setBarContent(.hidden, position: "top")
+    session.renderer.render(overlays: [.rectangle(OverlayShape.Rectangle(x: 0, y: 4, width: 6, height: 6, rgba: [255, 0, 0, 1], effect: nil))])
+    await session.stream.updateOverlayBuffer(session.renderer.buffer)
+
+    let shot = try screenshot(try await session.stream.captureCompositedScreenshot(), isRedAt: CGPoint(x: 2, y: 6))
+    // BUG: the screenshot is the recording's letterboxed frame, so the screen's top left is in the black above it — flipped in the following commit
+    XCTAssertEqual(shot.size, CGSize(width: 20, height: 38))
+    XCTAssertFalse(shot.isRed)
     try await session.stream.stopStreaming()
   }
 }
