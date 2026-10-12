@@ -33,7 +33,7 @@ public extension ScreenshotCommands {
   }
 }
 
-enum ScreenshotFormatError: Error, Hashable {
+enum ScreenshotFormatError: Error {
   case unrecognizedFormat(String)
 }
 
