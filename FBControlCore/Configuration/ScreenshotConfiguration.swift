@@ -149,7 +149,7 @@ extension ScreenshotConfiguration: CustomStringConvertible {
 }
 
 /// A captured screenshot. `size` can differ from what was requested: an overhanging crop is clamped and a fit bound rounds.
-public struct ScreenshotResult: Hashable, Sendable {
+public struct ScreenshotResult: Sendable {
 
   public let imageData: Data
   public let format: ScreenshotImageFormat
