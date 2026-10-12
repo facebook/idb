@@ -208,7 +208,9 @@ final class FollowingFramebufferSurfaceTests: XCTestCase {
 
     continuation.yield(configuration(active: "cover", phase: .transitioning(incoming: display("inner"))))
     continuation.yield(configuration(active: "inner"))
-    try await waitUntil { !inner.registeredTokens.isEmpty }
+    // The surface registers on the named incoming display while the transition is still under way, so that
+    // registration can land before the settled configuration is announced: wait for the announcement instead.
+    try await waitUntil { registeredWhenSettled != nil }
 
     XCTAssertEqual(registeredWhenSettled, 1)
     XCTAssertEqual(inner.registeredTokens.count, 1)
