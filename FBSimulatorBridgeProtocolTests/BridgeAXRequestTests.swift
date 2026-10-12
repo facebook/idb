@@ -108,6 +108,47 @@ final class BridgeAXRequestTests: XCTestCase {
     XCTAssertNil(BridgeRequest.accessibilityParameters(of: try BridgeRequest(command: .ping).encoded()))
   }
 
+  // The exact payloads the host sends for its default requests. A change to any of these is a change to
+  // what every guest receives, so it must be deliberate.
+  func testTheDefaultReadPayloadsAreUnchanged() {
+    let base: [String: Any] = ["verb": "describe", "pid": 42, "maxDepth": 100, "maxNodes": 5000, "automationMode": true]
+    let traversalKeys: [BridgeAXTraversal: [String: Any]] = [
+      .viewHierarchy: [:],
+      .semantic: ["translatorVocabulary": true],
+      .singleFetch: ["snapshotTree": true],
+    ]
+    for traversal in BridgeAXTraversal.allCases {
+      let options = BridgeAXReadOptions(
+        maxDepth: BridgeAXReadOptions.defaultMaxDepth, maxNodes: BridgeAXReadOptions.defaultMaxNodes, attributes: nil,
+        explainUnreachable: false, traversal: traversal, automationMode: true)
+      let expected = base.merging(traversalKeys[traversal]!) { $1 }
+      XCTAssertEqual(NSDictionary(dictionary: BridgeAXRequest.read(pid: 42, options: options).payload), NSDictionary(dictionary: expected), "\(traversal)")
+    }
+  }
+
+  func testTheDefaultFrontmostReadPayloadIsUnchanged() {
+    let options = BridgeAXReadOptions(
+      maxDepth: BridgeAXReadOptions.defaultMaxDepth, maxNodes: BridgeAXReadOptions.defaultMaxNodes, attributes: nil,
+      explainUnreachable: false, traversal: .singleFetch, automationMode: true)
+    XCTAssertEqual(
+      NSDictionary(dictionary: BridgeAXRequest.readFrontmost(x: 195, y: 422, method: .windowServer, options: options).payload),
+      NSDictionary(dictionary: [
+        "verb": "describe", "x": 195.0, "y": 422.0, "method": "window-server", "maxDepth": 100, "maxNodes": 5000, "snapshotTree": true,
+        "automationMode": true,
+      ]))
+  }
+
+  func testTheDefaultHitTestPayloadIsUnchanged() {
+    XCTAssertEqual(
+      NSDictionary(dictionary: BridgeAXRequest.hitTest(x: 1, y: 2, attributes: nil).payload),
+      NSDictionary(dictionary: ["verb": "hittest", "x": 1.0, "y": 2.0]))
+  }
+
+  func testAReadThatLeavesAutomationModeAloneOmitsIt() {
+    let options = BridgeAXReadOptions(maxDepth: 1, maxNodes: 1, attributes: nil, explainUnreachable: false, traversal: .viewHierarchy, automationMode: nil)
+    XCTAssertNil(BridgeAXRequest.read(pid: 1, options: options).payload["automationMode"])
+  }
+
   func testClientTypesCarryTheTranslatorsIntegers() {
     let expected: [BridgeAXClientType: UInt64] = [
       .noClient: 0, .unidentified: 1, .application: 2, .xcodeHelper: 3, .xctest: 4, .scripter: 5, .systemEvents: 6, .voiceOver: 7,
