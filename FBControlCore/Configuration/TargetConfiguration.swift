@@ -105,7 +105,7 @@ public struct OSVersionName: RawRepresentable, Hashable, Codable, Sendable {
 
 // MARK: - OSVersion
 
-public struct OSVersion: Equatable, Hashable, CustomStringConvertible, Sendable {
+public struct OSVersion: CustomStringConvertible, Sendable {
 
   public let name: OSVersionName
   public let versionString: String
@@ -152,15 +152,6 @@ public struct OSVersion: Equatable, Hashable, CustomStringConvertible, Sendable 
       return .orderedSame
     }
     return left.lexicographicallyPrecedes(right) ? .orderedAscending : .orderedDescending
-  }
-
-  /// The display name remains the identity; runtime identifiers belong to simulator metadata.
-  public static func == (lhs: OSVersion, rhs: OSVersion) -> Bool {
-    lhs.name == rhs.name
-  }
-
-  public func hash(into hasher: inout Hasher) {
-    hasher.combine(name)
   }
 
   public var description: String {

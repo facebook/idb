@@ -45,12 +45,4 @@ final class TargetConfigurationTests: XCTestCase {
     XCTAssertEqual(os.versionString, "")
     XCTAssertEqual(os.version.majorVersion, 0)
   }
-
-  func testOSVersionEqualityConsidersOnlyTheName() {
-    let described = OSVersion(name: OSVersionName(rawValue: "Future Platform"), versionString: "99.0")
-    let generic = OSVersion.generic(withName: "Future Platform")
-    XCTAssertNotEqual(described.versionString, generic.versionString)
-    XCTAssertEqual(described, generic)
-    XCTAssertEqual(described.hashValue, generic.hashValue)
-  }
 }
