@@ -8,8 +8,8 @@
 import FBControlCore
 import Foundation
 
-/// The logging surface the Objective-C DTX layer sees, so `ControlCoreLogger` need not be `@objc`.
-@objc public protocol TestManagerLogSink: NSObjectProtocol {
+/// What the DTX connection and the IDE interface log to.
+protocol TestManagerLogSink: AnyObject {
   func log(_ message: String)
 }
 
