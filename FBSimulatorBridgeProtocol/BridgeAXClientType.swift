@@ -45,6 +45,33 @@ public enum BridgeAXClientType: UInt64, Sendable, CaseIterable {
   /// Inspector does.
   case accessibilityInspector = 11
 
+  /// The client's stable name: what reports and command lines spell it as. Spelled out rather than derived
+  /// from the case, so renaming a case cannot change an output or break a caller's flag.
+  public var name: String {
+    switch self {
+    case .noClient: "noClient"
+    case .unidentified: "unidentified"
+    case .application: "application"
+    case .xcodeHelper: "xcodeHelper"
+    case .xctest: "xctest"
+    case .scripter: "scripter"
+    case .systemEvents: "systemEvents"
+    case .voiceOver: "voiceOver"
+    case .switchControl: "switchControl"
+    case .fullKeyboardAccess: "fullKeyboardAccess"
+    case .voiceControl: "voiceControl"
+    case .accessibilityInspector: "accessibilityInspector"
+    }
+  }
+
+  /// The client a stable `name` spells, or nil for a name no client has.
+  public init?(name: String) {
+    guard let clientType = Self.allCases.first(where: { $0.name == name }) else {
+      return nil
+    }
+    self = clientType
+  }
+
   /// The client the target application sees for this request. Values outside `application` through
   /// `accessibilityInspector` reach it as no client at all.
   public var requestingClient: BridgeAXRequestingClient {

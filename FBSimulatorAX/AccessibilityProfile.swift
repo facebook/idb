@@ -133,7 +133,7 @@ public struct AccessibilityClientReport: Sendable, Equatable, Encodable {
 
   public func encode(to encoder: Encoder) throws {
     var container = encoder.container(keyedBy: CodingKeys.self)
-    try container.encode(String(describing: clientType), forKey: .type)
+    try container.encode(clientType.name, forKey: .type)
     try container.encode(tree, forKey: .tree)
     try container.encode(caveat, forKey: .caveat)
   }

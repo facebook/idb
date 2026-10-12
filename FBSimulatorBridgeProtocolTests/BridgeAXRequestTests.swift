@@ -210,6 +210,20 @@ final class BridgeAXRequestTests: XCTestCase {
     XCTAssertNil(BridgeAXClientType(rawValue: 12))
   }
 
+  // Names are an output and command-line contract: pinned literally so a renamed case shows up here.
+  func testClientTypesCarryStableNames() {
+    XCTAssertEqual(
+      BridgeAXClientType.allCases.map(\.name),
+      [
+        "noClient", "unidentified", "application", "xcodeHelper", "xctest", "scripter", "systemEvents", "voiceOver", "switchControl",
+        "fullKeyboardAccess", "voiceControl", "accessibilityInspector",
+      ])
+    for clientType in BridgeAXClientType.allCases {
+      XCTAssertEqual(BridgeAXClientType(name: clientType.name), clientType)
+    }
+    XCTAssertNil(BridgeAXClientType(name: "XCTest"))
+  }
+
   func testClientTypesMapOntoTheRequestingClientTheGuestTranslatorInstalls() {
     let expected: [BridgeAXClientType: UInt32] = [
       .noClient: 0, .unidentified: 0, .application: 1, .xcodeHelper: 2, .xctest: 2, .scripter: 1, .systemEvents: 1, .voiceOver: 3,
