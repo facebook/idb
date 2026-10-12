@@ -27,6 +27,28 @@ final class FBControlCoreTransientTests: XCTestCase {
     XCTAssertEqual(a, b)
   }
 
+  func testBundleDescriptorEqualityComparesEveryField() throws {
+    let binary = try BinaryDescriptor.binary(withPath: "/usr/bin/codesign")
+    let otherBinary = try BinaryDescriptor.binary(withPath: "/usr/bin/true")
+    let base = BundleDescriptor(name: "App", identifier: "com.test", path: "/a", binary: binary)
+
+    XCTAssertEqual(base, BundleDescriptor(name: "App", identifier: "com.test", path: "/a", binary: binary))
+    XCTAssertNotEqual(base, BundleDescriptor(name: "Other", identifier: "com.test", path: "/a", binary: binary))
+    XCTAssertNotEqual(base, BundleDescriptor(name: "App", identifier: "com.other", path: "/a", binary: binary))
+    XCTAssertNotEqual(base, BundleDescriptor(name: "App", identifier: "com.test", path: "/b", binary: binary))
+    XCTAssertNotEqual(base, BundleDescriptor(name: "App", identifier: "com.test", path: "/a", binary: otherBinary))
+    XCTAssertNotEqual(base, BundleDescriptor(name: "App", identifier: "com.test", path: "/a", binary: nil))
+  }
+
+  func testBundleDescriptorEqualDescriptorsHashEqually() throws {
+    let a = BundleDescriptor(name: "App", identifier: "com.test", path: "/a", binary: try BinaryDescriptor.binary(withPath: "/usr/bin/codesign"))
+    let b = BundleDescriptor(name: "App", identifier: "com.test", path: "/a", binary: try BinaryDescriptor.binary(withPath: "/usr/bin/codesign"))
+    let c = BundleDescriptor(name: "App", identifier: "com.test", path: "/c", binary: nil)
+
+    XCTAssertEqual(a.hashValue, b.hashValue)
+    XCTAssertEqual(Set([a, b, c]).count, 2)
+  }
+
   func testBundleDescriptorDescription() {
     let bundle = BundleDescriptor(name: "TestApp", identifier: "com.example.test", path: "/tmp/test", binary: nil)
 
