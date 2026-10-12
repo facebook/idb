@@ -755,9 +755,7 @@ output="$(in_package "$dir" '
     invoke_xcodebuild() { :; }
     build_staging_bench
 ')"
-# BUG: no archive is built, so the benchmark cannot import FBArtifactStaging
-# -- flipped in the following commit.
-assert_equal "building the staging benchmark builds its archives" '' "$output"
+assert_equal "building the staging benchmark builds its archives" 'built FBArtifactStaging Release' "$output"
 
 if [ "$FAILURES" -ne 0 ]; then
     echo "$FAILURES assertion(s) failed"

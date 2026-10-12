@@ -889,7 +889,7 @@ function build_sim_video() {
 
 # The archive staging benchmark (Benchmarks/README.md); not part of the distribution.
 function build_staging_bench() {
-  build_companion_archives
+  build_companion_archives staging-bench
   invoke_xcodebuild \
     ONLY_ACTIVE_ARCH=NO \
     SWIFT_ENABLE_EXPLICIT_MODULES=NO \
