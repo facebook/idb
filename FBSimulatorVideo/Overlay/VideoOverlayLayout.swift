@@ -14,4 +14,8 @@ public protocol VideoOverlayLayout: AnyObject, Sendable {
   /// of `screenPixelWidth` by `screenPixelHeight`, both in pixels as the interface shows them. A screen of another
   /// shape than the canvas is letterboxed into it.
   func layOut(screenPixelWidth: Int, screenPixelHeight: Int, canvasPixelWidth: Int, canvasPixelHeight: Int) -> CVPixelBuffer
+
+  /// A one-off buffer with the overlay drawn as it is now, laid out for a canvas that is exactly a screen of this many
+  /// pixels. The buffer `layOut` returned is left as it is.
+  func snapshot(screenPixelWidth: Int, screenPixelHeight: Int) -> CVPixelBuffer
 }

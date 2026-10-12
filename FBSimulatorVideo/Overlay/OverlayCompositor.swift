@@ -46,7 +46,22 @@ final class OverlayCompositor {
   /// The interface rotation the source is turned by before it is scaled and padded.
   private(set) var rotation = SimulatorDisplayRotation.upright
   /// Whether the turned source has another shape than the canvas, and so is fitted into it with black around it.
-  private var letterboxes = false
+  private(set) var letterboxes = false
+  /// The size of a frame showing the turned source at its own shape, for a screenshot of a letterboxed source.
+  private var screenWidth = 0
+  private var screenHeight = 0
+
+  /// What a composite is laid out for: its output size, whether the source is letterboxed into it, and the overlay.
+  private struct Layout {
+    let width: Int
+    let height: Int
+    let letterboxes: Bool
+    let overlay: CVPixelBuffer?
+  }
+
+  private var frameLayout: Layout {
+    Layout(width: outputWidth, height: outputHeight, letterboxes: letterboxes, overlay: overlayBuffer)
+  }
 
   init(edgeInsets: VideoStreamEdgeInsets) {
     self.edgeInsets = edgeInsets
@@ -70,6 +85,10 @@ final class OverlayCompositor {
     self.rotation = rotation
     let shown = VideoFrameSource(width: sourceWidth, height: sourceHeight, pixelFormat: kCVPixelFormatType_32BGRA).rotated(rotation)
     letterboxes = shown.width != canvas.width || shown.height != canvas.height
+    let screen = VideoOutputDimensions.calculate(
+      sourceWidth: shown.width, sourceHeight: shown.height, scaleFactor: scaleFactor, edgeInsets: edgeInsets)
+    screenWidth = screen.width
+    screenHeight = screen.height
     let dimensions = VideoOutputDimensions.calculate(
       sourceWidth: canvas.width, sourceHeight: canvas.height, scaleFactor: scaleFactor, edgeInsets: edgeInsets)
     outputWidth = dimensions.width
@@ -94,7 +113,7 @@ final class OverlayCompositor {
   /// The frame to encode: the source composited with the overlay and insets into a pooled output
   /// buffer, or the source itself when there is nothing to composite (or the pool has nothing to give).
   func composite(_ source: CVPixelBuffer) -> CVPixelBuffer {
-    guard let image = compositedImage(of: source), let pool, let context else {
+    guard let image = compositedImage(of: source, layout: frameLayout), let pool, let context else {
       return source
     }
     var output: CVPixelBuffer?
@@ -106,9 +125,12 @@ final class OverlayCompositor {
   }
 
   /// A PNG of the source with the overlay composited, rendered straight to a `CGImage` rather than
-  /// through the pool.
-  func screenshotPNG(of source: CVPixelBuffer) throws -> Data {
-    let image = compositedImage(of: source) ?? CIImage(cvPixelBuffer: source)
+  /// through the pool. A letterboxed source is shown at its own shape instead, under `screenOverlay`: the overlay
+  /// laid out for that screen.
+  func screenshotPNG(of source: CVPixelBuffer, screenOverlay: CVPixelBuffer?) throws -> Data {
+    let layout =
+      letterboxes ? Layout(width: screenWidth, height: screenHeight, letterboxes: false, overlay: screenOverlay) : frameLayout
+    let image = compositedImage(of: source, layout: layout) ?? CIImage(cvPixelBuffer: source)
     let context = self.context ?? CIContext()
     guard let cgImage = context.createCGImage(image, from: image.extent) else {
       throw OverlayCompositorError.failedToCreateCGImage
@@ -126,8 +148,8 @@ final class OverlayCompositor {
 
   /// The source turned into the interface's orientation and scaled into the inset frame, letterboxed when its shape
   /// differs from the canvas, with the overlay over it; nil when nothing calls for compositing, or before `configure`.
-  private func compositedImage(of source: CVPixelBuffer) -> CIImage? {
-    guard hasInsets || overlayBuffer != nil || rotation != .upright || letterboxes, context != nil, pool != nil else {
+  private func compositedImage(of source: CVPixelBuffer, layout: Layout) -> CIImage? {
+    guard hasInsets || layout.overlay != nil || rotation != .upright || layout.letterboxes, context != nil, pool != nil else {
       return nil
     }
     var sourceImage = CIImage(cvPixelBuffer: source)
@@ -139,9 +161,9 @@ final class OverlayCompositor {
     // Core Image's origin is bottom-left: scale the source to the inset-free width, then move it up
     // and right by the bottom and left insets.
     let sourceWidth = Int(sourceImage.extent.width)
-    let targetWidth = outputWidth - Int(edgeInsets.left) - Int(edgeInsets.right)
-    if letterboxes {
-      sourceImage = letterboxed(sourceImage, width: targetWidth, height: outputHeight - Int(edgeInsets.top) - Int(edgeInsets.bottom))
+    let targetWidth = layout.width - Int(edgeInsets.left) - Int(edgeInsets.right)
+    if layout.letterboxes {
+      sourceImage = letterboxed(sourceImage, width: targetWidth, height: layout.height - Int(edgeInsets.top) - Int(edgeInsets.bottom))
     } else if targetWidth != sourceWidth && sourceWidth > 0 {
       let scale = CGFloat(targetWidth) / CGFloat(sourceWidth)
       sourceImage = sourceImage.transformed(by: CGAffineTransform(scaleX: scale, y: scale))
@@ -149,10 +171,10 @@ final class OverlayCompositor {
     if edgeInsets.left > 0 || edgeInsets.bottom > 0 {
       sourceImage = sourceImage.transformed(by: CGAffineTransform(translationX: CGFloat(edgeInsets.left), y: CGFloat(edgeInsets.bottom)))
     }
-    guard let overlayBuffer else {
+    guard let overlay = layout.overlay else {
       return sourceImage
     }
-    return CIImage(cvPixelBuffer: overlayBuffer).composited(over: sourceImage)
+    return CIImage(cvPixelBuffer: overlay).composited(over: sourceImage)
   }
 
   /// The image scaled to fit a `width` by `height` frame and centred in it over black, with its origin at zero.

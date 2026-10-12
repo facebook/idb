@@ -98,8 +98,7 @@ final class SimulatorVideoStreamOrientationTests: XCTestCase {
     let canvas = await started.stream.canvasSize
     let screenshot = try pngSize(try await started.stream.captureCompositedScreenshot())
     XCTAssertEqual(canvas, CGSize(width: 20, height: 38))
-    // BUG: the screenshot is letterboxed into the recording's canvas rather than the screen as the interface shows it — flipped in the following commit
-    XCTAssertEqual(screenshot, CGSize(width: 20, height: 30))
+    XCTAssertEqual(screenshot, CGSize(width: 30, height: 20))
     try await started.stream.stopStreaming()
   }
 
@@ -113,8 +112,7 @@ final class SimulatorVideoStreamOrientationTests: XCTestCase {
     let canvas = await started.stream.canvasSize
     let screenshot = try pngSize(try await started.stream.captureCompositedScreenshot())
     XCTAssertEqual(canvas, CGSize(width: 20, height: 38))
-    // BUG: the screenshot is the larger surface scaled down into the recording's canvas rather than at its own size — flipped in the following commit
-    XCTAssertEqual(screenshot, CGSize(width: 20, height: 30))
+    XCTAssertEqual(screenshot, CGSize(width: 40, height: 60))
     try await started.stream.stopStreaming()
   }
 

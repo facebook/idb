@@ -1492,7 +1492,8 @@ class RotationDemos(AccessibilityFixtureTestCase):
             "recording keeps its portrait frame, as a video file cannot change size, "
             "and letterboxes the landscape screen into it upright: the bars stay "
             "across the top and bottom, and the highlight lands on the row wherever "
-            "it is laid out."
+            "it is laid out. The recorder's screenshot shows the screen as the "
+            "interface does, landscape in landscape."
         ),
     )
     async def test_record_through_a_rotation(self) -> None:
@@ -1525,12 +1526,14 @@ class RotationDemos(AccessibilityFixtureTestCase):
             step="Find the General row in landscape", landscape=True
         )
         turned = self.highlight(landscape)
-        self.assertEqual(await self.recorded_shape(), (width, height))
+        turned_width, turned_height = await self.recorded_shape()
+        self.assertGreater(turned_width, turned_height)
         self.note(
             f"In landscape the row is {turned['width']:.0f}×{turned['height']:.0f} "
-            f"points at ({turned['x']:.0f}, {turned['y']:.0f}). The recording is "
-            f"still {width}×{height} pixels, with the landscape screen letterboxed "
-            "upright inside it and the bars still across the top and bottom.",
+            f"points at ({turned['x']:.0f}, {turned['y']:.0f}). The recording keeps "
+            "its portrait frame, with the landscape screen letterboxed upright inside "
+            "it and the bars still across the top and bottom; the recorder's "
+            f"screenshot is the screen itself, {turned_width}×{turned_height} pixels.",
             GENERAL_ROW_ID,
         )
 

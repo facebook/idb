@@ -880,12 +880,17 @@ public actor SimulatorVideoStream: VideoStreamOperation {
 
   // MARK: - Screenshot
 
-  /// Capture a PNG screenshot of the current frame with overlay composited.
+  /// Capture a PNG screenshot of the current frame with overlay composited. While a recording letterboxes its screen,
+  /// the screenshot is the screen at its own size and orientation, with the overlay laid out for it.
   public func captureCompositedScreenshot() throws -> Data {
     guard let sourceBuffer = pixelBuffer else {
       throw SimulatorVideoStreamError.noPixelBufferForScreenshot
     }
-    return try compositor.screenshotPNG(of: sourceBuffer)
+    var screenOverlay: CVPixelBuffer?
+    if compositor.letterboxes, compositor.overlayBuffer != nil, let layout = overlayLayout.withLock({ $0 }), let mountedSource {
+      screenOverlay = layout.snapshot(screenPixelWidth: mountedSource.width, screenPixelHeight: mountedSource.height)
+    }
+    return try compositor.screenshotPNG(of: sourceBuffer, screenOverlay: screenOverlay)
   }
 
   // MARK: - Stats

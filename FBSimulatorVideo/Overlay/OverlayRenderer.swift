@@ -187,6 +187,17 @@ public final class OverlayRenderer: VideoOverlayLayout, @unchecked Sendable {
     return storage
   }
 
+  public func snapshot(screenPixelWidth: Int, screenPixelHeight: Int) -> CVPixelBuffer {
+    stateLock.lock()
+    defer { stateLock.unlock() }
+    let screenLayout = layout.resized(
+      screenPixelWidth: screenPixelWidth, screenPixelHeight: screenPixelHeight, canvasPixelWidth: screenPixelWidth,
+      canvasPixelHeight: screenPixelHeight)
+    let buffer = Self.makeBuffer(width: screenLayout.bufferWidth, height: screenLayout.bufferHeight)
+    draw(into: buffer, layout: screenLayout)
+    return buffer
+  }
+
   /// The overlay scale factor from the layout.
   var scaleFactor: CGFloat { transform.overlayScale }
 

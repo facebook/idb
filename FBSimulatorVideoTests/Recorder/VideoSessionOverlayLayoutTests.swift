@@ -133,9 +133,8 @@ final class VideoSessionOverlayLayoutTests: XCTestCase {
     await session.stream.updateOverlayBuffer(session.renderer.buffer)
 
     let shot = try screenshot(try await session.stream.captureCompositedScreenshot(), isRedAt: CGPoint(x: 2, y: 6))
-    // BUG: the screenshot is the recording's letterboxed frame, so the screen's top left is in the black above it — flipped in the following commit
-    XCTAssertEqual(shot.size, CGSize(width: 20, height: 38))
-    XCTAssertFalse(shot.isRed)
+    XCTAssertEqual(shot.size, CGSize(width: 30, height: 28))
+    XCTAssertTrue(shot.isRed)
     try await session.stream.stopStreaming()
   }
 }
