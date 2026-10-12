@@ -29,7 +29,7 @@ public enum TerminationStatus: Sendable, Equatable {
 }
 
 /// Which terminations a run-to-completion call treats as success.
-public enum ExitPolicy: Sendable, Equatable {
+public enum ExitPolicy: Sendable {
   /// Only a normal exit with code zero.
   case mustExitZero
   /// Only a normal exit with one of these codes.
