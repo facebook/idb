@@ -199,6 +199,9 @@ public struct AccessibilityElementsResponse: Sendable {
   /// single-element reads, which select an element rather than narrow a list.
   public let narrowing: AccessibilityNarrowing?
 
+  /// The client the read's translator requests claimed to come from, when the read named one.
+  public let client: AccessibilityClientReport?
+
   public init(
     elements: AccessibilityElementPayload,
     profilingData: AccessibilityProfile? = nil,
@@ -209,7 +212,8 @@ public struct AccessibilityElementsResponse: Sendable {
     backend: UIAutomationBackendName? = nil,
     target: AccessibilityTargetDescriptor? = nil,
     automation: AccessibilityAutomationState? = nil,
-    narrowing: AccessibilityNarrowing? = nil
+    narrowing: AccessibilityNarrowing? = nil,
+    client: AccessibilityClientReport? = nil
   ) {
     self.elements = elements
     self.profilingData = profilingData
@@ -221,6 +225,7 @@ public struct AccessibilityElementsResponse: Sendable {
     self.target = target
     self.automation = automation
     self.narrowing = narrowing
+    self.client = client
   }
 
   /// A copy carrying the read's provenance; a `nil` argument leaves the existing value in place.
@@ -240,7 +245,25 @@ public struct AccessibilityElementsResponse: Sendable {
       backend: backend ?? self.backend,
       target: target ?? self.target,
       automation: automation,
-      narrowing: narrowing
+      narrowing: narrowing,
+      client: client
+    )
+  }
+
+  /// A copy reporting the client the read named; nil leaves the read reporting none.
+  public func withClient(_ client: AccessibilityClientReport?) -> AccessibilityElementsResponse {
+    AccessibilityElementsResponse(
+      elements: elements,
+      profilingData: profilingData,
+      coverage: coverage,
+      modal: modal,
+      truncated: truncated,
+      screen: screen,
+      backend: backend,
+      target: target,
+      automation: automation,
+      narrowing: narrowing,
+      client: client
     )
   }
 
@@ -256,7 +279,8 @@ public struct AccessibilityElementsResponse: Sendable {
       backend: backend,
       target: target,
       automation: automation,
-      narrowing: narrowing
+      narrowing: narrowing,
+      client: client
     )
   }
 
@@ -272,7 +296,8 @@ public struct AccessibilityElementsResponse: Sendable {
       backend: backend,
       target: target,
       automation: automation,
-      narrowing: narrowing
+      narrowing: narrowing,
+      client: client
     )
   }
 
@@ -291,7 +316,8 @@ public struct AccessibilityElementsResponse: Sendable {
       interaction: AccessibilityInteractionSummary(elements: reported),
       frames: AccessibilityFrameSummary(elements: reported),
       automation: automation,
-      narrowing: narrowing
+      narrowing: narrowing,
+      client: client
     )
   }
 

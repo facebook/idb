@@ -999,6 +999,34 @@ final class AccessibilitySerializationTests: XCTestCase {
     XCTAssertEqual(documentKeys(full), expected)
   }
 
+  func testACompleteDocumentReportsANamedClientUnderItsOwnKey() throws {
+    let expected: Set<String> = ["elements", "modal", "truncated", "screen", "backend", "target", "profile", "coverage", "interaction", "frames", "automation", "narrowing"]
+    let response = AccessibilityElementsResponse(elements: .tree([])).withClient(AccessibilityClientReport(clientType: .xctest))
+    XCTAssertEqual(documentKeys(response), expected.union(["client"]))
+    let client = try XCTUnwrap(documentObject(response)["client"] as? [String: Any])
+    XCTAssertEqual(client["type"] as? String, "xctest")
+    XCTAssertEqual(client["tree"] as? String, "automation")
+    XCTAssertTrue((client["caveat"] as? String)?.contains("roughly ten times the translator round trips") == true)
+  }
+
+  func testAClientAnsweredWithTheVoiceOverTreeCarriesNoCaveat() throws {
+    let response = AccessibilityElementsResponse(elements: .tree([])).withClient(AccessibilityClientReport(clientType: .voiceOver))
+    XCTAssertEqual(
+      try documentJSON(response),
+      #"{"automation":null,"backend":null,"client":{"caveat":null,"tree":"voiceover","type":"voiceOver"},"coverage":null,"elements":[],"frames":null,"interaction":null,"modal":null,"narrowing":null,"profile":null,"screen":null,"target":null,"truncated":false}"#
+    )
+  }
+
+  func testTheClientSurvivesEveryCopy() {
+    let report = AccessibilityClientReport(clientType: .scripter)
+    let response = AccessibilityElementsResponse(elements: .tree([])).withClient(report)
+    XCTAssertEqual(response.withProvenance(backend: .ax).client, report)
+    XCTAssertEqual(response.replacingScreen(nil).client, report)
+    XCTAssertEqual(
+      response.withNarrowing(AccessibilityNarrowing(match: nil, matchKey: nil, ignoreCase: false, filter: "all", walked: 0, matched: 0)).client,
+      report)
+  }
+
   func testCompleteDocumentEmitsAbsentSignalsAsNull() throws {
     let response = AccessibilityElementsResponse(elements: .tree([]))
     XCTAssertEqual(

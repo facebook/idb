@@ -94,6 +94,51 @@ public enum AccessibilityProfile: Sendable, Equatable, Encodable {
   }
 }
 
+/// The assistive client a read's translator requests claimed to come from. Reported only for a read that
+/// named one, so a read that did not keeps the document it always had.
+public struct AccessibilityClientReport: Sendable, Equatable, Encodable {
+
+  /// The tree the target application answers the client with.
+  public enum Tree: String, Sendable, Encodable {
+    /// The children an application sets in `automationElements`, falling back to the ones XCTest reads.
+    case automation
+    /// The flattened, labelled leaves VoiceOver reads.
+    case voiceOver = "voiceover"
+  }
+
+  public let clientType: AXClientType
+
+  public init(clientType: AXClientType) {
+    self.clientType = clientType
+  }
+
+  public var tree: Tree {
+    clientType.deservesAutomation ? .automation : .voiceOver
+  }
+
+  /// What a caller should know about the read this client produced, or nil when nothing departs from a
+  /// default read's expectations.
+  public var caveat: String? {
+    guard clientType.deservesAutomation else {
+      return nil
+    }
+    return "The automation tree takes roughly ten times the translator round trips of a default read, is not a superset of the default tree, and its granularity depends on the device's AutomationEnabled accessibility preference. An application that stores automationElements serves them as stored, whatever is on screen."
+  }
+
+  enum CodingKeys: String, CodingKey {
+    case type
+    case tree
+    case caveat
+  }
+
+  public func encode(to encoder: Encoder) throws {
+    var container = encoder.container(keyedBy: CodingKeys.self)
+    try container.encode(String(describing: clientType), forKey: .type)
+    try container.encode(tree, forKey: .tree)
+    try container.encode(caveat, forKey: .caveat)
+  }
+}
+
 public struct AccessibilityAutomationState: Sendable, Equatable, Encodable {
   public let enabled: Bool
   public let asserted: Bool

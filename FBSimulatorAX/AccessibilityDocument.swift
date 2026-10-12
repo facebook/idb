@@ -842,6 +842,9 @@ public struct AccessibilityDocument: Sendable, Encodable {
   /// What the read was narrowed by and how much survived. Nil for a single-element read, which selects
   /// rather than narrows.
   public let narrowing: AccessibilityNarrowing?
+  /// The client the read named. Unlike every other key, absent rather than null when the read named none,
+  /// so a read that did not keeps exactly the document it always had.
+  public let client: AccessibilityClientReport?
 
   public init(
     elements: [AccessibilityDocumentElement],
@@ -855,7 +858,8 @@ public struct AccessibilityDocument: Sendable, Encodable {
     interaction: AccessibilityInteractionSummary? = nil,
     frames: AccessibilityFrameSummary? = nil,
     automation: AccessibilityAutomationState? = nil,
-    narrowing: AccessibilityNarrowing? = nil
+    narrowing: AccessibilityNarrowing? = nil,
+    client: AccessibilityClientReport? = nil
   ) {
     self.elements = elements
     self.modal = modal
@@ -869,6 +873,7 @@ public struct AccessibilityDocument: Sendable, Encodable {
     self.frames = frames
     self.automation = automation
     self.narrowing = narrowing
+    self.client = client
   }
 
   enum CodingKeys: String, CodingKey {
@@ -884,6 +889,7 @@ public struct AccessibilityDocument: Sendable, Encodable {
     case frames
     case automation
     case narrowing
+    case client
   }
 
   public func encode(to encoder: Encoder) throws {
@@ -900,6 +906,7 @@ public struct AccessibilityDocument: Sendable, Encodable {
     try container.encode(frames, forKey: .frames)
     try container.encode(automation, forKey: .automation)
     try container.encode(narrowing, forKey: .narrowing)
+    try container.encodeIfPresent(client, forKey: .client)
   }
 }
 

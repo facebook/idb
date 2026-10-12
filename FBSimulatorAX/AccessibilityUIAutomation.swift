@@ -39,6 +39,7 @@ final class AccessibilityUIAutomation: UIAutomation, @unchecked Sendable {
       defer { element.close() }
       let response = try await element.serialize(with: options)
         .withProvenance(backend: UIAutomationBackend.accessibility.name, target: query.targetDescriptor)
+        .withClient(options.clientType.map(AccessibilityClientReport.init))
       if response.screen?.display != nil { return response }
       // A point or marker resolves one element and is then serialized through the frontmost path, which
       // reads screen bounds off whatever element it is handed. For those queries that element is the
@@ -80,6 +81,7 @@ final class AccessibilityUIAutomation: UIAutomation, @unchecked Sendable {
       defer { element.close() }
       return try await element.serialize(with: options)
         .withProvenance(backend: UIAutomationBackend.accessibility.name, target: .point(point))
+        .withClient(options.clientType.map(AccessibilityClientReport.init))
     } catch let error as AccessibilityError {
       // A point that resolves to no element is a valid empty hit-test result, not a failure.
       if case .elementNotFound = error { return nil }

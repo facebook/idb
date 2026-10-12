@@ -1338,6 +1338,20 @@ final class SimulatorAccessibilityCommandsTests: XCTestCase {
     XCTAssertNil(result.diagnostics?.readError)
   }
 
+  func testALegacyReadReportsTheClientItNamedAndOnlyThen() async throws {
+    try setUp(withRootElement: defaultElementTree)
+    fixture!.translator.bridgeRequestClientTypes = [0]
+    let reader = AccessibilityUIAutomation(simulator: simulator)
+
+    let named = try await reader.describe(.frontmost, options: AccessibilityRequestOptions(format: .complete, clientType: .xctest))
+    XCTAssertEqual(named.client, AccessibilityClientReport(clientType: .xctest))
+    XCTAssertEqual(
+      fixture!.device.accessibilityRequests.compactMap { AccessibilityTranslatorRequests.clientType(of: $0) }, [AXClientType.xctest.rawValue])
+
+    let unnamed = try await reader.describe(.frontmost, options: AccessibilityRequestOptions(format: .complete))
+    XCTAssertNil(unnamed.client)
+  }
+
   func testLegacyWaitCarriesTheTraversalNonmatches() async throws {
     try setUp(withRootElement: defaultElementTree)
     let reader = AccessibilityUIAutomation(simulator: simulator)
