@@ -719,9 +719,8 @@ output="$(in_package "$dir" '
     build_target() { echo "built $1 $2"; }
     build_companion_tests
 ')"
-# BUG: no archive is built, so the test bundles cannot import the libraries
-# they test against -- flipped in the following commit.
-assert_equal "building for the companion's tests builds the companion's archives" '' "$output"
+assert_equal "building for the companion's tests builds the companion's archives" 'built FBControlCore Release
+built FBSimulatorControl Release' "$output"
 
 if [ "$FAILURES" -ne 0 ]; then
     echo "$FAILURES assertion(s) failed"

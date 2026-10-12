@@ -835,7 +835,7 @@ function build_companion_tests() {
   build_idb_deps
   generate_proto
   generate_companion_project
-  build_companion_archives
+  build_companion_archives idb_companion
 }
 
 function build_idb_companion() {
