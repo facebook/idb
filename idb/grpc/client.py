@@ -190,7 +190,7 @@ from idb.grpc.instruments import (
     instruments_generate_bytes,
     translate_instruments_timings,
 )
-from idb.grpc.launch import drain_launch_stream, end_launch_stream
+from idb.grpc.launch import drain_launch_stream, wait_for_launch_stream
 from idb.grpc.screenshot import screenshot_from_grpc, screenshot_to_grpc
 from idb.grpc.status_details import RetryVerdictCodec
 from idb.grpc.stream import (
@@ -1563,10 +1563,7 @@ class Client(ClientBase):
             )
             await stream.send_message(request)
             if stop:
-                await asyncio.gather(
-                    drain_launch_stream(stream, pid_file),
-                    end_launch_stream(stream, stop),
-                )
+                await wait_for_launch_stream(stream, stop, pid_file)
             else:
                 await stream.end()
                 await drain_launch_stream(stream, pid_file)

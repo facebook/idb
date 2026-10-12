@@ -14,6 +14,33 @@ from idb.grpc.idb_pb2 import LaunchRequest, LaunchResponse, ProcessOutput
 from idb.grpc.stream import Stream
 
 
+async def wait_for_launch_stream(
+    stream: Stream[LaunchRequest, LaunchResponse],
+    stop: asyncio.Event,
+    pid_file: str | None,
+) -> None:
+    drain = asyncio.create_task(drain_launch_stream(stream, pid_file))
+    stopped = asyncio.create_task(stop.wait())
+    try:
+        done, _ = await asyncio.wait(
+            (drain, stopped), return_when=asyncio.FIRST_COMPLETED
+        )
+        if drain in done:
+            await drain
+        else:
+            await stream.send_message(LaunchRequest(stop=LaunchRequest.Stop()))
+        # grpclib raises if a call exits before its requests are ended, even after
+        # the response ends
+        await stream.end()
+        # The companion still forwards the app's final output after Stop, until it
+        # ends the response
+        await drain
+    finally:
+        drain.cancel()
+        stopped.cancel()
+        await asyncio.gather(drain, stopped, return_exceptions=True)
+
+
 async def drain_launch_stream(
     stream: Stream[LaunchRequest, LaunchResponse], pid_file: str | None
 ) -> None:
@@ -41,11 +68,3 @@ async def drain_launch_stream(
                 with open(pid_file, "wb") as f:
                     f.write(json_format_debugger_info(info).encode())
                     f.flush()
-
-
-async def end_launch_stream(
-    stream: Stream[LaunchRequest, LaunchResponse], stop: asyncio.Event
-) -> None:
-    await stop.wait()
-    await stream.send_message(LaunchRequest(stop=LaunchRequest.Stop()))
-    await stream.end()
