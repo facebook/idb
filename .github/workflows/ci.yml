@@ -110,11 +110,16 @@ jobs:
           ./build.sh build library-package
           tar -C Build/LibraryPackage -czf idb-libraries.macos-arm64.tar.gz .
           shasum -a 256 idb-libraries.macos-arm64.tar.gz | tee idb-libraries.macos-arm64.tar.gz.sha256
+          # One zip per XCFramework, as a SwiftPM binary target fetched by URL takes it,
+          # with the checksums a Package.swift names them by.
+          python3 -m CI.xcframework_zips Build/LibraryPackage xcframeworks
       - name: Upload the libraries
         uses: actions/upload-artifact@v5
         with:
           name: idb-libraries
-          path: idb-libraries.macos-arm64.tar.gz*
+          path: |
+            idb-libraries.macos-arm64.tar.gz*
+            xcframeworks/
       # The raw xcodebuild output build.sh keeps for every invocation; the
       # formatted job log shows only what the formatter recognised.
       - name: Upload xcodebuild logs on failure

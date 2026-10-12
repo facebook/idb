@@ -170,8 +170,9 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           run_id=$(gh run list -R "$GITHUB_REPOSITORY" --workflow ci.yml --commit "$GITHUB_SHA" --status success --limit 1 --json databaseId --jq '.[0].databaseId // empty')
-          if [ -n "$run_id" ] && gh run download "$run_id" -R "$GITHUB_REPOSITORY" -n idb-libraries -D reuse && [ -f reuse/idb-libraries.macos-arm64.tar.gz ]; then
+          if [ -n "$run_id" ] && gh run download "$run_id" -R "$GITHUB_REPOSITORY" -n idb-libraries -D reuse && [ -f reuse/idb-libraries.macos-arm64.tar.gz ] && [ -f reuse/xcframeworks/checksums.json ]; then
             mv reuse/idb-libraries.macos-arm64.tar.gz .
+            mv reuse/xcframeworks .
             echo "reused=true" >> "$GITHUB_OUTPUT"
             echo "Reusing the libraries package from CI run $run_id for $GITHUB_SHA"
           else
@@ -187,6 +188,7 @@ jobs:
           ./build.sh build libraries
           ./build.sh build library-package
           tar -C Build/LibraryPackage -czf idb-libraries.macos-arm64.tar.gz .
+          python3 -m CI.xcframework_zips Build/LibraryPackage xcframeworks
       - name: Upload xcodebuild logs on failure
         if: failure()
         uses: actions/upload-artifact@v5
@@ -203,13 +205,20 @@ jobs:
         uses: actions/upload-artifact@v5
         with:
           name: idb-libraries
-          path: idb-libraries.macos-arm64.tar.gz*
+          path: |
+            idb-libraries.macos-arm64.tar.gz*
+            xcframeworks/
       - name: Upload to release
         if: ${{ startsWith(github.ref, 'refs/tags/v') || inputs.version != '' }}
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           gh release upload "$RELEASE_TAG" idb-libraries.macos-arm64.tar.gz idb-libraries.macos-arm64.tar.gz.sha256 --clobber --repo "$GITHUB_REPOSITORY"
+          # The XCFramework zips, by the names a Package.swift fetches them by, and their
+          # checksums, published as xcframework-checksums.json.
+          gh release upload "$RELEASE_TAG" xcframeworks/*.xcframework.zip --clobber --repo "$GITHUB_REPOSITORY"
+          cp xcframeworks/checksums.json xcframework-checksums.json
+          gh release upload "$RELEASE_TAG" xcframework-checksums.json --clobber --repo "$GITHUB_REPOSITORY"
   python-client:
     name: Build fb-idb distributions
     runs-on: ubuntu-latest
