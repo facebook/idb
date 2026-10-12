@@ -5,9 +5,9 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-import CompanionUtilities
 import GRPCCore
 import IDBGRPCSwift
+import IDBTelemetry
 
 /// Logs a one-line summary when a streaming call's client stream closes.
 ///

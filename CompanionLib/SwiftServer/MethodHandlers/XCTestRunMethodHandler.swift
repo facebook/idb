@@ -5,13 +5,13 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-import CompanionUtilities
 import FBControlCore
 import FBSimulatorControl
 import FBXCTestCore
 import Foundation
 import GRPCCore
 import IDBGRPCSwift
+import IDBTelemetry
 
 /// Seam over a started test run, so the handler can be tested against a double.
 protocol XCTestRunCompletion {

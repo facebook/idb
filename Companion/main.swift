@@ -6,12 +6,13 @@
  */
 
 import CompanionLib
-import CompanionUtilities
 import FBControlCore
 import FBDeviceControl
 import FBSimulatorControl
 import FBXCTestCore
 import Foundation
+import IDBConcurrency
+import IDBTelemetry
 
 // @oss-disable
   // @oss-disable

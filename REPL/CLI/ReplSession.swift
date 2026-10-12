@@ -7,11 +7,11 @@
 
 import ArgumentParser
 import CompanionDiscovery
-import CompanionUtilities
 import Foundation
 import GRPCCore
 import GRPCNIOTransportHTTP2Posix
 import IDBGRPCSwift
+import IDBTelemetry
 import ReplCompiler
 
 /// The options needed to establish a REPL session, gathered from the CLI so both

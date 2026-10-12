@@ -6,12 +6,6 @@
     "CompanionTests": [
       "CompanionTests"
     ],
-    "CompanionUtilities": [
-      "CompanionUtilitiesTests"
-    ],
-    "CompanionUtilitiesTests": [
-      "CompanionUtilitiesTests"
-    ],
     "FBArtifactStaging": [
       "FBArtifactStagingTests"
     ],
@@ -103,6 +97,18 @@
     "FBXCTestCoreTests": [
       "FBXCTestCoreTests"
     ],
+    "IDBConcurrency": [
+      "IDBConcurrencyTests"
+    ],
+    "IDBConcurrencyTests": [
+      "IDBConcurrencyTests"
+    ],
+    "IDBTelemetry": [
+      "IDBTelemetryTests"
+    ],
+    "IDBTelemetryTests": [
+      "IDBTelemetryTests"
+    ],
     "ShimulatorProtocolTests": [
       "ShimulatorProtocolTests"
     ],
@@ -126,11 +132,6 @@
       ],
       "project": "Companion/idb_companion.xcodeproj",
       "runner": "large"
-    },
-    "CompanionUtilitiesTests": {
-      "bootedSimulator": false,
-      "prerequisites": [],
-      "runner": "standard"
     },
     "FBArtifactStagingTests": {
       "bootedSimulator": false,
@@ -237,6 +238,16 @@
       "prerequisites": [
         "fixtures"
       ],
+      "runner": "standard"
+    },
+    "IDBConcurrencyTests": {
+      "bootedSimulator": false,
+      "prerequisites": [],
+      "runner": "standard"
+    },
+    "IDBTelemetryTests": {
+      "bootedSimulator": false,
+      "prerequisites": [],
       "runner": "standard"
     },
     "ShimulatorProtocolTests": {

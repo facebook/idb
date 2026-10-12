@@ -5,7 +5,6 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-import CompanionUtilities
 import CoreGraphics
 import FBControlCore
 import FBSimulatorAX
@@ -13,6 +12,7 @@ import FBSimulatorControl
 import FBSimulatorVideo
 import FBVideoCore
 import Foundation
+import IDBConcurrency
 import IOSurface
 import SimScopeProtocol
 

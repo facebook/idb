@@ -13,8 +13,6 @@
 targets:
   idb_companion:
     dependencies:
-      - framework: ../Build/Products/Release/libCompanionUtilities.a
-        embed: false
       - framework: ../Build/Products/Release/libFBArtifactStaging.a
         embed: false
       - framework: ../Build/Products/Release/FBControlCore.framework
@@ -37,6 +35,10 @@ targets:
         embed: false
       - framework: ../Build/Products/Release/FBXCTestCore.framework
         embed: false
+      - framework: ../Build/Products/Release/libIDBConcurrency.a
+        embed: false
+      - framework: ../Build/Products/Release/libIDBTelemetry.a
+        embed: false
       - framework: ../Build/Products/Release/libShimulatorAudioInjectionCore.a
         embed: false
       - framework: ../Build/Products/Release/libShimulatorProtocol.a
@@ -47,12 +49,10 @@ targets:
         embed: false
   idb-repl:
     dependencies:
-      - framework: ../Build/Products/Release/libCompanionUtilities.a
+      - framework: ../Build/Products/Release/libIDBTelemetry.a
         embed: false
   sim-video:
     dependencies:
-      - framework: ../Build/Products/Release/libCompanionUtilities.a
-        embed: false
       - framework: ../Build/Products/Release/FBControlCore.framework
         embed: false
       - framework: ../Build/Products/Release/libFBSimulatorBridgeProtocol.a
@@ -63,6 +63,8 @@ targets:
         embed: false
       - framework: ../Build/Products/Release/libFBVideoCore.a
         embed: false
+      - framework: ../Build/Products/Release/libIDBConcurrency.a
+        embed: false
       - framework: ../Build/Products/Release/libShimulatorAudioInjectionCore.a
         embed: false
       - framework: ../Build/Products/Release/libShimulatorProtocol.a
@@ -71,8 +73,6 @@ targets:
         embed: false
   SimScope:
     dependencies:
-      - framework: ../Build/Products/Release/libCompanionUtilities.a
-        embed: false
       - framework: ../Build/Products/Release/FBControlCore.framework
         embed: false
       - framework: ../Build/Products/Release/libFBSimulatorAX.a
@@ -84,6 +84,8 @@ targets:
       - framework: ../Build/Products/Release/libFBSimulatorVideo.a
         embed: false
       - framework: ../Build/Products/Release/libFBVideoCore.a
+        embed: false
+      - framework: ../Build/Products/Release/libIDBConcurrency.a
         embed: false
       - framework: ../Build/Products/Release/libShimulatorAudioInjectionCore.a
         embed: false
@@ -107,8 +109,6 @@ targets:
         embed: false
   CompanionLibTests:
     dependencies:
-      - framework: ../Build/Products/Release/libCompanionUtilities.a
-        embed: false
       - framework: ../Build/Products/Release/libFBArtifactStaging.a
         embed: false
       - framework: ../Build/Products/Release/FBControlCore.framework
@@ -130,6 +130,10 @@ targets:
       - framework: ../Build/Products/Release/libFBVideoCore.a
         embed: false
       - framework: ../Build/Products/Release/FBXCTestCore.framework
+        embed: false
+      - framework: ../Build/Products/Release/libIDBConcurrency.a
+        embed: false
+      - framework: ../Build/Products/Release/libIDBTelemetry.a
         embed: false
       - framework: ../Build/Products/Release/libShimulatorAudioInjectionCore.a
         embed: false
@@ -141,8 +145,6 @@ targets:
         embed: false
   CompanionTests:
     dependencies:
-      - framework: ../Build/Products/Release/libCompanionUtilities.a
-        embed: false
       - framework: ../Build/Products/Release/libFBArtifactStaging.a
         embed: false
       - framework: ../Build/Products/Release/FBControlCore.framework
@@ -164,6 +166,10 @@ targets:
       - framework: ../Build/Products/Release/libFBVideoCore.a
         embed: false
       - framework: ../Build/Products/Release/FBXCTestCore.framework
+        embed: false
+      - framework: ../Build/Products/Release/libIDBConcurrency.a
+        embed: false
+      - framework: ../Build/Products/Release/libIDBTelemetry.a
         embed: false
       - framework: ../Build/Products/Release/libShimulatorAudioInjectionCore.a
         embed: false

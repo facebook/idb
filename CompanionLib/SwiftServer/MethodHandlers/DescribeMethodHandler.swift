@@ -5,11 +5,11 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-import CompanionUtilities
 import FBControlCore
 import Foundation
 import GRPCCore
 import IDBGRPCSwift
+import IDBTelemetry
 
 struct DescribeMethodHandler {
 

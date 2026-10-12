@@ -6,8 +6,8 @@
  */
 
 import ArgumentParser
-import CompanionUtilities
 import Foundation
+import IDBConcurrency
 
 @main
 struct VideoCommand: AsyncParsableCommand {
