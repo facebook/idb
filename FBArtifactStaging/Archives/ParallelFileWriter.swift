@@ -93,7 +93,7 @@ final class ParallelFileWriter {
 
   private static let inlineThreshold = 4 << 20
 
-  private struct File {
+  struct File {
     var path: String
     var contents: Data
     var mode: mode_t?
@@ -114,7 +114,7 @@ final class ParallelFileWriter {
 
   /// Hands files from the decoding thread to the writers, holding back the decoder
   /// when the writers fall behind.
-  private final class WriteQueue: @unchecked Sendable {
+  final class WriteQueue: @unchecked Sendable {
     private let condition = NSCondition()
     private var files: [File] = []
     private var head = 0
@@ -133,6 +133,13 @@ final class ParallelFileWriter {
       condition.lock()
       defer { condition.unlock() }
       return error
+    }
+
+    /// What the queue holds on to, in bytes, taken or not: the memory it costs.
+    var heldBytes: Int {
+      condition.lock()
+      defer { condition.unlock() }
+      return files.reduce(0) { $0 + $1.contents.count }
     }
 
     func put(_ file: File) throws {
