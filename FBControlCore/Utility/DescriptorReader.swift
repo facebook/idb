@@ -25,7 +25,7 @@ private func contiguousData(from data: DispatchData) -> Data {
 /// and its waiters to `lock`.
 public final class DescriptorReader: @unchecked Sendable {
 
-  public enum Outcome: Equatable, Sendable {
+  public enum Outcome: Sendable {
     case endOfFile
     case stopped
     case failed(errno: Int32)
