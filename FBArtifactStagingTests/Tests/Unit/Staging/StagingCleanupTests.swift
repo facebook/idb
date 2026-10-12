@@ -103,11 +103,16 @@ struct StagingCleanupTests {
     let contents = payload == .app ? try appArchive() : Data(repeating: 0x42, count: 100_000)
     let (installSource, configuration) = try installSource(source, contents)
 
-    let result = await Result {
+    // `Result`'s async initializer is newer than the Swift the open-source build compiles with.
+    let result: Result<Void, any Error>
+    do {
       try await Staging.withMaterialized(
         installSource, as: .application, downloadConfiguration: configuration,
         temporaryDirectory: TemporaryDirectory(rootDirectory: stagingRoot, logger: logger), logger: logger
       ) { _ in }
+      result = .success(())
+    } catch {
+      result = .failure(error)
     }
 
     switch (payload, result) {
