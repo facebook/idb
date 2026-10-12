@@ -48,7 +48,7 @@ package enum AXBridgeResponse {
       return .frontmostUnresolved(method: frontmostMethod, reason: message)
     case .assertionFailed:
       return .assertionFailed(message)
-    case .badRequest, .runtimeFailed, .none:
+    case .badRequest, .runtimeFailed, .capabilityUnavailable, .none:
       guard let pid else {
         return .guestFailure(message)
       }

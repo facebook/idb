@@ -5,6 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+import FBSimulatorBridgeProtocol
 import Foundation
 
 public enum SimulatorDisplayInteractionError: Error, LocalizedError {
@@ -39,10 +40,7 @@ public enum SimulatorDisplayInteractionError: Error, LocalizedError {
   }
 }
 
-struct SimulatorAccessibilityDisplay: Decodable, Equatable, Sendable {
-  let uniqueID: String
-  let displayID: UInt32
-}
+typealias SimulatorAccessibilityDisplay = BridgeAXDisplayInventory.Display
 
 /// What the guest advertises it can scope to a named display, beyond reporting its displays.
 package struct AXBridgeDisplayCapabilities: OptionSet, Sendable {
@@ -60,25 +58,26 @@ package struct AXBridgeDisplayCapabilities: OptionSet, Sendable {
 enum AXBridgeDisplayInventory {
   static func decode(_ data: Data, requiring capabilities: AXBridgeDisplayCapabilities = []) throws -> [SimulatorAccessibilityDisplay] {
     if let response = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
-      response["ok"] as? Bool == false, response["error_kind"] as? String == "capability_unavailable"
+      response[AXWire.Envelope.ok.rawValue] as? Bool == false,
+      response[AXWire.Envelope.errorKind.rawValue] as? String == AXWire.ErrorKind.capabilityUnavailable.rawValue
     {
       throw SimulatorDisplayInteractionError.unsupportedCapability("accessibility display discovery")
     }
-    let response = try AXBridgeResponse.validated(data, context: "display inventory")
-    if capabilities.contains(.scopedInteractions), response["displayScopedInteractions"] as? Bool != true {
+    _ = try AXBridgeResponse.validated(data, context: "display inventory")
+    guard let inventory = try? JSONDecoder().decode(BridgeAXDisplayInventory.self, from: data) else {
+      throw AXBridgeError.guestFailure("Invalid accessibility display inventory")
+    }
+    if capabilities.contains(.scopedInteractions), !inventory.displayScopedInteractions {
       throw SimulatorDisplayInteractionError.unsupportedCapability("display-scoped accessibility interactions in this guest")
     }
-    if capabilities.contains(.scopedTrees), response["displayScopedTrees"] as? Bool != true {
+    if capabilities.contains(.scopedTrees), !inventory.displayScopedTrees {
       throw SimulatorDisplayInteractionError.unsupportedCapability("display-scoped accessibility trees in this guest")
     }
-    if capabilities.contains(.scopedQuiescence), response["displayScopedQuiescence"] as? Bool != true {
+    if capabilities.contains(.scopedQuiescence), !inventory.displayScopedQuiescence {
       throw SimulatorDisplayInteractionError.unsupportedCapability("display-scoped quiescence in this guest")
     }
-    struct Envelope: Decodable {
-      let displays: [SimulatorAccessibilityDisplay]
-    }
-    guard let displays = try? JSONDecoder().decode(Envelope.self, from: data).displays,
-      displays.count <= 32,
+    let displays = inventory.displays
+    guard displays.count <= 32,
       displays.allSatisfy({ !$0.uniqueID.isEmpty && $0.uniqueID.count <= 1024 && $0.displayID > 0 }),
       Set(displays.map(\.uniqueID)).count == displays.count,
       Set(displays.map(\.displayID)).count == displays.count
