@@ -44,7 +44,7 @@ struct IDBTransientTests {
     ]
     for (protoKind, expectedKind) in mappings {
       let result = FileContainerValueTransformer.fileContainer(from: protoKind)
-      #expect((result) == (expectedKind), "Mapping failed for \(protoKind)")
+      #expect(result?.rawValue == expectedKind.rawValue, "Mapping failed for \(protoKind)")
     }
   }
 

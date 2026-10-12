@@ -110,7 +110,7 @@ public final class FileContainerTailOperation {
 // MARK: - Container Kinds
 
 /// The names of the file containers a target can expose.
-public struct FileContainerKind: RawRepresentable, Hashable, Sendable {
+public struct FileContainerKind: RawRepresentable, Sendable {
   public let rawValue: String
 
   public init(rawValue: String) {
