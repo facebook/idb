@@ -95,6 +95,7 @@ Head over [to the main documentation](https://www.fbidb.io) for more details on 
 
 # Or build a subset: libraries, shims, idb_companion, or a specific library
 ./build.sh build libraries
+./build.sh build library-package   # the libraries as consumers take them; see FBSimulatorControl/README.md
 ./build.sh build idb_companion
 ./build.sh build FBControlCore
 

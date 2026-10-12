@@ -27,13 +27,40 @@ The original use-case for `FBSimulatorControl` was to boot multiple Simulators o
 
 ## Installation
 
-The homebrew installation is derived from [the `build.sh`](../build.sh) script in the root of the repository. You can build `FBSimulatorControl` on its own with: `./build.sh build FBSimulatorControl` (or build every framework with `./build.sh build frameworks`).
+idb's libraries are published as static libraries, one XCFramework each, in `idb-libraries.macos-arm64.tar.gz` on each [release](https://github.com/facebook/idb/releases). A consumer takes only the libraries it uses: `FBControlCore` alone, `FBSimulatorControl` and what it builds on, or any of the libraries built on that, such as `FBSimulatorAX` or `FBSimulatorVideo`. The package is assembled from a source build with `./build.sh build libraries`, then `./build.sh build library-package`, which writes it to `Build/LibraryPackage`.
 
-The `FBSimulatorControl.xcodeproj` builds the `FBSimulatorControl.framework` and its test bundles: `FBSimulatorControlUnitTests.xctest`, `FBSimulatorControlBootTests.xctest` and `FBSimulatorControlSmokeTests.xctest`. The project file is generated from `project.yml` with [XcodeGen](https://github.com/yonaskolb/XcodeGen) (run `./build.sh generate`), so it is not checked into the repo.
+The package holds:
 
-Once you build the `FBSimulatorControl.framework`, it can be linked like any other 3rd-party Framework for your project:
-- Add `FBSimulatorControl.framework` to the Target's 'Link Binary With Libraries' build phase.
-- Ensure that `FBSimulatorControl` is copied into the Target's bundle (if your Target is an Application or Framework) or a path relative to the Executable if your project does not have a bundle.
+- `<Library>.xcframework` for each library: its static archive, and its Swift module with the textual module interface, so it builds with a different Swift compiler from the one that built it.
+- `manifest.json`, for each library: the archives it links (its own and every library it builds on), the SDK frameworks, the linker flags, the search paths its interface needs, and the resources it runs. It is [`LibraryPackage.json`](../LibraryPackage.json), which is generated from the build.
+- `PrivateHeaders/`: Apple's private frameworks, declared as idb uses them, with the TBD stubs the simulator libraries' linker flags name.
+- `Resources/`: the guest bridges and shims the simulator libraries run inside a simulator.
+- `Package.swift`: a SwiftPM product per library.
+
+### With SwiftPM
+
+Unpack the package, add it as a local dependency, and depend on the libraries you use by product:
+
+```swift
+dependencies: [.package(path: "path/to/idb-libraries")],
+targets: [
+  .executableTarget(name: "Tool", dependencies: [.product(name: "FBSimulatorControl", package: "idb-libraries")]),
+]
+```
+
+It has to be a local dependency rather than a URL: the simulator libraries link Apple's private `CoreSimulator` and `AccessibilityPlatformTranslation` frameworks through TBD stubs, and SwiftPM accepts the linker flags that name them only from a local package.
+
+### With Xcode or swiftc
+
+For each library you use, as `manifest.json` lists it:
+
+- Link every archive in `archives`, from its XCFramework, and every framework in `frameworks`.
+- Add each archive's XCFramework slice (`<Library>.xcframework/macos-arm64`) to the Swift search paths (`SWIFT_INCLUDE_PATHS`, or `-I`), and each entry of `search_paths` (`PrivateHeaders`, for the simulator libraries) too.
+- Give the linker `linker_flags`, with their paths made relative to the package: in `OTHER_LDFLAGS`, or with `-Xlinker` before each for `swiftc`.
+
+### Resources
+
+The simulator libraries run helpers inside the simulator: the guest bridge for services and accessibility, and the shims for XCTest and the REPL. Point `BundledResources.hostDirectoryPath` at the package's `Resources/` (or wherever you copy it) before using them. Without it, they are looked for in an application's own resources, or in a `Resources/` directory beside the executable. Copy them as they are: the guests are signed for the simulator and must not be re-signed.
 
 ## Usage
 
