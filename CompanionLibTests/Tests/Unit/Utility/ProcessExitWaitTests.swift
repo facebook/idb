@@ -27,15 +27,20 @@ struct ProcessExitWaitTests {
   }
 
   /// A live process that exits while being watched resolves the wait (and the
-  /// `DispatchSource` survives long enough to deliver the event).
+  /// `DispatchSource` survives long enough to deliver the event), and not before it
+  /// exits: `sleep 0.3` cannot exit sooner than 300 ms after it is launched.
+  ///
+  /// `Process.isRunning` is no measure of that: `Process` learns of the exit from a
+  /// source of its own, which may run after the one that resolves the wait.
   @Test
   func resolvesWhenAWatchedProcessExits() async throws {
     let process = Process()
     process.executableURL = URL(fileURLWithPath: "/bin/sleep")
     process.arguments = ["0.3"]
+    let launched = ContinuousClock.now
     try process.run()
 
     await waitForProcessExit(pid: process.processIdentifier)
-    #expect(!(process.isRunning))
+    #expect(ContinuousClock.now - launched >= .milliseconds(300))
   }
 }
