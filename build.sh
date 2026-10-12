@@ -991,6 +991,13 @@ function build_distribution() {
   echo "Distribution ready at $dist"
 }
 
+# The libraries as consumers take them, from the products `build libraries`
+# leaves: one static XCFramework per library, the private frameworks' module maps
+# and stubs, the resources, and the manifest of what each library links and needs.
+function build_library_package() {
+  python3 -m CI.library_package "$BUILD_DIRECTORY" "$BUILD_DIRECTORY/LibraryPackage"
+}
+
 function build_simscope() {
   build_companion_archives SimScope
   for scheme in SimScope simscope-remote; do
@@ -1066,6 +1073,8 @@ function build() {
         build_staging_bench;;
       distribution)
         build_distribution;;
+      library-package)
+        build_library_package;;
       FBControlCore|FBXCTestCore|FBSimulatorControl|FBSimulatorXCTest|FBDeviceControl)
         build_target "$target";;
       *)
@@ -1179,6 +1188,7 @@ Commands:
       simscope        Build and package SimScope.app with its bundled tools
       distribution    Assemble the distribution
       libraries       Build every library, and the guests and shims they need, in Release (also: frameworks)
+      library-package Package the built libraries for consumers (after 'build libraries')
       idb_companion   Build idb_companion only
       idb-repl        Build idb-repl only
       sim-video       Build the local video recorder

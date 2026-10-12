@@ -101,6 +101,20 @@ jobs:
         # The whole of Build/Products, whatever configuration the build used; each row
         # names it.
         run: python3 -m CI.binary_sizes --title "Libraries" Build/Products | tee -a "$GITHUB_STEP_SUMMARY"
+      # The libraries as consumers take them: an XCFramework per library, the
+      # private frameworks' module maps and stubs, the resources, and the manifest
+      # of what each library links and needs. The Release workflow publishes this
+      # tarball when it is cut at a commit CI built.
+      - name: Package the libraries
+        run: |
+          ./build.sh build library-package
+          tar -C Build/LibraryPackage -czf idb-libraries.macos-arm64.tar.gz .
+          shasum -a 256 idb-libraries.macos-arm64.tar.gz | tee idb-libraries.macos-arm64.tar.gz.sha256
+      - name: Upload the libraries
+        uses: actions/upload-artifact@v5
+        with:
+          name: idb-libraries
+          path: idb-libraries.macos-arm64.tar.gz*
       # The raw xcodebuild output build.sh keeps for every invocation; the
       # formatted job log shows only what the formatter recognised.
       - name: Upload xcodebuild logs on failure

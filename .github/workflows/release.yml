@@ -149,6 +149,67 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           gh release upload "$RELEASE_TAG" idb-companion.macos-arm64.tar.gz idb-companion.macos-arm64.tar.gz.sha256 --clobber --repo "$GITHUB_REPOSITORY"
+  libraries:
+    name: Build and publish the libraries
+    runs-on: macos-26
+    timeout-minutes: 90
+    needs: [create-release]
+    if: ${{ !cancelled() && (needs.create-release.result == 'success' || needs.create-release.result == 'skipped') }}
+    permissions:
+      contents: write
+      actions: read
+    env:
+      RELEASE_TAG: ${{ startsWith(github.ref, 'refs/tags/v') && github.ref_name || inputs.version }}
+    steps:
+      - uses: actions/checkout@v5
+      # As for the companion: a release cut at a commit CI has already built
+      # ships CI's libraries package rather than a rebuild.
+      - name: Look for this commit's CI libraries package
+        id: reuse
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          run_id=$(gh run list -R "$GITHUB_REPOSITORY" --workflow ci.yml --commit "$GITHUB_SHA" --status success --limit 1 --json databaseId --jq '.[0].databaseId // empty')
+          if [ -n "$run_id" ] && gh run download "$run_id" -R "$GITHUB_REPOSITORY" -n idb-libraries -D reuse && [ -f reuse/idb-libraries.macos-arm64.tar.gz ]; then
+            mv reuse/idb-libraries.macos-arm64.tar.gz .
+            echo "reused=true" >> "$GITHUB_OUTPUT"
+            echo "Reusing the libraries package from CI run $run_id for $GITHUB_SHA"
+          else
+            echo "reused=false" >> "$GITHUB_OUTPUT"
+            echo "No successful CI run with a libraries package for $GITHUB_SHA; building"
+          fi
+      - name: Install tools
+        if: steps.reuse.outputs.reused != 'true'
+        run: brew install xcodegen xcbeautify
+      - name: Build and package the libraries
+        if: steps.reuse.outputs.reused != 'true'
+        run: |
+          ./build.sh build libraries
+          ./build.sh build library-package
+          tar -C Build/LibraryPackage -czf idb-libraries.macos-arm64.tar.gz .
+      - name: Upload xcodebuild logs on failure
+        if: failure()
+        uses: actions/upload-artifact@v5
+        with:
+          name: libraries-xcodebuild-logs
+          path: Build/Logs/xcodebuild/*.log
+          if-no-files-found: ignore
+          retention-days: 14
+      # Digested here whichever way the tarball arrived, so the digest is always
+      # that of the file being uploaded.
+      - name: Digest
+        run: shasum -a 256 idb-libraries.macos-arm64.tar.gz | tee idb-libraries.macos-arm64.tar.gz.sha256
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v5
+        with:
+          name: idb-libraries
+          path: idb-libraries.macos-arm64.tar.gz*
+      - name: Upload to release
+        if: ${{ startsWith(github.ref, 'refs/tags/v') || inputs.version != '' }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release upload "$RELEASE_TAG" idb-libraries.macos-arm64.tar.gz idb-libraries.macos-arm64.tar.gz.sha256 --clobber --repo "$GITHUB_REPOSITORY"
   python-client:
     name: Build fb-idb distributions
     runs-on: ubuntu-latest
