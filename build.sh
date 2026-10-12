@@ -717,12 +717,12 @@ function build_target() {
 }
 
 # Release, the configuration that ships: the test schemes already build every
-# library in Debug, so a Debug build here would only repeat them.
+# library in Debug, so a Debug build here would only repeat them. The generated
+# project's Libraries scheme holds every library, and the guests and shims are
+# the resources they need at runtime, so a local build has what is published.
 function build_all_libraries() {
-  build_target FBControlCore Release
-  build_target FBXCTestCore Release
-  build_target FBSimulatorControl Release
-  build_target FBDeviceControl Release
+  build_target Libraries Release
+  build_fbsimulatorcontrol_resources
 }
 
 function build_shim() {
@@ -1178,7 +1178,7 @@ Commands:
       all             Build all targets
       simscope        Build and package SimScope.app with its bundled tools
       distribution    Assemble the distribution
-      libraries       Build all libraries only, in Release (also: frameworks)
+      libraries       Build every library, and the guests and shims they need, in Release (also: frameworks)
       idb_companion   Build idb_companion only
       idb-repl        Build idb-repl only
       sim-video       Build the local video recorder

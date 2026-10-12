@@ -1799,3 +1799,29 @@ targets:
     dependencies:
       - target: IDBTelemetry
       - sdk: XCTest.framework
+
+schemes:
+  Libraries:
+    build:
+      targets:
+        SimScopeProtocol: all
+        SimulatorIPC: all
+        FBSimulatorBridgeProtocol: all
+        FBSimulatorVideo: all
+        ShimulatorProtocol: all
+        ShimulatorAudioInjectionCore: all
+        ZstdDecompress: all
+        FBControlCoreObjC: all
+        FBControlCore: all
+        FBArtifactStaging: all
+        FBVideoCore: all
+        FBProfilingCore: all
+        FBXCTestCore: all
+        FBSimulatorControl: all
+        FBSimulatorAX: all
+        FBSimulatorProfiling: all
+        FBSimulatorXCTest: all
+        FBSimulatorCodeInjection: all
+        FBDeviceControl: all
+        IDBConcurrency: all
+        IDBTelemetry: all

@@ -757,6 +757,17 @@ output="$(in_package "$dir" '
 ')"
 assert_equal "building the staging benchmark builds its archives" 'built FBArtifactStaging Release' "$output"
 
+# Building the libraries builds the generated project's scheme of every library,
+# then the resources they need at runtime.
+output="$(in_package "$dir" '
+    set +u
+    build_target() { echo "built $1 $2"; }
+    build_fbsimulatorcontrol_resources() { echo "built resources"; }
+    build_all_libraries
+')"
+assert_equal "building the libraries builds every library and their resources" 'built Libraries Release
+built resources' "$output"
+
 if [ "$FAILURES" -ne 0 ]; then
     echo "$FAILURES assertion(s) failed"
     exit 1
