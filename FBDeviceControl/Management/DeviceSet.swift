@@ -89,7 +89,7 @@ public final class DeviceSet: TargetSet, TargetSetDelegate, CustomStringConverti
     if let device = storage.device(forKey: amDevice.uniqueIdentifier) {
       device.amDevice = amDevice
     } else {
-      let device = Device(set: self, amDevice: amDevice, restorableDevice: nil, logger: logger)
+      let device = Device(amDevice: amDevice, restorableDevice: nil, logger: logger)
       storage.deviceAttached(device, forKey: amDevice.uniqueIdentifier)
     }
     if let device = storage.device(forKey: amDevice.uniqueIdentifier) {
@@ -115,7 +115,7 @@ public final class DeviceSet: TargetSet, TargetSetDelegate, CustomStringConverti
     if let device = storage.device(forKey: restorableDevice.uniqueIdentifier) {
       device.restorableDevice = restorableDevice
     } else {
-      let device = Device(set: self, amDevice: nil, restorableDevice: restorableDevice, logger: logger)
+      let device = Device(amDevice: nil, restorableDevice: restorableDevice, logger: logger)
       storage.deviceAttached(device, forKey: restorableDevice.uniqueIdentifier)
     }
     if let device = storage.device(forKey: restorableDevice.uniqueIdentifier) {

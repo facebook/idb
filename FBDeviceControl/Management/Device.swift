@@ -15,7 +15,6 @@ public final class Device: Target, DeviceCommands, CustomStringConvertible {
 
   // MARK: - Properties
 
-  public private(set) weak var set: DeviceSet?
   public let commandCache: TargetCommandCache
   public private(set) var logger: any ControlCoreLogger
   public private(set) var calls: AMDCalls
@@ -82,12 +81,10 @@ public final class Device: Target, DeviceCommands, CustomStringConvertible {
   public var allValues: [String: Any] { cachedAllValues ?? [:] }
 
   public init(
-    set: DeviceSet?,
     amDevice: MobileDevice?,
     restorableDevice: RestorableDevice?,
     logger: any ControlCoreLogger
   ) {
-    self.set = set
     self.amDeviceStorage = amDevice
     self.restorableDeviceStorage = restorableDevice
     self.commandCache = TargetCommandCache()

@@ -180,7 +180,6 @@ final class FakeAMDevice: NSObject {
   /// A `Device` — the type the command classes take, and so the type public-API tests need.
   func makeDevice() -> Device {
     Device(
-      set: nil,
       amDevice: makeAMDevice(),
       restorableDevice: nil,
       logger: ControlCoreGlobalConfiguration.defaultLogger)
