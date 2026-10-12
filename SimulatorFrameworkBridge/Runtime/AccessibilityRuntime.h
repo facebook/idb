@@ -513,8 +513,15 @@ typedef void (^FBAXQuiescenceHandler)(FBAXQuiescenceReport report, pid_t pid);
  */
 - (FBAXHitTestOutcome *)hitTestAtPoint:(CGPoint)point processIdentifier:(pid_t)pid;
 
-/** Resolves unrotated points on one discovered accessibility display; a mismatched pid is empty. */
-- (FBAXHitTestOutcome *)hitTestAtPoint:(CGPoint)point processIdentifier:(pid_t)pid displayIdentifier:(uint32_t)displayID;
+/**
+ * Resolves unrotated points on one discovered accessibility display; a mismatched pid is empty. The
+ * translator's requests claim `clientType` (a `BridgeAXClientType` raw value), which can change the element
+ * the application reports at the point.
+ */
+- (FBAXHitTestOutcome *)hitTestAtPoint:(CGPoint)point
+                     processIdentifier:(pid_t)pid
+                     displayIdentifier:(uint32_t)displayID
+                            clientType:(NSUInteger)clientType;
 
 /**
  * Performs a semantic action on an element handle, in one round trip. Whether the element advertises the
@@ -537,10 +544,13 @@ typedef void (^FBAXQuiescenceHandler)(FBAXQuiescenceReport report, pid_t pid);
  * vocabulary from XCTest's `XC_kAXXCAttribute*` names with its own server-side handlers; the two
  * disagree on some screens. `element` may be an element handle or a translation object from an earlier
  * translator read. The result omits attributes the server did not answer; nil means the read could not
- * be performed at all.
+ * be performed at all. The request claims `clientType` (a `BridgeAXClientType` raw value): an application
+ * answers a client that deserves automation with its `automationElements`, which nothing invalidates, so
+ * zero — no client — is what keeps a read on the live traversal.
  */
 - (nullable NSDictionary<NSNumber *, id> *)translatorAttributes:(NSArray<NSNumber *> *)attributes
-                                                      ofElement:(id)element;
+                                                      ofElement:(id)element
+                                                     clientType:(NSUInteger)clientType;
 
 /**
  * Whether the device is in accessibility automation mode.

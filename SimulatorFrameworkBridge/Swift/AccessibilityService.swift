@@ -268,6 +268,9 @@ private struct TraversalContext {
   // replaces is counted, and this caps what a pathological ownership graph can spend on fetches. Screens
   // measured so far carry one or two boundaries; a read that hits the cap reports `truncated`.
   var remainingBoundaryFetches = 64
+  // The client the read's translator requests claim. Only the translator vocabulary asks through the
+  // translator, so only a semantic walk sends it.
+  var clientType: BridgeAXClientType = .noClient
   var truncated = false
   var roundTrips: Int64 = 0
   // UIKit lists some elements under more than one parent (a table header's search field sits under its
@@ -615,7 +618,7 @@ private final class AccessibilityRequest {
     traversal.remainingNodes -= 1
 
     FBAXBridgeCountRoundTrip()
-    let values = try client.translatorAttributes(of: element)
+    let values = try client.translatorAttributes(of: element, clientType: UInt(traversal.clientType.rawValue))
     // Nil is "could not read", not "empty element": building a node from it would report a failed bind as a
     // healthy application with no content.
     guard values.isAvailable else {
@@ -680,7 +683,7 @@ private final class AccessibilityRequest {
     // Children are a separate request (the handler special-cases the attribute out of the batch). Asked even
     // at the depth cap, because `truncated` needs to know whether this node has children.
     FBAXBridgeCountRoundTrip()
-    let childElements = try client.translatorChildren(of: element)
+    let childElements = try client.translatorChildren(of: element, clientType: UInt(traversal.clientType.rawValue))
     if depth < maxDepth {
       for child in childElements {
         let built = try FBAXBridgeBuildTranslatorNode(
@@ -764,14 +767,16 @@ private final class AccessibilityRequest {
 
   // MARK: - Frontmost resolution
 
+  // Only a display-scoped hit-test asks through the translator, so only it carries `clientType`.
   fileprivate func FBAXBridgeHitTest(
     client: FBAXClient,
     at point: CGPoint,
     processIdentifier pid: pid_t,
-    displayID: UInt32?
+    displayID: UInt32?,
+    clientType: BridgeAXClientType
   ) throws -> FBAXElementHit {
     guard let displayID else { return try client.hitTest(at: point, processIdentifier: pid) }
-    return try client.hitTest(at: point, processIdentifier: pid, displayIdentifier: displayID)
+    return try client.hitTest(at: point, processIdentifier: pid, displayIdentifier: displayID, clientType: UInt(clientType.rawValue))
   }
 
   // Bounds a descent against an accessibility tree that loops back on itself.
@@ -828,7 +833,8 @@ private final class AccessibilityRequest {
     displayID: UInt32?
   ) throws -> FBAXFrontmostOutcome {
     FBAXBridgeCountRoundTrip()
-    let outcome = try FBAXBridgeHitTest(client: client, at: anchor, processIdentifier: 0, displayID: displayID)
+    // Resolution asks which application is in front, not for its tree, so it claims no client.
+    let outcome = try FBAXBridgeHitTest(client: client, at: anchor, processIdentifier: 0, displayID: displayID, clientType: .noClient)
     switch outcome.status {
     case FBAXHitTestStatus.hit:
       return FBAXFrontmostOutcome.resolved(outcome.owningProcessIdentifier)
@@ -1024,13 +1030,14 @@ private final class AccessibilityRequest {
     point: CGPoint,
     pid: Int32?,
     attributes: [String]?,
-    displayID: UInt32?
+    displayID: UInt32?,
+    clientType: BridgeAXClientType
   ) throws -> [String: Any] {
     let pidNumber = pid.map { $0 as NSNumber }
 
     FBAXBridgeCountRoundTrip()
 
-    let outcome = try FBAXBridgeHitTest(client: client, at: point, processIdentifier: pid ?? 0, displayID: displayID)
+    let outcome = try FBAXBridgeHitTest(client: client, at: point, processIdentifier: pid ?? 0, displayID: displayID, clientType: clientType)
     switch outcome.status {
     case FBAXHitTestStatus.hit:
       break
@@ -1133,7 +1140,9 @@ private final class AccessibilityRequest {
     let assertValue = request.assertion?.value
 
     FBAXBridgeCountRoundTrip()
-    let hit = try FBAXBridgeHitTest(client: client, at: CGPoint(x: request.x, y: request.y), processIdentifier: request.pid ?? 0, displayID: request.displayID)
+    let hit = try FBAXBridgeHitTest(
+      client: client, at: CGPoint(x: request.x, y: request.y), processIdentifier: request.pid ?? 0, displayID: request.displayID,
+      clientType: .noClient)
     switch hit.status {
     case FBAXHitTestStatus.hit:
       break
@@ -1463,8 +1472,9 @@ private final class AccessibilityRequest {
       return try FBAXBridgeDeviceSetting(client: client, name: name, enabled: enabled)
     // `hittest` is self-contained: with a pid it hit-tests that app; with no pid it hit-tests display-wide
     // — the app owning the point, resolved in-guest, with no frontmost pid query.
-    case let .hitTest(x, y, attributes, _, displayID, pid):
-      return try FBAXBridgeHitTest(client: client, point: CGPoint(x: x, y: y), pid: pid, attributes: attributes, displayID: displayID)
+    case let .hitTest(x, y, attributes, clientType, displayID, pid):
+      return try FBAXBridgeHitTest(
+        client: client, point: CGPoint(x: x, y: y), pid: pid, attributes: attributes, displayID: displayID, clientType: clientType)
     // Writes are point-addressed: a one-shot guest exits between requests, so an element handle cannot
     // survive one.
     case let .write(write):
@@ -1561,7 +1571,7 @@ private final class AccessibilityRequest {
     let nodeBudget = options.maxNodes
 
     var tree: [String: Any]?
-    traversal = TraversalContext(remainingNodes: nodeBudget, processIdentifier: pid)
+    traversal = TraversalContext(remainingNodes: nodeBudget, processIdentifier: pid, clientType: options.clientType)
     let traverseStarted = CFAbsoluteTimeGetCurrent()
     if options.traversal == .singleFetch {
       let names = FBAXBridgeFetchList(attributes: options.attributes, displayID: displayID)

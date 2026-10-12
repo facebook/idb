@@ -542,13 +542,18 @@ static NSDictionary *FBAXFakeSnapshotNode(FBAXFakeElement *element,
   _lastHitTestPoint = point;
   _lastHitTestProcessIdentifier = pid;
   _lastHitTestDisplayIdentifier = nil;
+  _lastHitTestClientType = nil;
   return self.hitTestOutcome;
 }
 
-- (FBAXHitTestOutcome *)hitTestAtPoint:(CGPoint)point processIdentifier:(pid_t)pid displayIdentifier:(uint32_t)displayID
+- (FBAXHitTestOutcome *)hitTestAtPoint:(CGPoint)point
+                     processIdentifier:(pid_t)pid
+                     displayIdentifier:(uint32_t)displayID
+                            clientType:(NSUInteger)clientType
 {
   FBAXHitTestOutcome *outcome = [self hitTestAtPoint:point processIdentifier:pid];
   _lastHitTestDisplayIdentifier = @(displayID);
+  _lastHitTestClientType = @(clientType);
   return outcome;
 }
 
@@ -587,10 +592,11 @@ static NSDictionary *FBAXFakeSnapshotNode(FBAXFakeElement *element,
 
 - (nullable NSDictionary<NSNumber *, id> *)translatorAttributes:(NSArray<NSNumber *> *)attributes
                                                       ofElement:(id)element
+                                                     clientType:(NSUInteger)clientType
 {
   [self recordOperation:@"translatorAttributes"];
   _translatorReadCount++;
-  [self.translatorRequests addObject:@{@"attributes" : attributes, @"element" : element}];
+  [self.translatorRequests addObject:@{@"attributes" : attributes, @"element" : element, @"clientType" : @(clientType)}];
   if (self.translatorRaiseAtRead == self.translatorReadCount) {
     [NSException raise:NSInternalInconsistencyException format:@"translator read %lu failed", (unsigned long)self.translatorReadCount];
   }

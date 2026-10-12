@@ -85,7 +85,11 @@ NS_ASSUME_NONNULL_BEGIN
 - (nullable NSNumber *)owningProcessIdentifierOfElement:(FBAXElement *)element error:(NSError **)error;
 - (FBXCUIElementType)elementTypeForAutomationType:(NSUInteger)automationType;
 - (nullable FBAXElementHit *)hitTestAtPoint:(CGPoint)point processIdentifier:(pid_t)pid error:(NSError **)error;
-- (nullable FBAXElementHit *)hitTestAtPoint:(CGPoint)point processIdentifier:(pid_t)pid displayIdentifier:(uint32_t)displayID error:(NSError **)error;
+- (nullable FBAXElementHit *)hitTestAtPoint:(CGPoint)point
+                          processIdentifier:(pid_t)pid
+                          displayIdentifier:(uint32_t)displayID
+                                 clientType:(NSUInteger)clientType
+                                      error:(NSError **)error;
 - (nullable FBAXWriteOutcome *)performAction:(FBAXAction)action onElement:(FBAXElement *)element error:(NSError **)error;
 - (nullable FBAXWriteOutcome *)setValue:(id)value onElement:(FBAXElement *)element error:(NSError **)error;
 - (nullable FBAXFrontmostOutcome *)windowServerFrontmostWithError:(NSError **)error;
@@ -95,8 +99,10 @@ NS_ASSUME_NONNULL_BEGIN
 - (nullable NSNumber *)setAutomationModeEnabled:(BOOL)enabled error:(NSError **)error;
 - (nullable FBAXDeviceSettingOutcome *)enabledStateForDeviceSetting:(FBAXDeviceSetting)setting error:(NSError **)error;
 - (nullable FBAXDeviceSettingOutcome *)setEnabled:(BOOL)enabled forDeviceSetting:(FBAXDeviceSetting)setting error:(NSError **)error;
-- (nullable FBAXTranslatorRead *)translatorAttributesOfElement:(FBAXElement *)element error:(NSError **)error;
-- (nullable NSArray<FBAXElement *> *)translatorChildrenOfElement:(FBAXElement *)element error:(NSError **)error;
+- (nullable FBAXTranslatorRead *)translatorAttributesOfElement:(FBAXElement *)element clientType:(NSUInteger)clientType error:(NSError **)error;
+- (nullable NSArray<FBAXElement *> *)translatorChildrenOfElement:(FBAXElement *)element
+                                                      clientType:(NSUInteger)clientType
+                                                           error:(NSError **)error;
 /** Nil when the runtime cannot observe or raised, with `*error` saying which. */
 - (nullable FBAXQuiescenceMonitorClient *)quiescenceMonitorWithHandler:(FBAXQuiescenceHandler)handler error:(NSError **)error;
 

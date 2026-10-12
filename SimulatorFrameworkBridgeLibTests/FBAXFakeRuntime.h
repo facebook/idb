@@ -159,7 +159,7 @@ NSDictionary<NSString *, id> *FBAXGeometryDictionaryProbe(BOOL rectangle, BOOL r
 /** Every device-setting write as `{setting, enabled}`, in order. */
 @property (nonatomic, strong) NSMutableArray<NSDictionary<NSString *, NSNumber *> *> *deviceSettingWrites;
 
-/** What `-translatorAttributes:ofElement:` answers with. Nil means the read could not be performed. */
+/** What `-translatorAttributes:ofElement:clientType:` answers with. Nil means the read could not be performed. */
 @property (nullable, nonatomic, copy) NSDictionary<NSNumber *, id> *translatorAttributeValues;
 /** Per-call answers; NSNull models a nil answer. Empty uses translatorAttributeValues. */
 @property (nonatomic, copy) NSArray<id> *translatorResponses;
@@ -232,6 +232,8 @@ NSDictionary<NSString *, id> *FBAXGeometryDictionaryProbe(BOOL rectangle, BOOL r
 /** The point of the most recent hit-test, and the pid it was scoped to (0 for display-wide). */
 @property (nonatomic, readonly) CGPoint lastHitTestPoint;
 @property (nonatomic, readonly) pid_t lastHitTestProcessIdentifier;
+/** The client the last display hit-test claimed; nil after a hit-test that names no display. */
+@property (nullable, nonatomic, readonly) NSNumber *lastHitTestClientType;
 @property (nullable, nonatomic, readonly) NSNumber *lastHitTestDisplayIdentifier;
 @property (nullable, nonatomic, readonly) NSNumber *lastFrontmostDisplayIdentifier;
 /**

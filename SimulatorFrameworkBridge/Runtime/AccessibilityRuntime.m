@@ -523,6 +523,7 @@ static const FBAXBoundSelector kFBAXBoundSelectors[] = {
   {"AXPTranslatorRequest", "requestWithTranslation:", YES, "@@:@"},
   {"AXPTranslatorRequest", "setRequestType:", NO, "v@:Q"},
   {"AXPTranslatorRequest", "setAttributeType:", NO, "v@:Q"},
+  {"AXPTranslatorRequest", "setClientType:", NO, "v@:Q"},
   {"AXPTranslatorRequest", "setParameters:", NO, "v@:@"},
   {"AXPTranslatorResponse", "resultData", NO, "@@:"},
   // RunningBoardServices
@@ -913,6 +914,22 @@ static void FBAXQuiescenceObserverCallback(void *observer, void *element, uint32
 // translator resolve the true window-server frontmost with no host round-trip. Requests are serviced
 // serially by the guest, so the depth guard only bounds re-entrant sub-reads.
 static NSInteger gAXPSelfServiceDepth = 0;
+// The client the requests a translator emits during one interaction claim: set around an interaction that
+// names a client and cleared after it, even if it raises, on the queue that runs it. Nil leaves those
+// requests exactly as the translator built them.
+static NSNumber *_Nullable gAXPSelfServiceClientType = nil;
+
+// Runs `interaction` with the translator's own requests claiming `clientType`; zero claims none, so the
+// requests pass through untouched.
+static void FBAXBridgeWithSelfServiceClientType(NSUInteger clientType, void (^interaction)(void))
+{
+  gAXPSelfServiceClientType = clientType == 0 ? nil : @(clientType);
+  @try {
+    interaction();
+  } @finally {
+    gAXPSelfServiceClientType = nil;
+  }
+}
 
 @interface FBAXWindowServerDelegate : NSObject <AXPTranslationTokenDelegateHelper>
 @property (nonatomic, weak) AXPTranslator *translator;
@@ -931,6 +948,10 @@ static NSInteger gAXPSelfServiceDepth = 0;
     id result = nil;
     // Declaring the selector says what its signature is if the runtime has it, not that the runtime has
     // it — so the guard stays.
+    NSNumber *clientType = gAXPSelfServiceClientType;
+    if (clientType && [request respondsToSelector:@selector(setClientType:)]) {
+      [(AXPTranslatorRequest *)request setClientType:clientType.unsignedIntegerValue];
+    }
     if ([translator respondsToSelector:@selector(processTranslatorRequest:)]) {
       @try {
         result = [translator processTranslatorRequest:request];
@@ -1542,7 +1563,10 @@ static NSError *FBAXSnapshotFailure(NSInteger code, NSString *description)
 // Every raw AXUIElementRef in the product is acquired inside this method and owned by an `FBAXElementRef`
 // from the moment it is, and the hit is handed back already wrapped as an opaque element handle — so
 // nothing outside can outlive or over-release either, and nothing inside has to remember to.
-- (FBAXHitTestOutcome *)hitTestAtPoint:(CGPoint)point processIdentifier:(pid_t)pid displayIdentifier:(uint32_t)displayID
+- (FBAXHitTestOutcome *)hitTestAtPoint:(CGPoint)point
+                     processIdentifier:(pid_t)pid
+                     displayIdentifier:(uint32_t)displayID
+                            clientType:(NSUInteger)clientType
 {
   __block FBAXHitTestOutcome *outcome = nil;
   FBAXBridgeRunOffMainQueue(^{
@@ -1553,7 +1577,10 @@ static NSError *FBAXSnapshotFailure(NSInteger code, NSString *description)
       outcome = [FBAXHitTestOutcome failed:setupError ?: @"Display-specific accessibility hit testing is unavailable"];
       return;
     }
-    AXPTranslationObject *translation = [translator objectAtPoint:point displayId:displayID bridgeDelegateToken:@"axbridge"];
+    __block AXPTranslationObject *translation = nil;
+    FBAXBridgeWithSelfServiceClientType(clientType, ^{
+      translation = [translator objectAtPoint:point displayId:displayID bridgeDelegateToken:@"axbridge"];
+    });
     if (!translation) {
       outcome = [FBAXHitTestOutcome empty];
       return;
@@ -1714,6 +1741,7 @@ static NSError *FBAXSnapshotFailure(NSInteger code, NSString *description)
 // both are accepted so a walk can hand its own children straight back in.
 - (nullable NSDictionary<NSNumber *, id> *)translatorAttributes:(NSArray<NSNumber *> *)attributes
                                                       ofElement:(id)element
+                                                     clientType:(NSUInteger)clientType
 {
   if (attributes.count == 0 || !element) {
     return nil;
@@ -1742,15 +1770,17 @@ static NSError *FBAXSnapshotFailure(NSInteger code, NSString *description)
     }
     AXPTranslatorRequest *request = [requestClass requestWithTranslation:translation];
     request.requestType = FBAXPRequestTypeMultipleAttribute;
-    // `clientType` is left unset on purpose. The app-side children handler answers a client that "deserves
-    // automation" from its stored `automationElements` override, which nothing invalidates — a stale one
-    // serves the previous screen. No client type keeps this read on the live traversal.
+    if ([request respondsToSelector:@selector(setClientType:)]) {
+      request.clientType = clientType;
+    }
     // The handler subscripts `parameters` by this key; an array here throws and takes the reader down.
     request.parameters = @{@"attributes" : attributes};
     @try {
-      AXPTranslatorResponse *response = [translator processTranslatorRequest:request];
-      id data = response.resultData;
-      result = [data isKindOfClass:NSDictionary.class] ? data : nil;
+      FBAXBridgeWithSelfServiceClientType(clientType, ^{
+        AXPTranslatorResponse *response = [translator processTranslatorRequest:request];
+        id data = response.resultData;
+        result = [data isKindOfClass:NSDictionary.class] ? data : nil;
+      });
     } @catch (NSException *exception) {
       result = nil;
     }

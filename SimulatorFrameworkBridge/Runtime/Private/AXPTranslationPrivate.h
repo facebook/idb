@@ -89,6 +89,12 @@ typedef id _Nullable (^AXPTranslationBridgeCallback)(id request);
 
 @property (nonatomic, assign) NSUInteger requestType;
 @property (nonatomic, assign) NSUInteger attributeType;
+/**
+ * The assistive client the request claims to come from — a `BridgeAXClientType` raw value. The iOS
+ * translator maps it onto the application's requesting client for the request, which decides whether the
+ * application answers with its automation tree. Zero claims no client.
+ */
+@property (nonatomic, assign) NSUInteger clientType;
 @property (nullable, nonatomic, strong) id parameters;
 
 @end

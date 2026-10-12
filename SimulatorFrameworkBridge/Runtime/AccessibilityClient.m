@@ -272,10 +272,14 @@ static id FBAXCopyAttributeContainers(id value)
   }
 }
 
-- (FBAXElementHit *)hitTestAtPoint:(CGPoint)point processIdentifier:(pid_t)pid displayIdentifier:(uint32_t)displayID error:(NSError **)error
+- (FBAXElementHit *)hitTestAtPoint:(CGPoint)point
+                 processIdentifier:(pid_t)pid
+                 displayIdentifier:(uint32_t)displayID
+                        clientType:(NSUInteger)clientType
+                             error:(NSError **)error
 {
   @try {
-    return [[FBAXElementHit alloc] initWithOutcome:[_runtime hitTestAtPoint:point processIdentifier:pid displayIdentifier:displayID]];
+    return [[FBAXElementHit alloc] initWithOutcome:[_runtime hitTestAtPoint:point processIdentifier:pid displayIdentifier:displayID clientType:clientType]];
   } @catch (NSException *exception) {
     FBAXClientException(exception, error);
     return nil;
@@ -399,7 +403,7 @@ static id FBAXCopyAttributeContainers(id value)
   }
 }
 
-- (FBAXTranslatorRead *)translatorAttributesOfElement:(FBAXElement *)element error:(NSError **)error
+- (FBAXTranslatorRead *)translatorAttributesOfElement:(FBAXElement *)element clientType:(NSUInteger)clientType error:(NSError **)error
 {
   @try {
     NSArray<NSNumber *> *attributes = @[
@@ -408,17 +412,17 @@ static id FBAXCopyAttributeContainers(id value)
       @(FBAXPAttributeRole), @(FBAXPAttributeSubrole), @(FBAXPAttributeVisiblePoint),
       @(FBAXPAttributeTraits), @(FBAXPAttributeMemoryAddress),
     ];
-    return [[FBAXTranslatorRead alloc] initWithValues:[_runtime translatorAttributes:attributes ofElement:element.value]];
+    return [[FBAXTranslatorRead alloc] initWithValues:[_runtime translatorAttributes:attributes ofElement:element.value clientType:clientType]];
   } @catch (NSException *exception) {
     FBAXClientException(exception, error);
     return nil;
   }
 }
 
-- (NSArray<FBAXElement *> *)translatorChildrenOfElement:(FBAXElement *)element error:(NSError **)error
+- (NSArray<FBAXElement *> *)translatorChildrenOfElement:(FBAXElement *)element clientType:(NSUInteger)clientType error:(NSError **)error
 {
   @try {
-    NSDictionary<NSNumber *, id> *values = [_runtime translatorAttributes:@[@(FBAXPAttributeChildren)] ofElement:element.value];
+    NSDictionary<NSNumber *, id> *values = [_runtime translatorAttributes:@[@(FBAXPAttributeChildren)] ofElement:element.value clientType:clientType];
     id list = values[@(FBAXPAttributeChildren)];
     if (![list isKindOfClass:NSArray.class]) {
       return @[];

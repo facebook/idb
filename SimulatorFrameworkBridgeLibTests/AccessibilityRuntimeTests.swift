@@ -258,6 +258,42 @@ final class AccessibilityRuntimeTests: XCTestCase {
     }
   }
 
+  func testADisplayHitTestClaimsTheRequestedClientAndAWriteClaimsNone() {
+    runtime.hitTestOutcome = FBAXHitTestOutcome.hit(FBAXFakeElement.readable("XCUIElementTypeButton"), owningProcessIdentifier: kAppPid)
+    let unnamed = FBAccessibilityService.handleRequest(["verb": "hittest", "pid": kAppPid, "x": 80, "y": 120, "displayID": 42])
+    assertEqualObjects(axValue(unnamed, "ok"), NSNumber(value: true))
+    XCTAssertEqual(runtime.lastHitTestClientType, NSNumber(value: 0))
+
+    let named = FBAccessibilityService.handleRequest(["verb": "hittest", "pid": kAppPid, "x": 80, "y": 120, "displayID": 42, "clientType": 4])
+    assertEqualObjects(axValue(named, "ok"), NSNumber(value: true))
+    XCTAssertEqual(runtime.lastHitTestClientType, NSNumber(value: 4))
+
+    // Straight after a named hit-test, so a write that reused its client would leave 4 behind.
+    let write = FBAccessibilityService.handleRequest([
+      "verb": "perform", "action": "press", "pid": kAppPid, "x": 80, "y": 120, "displayID": 42, "clientType": 4,
+    ])
+    assertEqualObjects(axValue(write, "ok"), NSNumber(value: true))
+    XCTAssertEqual(runtime.lastHitTestClientType, NSNumber(value: 0), "a write's target is resolved as no client")
+  }
+
+  func testASemanticReadClaimsTheRequestedClientOnEveryTranslatorRead() {
+    runtime.applicationElements[NSNumber(value: kAppPid)] = FBAXFakeElement.readable("original")
+    runtime.translatorAttributeValues = [33: "translated"]
+    for (clientType, expected) in [(NSNumber(value: 4), 4), (nil, 0)] as [(NSNumber?, Int)] {
+      let before = runtime.translatorRequests.count
+      var request: [String: Any] = ["verb": "describe", "pid": kAppPid, "traversal": "semantic"]
+      request["clientType"] = clientType
+
+      let response = FBAccessibilityService.handleRequest(request)
+
+      assertEqualObjects(response["ok"], true)
+      let requests = runtime.translatorRequests as NSArray as? [[String: Any]] ?? []
+      let sent = requests.dropFirst(before).map { $0["clientType"] as? Int }
+      XCTAssertFalse(sent.isEmpty)
+      XCTAssertEqual(Set(sent), [expected])
+    }
+  }
+
   func testMalformedDisplayIdentityNeverReachesHitTesting() {
     for value: Any in [0, -1, 1.5, 4_294_967_296, true, "3", NSNull()] {
       let response = FBAccessibilityService.handleRequest(["verb": "hittest", "x": 1, "y": 2, "displayID": value])
