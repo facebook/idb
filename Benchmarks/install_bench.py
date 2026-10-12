@@ -726,8 +726,16 @@ def install_argv(
     ]
     if pattern.route != "curl":
         return [*client, target]
-    # pipefail so that a failed download fails the install, not just truncates it.
-    return ["sh", "-c", 'set -o pipefail; curl -sfS "$0" | "$@"', target, *client, "-"]
+    # pipefail so that a failed download fails the install, not just truncates it. bash, not
+    # sh: where sh is dash, as on Ubuntu, `set -o pipefail` is rejected before curl runs.
+    return [
+        "bash",
+        "-c",
+        'set -o pipefail; curl -sfS "$0" | "$@"',
+        target,
+        *client,
+        "-",
+    ]
 
 
 def progress(record: dict[str, Any]) -> str:
