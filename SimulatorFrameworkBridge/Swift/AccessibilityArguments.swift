@@ -22,6 +22,7 @@ public enum FBAXBridgeArguments {
       case "--max-nodes": request["maxNodes"] = string.intValue
       case "--automation-mode": request["automationMode"] = string.boolValue
       case "--traversal": request["traversal"] = value
+      case "--client-type": request["clientType"] = string.intValue
       case "--explain-unreachable": request["explainUnreachable"] = string.boolValue
       case "--attributes": request["attributes"] = value.components(separatedBy: ",")
       case "--x": request["x"] = string.doubleValue

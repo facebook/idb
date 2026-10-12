@@ -118,14 +118,19 @@ public struct BridgeAXReadOptions: Sendable, Equatable {
   public let explainUnreachable: Bool
   public let traversal: BridgeAXTraversal
   public let automationMode: Bool?
+  public let clientType: BridgeAXClientType
 
-  public init(maxDepth: Int, maxNodes: Int, attributes: [String]?, explainUnreachable: Bool, traversal: BridgeAXTraversal, automationMode: Bool?) {
+  public init(
+    maxDepth: Int, maxNodes: Int, attributes: [String]?, explainUnreachable: Bool, traversal: BridgeAXTraversal, automationMode: Bool?,
+    clientType: BridgeAXClientType
+  ) {
     self.maxDepth = maxDepth
     self.maxNodes = maxNodes
     self.attributes = attributes
     self.explainUnreachable = explainUnreachable
     self.traversal = traversal
     self.automationMode = automationMode
+    self.clientType = clientType
   }
 
   public func appendingPayload(to payload: [String: Any]) -> [String: Any] {
@@ -139,6 +144,7 @@ public struct BridgeAXReadOptions: Sendable, Equatable {
       payload[BridgeAXWire.Request.explainUnreachable.key] = true
     }
     payload[BridgeAXWire.Request.traversal.key] = traversal.rawValue
+    payload[BridgeAXWire.Request.clientType.key] = clientType.rawValue
     if let automationMode {
       payload[BridgeAXWire.Request.automationMode.key] = automationMode
     }
@@ -150,7 +156,7 @@ public enum BridgeAXRequest: Sendable, Equatable {
   case read(pid: Int32, options: BridgeAXReadOptions, displayID: UInt32? = nil)
   case readFrontmost(x: Double, y: Double, method: BridgeAXFrontmostMethod, options: BridgeAXReadOptions, displayID: UInt32? = nil)
   /// Display-wide when `pid` is nil: the guest names the application that owns the point.
-  case hitTest(x: Double, y: Double, attributes: [String]?, displayID: UInt32? = nil, pid: Int32? = nil)
+  case hitTest(x: Double, y: Double, attributes: [String]?, clientType: BridgeAXClientType, displayID: UInt32? = nil, pid: Int32? = nil)
   case write(BridgeAXWriteRequest)
   case deviceSettingRead(String)
   case deviceSettingWrite(String, enabled: Bool)
@@ -208,11 +214,12 @@ public enum BridgeAXRequest: Sendable, Equatable {
         payload[BridgeAXWire.Request.displayID.key] = displayID
       }
       return options.appendingPayload(to: payload)
-    case let .hitTest(x, y, attributes, displayID, pid):
+    case let .hitTest(x, y, attributes, clientType, displayID, pid):
       var payload: [String: Any] = [
         BridgeAXWire.Request.verb.key: BridgeAXWire.Verb.hitTest.rawValue,
         BridgeAXWire.Request.x.key: x,
         BridgeAXWire.Request.y.key: y,
+        BridgeAXWire.Request.clientType.key: clientType.rawValue,
       ]
       if let pid {
         payload[BridgeAXWire.Request.pid.key] = Int(pid)

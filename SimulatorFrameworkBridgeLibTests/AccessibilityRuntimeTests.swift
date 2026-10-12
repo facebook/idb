@@ -2583,6 +2583,20 @@ final class AccessibilityRuntimeTests: XCTestCase {
     XCTAssertEqual(runtime.hitTestCount, 0)
   }
 
+  func testAnUnknownClientTypeIsRefusedAndRecovers() {
+    runtime.applicationElements[NSNumber(value: kAppPid)] = FBAXFakeElement.readable("root")
+    for value in [12, -1, "xctest"] as [Any] {
+      let response = FBAccessibilityService.handleRequest(["verb": "describe", "pid": kAppPid, "clientType": value])
+
+      assertEqualObjects(response["ok"], false)
+      assertEqualObjects(response["error_kind"], "bad_request")
+      let error = response["error"] as? String ?? ""
+      XCTAssertTrue(error.hasPrefix("unsupported client type: "), error)
+      XCTAssertTrue(error.hasSuffix("; expected an integer from 0 to 11"), error)
+      assertEqualObjects(FBAccessibilityService.handleRequest(["verb": "describe", "pid": kAppPid])["ok"], true)
+    }
+  }
+
   func testSnapshotSelectionDoesNotInterpretUnusedTraversalFlags() {
     runtime.applicationElements[NSNumber(value: kAppPid)] = FBAXFakeElement.readable("root")
 

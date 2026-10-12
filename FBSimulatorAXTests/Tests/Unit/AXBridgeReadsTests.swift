@@ -2898,7 +2898,7 @@ final class AXAutoTraversalTests: XCTestCase {
         attributes: nil,
         explainUnreachable: false,
         traversal: traversal,
-        automationMode: nil
+        automationMode: nil, clientType: .noClient
       )
     )
   }

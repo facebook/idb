@@ -26,6 +26,8 @@ public enum BridgeAXRequestError: Error, Equatable, Sendable {
   case unsupportedFrontmostMethod(String)
   /// The traversal is not a string, or not one the bridge runs.
   case unsupportedTraversal(BridgeJSONValue)
+  /// The client type is not an integer, or not one the translator carries.
+  case unsupportedClientType(BridgeJSONValue)
   /// A flag that is neither a boolean, a number nor a string.
   case malformedFlag(BridgeAXWire.Request)
   case negativeTunable(BridgeAXWire.Request, Int)
@@ -70,7 +72,7 @@ extension BridgeAXRequest {
       self = .deviceSettingWrite(setting, enabled: enabled)
     case .hitTest:
       guard let (x, y) = fields.point() else { throw .missingPoint(.hitTest) }
-      self = .hitTest(x: x, y: y, attributes: fields.attributes(), displayID: displayID, pid: pid)
+      self = .hitTest(x: x, y: y, attributes: fields.attributes(), clientType: try fields.clientType(), displayID: displayID, pid: pid)
     case .perform:
       let actionValue = fields[.action]
       guard case let .string(name) = actionValue, let action = BridgeAXWire.Action(rawValue: name) else {
@@ -143,6 +145,22 @@ private struct Fields {
     return traversal
   }
 
+  func clientType() throws(BridgeAXRequestError) -> BridgeAXClientType {
+    guard let value = self[.clientType] else {
+      return .noClient
+    }
+    let raw: UInt64? =
+      switch value {
+      case let .integer(integer): UInt64(exactly: integer)
+      case let .unsignedInteger(integer): UInt64(exactly: integer)
+      default: nil
+      }
+    guard let raw, let clientType = BridgeAXClientType(rawValue: raw) else {
+      throw .unsupportedClientType(value)
+    }
+    return clientType
+  }
+
   func string(_ key: BridgeAXWire.Request) -> String? {
     guard case let .string(value) = self[key] else { return nil }
     return value
@@ -198,7 +216,8 @@ private struct Fields {
       attributes: attributes(),
       explainUnreachable: explainUnreachable,
       traversal: traversal,
-      automationMode: number(.automationMode)?.boolValue
+      automationMode: number(.automationMode)?.boolValue,
+      clientType: try clientType()
     )
   }
 

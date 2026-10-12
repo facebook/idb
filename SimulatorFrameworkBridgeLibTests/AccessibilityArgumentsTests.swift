@@ -15,14 +15,14 @@ final class AccessibilityArgumentsTests: XCTestCase {
       action: "perform",
       arguments: [
         "--pid", "12suffix", "--max-depth", "nonsense", "--max-nodes", "-3",
-        "--traversal", "semantic", "--explain-unreachable", "true",
+        "--traversal", "semantic", "--client-type", "4", "--explain-unreachable", "true",
         "--attributes", "label,,value,", "--x", "1.5tail", "--y", "bad",
         "--method", "window-server", "--action", "press", "--value", "",
         "--setting", "voiceover", "--enabled", "false", "--assert-key", "label", "--assert-value", "Hello",
       ])
     let expected: [String: Any] = [
       "verb": "perform", "pid": 12, "maxDepth": 0, "maxNodes": -3,
-      "traversal": "semantic", "explainUnreachable": true,
+      "traversal": "semantic", "clientType": 4, "explainUnreachable": true,
       "attributes": ["label", "", "value", ""], "x": 1.5, "y": 0,
       "method": "window-server", "action": "press", "value": "", "setting": "voiceover",
       "enabled": false, "assertKey": "label", "assertValue": "Hello",

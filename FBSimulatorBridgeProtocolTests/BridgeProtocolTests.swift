@@ -11,7 +11,7 @@ import XCTest
 
 final class BridgeProtocolTests: XCTestCase {
   private static func readOptions(maxDepth: Int = 1, maxNodes: Int = 2, automationMode: Bool? = nil) -> BridgeAXReadOptions {
-    BridgeAXReadOptions(maxDepth: maxDepth, maxNodes: maxNodes, attributes: nil, explainUnreachable: false, traversal: .viewHierarchy, automationMode: automationMode)
+    BridgeAXReadOptions(maxDepth: maxDepth, maxNodes: maxNodes, attributes: nil, explainUnreachable: false, traversal: .viewHierarchy, automationMode: automationMode, clientType: .noClient)
   }
 
   func testEveryServiceUsesTheSameRequestForArgumentsAndFrames() throws {
@@ -61,7 +61,7 @@ final class BridgeProtocolTests: XCTestCase {
     }
     let reads: [BridgeCommand] = [
       .dynamicStore(.snapshot(key: "dns")), .ping, .dns(.list), .proxy(.list), .notifications(.list(bundleID: nil)), .notifications(.delivered(bundleID: "app")),
-      .health(.list(bundleID: "app")), .accessibility(.hitTest(x: 1, y: 2, attributes: nil)), .accessibility(.deviceSettingRead("voiceover")), .accessibility(.displays),
+      .health(.list(bundleID: "app")), .accessibility(.hitTest(x: 1, y: 2, attributes: nil, clientType: .noClient)), .accessibility(.deviceSettingRead("voiceover")), .accessibility(.displays),
     ]
     for command in reads {
       XCTAssertTrue(command.mayRetry, "\(command)")
@@ -126,8 +126,8 @@ final class BridgeProtocolTests: XCTestCase {
       (#"{"notifications":{"_0":{"delivered":{"bundleID":"app"}}}}"#, .notifications(.delivered(bundleID: "app"))),
       (#"{"notifications":{"_0":{"clearDelivered":{"bundleID":"app"}}}}"#, .notifications(.clearDelivered(bundleID: "app"))),
       (#"{"health":{"_0":{"approve":{"bundleID":"app","typeIDs":["step"]}}}}"#, .health(.approve(bundleID: "app", typeIDs: ["step"]))),
-      (#"{"accessibility":{"_0":{"maxDepth":5,"maxNodes":10,"pid":42,"traversal":"view-hierarchy","verb":"describe"}}}"#, .accessibility(.read(pid: 42, options: Self.readOptions(maxDepth: 5, maxNodes: 10)))),
-      (#"{"accessibility":{"_0":{"verb":"hittest","x":1.5,"y":2}}}"#, .accessibility(.hitTest(x: 1.5, y: 2, attributes: nil))),
+      (#"{"accessibility":{"_0":{"clientType":0,"maxDepth":5,"maxNodes":10,"pid":42,"traversal":"view-hierarchy","verb":"describe"}}}"#, .accessibility(.read(pid: 42, options: Self.readOptions(maxDepth: 5, maxNodes: 10)))),
+      (#"{"accessibility":{"_0":{"clientType":0,"verb":"hittest","x":1.5,"y":2}}}"#, .accessibility(.hitTest(x: 1.5, y: 2, attributes: nil, clientType: .noClient))),
       (#"{"ping":{}}"#, .ping),
       (#"{"shutdown":{}}"#, .shutdown),
     ]

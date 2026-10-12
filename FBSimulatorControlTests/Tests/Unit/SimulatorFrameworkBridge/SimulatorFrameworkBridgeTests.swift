@@ -102,7 +102,7 @@ final class SimulatorFrameworkBridgeTests: XCTestCase {
     XCTAssertEqual(BridgeCommand.dns(.set(servers: ["1.1.1.1"])).serviceAndAction, "dns set")
     XCTAssertEqual(BridgeCommand.notifications(.clearDelivered(bundleID: "com.apple.news")).serviceAndAction, "notifications clear-delivered")
     XCTAssertEqual(BridgeCommand.health(.approve(bundleID: "com.apple.news", typeIDs: [])).serviceAndAction, "health approve")
-    XCTAssertEqual(BridgeCommand.accessibility(.hitTest(x: 1, y: 2, attributes: nil)).serviceAndAction, "accessibility hittest")
+    XCTAssertEqual(BridgeCommand.accessibility(.hitTest(x: 1, y: 2, attributes: nil, clientType: .noClient)).serviceAndAction, "accessibility hittest")
   }
 
   func testFailuresNameTheCommandRatherThanTheAccessibilityReader() {

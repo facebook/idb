@@ -181,6 +181,9 @@ public enum BridgeAXWire {
     /// Which walk a read runs: a `BridgeAXTraversal` raw value. The host always sends it; a read without one
     /// walks the view hierarchy.
     case traversal
+    /// The assistive client the guest's translator requests claim to come from: a `BridgeAXClientType` raw
+    /// value. The host always sends it; a request without one claims no client.
+    case clientType
     /// The attributes the guest fetches per element. Omitted for a default read; the guest falls back
     /// to `Node.defaultFetchList`.
     case attributes
@@ -217,6 +220,7 @@ public enum BridgeAXWire {
       case .maxNodes: "--max-nodes"
       case .automationMode: "--automation-mode"
       case .traversal: "--traversal"
+      case .clientType: "--client-type"
       case .attributes: "--attributes"
       case .explainUnreachable: "--explain-unreachable"
       case .x: "--x"

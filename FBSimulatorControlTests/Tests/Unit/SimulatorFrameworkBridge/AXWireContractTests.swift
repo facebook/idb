@@ -159,6 +159,7 @@ final class AXWireContractTests: XCTestCase {
       .automationMode: ("automationMode", "--automation-mode"),
       .attributes: ("attributes", "--attributes"),
       .traversal: ("traversal", "--traversal"),
+      .clientType: ("clientType", "--client-type"),
       .explainUnreachable: ("explainUnreachable", "--explain-unreachable"),
       .x: ("x", "--x"),
       .y: ("y", "--y"),
@@ -213,10 +214,10 @@ final class AXWireContractTests: XCTestCase {
   func testDisplayRoutingIsIdenticalForBothTransports() throws {
     let options = AXBridgeReadRequest(
       maxDepth: 10, maxNodes: 100, attributes: nil, explainUnreachable: false,
-      traversal: .viewHierarchy, automationMode: nil)
+      traversal: .viewHierarchy, automationMode: nil, clientType: .noClient)
     let requests: [AXBridgeRequest] = [
       .read(pid: 42, options: options, displayID: 82),
-      .hitTest(x: 10, y: 20, attributes: nil, displayID: 82),
+      .hitTest(x: 10, y: 20, attributes: nil, clientType: .noClient, displayID: 82),
       .readFrontmost(x: 10, y: 20, method: .windowServer, options: options, displayID: 82),
       .write(AXBridgeWriteRequest(kind: .perform(.press), x: 10, y: 20, pid: nil, assertion: nil, displayID: 82)),
     ]

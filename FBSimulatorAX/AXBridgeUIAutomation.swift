@@ -221,7 +221,8 @@ final class AXBridgeUIAutomation: AXBridgeTreeReader, @unchecked Sendable {
           attributes: attributes,
           explainUnreachable: explainUnreachable,
           traversal: traversal,
-          automationMode: requestedAutomationMode
+          automationMode: requestedAutomationMode,
+          clientType: .noClient
         )
         let sent = CFAbsoluteTimeGetCurrent()
         let response = try await transport.send(.read(pid: pid, options: options, displayID: display?.accessibilityID))
@@ -238,7 +239,8 @@ final class AXBridgeUIAutomation: AXBridgeTreeReader, @unchecked Sendable {
         attributes: attributes,
         explainUnreachable: explainUnreachable,
         traversal: traversal,
-        automationMode: requestedAutomationMode
+        automationMode: requestedAutomationMode,
+        clientType: .noClient
       )
       let sent = CFAbsoluteTimeGetCurrent()
       let response = try await transport.send(
@@ -265,6 +267,7 @@ final class AXBridgeUIAutomation: AXBridgeTreeReader, @unchecked Sendable {
         .hitTest(
           x: Double(lookupPoint.x), y: Double(lookupPoint.y),
           attributes: AXWire.Node.fetchList(for: options.serializationKeys),
+          clientType: .noClient,
           displayID: display?.accessibilityID)
       )
       guard let hit = try AXTreeRead(hitTestResponse: response) else {
