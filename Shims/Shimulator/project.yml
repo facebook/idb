@@ -96,6 +96,22 @@ targets:
       - target: ShimulatorProtocol-iOS
       - sdk: Foundation.framework
 
+  ShimulatorVideoInjectionCore:
+    type: library.static
+    platform: iOS
+    deploymentTarget: "17.0"
+    sources:
+      - path: VideoInjection/VideoInjectionController.swift
+      - path: VideoInjection/VideoInjectionProtocol.swift
+    settings:
+      base:
+        SDKROOT: iphonesimulator
+        PRODUCT_MODULE_NAME: ShimulatorVideoInjectionCore
+        SWIFT_VERSION: "6.0"
+    dependencies:
+      - target: ShimulatorProtocol-iOS
+      - sdk: Foundation.framework
+
   Shimulator-iOS:
     type: library.dynamic
     platform: iOS
