@@ -693,6 +693,36 @@ output="$(in_package "$dir" '
 assert_equal "a repeat REPL build regenerates sources before project globs" 'regenerated-proto
 regenerated-project' "$output"
 
+# The companion's test bundles link the archives the companion links, by path
+# from Build/Products/Release, so building for those tests builds every one of
+# them, and only those.
+cat > "$dir/Companion/project-deps.yml" <<'EOF'
+targets:
+  idb_companion:
+    dependencies:
+      - framework: ../Build/Products/Release/libFBSimulatorControl.a
+        embed: false
+      - framework: ../Build/Products/Release/FBControlCore.framework
+        embed: false
+  sim-video:
+    dependencies:
+      - framework: ../Build/Products/Release/libFBVideoCore.a
+        embed: false
+EOF
+output="$(in_package "$dir" '
+    # build.sh runs without nounset, which this file sets.
+    set +u
+    check_protobuf() { :; }
+    build_idb_deps() { :; }
+    generate_proto() { :; }
+    generate_companion_project() { :; }
+    build_target() { echo "built $1 $2"; }
+    build_companion_tests
+')"
+# BUG: no archive is built, so the test bundles cannot import the libraries
+# they test against -- flipped in the following commit.
+assert_equal "building for the companion's tests builds the companion's archives" '' "$output"
+
 if [ "$FAILURES" -ne 0 ]; then
     echo "$FAILURES assertion(s) failed"
     exit 1
