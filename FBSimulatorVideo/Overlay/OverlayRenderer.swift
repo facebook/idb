@@ -320,11 +320,18 @@ public final class OverlayRenderer: VideoOverlayLayout, @unchecked Sendable {
   public func renderToBuffer() {
     stateLock.lock()
     defer { stateLock.unlock() }
-    CVPixelBufferLockBaseAddress(storage, [])
-    defer { CVPixelBufferUnlockBaseAddress(storage, []) }
+    draw(into: storage, layout: layout)
+  }
 
-    guard let baseAddress = CVPixelBufferGetBaseAddress(storage) else { return }
-    let bytesPerRow = CVPixelBufferGetBytesPerRow(storage)
+  /// Draws every shape and bar at the current time into `buffer`, laid out by `layout`, which sizes it.
+  private func draw(into buffer: CVPixelBuffer, layout: OverlayCoordinateTransform) {
+    let width = layout.bufferWidth
+    let height = layout.bufferHeight
+    CVPixelBufferLockBaseAddress(buffer, [])
+    defer { CVPixelBufferUnlockBaseAddress(buffer, []) }
+
+    guard let baseAddress = CVPixelBufferGetBaseAddress(buffer) else { return }
+    let bytesPerRow = CVPixelBufferGetBytesPerRow(buffer)
 
     let bitmapInfo = CGImageAlphaInfo.premultipliedFirst.rawValue | CGBitmapInfo.byteOrder32Little.rawValue
     guard
@@ -348,37 +355,37 @@ public final class OverlayRenderer: VideoOverlayLayout, @unchecked Sendable {
     let now = currentTime()
     for timedShape in shapes {
       let elapsed = now - timedShape.startTime
-      renderShape(timedShape.shape, context: context, elapsed: elapsed)
+      renderShape(timedShape.shape, layout: layout, context: context, elapsed: elapsed)
     }
 
-    renderBarIfActive("bottom", context: context)
-    renderBarIfActive("top", context: context)
+    renderBarIfActive("bottom", layout: layout, context: context)
+    renderBarIfActive("top", layout: layout, context: context)
   }
 
-  private func renderShape(_ shape: OverlayShape, context: CGContext, elapsed: CFTimeInterval) {
+  private func renderShape(_ shape: OverlayShape, layout: OverlayCoordinateTransform, context: CGContext, elapsed: CFTimeInterval) {
     switch shape {
     case .circle(let c):
       let bp = layout.bufferPoint(x: c.x, y: c.y)
-      logger?.log("Overlay circle: input=(\(c.x),\(c.y)) r=\(c.radius) -> buffer=(\(bp.x),\(bp.y)) r=\(layout.bufferSize(width: c.radius, height: 0).width) [scale=\(layout.overlayScale), buffer=\(width)x\(height)]")
-      renderCircle(c, context: context, elapsed: elapsed)
+      logger?.log("Overlay circle: input=(\(c.x),\(c.y)) r=\(c.radius) -> buffer=(\(bp.x),\(bp.y)) r=\(layout.bufferSize(width: c.radius, height: 0).width) [scale=\(layout.overlayScale), buffer=\(layout.bufferWidth)x\(layout.bufferHeight)]")
+      renderCircle(c, layout: layout, context: context, elapsed: elapsed)
     case .rectangle(let r):
       let br = layout.bufferRect(x: r.x, y: r.y, width: r.width, height: r.height)
-      logger?.log("Overlay rect: input=(\(r.x),\(r.y),\(r.width),\(r.height)) -> buffer=(\(br.origin.x),\(br.origin.y),\(br.size.width),\(br.size.height)) [scale=\(layout.overlayScale), buffer=\(width)x\(height)]")
-      renderRectangle(r, context: context, elapsed: elapsed)
+      logger?.log("Overlay rect: input=(\(r.x),\(r.y),\(r.width),\(r.height)) -> buffer=(\(br.origin.x),\(br.origin.y),\(br.size.width),\(br.size.height)) [scale=\(layout.overlayScale), buffer=\(layout.bufferWidth)x\(layout.bufferHeight)]")
+      renderRectangle(r, layout: layout, context: context, elapsed: elapsed)
     case .label(let l):
-      renderLabel(l, context: context)
+      renderLabel(l, layout: layout, context: context)
     }
   }
 
   // MARK: - Circle
 
-  private func renderCircle(_ circle: OverlayShape.Circle, context: CGContext, elapsed: CFTimeInterval) {
+  private func renderCircle(_ circle: OverlayShape.Circle, layout: OverlayCoordinateTransform, context: CGContext, elapsed: CFTimeInterval) {
     let alpha = effectAlpha(circle.effect, baseAlpha: circleAlpha(circle.rgba), elapsed: elapsed)
     guard alpha > 0 else { return }
 
     var center = layout.bufferPoint(x: circle.x, y: circle.y)
     if let effect = circle.effect {
-      center = effectPosition(effect, base: center, elapsed: elapsed)
+      center = effectPosition(effect, base: center, layout: layout, elapsed: elapsed)
     }
 
     let color = CGColor(
@@ -400,7 +407,7 @@ public final class OverlayRenderer: VideoOverlayLayout, @unchecked Sendable {
 
   // MARK: - Rectangle
 
-  private func renderRectangle(_ rect: OverlayShape.Rectangle, context: CGContext, elapsed: CFTimeInterval) {
+  private func renderRectangle(_ rect: OverlayShape.Rectangle, layout: OverlayCoordinateTransform, context: CGContext, elapsed: CFTimeInterval) {
     let alpha = effectAlpha(rect.effect, baseAlpha: circleAlpha(rect.rgba), elapsed: elapsed)
     guard alpha > 0 else { return }
 
@@ -418,7 +425,7 @@ public final class OverlayRenderer: VideoOverlayLayout, @unchecked Sendable {
 
   // MARK: - Label
 
-  private func renderLabel(_ label: OverlayShape.Label, context: CGContext) {
+  private func renderLabel(_ label: OverlayShape.Label, layout: OverlayCoordinateTransform, context: CGContext) {
     let (fontName, baseFontSize) = parseFontSpec(label.font)
     let fontSize = layout.labelFontSize(baseFontSize)
     let font = CTFontCreateWithName(fontName as CFString, fontSize, nil)
@@ -459,7 +466,7 @@ public final class OverlayRenderer: VideoOverlayLayout, @unchecked Sendable {
 
   // MARK: - Status Bars
 
-  private func renderBarIfActive(_ position: String, context: CGContext) {
+  private func renderBarIfActive(_ position: String, layout: OverlayCoordinateTransform, context: CGContext) {
     let content = barContent[position] ?? .hidden
     let text: String
     switch content {
@@ -477,6 +484,7 @@ public final class OverlayRenderer: VideoOverlayLayout, @unchecked Sendable {
       fontSize: layout.barFontSize(),
       barY: layout.barY(position: position),
       barHeight: layout.barHeight(),
+      width: CGFloat(layout.bufferWidth),
       mode: mode,
       fit: fit,
       context: context
@@ -488,6 +496,7 @@ public final class OverlayRenderer: VideoOverlayLayout, @unchecked Sendable {
     fontSize: CGFloat,
     barY: CGFloat,
     barHeight: CGFloat,
+    width: CGFloat,
     mode: BarMode,
     fit: Bool,
     context: CGContext
@@ -497,9 +506,9 @@ public final class OverlayRenderer: VideoOverlayLayout, @unchecked Sendable {
     let bgAlpha: CGFloat = mode == .overlay ? 0.7 : 1.0
     let bgColor = CGColor(red: 0, green: 0, blue: 0, alpha: bgAlpha)
     context.setFillColor(bgColor)
-    context.fill(CGRect(x: 0, y: barY, width: CGFloat(width), height: barHeight))
+    context.fill(CGRect(x: 0, y: barY, width: width, height: barHeight))
 
-    let availableWidth = CGFloat(width) - padding * 2
+    let availableWidth = width - padding * 2
     let (font, line) = makeLine(text: text, fontSize: fontSize, availableWidth: availableWidth, fit: fit)
 
     let ascent = CTFontGetAscent(font)
@@ -566,7 +575,7 @@ public final class OverlayRenderer: VideoOverlayLayout, @unchecked Sendable {
     }
   }
 
-  private func effectPosition(_ effect: OverlayShape.Effect, base: CGPoint, elapsed: CFTimeInterval) -> CGPoint {
+  private func effectPosition(_ effect: OverlayShape.Effect, base: CGPoint, layout: OverlayCoordinateTransform, elapsed: CFTimeInterval) -> CGPoint {
     switch effect {
     case .translate(let t):
       let progress = min(1.0, elapsed / (Double(t.durationMs) / 1000.0))
