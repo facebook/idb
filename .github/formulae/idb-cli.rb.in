@@ -18,9 +18,10 @@ class IdbCli < Formula
   # provenance rather than availability, and either source would install the
   # same bytes.
   url "${wheel_url}"
-  # Kept in the release's own form so all three idb formulae carry one version.
-  version "${version}"
-  sha256 "${wheel_sha256}"
+  # Only a prerelease spells out its version, in the release's own dotted form
+  # rather than the wheel's PEP 440 one, so all three idb formulae carry one
+  # version. A stable version is the one Homebrew scans from the url.
+${version_stanza}  sha256 "${wheel_sha256}"
   license "MIT"
 ${bottle_block}
   depends_on "python@3.14"

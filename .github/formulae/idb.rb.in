@@ -15,8 +15,7 @@ class Idb < Formula
   # its own beyond a 25KB README. Keep the url and sha256 in step with
   # idb-cli.rb or that dedup is silently lost.
   url "${wheel_url}"
-  version "${version}"
-  sha256 "${wheel_sha256}"
+${version_stanza}  sha256 "${wheel_sha256}"
   license "MIT"
 
   # idb is normally used as a pair: the CLI talks to a companion, and the

@@ -203,9 +203,11 @@ def render_formulae(
         "companion_sha256": companion_sha or "",
         "wheel_url": f"{base}/{wheel_asset(version)}",
         "wheel_sha256": wheel_sha,
-        # Homebrew scans the version from the url on a stable tag; on a
-        # prerelease the scan drops the suffix, so the stanza is needed.
-        "companion_version_stanza": (
+        # Homebrew scans the version from the url on a stable tag, and
+        # `brew audit --strict` rejects a stanza that repeats it. A prerelease
+        # needs the stanza: the scan drops or reshapes its suffix, and all
+        # three formulae should carry the release's own dotted form.
+        "version_stanza": (
             f'  version "{version}"\n' if is_prerelease(version) else ""
         ),
     }

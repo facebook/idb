@@ -14,7 +14,7 @@ class IdbCompanion < Formula
   # the URL, and `brew audit --strict` rejects the redundancy. A prerelease tag
   # (v1.5.0.b7) must re-add the stanza, because URL scanning silently drops the
   # suffix and would make a beta look like a final release.
-${companion_version_stanza}  sha256 "${companion_sha256}"
+${version_stanza}  sha256 "${companion_sha256}"
   license "MIT"
   # Deliberately no `head` spec. Building idb from source through Homebrew has
   # never worked -- see facebook/homebrew-fb issues 73, 75, 77 and 84, spanning
