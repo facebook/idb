@@ -164,10 +164,15 @@ final class SimulatorTests: XCTestCase {
 
   // MARK: - Temporary Directory (Lazy Init)
 
+  /// Every ephemeral directory is a direct child of the root a `TemporaryDirectory` manages.
+  private func root(of directory: TemporaryDirectory) -> URL {
+    directory.ephemeralTemporaryDirectory().deletingLastPathComponent()
+  }
+
   func testTemporaryDirectory_ReturnsSameInstanceOnSubsequentAccess() {
     let first = simulator.temporaryDirectory
     let second = simulator.temporaryDirectory
-    XCTAssertEqual(first, second, "temporaryDirectory should return the same cached directory on subsequent access")
+    XCTAssertEqual(root(of: first), root(of: second), "temporaryDirectory should return the same cached directory on subsequent access")
   }
 
   func testTemporaryDirectory_ConcurrentFirstAccess() {
@@ -179,7 +184,7 @@ final class SimulatorTests: XCTestCase {
       lock.withLock { directories.append(directory) }
     }
     XCTAssertEqual(directories.count, 64)
-    XCTAssertTrue(directories.allSatisfy { $0 == directories[0] })
+    XCTAssertTrue(directories.allSatisfy { root(of: $0) == root(of: directories[0]) })
   }
 
   // MARK: - Healthcheck Helpers

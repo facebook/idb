@@ -18,18 +18,14 @@ enum TemporaryDirectoryError: Error, LocalizedError {
   }
 }
 
-/// A value over the root it manages: two values with the same root are the same directory.
-public struct TemporaryDirectory: Equatable, Sendable {
+/// A value over the root it manages.
+public struct TemporaryDirectory: Sendable {
 
   // MARK: - Properties
 
   public let logger: any ControlCoreLogger
 
   private let rootTemporaryDirectory: URL
-
-  public static func == (lhs: TemporaryDirectory, rhs: TemporaryDirectory) -> Bool {
-    lhs.rootTemporaryDirectory == rhs.rootTemporaryDirectory
-  }
 
   // MARK: - Initializers
 
