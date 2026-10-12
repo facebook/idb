@@ -123,7 +123,7 @@ final class ScreenshotRendererTests: XCTestCase {
     XCTAssertThrowsError(
       try ScreenshotRenderer.render(encoded: data, configuration: ScreenshotConfiguration(), screenScale: nil)
     ) { error in
-      XCTAssertEqual(error as? ScreenshotRenderError, .unreadableImageData)
+      XCTAssertEqual(String(reflecting: error), String(reflecting: ScreenshotRenderError.unreadableImageData))
     }
   }
 
@@ -162,7 +162,7 @@ final class ScreenshotRendererTests: XCTestCase {
     for outputSize in [CGSize(width: 0, height: 10), CGSize(width: 10, height: 0), .zero] {
       let plan = ScreenshotPlan(cropRect: nil, scaleFactor: 1, outputSize: outputSize)
       XCTAssertThrowsError(try ScreenshotRenderer.transform(image, plan: plan), "\(outputSize)") { error in
-        XCTAssertEqual(error as? ScreenshotRenderError, .contextCreationFailed(size: outputSize), "\(outputSize)")
+        XCTAssertEqual(String(reflecting: error), String(reflecting: ScreenshotRenderError.contextCreationFailed(size: outputSize)), "\(outputSize)")
       }
     }
   }
@@ -193,7 +193,7 @@ final class ScreenshotRendererTests: XCTestCase {
     for quality in [0.0, -0.5, 1.5] {
       let encoding = ScreenshotEncoding.jpeg(quality: quality)
       XCTAssertThrowsError(try ScreenshotRenderer.encode(image, encoding: encoding), "\(quality)") { error in
-        XCTAssertEqual(error as? ScreenshotRenderError, .compressionQualityOutOfRange(quality), "\(quality)")
+        XCTAssertEqual(String(reflecting: error), String(reflecting: ScreenshotRenderError.compressionQualityOutOfRange(quality)), "\(quality)")
       }
     }
     // NaN compares false against every bound, so it has to be rejected by the shape of the check

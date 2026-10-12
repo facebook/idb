@@ -10,7 +10,7 @@ import Foundation
 import ImageIO
 import UniformTypeIdentifiers
 
-public enum ScreenshotRenderError: Error, Hashable {
+public enum ScreenshotRenderError: Error {
   case colorSpaceCreationFailed
   case croppingFailed(cropRect: CGRect, sourceSize: CGSize)
   case contextCreationFailed(size: CGSize)
