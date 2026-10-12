@@ -24,15 +24,21 @@ final class VideoSessionOverlayLayoutTests: XCTestCase {
     let handler: StdinCommandHandler
   }
 
-  private func startSession() async throws -> Session {
+  private func startSession(recording: Bool = false) async throws -> Session {
     let surface = FakeFramebufferSurface()
     surface.immediateSurface = makeTestIOSurface(width: 20, height: 30)
+    if recording {
+      let upright = display(width: 20, height: 30, rotation: .upright)
+      surface.configurationAtRegistration = SimulatorDisplayConfiguration(
+        generation: 1, displays: [upright], active: .identified(upright), phase: .settled)
+    }
     let stream = SimulatorVideoStream(
       framebuffer: Framebuffer(surface: surface, logger: CapturingLogger()),
       configuration: VideoStreamConfiguration(format: .bgra, framesPerSecond: nil, rateControl: nil, scaleFactor: nil, keyFrameRate: nil),
       edgeInsets: VideoStreamEdgeInsets(top: 4, bottom: 4, left: 0, right: 0),
       cadence: .lazy,
-      logger: CapturingLogger())
+      logger: CapturingLogger(),
+      encodedSampleConsumerOverride: recording ? DiscardingEncodedSampleConsumer() : nil)
     try await stream.startStreaming(FBDataBuffer.accumulatingBuffer())
     let renderer = OverlayRenderer(
       transform: OverlayCoordinateTransform(
@@ -84,6 +90,21 @@ final class VideoSessionOverlayLayoutTests: XCTestCase {
     let composited = await size(session.stream.compositor.overlayBuffer)
     XCTAssertEqual(size(session.renderer.buffer), CGSize(width: 30, height: 28))
     XCTAssertEqual(composited, CGSize(width: 30, height: 28))
+    try await session.stream.stopStreaming()
+  }
+
+  func testARecordingsOverlayAfterARotation() async throws {
+    let session = try await startSession(recording: true)
+    let turned = display(width: 20, height: 30, rotation: .clockwise)
+    session.surface.configurationChanged?(SimulatorDisplayConfiguration(generation: 2, displays: [turned], active: .identified(turned), phase: .settled))
+    try await waitUntil { await session.stream.mountedSource?.width == 30 }
+
+    let composited = await size(session.stream.compositor.overlayBuffer)
+    let screenOrigin = session.renderer.transform.bufferPoint(x: 0, y: 4)
+    // BUG: the overlay follows the recording's changing canvas rather than placing the turned screen within a fixed one — flipped in the following commit
+    XCTAssertEqual(size(session.renderer.buffer), CGSize(width: 30, height: 28))
+    XCTAssertEqual(composited, CGSize(width: 30, height: 28))
+    XCTAssertEqual(screenOrigin, CGPoint(x: 0, y: 4))
     try await session.stream.stopStreaming()
   }
 }

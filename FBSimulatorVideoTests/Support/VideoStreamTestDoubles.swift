@@ -177,3 +177,10 @@ func createTestVideoStreamPusher(_ logger: ControlCoreLogger) -> VideoToolboxFra
     encodedSampleConsumer: DataConsumerEncodedSampleConsumer(consumer: consumer, frameWriter: AnnexBFrameWriter(codec: .h264)),
     logger: logger)
 }
+
+/// Stands in for a recording's file writer, so a stream treats its output as a file.
+final class DiscardingEncodedSampleConsumer: EncodedSampleConsumer {
+  func consume(_ sampleBuffer: CMSampleBuffer, logger: any ControlCoreLogger) -> Bool {
+    true
+  }
+}

@@ -32,15 +32,20 @@ final class SimulatorVideoStreamOrientationTests: XCTestCase {
     SimulatorDisplayConfiguration(generation: generation, displays: [display], active: .identified(display), phase: .settled)
   }
 
-  private func startStream(insets: VideoStreamEdgeInsets = VideoStreamEdgeInsets(top: 0, bottom: 0, left: 0, right: 0)) async throws -> Started {
+  private func startStream(
+    insets: VideoStreamEdgeInsets = VideoStreamEdgeInsets(top: 0, bottom: 0, left: 0, right: 0), recording: Bool = false,
+    configurationAtStart: SimulatorDisplayConfiguration? = nil
+  ) async throws -> Started {
     let surface = FakeFramebufferSurface()
     surface.immediateSurface = makeTestIOSurface(width: 20, height: 30)
+    surface.configurationAtRegistration = configurationAtStart
     let stream = SimulatorVideoStream(
       framebuffer: Framebuffer(surface: surface, logger: CapturingLogger()),
       configuration: VideoStreamConfiguration(format: .bgra, framesPerSecond: nil, rateControl: nil, scaleFactor: nil, keyFrameRate: nil),
       edgeInsets: insets,
       cadence: .lazy,
-      logger: CapturingLogger())
+      logger: CapturingLogger(),
+      encodedSampleConsumerOverride: recording ? DiscardingEncodedSampleConsumer() : nil)
     try await stream.startStreaming(FBDataBuffer.accumulatingBuffer())
     return Started(stream: stream, surface: surface)
   }
@@ -80,6 +85,49 @@ final class SimulatorVideoStreamOrientationTests: XCTestCase {
     let screenshot = try pngSize(try await started.stream.captureCompositedScreenshot())
     XCTAssertEqual(canvas, CGSize(width: 20, height: 38))
     XCTAssertEqual(screenshot, CGSize(width: 20, height: 30))
+    try await started.stream.stopStreaming()
+  }
+
+  func testARecordingThroughARotation() async throws {
+    let upright = display(width: 20, height: 30, rotation: .upright)
+    let started = try await startStream(
+      insets: VideoStreamEdgeInsets(top: 4, bottom: 4, left: 0, right: 0), recording: true, configurationAtStart: configuration(upright))
+    started.surface.configurationChanged?(configuration(display(width: 20, height: 30, rotation: .clockwise), generation: 2))
+    try await waitUntil { await started.stream.mountedSource?.width == 30 }
+
+    let canvas = await started.stream.canvasSize
+    let screenshot = try pngSize(try await started.stream.captureCompositedScreenshot())
+    // BUG: the recording's canvas follows the rotation, so its file changes frame size mid-recording — flipped in the following commit
+    XCTAssertEqual(canvas, CGSize(width: 30, height: 28))
+    XCTAssertEqual(screenshot, CGSize(width: 30, height: 20))
+    try await started.stream.stopStreaming()
+  }
+
+  func testARecordingThroughASwitchToALargerSurface() async throws {
+    let upright = display(width: 20, height: 30, rotation: .upright)
+    let started = try await startStream(
+      insets: VideoStreamEdgeInsets(top: 4, bottom: 4, left: 0, right: 0), recording: true, configurationAtStart: configuration(upright))
+    started.surface.ioSurfaceChanged?(makeTestIOSurface(width: 40, height: 60))
+    try await waitUntil { await started.stream.mountedSource?.width == 40 }
+
+    let canvas = await started.stream.canvasSize
+    let screenshot = try pngSize(try await started.stream.captureCompositedScreenshot())
+    // BUG: the recording's canvas follows the larger surface, so its file changes frame size mid-recording — flipped in the following commit
+    XCTAssertEqual(canvas, CGSize(width: 40, height: 68))
+    XCTAssertEqual(screenshot, CGSize(width: 40, height: 60))
+    try await started.stream.stopStreaming()
+  }
+
+  func testARecordingStartedInARotatedInterfaceIsInItsOrientation() async throws {
+    let turned = display(width: 20, height: 30, rotation: .clockwise)
+    let started = try await startStream(
+      insets: VideoStreamEdgeInsets(top: 4, bottom: 4, left: 0, right: 0), recording: true, configurationAtStart: configuration(turned))
+    try await waitUntil { await started.stream.mountedSource?.width == 30 }
+
+    let canvas = await started.stream.canvasSize
+    let screenshot = try pngSize(try await started.stream.captureCompositedScreenshot())
+    XCTAssertEqual(canvas, CGSize(width: 30, height: 28))
+    XCTAssertEqual(screenshot, CGSize(width: 30, height: 20))
     try await started.stream.stopStreaming()
   }
 }
