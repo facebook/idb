@@ -39,6 +39,27 @@ final class FramebufferTests: XCTestCase {
     XCTAssertNil(attachment.initialSurface)
   }
 
+  func testAttachReturnsTheConfigurationReportedWhileRegistering() async throws {
+    let surface = FakeFramebufferSurface()
+    let configuration = SimulatorDisplayConfiguration(generation: 2, displays: [], active: .unresolved, phase: .settled)
+    surface.configurationAtRegistration = configuration
+
+    let attachment = try makeFramebuffer(surface: surface).attach()
+
+    XCTAssertEqual(attachment.initialConfiguration, configuration)
+    var events = attachment.events.makeAsyncIterator()
+    guard case let .configurationChanged(delivered) = await events.next() else {
+      return XCTFail("The configuration was not the first event")
+    }
+    XCTAssertEqual(delivered, configuration)
+  }
+
+  func testAttachReturnsNoConfigurationWhenNoneWasReported() throws {
+    let attachment = try makeFramebuffer(surface: FakeFramebufferSurface()).attach()
+
+    XCTAssertNil(attachment.initialConfiguration)
+  }
+
   func testAttachThrowsWhenRegistrationFails() {
     let surface = FakeFramebufferSurface()
     surface.registerError = FramebufferError.surfaceCallbackRegistrationFailed(underlying: nil)

@@ -15,6 +15,8 @@ import IOSurface
 /// CoreSimulator renderable. Tests call `ioSurfaceChanged` / `frameRendered` to simulate callbacks.
 final class FakeFramebufferSurface: FramebufferSurface {
   var immediateSurface: IOSurface?
+  /// Reported to each registration as it registers, as a surface that knows its display configuration does.
+  var configurationAtRegistration: SimulatorDisplayConfiguration?
   var registerError: Error?
 
   private(set) var ioSurfaceChanged: ((IOSurface?) -> Void)?
@@ -40,6 +42,9 @@ final class FakeFramebufferSurface: FramebufferSurface {
     self.ioSurfaceChanged = ioSurfaceChanged
     self.frameRendered = frameRendered
     self.configurationChanged = configurationChanged
+    if let configurationAtRegistration {
+      configurationChanged(configurationAtRegistration)
+    }
   }
 
   func unregisterCallbacks(token: UUID) {

@@ -87,6 +87,21 @@ private final class SurfaceChangeFilter: @unchecked Sendable {
   }
 }
 
+/// The configuration a display surface reported most recently, read once registration returns: a surface that
+/// knows its configuration reports it while registering.
+private final class LatestConfiguration: @unchecked Sendable {
+  private let lock = NSLock()
+  private var configuration: SimulatorDisplayConfiguration?
+
+  var value: SimulatorDisplayConfiguration? {
+    lock.withLock { configuration }
+  }
+
+  func record(_ configuration: SimulatorDisplayConfiguration) {
+    lock.withLock { self.configuration = configuration }
+  }
+}
+
 public final class Framebuffer: @unchecked Sendable {
 
   private let surface: any FramebufferSurface
@@ -143,11 +158,12 @@ public final class Framebuffer: @unchecked Sendable {
     let token = UUID()
     let immediateSurface = surface.immediatelyAvailableSurface()
     let filter = SurfaceChangeFilter(initialSurface: immediateSurface)
+    let latestConfiguration = LatestConfiguration()
 
     let (events, continuation) = AsyncStream.makeStream(of: FramebufferEvent.self, bufferingPolicy: .unbounded)
 
     do {
-      try register(token: token, filter: filter, continuation: continuation)
+      try register(token: token, filter: filter, latestConfiguration: latestConfiguration, continuation: continuation)
     } catch {
       surface.unregisterCallbacks(token: token)
       throw error
@@ -157,11 +173,14 @@ public final class Framebuffer: @unchecked Sendable {
       framebuffer: self,
       token: token,
       initialSurface: immediateSurface,
+      initialConfiguration: latestConfiguration.value,
       events: events,
       continuation: continuation)
   }
 
-  private func register(token: UUID, filter: SurfaceChangeFilter, continuation: AsyncStream<FramebufferEvent>.Continuation) throws {
+  private func register(
+    token: UUID, filter: SurfaceChangeFilter, latestConfiguration: LatestConfiguration, continuation: AsyncStream<FramebufferEvent>.Continuation
+  ) throws {
     try surface.registerCallbacks(
       token: token,
       ioSurfaceChanged: { [statsRecorder, logger] surface in
@@ -177,6 +196,7 @@ public final class Framebuffer: @unchecked Sendable {
         continuation.yield(.frameRendered)
       },
       configurationChanged: { [boundGeneration] configuration in
+        latestConfiguration.record(configuration)
         continuation.yield(.configurationChanged(configuration))
         guard let boundGeneration, configuration.generation != boundGeneration else { return }
         continuation.yield(.ended(.changed))
@@ -191,6 +211,10 @@ public final class FramebufferAttachment: @unchecked Sendable {
 
   /// The surface available at attach time, if the framebuffer could vend one synchronously.
   public let initialSurface: IOSurface?
+
+  /// The display configuration known at attach time, if the display surface reported one while registering. It is
+  /// also the first `configurationChanged` in `events`.
+  public let initialConfiguration: SimulatorDisplayConfiguration?
 
   /// Every framebuffer event since attachment, in the order the display surface reported them.
   /// Buffered without loss until iterated; finished by `cancel()`.
@@ -211,12 +235,14 @@ public final class FramebufferAttachment: @unchecked Sendable {
     framebuffer: Framebuffer,
     token: UUID,
     initialSurface: IOSurface?,
+    initialConfiguration: SimulatorDisplayConfiguration?,
     events: AsyncStream<FramebufferEvent>,
     continuation: AsyncStream<FramebufferEvent>.Continuation
   ) {
     self.framebuffer = framebuffer
     self.token = token
     self.initialSurface = initialSurface
+    self.initialConfiguration = initialConfiguration
     self.events = events
     self.continuation = continuation
   }
