@@ -41,7 +41,7 @@ public struct Subprocess: Sendable {
   }
 
   /// The environment a child process receives.
-  public enum Environment: Sendable, Equatable {
+  public enum Environment: Sendable {
     /// A minimal allowlist inherited from this process: `DEVELOPER_DIR`,
     /// `HOME` and `PATH`, where set.
     case idbDefault

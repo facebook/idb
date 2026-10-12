@@ -20,7 +20,10 @@ struct SubprocessSpecTests {
     copy.environment = .inherit
 
     #expect(base.arguments.isEmpty)
-    #expect(base.environment == .idbDefault)
+    guard case .idbDefault = base.environment else {
+      Issue.record("the original keeps its environment, got \(base.environment)")
+      return
+    }
     #expect(copy.arguments == ["--flag"])
   }
 
