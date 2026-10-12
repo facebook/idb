@@ -15,8 +15,6 @@ targets:
     dependencies:
       - framework: ../Build/Products/Release/libCompanionUtilities.a
         embed: false
-      - framework: ../Build/Products/Release/libFBAXCore.a
-        embed: false
       - framework: ../Build/Products/Release/libFBArtifactStaging.a
         embed: false
       - framework: ../Build/Products/Release/FBControlCore.framework
@@ -67,8 +65,6 @@ targets:
     dependencies:
       - framework: ../Build/Products/Release/libCompanionUtilities.a
         embed: false
-      - framework: ../Build/Products/Release/libFBAXCore.a
-        embed: false
       - framework: ../Build/Products/Release/FBControlCore.framework
         embed: false
       - framework: ../Build/Products/Release/libFBSimulatorAX.a
@@ -101,8 +97,6 @@ targets:
     dependencies:
       - framework: ../Build/Products/Release/libCompanionUtilities.a
         embed: false
-      - framework: ../Build/Products/Release/libFBAXCore.a
-        embed: false
       - framework: ../Build/Products/Release/libFBArtifactStaging.a
         embed: false
       - framework: ../Build/Products/Release/FBControlCore.framework
@@ -132,8 +126,6 @@ targets:
   CompanionTests:
     dependencies:
       - framework: ../Build/Products/Release/libCompanionUtilities.a
-        embed: false
-      - framework: ../Build/Products/Release/libFBAXCore.a
         embed: false
       - framework: ../Build/Products/Release/libFBArtifactStaging.a
         embed: false

@@ -6,8 +6,8 @@
  */
 
 import AXRuntime
-@testable import FBAXCore
 @testable import FBControlCore
+@testable import FBSimulatorAX
 import XCTest
 
 final class AXTraitsTest: XCTestCase {

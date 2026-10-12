@@ -7,7 +7,6 @@
 
 import CompanionUtilities
 import CoreGraphics
-import FBAXCore
 import FBControlCore
 import FBSimulatorAX
 import FBSimulatorControl

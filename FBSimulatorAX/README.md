@@ -2,7 +2,7 @@
 
 Reads and drives the accessibility tree of an iOS Simulator's frontmost application, without a test bundle. It is the Simulator's accessibility capability, added onto `Simulator` from outside `FBSimulatorControl`: a consumer that does not read accessibility does not link it.
 
-It builds on [`FBAXCore`](../FBAXCore/README.md), whose requests and documents it reads into, and on `FBSimulatorControl`, whose display routing and guest bridge it reads through.
+It holds the accessibility model its readers answer with, and builds on `FBSimulatorControl`, whose display routing and guest bridge it reads through, and on [`FBSimulatorBridgeProtocol`](../FBSimulatorBridgeProtocol/README.md), the vocabulary it and the in-guest reader share.
 
 ## Reading the tree
 
@@ -15,6 +15,15 @@ It builds on [`FBAXCore`](../FBAXCore/README.md), whose requests and documents i
   - `.exclusive` reads over a guest of the caller's own, on a socket nobody else can discover, and holds its connection between reads. The guest exits when that connection closes, so it suits a process that owns the Simulator for its lifetime.
 
 Operations reach the display a `DisplaySelection` names and fail rather than reach another; see the multiple displays section of [the `FBSimulatorControl` README](../FBSimulatorControl/README.md).
+
+## The accessibility model
+
+Every reader produces the same model, so a consumer can use one result regardless of which backend read it.
+
+- **Requests.** `AccessibilityRequestOptions` gathers what a read asks for: which `AXKeys` to report, an `AccessibilityElementFilter` such as interactable-only, an `AccessibilityMatch` substring search, the traversal (`AXTraversal`, the bridge protocol's `BridgeAXTraversal`), whether to explain unreachable elements, and how to read remote content such as web views, which live in separate processes and need grid-based hit-testing.
+- **Keys.** `AXKeys` names every attribute a read can report. Their raw values are the JSON keys in idb's output and the cli's `--key` names, so they are stable. `AXSearchableKey` is the subset with string values that a search can match against.
+- **Documents.** `AccessibilityDocument` is a complete read: the target and screen it was read against, each `AccessibilityDocumentElement` with its frame, attributes, interactability and coverage, the frontmost modal if one covers the target, and a backend-specific `AccessibilityProfile` of timings. `AccessibilityElementsResponse` carries a read with optional profiling data.
+- **Rendering.** `AccessibilityOutputFormat` chooses between the complete document and the legacy element payload, which stays byte-stable for existing consumers. Traits arrive as a bitmask and are decoded to names with `AXExtractTraits`, through the `AXRuntime` private headers.
 
 ## Finding elements
 

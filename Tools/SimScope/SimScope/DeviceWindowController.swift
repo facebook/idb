@@ -6,8 +6,8 @@
  */
 
 import AppKit
-import FBAXCore
 import FBControlCore
+import FBSimulatorAX
 import FBSimulatorControl
 import SimScopeProtocol
 

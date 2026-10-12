@@ -6,7 +6,6 @@
  */
 
 @testable import CompanionLib
-import FBAXCore
 @preconcurrency import FBControlCore
 import FBSimulatorAX
 import FBSimulatorControl

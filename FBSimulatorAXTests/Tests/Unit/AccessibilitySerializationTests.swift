@@ -6,7 +6,6 @@
  */
 
 import CoreGraphics
-import FBAXCore
 import FBControlCore
 @testable import FBSimulatorAX
 import FBSimulatorBridgeProtocol

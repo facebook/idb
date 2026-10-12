@@ -21,7 +21,6 @@ module.exports = {
         "idb/commands",
         "idb/fbcontrolcore",
         "idb/fbvideocore",
-        "idb/fbaxcore",
         "idb/fbartifactstaging",
         "idb/fbsimulatorbridgeprotocol",
         "idb/fbsimulatorcontrol",

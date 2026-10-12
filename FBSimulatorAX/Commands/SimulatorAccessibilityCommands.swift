@@ -8,7 +8,6 @@
 @preconcurrency internal import AccessibilityPlatformTranslation
 import AppKit
 import CoreSimulator
-import FBAXCore
 import FBControlCore
 import FBSimulatorControl
 import Foundation

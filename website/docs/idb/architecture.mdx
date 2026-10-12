@@ -90,6 +90,7 @@ flowchart TD
     FBSimulatorVideo --> FBSimulatorControl
     FBSimulatorVideo --> FBVideoCore
     FBSimulatorAX --> FBSimulatorControl
+    FBSimulatorAX --> FBSimulatorBridgeProtocol
     FBSimulatorXCTest --> FBSimulatorControl
     FBSimulatorXCTest --> FBXCTestCore
     FBSimulatorCodeInjection --> FBSimulatorXCTest
@@ -98,14 +99,12 @@ flowchart TD
     FBDeviceControl --> FBVideoCore
     FBDeviceControl --> FBXCTestCore
     FBVideoCore --> FBControlCore
-    FBAXCore --> FBControlCore
-    FBAXCore --> FBSimulatorBridgeProtocol
     FBXCTestCore --> FBControlCore
     FBArtifactStaging --> FBControlCore
     FBSimulatorControl --> FBControlCore
 ```
 
-Each library has its own page: [`FBControlCore`](fbcontrolcore.mdx), [`FBVideoCore`](fbvideocore.mdx), [`FBAXCore`](fbaxcore.mdx), [`FBArtifactStaging`](fbartifactstaging.mdx), [`FBXCTestCore`](fbxctestcore.mdx), [`FBSimulatorBridgeProtocol`](fbsimulatorbridgeprotocol.mdx), [`FBSimulatorControl`](fbsimulatorcontrol.mdx), [`FBSimulatorVideo`](fbsimulatorvideo.mdx), [`FBSimulatorAX`](fbsimulatorax.mdx), [`FBSimulatorXCTest`](fbsimulatorxctest.mdx), [`FBSimulatorCodeInjection`](fbsimulatorcodeinjection.mdx) and [`FBDeviceControl`](fbdevicecontrol.mdx).
+Each library has its own page: [`FBControlCore`](fbcontrolcore.mdx), [`FBVideoCore`](fbvideocore.mdx), [`FBArtifactStaging`](fbartifactstaging.mdx), [`FBXCTestCore`](fbxctestcore.mdx), [`FBSimulatorBridgeProtocol`](fbsimulatorbridgeprotocol.mdx), [`FBSimulatorControl`](fbsimulatorcontrol.mdx), [`FBSimulatorVideo`](fbsimulatorvideo.mdx), [`FBSimulatorAX`](fbsimulatorax.mdx), [`FBSimulatorXCTest`](fbsimulatorxctest.mdx), [`FBSimulatorCodeInjection`](fbsimulatorcodeinjection.mdx) and [`FBDeviceControl`](fbdevicecontrol.mdx).
 
 ### Targets
 

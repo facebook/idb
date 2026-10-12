@@ -6,7 +6,6 @@
  */
 
 import AppKit
-import FBAXCore
 import FBControlCore
 @testable import FBSimulatorAX
 @testable import FBSimulatorControl

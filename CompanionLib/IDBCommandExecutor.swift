@@ -6,7 +6,6 @@
  */
 
 import CoreGraphics
-import FBAXCore
 import FBArtifactStaging
 import FBControlCore
 import FBDeviceControl

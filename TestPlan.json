@@ -12,12 +12,6 @@
     "CompanionUtilitiesTests": [
       "CompanionUtilitiesTests"
     ],
-    "FBAXCore": [
-      "FBAXCoreTests"
-    ],
-    "FBAXCoreTests": [
-      "FBAXCoreTests"
-    ],
     "FBArtifactStaging": [
       "FBArtifactStagingTests"
     ],
@@ -134,11 +128,6 @@
       "runner": "large"
     },
     "CompanionUtilitiesTests": {
-      "bootedSimulator": false,
-      "prerequisites": [],
-      "runner": "standard"
-    },
-    "FBAXCoreTests": {
       "bootedSimulator": false,
       "prerequisites": [],
       "runner": "standard"

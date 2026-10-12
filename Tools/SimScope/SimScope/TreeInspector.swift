@@ -6,8 +6,8 @@
  */
 
 import AppKit
-import FBAXCore
 import FBControlCore
+import FBSimulatorAX
 import QuartzCore
 
 /// An embeddable **outline table** showing the frontmost app's accessibility tree, refreshed on an
