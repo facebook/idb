@@ -31,7 +31,7 @@ public enum ApplicationInstallType: Sendable {
 }
 
 /// Keys of the application info dictionary.
-public struct ApplicationInstallInfoKey: RawRepresentable, Hashable, Sendable {
+public struct ApplicationInstallInfoKey: RawRepresentable, Sendable {
   public let rawValue: String
   public init(rawValue: String) {
     self.rawValue = rawValue
