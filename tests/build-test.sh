@@ -741,6 +741,24 @@ assert_equal "the companion's tests build with explicit modules off" 1 "$output"
 output="$(in_package "$dir" "scheme=FBControlCoreTests; $explicit_modules_off")"
 assert_equal "the generated project's tests keep Xcode's default" 0 "$output"
 
+# The staging benchmark links its own closure from Build/Products/Release, so
+# building it builds exactly those archives first.
+cat >> "$dir/Companion/project-deps.yml" <<'EOF'
+  staging-bench:
+    dependencies:
+      - framework: ../Build/Products/Release/libFBArtifactStaging.a
+        embed: false
+EOF
+output="$(in_package "$dir" '
+    set +u
+    build_target() { echo "built $1 $2"; }
+    invoke_xcodebuild() { :; }
+    build_staging_bench
+')"
+# BUG: no archive is built, so the benchmark cannot import FBArtifactStaging
+# -- flipped in the following commit.
+assert_equal "building the staging benchmark builds its archives" '' "$output"
+
 if [ "$FAILURES" -ne 0 ]; then
     echo "$FAILURES assertion(s) failed"
     exit 1
