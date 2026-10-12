@@ -26,10 +26,12 @@ settings:
     SWIFT_INCLUDE_PATHS: $(inherited) $(SRCROOT)/../ZstdDecompress/include
     # The libraries this project links, and the public headers they install, are
     # always built Release. A Debug build here (the test schemes) otherwise looks
-    # for those headers only under its own products directory, and importing
-    # FBDeviceControl, whose bridging header includes <FBDeviceControl/AMDefines.h>,
-    # fails.
+    # for both only under its own products directory: importing FBDeviceControl,
+    # whose bridging header includes <FBDeviceControl/AMDefines.h>, fails, and so
+    # does linking, since each archive is linked by name (`-lCompanionUtilities`)
+    # rather than by its path.
     HEADER_SEARCH_PATHS: $(inherited) $(SRCROOT)/../Build/Products/Release/include
+    LIBRARY_SEARCH_PATHS: $(inherited) $(SRCROOT)/../Build/Products/Release
     # The generated project's libraries and Source/Package.swift compile into the Swift package
     # `idb` too, so a conformance this project declares on one of their types is not retroactive.
     SWIFT_PACKAGE_NAME: idb
