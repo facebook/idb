@@ -204,7 +204,7 @@ extension ScreenshotGeometryError: LocalizedError {
 }
 
 /// A resolved transform: everything in pixels, every bound checked. Shared by the simulator and device paths.
-public struct ScreenshotPlan: Hashable, Sendable {
+public struct ScreenshotPlan: Sendable {
 
   /// The region to capture, in pixels, clamped to the source and rounded out to whole pixels.
   /// `nil` captures the whole source image.
