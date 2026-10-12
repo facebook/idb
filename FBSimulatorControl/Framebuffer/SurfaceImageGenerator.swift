@@ -62,14 +62,7 @@ public final class SurfaceImageGenerator {
     var source = CIImage(ioSurface: unsafeBitCast(surface, to: IOSurfaceRef.self), options: [.colorSpace: colorSpace])
     if let display {
       guard source.extent == display.bounds else { throw SimulatorDisplayError.changed }
-      let orientation: Int32
-      switch display.rotation {
-      case .upright: orientation = 1
-      case .clockwise: orientation = 6
-      case .upsideDown: orientation = 3
-      case .counterclockwise: orientation = 8
-      }
-      source = source.oriented(forExifOrientation: orientation)
+      source = source.oriented(forExifOrientation: display.rotation.exifOrientation)
     }
     let sourceSize = source.extent.size
     let plan = try ScreenshotGeometry.plan(for: configuration, sourceSize: sourceSize, screenScale: screenScale)

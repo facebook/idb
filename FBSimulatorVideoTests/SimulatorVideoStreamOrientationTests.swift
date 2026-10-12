@@ -66,10 +66,8 @@ final class SimulatorVideoStreamOrientationTests: XCTestCase {
 
     let canvas = await started.stream.canvasSize
     let screenshot = try pngSize(try await started.stream.captureCompositedScreenshot())
-    // BUG: the frame keeps the panel's portrait orientation while the interface is landscape, so video and
-    // screenshots come out sideways. Flipped in the following commit.
-    XCTAssertEqual(canvas, CGSize(width: 20, height: 38))
-    XCTAssertEqual(screenshot, CGSize(width: 20, height: 30))
+    XCTAssertEqual(canvas, CGSize(width: 30, height: 28))
+    XCTAssertEqual(screenshot, CGSize(width: 30, height: 20))
     try await started.stream.stopStreaming()
   }
 

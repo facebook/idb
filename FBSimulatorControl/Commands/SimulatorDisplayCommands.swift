@@ -13,6 +13,24 @@ public enum SimulatorDisplayRotation: String, Sendable, Decodable {
   case clockwise = "rot90"
   case upsideDown = "rot180"
   case counterclockwise = "rot270"
+
+  /// The EXIF orientation that turns the panel's framebuffer into the interface as it is shown.
+  public var exifOrientation: Int32 {
+    switch self {
+    case .upright: 1
+    case .clockwise: 6
+    case .upsideDown: 3
+    case .counterclockwise: 8
+    }
+  }
+
+  /// Whether the interface's width runs along the panel's height.
+  public var isQuarterTurn: Bool {
+    switch self {
+    case .upright, .upsideDown: false
+    case .clockwise, .counterclockwise: true
+    }
+  }
 }
 
 /// Interface geometry, independent of accessibility and touchscreen routing identities.

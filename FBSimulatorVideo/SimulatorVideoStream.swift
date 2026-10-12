@@ -195,6 +195,10 @@ public actor SimulatorVideoStream: VideoStreamOperation {
   private var lazyTriggers: LazyFrameTriggers?
 
   var pixelBuffer: CVPixelBuffer?
+  /// The frames the mounted pusher is set up for: the mounted surface as the interface shows it.
+  var mountedSource: VideoFrameSource?
+  /// The surface the framebuffer last reported: the one the stream should show, whether or not it mounted.
+  private var latestSurface: IOSurface?
   var timeAtFirstFrame: TimeInterval = 0
   var wallClockAtFirstFrame: TimeInterval = 0
   var timeAtLastPush: TimeInterval = 0
@@ -330,6 +334,7 @@ public actor SimulatorVideoStream: VideoStreamOperation {
     // When a surface is already available this mounts it synchronously (transitioning to
     // `.streaming`), otherwise the first surface event does.
     if let surface = attachment.initialSurface {
+      latestSurface = surface
       do {
         try mountSurface(surface)
       } catch {
@@ -376,6 +381,8 @@ public actor SimulatorVideoStream: VideoStreamOperation {
     spareFramePushers.removeAll().forEach { tearDown($0, after: "the stream stopped") }
     preparesForDisplaySwitches = false
     displayConfiguration = nil
+    mountedSource = nil
+    latestSurface = nil
     if let framePusher {
       do {
         try framePusher.tearDown()
@@ -441,16 +448,8 @@ public actor SimulatorVideoStream: VideoStreamOperation {
     switch event {
     case let .surfaceChanged(surface):
       guard let surface else { return }
-      do {
-        try mountSurface(surface)
-      } catch {
-        logger.log("Failed to mount incoming surface: \(error)")
-        failPendingStart(with: error)
-        return
-      }
-      // A pusher taken from the spares has encoded before, so its next frame would reference one the consumer
-      // never received.
-      pushFrame(forceKeyFrame: true)
+      latestSurface = surface
+      reconcileMount()
       // After the push, so preparing for a configuration that arrived before the first mount does not delay it.
       prepareSpareFramePushers()
     case .frameRendered:
@@ -462,6 +461,7 @@ public actor SimulatorVideoStream: VideoStreamOperation {
       }
     case let .configurationChanged(displayConfiguration):
       self.displayConfiguration = displayConfiguration
+      reconcileMount()
       prepareSpareFramePushers()
     case let .ended(error):
       logger.log("Framebuffer ended: \(error)")
@@ -488,11 +488,64 @@ public actor SimulatorVideoStream: VideoStreamOperation {
 
     let attributes = bitmapStreamPixelBufferAttributes(from: buffer)
     logger.log("Mounting Surface \(IOSurfaceGetID(surface)) with Attributes: \(CollectionInformation.oneLineDescription(from: attributes))")
+    try mount(buffer, attributes: attributes, consumer: consumer)
+  }
 
+  /// Mounts the surface the framebuffer last reported, as the interface shows it, unless that is what is mounted.
+  /// A new surface and a rotation of the interface both differ from what is mounted, and so does a mount that
+  /// failed: the stream keeps its working pipeline, and the next display event tries again. A first mount that
+  /// fails fails the start instead.
+  private func reconcileMount() {
+    guard let latestSurface else {
+      return
+    }
+    if let pixelBuffer, let mountedSource, let mountedSurface = CVPixelBufferGetIOSurface(pixelBuffer)?.takeUnretainedValue(),
+      IOSurfaceGetID(mountedSurface) == IOSurfaceGetID(latestSurface),
+      VideoFrameSource(pixelBuffer).rotated(interfaceRotation(of: pixelBuffer)) == mountedSource
+    {
+      return
+    }
+    do {
+      try mountSurface(latestSurface)
+    } catch {
+      logger.log("Failed to mount surface \(IOSurfaceGetID(latestSurface)), keeping the mounted one until the next display event: \(error)")
+      failPendingStart(with: error)
+      return
+    }
+    // A pusher taken from the spares has encoded before, so its next frame would reference one the consumer
+    // never received.
+    pushFrame(forceKeyFrame: true)
+  }
+
+  /// The interface rotation of the display whose surface is `buffer`: a transition's incoming display, then the
+  /// active one, then any other. Upright when no display's surface is the buffer's size.
+  private func interfaceRotation(of buffer: CVPixelBuffer) -> SimulatorDisplayRotation {
+    guard let displayConfiguration else {
+      return .upright
+    }
+    var candidates: [SimulatorDisplayGeometry] = []
+    if case let .transitioning(incoming?) = displayConfiguration.phase {
+      candidates.append(incoming.geometry)
+    }
+    switch displayConfiguration.active {
+    case let .identified(display):
+      candidates.append(display.geometry)
+    case let .unidentified(geometry):
+      candidates.append(geometry)
+    case .unresolved, .unknown:
+      break
+    }
+    candidates += displayConfiguration.displays.map(\.geometry)
+    let size = CGSize(width: CVPixelBufferGetWidth(buffer), height: CVPixelBufferGetHeight(buffer))
+    return candidates.first { $0.surfacePixelSize == size }?.rotation ?? .upright
+  }
+
+  private func mount(_ buffer: CVPixelBuffer, attributes: [String: Any], consumer: any DataConsumer) throws {
     if frameWriters == nil {
       frameWriters = configuration.format.frameWriters()
     }
-    let source = VideoFrameSource(buffer)
+    let rotation = interfaceRotation(of: buffer)
+    let source = VideoFrameSource(buffer).rotated(rotation)
     let framePusher: any FramePusher
     if let spare = spareFramePushers.take(source) {
       framePusher = spare
@@ -506,10 +559,11 @@ public actor SimulatorVideoStream: VideoStreamOperation {
     // leaves the previous surface installed rather than a new `pixelBuffer` behind a pusher never
     // set up for it.
     let previousFramePusher = self.framePusher
-    let previousSource = self.pixelBuffer.map(VideoFrameSource.init)
+    let previousSource = mountedSource
     self.pixelBuffer = buffer
     self.pixelBufferAttributes = attributes
     self.framePusher = framePusher
+    self.mountedSource = source
     // Torn down or kept after the new pusher is published so a swap never leaves the stream without
     // a working pusher, and a teardown failure cannot fail an otherwise good mount.
     if let previousFramePusher, preparesForDisplaySwitches, let previousSource, previousSource != source {
@@ -530,7 +584,8 @@ public actor SimulatorVideoStream: VideoStreamOperation {
     }
 
     compositor.configure(
-      sourceWidth: CVPixelBufferGetWidth(buffer), sourceHeight: CVPixelBufferGetHeight(buffer), scaleFactor: configuration.scaleFactor)
+      sourceWidth: CVPixelBufferGetWidth(buffer), sourceHeight: CVPixelBufferGetHeight(buffer), rotation: rotation,
+      scaleFactor: configuration.scaleFactor)
     let insets = edgeInsets
     if insets.top + insets.bottom + insets.left + insets.right > 0 {
       logger.info().log("Composited pool includes edge insets (t=\(insets.top) b=\(insets.bottom) l=\(insets.left) r=\(insets.right)): w=\(compositor.outputWidth)/h=\(compositor.outputHeight)")
@@ -640,7 +695,7 @@ public actor SimulatorVideoStream: VideoStreamOperation {
   /// switch does not start an encoder. Only once a configuration has several sizes, and once a surface is mounted,
   /// as a pusher needs the consumer. Warming waits for one encode per size.
   private func prepareSpareFramePushers() {
-    guard let displayConfiguration, let consumer, let pixelBuffer else {
+    guard let displayConfiguration, let consumer, let mounted = mountedSource else {
       return
     }
     var displays = displayConfiguration.displays.filter(\.isIntegrated)
@@ -649,12 +704,11 @@ public actor SimulatorVideoStream: VideoStreamOperation {
     }
     // A simulator's framebuffer surfaces are BGRA; a surface in another format is not a spare's source, so its
     // mount sets up a pusher of its own.
-    let sources = Set(displays.compactMap { VideoFrameSource($0.geometry.surfacePixelSize, pixelFormat: kCVPixelFormatType_32BGRA) })
+    let sources = Set(displays.compactMap { VideoFrameSource($0.geometry.surfacePixelSize, pixelFormat: kCVPixelFormatType_32BGRA)?.rotated($0.rotation) })
     guard sources.count > 1 else {
       return
     }
     preparesForDisplaySwitches = true
-    let mounted = VideoFrameSource(pixelBuffer)
     for source in sources where source != mounted && !spareFramePushers.contains(source) {
       do {
         let framePusher = try newFramePusher(consumer: consumer)

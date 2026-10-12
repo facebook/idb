@@ -43,6 +43,8 @@ final class OverlayCompositor {
   private var pool: CVPixelBufferPool?
   private(set) var outputWidth = 0
   private(set) var outputHeight = 0
+  /// The interface rotation the source is turned by before it is scaled and padded.
+  private(set) var rotation = SimulatorDisplayRotation.upright
 
   init(edgeInsets: VideoStreamEdgeInsets) {
     self.edgeInsets = edgeInsets
@@ -52,9 +54,9 @@ final class OverlayCompositor {
     edgeInsets.top + edgeInsets.bottom + edgeInsets.left + edgeInsets.right > 0
   }
 
-  /// Sizes the output for a newly mounted source. The Core Image context is created once and kept
-  /// (its GPU pipeline is expensive to build); the pool is remade for the new size.
-  func configure(sourceWidth: Int, sourceHeight: Int, scaleFactor: Double?) {
+  /// Sizes the output for a newly mounted source, shown turned by `rotation`. The Core Image context is created
+  /// once and kept (its GPU pipeline is expensive to build); the pool is remade for the new size.
+  func configure(sourceWidth: Int, sourceHeight: Int, rotation: SimulatorDisplayRotation, scaleFactor: Double?) {
     if context == nil {
       if let device = MTLCreateSystemDefaultDevice() {
         context = CIContext(mtlDevice: device, options: [.cacheIntermediates: false])
@@ -62,8 +64,10 @@ final class OverlayCompositor {
         context = CIContext(options: [.cacheIntermediates: false])
       }
     }
+    self.rotation = rotation
+    let shown = VideoFrameSource(width: sourceWidth, height: sourceHeight, pixelFormat: kCVPixelFormatType_32BGRA).rotated(rotation)
     let dimensions = VideoOutputDimensions.calculate(
-      sourceWidth: sourceWidth, sourceHeight: sourceHeight, scaleFactor: scaleFactor, edgeInsets: edgeInsets)
+      sourceWidth: shown.width, sourceHeight: shown.height, scaleFactor: scaleFactor, edgeInsets: edgeInsets)
     outputWidth = dimensions.width
     outputHeight = dimensions.height
     let attributes: [String: Any] = [
@@ -116,17 +120,21 @@ final class OverlayCompositor {
     return png as Data
   }
 
-  /// The source scaled into the inset frame with the overlay over it; nil when neither insets nor an
-  /// overlay call for compositing, or before `configure`.
+  /// The source turned into the interface's orientation and scaled into the inset frame, with the overlay over
+  /// it; nil when no rotation, insets or overlay call for compositing, or before `configure`.
   private func compositedImage(of source: CVPixelBuffer) -> CIImage? {
-    guard hasInsets || overlayBuffer != nil, context != nil, pool != nil else {
+    guard hasInsets || overlayBuffer != nil || rotation != .upright, context != nil, pool != nil else {
       return nil
     }
     var sourceImage = CIImage(cvPixelBuffer: source)
+    if rotation != .upright {
+      sourceImage = sourceImage.oriented(forExifOrientation: rotation.exifOrientation)
+      sourceImage = sourceImage.transformed(by: CGAffineTransform(translationX: -sourceImage.extent.minX, y: -sourceImage.extent.minY))
+    }
 
     // Core Image's origin is bottom-left: scale the source to the inset-free width, then move it up
     // and right by the bottom and left insets.
-    let sourceWidth = CVPixelBufferGetWidth(source)
+    let sourceWidth = Int(sourceImage.extent.width)
     let targetWidth = outputWidth - Int(edgeInsets.left) - Int(edgeInsets.right)
     if targetWidth != sourceWidth && sourceWidth > 0 {
       let scale = CGFloat(targetWidth) / CGFloat(sourceWidth)

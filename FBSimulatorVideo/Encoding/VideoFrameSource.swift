@@ -8,6 +8,7 @@
 import CoreGraphics
 import CoreVideo
 import FBControlCore
+import FBSimulatorControl
 
 /// What a frame pusher is set up for: the size and pixel format of the frames it is given.
 struct VideoFrameSource: Hashable, CustomStringConvertible {
@@ -32,6 +33,11 @@ struct VideoFrameSource: Hashable, CustomStringConvertible {
       return nil
     }
     self.init(width: width, height: height, pixelFormat: pixelFormat)
+  }
+
+  /// The source as the interface shows it: a quarter turn swaps its width and height.
+  func rotated(_ rotation: SimulatorDisplayRotation) -> VideoFrameSource {
+    rotation.isQuarterTurn ? VideoFrameSource(width: height, height: width, pixelFormat: pixelFormat) : self
   }
 
   var description: String { "\(width)x\(height) \(pixelFormat.fourCharCodeString)" }
