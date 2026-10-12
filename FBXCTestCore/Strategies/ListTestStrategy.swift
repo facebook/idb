@@ -77,7 +77,11 @@ public final class ListTestStrategy {
   private func listTestSubprocess(environment: [String: String], temporaryDirectory: URL) async throws -> Subprocess {
     guard let runnerAppPath = configuration.runnerAppPath, BundleDescriptor.isApplication(atPath: runnerAppPath) else {
       let thinned = try await ArchitectureProcessAdapter.thinExecutable(atPath: target.xctest.path, toAnyArchitectureIn: Set(configuration.architectures.map { Architecture(rawValue: $0) }), temporaryDirectory: temporaryDirectory)
-      return Subprocess(executable: thinned.path, environment: .exact(environment.merging(thinned.environment) { _, thinnedValue in thinnedValue }))
+      return Subprocess(
+        executable: thinned.path,
+        environment: .exact(
+          XCTestShimConfiguration.unarmedAudioInjectionEnvironment(
+            environment.merging(thinned.environment) { _, thinnedValue in thinnedValue })))
     }
     let developerLibraryPath = (XcodeConfiguration.developerDirectory as NSString).appendingPathComponent("Platforms/iPhoneSimulator.platform/Developer/Library")
     let testFrameworkPaths = [
@@ -88,7 +92,9 @@ public final class ListTestStrategy {
     environment["DYLD_FALLBACK_FRAMEWORK_PATH"] = testFrameworkPaths
     environment["DYLD_FALLBACK_LIBRARY_PATH"] = testFrameworkPaths
     let appBundle = try BundleDescriptor.bundle(fromPath: runnerAppPath)
-    return Subprocess(executable: appBundle.binary?.path ?? target.xctest.path, environment: .exact(environment))
+    return Subprocess(
+      executable: appBundle.binary?.path ?? target.xctest.path,
+      environment: .exact(XCTestShimConfiguration.unarmedAudioInjectionEnvironment(environment)))
   }
 
   private static func setupEnvironment(withDylibs libraries: [String], shimPath: String, shimOutputFilePath: String, bundlePath: String, target: any Target) -> [String: String] {

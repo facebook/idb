@@ -56,7 +56,7 @@ public final class XcodeBuildOperation {
       arguments.append("-skip-testing:\(test)")
     }
 
-    var environment = ProcessInfo.processInfo.environment
+    var environment = XCTestShimConfiguration.unarmedAudioInjectionEnvironment(ProcessInfo.processInfo.environment)
     environment[XcodebuildEnvironmentTargetUDID] = udid
 
     if let simDeviceSetPath {
@@ -110,10 +110,12 @@ public final class XcodeBuildOperation {
 
     let defaultTestRunProperties = XcodeBuildOperation.xctestRunProperties(configuration)
 
-    let testRunProperties =
+    let mergedTestRunProperties =
       configuration.xcTestRunProperties.map {
         XcodeBuildOperation.overwriteXCTestRunProperties(withBaseProperties: $0, newProperties: defaultTestRunProperties)
       } ?? defaultTestRunProperties
+    let testRunProperties = unarmedAudioInjectionProperties(
+      mergedTestRunProperties, applicationEnvironment: configuration.applicationLaunchConfiguration.environment)
 
     if !(testRunProperties as NSDictionary).write(toFile: path, atomically: false) {
       throw XcodeBuildError.writeFailed(path: path)
@@ -152,17 +154,52 @@ public final class XcodeBuildOperation {
 
   public static func overwriteXCTestRunProperties(withBaseProperties baseProperties: [String: Any], newProperties: [String: Any]) -> [String: Any] {
     let defaultTestProperties = newProperties["StubBundleId"] as? [String: Any] ?? [:]
+    let armingVariable = XCTestShimConfiguration.audioInjectionEnvironmentVariable
+    let explicitArming = (defaultTestProperties["EnvironmentVariables"] as? [String: String])?[armingVariable]
     var mutableTestRunProperties: [String: Any] = [:]
     for (testId, value) in baseProperties {
       guard var mutableTestProperties = value as? [String: Any] else { continue }
       for (key, newValue) in defaultTestProperties {
         if mutableTestProperties[key] != nil {
-          mutableTestProperties[key] = newValue
+          var replacement = newValue
+          if explicitArming == nil, ["EnvironmentVariables", "TestingEnvironmentVariables"].contains(key),
+            var environment = newValue as? [String: Any],
+            let existing = mutableTestProperties[key] as? [String: Any]
+          {
+            environment[armingVariable] = environment[armingVariable] ?? existing[armingVariable]
+            replacement = environment
+          }
+          mutableTestProperties[key] = replacement
         }
       }
       mutableTestRunProperties[testId] = mutableTestProperties
     }
     return mutableTestRunProperties
+  }
+
+  static func unarmedAudioInjectionProperties(
+    _ properties: [String: Any], applicationEnvironment: [String: String]
+  ) -> [String: Any] {
+    let armingVariable = XCTestShimConfiguration.audioInjectionEnvironmentVariable
+    var updated = properties
+    for (testID, value) in properties {
+      guard var target = value as? [String: Any], target["TestBundlePath"] != nil else { continue }
+      var environment = target["EnvironmentVariables"] as? [String: Any] ?? [:]
+      let testingEnvironment = target["TestingEnvironmentVariables"] as? [String: Any] ?? [:]
+      if environment[armingVariable] == nil && testingEnvironment[armingVariable] == nil {
+        environment[armingVariable] = "0"
+        target["EnvironmentVariables"] = environment
+      }
+      if target["IsUITestBundle"] as? Bool == true || target["UITargetAppEnvironmentVariables"] != nil {
+        var application = target["UITargetAppEnvironmentVariables"] as? [String: Any] ?? [:]
+        if application[armingVariable] == nil {
+          application[armingVariable] = applicationEnvironment[armingVariable] ?? "0"
+        }
+        target["UITargetAppEnvironmentVariables"] = application
+      }
+      updated[testID] = target
+    }
+    return updated
   }
 
   public static func confirmExit(ofXcodebuildOperation running: RunningSubprocess, configuration: TestLaunchConfiguration, reporter: XCTestReporter, logger: ControlCoreLogger) async throws {

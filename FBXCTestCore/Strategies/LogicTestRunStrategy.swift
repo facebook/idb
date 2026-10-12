@@ -113,7 +113,8 @@ public final class LogicTestRunStrategy {
     let environment = LogicTestRunStrategy.setupEnvironment(withDylibs: configuration.processUnderTestEnvironment, withLibraries: libraries, injectLibraries: configuration.injectLibraries, shimOutputFilePath: shimOutputPath, shimPath: shimPath, bundlePath: configuration.testBundlePath, coverageConfiguration: configuration.coverageConfiguration, logDirectoryPath: configuration.logDirectoryPath, waitForDebugger: configuration.waitForDebugger, target: target)
     let thinned = try await ArchitectureProcessAdapter.thinExecutable(atPath: target.xctest.path, toAnyArchitectureIn: Set(configuration.architectures.map { Architecture(rawValue: $0) }), temporaryDirectory: temporaryDirectory)
     let arguments = ["-XCTest", configuration.testFilter ?? "All", configuration.testBundlePath]
-    let launchEnvironment = environment.merging(thinned.environment) { _, thinnedValue in thinnedValue }
+    let launchEnvironment = XCTestShimConfiguration.unarmedAudioInjectionEnvironment(
+      environment.merging(thinned.environment) { _, thinnedValue in thinnedValue })
     logger.log("Launching xctest process with arguments \(CollectionInformation.oneLineDescription(from: [thinned.path] + arguments)), environment \(CollectionInformation.oneLineDescription(from: launchEnvironment))")
     return Subprocess(executable: thinned.path, arguments: arguments, environment: .exact(launchEnvironment), mode: .posixSpawn)
   }

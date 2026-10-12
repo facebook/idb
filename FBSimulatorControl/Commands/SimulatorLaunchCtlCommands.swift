@@ -52,7 +52,8 @@ public final class SimulatorLaunchCtlCommands: LaunchCtlCommands {
 
   // MARK: - Initializers
 
-  private static func launchCtlLaunchPath(for simulator: Simulator) throws -> String {
+  /// The runtime's own `launchctl`, for anything in this module that needs to run it in the guest.
+  static func launchCtlLaunchPath(for simulator: Simulator) throws -> String {
     let path = (simulator.device.runtime.root as NSString)
       .appendingPathComponent("bin")
       .appending("/launchctl")

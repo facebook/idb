@@ -28,7 +28,7 @@ final class SimulatorReplCommandsTests: XCTestCase {
     XCTAssertEqual(repl.extraInterfacePaths, ["/IDB.swiftinterface"])
     let options = try XCTUnwrap(device.spawnedOptions)
     XCTAssertEqual(options["arguments"] as? [String], ["/bridge", "repl", "start", repl.socketPath, "/libRepl.dylib"])
-    XCTAssertEqual(options["environment"] as? [String: String], [:])
+    XCTAssertEqual(options["environment"] as? [String: String], ["IDB_AUDIO_INJECTION": "0"])
     XCTAssertTrue(Self.isWritable(options["stdout"]), "The bridge writes to /dev/null")
     XCTAssertTrue(Self.isWritable(options["stderr"]), "The bridge writes to /dev/null")
     device.terminate(statLoc: 0)

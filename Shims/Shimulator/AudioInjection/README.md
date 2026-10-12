@@ -9,6 +9,7 @@ hears a recording wherever it would hear the microphone.
 | Piece | Where |
 |---|---|
 | The shim loaded into guest processes | `Source/Shims/Shimulator/AudioInjection/` → `:libShimulator-iOS`, shipped once in the companion's `Resources/` |
+| App launch preparation, injecting, waiting | `SimulatorAudioCommands.appLaunchEnvironment(_:)`, `inject(from:)` |
 
 The shared Swift `ShimulatorProtocol` target owns the versioned messages, the per-capability socket path and the client that serves it. `AudioInjectionController` contributes the capability name, the typed handler and WAV decoding. `AudioInjectionHAL.swift` owns the IO-proc lifecycle, the synthetic input and the realtime sample copy. The only C is the boundary Swift cannot express: `include/IDBAudioInjectionPrivate.h` declares the private HAL symbols and the audio thread's lock-free counters, and `IDBAudioInjectionInterpose.c` holds the dyld interpose records pointing at the Swift replacements in `AudioInjectionBootstrap.swift`.
 
@@ -51,14 +52,15 @@ player does not -- is filled or counted as having heard the injection.
 
 ## Rules for the shim
 
-idb loads `libShimulator-iOS` into every iOS test process it runs, armed or not.
-Once a simulator is armed, the shim is also loaded into **every** process it
-launches, through the guest `launchd`'s `DYLD_INSERT_LIBRARIES`.
+idb's ordinary iOS test processes already load `libShimulator-iOS` for XCTest
+support. App launches prepare microphone injection in that app's environment;
+idb does not set the audio flag or shim in the guest `launchd` environment.
 
-- **Do nothing unless armed.** Arming also sets `IDB_AUDIO_INJECTION=1` in the
-  guest `launchd`, and the shim reads it once, at load. Without it, every
-  interposed function calls the original with the same arguments and returns its
-  result: no thread, no extra HAL call, no synthetic input. Each entry point in
+- **Do nothing unless armed.** The shim reads `IDB_AUDIO_INJECTION` once, at
+  load, and arms only when its value is exactly `1`. Ordinary test launches
+  default it to `0`, preserving an explicit per-process opt-in. Without arming,
+  every interposed function calls the original with the same arguments and returns
+  its result: no thread, no extra HAL call, no synthetic input. Each entry point in
   `AudioInjectionHAL.swift` starts with that check, and the unit tests hold it.
 - **Nothing blocks on the audio thread.** It reads no HAL property or file, only
   try-locks around copying samples, and never allocates or frees under that lock.
@@ -75,6 +77,27 @@ launches, through the guest `launchd`'s `DYLD_INSERT_LIBRARIES`.
   played it to the end.
 - **Key registrations on the `ioProcID` the HAL returned**, not the client data
   (`NULL` is legal) or the device (two recorders can share one).
+
+## App-scoped preparation
+
+`idb launch` automatically adds the bundled shim and `IDB_AUDIO_INJECTION=1`
+to the app's launch environment. No device configuration or empty-WAV pre-arm
+command is needed. `idb audio inject` controls playback, not process arming.
+
+The shim reads its flag once at process startup. A normal resume keeps an
+already-running app and its state; it does not restart the app to arm it.
+A process launched without arming must be explicitly relaunched before it can
+hear injected audio.
+
+Caller-supplied `DYLD_INSERT_LIBRARIES` replaces guest inheritance. Preparation
+preserves unrelated libraries and REPL support, replaces stale Shimulator paths
+with the current bundled shim, and preserves an explicit audio flag, including
+`0`. The guest `launchd` environment is only read, never changed.
+
+Ordinary logic, hosted and UI test launches default their audio flag to `0`,
+including on a simulator previously armed by an older companion. Explicit
+per-process test opt-ins remain possible. These defaults protect new processes;
+they cannot disarm a process that already cached the flag at startup.
 
 ## Two device-level routes that look right and are not
 

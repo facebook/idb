@@ -6,7 +6,7 @@
  */
 
 import FBControlCore
-import FBXCTestCore
+@testable import FBXCTestCore
 import XCTest
 
 final class XcodeBuildOperationTests: XCTestCase {
@@ -53,5 +53,69 @@ final class XcodeBuildOperationTests: XCTestCase {
     XCTAssertEqual(stubBundleProperties["TestBundlePath"] as? String, testBundlePath)
     XCTAssertEqual(stubBundleProperties["UseUITargetAppProvidedByTests"] as? NSNumber, true)
     XCTAssertEqual(stubBundleProperties["IsUITestBundle"] as? NSNumber, true)
+  }
+
+  private func target(
+    environment: [String: String] = [:], testing: [String: String] = [:], application: [String: String]? = nil
+  ) -> [String: Any] {
+    var properties: [String: Any] = [
+      "TestBundlePath": "/tmp/fixture.xctest", "IsUITestBundle": true,
+      "EnvironmentVariables": environment, "TestingEnvironmentVariables": testing,
+    ]
+    if let application { properties["UITargetAppEnvironmentVariables"] = application }
+    return properties
+  }
+
+  func testXcodebuildDefaultsRunnerAndAUTWithoutChangingMetadata() throws {
+    let original: [String: Any] = ["test": target(environment: ["MAGIC": "keep"]), "__xctestrun_metadata__": ["FormatVersion": 1]]
+    let updated = XcodeBuildOperation.unarmedAudioInjectionProperties(original, applicationEnvironment: [:])
+    let test = try XCTUnwrap(updated["test"] as? [String: Any])
+    XCTAssertEqual(test["EnvironmentVariables"] as? [String: String], ["MAGIC": "keep", "IDB_AUDIO_INJECTION": "0"])
+    XCTAssertEqual(test["UITargetAppEnvironmentVariables"] as? [String: String], ["IDB_AUDIO_INJECTION": "0"])
+    XCTAssertEqual(updated["__xctestrun_metadata__"] as? NSDictionary, original["__xctestrun_metadata__"] as? NSDictionary)
+  }
+
+  func testImportedArmingSurvivesEnvironmentMapReplacement() throws {
+    let base = [
+      "test": target(
+        environment: ["IDB_AUDIO_INJECTION": "1", "OLD": "drop"], testing: ["IDB_AUDIO_INJECTION": "1"],
+        application: ["IDB_AUDIO_INJECTION": "0", "AUT": "keep"])
+    ]
+    let generated = ["StubBundleId": target(environment: ["NEW": "keep"], testing: ["SDK": "keep"])]
+    let merged = XcodeBuildOperation.overwriteXCTestRunProperties(withBaseProperties: base, newProperties: generated)
+    let updated = XcodeBuildOperation.unarmedAudioInjectionProperties(merged, applicationEnvironment: [:])
+    let test = try XCTUnwrap(updated["test"] as? [String: Any])
+    XCTAssertEqual(test["EnvironmentVariables"] as? [String: String], ["NEW": "keep", "IDB_AUDIO_INJECTION": "1"])
+    XCTAssertEqual(test["TestingEnvironmentVariables"] as? [String: String], ["SDK": "keep", "IDB_AUDIO_INJECTION": "1"])
+    XCTAssertEqual(test["UITargetAppEnvironmentVariables"] as? [String: String], ["IDB_AUDIO_INJECTION": "0", "AUT": "keep"])
+  }
+
+  func testExplicitConfigurationOverridesImportedRunnerArming() throws {
+    let requested = ["IDB_AUDIO_INJECTION": "0"]
+    let base = ["test": target(environment: ["IDB_AUDIO_INJECTION": "1"], testing: ["IDB_AUDIO_INJECTION": "1"])]
+    let generated = ["StubBundleId": target(environment: requested)]
+    let merged = XcodeBuildOperation.overwriteXCTestRunProperties(withBaseProperties: base, newProperties: generated)
+    let updated = XcodeBuildOperation.unarmedAudioInjectionProperties(merged, applicationEnvironment: requested)
+    let test = try XCTUnwrap(updated["test"] as? [String: Any])
+    XCTAssertEqual(test["EnvironmentVariables"] as? [String: String], requested)
+    XCTAssertNil((test["TestingEnvironmentVariables"] as? [String: String])?["IDB_AUDIO_INJECTION"])
+    XCTAssertEqual(test["UITargetAppEnvironmentVariables"] as? [String: String], requested)
+  }
+
+  func testTestingMapOptInIsNotOverriddenByARunnerDefault() throws {
+    let updated = XcodeBuildOperation.unarmedAudioInjectionProperties(
+      ["test": target(testing: ["IDB_AUDIO_INJECTION": "1"])], applicationEnvironment: [:])
+    let test = try XCTUnwrap(updated["test"] as? [String: Any])
+    XCTAssertNil((test["EnvironmentVariables"] as? [String: String])?["IDB_AUDIO_INJECTION"])
+    XCTAssertEqual((test["TestingEnvironmentVariables"] as? [String: String])?["IDB_AUDIO_INJECTION"], "1")
+  }
+
+  func testAUTOptInPreservesItsOwnOverride() throws {
+    let requested = ["IDB_AUDIO_INJECTION": "1"]
+    let updated = XcodeBuildOperation.unarmedAudioInjectionProperties(
+      ["test": target(environment: requested, application: ["IDB_AUDIO_INJECTION": "0"])], applicationEnvironment: requested)
+    let test = try XCTUnwrap(updated["test"] as? [String: Any])
+    XCTAssertEqual((test["EnvironmentVariables"] as? [String: String])?["IDB_AUDIO_INJECTION"], "1")
+    XCTAssertEqual((test["UITargetAppEnvironmentVariables"] as? [String: String])?["IDB_AUDIO_INJECTION"], "0")
   }
 }

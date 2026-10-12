@@ -51,7 +51,7 @@ struct LaunchMethodHandler: @unchecked Sendable {
       }
       launchMode = .relaunchIfRunning
     }
-
+    environment = await commandExecutor.audioInjectionAppLaunchEnvironment(environment)
     let config = ApplicationLaunchConfiguration(
       bundleID: start.bundleID,
       bundleName: nil,

@@ -4,6 +4,7 @@
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  */
+
 import FBControlCore
 import Foundation
 
@@ -78,15 +79,26 @@ struct TestRunnerConfiguration {
     environmentVariables["TestBundleLocation"] = testBundle.path
     environmentVariables["XCODE_DBG_XPC_EXCLUSIONS"] = "com.apple.dt.xctestSymbolicator"
     environmentVariables["XCTestConfigurationFilePath"] = testConfigurationPath
-    return addAdditionalEnvironmentVariables(environmentVariables)
+    return XCTestShimConfiguration.unarmedAudioInjectionEnvironment(addAdditionalEnvironmentVariables(environmentVariables))
+  }
+
+  static func audioInjectionTestedApplicationEnvironment(
+    _ environment: [String: String], applicationEnvironment: [String: String], runnerEnvironment: [String: String]
+  ) -> [String: String] {
+    let armingVariable = XCTestShimConfiguration.audioInjectionEnvironmentVariable
+    var prepared = environment
+    prepared[armingVariable] = applicationEnvironment[armingVariable] ?? runnerEnvironment[armingVariable] ?? "0"
+    return prepared
   }
 
   // MARK: - Private
 
-  private static func addAdditionalEnvironmentVariables(_ currentEnvironmentVariables: [String: String]) -> [String: String] {
+  static func addAdditionalEnvironmentVariables(
+    _ currentEnvironmentVariables: [String: String], source: [String: String] = ProcessInfo.processInfo.environment
+  ) -> [String: String] {
     let prefix = "CUSTOM_"
     var envs = currentEnvironmentVariables
-    for (key, value) in ProcessInfo.processInfo.environment {
+    for (key, value) in source {
       if key.hasPrefix(prefix) {
         envs[String(key.dropFirst(prefix.count))] = value
       }
@@ -186,6 +198,11 @@ struct TestRunnerConfiguration {
       testConfigurationPath: testConfiguration.path,
       frameworkSearchPaths: frameworkSearchPaths
     )
+
+    testedApplicationAdditionalEnvironment = audioInjectionTestedApplicationEnvironment(
+      testedApplicationAdditionalEnvironment,
+      applicationEnvironment: testLaunchConfiguration.applicationLaunchConfiguration.environment,
+      runnerEnvironment: launchEnvironment)
 
     return TestRunnerConfiguration(
       sessionIdentifier: sessionIdentifier,

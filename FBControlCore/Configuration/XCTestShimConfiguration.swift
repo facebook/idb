@@ -66,6 +66,14 @@ public struct XCTestShimConfiguration: Sendable {
     self.macOSTestShimPath = macOSTestShimPath
   }
 
+  public static let audioInjectionEnvironmentVariable = "IDB_AUDIO_INJECTION"
+
+  public static func unarmedAudioInjectionEnvironment(_ environment: [String: String]) -> [String: String] {
+    var unarmed = environment
+    unarmed[audioInjectionEnvironmentVariable] = environment[audioInjectionEnvironmentVariable] ?? "0"
+    return unarmed
+  }
+
   // MARK: - Lookup
 
   private static func pathForCanonicallyNamedShim(_ shim: CanonicalShim, inDirectory directory: String) async throws -> String {

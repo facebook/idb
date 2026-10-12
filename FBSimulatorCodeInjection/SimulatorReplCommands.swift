@@ -111,7 +111,7 @@ public struct SimulatorReplCommands {
     let process = try await Subprocess(
       executable: bridgePath,
       arguments: ["repl", "start", socketPath, libReplPath] + additionalLibraries,
-      environment: .exact([:]),
+      environment: .exact(XCTestShimConfiguration.unarmedAudioInjectionEnvironment([:])),
       mode: .posixSpawn
     ).launch(on: SimulatorSubprocessLauncher(simulator: simulator), output: .nullDevice, error: .nullDevice)
     return LaunchedRepl(socketPath: socketPath, host: .process(process), extraInterfacePaths: extraInterfacePaths)
@@ -146,8 +146,9 @@ public struct SimulatorReplCommands {
       return LaunchedRepl(socketPath: socketPath, host: .app, extraInterfacePaths: extraInterfacePaths)
     }
 
-    // `.relaunchIfRunning` so an app already running without the dylib picks it up.
-    let environment = try await appLaunchEnvironment(bundleID: bundleID, additionalLibraries: additionalLibraries)
+    // `.relaunchIfRunning` so an app already running without the REPL dylib picks it up.
+    let environment = await simulator.audio.appLaunchEnvironment(
+      try await appLaunchEnvironment(bundleID: bundleID, additionalLibraries: additionalLibraries))
     let configuration = ApplicationLaunchConfiguration(
       bundleID: bundleID,
       bundleName: nil,

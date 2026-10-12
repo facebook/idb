@@ -37,6 +37,10 @@ targets:
         embed: false
       - framework: ../Build/Products/Release/FBXCTestCore.framework
         embed: false
+      - framework: ../Build/Products/Release/libShimulatorAudioInjectionCore.a
+        embed: false
+      - framework: ../Build/Products/Release/libShimulatorProtocol.a
+        embed: false
       - framework: ../Build/Products/Release/libSimulatorIPC.a
         embed: false
       - framework: ../Build/Products/Release/libZstdDecompress.a
@@ -59,6 +63,10 @@ targets:
         embed: false
       - framework: ../Build/Products/Release/libFBVideoCore.a
         embed: false
+      - framework: ../Build/Products/Release/libShimulatorAudioInjectionCore.a
+        embed: false
+      - framework: ../Build/Products/Release/libShimulatorProtocol.a
+        embed: false
       - framework: ../Build/Products/Release/libSimulatorIPC.a
         embed: false
   SimScope:
@@ -76,6 +84,10 @@ targets:
       - framework: ../Build/Products/Release/libFBSimulatorVideo.a
         embed: false
       - framework: ../Build/Products/Release/libFBVideoCore.a
+        embed: false
+      - framework: ../Build/Products/Release/libShimulatorAudioInjectionCore.a
+        embed: false
+      - framework: ../Build/Products/Release/libShimulatorProtocol.a
         embed: false
       - framework: ../Build/Products/Release/libSimScopeProtocol.a
         embed: false
@@ -119,6 +131,10 @@ targets:
         embed: false
       - framework: ../Build/Products/Release/FBXCTestCore.framework
         embed: false
+      - framework: ../Build/Products/Release/libShimulatorAudioInjectionCore.a
+        embed: false
+      - framework: ../Build/Products/Release/libShimulatorProtocol.a
+        embed: false
       - framework: ../Build/Products/Release/libSimulatorIPC.a
         embed: false
       - framework: ../Build/Products/Release/libZstdDecompress.a
@@ -148,6 +164,10 @@ targets:
       - framework: ../Build/Products/Release/libFBVideoCore.a
         embed: false
       - framework: ../Build/Products/Release/FBXCTestCore.framework
+        embed: false
+      - framework: ../Build/Products/Release/libShimulatorAudioInjectionCore.a
+        embed: false
+      - framework: ../Build/Products/Release/libShimulatorProtocol.a
         embed: false
       - framework: ../Build/Products/Release/libSimulatorIPC.a
         embed: false

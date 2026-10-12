@@ -197,6 +197,10 @@ targets:
         embed: false
       - target: FBVideoCore
         embed: false
+      - target: ShimulatorAudioInjectionCore
+        embed: false
+      - target: ShimulatorProtocol
+        embed: false
       - target: SimulatorIPC
         embed: false
       - sdk: AVFoundation.framework
@@ -284,6 +288,8 @@ targets:
       - target: FBSimulatorControl
       - target: FBSimulatorVideo
       - target: FBVideoCore
+      - target: ShimulatorAudioInjectionCore
+      - target: ShimulatorProtocol
       - target: SimulatorIPC
       - sdk: AVFoundation.framework
       - sdk: Cocoa.framework
@@ -339,6 +345,31 @@ targets:
       - target: ShimulatorProtocol
       - target: SimulatorIPC
       - sdk: XCTest.framework
+  ShimulatorAudioInjectionCore:
+    type: library.static
+    platform: macOS
+    deploymentTarget: "15.0"
+    sources:
+      - path: Shims/Shimulator/AudioInjection/AudioInjectionController.swift
+    settings:
+      base:
+        MACOSX_DEPLOYMENT_TARGET: "15.0"
+        PRODUCT_BUNDLE_IDENTIFIER: com.facebook.ShimulatorAudioInjectionCore
+        PRODUCT_NAME: ShimulatorAudioInjectionCore
+        DEFINES_MODULE: "YES"
+        MACH_O_TYPE: staticlib
+        SWIFT_VERSION: "6.0"
+        GENERATE_INFOPLIST_FILE: "YES"
+      configs:
+        Release:
+          DEBUG_INFORMATION_FORMAT: dwarf
+          STRIP_INSTALLED_PRODUCT: "NO"
+    dependencies:
+      - target: ShimulatorProtocol
+        embed: false
+      - target: SimulatorIPC
+        embed: false
+      - sdk: Foundation.framework
   ZstdDecompress:
     type: library.static
     platform: macOS
@@ -762,6 +793,10 @@ targets:
         embed: false
       - target: FBSimulatorBridgeProtocol
         embed: false
+      - target: ShimulatorAudioInjectionCore
+        embed: false
+      - target: ShimulatorProtocol
+        embed: false
       - target: SimulatorIPC
         embed: false
       - sdk: Cocoa.framework
@@ -809,6 +844,10 @@ targets:
       - target: FBSimulatorBridgeProtocol
         embed: false
       - target: FBSimulatorControl
+        embed: false
+      - target: ShimulatorAudioInjectionCore
+        embed: false
+      - target: ShimulatorProtocol
         embed: false
       - target: SimulatorIPC
         embed: false
@@ -869,6 +908,8 @@ targets:
       - target: FBSimulatorAX
       - target: FBSimulatorBridgeProtocol
       - target: FBSimulatorControl
+      - target: ShimulatorAudioInjectionCore
+      - target: ShimulatorProtocol
       - target: SimulatorIPC
       - sdk: Cocoa.framework
       - sdk: XCTest.framework
@@ -922,6 +963,8 @@ targets:
       - target: FBSimulatorAX
       - target: FBSimulatorBridgeProtocol
       - target: FBSimulatorControl
+      - target: ShimulatorAudioInjectionCore
+      - target: ShimulatorProtocol
       - target: SimulatorIPC
       - sdk: Cocoa.framework
       - sdk: XCTest.framework
@@ -966,6 +1009,10 @@ targets:
       - target: FBSimulatorBridgeProtocol
         embed: false
       - target: FBSimulatorControl
+        embed: false
+      - target: ShimulatorAudioInjectionCore
+        embed: false
+      - target: ShimulatorProtocol
         embed: false
       - target: SimulatorIPC
         embed: false
@@ -1020,6 +1067,8 @@ targets:
       - target: FBSimulatorBridgeProtocol
       - target: FBSimulatorControl
       - target: FBSimulatorProfiling
+      - target: ShimulatorAudioInjectionCore
+      - target: ShimulatorProtocol
       - target: SimulatorIPC
       - sdk: XCTest.framework
   FBSimulatorProfilingSmokeTests:
@@ -1073,6 +1122,8 @@ targets:
       - target: FBSimulatorBridgeProtocol
       - target: FBSimulatorControl
       - target: FBSimulatorProfiling
+      - target: ShimulatorAudioInjectionCore
+      - target: ShimulatorProtocol
       - target: SimulatorIPC
       - sdk: XCTest.framework
   FBSimulatorXCTest:
@@ -1115,6 +1166,10 @@ targets:
       - target: FBSimulatorControl
         embed: false
       - target: FBXCTestCore
+        embed: false
+      - target: ShimulatorAudioInjectionCore
+        embed: false
+      - target: ShimulatorProtocol
         embed: false
       - target: SimulatorIPC
         embed: false
@@ -1171,6 +1226,8 @@ targets:
       - target: FBSimulatorControl
       - target: FBSimulatorXCTest
       - target: FBXCTestCore
+      - target: ShimulatorAudioInjectionCore
+      - target: ShimulatorProtocol
       - target: SimulatorIPC
       - sdk: XCTest.framework
   FBSimulatorCodeInjection:
@@ -1215,6 +1272,10 @@ targets:
       - target: FBSimulatorXCTest
         embed: false
       - target: FBXCTestCore
+        embed: false
+      - target: ShimulatorAudioInjectionCore
+        embed: false
+      - target: ShimulatorProtocol
         embed: false
       - target: SimulatorIPC
         embed: false
@@ -1272,6 +1333,8 @@ targets:
       - target: FBSimulatorControl
       - target: FBSimulatorXCTest
       - target: FBXCTestCore
+      - target: ShimulatorAudioInjectionCore
+      - target: ShimulatorProtocol
       - target: SimulatorIPC
       - sdk: XCTest.framework
   FBSimulatorControlUnitTests:
@@ -1335,6 +1398,8 @@ targets:
       - target: FBSimulatorBridgeProtocol
       - target: FBSimulatorControl
       - target: FBVideoCore
+      - target: ShimulatorAudioInjectionCore
+      - target: ShimulatorProtocol
       - target: SimulatorIPC
       - sdk: AVFoundation.framework
       - sdk: Cocoa.framework
@@ -1401,6 +1466,8 @@ targets:
       - target: FBSimulatorBridgeProtocol
       - target: FBSimulatorControl
       - target: FBVideoCore
+      - target: ShimulatorAudioInjectionCore
+      - target: ShimulatorProtocol
       - target: SimulatorIPC
       - sdk: AVFoundation.framework
       - sdk: Cocoa.framework
@@ -1467,6 +1534,8 @@ targets:
       - target: FBSimulatorBridgeProtocol
       - target: FBSimulatorControl
       - target: FBVideoCore
+      - target: ShimulatorAudioInjectionCore
+      - target: ShimulatorProtocol
       - target: SimulatorIPC
       - sdk: AVFoundation.framework
       - sdk: Cocoa.framework
