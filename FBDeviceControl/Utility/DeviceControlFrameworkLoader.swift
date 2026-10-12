@@ -7,6 +7,7 @@
 
 import FBControlCore
 import Foundation
+import MobileDeviceAPI
 
 /// Reinterprets a `dlsym` result as the function pointer the call table expects.
 ///

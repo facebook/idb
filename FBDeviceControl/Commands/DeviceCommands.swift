@@ -7,6 +7,7 @@
 
 @preconcurrency import FBControlCore
 import Foundation
+import MobileDeviceAPI
 
 /// The Activation State of the device.
 public enum DeviceActivationState: String, Sendable, CaseIterable {

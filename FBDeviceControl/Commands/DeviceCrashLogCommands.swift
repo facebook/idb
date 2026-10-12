@@ -7,6 +7,7 @@
 
 @preconcurrency import FBControlCore
 import Foundation
+import MobileDeviceAPI
 
 private let CrashReportMoverService = "com.apple.crashreportmover"
 private let CrashReportCopyService = "com.apple.crashreportcopymobile"

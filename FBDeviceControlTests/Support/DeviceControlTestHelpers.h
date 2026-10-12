@@ -5,7 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#import <FBDeviceControl/AMDefines.h>
+#import <MobileDeviceAPI/AMDefines.h>
 
 /// Returns a zero-initialized AMDCalls struct (needed because Swift can't zero-init
 /// structs with _Nonnull function pointer fields).

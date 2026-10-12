@@ -7,6 +7,7 @@
 
 @preconcurrency import FBControlCore
 import Foundation
+import MobileDeviceAPI
 
 public final class DeviceSet: TargetSet, TargetSetDelegate, CustomStringConvertible {
   // Loaded once per process; a failed load is cached and rethrown by every init rather than

@@ -7,6 +7,7 @@
 
 @preconcurrency import FBControlCore
 import Foundation
+import MobileDeviceAPI
 
 private func notificationTypeDescription(_ status: AMRestorableDeviceNotificationType) -> String {
   switch status {

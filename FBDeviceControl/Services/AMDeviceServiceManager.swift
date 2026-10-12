@@ -7,6 +7,7 @@
 
 @preconcurrency import FBControlCore
 import Foundation
+import MobileDeviceAPI
 
 enum AMDeviceServiceError: Error {
   case houseArrestStartFailed(bundleID: String, status: Int32, message: String)

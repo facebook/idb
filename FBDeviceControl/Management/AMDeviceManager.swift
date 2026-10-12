@@ -7,6 +7,7 @@
 
 @preconcurrency import FBControlCore
 import Foundation
+import MobileDeviceAPI
 
 private let mobileBackupDomain = "com.apple.mobile.backup"
 private let serviceReuseTimeout: TimeInterval = 6.0

@@ -7,6 +7,7 @@
 
 @preconcurrency import FBControlCore
 import Foundation
+import MobileDeviceAPI
 
 private typealias HeaderIntType = UInt32
 private let HeaderLength = MemoryLayout<HeaderIntType>.size

@@ -7,6 +7,7 @@
 
 @preconcurrency import FBControlCore
 import Foundation
+import MobileDeviceAPI
 
 private let EraseCallbackValueGood: Int32 = -10
 private let DetectTimeout: TimeInterval = 10

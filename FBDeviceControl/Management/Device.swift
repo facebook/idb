@@ -8,6 +8,7 @@
 @preconcurrency import FBControlCore
 import FBVideoCore
 import Foundation
+import MobileDeviceAPI
 
 /// Backed by a `MobileDevice`, a `RestorableDevice`, or both, caching the target
 /// information of whichever it holds.

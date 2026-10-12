@@ -7,6 +7,7 @@
 
 @preconcurrency import FBControlCore
 import Foundation
+import MobileDeviceAPI
 
 private let MountRootPath = "mounted"
 private let ExtractedSymbolsDirectory = "Symbols"
