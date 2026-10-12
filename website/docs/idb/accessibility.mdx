@@ -115,7 +115,19 @@ sequenceDiagram
 
 Narrowing a read with `--key` does not put it on that path unless a reachability key is among the keys asked for — the ordinary attributes are not hit-tested.
 
-`--api ax` is unaffected. It fetches attribute by attribute over XPC and reports no `traversal` at all.
+`--api ax` is unaffected. It fetches attribute by attribute over XPC and reports no `traversal` at all, but what it reads is the translator's vocabulary: the same one as axbridge's `semantic` traversal, described next.
+
+### Vocabularies and traversals
+
+A traversal is two choices at once: **whose attributes** the read asks the application for, and **how many calls** it takes to fetch them.
+
+| | One call per node | One call for the tree |
+|---|---|---|
+| **XCTest's attributes** (the tree the application built, as `XCUITest` sees it) | `view-hierarchy` | `single-fetch` |
+| **The accessibility translator's attributes** (what an assistive technology sees) | `semantic`, and every `--api ax` read | — |
+
+`--api ax` and axbridge's `semantic` traversal read the same vocabulary and return the same default tree: on an iOS 27.0 Settings screen, 14 elements one level deep from both, against 152 elements 21 levels deep from `view-hierarchy` or `single-fetch`. Only the translator's vocabulary is affected by a [requesting client](#requesting-clients).
+
 
 ### Compatibility
 
@@ -188,8 +200,9 @@ $ idb ui describe General --format complete | jq '{backend, truncated, target, s
 | `automation` | The automation mode the read ran in, and whether this read asserted it — see [Automation mode](#automation-mode) |
 | `coverage` | How much of the screen the read's element frames cover, along several dimensions. Collected when `--collect-frame-coverage` is passed |
 | `profile` | Where the read spent its time, and how many calls it took. Collected when `--profile` is passed — see [Reading `profile`](#reading-profile) |
+| `client` | The requesting client the read named, the tree it gets, and any caveat — see [Requesting clients](#requesting-clients). The one field that is **absent**, not `null`, when it does not apply: present only when a read names a client, so a read that names none produces exactly the document it always did |
 
-This format is the easiest one to consume. Its **key set is fixed**: every field is always present, `null` where it does not apply, so one parser handles every read command, and `target` — not the shape — says which command produced the document. Its **element attribute names are the clean ones**: `label` rather than `AXLabel`, `identifier` rather than `AXUniqueId`. Two attributes that restated another are absent: the stringified `AXFrame` (`frame` carries the same rectangle structurally) and the raw `role` (`type` is its normalised form).
+This format is the easiest one to consume. Its **key set is fixed**: every field is always present, `null` where it does not apply (`client` aside, as above), so one parser handles every read command, and `target` — not the shape — says which command produced the document. Its **element attribute names are the clean ones**: `label` rather than `AXLabel`, `identifier` rather than `AXUniqueId`. Two attributes that restated another are absent: the stringified `AXFrame` (`frame` carries the same rectangle structurally) and the raw `role` (`type` is its normalised form).
 
 The document is expected to grow. New fields are added additively, and a consumer should ignore fields it does not know rather than reject the document; there is deliberately no version to check.
 
@@ -310,8 +323,41 @@ Automation mode (`AutomationEnabled` in the `com.apple.Accessibility` domain) is
 - **The setting persists after the read.** Nothing restores it when the process exits, because restoring would flip a device-wide setting twice per read, with a window in which a concurrent reader sees the wrong value. A later `--api ax` read, or another tool entirely, sees a device left in the mode. To read without changing anything, use `--api ax`.
 - **The read says whether it changed anything.** `--format complete` carries an `automation` object with `enabled` and `asserted`: the mode the read ran in, and whether this read put it there. A read that found the mode already on reports `asserted: false`.
 - **The mode can be cleared underneath you.** The accessibility runtime turns it off when an accessibility observer client exits, so it is not something a caller can set once and rely on. Each guest read asserts it again, which is why a read that finds it off still returns a correct tree.
+- **It refines the automation tree, it does not select it.** Which tree an application answers with is decided by the [requesting client](#requesting-clients). The mode makes the automation tree finer-grained: on an iOS 27.0 Settings screen, an `xctest` read returned 125 elements with the mode off and 155 with it on, while a read naming no client went from 15 to 14. `--api ax` neither reads nor sets the mode, so a host read cannot tell which state it ran in.
 - **Mode-asserted reads are slower.** The mode exposes subtrees that were collapsed, and a bigger tree costs more to walk. On a small screen the difference is lost in fixed overhead; on a large production application, paired measurements on one binary put it at roughly **1.8× wall clock** for about 15% more reported elements.
 
 ### If you poll or wait on a read, check the budget
 
 A poll budget calibrated when a read took a few hundred milliseconds can expire during a single mode-asserted read of a large application. The loop then gets one attempt, possibly against a screen that had not finished transitioning, and the failure surfaces as the awaited element never appearing — not as a timeout, and with the read itself still succeeding. Re-check any wait calibrated against pre-assertion latency; a budget that assumed several attempts should afford several attempts again, and is better made configurable than re-guessed.
+
+## Requesting clients
+
+Every request the accessibility translator sends an application says which assistive client it comes from: VoiceOver, Switch Control, an `XCUITest` run, and so on. The application answers for that client. Two things change with it:
+
+- **Which tree it answers with.** Clients used for automation get the application's *automation tree*: the children the application lists in `automationElements`, falling back to the ones `XCUITest` reads. Every other client gets the flattened, labelled leaves VoiceOver reads.
+- **What individual elements report.** Whether an element is exposed at all, and its traits and values, can vary by client.
+
+A read that names no client claims none. That is what every read has always done, and it gets the VoiceOver-style tree. A caller of the `FBSimulatorAX` library can name a client with `AccessibilityRequestOptions.clientType`; `idb` does not expose it yet.
+
+| Client | Tree the application answers with |
+|---|---|
+| `noClient` (default), `unidentified` | VoiceOver-style |
+| `application`, `xcodeHelper`, `xctest`, `scripter`, `systemEvents` | Automation |
+| `voiceOver`, `switchControl`, `fullKeyboardAccess`, `voiceControl`, `accessibilityInspector` | VoiceOver-style |
+
+The values and their mapping onto the application's own notion of the requesting client are the same on every iOS runtime from 26.4 to 27.0.
+
+On an iOS 27.0 Settings screen, `xctest` returns 155 elements 21 levels deep where the default returns 14 one level deep: container groups, toolbars, scroll indicators, SF Symbol image identifiers, and text split into its parts. Before reaching for it, note that the automation tree:
+
+- **costs roughly ten times the round trips** of a default read (2172 against 196 on that screen, about twice the wall clock);
+- **is not a superset** of the default tree: an element the default reports can be absent from it;
+- **is served as stored** by an application that sets `automationElements`, whatever is now on screen;
+- **varies with [automation mode](#automation-mode)**, which makes it finer-grained.
+
+A client travels only on translator requests:
+
+- **`--api ax`**: on every request the read makes, from resolving the element to serializing it.
+- **`--api axbridge`**: on the `semantic` traversal and on display-scoped hit-tests. The automatic traversal selects `semantic` when a client is named. An explicit `view-hierarchy` or `single-fetch` with a client is refused, because those read `XCUITest`'s attributes and make no translator request.
+
+Actions, frames and waits take no options and claim no client. A read that names a client reports it in `--format complete` under `client`: its `type`, the `tree` it gets (`automation` or `voiceover`), and a `caveat` for the automation tree.
+
