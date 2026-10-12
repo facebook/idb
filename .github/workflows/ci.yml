@@ -78,7 +78,7 @@ jobs:
       - name: Test homebrew.py
         run: python -m unittest homebrew_tests -v
 
-  mac-frameworks:
+  mac-libraries:
     name: Build libraries (macOS)
     runs-on: macos-26
     timeout-minutes: 45
@@ -107,7 +107,7 @@ jobs:
         if: failure()
         uses: actions/upload-artifact@v5
         with:
-          name: frameworks-xcodebuild-logs
+          name: libraries-xcodebuild-logs
           path: Build/Logs/xcodebuild/*.log
           if-no-files-found: ignore
           retention-days: 14
