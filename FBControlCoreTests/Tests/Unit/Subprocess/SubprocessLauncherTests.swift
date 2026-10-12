@@ -25,7 +25,7 @@ struct SubprocessLauncherTests {
 
     #expect(completed.terminationStatus == .exited(3))
     #expect(completed.processIdentifier == ScriptedLauncher.processIdentifier)
-    #expect(await launcher.spawned == [Self.spec])
+    #expect(await launcher.spawned.map { String(reflecting: $0) } == [String(reflecting: Self.spec)])
   }
 
   @Test("The launcher's exit status is subject to the exit policy")

@@ -13,7 +13,7 @@ import Foundation
 /// A `Subprocess` is a plain value. It carries no live process state and no
 /// IO configuration — output and input are arguments to the launch call, so
 /// their types flow into the result rather than being stored here.
-public struct Subprocess: Sendable, Equatable {
+public struct Subprocess: Sendable {
 
   /// The absolute path of the executable to launch.
   public var executable: String
