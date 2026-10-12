@@ -92,7 +92,9 @@ struct DownloadBackpressureTests {
   /// What the download is ahead of its reader by is spooled to disk, so the footprint rises by far less than the body.
   /// The footprint is the whole process's, and other suites share it, so the body is large enough to stand well clear
   /// of what they add: a rise of three quarters of it is the line either way.
-  @Test
+  // A gigabyte served locally, spooled to disk and read back throttled takes longer than the default minute on a
+  // hosted runner's disk.
+  @Test(.timeLimit(.minutes(5)))
   func aDownloadAheadOfItsReaderIsHeldInMemory() async throws {
     let size = 1 << 30
     let growth = try await peakFootprintGrowth(size: size)
