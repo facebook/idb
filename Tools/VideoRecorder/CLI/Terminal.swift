@@ -55,6 +55,8 @@ struct Terminal: AsyncParsableCommand {
           continue
         case .ended(let error):
           return Optional(error)
+        @unknown default:
+          continue
         }
       }
       return nil
