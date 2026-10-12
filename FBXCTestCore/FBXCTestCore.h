@@ -6,7 +6,6 @@
  */
 
 #import <FBXCTestCore/FBTestBundleDTXConnection.h>
-#import <FBXCTestCore/FBTestConfiguration.h>
 #import <FBXCTestCore/FBTestManagerAPIMediatorIDEInterface.h>
 
 // FBTestReporterAdapter.h is excluded: it imports XCTestPrivate headers.

@@ -25,8 +25,6 @@
 #import <XCTestPrivate/XCTestManager_DaemonConnectionInterface-Protocol.h>
 #import <XCTestPrivate/XCTestManager_IDEInterface-Protocol.h>
 
-#import "FBTestConfiguration.h"
-
 static const NSInteger FBProtocolVersion = 36;
 static const NSInteger FBProtocolMinimumVersion = 0x8;
 
