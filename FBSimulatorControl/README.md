@@ -36,10 +36,11 @@ The package holds:
 - `PrivateHeaders/`: Apple's private frameworks, declared as idb uses them, with the TBD stubs the simulator libraries' linker flags name.
 - `Resources/`: the guest bridges and shims the simulator libraries run inside a simulator.
 - `Package.swift`: a SwiftPM product per library.
+- `CoreSimulatorStub.xcframework` and `AccessibilityPlatformTranslationStub.xcframework`: small frameworks that re-export Apple's private frameworks, so SwiftPM and Xcode link them like any other framework.
 
 ### With SwiftPM
 
-Unpack the package, add it as a local dependency, and depend on the libraries you use by product:
+Add the package as a dependency, unpacked locally or from a git repository holding it, and depend on the libraries you use by product:
 
 ```swift
 dependencies: [.package(path: "path/to/idb-libraries")],
@@ -48,7 +49,7 @@ targets: [
 ]
 ```
 
-It has to be a local dependency rather than a URL: the simulator libraries link Apple's private `CoreSimulator` and `AccessibilityPlatformTranslation` frameworks through TBD stubs, and SwiftPM accepts the linker flags that name them only from a local package.
+The simulator libraries link Apple's private `CoreSimulator` and `AccessibilityPlatformTranslation` frameworks through the stub frameworks, which SwiftPM links without any linker flags, so the package works as a versioned dependency too. Each stub is a dynamic framework: it is copied beside a command-line tool or embedded in an application like any other, and loads the real private framework from its fixed location. The link is a strong one, so a tool that uses the simulator libraries needs Xcode installed to launch, as it does to do anything.
 
 ### With Xcode or swiftc
 
@@ -56,7 +57,7 @@ For each library you use, as `manifest.json` lists it:
 
 - Link every archive in `archives`, from its XCFramework, and every framework in `frameworks`.
 - Add each archive's XCFramework slice (`<Library>.xcframework/macos-arm64`) to the Swift search paths (`SWIFT_INCLUDE_PATHS`, or `-I`), and each entry of `search_paths` (`PrivateHeaders`, for the simulator libraries) too.
-- Give the linker `linker_flags`, with their paths made relative to the package: in `OTHER_LDFLAGS`, or with `-Xlinker` before each for `swiftc`.
+- Give the linker `linker_flags`, with their paths made relative to the package: in `OTHER_LDFLAGS`, or with `-Xlinker` before each for `swiftc`. These weak-link the private frameworks through their TBD stubs; linking the stub frameworks instead, as SwiftPM does, works too.
 
 ### Resources
 

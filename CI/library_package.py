@@ -17,15 +17,16 @@ The package holds everything a consumer of idb's libraries needs, as
                               the TBD stubs the linker flags name
       Resources/              the guest bridges and shims the libraries run
       manifest.json           LibraryPackage.json: what each library links and needs
-      Package.swift           the same, for SwiftPM: a product per library, used as a
-                              local (path) dependency, since the simulator libraries'
-                              linker flags are unsafe flags SwiftPM refuses from a
-                              versioned one
+      Package.swift           the same, for SwiftPM: a product per library, usable
+                              from a path or from a versioned URL
+      <Framework>Stub.xcframework
+                              a stand-in for each private framework the simulator
+                              libraries link: a small library re-exporting the real
+                              one, linked as a binary target rather than through
+                              linker flags SwiftPM refuses from a versioned dependency
       IDBPrivateHeaders.xcframework
-                              the private frameworks' modules again, in a binary
-                              target's slice: the one search path SwiftPM gives
-                              dependents that also reaches the compile building a
-                              library from its module interface
+                              the private frameworks' modules again, as a binary
+                              target's headers, where SwiftPM and Xcode both find them
       Linkage/                the source file each product's wrapper target needs
 
 Stdlib only: CI runs it with the runner's own python3.
@@ -78,56 +79,155 @@ def _xcframework(name: str, products: Path, output: Path, run: Runner) -> Path:
         # A library slice's Swift module sits beside its archive, where SwiftPM and
         # Xcode look for it. Recent Xcodes copy it there themselves; older ones copy
         # only the archive and headers.
-        slices = [path for path in xcframework.iterdir() if path.is_dir()]
-        if len(slices) != 1:
-            raise PackageError(f"{xcframework} has {len(slices)} slices, expected one")
-        if not (slices[0] / module.name).exists():
-            shutil.copytree(module, slices[0] / module.name)
+        slice_directory = _single_slice(xcframework)
+        if not (slice_directory / module.name).exists():
+            shutil.copytree(module, slice_directory / module.name)
     return xcframework
 
 
 PRIVATE_HEADERS_TARGET = "IDBPrivateHeaders"
 
 
-def _private_headers_xcframework(output: Path, scratch: Path, run: Runner) -> None:
-    """An empty archive with the private frameworks' module directories in its slice."""
-    if scratch.exists():
-        shutil.rmtree(scratch)
-    scratch.mkdir(parents=True)
+TARGET = "arm64-apple-macos15.0"
+
+FRAMEWORK_PLIST = """<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>CFBundleExecutable</key>
+  <string>{name}</string>
+  <key>CFBundleIdentifier</key>
+  <string>com.facebook.idb.{name}</string>
+  <key>CFBundleName</key>
+  <string>{name}</string>
+  <key>CFBundlePackageType</key>
+  <string>FMWK</string>
+  <key>CFBundleShortVersionString</key>
+  <string>1.0</string>
+  <key>CFBundleVersion</key>
+  <string>1</string>
+</dict>
+</plist>
+"""
+
+
+def _single_slice(xcframework: Path) -> Path:
+    slices = [path for path in xcframework.iterdir() if path.is_dir()]
+    if len(slices) != 1:
+        raise PackageError(f"{xcframework} has {len(slices)} slices, expected one")
+    return slices[0]
+
+
+def _empty_object(scratch: Path, run: Runner) -> Path:
     source = scratch / "empty.c"
     source.write_text("")
     obj = scratch / "empty.o"
-    archive = scratch / f"lib{PRIVATE_HEADERS_TARGET}.a"
     run(
         [
             "xcrun",
+            "--sdk",
+            "macosx",
             "clang",
             "-c",
             "-target",
-            "arm64-apple-macos15.0",
+            TARGET,
             str(source),
             "-o",
             str(obj),
         ]
     )
-    run(["xcrun", "libtool", "-static", "-o", str(archive), str(obj)])
-    xcframework = output / f"{PRIVATE_HEADERS_TARGET}.xcframework"
+    return obj
+
+
+def _private_headers_xcframework(output: Path, scratch: Path, run: Runner) -> None:
+    """An empty archive whose headers are the private frameworks' module directories.
+
+    In its `Headers/`, which SwiftPM puts on its dependents' search paths and Xcode copies
+    into the build's `include/`, so both find the modules a library's interface imports.
+    """
+    headers = scratch / "include"
+    for module in sorted((SOURCE_ROOT / "PrivateHeaders").iterdir()):
+        if module.is_dir():
+            shutil.copytree(module, headers / module.name)
+    archive = scratch / f"lib{PRIVATE_HEADERS_TARGET}.a"
+    run(
+        [
+            "xcrun",
+            "libtool",
+            "-static",
+            "-o",
+            str(archive),
+            str(_empty_object(scratch, run)),
+        ]
+    )
     run(
         [
             "xcodebuild",
             "-create-xcframework",
             "-library",
             str(archive),
+            "-headers",
+            str(headers),
             "-output",
-            str(xcframework),
+            str(output / f"{PRIVATE_HEADERS_TARGET}.xcframework"),
         ]
     )
-    slices = [path for path in xcframework.iterdir() if path.is_dir()]
-    if len(slices) != 1:
-        raise PackageError(f"{xcframework} has {len(slices)} slices, expected one")
-    for module in sorted((SOURCE_ROOT / "PrivateHeaders").iterdir()):
-        if module.is_dir():
-            shutil.copytree(module, slices[0] / module.name)
+
+
+def _stub_frameworks(entry: dict[str, list[str]]) -> list[str]:
+    """The private frameworks a library links through TBD stubs, from its linker flags."""
+    return [Path(flag).stem for flag in entry["linker_flags"] if flag.endswith(".tbd")]
+
+
+def _all_stub_frameworks(libraries: dict[str, dict[str, list[str]]]) -> list[str]:
+    return sorted(
+        {name for entry in libraries.values() for name in _stub_frameworks(entry)}
+    )
+
+
+def _stub_xcframework(name: str, output: Path, scratch: Path, run: Runner) -> None:
+    """A private framework's stand-in: a framework whose library re-exports the real one.
+
+    A consumer links it like any dynamic binary target, with no linker flags, and an app
+    embeds and signs it; at runtime it loads the private framework from the path the TBD
+    stub records. The framework has the versioned layout macOS bundles need.
+    """
+    stub = f"{name}Stub"
+    framework = scratch / f"{stub}.framework"
+    version = framework / "Versions" / "A"
+    (version / "Resources").mkdir(parents=True)
+    tbd = SOURCE_ROOT / "PrivateHeaders" / name / f"{name}.tbd"
+    run(
+        [
+            "xcrun",
+            "--sdk",
+            "macosx",
+            "clang",
+            "-dynamiclib",
+            "-target",
+            TARGET,
+            "-install_name",
+            f"@rpath/{stub}.framework/Versions/A/{stub}",
+            f"-Wl,-reexport_library,{tbd}",
+            str(_empty_object(scratch, run)),
+            "-o",
+            str(version / stub),
+        ]
+    )
+    (version / "Resources" / "Info.plist").write_text(FRAMEWORK_PLIST.format(name=stub))
+    (framework / "Versions" / "Current").symlink_to("A")
+    (framework / stub).symlink_to(f"Versions/Current/{stub}")
+    (framework / "Resources").symlink_to("Versions/Current/Resources")
+    run(
+        [
+            "xcodebuild",
+            "-create-xcframework",
+            "-framework",
+            str(framework),
+            "-output",
+            str(output / f"{stub}.xcframework"),
+        ]
+    )
 
 
 def _swift_string(value: str) -> str:
@@ -140,30 +240,26 @@ def _package_manifest(libraries: dict[str, dict[str, list[str]]]) -> str:
     targets: list[str] = [
         f'    .binaryTarget(name: "{PRIVATE_HEADERS_TARGET}", path: "{PRIVATE_HEADERS_TARGET}.xcframework"),'
     ]
+    stubs = _all_stub_frameworks(libraries)
+    targets += [
+        f'    .binaryTarget(name: "{stub}Stub", path: "{stub}Stub.xcframework"),'
+        for stub in stubs
+    ]
     targets += [
         f'    .binaryTarget(name: "{name}", path: "{name}.xcframework"),'
         for name in libraries
     ]
     for name, entry in libraries.items():
-        dependencies = [
+        dependencies = [f"{stub}Stub" for stub in _stub_frameworks(entry)]
+        if entry["search_paths"]:
+            dependencies.append(PRIVATE_HEADERS_TARGET)
+        dependencies += [
             archive[len("lib") : -len(".a")] for archive in entry["archives"]
         ]
-        if entry["search_paths"]:
-            dependencies.insert(0, PRIVATE_HEADERS_TARGET)
         settings = [
             f".linkedFramework({_swift_string(framework.removesuffix('.framework'))})"
             for framework in entry["frameworks"]
         ]
-        flags: list[str] = []
-        for flag in entry["linker_flags"]:
-            flags.append(_swift_string("-Xlinker"))
-            flags.append(
-                f"root + {_swift_string('/' + flag)}"
-                if flag.endswith(".tbd")
-                else _swift_string(flag)
-            )
-        if flags:
-            settings.append(f".unsafeFlags([{', '.join(flags)}])")
         quoted = ", ".join(_swift_string(dependency) for dependency in dependencies)
         targets.append(
             f'    .target(name: "{name}Linkage", dependencies: [{quoted}], '
@@ -174,12 +270,7 @@ def _package_manifest(libraries: dict[str, dict[str, list[str]]]) -> str:
         [
             "// swift-tools-version:6.0",
             "// Generated by CI/library_package.py from LibraryPackage.json.",
-            "import Foundation",
             "import PackageDescription",
-            "",
-            "// The package's own directory, for the TBD stubs the simulator libraries' linker",
-            "// flags name: the package can be unpacked anywhere.",
-            "let root = URL(fileURLWithPath: #filePath).deletingLastPathComponent().path",
             "",
             "let package = Package(",
             '  name: "idb-libraries",',
@@ -219,7 +310,14 @@ def assemble(
         else:
             shutil.copy2(product, resources / name)
     shutil.copy2(MANIFEST, output / "manifest.json")
-    _private_headers_xcframework(output, build_directory / "LibraryPackageScratch", run)
+    scratch = build_directory / "LibraryPackageScratch"
+    if scratch.exists():
+        shutil.rmtree(scratch)
+    (scratch / PRIVATE_HEADERS_TARGET).mkdir(parents=True)
+    _private_headers_xcframework(output, scratch / PRIVATE_HEADERS_TARGET, run)
+    for stub in _all_stub_frameworks(libraries):
+        (scratch / stub).mkdir()
+        _stub_xcframework(stub, output, scratch / stub, run)
     for name in libraries:
         linkage = output / "Linkage" / name
         linkage.mkdir(parents=True)

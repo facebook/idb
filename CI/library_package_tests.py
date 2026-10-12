@@ -38,20 +38,30 @@ MANIFEST = {
 
 
 class FakeXcodebuild:
-    """Writes what the tools would: an object, an archive, or an XCFramework with one slice."""
+    """Writes what the tools would: an object or library, or an XCFramework with one slice."""
 
     def __init__(self) -> None:
         self.commands: list[list[str]] = []
 
     def __call__(self, command: Sequence[str]) -> None:
         if command[0] == "xcrun":
-            Path(command[command.index("-o") + 1]).write_bytes(b"empty")
+            Path(command[command.index("-o") + 1]).write_bytes(b"built")
             return
         self.commands.append(list(command))
-        archive = Path(command[command.index("-library") + 1])
         output = Path(command[command.index("-output") + 1])
-        (output / "macos-arm64").mkdir(parents=True)
-        (output / "macos-arm64" / archive.name).write_bytes(archive.read_bytes())
+        slice_directory = output / "macos-arm64"
+        slice_directory.mkdir(parents=True)
+        if "-framework" in command:
+            framework = Path(command[command.index("-framework") + 1])
+            shutil.copytree(framework, slice_directory / framework.name, symlinks=True)
+            return
+        archive = Path(command[command.index("-library") + 1])
+        (slice_directory / archive.name).write_bytes(archive.read_bytes())
+        if "-headers" in command:
+            shutil.copytree(
+                Path(command[command.index("-headers") + 1]),
+                slice_directory / "Headers",
+            )
 
 
 class LibraryPackageTest(unittest.TestCase):
@@ -96,7 +106,7 @@ class LibraryPackageTest(unittest.TestCase):
 
     def test_each_library_gets_an_xcframework_with_its_module_or_headers(self) -> None:
         self._assemble()
-        swifty, cish, _ = self.xcodebuild.commands
+        swifty, cish = self.xcodebuild.commands[:2]
         self.assertNotIn("-headers", swifty)
         self.assertEqual(
             cish[cish.index("-headers") + 1],
@@ -127,7 +137,7 @@ class LibraryPackageTest(unittest.TestCase):
         self.assertTrue(
             (
                 self.output
-                / "IDBPrivateHeaders.xcframework/macos-arm64/Private/module.modulemap"
+                / "IDBPrivateHeaders.xcframework/macos-arm64/Headers/Private/module.modulemap"
             ).is_file()
         )
 
@@ -146,20 +156,63 @@ class LibraryPackageTest(unittest.TestCase):
         )
         self.assertTrue((self.output / "Linkage/Swifty/SwiftyLinkage.swift").is_file())
 
-    def test_swiftpm_finds_the_stubs_wherever_the_package_is_unpacked(self) -> None:
+    def test_a_private_frameworks_stub_is_a_binary_target_not_a_flag(self) -> None:
         MANIFEST["libraries"]["Swifty"]["linker_flags"] = [
             "-weak_library",
             "PrivateHeaders/Private/Private.tbd",
         ]
         self.addCleanup(MANIFEST["libraries"]["Swifty"].__setitem__, "linker_flags", [])
         (self.root / "Source" / "LibraryPackage.json").write_text(json.dumps(MANIFEST))
+        (
+            self.root / "Source" / "PrivateHeaders" / "Private" / "Private.tbd"
+        ).write_text("--- !tapi-tbd\n")
         self._assemble()
         package = (self.output / "Package.swift").read_text()
+        self.assertNotIn("unsafeFlags", package)
         self.assertIn(
-            '.unsafeFlags(["-Xlinker", "-weak_library", "-Xlinker", root + "/PrivateHeaders/Private/Private.tbd"])',
+            '.binaryTarget(name: "PrivateStub", path: "PrivateStub.xcframework"),',
             package,
         )
-        self.assertIn("let root = URL(fileURLWithPath: #filePath)", package)
+        self.assertIn(
+            '.target(name: "SwiftyLinkage", dependencies: ["PrivateStub", "IDBPrivateHeaders", "Swifty", "Cish"]',
+            package,
+        )
+        framework = (
+            self.output / "PrivateStub.xcframework/macos-arm64/PrivateStub.framework"
+        )
+        self.assertTrue((framework / "Versions/A/PrivateStub").is_file())
+        self.assertEqual((framework / "Versions/Current").readlink(), Path("A"))
+        self.assertIn(
+            "<string>PrivateStub</string>",
+            (framework / "Versions/A/Resources/Info.plist").read_text(),
+        )
+        link = next(
+            command for command in self.xcodebuild.commands if "-framework" in command
+        )
+        self.assertEqual(
+            Path(link[link.index("-framework") + 1]).name, "PrivateStub.framework"
+        )
+
+    def test_a_stub_re_exports_the_private_framework_from_its_tbd(self) -> None:
+        MANIFEST["libraries"]["Swifty"]["linker_flags"] = [
+            "-weak_library",
+            "PrivateHeaders/Private/Private.tbd",
+        ]
+        self.addCleanup(MANIFEST["libraries"]["Swifty"].__setitem__, "linker_flags", [])
+        (self.root / "Source" / "LibraryPackage.json").write_text(json.dumps(MANIFEST))
+        commands: list[list[str]] = []
+
+        def record(command: Sequence[str]) -> None:
+            commands.append(list(command))
+            self.xcodebuild(command)
+
+        library_package.assemble(self.build, self.output, record)
+        dylib = next(command for command in commands if "-dynamiclib" in command)
+        self.assertIn("@rpath/PrivateStub.framework/Versions/A/PrivateStub", dylib)
+        self.assertIn(
+            f"-Wl,-reexport_library,{self.root / 'Source/PrivateHeaders/Private/Private.tbd'}",
+            dylib,
+        )
 
     def test_a_missing_product_names_the_build_that_makes_it(self) -> None:
         (self.build / "Products" / "Release" / "libCish.a").unlink()
