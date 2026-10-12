@@ -93,8 +93,8 @@ Head over [to the main documentation](https://www.fbidb.io) for more details on 
 # Build everything and assemble the runnable distribution
 ./build.sh build
 
-# Or build a subset: frameworks, shims, idb_companion, or a specific framework
-./build.sh build frameworks
+# Or build a subset: libraries, shims, idb_companion, or a specific library
+./build.sh build libraries
 ./build.sh build idb_companion
 ./build.sh build FBControlCore
 

@@ -717,8 +717,8 @@ function build_target() {
 }
 
 # Release, the configuration that ships: the test schemes already build every
-# framework in Debug, so a Debug build here would only repeat them.
-function build_all_frameworks() {
+# library in Debug, so a Debug build here would only repeat them.
+function build_all_libraries() {
   build_target FBControlCore Release
   build_target FBXCTestCore Release
   build_target FBSimulatorControl Release
@@ -1035,8 +1035,9 @@ function build() {
       simscope)
         build_all
         build_simscope;;
-      frameworks)
-        build_all_frameworks;;
+      # `frameworks` is the old name, kept so existing scripts keep working.
+      libraries|frameworks)
+        build_all_libraries;;
       shims)
         build_shims;;
       fixtures)
@@ -1069,7 +1070,7 @@ function build() {
         build_target "$target";;
       *)
         echo "Unknown target: $target"
-        echo "Valid targets: all, simscope, frameworks, shims, fixtures, idb_companion, idb-repl, sim-video, FBControlCore, FBXCTestCore, FBSimulatorControl, FBSimulatorXCTest, FBDeviceControl, Shimulator-iOS, Shimulator-macOS, Repl-iOS, Repl-macOS, ReplHost, SimulatorFrameworkBridge-iOS, SimulatorFrameworkBridge-tvOS, distribution"
+        echo "Valid targets: all, simscope, libraries, shims, fixtures, idb_companion, idb-repl, sim-video, FBControlCore, FBXCTestCore, FBSimulatorControl, FBSimulatorXCTest, FBDeviceControl, Shimulator-iOS, Shimulator-macOS, Repl-iOS, Repl-macOS, ReplHost, SimulatorFrameworkBridge-iOS, SimulatorFrameworkBridge-tvOS, distribution"
         exit 1;;
     esac
   fi
@@ -1177,7 +1178,7 @@ Commands:
       all             Build all targets
       simscope        Build and package SimScope.app with its bundled tools
       distribution    Assemble the distribution
-      frameworks      Build all frameworks only, in Release
+      libraries       Build all libraries only, in Release (also: frameworks)
       idb_companion   Build idb_companion only
       idb-repl        Build idb-repl only
       sim-video       Build the local video recorder
@@ -1213,10 +1214,10 @@ Examples:
   ./build.sh generate                 # Regenerate Xcode projects
   ./build.sh generate-proto           # Regenerate gRPC Swift from proto
   ./build.sh build                    # Build everything
-  ./build.sh build frameworks         # Build all frameworks
+  ./build.sh build libraries          # Build all libraries
   ./build.sh build shims              # Build Shimulator-iOS and Shimulator-macOS
   ./build.sh build idb_companion      # Build idb_companion
-  ./build.sh build FBControlCore      # Build specific framework
+  ./build.sh build FBControlCore      # Build one library
   ./build.sh test                     # Run all tests
   ./build.sh test FBSimulatorControl  # Test specific framework
   ./build.sh test FBSimulatorControlSmokeTests  # Test one suite of it
