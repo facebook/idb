@@ -38,12 +38,15 @@ MANIFEST = {
 
 
 class FakeXcodebuild:
-    """Writes the XCFramework `-create-xcframework` would: one slice, the archive in it."""
+    """Writes what the tools would: an object, an archive, or an XCFramework with one slice."""
 
     def __init__(self) -> None:
         self.commands: list[list[str]] = []
 
     def __call__(self, command: Sequence[str]) -> None:
+        if command[0] == "xcrun":
+            Path(command[command.index("-o") + 1]).write_bytes(b"empty")
+            return
         self.commands.append(list(command))
         archive = Path(command[command.index("-library") + 1])
         output = Path(command[command.index("-output") + 1])
@@ -93,7 +96,7 @@ class LibraryPackageTest(unittest.TestCase):
 
     def test_each_library_gets_an_xcframework_with_its_module_or_headers(self) -> None:
         self._assemble()
-        swifty, cish = self.xcodebuild.commands
+        swifty, cish, _ = self.xcodebuild.commands
         self.assertNotIn("-headers", swifty)
         self.assertEqual(
             cish[cish.index("-headers") + 1],
@@ -118,6 +121,45 @@ class LibraryPackageTest(unittest.TestCase):
         self.assertEqual(
             json.loads((self.output / "manifest.json").read_text()), MANIFEST
         )
+
+    def test_the_private_modules_are_also_a_binary_target_for_swiftpm(self) -> None:
+        self._assemble()
+        self.assertTrue(
+            (
+                self.output
+                / "IDBPrivateHeaders.xcframework/macos-arm64/Private/module.modulemap"
+            ).is_file()
+        )
+
+    def test_swiftpm_gets_a_product_per_library_with_what_it_links(self) -> None:
+        self._assemble()
+        package = (self.output / "Package.swift").read_text()
+        self.assertIn('.library(name: "Swifty", targets: ["SwiftyLinkage"])', package)
+        self.assertIn(
+            '.target(name: "SwiftyLinkage", dependencies: ["IDBPrivateHeaders", "Swifty", "Cish"], '
+            'path: "Linkage/Swifty", linkerSettings: [.linkedFramework("Foundation")]),',
+            package,
+        )
+        self.assertIn(
+            '.target(name: "CishLinkage", dependencies: ["Cish"], path: "Linkage/Cish", linkerSettings: []),',
+            package,
+        )
+        self.assertTrue((self.output / "Linkage/Swifty/SwiftyLinkage.swift").is_file())
+
+    def test_swiftpm_finds_the_stubs_wherever_the_package_is_unpacked(self) -> None:
+        MANIFEST["libraries"]["Swifty"]["linker_flags"] = [
+            "-weak_library",
+            "PrivateHeaders/Private/Private.tbd",
+        ]
+        self.addCleanup(MANIFEST["libraries"]["Swifty"].__setitem__, "linker_flags", [])
+        (self.root / "Source" / "LibraryPackage.json").write_text(json.dumps(MANIFEST))
+        self._assemble()
+        package = (self.output / "Package.swift").read_text()
+        self.assertIn(
+            '.unsafeFlags(["-Xlinker", "-weak_library", "-Xlinker", root + "/PrivateHeaders/Private/Private.tbd"])',
+            package,
+        )
+        self.assertIn("let root = URL(fileURLWithPath: #filePath)", package)
 
     def test_a_missing_product_names_the_build_that_makes_it(self) -> None:
         (self.build / "Products" / "Release" / "libCish.a").unlink()
