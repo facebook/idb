@@ -47,6 +47,15 @@ extension Idb_AddMediaRequest: PayloadExtractable {
   }
 }
 
+extension Idb_InjectAudioRequest: PayloadExtractable {
+  func extractPayload() -> Idb_Payload? {
+    if hasPayload {
+      return payload
+    }
+    return nil
+  }
+}
+
 extension PayloadExtractable {
   func extractDataFrame() -> Data? {
     extractPayload()?.extractDataFrame()

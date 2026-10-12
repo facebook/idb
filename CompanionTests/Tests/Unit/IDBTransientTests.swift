@@ -118,6 +118,19 @@ struct IDBTransientTests {
   }
 
   @Test
+  func injectAudioRequestExtractsPayload() {
+    var request = Idb_InjectAudioRequest()
+    request.payload = Idb_Payload.with { $0.source = .data(Data([9, 10])) }
+    #expect((request.extractPayload()) != nil)
+  }
+
+  @Test
+  func injectAudioRequestReturnsNilWithoutPayload() {
+    let request = Idb_InjectAudioRequest()
+    #expect((request.extractPayload()) == nil)
+  }
+
+  @Test
   func payloadExtractsDataFrame() {
     let testData = Data([10, 20, 30])
     let payload = Idb_Payload.with { $0.source = .data(testData) }

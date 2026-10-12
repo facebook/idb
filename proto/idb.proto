@@ -64,6 +64,7 @@ service CompanionService {
   rpc uninstall(UninstallRequest) returns (UninstallResponse) {}
   // Video/Audio
   rpc add_media(stream AddMediaRequest) returns (AddMediaResponse) {}
+  rpc inject_audio(stream InjectAudioRequest) returns (InjectAudioResponse) {}
   rpc record(stream RecordRequest) returns (stream RecordResponse) {}
   rpc screenshot(ScreenshotRequest) returns (ScreenshotResponse) {}
   rpc video_stream(stream VideoStreamRequest)
@@ -972,6 +973,15 @@ message AddMediaRequest {
 }
 
 message AddMediaResponse {}
+
+// A companion on the client's machine is sent one `file_path` naming a WAV
+// file. A remote companion is sent the file's raw bytes in `data` frames, not a
+// tar archive; `compression` and `url` are refused.
+message InjectAudioRequest {
+  Payload payload = 1;
+}
+
+message InjectAudioResponse {}
 
 message InstrumentsRunRequest {
   message InstrumentsTimings {

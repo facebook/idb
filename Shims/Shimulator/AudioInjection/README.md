@@ -10,6 +10,7 @@ hears a recording wherever it would hear the microphone.
 |---|---|
 | The shim loaded into guest processes | `Source/Shims/Shimulator/AudioInjection/` → `:libShimulator-iOS`, shipped once in the companion's `Resources/` |
 | App launch preparation, injecting, waiting | `SimulatorAudioCommands.appLaunchEnvironment(_:)`, `inject(from:)` |
+| The RPC | `inject_audio` in `//xplat/idb:idb.proto`, `InjectAudioMethodHandler` |
 
 The shared Swift `ShimulatorProtocol` target owns the versioned messages, the per-capability socket path and the client that serves it. `AudioInjectionController` contributes the capability name, the typed handler and WAV decoding. `AudioInjectionHAL.swift` owns the IO-proc lifecycle, the synthetic input and the realtime sample copy. The only C is the boundary Swift cannot express: `include/IDBAudioInjectionPrivate.h` declares the private HAL symbols and the audio thread's lock-free counters, and `IDBAudioInjectionInterpose.c` holds the dyld interpose records pointing at the Swift replacements in `AudioInjectionBootstrap.swift`.
 
