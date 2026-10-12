@@ -9,7 +9,7 @@ import Foundation
 
 // MARK: - TargetScreenInfo
 
-public struct TargetScreenInfo: Equatable, Hashable, CustomStringConvertible {
+public struct TargetScreenInfo: CustomStringConvertible {
 
   public let widthPixels: UInt
   public let heightPixels: UInt
@@ -19,12 +19,6 @@ public struct TargetScreenInfo: Equatable, Hashable, CustomStringConvertible {
     self.widthPixels = widthPixels
     self.heightPixels = heightPixels
     self.scale = scale
-  }
-
-  /// Truncating the scale to `Int` means two screens differing only in the fraction of their scale
-  /// collide, which equality still separates.
-  public func hash(into hasher: inout Hasher) {
-    hasher.combine(Int(widthPixels) ^ Int(heightPixels) ^ Int(scale))
   }
 
   public var description: String {

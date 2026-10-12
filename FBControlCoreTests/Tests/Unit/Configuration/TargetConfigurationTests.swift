@@ -61,13 +61,4 @@ final class TargetConfigurationTests: XCTestCase {
     XCTAssertEqual(described, generic)
     XCTAssertEqual(described.hashValue, generic.hashValue)
   }
-
-  func testScreenInfoHashTruncatesScale() {
-    let integral = TargetScreenInfo(widthPixels: 640, heightPixels: 960, scale: 2)
-    let fractional = TargetScreenInfo(widthPixels: 640, heightPixels: 960, scale: 2.5)
-
-    // The hash casts the scale to Int, so a fractional difference collides while equality still separates them.
-    XCTAssertNotEqual(integral, fractional)
-    XCTAssertEqual(integral.hashValue, fractional.hashValue)
-  }
 }
