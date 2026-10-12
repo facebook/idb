@@ -34,6 +34,13 @@ public struct OverlayCoordinateTransform {
 
   /// Visible header height in buffer pixels (the `scaledBorderTop` init parameter).
   let headerHeight: CGFloat
+  /// The screen this transform lays overlays out on, in pixels as the interface shows it.
+  let screenPixelWidth: Int
+  let screenPixelHeight: Int
+  private let retinaScale: CGFloat
+  private let videoScale: CGFloat
+  private let borders: (top: Int, scaledTop: Int, bottom: Int, scaledBottom: Int)
+  private let coordSpace: OverlayCoordSpace
 
   public init(
     screenPixelWidth: Int,
@@ -46,6 +53,12 @@ public struct OverlayCoordinateTransform {
     scaledBorderBottom: Int,
     coordSpace: OverlayCoordSpace = .composed
   ) {
+    self.screenPixelWidth = screenPixelWidth
+    self.screenPixelHeight = screenPixelHeight
+    self.retinaScale = retinaScale
+    self.videoScale = videoScale
+    self.borders = (borderTop, scaledBorderTop, borderBottom, scaledBorderBottom)
+    self.coordSpace = coordSpace
     self.bufferWidth = Int(Double(screenPixelWidth) * Double(videoScale))
     // Must include both scaled insets so the overlay buffer matches the video frame; a shorter overlay is
     // shifted down by the compositor.
@@ -62,6 +75,14 @@ public struct OverlayCoordinateTransform {
     case .device:
       self.insetCorrection = CGPoint(x: 0, y: CGFloat(scaledBorderTop))
     }
+  }
+
+  /// The same transform for a screen of another size, as after a rotation or a switch to another display.
+  func resized(screenPixelWidth: Int, screenPixelHeight: Int) -> OverlayCoordinateTransform {
+    OverlayCoordinateTransform(
+      screenPixelWidth: screenPixelWidth, screenPixelHeight: screenPixelHeight, retinaScale: retinaScale, videoScale: videoScale,
+      borderTop: borders.top, scaledBorderTop: borders.scaledTop, borderBottom: borders.bottom, scaledBorderBottom: borders.scaledBottom,
+      coordSpace: coordSpace)
   }
 
   func bufferPoint(x: CGFloat, y: CGFloat) -> CGPoint {

@@ -42,11 +42,23 @@ public enum BarMode: String {
 ///
 /// For animated effects (fadeout, fadein, translate), call `startEffectTimer(onTick:)`
 /// after rendering. The timer re-renders at ~30fps until all effects complete.
-public final class OverlayRenderer {
-  public let buffer: CVPixelBuffer
-  let width: Int
-  let height: Int
-  public let transform: OverlayCoordinateTransform
+// SAFETY: every mutable field, the buffer and its layout included, is guarded by `stateLock`.
+// patternlint-disable-next-line unchecked-sendable
+public final class OverlayRenderer: VideoOverlayLayout, @unchecked Sendable {
+  public var buffer: CVPixelBuffer {
+    stateLock.lock()
+    defer { stateLock.unlock() }
+    return storage
+  }
+  public var transform: OverlayCoordinateTransform {
+    stateLock.lock()
+    defer { stateLock.unlock() }
+    return layout
+  }
+  private var storage: CVPixelBuffer
+  private var width: Int
+  private var height: Int
+  private var layout: OverlayCoordinateTransform
 
   /// Injectable time source for monotonic time (seconds). Defaults to `CACurrentMediaTime()`.
   /// Override in tests to control animation progress deterministically.
@@ -129,8 +141,15 @@ public final class OverlayRenderer {
   }
 
   public init(transform: OverlayCoordinateTransform) {
-    let width = transform.bufferWidth
-    let height = transform.bufferHeight
+    self.storage = Self.makeBuffer(width: transform.bufferWidth, height: transform.bufferHeight)
+    self.width = transform.bufferWidth
+    self.height = transform.bufferHeight
+    self.layout = transform
+
+    clearBuffer()
+  }
+
+  private static func makeBuffer(width: Int, height: Int) -> CVPixelBuffer {
     var pixelBuffer: CVPixelBuffer?
     let attrs: [String: Any] = [
       kCVPixelBufferPixelFormatTypeKey as String: kCVPixelFormatType_32BGRA,
@@ -144,15 +163,26 @@ public final class OverlayRenderer {
     guard let createdBuffer = pixelBuffer else {
       fatalError("CVPixelBufferCreate failed for \(width)x\(height) BGRA buffer")
     }
-    self.buffer = createdBuffer
-    self.width = width
-    self.height = height
-    self.transform = transform
-
-    clearBuffer()
+    return createdBuffer
   }
 
-  /// The overlay scale factor from the transform.
+  /// Lays the overlay out for a screen of this size, keeping its shapes and bars, and returns the buffer they are
+  /// drawn in: a new one when the size changed.
+  public func layOut(screenPixelWidth: Int, screenPixelHeight: Int) -> CVPixelBuffer {
+    stateLock.lock()
+    defer { stateLock.unlock() }
+    guard screenPixelWidth != layout.screenPixelWidth || screenPixelHeight != layout.screenPixelHeight else {
+      return storage
+    }
+    layout = layout.resized(screenPixelWidth: screenPixelWidth, screenPixelHeight: screenPixelHeight)
+    width = layout.bufferWidth
+    height = layout.bufferHeight
+    storage = Self.makeBuffer(width: width, height: height)
+    renderToBuffer()
+    return storage
+  }
+
+  /// The overlay scale factor from the layout.
   var scaleFactor: CGFloat { transform.overlayScale }
 
   /// Render the given overlays into the buffer.
@@ -274,10 +304,10 @@ public final class OverlayRenderer {
   // MARK: - Private
 
   private func clearBuffer() {
-    CVPixelBufferLockBaseAddress(buffer, [])
-    defer { CVPixelBufferUnlockBaseAddress(buffer, []) }
-    guard let baseAddress = CVPixelBufferGetBaseAddress(buffer) else { return }
-    let size = CVPixelBufferGetBytesPerRow(buffer) * height
+    CVPixelBufferLockBaseAddress(storage, [])
+    defer { CVPixelBufferUnlockBaseAddress(storage, []) }
+    guard let baseAddress = CVPixelBufferGetBaseAddress(storage) else { return }
+    let size = CVPixelBufferGetBytesPerRow(storage) * height
     memset(baseAddress, 0, size)
   }
 
@@ -285,11 +315,11 @@ public final class OverlayRenderer {
   public func renderToBuffer() {
     stateLock.lock()
     defer { stateLock.unlock() }
-    CVPixelBufferLockBaseAddress(buffer, [])
-    defer { CVPixelBufferUnlockBaseAddress(buffer, []) }
+    CVPixelBufferLockBaseAddress(storage, [])
+    defer { CVPixelBufferUnlockBaseAddress(storage, []) }
 
-    guard let baseAddress = CVPixelBufferGetBaseAddress(buffer) else { return }
-    let bytesPerRow = CVPixelBufferGetBytesPerRow(buffer)
+    guard let baseAddress = CVPixelBufferGetBaseAddress(storage) else { return }
+    let bytesPerRow = CVPixelBufferGetBytesPerRow(storage)
 
     let bitmapInfo = CGImageAlphaInfo.premultipliedFirst.rawValue | CGBitmapInfo.byteOrder32Little.rawValue
     guard
@@ -323,12 +353,12 @@ public final class OverlayRenderer {
   private func renderShape(_ shape: OverlayShape, context: CGContext, elapsed: CFTimeInterval) {
     switch shape {
     case .circle(let c):
-      let bp = transform.bufferPoint(x: c.x, y: c.y)
-      logger?.log("Overlay circle: input=(\(c.x),\(c.y)) r=\(c.radius) -> buffer=(\(bp.x),\(bp.y)) r=\(transform.bufferSize(width: c.radius, height: 0).width) [scale=\(transform.overlayScale), buffer=\(width)x\(height)]")
+      let bp = layout.bufferPoint(x: c.x, y: c.y)
+      logger?.log("Overlay circle: input=(\(c.x),\(c.y)) r=\(c.radius) -> buffer=(\(bp.x),\(bp.y)) r=\(layout.bufferSize(width: c.radius, height: 0).width) [scale=\(layout.overlayScale), buffer=\(width)x\(height)]")
       renderCircle(c, context: context, elapsed: elapsed)
     case .rectangle(let r):
-      let br = transform.bufferRect(x: r.x, y: r.y, width: r.width, height: r.height)
-      logger?.log("Overlay rect: input=(\(r.x),\(r.y),\(r.width),\(r.height)) -> buffer=(\(br.origin.x),\(br.origin.y),\(br.size.width),\(br.size.height)) [scale=\(transform.overlayScale), buffer=\(width)x\(height)]")
+      let br = layout.bufferRect(x: r.x, y: r.y, width: r.width, height: r.height)
+      logger?.log("Overlay rect: input=(\(r.x),\(r.y),\(r.width),\(r.height)) -> buffer=(\(br.origin.x),\(br.origin.y),\(br.size.width),\(br.size.height)) [scale=\(layout.overlayScale), buffer=\(width)x\(height)]")
       renderRectangle(r, context: context, elapsed: elapsed)
     case .label(let l):
       renderLabel(l, context: context)
@@ -341,7 +371,7 @@ public final class OverlayRenderer {
     let alpha = effectAlpha(circle.effect, baseAlpha: circleAlpha(circle.rgba), elapsed: elapsed)
     guard alpha > 0 else { return }
 
-    var center = transform.bufferPoint(x: circle.x, y: circle.y)
+    var center = layout.bufferPoint(x: circle.x, y: circle.y)
     if let effect = circle.effect {
       center = effectPosition(effect, base: center, elapsed: elapsed)
     }
@@ -353,7 +383,7 @@ public final class OverlayRenderer {
       alpha: alpha
     )
     context.setFillColor(color)
-    let scaledRadius = transform.bufferSize(width: circle.radius, height: 0).width
+    let scaledRadius = layout.bufferSize(width: circle.radius, height: 0).width
     let rect = CGRect(
       x: center.x - scaledRadius,
       y: center.y - scaledRadius,
@@ -369,7 +399,7 @@ public final class OverlayRenderer {
     let alpha = effectAlpha(rect.effect, baseAlpha: circleAlpha(rect.rgba), elapsed: elapsed)
     guard alpha > 0 else { return }
 
-    let r = transform.bufferRect(x: rect.x, y: rect.y, width: rect.width, height: rect.height)
+    let r = layout.bufferRect(x: rect.x, y: rect.y, width: rect.width, height: rect.height)
 
     let color = CGColor(
       red: circleRed(rect.rgba),
@@ -385,7 +415,7 @@ public final class OverlayRenderer {
 
   private func renderLabel(_ label: OverlayShape.Label, context: CGContext) {
     let (fontName, baseFontSize) = parseFontSpec(label.font)
-    let fontSize = transform.labelFontSize(baseFontSize)
+    let fontSize = layout.labelFontSize(baseFontSize)
     let font = CTFontCreateWithName(fontName as CFString, fontSize, nil)
     let white = CGColor(red: 1, green: 1, blue: 1, alpha: 1)
     let attributes: [NSAttributedString.Key: Any] = [
@@ -397,7 +427,7 @@ public final class OverlayRenderer {
 
     let ascent = CTFontGetAscent(font)
     let descent = CTFontGetDescent(font)
-    let origin = transform.labelOrigin(padding: label.padding, ascent: ascent, descent: descent)
+    let origin = layout.labelOrigin(padding: label.padding, ascent: ascent, descent: descent)
     context.saveGState()
     context.translateBy(x: origin.x, y: origin.y)
     context.scaleBy(x: 1, y: -1)
@@ -439,9 +469,9 @@ public final class OverlayRenderer {
     let fit = barFit[position] ?? false
     drawStatusBar(
       text: text,
-      fontSize: transform.barFontSize(),
-      barY: transform.barY(position: position),
-      barHeight: transform.barHeight(),
+      fontSize: layout.barFontSize(),
+      barY: layout.barY(position: position),
+      barHeight: layout.barHeight(),
       mode: mode,
       fit: fit,
       context: context
@@ -535,7 +565,7 @@ public final class OverlayRenderer {
     switch effect {
     case .translate(let t):
       let progress = min(1.0, elapsed / (Double(t.durationMs) / 1000.0))
-      let target = transform.translateTarget(x: t.x, y: t.y)
+      let target = layout.translateTarget(x: t.x, y: t.y)
       let x = base.x + (target.x - base.x) * CGFloat(progress)
       let y = base.y + (target.y - base.y) * CGFloat(progress)
       return CGPoint(x: x, y: y)

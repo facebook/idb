@@ -13,6 +13,7 @@ import FBVideoCore
 import Foundation
 import IOSurface
 import VideoToolbox
+import os
 
 enum SimulatorVideoStreamError: Error {
   case startWhenStopped
@@ -214,6 +215,10 @@ public actor SimulatorVideoStream: VideoStreamOperation {
     }
   }
   var framePusher: (any FramePusher)?
+  /// What lays the overlay out for the canvas, set from outside the actor and read at every mount.
+  private nonisolated let overlayLayout = OSAllocatedUnfairLock<(any VideoOverlayLayout)?>(initialState: nil)
+  /// The size of the overlay laid out for the current canvas; a buffer of any other size is from an earlier one.
+  private var overlaySize: (width: Int, height: Int)?
   /// Set up for the other displays a stream switches between, once a configuration has several surface sizes.
   /// A displaced pusher is kept here rather than torn down while `preparesForDisplaySwitches`. A spare is set up
   /// as a mount would set it up: the configuration and edge insets are fixed for the stream's life, so its source
@@ -586,6 +591,7 @@ public actor SimulatorVideoStream: VideoStreamOperation {
     compositor.configure(
       sourceWidth: CVPixelBufferGetWidth(buffer), sourceHeight: CVPixelBufferGetHeight(buffer), rotation: rotation,
       scaleFactor: configuration.scaleFactor)
+    layOutOverlay()
     let insets = edgeInsets
     if insets.top + insets.bottom + insets.left + insets.right > 0 {
       logger.info().log("Composited pool includes edge insets (t=\(insets.top) b=\(insets.bottom) l=\(insets.left) r=\(insets.right)): w=\(compositor.outputWidth)/h=\(compositor.outputHeight)")
@@ -666,6 +672,22 @@ public actor SimulatorVideoStream: VideoStreamOperation {
     }
 
     self.frameNumber = frameNumber + 1
+  }
+
+  /// Lays overlays out on the current canvas from now on, as it changes with rotations and switches between
+  /// displays of different sizes.
+  public nonisolated func setOverlayLayout(_ layout: any VideoOverlayLayout) {
+    overlayLayout.withLock { $0 = layout }
+    Task { await self.layOutOverlay() }
+  }
+
+  private func layOutOverlay() {
+    guard let layout = overlayLayout.withLock({ $0 }), let mountedSource else {
+      return
+    }
+    let buffer = layout.layOut(screenPixelWidth: mountedSource.width, screenPixelHeight: mountedSource.height)
+    overlaySize = (CVPixelBufferGetWidth(buffer), CVPixelBufferGetHeight(buffer))
+    updateOverlayBuffer(buffer)
   }
 
   // MARK: - Frame Pusher
@@ -781,6 +803,10 @@ public actor SimulatorVideoStream: VideoStreamOperation {
   /// into keyframes, starving the motion budget.
   /// In eager/CFR mode: no extra push — the next cadence tick picks up the change without disrupting frame timing.
   public func updateOverlayBuffer(_ overlayBuffer: CVPixelBuffer?) {
+    if let overlayBuffer, let overlaySize, CVPixelBufferGetWidth(overlayBuffer) != overlaySize.width || CVPixelBufferGetHeight(overlayBuffer) != overlaySize.height {
+      logger.log("Ignoring an overlay laid out for an earlier canvas")
+      return
+    }
     let sameReference = (overlayBuffer === compositor.overlayBuffer)
     if !sameReference {
       compositor.overlayBuffer = overlayBuffer

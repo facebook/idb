@@ -28,6 +28,7 @@ public enum VideoSession {
       logger: logger
     )
     handler.videoStream = videoStream
+    videoStream?.setOverlayLayout(renderer)
 
     // Apply per-position bar mode (drives bar background alpha).
     for entry in parsedBars {
@@ -46,10 +47,6 @@ public enum VideoSession {
     var statsTimers: [Task<Void, Never>] = []
     for statsPosition in barStats {
       guard let videoStream else { break }
-      // OverlayRenderer synchronizes its buffer mutations internally; this task only touches that
-      // thread-safe surface. Held strongly for the task's lifetime (cancelled at session teardown).
-      // patternlint-disable-next-line swift-nonisolated-unsafe
-      nonisolated(unsafe) let renderer = renderer
       let task = Task.detached { [weak videoStream] in
         var prevFbStats = FramebufferStats()
         var prevEncStats = VideoEncoderStats()

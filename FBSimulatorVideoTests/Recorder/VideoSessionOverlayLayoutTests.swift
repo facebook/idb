@@ -70,10 +70,8 @@ final class VideoSessionOverlayLayoutTests: XCTestCase {
     try await waitUntil { await session.stream.mountedSource?.width == 40 }
 
     let composited = await size(session.stream.compositor.overlayBuffer)
-    // BUG: the overlay and bars keep the first canvas's layout, so on a larger canvas they cover only part of it.
-    // Flipped in the following commit.
-    XCTAssertEqual(size(session.renderer.buffer), CGSize(width: 20, height: 38))
-    XCTAssertEqual(composited, CGSize(width: 20, height: 38))
+    XCTAssertEqual(size(session.renderer.buffer), CGSize(width: 40, height: 68))
+    XCTAssertEqual(composited, CGSize(width: 40, height: 68))
     try await session.stream.stopStreaming()
   }
 
@@ -84,10 +82,8 @@ final class VideoSessionOverlayLayoutTests: XCTestCase {
     try await waitUntil { await session.stream.mountedSource?.width == 30 }
 
     let composited = await size(session.stream.compositor.overlayBuffer)
-    // BUG: the overlay and bars keep the panel's portrait layout while the canvas is landscape. Flipped in the
-    // following commit.
-    XCTAssertEqual(size(session.renderer.buffer), CGSize(width: 20, height: 38))
-    XCTAssertEqual(composited, CGSize(width: 20, height: 38))
+    XCTAssertEqual(size(session.renderer.buffer), CGSize(width: 30, height: 28))
+    XCTAssertEqual(composited, CGSize(width: 30, height: 28))
     try await session.stream.stopStreaming()
   }
 }
