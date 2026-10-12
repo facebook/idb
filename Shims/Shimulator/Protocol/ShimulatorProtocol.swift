@@ -22,7 +22,7 @@ public enum ShimulatorWireProtocol {
 
 }
 
-public enum ShimulatorProtocolError: Error, Equatable, Sendable, CustomStringConvertible {
+@frozen public enum ShimulatorProtocolError: Error, Equatable, Sendable, CustomStringConvertible {
   case unsupportedVersion(Int)
 
   public var description: String {
@@ -61,7 +61,7 @@ public struct ShimulatorRequest<Parameters: Codable & Sendable>: Codable, Sendab
 
 extension ShimulatorRequest: Equatable where Parameters: Equatable {}
 
-public enum ShimulatorResponseState: String, Codable, Equatable, Sendable {
+@frozen public enum ShimulatorResponseState: String, Codable, Equatable, Sendable {
   case accepted
   case completed
   case failed

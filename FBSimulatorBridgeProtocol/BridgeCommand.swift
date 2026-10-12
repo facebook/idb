@@ -8,26 +8,26 @@
 import Foundation
 
 /// The same command is encoded as a CLI argument or a socket frame.
-public enum BridgeCommand: Codable, Equatable, Sendable {
-  public enum DNS: Codable, Equatable, Sendable {
+@frozen public enum BridgeCommand: Codable, Equatable, Sendable {
+  @frozen public enum DNS: Codable, Equatable, Sendable {
     case list
     case set(servers: [String])
     case clear
   }
 
-  public enum DynamicStore: Codable, Equatable, Sendable {
+  @frozen public enum DynamicStore: Codable, Equatable, Sendable {
     case snapshot(key: String)
     case restore(key: String, snapshot: Data)
   }
 
-  public enum Proxy: Codable, Equatable, Sendable {
-    public enum Kind: String, Codable, Sendable { case http, socks }
+  @frozen public enum Proxy: Codable, Equatable, Sendable {
+    @frozen public enum Kind: String, Codable, Sendable { case http, socks }
     case list
     case set(host: String, port: Int32, kind: Kind)
     case clear
   }
 
-  public enum Notifications: Codable, Equatable, Sendable {
+  @frozen public enum Notifications: Codable, Equatable, Sendable {
     case list(bundleID: String?)
     case approve(bundleID: String)
     case revoke(bundleID: String)
@@ -35,7 +35,7 @@ public enum BridgeCommand: Codable, Equatable, Sendable {
     case clearDelivered(bundleID: String)
   }
 
-  public enum Health: Codable, Equatable, Sendable {
+  @frozen public enum Health: Codable, Equatable, Sendable {
     case list(bundleID: String)
     case clear(bundleID: String)
     case approve(bundleID: String, typeIDs: [String])

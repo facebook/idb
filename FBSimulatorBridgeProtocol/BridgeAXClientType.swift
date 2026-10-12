@@ -18,7 +18,7 @@ import Foundation
 /// it exposes.
 ///
 /// The mapping is the same on every runtime from iOS 26.4 to iOS 27.0.
-public enum BridgeAXClientType: UInt64, Sendable, CaseIterable {
+@frozen public enum BridgeAXClientType: UInt64, Sendable, CaseIterable {
   /// No AX request is being serviced. What idb's host translator sends.
   case noClient = 0
   /// An AX request from a client the translator could not identify.
@@ -104,7 +104,7 @@ public enum BridgeAXClientType: UInt64, Sendable, CaseIterable {
 /// Raw values are the integers the runtime uses. Only some are reachable from a `BridgeAXClientType`. The
 /// runtime assigns the rest to in-guest processes by process name, or a process overrides its own. Nothing
 /// in the simulator runtime produces 9, so it has no case.
-public enum BridgeAXRequestingClient: UInt32, Sendable, CaseIterable {
+@frozen public enum BridgeAXRequestingClient: UInt32, Sendable, CaseIterable {
   case noClient = 0
   /// `scripter2`, `uiautomationd`, `uia2unboxed`.
   case scripting = 1

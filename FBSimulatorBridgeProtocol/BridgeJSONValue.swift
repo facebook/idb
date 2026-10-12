@@ -8,7 +8,7 @@
 import CoreFoundation
 import Foundation
 
-public enum BridgeJSONValue: Codable, Equatable, Sendable {
+@frozen public enum BridgeJSONValue: Codable, Equatable, Sendable {
   case null
   case bool(Bool)
   case integer(Int64)

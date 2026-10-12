@@ -10,7 +10,7 @@ import Foundation
 
 /// Why a payload does not decode to a `BridgeAXRequest`. The cases carry what the guest needs to name the problem;
 /// wording it is the guest's job.
-public enum BridgeAXRequestError: Error, Equatable, Sendable {
+@frozen public enum BridgeAXRequestError: Error, Equatable, Sendable {
   /// The verb is absent, not a string, or not one the bridge serves.
   case unsupportedVerb(BridgeJSONValue?)
   case nonPositivePid(Int32)

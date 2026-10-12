@@ -7,7 +7,7 @@
 
 import Foundation
 
-public enum IPCError: Error, Equatable {
+@frozen public enum IPCError: Error, Equatable {
   case invalidFrameSize(Int)
   case pathTooLong(path: String, limit: Int)
   case closed

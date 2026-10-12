@@ -13,7 +13,7 @@ import Foundation
 /// fetched once per drawing process rather than once per node. The strategies read different child
 /// relations, so neither's element count is a baseline for the other, and a reachability verdict covers
 /// only what the strategy returned, not everything on screen.
-public enum BridgeAXTraversal: String, Sendable, CaseIterable {
+@frozen public enum BridgeAXTraversal: String, Sendable, CaseIterable {
   case viewHierarchy = "view-hierarchy"
   case semantic = "semantic"
   /// One fetch for the application plus one per subtree another process draws (a web view, picker or
@@ -22,7 +22,7 @@ public enum BridgeAXTraversal: String, Sendable, CaseIterable {
 }
 
 /// Selects how an in-guest frontmost read resolves the foreground application.
-public enum BridgeAXFrontmostMethod: String, Sendable, CaseIterable {
+@frozen public enum BridgeAXFrontmostMethod: String, Sendable, CaseIterable {
   case centerPoint = "center-point"
   case windowServer = "window-server"
   case runningBoard = "runningboard"
@@ -39,7 +39,7 @@ public struct BridgeAXWriteAssertion: Sendable, Equatable {
 }
 
 public struct BridgeAXWriteRequest: Sendable, Equatable {
-  public enum Kind: Sendable, Equatable {
+  @frozen public enum Kind: Sendable, Equatable {
     case perform(BridgeAXWire.Action)
     case setValue(String)
   }
@@ -152,7 +152,7 @@ public struct BridgeAXReadOptions: Sendable, Equatable {
   }
 }
 
-public enum BridgeAXRequest: Sendable, Equatable {
+@frozen public enum BridgeAXRequest: Sendable, Equatable {
   case read(pid: Int32, options: BridgeAXReadOptions, displayID: UInt32? = nil)
   case readFrontmost(x: Double, y: Double, method: BridgeAXFrontmostMethod, options: BridgeAXReadOptions, displayID: UInt32? = nil)
   /// Display-wide when `pid` is nil: the guest names the application that owns the point.

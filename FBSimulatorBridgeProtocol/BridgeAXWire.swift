@@ -12,7 +12,7 @@ public enum BridgeAXWire {
 
   /// Per-node attribute keys — the exact keys `_XCTD_fetchAttributes:forElement:` accepts and echoes
   /// back in its per-element result dictionary.
-  public enum Node: String, Codable, Sendable {
+  @frozen public enum Node: String, Codable, Sendable {
     case elementType = "XC_kAXXCAttributeElementType"
     case elementBaseType = "XC_kAXXCAttributeElementBaseType"
     case label = "XC_kAXXCAttributeLabel"
@@ -80,7 +80,7 @@ public enum BridgeAXWire {
 
   /// Top-level keys of the guest's `{ ok, tree | error, ... }` response envelope, parsed by
   /// `AXTreeRead`.
-  public enum Envelope: String, Codable, Sendable {
+  @frozen public enum Envelope: String, Codable, Sendable {
     case method
     case ok
     case enabled
@@ -103,14 +103,14 @@ public enum BridgeAXWire {
 
   /// Keys of the envelope's `phases` object — what the guest measured of its own work. The host's own
   /// phases are not here: it measures those itself.
-  public enum Phase: String, Codable, Sendable {
+  @frozen public enum Phase: String, Codable, Sendable {
     case traverse = "traverse_ms"
     case machRoundTrips = "mach_round_trips"
   }
 
   /// Keys of the envelope's `automation` object: the device's accessibility automation mode as it stood
   /// for the read, and whether the read changed it.
-  public enum Automation: String, Codable, Sendable {
+  @frozen public enum Automation: String, Codable, Sendable {
     case enabled
     case asserted
   }
@@ -120,7 +120,7 @@ public enum BridgeAXWire {
   /// The kind decides what the host *tells* the caller — which typed error it raises and whether any
   /// remedy applies — while the envelope's `error` carries the detail. An unknown or absent kind
   /// degrades to a generic reader failure rather than failing to parse.
-  public enum ErrorKind: String, Codable, Sendable, CaseIterable {
+  @frozen public enum ErrorKind: String, Codable, Sendable, CaseIterable {
     /// The process has no accessibility server: a dead pid, or a process that is not an application.
     case applicationUnavailable = "application_unavailable"
     /// The process has one and it did not answer in time — alive but busy, suspended or wedged.
@@ -144,7 +144,7 @@ public enum BridgeAXWire {
 
   /// What a failed write did to the application, as the guest's `effect` reports it. Absent means
   /// `unknown`: that is all an older guest could have said.
-  public enum Effect: String, Codable, Sendable, CaseIterable {
+  @frozen public enum Effect: String, Codable, Sendable, CaseIterable {
     /// Nothing was sent: the write failed while finding or checking its target.
     case none
     /// The write was sent and the runtime did not confirm it, so it may or may not have landed.
@@ -153,7 +153,7 @@ public enum BridgeAXWire {
 
   /// The guest verbs — the one-shot CLI subcommand and the persistent-transport `verb` value share this
   /// spelling.
-  public enum Verb: String, Codable, Sendable, CaseIterable {
+  @frozen public enum Verb: String, Codable, Sendable, CaseIterable {
     case displays
     case describe
     case hitTest = "hittest"
@@ -171,7 +171,7 @@ public enum BridgeAXWire {
   ///
   /// One case per field: the persistent transport sends JSON and the one-shot transport sends argv for
   /// the *same* request, so the two renderings are declared together and cannot drift.
-  public enum Request: String, Codable, Sendable, CaseIterable {
+  @frozen public enum Request: String, Codable, Sendable, CaseIterable {
     case verb
     case pid
     case displayID
@@ -255,7 +255,7 @@ public enum BridgeAXWire {
   /// These are accessibility actions the application runs itself, not synthesized touches — the guest
   /// hands the numeric identifier to the AX runtime, and the element's own implementation decides what
   /// happens.
-  public enum Action: String, Codable, Sendable, CaseIterable {
+  @frozen public enum Action: String, Codable, Sendable, CaseIterable {
     /// Activate the element — the semantic equivalent of tapping it.
     case press
     case scrollUp = "scroll-up"
@@ -274,14 +274,14 @@ public enum BridgeAXWire {
     public static let defaultBusyThresholdMs = 20
     public static let defaultQuietWindowMs = 250
 
-    public enum Key: String, Codable, Sendable, CaseIterable {
+    @frozen public enum Key: String, Codable, Sendable, CaseIterable {
       case event
       case state
       /// The signals holding a `busy` state, as `Signal` values.
       case signals
     }
 
-    public enum Event: String, Codable, Sendable, CaseIterable {
+    @frozen public enum Event: String, Codable, Sendable, CaseIterable {
       /// The application's `State`, written first once it is known and then on every change.
       case state
       /// A touch sequence finished. Informational: it does not affect the state.
@@ -293,7 +293,7 @@ public enum BridgeAXWire {
       case targetExited = "target_exited"
     }
 
-    public enum State: String, Codable, Sendable, CaseIterable {
+    @frozen public enum State: String, Codable, Sendable, CaseIterable {
       /// At least one signal has gone unanswered for longer than the busy threshold.
       case busy
       /// No signal is busy, but they have not all been answered for the whole quiet window.
@@ -302,7 +302,7 @@ public enum BridgeAXWire {
       case quiet
     }
 
-    public enum Signal: String, Codable, Sendable, CaseIterable {
+    @frozen public enum Signal: String, Codable, Sendable, CaseIterable {
       /// The application's main run loop has gone idle.
       case runLoopIdle = "run_loop_idle"
       /// No animation is running in the application.

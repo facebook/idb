@@ -7,7 +7,7 @@
 
 import Foundation
 
-public enum BridgeProtocolError: Error, Equatable {
+@frozen public enum BridgeProtocolError: Error, Equatable {
   case invalidJSONValue
   case unsupportedVersion(Int)
   case mismatchedResponse

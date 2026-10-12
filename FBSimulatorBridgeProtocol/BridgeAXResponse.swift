@@ -11,7 +11,7 @@ import Foundation
 /// it can scope to one of them.
 public struct BridgeAXDisplayInventory: Codable, Equatable, Sendable {
   public struct Display: Codable, Equatable, Sendable {
-    public enum CodingKeys: String, CodingKey {
+    @frozen public enum CodingKeys: String, CodingKey {
       case uniqueID
       case displayID
     }
@@ -25,7 +25,7 @@ public struct BridgeAXDisplayInventory: Codable, Equatable, Sendable {
     }
   }
 
-  public enum CodingKeys: String, CodingKey {
+  @frozen public enum CodingKeys: String, CodingKey {
     case displayScopedInteractions
     case displayScopedTrees
     case displayScopedQuiescence
@@ -71,12 +71,12 @@ public struct BridgeAXDisplayInventory: Codable, Equatable, Sendable {
 public struct BridgeAXModal: Codable, Equatable, Sendable {
   /// Who owns the modal: the system shell (SpringBoard — a system or permission alert) or the app itself
   /// (an in-app `UIAlertController`).
-  public enum Kind: String, Codable, Sendable {
+  @frozen public enum Kind: String, Codable, Sendable {
     case system
     case app
   }
 
-  public enum CodingKeys: String, CodingKey {
+  @frozen public enum CodingKeys: String, CodingKey {
     case kind
     case elementType
     case label
