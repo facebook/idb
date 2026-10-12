@@ -12,6 +12,7 @@ from idb.common.types import (
     HIDButtonType,
     HIDDelay,
     HIDDirection,
+    HIDEdge,
     HIDEvent,
     HIDHinge,
     HIDKey,
@@ -39,6 +40,7 @@ GrpcHIDSwipe = GrpcHIDEvent.HIDSwipe
 GrpcHIDTouch = GrpcHIDEvent.HIDTouch
 GrpcHIDButtonType = GrpcHIDEvent.HIDButtonType
 GrpcHIDDirection = GrpcHIDEvent.HIDDirection
+GrpcHIDEdge = GrpcHIDEvent.HIDEdge
 GrpcHIDOrientation = GrpcHIDEvent.HIDOrientation
 GrpcHIDShake = GrpcHIDEvent.HIDShake
 GrpcHIDOrientationType = GrpcHIDEvent.HIDOrientationType
@@ -63,6 +65,14 @@ DIRECTION_PAIRS: "List[Tuple[HIDDirection, GrpcHIDDirection]]" = [
     (HIDDirection.UP, GrpcHIDEvent.UP),
 ]
 
+EDGE_PAIRS: "List[Tuple[HIDEdge, GrpcHIDEdge]]" = [
+    (HIDEdge.NONE, GrpcHIDEvent.NO_EDGE),
+    (HIDEdge.TOP, GrpcHIDEvent.TOP_EDGE),
+    (HIDEdge.LEFT, GrpcHIDEvent.LEFT_EDGE),
+    (HIDEdge.BOTTOM, GrpcHIDEvent.BOTTOM_EDGE),
+    (HIDEdge.RIGHT, GrpcHIDEvent.RIGHT_EDGE),
+]
+
 ORIENTATION_TYPE_PAIRS: "List[Tuple[HIDOrientationType, GrpcHIDOrientationType]]" = [
     (HIDOrientationType.PORTRAIT, GrpcHIDEvent.PORTRAIT),
     (HIDOrientationType.PORTRAIT_UPSIDE_DOWN, GrpcHIDEvent.PORTRAIT_UPSIDE_DOWN),
@@ -84,12 +94,16 @@ def direction_to_grpc(direction: HIDDirection) -> GrpcHIDDirection:
     return _translation_from_pairs(DIRECTION_PAIRS, direction)
 
 
+def edge_to_grpc(edge: HIDEdge) -> GrpcHIDEdge:
+    return _translation_from_pairs(EDGE_PAIRS, edge)
+
+
 def point_to_grpc(point: Point) -> GrpcPoint:
     return GrpcPoint(x=point.x, y=point.y)
 
 
 def touch_to_grpc(touch: HIDTouch) -> GrpcHIDTouch:
-    return GrpcHIDTouch(point=point_to_grpc(touch.point))
+    return GrpcHIDTouch(point=point_to_grpc(touch.point), edge=edge_to_grpc(touch.edge))
 
 
 def button_to_grpc(button: HIDButton) -> GrpcHIDButton:
@@ -126,6 +140,7 @@ def swipe_to_grpc(swipe: HIDSwipe) -> GrpcHIDSwipe:
         delta=swipe.delta,
         # pyre-ignore
         duration=swipe.duration,
+        edge=edge_to_grpc(swipe.edge),
     )
 
 

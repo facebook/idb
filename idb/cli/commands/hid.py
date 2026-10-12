@@ -12,7 +12,7 @@ from idb.common.hid import (
     iterator_to_async_iterator,
     key_press_with_modifiers_to_events,
 )
-from idb.common.types import Client, HIDButtonType, HIDOrientationType
+from idb.common.types import Client, HIDButtonType, HIDEdge, HIDOrientationType
 
 
 class MultiTapCommand(ClientCommand):
@@ -271,6 +271,13 @@ class SwipeCommand(ClientCommand):
             type=int,
             required=False,
         )
+        parser.add_argument(
+            "--edge",
+            help="The screen edge the swipe starts at, which makes it a system "
+            "gesture: bottom for home, top for Notification Centre, left for back",
+            choices=[edge.name.lower() for edge in HIDEdge if edge != HIDEdge.NONE],
+            required=False,
+        )
         super().add_parser_arguments(parser)
 
     async def run_with_client(self, args: Namespace, client: Client) -> None:
@@ -279,6 +286,7 @@ class SwipeCommand(ClientCommand):
             p_end=(args.x_end, args.y_end),
             duration=args.duration,
             delta=args.delta,
+            edge=HIDEdge[args.edge.upper()] if args.edge else HIDEdge.NONE,
         )
 
 

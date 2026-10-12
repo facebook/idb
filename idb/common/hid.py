@@ -12,6 +12,7 @@ from idb.common.types import (
     HIDButtonType,
     HIDDelay,
     HIDDirection,
+    HIDEdge,
     HIDEvent,
     HIDKey,
     HIDOrientation,
@@ -83,10 +84,11 @@ def swipe_to_events(
     p_end: tuple[float, float],
     duration: float | None = None,
     delta: float | None = None,
+    edge: HIDEdge = HIDEdge.NONE,
 ) -> list[HIDEvent]:
     start = Point(x=p_start[0], y=p_start[1])
     end = Point(x=p_end[0], y=p_end[1])
-    return [HIDSwipe(start=start, end=end, delta=delta, duration=duration)]
+    return [HIDSwipe(start=start, end=end, delta=delta, duration=duration, edge=edge)]
 
 
 def _key_down_event(keycode: int) -> HIDEvent:

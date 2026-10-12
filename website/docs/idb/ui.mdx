@@ -267,6 +267,15 @@ idb ui swipe 100 500 100 100
 
 The touch is moved in steps; `--delta` sets the distance in points between successive touch points along the line, and `--duration` sets how long the whole gesture takes.
 
+A swipe that merely starts at a screen edge is an ordinary drag: iOS recognises its system gestures from an edge flag on the touch, not from where the touch is. `--edge` sets that flag, one of `top`, `left`, `bottom` or `right`.
+
+```
+# Go to the home screen, as the home indicator does
+idb ui swipe 201 873 201 437 --edge bottom
+# Open Notification Centre
+idb ui swipe 201 1 201 437 --edge top
+```
+
 ### `idb ui pinch X Y SCALE`
 
 A two-finger pinch centred on a point. A scale above `1.0` zooms in, below `1.0` zooms out.
