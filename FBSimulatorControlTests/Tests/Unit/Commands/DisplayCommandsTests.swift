@@ -198,7 +198,7 @@ final class DisplayCommandsTests: XCTestCase {
     guard case let .read(legacy) = try await DisplayCommandsDouble([.success(.legacy(integrated: [geometry]))]).describedDisplays() else {
       return XCTFail("a legacy runtime is read")
     }
-    XCTAssertEqual(legacy, [])
+    XCTAssertTrue(legacy.isEmpty)
     guard case .failed = try await DisplayCommandsDouble([.success(.failed(.malformed("unreadable")))]).describedDisplays() else {
       return XCTFail("an unreadable report fails")
     }
@@ -225,10 +225,11 @@ final class DisplayCommandsTests: XCTestCase {
       bounds: CGRect(x: 0, y: 0, width: 2008, height: 2854), scale: 3, rotation: .clockwise)
 
     XCTAssertEqual(
-      TargetDisplayDescription(display),
-      TargetDisplayDescription(
-        uniqueID: "FA9C9507-0D45-4189-A7D6-A3335032D47B", name: "LCD-1", isActive: true, isIntegrated: true, widthPixels: 2854,
-        heightPixels: 2008, scale: 3))
+      String(reflecting: TargetDisplayDescription(display)),
+      String(
+        reflecting: TargetDisplayDescription(
+          uniqueID: "FA9C9507-0D45-4189-A7D6-A3335032D47B", name: "LCD-1", isActive: true, isIntegrated: true, widthPixels: 2854,
+          heightPixels: 2008, scale: 3)))
   }
 
   func testAnInactiveExternalDisplayIsDescribedAsSuch() {

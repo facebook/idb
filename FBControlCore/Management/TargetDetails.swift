@@ -21,7 +21,7 @@ public enum TargetDetail<Value> {
 }
 
 /// A display as a target describes it.
-public struct TargetDisplayDescription: Equatable, Sendable {
+public struct TargetDisplayDescription: Sendable {
   public let uniqueID: String
   public let name: String
   public let isActive: Bool
