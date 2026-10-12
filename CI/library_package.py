@@ -27,7 +27,6 @@ The package holds everything a consumer of idb's libraries needs, as
       IDBPrivateHeaders.xcframework
                               the private frameworks' modules again, as a binary
                               target's headers, where SwiftPM and Xcode both find them
-      Linkage/                the source file each product's wrapper target needs
 
 Stdlib only: CI runs it with the runner's own python3.
 """
@@ -234,38 +233,42 @@ def _swift_string(value: str) -> str:
     return json.dumps(value)
 
 
-def _package_manifest(libraries: dict[str, dict[str, list[str]]]) -> str:
-    """Package.swift: a product per library, its closure and what it links."""
-    products: list[str] = []
-    targets: list[str] = [
-        f'    .binaryTarget(name: "{PRIVATE_HEADERS_TARGET}", path: "{PRIVATE_HEADERS_TARGET}.xcframework"),'
-    ]
-    stubs = _all_stub_frameworks(libraries)
-    targets += [
-        f'    .binaryTarget(name: "{stub}Stub", path: "{stub}Stub.xcframework"),'
-        for stub in stubs
-    ]
-    targets += [
-        f'    .binaryTarget(name: "{name}", path: "{name}.xcframework"),'
-        for name in libraries
-    ]
+def product_targets(libraries: dict[str, dict[str, list[str]]]) -> dict[str, list[str]]:
+    """Each library's SwiftPM product: the binary targets it is made of.
+
+    Its stub frameworks, the private modules when its interface imports them, and its
+    closure's archives. No source target is needed: the archives' objects autolink the
+    SDK frameworks they import.
+    """
+    products: dict[str, list[str]] = {}
     for name, entry in libraries.items():
-        dependencies = [f"{stub}Stub" for stub in _stub_frameworks(entry)]
+        targets = [f"{stub}Stub" for stub in _stub_frameworks(entry)]
         if entry["search_paths"]:
-            dependencies.append(PRIVATE_HEADERS_TARGET)
-        dependencies += [
-            archive[len("lib") : -len(".a")] for archive in entry["archives"]
-        ]
-        settings = [
-            f".linkedFramework({_swift_string(framework.removesuffix('.framework'))})"
-            for framework in entry["frameworks"]
-        ]
-        quoted = ", ".join(_swift_string(dependency) for dependency in dependencies)
-        targets.append(
-            f'    .target(name: "{name}Linkage", dependencies: [{quoted}], '
-            f'path: "Linkage/{name}", linkerSettings: [{", ".join(settings)}]),'
-        )
-        products.append(f'    .library(name: "{name}", targets: ["{name}Linkage"]),')
+            targets.append(PRIVATE_HEADERS_TARGET)
+        targets += [archive[len("lib") : -len(".a")] for archive in entry["archives"]]
+        products[name] = targets
+    return products
+
+
+def binary_target_names(libraries: dict[str, dict[str, list[str]]]) -> list[str]:
+    """Every binary target the package has: the stubs, the private modules, the libraries."""
+    return (
+        [f"{stub}Stub" for stub in _all_stub_frameworks(libraries)]
+        + [PRIVATE_HEADERS_TARGET]
+        + list(libraries)
+    )
+
+
+def _package_manifest(libraries: dict[str, dict[str, list[str]]]) -> str:
+    """Package.swift: a product per library, each the binary targets it is made of."""
+    products = [
+        f'    .library(name: "{name}", targets: [{", ".join(_swift_string(t) for t in targets)}]),'
+        for name, targets in product_targets(libraries).items()
+    ]
+    targets = [
+        f'    .binaryTarget(name: "{name}", path: "{name}.xcframework"),'
+        for name in binary_target_names(libraries)
+    ]
     return "\n".join(
         [
             "// swift-tools-version:6.0",
@@ -318,13 +321,6 @@ def assemble(
     for stub in _all_stub_frameworks(libraries):
         (scratch / stub).mkdir()
         _stub_xcframework(stub, output, scratch / stub, run)
-    for name in libraries:
-        linkage = output / "Linkage" / name
-        linkage.mkdir(parents=True)
-        # SwiftPM builds a target only from sources; the wrapper exists for its linker settings.
-        (linkage / f"{name}Linkage.swift").write_text(
-            f"// The product {name}: its archives, and what they link.\n"
-        )
     (output / "Package.swift").write_text(_package_manifest(libraries))
     return manifest
 

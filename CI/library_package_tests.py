@@ -141,20 +141,19 @@ class LibraryPackageTest(unittest.TestCase):
             ).is_file()
         )
 
-    def test_swiftpm_gets_a_product_per_library_with_what_it_links(self) -> None:
+    def test_swiftpm_gets_a_product_per_library_made_of_binary_targets(self) -> None:
         self._assemble()
         package = (self.output / "Package.swift").read_text()
-        self.assertIn('.library(name: "Swifty", targets: ["SwiftyLinkage"])', package)
         self.assertIn(
-            '.target(name: "SwiftyLinkage", dependencies: ["IDBPrivateHeaders", "Swifty", "Cish"], '
-            'path: "Linkage/Swifty", linkerSettings: [.linkedFramework("Foundation")]),',
+            '.library(name: "Swifty", targets: ["IDBPrivateHeaders", "Swifty", "Cish"]),',
             package,
         )
+        self.assertIn('.library(name: "Cish", targets: ["Cish"]),', package)
         self.assertIn(
-            '.target(name: "CishLinkage", dependencies: ["Cish"], path: "Linkage/Cish", linkerSettings: []),',
-            package,
+            '.binaryTarget(name: "Swifty", path: "Swifty.xcframework"),', package
         )
-        self.assertTrue((self.output / "Linkage/Swifty/SwiftyLinkage.swift").is_file())
+        self.assertNotIn(".target(", package)
+        self.assertFalse((self.output / "Linkage").exists())
 
     def test_a_private_frameworks_stub_is_a_binary_target_not_a_flag(self) -> None:
         MANIFEST["libraries"]["Swifty"]["linker_flags"] = [
@@ -174,7 +173,7 @@ class LibraryPackageTest(unittest.TestCase):
             package,
         )
         self.assertIn(
-            '.target(name: "SwiftyLinkage", dependencies: ["PrivateStub", "IDBPrivateHeaders", "Swifty", "Cish"]',
+            '.library(name: "Swifty", targets: ["PrivateStub", "IDBPrivateHeaders", "Swifty", "Cish"]),',
             package,
         )
         framework = (
