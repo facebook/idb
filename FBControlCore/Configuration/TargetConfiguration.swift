@@ -62,7 +62,7 @@ public struct DeviceModel: RawRepresentable, Hashable, Codable, Sendable {
 
 // MARK: - DeviceType
 
-public struct DeviceType: Equatable, Hashable, CustomStringConvertible, Sendable {
+public struct DeviceType: CustomStringConvertible, Sendable {
 
   public let model: DeviceModel
   public let family: ProductFamily
@@ -74,15 +74,6 @@ public struct DeviceType: Equatable, Hashable, CustomStringConvertible, Sendable
   public init(model: DeviceModel, family: ProductFamily) {
     self.model = model
     self.family = family
-  }
-
-  /// Family metadata does not change the identity of a model.
-  public static func == (lhs: DeviceType, rhs: DeviceType) -> Bool {
-    lhs.model == rhs.model
-  }
-
-  public func hash(into hasher: inout Hasher) {
-    hasher.combine(model)
   }
 
   public var description: String {

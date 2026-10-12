@@ -46,14 +46,6 @@ final class TargetConfigurationTests: XCTestCase {
     XCTAssertEqual(os.version.majorVersion, 0)
   }
 
-  func testDeviceTypeEqualityConsidersOnlyTheModel() {
-    let described = DeviceType(model: DeviceModel(rawValue: "Future Device"), family: .iPad)
-    let generic = DeviceType.generic(withName: "Future Device")
-    XCTAssertNotEqual(described.family, generic.family)
-    XCTAssertEqual(described, generic)
-    XCTAssertEqual(described.hashValue, generic.hashValue)
-  }
-
   func testOSVersionEqualityConsidersOnlyTheName() {
     let described = OSVersion(name: OSVersionName(rawValue: "Future Platform"), versionString: "99.0")
     let generic = OSVersion.generic(withName: "Future Platform")

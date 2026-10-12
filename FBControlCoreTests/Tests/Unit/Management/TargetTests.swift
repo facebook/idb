@@ -74,8 +74,8 @@ final class TargetTests: XCTestCase {
     let output = input.sorted { $0.compare($1) == .orderedAscending }
     XCTAssertEqual(input.count, output.count)
     for index in 0..<input.count {
-      let expected = input[index].deviceType
-      let actual = output[index].deviceType
+      let expected = input[index].deviceType.model
+      let actual = output[index].deviceType.model
       XCTAssertEqual(expected, actual)
     }
   }
