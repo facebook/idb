@@ -170,7 +170,7 @@ public struct ScreenshotResult: Sendable {
 }
 
 /// Each case maps to an invalid-argument failure at the API boundary.
-public enum ScreenshotGeometryError: Error, Hashable {
+public enum ScreenshotGeometryError: Error {
   case scaleFactorOutOfRange(Double)
   case fitBoundsEmpty
   case fitBoundNotPositive(Int)

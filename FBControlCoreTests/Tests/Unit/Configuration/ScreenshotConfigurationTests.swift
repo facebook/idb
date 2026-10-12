@@ -41,7 +41,7 @@ final class ScreenshotConfigurationTests: XCTestCase {
       file: file,
       line: line
     ) { error in
-      XCTAssertEqual(error as? ScreenshotGeometryError, expected, file: file, line: line)
+      XCTAssertEqual(String(reflecting: error), String(reflecting: expected), file: file, line: line)
     }
   }
 

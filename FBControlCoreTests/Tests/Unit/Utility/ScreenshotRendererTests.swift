@@ -111,7 +111,7 @@ final class ScreenshotRendererTests: XCTestCase {
       unit: .points
     )
     XCTAssertThrowsError(try render(configuration, screenScale: nil)) { error in
-      XCTAssertEqual(error as? ScreenshotGeometryError, .screenScaleUnknown)
+      XCTAssertEqual(String(reflecting: error), String(reflecting: ScreenshotGeometryError.screenScaleUnknown))
     }
     XCTAssertNoThrow(try render(ScreenshotConfiguration(), screenScale: nil))
     // Points with nothing measured in them converts nothing, so it needs no scale either.

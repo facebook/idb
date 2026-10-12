@@ -161,7 +161,7 @@ final class SurfaceImageGeneratorTests: XCTestCase {
         screenScale: nil
       )
     ) { error in
-      XCTAssertEqual(error as? ScreenshotGeometryError, .screenScaleUnknown)
+      XCTAssertEqual(String(reflecting: error), String(reflecting: ScreenshotGeometryError.screenScaleUnknown))
     }
   }
 
