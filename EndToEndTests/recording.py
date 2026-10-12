@@ -26,6 +26,11 @@ CONTAINERS = {"h264": ".mp4", "hevc": ".mp4", "mjpeg": ".mov", "auto": ".mov"}
 ENCODING_ENV = "IDB_E2E_RECORDER_ENCODING"
 
 
+# The height, in points, of the bars the recorder reserves above and below the screen. Overlays are placed in
+# the composed frame, so a shape over the screen sits this far below its point in the screen's coordinates.
+BAR_POINTS = 48
+
+
 def container_for(encoding: str) -> str:
     """The container the recorder writes this encoding in.
 
@@ -84,8 +89,8 @@ class Recording:
                         "--scale",
                         "0.5",
                         "--bar",
-                        "top:48",
-                        "bottom:48",
+                        f"top:{BAR_POINTS}",
+                        f"bottom:{BAR_POINTS}",
                         "--screenshot-dir",
                         str(self.screenshots),
                     ],
