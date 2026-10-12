@@ -214,7 +214,11 @@ final class FBTestBundleDTXConnectionTests: XCTestCase {
   /// DTX raises when the object a channel exports does not conform to the channel's exported
   /// interface, so starting a session over a live connection would end the process.
   func testStartingASessionExportsTheConnectionAsEachInterfaceItConformsTo() throws {
-    try XCTestBootstrapFrameworkLoader.allDependentFrameworks.loadPrivateFrameworks(nil)
+    // xcodebuild's test runner has already loaded DTXConnectionServices, from its own Xcode, which
+    // the loader rejects when it is not the developer directory the loader checks against.
+    if objc_lookUpClass("DTXConnection") == nil {
+      try XCTestBootstrapFrameworkLoader.allDependentFrameworks.loadPrivateFrameworks(nil)
+    }
     var sockets: [Int32] = [-1, -1]
     XCTAssertEqual(socketpair(AF_UNIX, SOCK_STREAM, 0, &sockets), 0)
     // The connection owns the other end once wrapped.
