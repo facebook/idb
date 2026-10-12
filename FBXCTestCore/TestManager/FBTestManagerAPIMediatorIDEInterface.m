@@ -23,7 +23,6 @@
 #import <XCTestPrivate/XCTestManager_IDEInterface-Protocol.h>
 
 #import "FBTestReporterAdapter.h"
-#import "TestManagerResultSummary.h"
 
 @interface FBTestManagerAPIMediatorIDEInterface () <XCTestManager_IDEInterface, XCTMessagingChannel_RunnerToIDE>
 

@@ -11,8 +11,6 @@
 #import <XCTestPrivate/XCActivityRecord.h>
 #import <XCTestPrivate/XCTestManager_IDEInterface-Protocol.h>
 
-#import "TestManagerResultSummary.h"
-
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wprotocol"
 #pragma clang diagnostic ignored "-Wincomplete-implementation"

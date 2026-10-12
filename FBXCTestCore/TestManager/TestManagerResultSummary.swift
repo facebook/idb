@@ -7,6 +7,13 @@
 
 import Foundation
 
+/// The outcome of a test case.
+@objc public enum FBTestReportStatus: UInt {
+  case unknown = 0
+  case passed = 1
+  case failed = 2
+}
+
 @objc public final class TestManagerResultSummary: NSObject {
 
   public let testSuite: String
