@@ -6,13 +6,16 @@
  */
 
 @testable import FBControlCore
-import XCTest
+import Foundation
+import Testing
 
-final class CrashLogNotifierTests: XCTestCase {
+@Suite
+struct CrashLogNotifierTests {
 
   // MARK: - startListening
 
-  func testStartListening_WithOnlyNewYES_SetsSinceDateToNow() {
+  @Test
+  func startListening_WithOnlyNewYES_SetsSinceDateToNow() {
     let notifier = CrashLogNotifier(logger: ControlCoreLoggerDouble())
     notifier.sinceDate = .distantPast
 
@@ -20,29 +23,29 @@ final class CrashLogNotifierTests: XCTestCase {
     _ = notifier.startListening(true)
     let after = Date()
 
-    XCTAssertGreaterThanOrEqual(
-      notifier.sinceDate.timeIntervalSinceReferenceDate,
-      before.timeIntervalSinceReferenceDate,
+    #expect(
+      notifier.sinceDate.timeIntervalSinceReferenceDate >= before.timeIntervalSinceReferenceDate,
       "sinceDate should be updated to approximately now when onlyNew is YES")
-    XCTAssertLessThanOrEqual(
-      notifier.sinceDate.timeIntervalSinceReferenceDate,
-      after.timeIntervalSinceReferenceDate,
+    #expect(
+      notifier.sinceDate.timeIntervalSinceReferenceDate <= after.timeIntervalSinceReferenceDate,
       "sinceDate should not be in the future")
   }
 
-  func testStartListening_WithOnlyNewNO_SetsSinceDateToDistantPast() {
+  @Test
+  func startListening_WithOnlyNewNO_SetsSinceDateToDistantPast() {
     let notifier = CrashLogNotifier(logger: ControlCoreLoggerDouble())
 
     _ = notifier.startListening(false)
 
-    XCTAssertEqual(
-      notifier.sinceDate, .distantPast,
+    #expect(
+      notifier.sinceDate == .distantPast,
       "sinceDate should be set to distantPast when onlyNew is NO")
   }
 
   // MARK: - nextCrashLogForPredicate
 
-  func testNextCrashLogForPredicate_WhenNoMatchingCrashLog_PollDoesNotResolve() async throws {
+  @Test
+  func nextCrashLogForPredicate_WhenNoMatchingCrashLog_PollDoesNotResolve() async throws {
     let notifier = CrashLogNotifier(logger: ControlCoreLoggerDouble())
 
     let predicate = CrashLogPredicate.none
@@ -55,9 +58,9 @@ final class CrashLogNotifierTests: XCTestCase {
     poll.cancel()
     do {
       _ = try await poll.value
-      XCTFail("Poll should not resolve for an always-false predicate")
+      Issue.record("Poll should not resolve for an always-false predicate")
     } catch {
-      XCTAssertTrue(error is CancellationError, "cancelling the poll should surface CancellationError, got \(error)")
+      #expect(error is CancellationError, "cancelling the poll should surface CancellationError, got \(error)")
     }
   }
 }
