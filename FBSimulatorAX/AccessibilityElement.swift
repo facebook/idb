@@ -84,11 +84,18 @@ final class AccessibilityElement {
     if closed {
       throw AccessibilityError.closedElement(operation: "read from")
     }
-    let element = self.element
-    guard let value = try await dispatcher.performSerialized({ Self.stringValue(forKey: key, from: element) }) else {
+    let snapshot = try await read(AXReadPlan(searching: key, depth: .limited(0)))
+    guard let value = snapshot.searchableValue(for: key) else {
       throw AccessibilityError.noStringValue(key: key.rawValue)
     }
     return value
+  }
+
+  /// Reads this element against `plan` on the translator's work queue.
+  private func read(_ plan: AXReadPlan) async throws -> AXElementSnapshot {
+    let element = self.element
+    let token = request.token
+    return try await dispatcher.performSerialized { AXElementSnapshot.read(element, plan: plan, token: token) }
   }
 
   // MARK: - Actions
@@ -135,12 +142,7 @@ final class AccessibilityElement {
     if closed {
       throw AccessibilityError.closedElement(operation: "read the frame of")
     }
-    let element = self.element
-    let token = request.token
-    return try await dispatcher.performSerialized {
-      element.axSetBridgeDelegateToken(token)
-      return element.axFrame()
-    }
+    return try await read(AXReadPlan(attributes: [], depth: .limited(0))).frame
   }
 
   /// The pid of the backing translation object (0 when absent); reading it performs no serialization.
@@ -173,86 +175,45 @@ final class AccessibilityElement {
     if closed {
       throw AccessibilityError.closedElement(operation: "search")
     }
-    // Root geometry must be read before ownership passes to a matching descendant.
-    let element = self.element
-    let token = request.token
-    let result = try await dispatcher.performSerialized { () -> AccessibilitySearchResult<(found: AXWritableElement, rootBounds: CGRect)> in
-      var diagnostics = AccessibilitySearchDiagnostics()
-      guard
-        let found = Self.findElement(
-          withValue: value, forKey: key, in: element, token: token, remainingDepth: depth,
-          ignoresCase: ignoresCase, diagnostics: &diagnostics
-        ) as? AXWritableElement
-      else {
-        return AccessibilitySearchResult(match: nil, diagnostics: diagnostics)
-      }
-      element.axSetBridgeDelegateToken(token)
-      return AccessibilitySearchResult(match: (found, element.axFrame()), diagnostics: diagnostics)
-    }
-    guard let match = result.match else {
+    // The whole tree is read to `depth` before matching; the root's frame comes from the same read, before
+    // ownership passes to a matching descendant.
+    let root = try await read(AXReadPlan(searching: key, depth: .limited(depth)))
+    var diagnostics = AccessibilitySearchDiagnostics()
+    guard let found = Self.firstMatch(withValue: value, forKey: key, in: root, ignoresCase: ignoresCase, diagnostics: &diagnostics),
+      let handle = found.handle
+    else {
       close()
-      return AccessibilitySearchResult(match: nil, diagnostics: result.diagnostics)
+      return AccessibilitySearchResult(match: nil, diagnostics: diagnostics)
     }
     guard let simulator else {
       throw WeakTargetError.simulator
     }
     let newHandle = AccessibilityElement(
-      element: match.found, request: request, dispatcher: dispatcher, simulator: simulator, rootBounds: match.rootBounds
+      element: handle, request: request, dispatcher: dispatcher, simulator: simulator, rootBounds: root.frame
     )
     closed = true
-    return AccessibilitySearchResult(match: newHandle, diagnostics: result.diagnostics)
+    return AccessibilitySearchResult(match: newHandle, diagnostics: diagnostics)
   }
 
   // MARK: - Private helpers
 
-  private static func stringValue(forKey key: AXSearchableKey, from element: AXPlatformElement) -> String? {
-    switch key {
-    case .label:
-      return element.axLabel()
-    case .uniqueID:
-      return element.axIdentifier()
-    case .value:
-      return element.axValue() as? String
-    case .title:
-      return element.axTitle()
-    case .role:
-      return element.axRole()
-    case .roleDescription:
-      return element.axRoleDescription()
-    case .subrole:
-      return element.axSubrole()
-    case .help:
-      return element.axHelp()
-    case .placeholder:
-      return element.axPlaceholderValue()
-    }
-  }
-
-  private static func findElement(
+  /// The first snapshot, depth first, whose `key` value contains `value`, recording the nonmatching
+  /// values visited before it.
+  private static func firstMatch(
     withValue value: String,
     forKey key: AXSearchableKey,
-    in element: AXPlatformElement,
-    token: String,
-    remainingDepth: UInt,
+    in snapshot: AXElementSnapshot,
     ignoresCase: Bool,
     diagnostics: inout AccessibilitySearchDiagnostics
-  ) -> AXPlatformElement? {
-    element.axSetBridgeDelegateToken(token)
-    if let propertyValue = stringValue(forKey: key, from: element) {
+  ) -> AXElementSnapshot? {
+    if let propertyValue = snapshot.searchableValue(for: key) {
       if contains(value, in: propertyValue, ignoringCase: ignoresCase) {
-        return element
+        return snapshot
       }
       diagnostics.record(propertyValue)
     }
-    if remainingDepth == 0 {
-      return nil
-    }
-    for child in element.axChildren() {
-      child.axSetBridgeDelegateToken(token)
-      if let found = findElement(
-        withValue: value, forKey: key, in: child, token: token, remainingDepth: remainingDepth - 1,
-        ignoresCase: ignoresCase, diagnostics: &diagnostics
-      ) {
+    for child in snapshot.children {
+      if let found = firstMatch(withValue: value, forKey: key, in: child, ignoresCase: ignoresCase, diagnostics: &diagnostics) {
         return found
       }
     }

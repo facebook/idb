@@ -160,7 +160,8 @@ final class SimulatorAccessibilityCommands: AccessibilityOperations {
     if !remediationPermitted {
       return AccessibilityElement(element: element, request: request, dispatcher: dispatcher, simulator: simulator)
     }
-    let requiresRemediation = try await remediationRequired(forSimulator: simulator, element: element, dispatcher: dispatcher)
+    let requiresRemediation = try await remediationRequired(
+      forSimulator: simulator, element: element, token: request.token, dispatcher: dispatcher)
     if !requiresRemediation {
       return AccessibilityElement(element: element, request: request, dispatcher: dispatcher, simulator: simulator)
     }
@@ -172,16 +173,20 @@ final class SimulatorAccessibilityCommands: AccessibilityOperations {
     return try await accessibilityElement(request: nextRequest, remediationPermitted: false)
   }
 
-  private func remediationRequired(forSimulator simulator: Simulator, element: AXPlatformElement, dispatcher: AXTranslationDispatcher) async throws -> Bool {
+  private func remediationRequired(
+    forSimulator simulator: Simulator, element: AXPlatformElement, token: String, dispatcher: AXTranslationDispatcher
+  ) async throws -> Bool {
     // A quick check: a non-zero accessibility frame indicates a healthy element.
     // An attribute read, so it takes the serialized hop like every other translator touch.
-    let frame = try await dispatcher.performSerialized { element.axFrame() }
-    if !frame.equalTo(.zero) {
+    let root = try await dispatcher.performSerialized {
+      AXElementSnapshot.read(element, plan: AXReadPlan(attributes: [], depth: .limited(0)), token: token)
+    }
+    if !root.frame.equalTo(.zero) {
       return false
     }
     // A zero-framed root is stale unless its owning pid is still a live launchd service.
     // A launchctl failure is treated as "not live" so recovery is still attempted.
-    let pid = element.axTranslationPid
+    let pid = root.pid
     let pidIsLive = (try? await resolvedLaunchCtl(simulator).processIsRunning(withProcessIdentifier: pid)) ?? false
     if pidIsLive {
       return false

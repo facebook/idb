@@ -94,6 +94,23 @@ struct AXReadPlan: Equatable {
     }
     self.init(attributes: attributes, depth: depth)
   }
+
+  /// The plan a search comparing `key` consumes.
+  init(searching key: AXSearchableKey, depth: Depth) {
+    let attribute: Attribute =
+      switch key {
+      case .label: .label
+      case .uniqueID: .identifier
+      case .value: .value
+      case .title: .title
+      case .role: .role
+      case .roleDescription: .roleDescription
+      case .subrole: .subrole
+      case .help: .help
+      case .placeholder: .placeholder
+      }
+    self.init(attributes: [attribute], depth: depth)
+  }
 }
 
 /// Whether a touch reaches an element, and the attributes that decide why not. Only a backend that can
@@ -115,9 +132,14 @@ struct AXHittability: Equatable {
 final class AXElementSnapshot {
   let frame: NSRect
   let pid: pid_t
+  /// The element actions go through, when the backend can act on what it read.
+  let handle: AXWritableElement?
   let role: String?
   let label: String?
   let value: AccessibilityAttributeValue?
+  /// The value as read, when the platform returned a string: what a search on `.value` compares, which
+  /// a described non-string value must not match.
+  let stringValue: String?
   let identifier: String?
   let title: String?
   let help: String?
@@ -138,9 +160,11 @@ final class AXElementSnapshot {
   init(
     frame: NSRect,
     pid: pid_t,
+    handle: AXWritableElement? = nil,
     role: String? = nil,
     label: String? = nil,
     value: AccessibilityAttributeValue? = nil,
+    stringValue: String? = nil,
     identifier: String? = nil,
     title: String? = nil,
     help: String? = nil,
@@ -160,9 +184,11 @@ final class AXElementSnapshot {
   ) {
     self.frame = frame
     self.pid = pid
+    self.handle = handle
     self.role = role
     self.label = label
     self.value = value
+    self.stringValue = stringValue
     self.identifier = identifier
     self.title = title
     self.help = help
@@ -179,6 +205,26 @@ final class AXElementSnapshot {
     self.hittability = hittability
     self.explainedBy = explainedBy
     self.children = children
+  }
+}
+
+// MARK: - Searching
+
+extension AXElementSnapshot {
+
+  /// The value of `key`, as a search compares it. Read only when the snapshot's plan named the key.
+  func searchableValue(for key: AXSearchableKey) -> String? {
+    switch key {
+    case .label: label
+    case .uniqueID: identifier
+    case .value: stringValue
+    case .title: title
+    case .role: role
+    case .roleDescription: roleDescription
+    case .subrole: subrole
+    case .help: help
+    case .placeholder: placeholder
+    }
   }
 }
 
@@ -203,7 +249,7 @@ extension AXElementSnapshot {
     let frame = element.axFrame()
     let role = fetch(.role) { element.axRole() }
     let label = fetch(.label) { element.axLabel() }
-    let value = fetch(.value) { AccessibilityAttributeValue(element.axValue()) }
+    let rawValue = fetch(.value) { element.axValue() }
     let identifier = fetch(.identifier) { element.axIdentifier() }
     let title = fetch(.title) { element.axTitle() }
     let help = fetch(.help) { element.axHelp() }
@@ -230,9 +276,11 @@ extension AXElementSnapshot {
     return AXElementSnapshot(
       frame: frame,
       pid: element.axTranslationPid,
+      handle: element as? AXWritableElement,
       role: role,
       label: label,
-      value: value,
+      value: AccessibilityAttributeValue(rawValue),
+      stringValue: rawValue as? String,
       identifier: identifier,
       title: title,
       help: help,

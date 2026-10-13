@@ -1711,7 +1711,7 @@ final class SimulatorAccessibilityCommandsTests: XCTestCase {
     XCTAssertEqual(result.diagnostics?.unmatchedValues, ["App Window", "Outer"])
   }
 
-  func testSearchStopsReadingAtTheFirstMatch() async throws {
+  func testSearchReadsTheTreeToItsDepthBeforeMatching() async throws {
     let shallow = AccessibilityTestElementBuilder.button(
       withLabel: "OK", identifier: "ok_button", frame: NSRect(x: 20, y: 750, width: 150, height: 44))
     let nested = AccessibilityTestElementBuilder.button(
@@ -1723,9 +1723,9 @@ final class SimulatorAccessibilityCommandsTests: XCTestCase {
       for: .marker(value: "nested", key: .label, depth: 10, ignoresCase: false))
     defer { element.close() }
 
-    XCTAssertFalse(
-      (shallow.accessedProperties as? Set<String>)?.contains("accessibilityLabel") ?? true,
-      "the sibling after the match is never read")
+    XCTAssertTrue(
+      (shallow.accessedProperties as? Set<String>)?.contains("accessibilityLabel") ?? false,
+      "the sibling after the match is read with the rest of the tree; the match is still the first one")
   }
 
   func testSearchMissRecordsEveryValueItVisited() async throws {
