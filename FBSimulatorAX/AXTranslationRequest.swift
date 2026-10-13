@@ -129,6 +129,25 @@ final class AXTranslationRequest {
     }
   }
 
+  // MARK: - Reading
+
+  /// Reads `element` against `plan`, raw over this request's transport when `reads` asks for it and the
+  /// element has a translation to name, and through the element otherwise.
+  func snapshot(of element: AXPlatformElement, plan: AXReadPlan, reads: AXTranslatorReads) -> AXElementSnapshot {
+    guard reads == .raw, let transport, let reference = element.axTranslationReference else {
+      return AXElementSnapshot.read(element, plan: plan, token: token, mode: reads)
+    }
+    let translator = self.translator
+    let reader = AXRawTranslationReader(
+      transport: transport, clientType: clientType, timeout: requestTimeoutSeconds, collector: collector, token: token
+    ) { reference in
+      // Sent by message: the translation is typed by protocol here, so test doubles can stand in for it.
+      translator?.perform(NSSelectorFromString("macPlatformElementFromTranslation:"), with: reference)?
+        .takeUnretainedValue() as? AXWritableElement
+    }
+    return reader.read(reference, plan: plan)
+  }
+
   // MARK: - A single named element
 
   /// Serializes the one element a caller named — by point, or by a marker match. The element itself is
@@ -137,9 +156,9 @@ final class AXTranslationRequest {
     let walkStart = CFAbsoluteTimeGetCurrent()
     collector.markWalkStart()
     let serialization = AXSerialization(options)
-    let snapshot = AXElementSnapshot.read(
-      element, plan: serialization.readPlan(depth: serialization.nested ? .unlimited : .limited(0)), token: token,
-      mode: options.translatorReads)
+    let snapshot = snapshot(
+      of: element, plan: serialization.readPlan(depth: serialization.nested ? .unlimited : .limited(0)),
+      reads: options.translatorReads)
     var elements = AXNodeSerializer.formattedDescription(ofSnapshot: snapshot, serialization: serialization, collector: collector)
     if let children = elements.children {
       elements.children = options.filter.apply(to: children, screen: nil)
@@ -155,8 +174,7 @@ final class AXTranslationRequest {
     collector.markWalkStart()
 
     let serialization = AXSerialization(options)
-    let snapshot = AXElementSnapshot.read(
-      element, plan: serialization.readPlan(depth: .unlimited), token: token, mode: options.translatorReads)
+    let snapshot = snapshot(of: element, plan: serialization.readPlan(depth: .unlimited), reads: options.translatorReads)
     let screen = AXReadScreen(display: display, rootFrame: snapshot.frame)
     let seenPids = SeenPIDs()
 
@@ -249,8 +267,7 @@ final class AXTranslationRequest {
       }
 
       // One read serves both the duplicate check and the serialization.
-      let hit = AXElementSnapshot.read(
-        hitElement, plan: AXReadPlan(keys: keysWithFrame, depth: .limited(0)), token: token, mode: reads)
+      let hit = snapshot(of: hitElement, plan: AXReadPlan(keys: keysWithFrame, depth: .limited(0)), reads: reads)
       let hitFrame = hit.frame
       let hitFrameKey = "\(hitFrame.origin.x),\(hitFrame.origin.y),\(hitFrame.size.width),\(hitFrame.size.height)"
       if discoveredFrames.contains(hitFrameKey) {

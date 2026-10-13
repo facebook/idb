@@ -99,6 +99,29 @@ final class AXTranslationSmokeTests: ProvidedSimulatorTestCase {
     }
   }
 
+  /// The raw read must report exactly what the batched read through the translator's platform element
+  /// reports, on both trees, in fewer round trips: the platform element adds requests of its own that the raw
+  /// read folds into each element's one request.
+  func testRawReadMatchesBatchedReadInFewerRoundTrips() async throws {
+    try await launchApplication()
+    _ = try await describeFrontmost()
+
+    let automation = try simulator.uiAutomation(backend: .accessibility)
+    for clientType in [AXClientType.noClient, .xctest] {
+      var roundTrips: [AXTranslatorReads: Int64] = [:]
+      func read(_ reads: AXTranslatorReads) async throws -> [AccessibilityDocumentElement] {
+        var options = AccessibilityRequestOptions(keys: Self.comparedKeys, enableProfiling: true, clientType: clientType)
+        options.translatorReads = reads
+        let response = try await automation.describe(.frontmost, options: options)
+        roundTrips[reads] = try XCTUnwrap(response.profilingData?.translatorProfile?.xpcCallCount)
+        return response.elements.elements
+      }
+      try await assertSettledReadsAgree(
+        expected: { try await read(.batched) }, actual: { try await read(.raw) }, "client \(clientType)")
+      XCTAssertLessThan(try XCTUnwrap(roundTrips[.raw]), try XCTUnwrap(roundTrips[.batched]), "client \(clientType)")
+    }
+  }
+
   /// Talking to CoreSimulatorBridge's accessibility service directly must read exactly what CoreSimulator's
   /// own client reads.
   func testTheBridgeTransportReadsWhatCoreSimulatorsClientReads() async throws {

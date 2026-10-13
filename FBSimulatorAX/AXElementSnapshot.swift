@@ -245,7 +245,9 @@ extension AXElementSnapshot {
     element.axSetBridgeDelegateToken(token)
     let fields: Fields =
       switch mode {
-      case .batched: Fields(batchedFrom: element, plan: plan)
+      // A raw read sends over the read's transport, which an element does not carry;
+      // `AXTranslationRequest.snapshot(of:plan:reads:)` reads raw.
+      case .batched, .raw: Fields(batchedFrom: element, plan: plan)
       case .perAttribute: Fields(accessorsOf: element, plan: plan)
       }
     let children: [AXElementSnapshot] =

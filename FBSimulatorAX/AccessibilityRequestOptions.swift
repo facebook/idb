@@ -132,6 +132,9 @@ public enum AXTranslatorReads: String, Sendable, CaseIterable {
   case batched
   /// One request per attribute, through the element's own accessors: the reads a batch replaces.
   case perAttribute = "per-attribute"
+  /// One multiple-attribute request per element, sent and decoded without the translator's platform
+  /// element, which adds requests of its own to a batch.
+  case raw
 }
 
 /// The traversal a read asks for, or `auto` to let the serving backend choose. Kept apart from
@@ -250,7 +253,11 @@ public struct AccessibilityRequestOptions: Sendable {
 
   /// How the accessibility-translation backend fetches each element's attributes. Always `.batched` for a
   /// caller outside idb; package-scoped so idb's smoke suite can compare against the per-attribute reads.
-  package var translatorReads: AXTranslatorReads = .batched
+  package var translatorReads: AXTranslatorReads = Self.defaultTranslatorReads
+
+  /// The fetch a read makes when nothing chose another: every read's default, and what element reads —
+  /// marker search, frames, value checks — always make, since they take no options.
+  package static let defaultTranslatorReads: AXTranslatorReads = .batched
 
   /// The assistive client the read's translator requests claim to come from, or nil for the default.
   /// Only `resolvedClientType` should be read below this layer.

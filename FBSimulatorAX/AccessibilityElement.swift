@@ -92,8 +92,9 @@ final class AccessibilityElement {
   /// Reads this element against `plan` on the translator's work queue.
   private func read(_ plan: AXReadPlan) async throws -> AXElementSnapshot {
     let element = self.element
-    let token = request.token
-    return try await dispatcher.performSerialized { AXElementSnapshot.read(element, plan: plan, token: token) }
+    let request = self.request
+    let reads = AccessibilityRequestOptions.defaultTranslatorReads
+    return try await dispatcher.performSerialized { request.snapshot(of: element, plan: plan, reads: reads) }
   }
 
   // MARK: - Actions

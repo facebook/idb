@@ -43,9 +43,24 @@ protocol AXPlatformElement: AnyObject {
 
   /// The pid of the backing translation object (0 when absent).
   var axTranslationPid: pid_t { get }
+  /// The backing translation object, which a raw read names the element by; nil when absent.
+  var axTranslationReference: AXTranslationReference? { get }
   /// Sets the backing translation object's bridge-delegate token (no-op when absent).
   func axSetBridgeDelegateToken(_ token: String?)
 }
+
+/// A translator element's identity on the wire: what a raw request names, and what an element's children
+/// answer with. `AXPTranslationObject` is a private-framework class tests cannot subclass; the protocol admits
+/// test doubles.
+protocol AXTranslationReference: AnyObject {
+  var pid: pid_t { get }
+  var objectID: UInt64 { get }
+  // Spelled as the private header imports it, so `AXPTranslationObject` conforms as declared.
+  // swiftlint:disable:next implicitly_unwrapped_optional
+  var bridgeDelegateToken: String! { get set }
+}
+
+extension AXPTranslationObject: AXTranslationReference {}
 
 /// The mutating action surface — press, scroll, set-value — layered on the read surface.
 /// Only the legacy CoreSimulator element (`AXPMacPlatformElement`) and its test double
@@ -177,6 +192,7 @@ extension AXPMacPlatformElement: AXPlatformElement {
   }
 
   var axTranslationPid: pid_t { translation?.pid ?? 0 }
+  var axTranslationReference: AXTranslationReference? { translation }
   func axSetBridgeDelegateToken(_ token: String?) { translation?.bridgeDelegateToken = token }
 }
 

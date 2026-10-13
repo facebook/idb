@@ -9,6 +9,7 @@
 import AppKit
 import FBControlCore
 @testable import FBSimulatorAX
+import FBSimulatorBridgeProtocol
 @testable import FBSimulatorControl
 import Foundation
 import ObjectiveC
@@ -20,9 +21,16 @@ import ObjectiveC
 // runtime. Only the substituted surface is `@objc`; the fixture and call-recording members
 // are read from Swift by the tests themselves and stay invisible to Objective-C.
 
-class AXPTranslationObjectDouble: NSObject {
-  @objc var bridgeDelegateToken: String?
+class AXPTranslationObjectDouble: NSObject, AXTranslationReference {
+  @objc var bridgeDelegateToken: String!
   @objc var pid: pid_t = 12345
+  @objc var objectID: UInt64 = 0
+
+  convenience init(pid: pid_t, objectID: UInt64) {
+    self.init()
+    self.pid = pid
+    self.objectID = objectID
+  }
 }
 
 // MARK: - AXPMacPlatformElement Double
@@ -209,6 +217,7 @@ extension AXPMacPlatformElementDouble: AXPlatformElement {
     return values.filter { names.contains($0.key) }
   }
   var axTranslationPid: pid_t { translation.pid }
+  var axTranslationReference: AXTranslationReference? { translation }
   func axSetBridgeDelegateToken(_ token: String?) { translation.bridgeDelegateToken = token }
 }
 
@@ -282,6 +291,7 @@ final class AXSnapshotPlatformElementDouble: AXPlatformElement {
     return values.filter { names.contains($0.key) }
   }
   var axTranslationPid: pid_t { snapshot.pid }
+  var axTranslationReference: AXTranslationReference? { nil }
   func axSetBridgeDelegateToken(_ token: String?) {}
 }
 
@@ -316,6 +326,54 @@ final class AXTranslationTransportDouble: AXTranslationTransport, @unchecked Sen
       return nil
     }
     response.resultData = resultData
+    return response
+  }
+}
+
+// MARK: - Raw translator transport Double
+
+/// Answers multiple-attribute requests as the accessibility service does: from a fixture of each element's
+/// values, keyed by the requested translation's object ID, carrying only the attributes asked for. Records
+/// every request.
+final class AXRawTranslationTransportDouble: AXTranslationTransport, @unchecked Sendable {
+  let kind = AXTranslationTransportKind.bridge
+  private let lock = NSLock()
+  private var _requests: [AXPTranslatorRequest] = []
+  private let elements: [UInt64: [BridgeAXTranslatorAttribute: Any]]
+
+  /// An object ID the fixture has no entry for is not answered, as a timed-out send is not.
+  init(elements: [UInt64: [BridgeAXTranslatorAttribute: Any]]) {
+    self.elements = elements
+  }
+
+  var requests: [AXPTranslatorRequest] {
+    lock.withLock { _requests }
+  }
+
+  /// The object ID each request named, in order.
+  var requestedObjectIDs: [UInt64] {
+    requests.compactMap { (($0 as NSObject).value(forKey: "translation") as? AXPTranslationObjectDouble)?.objectID }
+  }
+
+  /// The attributes each request asked for, in order.
+  var requestedAttributes: [[Int]] {
+    requests.map { (($0.parameters?["attributes"] as? [NSNumber]) ?? []).map(\.intValue) }
+  }
+
+  func send(_ request: AXPTranslatorRequest, timeout: TimeInterval) -> AXPTranslatorResponse? {
+    lock.withLock { _requests.append(request) }
+    guard let translation = (request as NSObject).value(forKey: "translation") as? AXPTranslationObjectDouble,
+      let values = elements[translation.objectID],
+      let response = AXPTranslatorResponse.empty() as? AXPTranslatorResponse
+    else {
+      return nil
+    }
+    let asked = Set(((request.parameters?["attributes"] as? [NSNumber]) ?? []).map(\.intValue))
+    let answer = NSMutableDictionary()
+    for (attribute, value) in values where asked.contains(attribute.rawValue) {
+      answer[NSNumber(value: attribute.rawValue)] = value
+    }
+    response.resultData = answer
     return response
   }
 }
