@@ -20,7 +20,11 @@ const FRAMEWORKS = [
   { repoPath: 'FBSimulatorBridgeProtocol', id: 'fbsimulatorbridgeprotocol' },
   { repoPath: 'FBSimulatorControl', id: 'fbsimulatorcontrol' },
   { repoPath: 'FBSimulatorVideo', id: 'fbsimulatorvideo' },
-  { repoPath: 'FBSimulatorAX', id: 'fbsimulatorax' },
+  {
+    repoPath: 'FBSimulatorAX',
+    id: 'fbsimulatorax',
+    sidebarLabel: 'FBSimulatorAX: Accessibility & UI Automation',
+  },
   { repoPath: 'FBSimulatorXCTest', id: 'fbsimulatorxctest' },
   { repoPath: 'FBSimulatorCodeInjection', id: 'fbsimulatorcodeinjection' },
   { repoPath: 'FBDeviceControl', id: 'fbdevicecontrol' },
@@ -30,7 +34,7 @@ const FRAMEWORKS = [
 const websiteDir = path.join(__dirname, '..');
 const repoRoot = path.join(websiteDir, '..');
 
-for (const { repoPath, id } of FRAMEWORKS) {
+for (const { repoPath, id, sidebarLabel } of FRAMEWORKS) {
   const readmePath = path.join(repoRoot, repoPath, 'README.md');
   let text = fs.readFileSync(readmePath, 'utf8');
 
@@ -53,6 +57,8 @@ for (const { repoPath, id } of FRAMEWORKS) {
     '---',
     `id: ${id}`,
     `title: ${title}`,
+    // A label naming what the framework is for, where its name alone does not say.
+    ...(sidebarLabel ? [`sidebar_label: ${JSON.stringify(sidebarLabel)}`] : []),
     '---',
     '',
     `{/* Generated from ${repoPath}/README.md by scripts/generate-framework-docs.js — edit the README, not this file. */}`,

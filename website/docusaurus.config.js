@@ -118,7 +118,10 @@ module.exports = {
           { from: '/docs/video', to: '/idb/video' },
           { from: '/docs/test-execution', to: '/idb/test-execution' },
           { from: '/docs/file-containers', to: '/idb/file-containers' },
-          { from: '/docs/accessibility', to: '/idb/accessibility' },
+          {
+            from: ['/docs/accessibility', '/idb/accessibility', '/docs/idb/accessibility'],
+            to: '/idb/fbsimulatorax',
+          },
           { from: '/idb/xctestbootstrap', to: '/idb/fbxctestcore' },
           { from: '/idb/fbaxcore', to: '/idb/fbsimulatorax' },
         ],
