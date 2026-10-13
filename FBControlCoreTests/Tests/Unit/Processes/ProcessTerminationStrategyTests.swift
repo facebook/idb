@@ -7,7 +7,7 @@
 
 @testable import FBControlCore
 import Foundation
-import XCTest
+import Testing
 
 /// Reports every process as absent, so the existence check fails before any signal is sent.
 private final class AbsentProcessFetcher: ProcessFetcher {
@@ -16,25 +16,19 @@ private final class AbsentProcessFetcher: ProcessFetcher {
   }
 }
 
-final class ProcessTerminationStrategyTests: XCTestCase {
+@Suite(.serialized)
+final class ProcessTerminationStrategyTests {
 
   /// Beyond the default `kern.maxproc`, so no process can ever hold it and `kill` fails with ESRCH.
   private let unallocatablePID: pid_t = 999_999
 
-  private var logger: ControlCoreLoggerDouble!
+  private let logger = ControlCoreLoggerDouble()
   private var spawned: [Process] = []
 
-  override func setUp() {
-    super.setUp()
-    logger = ControlCoreLoggerDouble()
-  }
-
-  override func tearDown() {
+  deinit {
     for process in spawned where process.isRunning {
       process.terminate()
     }
-    spawned = []
-    super.tearDown()
   }
 
   // MARK: - Helpers
@@ -70,48 +64,54 @@ final class ProcessTerminationStrategyTests: XCTestCase {
 
   // MARK: - Tests
 
-  func testFailsWithoutSignallingWhenTheProcessIsNotFound() async throws {
+  @Test
+  func failsWithoutSignallingWhenTheProcessIsNotFound() async throws {
     let process = try spawnBlockedProcess()
     let strategy = strategy(options: [.checkProcessExistsBeforeSignal], processFetcher: AbsentProcessFetcher())
 
     do {
       try await strategy.killProcessIdentifier(process.processIdentifier)
-      XCTFail("Expected the kill to fail for a process the fetcher does not report")
+      Issue.record("Expected the kill to fail for a process the fetcher does not report")
     } catch {
       guard case .processDoesNotExist(let processIdentifier)? = terminationError(error) else {
-        return XCTFail("Unexpected error \(error)")
+        Issue.record("Unexpected error \(error)")
+        return
       }
-      XCTAssertEqual(processIdentifier, process.processIdentifier)
+      #expect(processIdentifier == process.processIdentifier)
     }
 
-    XCTAssertTrue(process.isRunning)
+    #expect(process.isRunning)
   }
 
-  func testFailsWhenTheSignalCannotBeDelivered() async throws {
+  @Test
+  func failsWhenTheSignalCannotBeDelivered() async throws {
     let strategy = strategy(options: [])
 
     do {
       try await strategy.killProcessIdentifier(unallocatablePID)
-      XCTFail("Expected the kill of an unallocatable process identifier to fail")
+      Issue.record("Expected the kill of an unallocatable process identifier to fail")
     } catch {
       guard case .killFailed(let processIdentifier, _)? = terminationError(error) else {
-        return XCTFail("Unexpected error \(error)")
+        Issue.record("Unexpected error \(error)")
+        return
       }
-      XCTAssertEqual(processIdentifier, unallocatablePID)
+      #expect(processIdentifier == unallocatablePID)
     }
   }
 
-  func testSignalsWithoutWaitingWhenDeathIsNotChecked() async throws {
+  @Test
+  func signalsWithoutWaitingWhenDeathIsNotChecked() async throws {
     let process = try spawnBlockedProcess()
     let strategy = strategy(options: [])
 
     try await strategy.killProcessIdentifier(process.processIdentifier)
 
     process.waitUntilExit()
-    XCTAssertEqual(process.terminationReason, .uncaughtSignal)
+    #expect(process.terminationReason == .uncaughtSignal)
   }
 
-  func testResolvesOnceTheProcessLeavesTheProcessTable() async throws {
+  @Test
+  func resolvesOnceTheProcessLeavesTheProcessTable() async throws {
     let process = try spawnBlockedProcess()
     let strategy = strategy(options: [.checkProcessExistsBeforeSignal, .checkDeathAfterSignal])
     // The signalled child is a zombie — and so still in the process table — until it is reaped.
@@ -121,6 +121,6 @@ final class ProcessTerminationStrategyTests: XCTestCase {
 
     try await strategy.killProcessIdentifier(process.processIdentifier)
 
-    XCTAssertNil(ProcessFetcher().processInfo(for: process.processIdentifier))
+    #expect(ProcessFetcher().processInfo(for: process.processIdentifier) == nil)
   }
 }
