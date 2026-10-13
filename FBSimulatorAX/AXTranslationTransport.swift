@@ -31,7 +31,14 @@ protocol AXTranslationTransport: Sendable {
 }
 
 /// Sends translator requests through CoreSimulator's own client,
-/// `-[SimDevice sendAccessibilityRequestAsync:completionQueue:completionHandler:]`.
+/// `-[SimDevice sendAccessibilityRequestAsync:completionQueue:completionHandler:]`. The fallback when
+/// `CoreSimulatorBridgeAXTranslationTransport` cannot reach the service.
+///
+/// CoreSimulator's client also forwards every notification the bridge pushes to
+/// `-[AXPTranslator handleNotification:data:associatedObject:]`, on a CoreSimulator queue — outside the serial
+/// queue that otherwise keeps every touch of the translator single-threaded. Nothing in idb asks for those
+/// notifications and the client offers no way to decline them, which is one reason the bridge transport is
+/// preferred: it receives the same pushes and drops them.
 final class CoreSimulatorAXTranslationTransport: AXTranslationTransport, @unchecked Sendable {
   let kind = AXTranslationTransportKind.coreSimulator
 
