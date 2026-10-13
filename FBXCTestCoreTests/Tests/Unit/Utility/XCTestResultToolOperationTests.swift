@@ -7,7 +7,8 @@
 
 import FBControlCore
 @testable import FBXCTestCore
-import XCTest
+import Foundation
+import Testing
 
 /// Pins how `XCTestResultToolOperation` launches `xcrun xcresulttool` and what a
 /// caller sees when it fails: which exit-code policy applies, and what reaches an
@@ -16,21 +17,19 @@ import XCTest
 /// Nothing here asserts a desirable design. Each case records what callers observe
 /// today so that a later replacement has to either reproduce it or change it
 /// deliberately.
-final class XCTestResultToolOperationTests: XCTestCase {
+@Suite(.serialized)
+final class XCTestResultToolOperationTests {
 
-  private var temporaryDirectory: URL!
+  private let temporaryDirectory: URL
 
-  override func setUpWithError() throws {
-    try super.setUpWithError()
+  init() throws {
     temporaryDirectory = URL(fileURLWithPath: NSTemporaryDirectory())
       .appendingPathComponent("XCTestResultToolOperationTests-\(UUID().uuidString)", isDirectory: true)
     try FileManager.default.createDirectory(at: temporaryDirectory, withIntermediateDirectories: true)
   }
 
-  override func tearDownWithError() throws {
+  deinit {
     try? FileManager.default.removeItem(at: temporaryDirectory)
-    temporaryDirectory = nil
-    try super.tearDownWithError()
   }
 
   private var absentResultBundlePath: String {
@@ -39,49 +38,55 @@ final class XCTestResultToolOperationTests: XCTestCase {
 
   // MARK: - Decoding
 
-  func testAJSONObjectDecodesToItsFields() throws {
+  @Test
+  func aJSONObjectDecodesToItsFields() throws {
     let actions = try XCTestResultToolOperation.json(from: #"{"actions": {"_values": []}}"#)["actions"] as? [String: Any]
-    XCTAssertEqual((actions?["_values"] as? [Any])?.count, 0)
+    #expect((actions?["_values"] as? [Any])?.count == 0)
   }
 
-  func testOutputThatIsNotJSONIsRejected() {
-    XCTAssertThrowsError(try XCTestResultToolOperation.json(from: "xcresulttool: error: something went wrong")) { error in
-      XCTAssertTrue(error.localizedDescription.contains("something went wrong"), error.localizedDescription)
-    }
+  @Test
+  func outputThatIsNotJSONIsRejected() {
+    let error = #expect(throws: (any Error).self) { try XCTestResultToolOperation.json(from: "xcresulttool: error: something went wrong") }
+    let description = error?.localizedDescription ?? ""
+    #expect(description.contains("something went wrong"), "\(description)")
   }
 
-  func testAJSONArrayIsRejected() {
-    XCTAssertThrowsError(try XCTestResultToolOperation.json(from: "[1, 2]"))
+  @Test
+  func aJSONArrayIsRejected() {
+    #expect(throws: (any Error).self) { try XCTestResultToolOperation.json(from: "[1, 2]") }
   }
 
   // MARK: - Exit code policy
 
-  func testGettingJSONFailsWhenTheToolExitsNonZero() async throws {
+  @Test
+  func gettingJSONFailsWhenTheToolExitsNonZero() async throws {
     do {
       _ = try await XCTestResultToolOperation.getJSON(from: absentResultBundlePath, forId: nil, logger: nil)
-      XCTFail("Expected reading an absent result bundle to fail")
+      Issue.record("Expected reading an absent result bundle to fail")
     } catch {
       // Every entry point launches with `[0]` as the only acceptable exit code, so a
       // failure surfaces as the launcher's exit-code rejection rather than as
       // anything `xcresulttool` said about the request.
-      XCTAssertTrue(error.localizedDescription.contains("is not acceptable"), error.localizedDescription)
+      #expect(error.localizedDescription.contains("is not acceptable"), "\(error.localizedDescription)")
     }
   }
 
-  func testExportingAFileFailsWhenTheToolExitsNonZero() async throws {
+  @Test
+  func exportingAFileFailsWhenTheToolExitsNonZero() async throws {
     do {
       _ = try await XCTestResultToolOperation.exportFile(
         from: absentResultBundlePath,
         to: temporaryDirectory.appendingPathComponent("out.bin").path,
         forId: "0~abcdef",
         logger: nil)
-      XCTFail("Expected exporting from an absent result bundle to fail")
+      Issue.record("Expected exporting from an absent result bundle to fail")
     } catch {
-      XCTAssertTrue(error.localizedDescription.contains("is not acceptable"), error.localizedDescription)
+      #expect(error.localizedDescription.contains("is not acceptable"), "\(error.localizedDescription)")
     }
   }
 
-  func testAnUnrecognizedScreenshotEncodingIsMaskedByAnExportFailure() async throws {
+  @Test
+  func anUnrecognizedScreenshotEncodingIsMaskedByAnExportFailure() async throws {
     do {
       _ = try await XCTestResultToolOperation.exportJPEG(
         from: absentResultBundlePath,
@@ -89,25 +94,27 @@ final class XCTestResultToolOperationTests: XCTestCase {
         forId: "0~abcdef",
         type: "public.png",
         logger: nil)
-      XCTFail("Expected the failing export to throw")
+      Issue.record("Expected the failing export to throw")
     } catch {
       // The export runs first, so an unusable result bundle masks the encoding
       // check entirely — the caller never learns the encoding was wrong.
-      XCTAssertTrue(error.localizedDescription.contains("is not acceptable"), error.localizedDescription)
-      XCTAssertFalse(error.localizedDescription.contains("Unrecognized XCTest screenshot encoding"), error.localizedDescription)
+      #expect(error.localizedDescription.contains("is not acceptable"), "\(error.localizedDescription)")
+      #expect(!error.localizedDescription.contains("Unrecognized XCTest screenshot encoding"), "\(error.localizedDescription)")
     }
   }
 
   // MARK: - Logging
 
-  func testASuppliedLoggerReceivesBothTheLaunchAndTheToolsStandardError() async throws {
+  @Test
+  func aSuppliedLoggerReceivesBothTheLaunchAndTheToolsStandardError() async throws {
     // What the tool writes to stderr for this exact invocation, captured by running
     // it directly. Asserting against this rather than a hardcoded message keeps the
     // case pinned to stderr forwarding itself, whatever the current toolchain emits.
     let capturedStdErr = try await standardError(
       ofDirectlyRunning: ["xcresulttool", "get", "--path", absentResultBundlePath, "--format", "json"])
     guard !capturedStdErr.isEmpty else {
-      return XCTFail("xcresulttool wrote nothing to stderr for a failing get; this case needs a stderr-producing invocation to pin forwarding")
+      Issue.record("xcresulttool wrote nothing to stderr for a failing get; this case needs a stderr-producing invocation to pin forwarding")
+      return
     }
 
     // A logger is the only way to see the tool's stderr from these entry points:
@@ -122,7 +129,7 @@ final class XCTestResultToolOperationTests: XCTestCase {
     }
 
     let messages = logger.messages
-    XCTAssertTrue(
+    #expect(
       messages.contains { $0.contains("Launched with pid") },
       "Lifecycle logging should announce the launch: \(messages)")
 
@@ -151,10 +158,10 @@ final class XCTestResultToolOperationTests: XCTestCase {
         index += 1
       }
     }
-    XCTAssertTrue(
+    #expect(
       remainder.isEmpty,
       "The whole of the tool's stderr should reach the logger; never received: \(remainder) given: \(messages)")
-    XCTAssertTrue(
+    #expect(
       duplicated.isEmpty,
       "Every stderr chunk should reach the logger exactly once; these arrived twice: \(duplicated)")
   }
