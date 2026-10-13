@@ -9,7 +9,7 @@
 import FBControlCore
 import Foundation
 import IDBGRPCSwift
-import XCTest
+import Testing
 
 // SAFETY: `attempts` and `failuresRemaining` are only touched under `lock`.
 private final class RecordingSender: @unchecked Sendable {
@@ -39,9 +39,11 @@ private final class RecordingSender: @unchecked Sendable {
   }
 }
 
-final class LaunchMethodHandlerTests: XCTestCase {
+@Suite
+struct LaunchMethodHandlerTests {
 
-  func testOutputIsForwardedInOrderWithItsInterface() async throws {
+  @Test
+  func outputIsForwardedInOrderWithItsInterface() async throws {
     let sender = RecordingSender()
     let consumer = LaunchMethodHandler.pipeOutput(interface: .stderr) { try sender.send($0) }
 
@@ -50,11 +52,12 @@ final class LaunchMethodHandlerTests: XCTestCase {
     consumer.consumeEndOfFile()
     try await consumer.awaitFinishedConsuming()
 
-    XCTAssertEqual(sender.attempted.map(\.output.data), [Data("one".utf8), Data("two".utf8)])
-    XCTAssertEqual(sender.attempted.map(\.output.interface), [.stderr, .stderr])
+    #expect(sender.attempted.map(\.output.data) == [Data("one".utf8), Data("two".utf8)])
+    #expect(sender.attempted.map(\.output.interface) == [.stderr, .stderr])
   }
 
-  func testAFailedSendStopsLaterSends() async throws {
+  @Test
+  func aFailedSendStopsLaterSends() async throws {
     let sender = RecordingSender(failingFirst: 1)
     let consumer = LaunchMethodHandler.pipeOutput(interface: .stdout) { try sender.send($0) }
 
@@ -63,6 +66,6 @@ final class LaunchMethodHandlerTests: XCTestCase {
     consumer.consumeEndOfFile()
     try await consumer.awaitFinishedConsuming()
 
-    XCTAssertEqual(sender.attempted.map(\.output.data), [Data("one".utf8)])
+    #expect(sender.attempted.map(\.output.data) == [Data("one".utf8)])
   }
 }
