@@ -21,6 +21,8 @@ targets:
         embed: false
       - framework: ../Build/Products/Release/libFBDeviceControl.a
         embed: false
+      - framework: ../Build/Products/Release/libFBProfilingCore.a
+        embed: false
       - framework: ../Build/Products/Release/libFBSimulatorAX.a
         embed: false
       - framework: ../Build/Products/Release/libFBSimulatorBridgeProtocol.a
@@ -28,6 +30,8 @@ targets:
       - framework: ../Build/Products/Release/libFBSimulatorCodeInjection.a
         embed: false
       - framework: ../Build/Products/Release/libFBSimulatorControl.a
+        embed: false
+      - framework: ../Build/Products/Release/libFBSimulatorProfiling.a
         embed: false
       - framework: ../Build/Products/Release/libFBSimulatorVideo.a
         embed: false
@@ -125,6 +129,8 @@ targets:
         embed: false
       - framework: ../Build/Products/Release/libFBDeviceControl.a
         embed: false
+      - framework: ../Build/Products/Release/libFBProfilingCore.a
+        embed: false
       - framework: ../Build/Products/Release/libFBSimulatorAX.a
         embed: false
       - framework: ../Build/Products/Release/libFBSimulatorBridgeProtocol.a
@@ -132,6 +138,8 @@ targets:
       - framework: ../Build/Products/Release/libFBSimulatorCodeInjection.a
         embed: false
       - framework: ../Build/Products/Release/libFBSimulatorControl.a
+        embed: false
+      - framework: ../Build/Products/Release/libFBSimulatorProfiling.a
         embed: false
       - framework: ../Build/Products/Release/libFBSimulatorVideo.a
         embed: false
@@ -163,6 +171,8 @@ targets:
         embed: false
       - framework: ../Build/Products/Release/libFBDeviceControl.a
         embed: false
+      - framework: ../Build/Products/Release/libFBProfilingCore.a
+        embed: false
       - framework: ../Build/Products/Release/libFBSimulatorAX.a
         embed: false
       - framework: ../Build/Products/Release/libFBSimulatorBridgeProtocol.a
@@ -170,6 +180,8 @@ targets:
       - framework: ../Build/Products/Release/libFBSimulatorCodeInjection.a
         embed: false
       - framework: ../Build/Products/Release/libFBSimulatorControl.a
+        embed: false
+      - framework: ../Build/Products/Release/libFBSimulatorProfiling.a
         embed: false
       - framework: ../Build/Products/Release/libFBSimulatorVideo.a
         embed: false

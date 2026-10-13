@@ -23,6 +23,7 @@ service CompanionService {
   rpc log(LogRequest) returns (stream LogResponse) {}
   rpc xctrace_record(stream XctraceRecordRequest)
       returns (stream XctraceRecordResponse) {}
+  rpc profile(stream ProfileRequest) returns (stream ProfileResponse) {}
   // Interaction
   rpc accessibility_info(AccessibilityInfoRequest)
       returns (AccessibilityInfoResponse) {}
@@ -1534,3 +1535,262 @@ message DapResponse {
 message SimulateMemoryWarningRequest {}
 
 message SimulateMemoryWarningResponse {}
+
+// Sent Start, then optionally Stop. Stop ends a `resources` profile, or a
+// `trace` before its duration with what it recorded so far; the other profilers
+// run to completion.
+message ProfileRequest {
+  message Target {
+    oneof target {
+      uint64 pid = 1;
+      // The running process of an installed application.
+      string bundle_id = 2;
+      // Launches the application, so the profile covers its startup. Only
+      // `trace` supports it.
+      string launch_bundle_id = 3;
+      // Every process on the target. Only `trace` supports it.
+      bool all_processes = 4;
+    }
+  }
+  message Leaks {}
+  message Memgraph {}
+  message Heap {}
+  message Sample {
+    uint32 seconds = 1;
+  }
+  message Vmmap {}
+  message Footprint {}
+  message Resources {
+    enum Scope {
+      APP = 0;
+      APP_AND_HELPERS = 1;
+    }
+    uint64 interval_ms = 1;
+    Scope scope = 2;
+  }
+  message Trace {
+    string template = 1;
+    // Empty exports the tables the template is known for, such as
+    // `time-profile` for Time Profiler.
+    repeated string schemas = 2;
+    double duration_seconds = 3;
+    // The most rows of each table to report; zero reports every row.
+    uint64 row_limit = 4;
+  }
+  message Start {
+    Target target = 1;
+    oneof kind {
+      Leaks leaks = 2;
+      Memgraph memgraph = 3;
+      Heap heap = 4;
+      Sample sample = 5;
+      Vmmap vmmap = 6;
+      Footprint footprint = 7;
+      Resources resources = 8;
+      Trace trace = 9;
+    }
+    // Streams the file the profiler wrote, such as the memory graph or the
+    // trace, as a gzipped tar.
+    bool include_artifact = 10;
+  }
+  message Stop {}
+  oneof control {
+    Start start = 1;
+    Stop stop = 2;
+  }
+}
+
+// Any samples, then exactly one result, then the artifact in chunks if it was
+// requested.
+message ProfileResponse {
+  message Result {
+    // Unset for `resources`, which reports through samples instead.
+    ProfileReport report = 1;
+    // What the tool wrote, unparsed.
+    bytes tool_output = 2;
+  }
+  oneof output {
+    ProfileResourceSample sample = 1;
+    Result result = 2;
+    Payload artifact = 3;
+  }
+}
+
+message ProfileReport {
+  oneof report {
+    ProfileLeaksReport leaks = 1;
+    ProfileHeapReport heap = 2;
+    ProfileSampleReport sample = 3;
+    ProfileVmmapReport vmmap = 4;
+    ProfileFootprintReport footprint = 5;
+    ProfileTraceReport trace = 6;
+  }
+}
+
+message ProfiledProcess {
+  string name = 1;
+  int32 pid = 2;
+  string identifier = 3;
+  optional uint64 physical_footprint_bytes = 4;
+  optional uint64 peak_physical_footprint_bytes = 5;
+}
+
+message ProfileFrame {
+  string symbol = 1;
+  string binary = 2;
+}
+
+message ProfileLeaksReport {
+  enum Kind {
+    LEAK = 0;
+    CYCLE = 1;
+  }
+  message Group {
+    Kind kind = 1;
+    string type_name = 2;
+    uint64 roots = 3;
+    uint64 nodes = 4;
+    uint64 bytes = 5;
+  }
+  message AllocationStack {
+    Kind kind = 1;
+    string type_name = 2;
+    uint64 instances = 3;
+    repeated ProfileFrame frames = 4;
+  }
+  ProfiledProcess process = 1;
+  uint64 leak_count = 2;
+  uint64 leaked_bytes = 3;
+  repeated Group groups = 4;
+  repeated AllocationStack allocation_stacks = 5;
+}
+
+message ProfileHeapReport {
+  message Class {
+    string class_name = 1;
+    uint64 count = 2;
+    uint64 bytes = 3;
+    string kind = 4;
+    string binary = 5;
+  }
+  ProfiledProcess process = 1;
+  uint64 node_count = 2;
+  uint64 bytes = 3;
+  repeated Class classes = 4;
+}
+
+message ProfileSampleReport {
+  message Thread {
+    string name = 1;
+    uint64 samples = 2;
+  }
+  message Frame {
+    ProfileFrame frame = 1;
+    uint64 samples = 2;
+  }
+  message Stack {
+    repeated ProfileFrame frames = 1;
+    uint64 samples = 2;
+  }
+  ProfiledProcess process = 1;
+  uint64 total_samples = 2;
+  uint64 busy_samples = 3;
+  repeated Thread threads = 4;
+  repeated Frame busy_frames = 5;
+  repeated Stack stacks = 6;
+}
+
+message ProfileVmmapReport {
+  message Region {
+    string type = 1;
+    uint64 virtual_bytes = 2;
+    uint64 resident_bytes = 3;
+    uint64 dirty_bytes = 4;
+    uint64 swapped_bytes = 5;
+    uint64 region_count = 6;
+  }
+  ProfiledProcess process = 1;
+  repeated Region regions = 2;
+  Region total = 3;
+}
+
+message ProfileFootprintReport {
+  message Category {
+    string name = 1;
+    uint64 dirty_bytes = 2;
+    uint64 swapped_bytes = 3;
+    uint64 region_count = 4;
+  }
+  string name = 1;
+  int32 pid = 2;
+  uint64 footprint_bytes = 3;
+  uint64 peak_footprint_bytes = 4;
+  // vmmap's dirty and swapped memory per region type, largest first. These
+  // count shared library pages that the footprint attributes elsewhere, so they
+  // need not sum to it.
+  repeated Category categories = 5;
+}
+
+message ProfileTraceReport {
+  message Process {
+    string name = 1;
+    int32 pid = 2;
+    string path = 3;
+  }
+  message Run {
+    uint64 number = 1;
+    string template_name = 2;
+    optional double duration_seconds = 3;
+    string end_reason = 4;
+    repeated Process processes = 5;
+    repeated string schemas = 6;
+  }
+  message Column {
+    string mnemonic = 1;
+    string name = 2;
+    string engineering_type = 3;
+  }
+  message Backtrace {
+    // Innermost first.
+    repeated ProfileFrame frames = 1;
+  }
+  message Value {
+    oneof value {
+      // The column has no value in this row.
+      bool empty = 1;
+      string text = 2;
+      Backtrace backtrace = 3;
+    }
+  }
+  message Row {
+    repeated Value values = 1;
+  }
+  message Table {
+    string schema = 1;
+    repeated Column columns = 2;
+    // Every row in the table, including any beyond the row limit.
+    uint64 row_count = 3;
+    repeated Row rows = 4;
+  }
+  repeated Run runs = 1;
+  // The exported tables of the last run.
+  repeated Table tables = 2;
+}
+
+message ProfileResourceSample {
+  int32 pid = 1;
+  string process_name = 2;
+  int64 timestamp_ms = 3;
+  int64 elapsed_ms = 4;
+  // Unset for the first sample, which has no interval to measure over.
+  optional double cpu_pct = 5;
+  uint64 footprint_bytes = 6;
+  uint64 resident_bytes = 7;
+  uint64 instructions = 8;
+  uint64 cycles = 9;
+  uint64 disk_bytes_read = 10;
+  uint64 disk_bytes_written = 11;
+  uint64 interrupt_wakeups = 12;
+  uint64 package_idle_wakeups = 13;
+  uint64 billed_energy_nano_joules = 14;
+}

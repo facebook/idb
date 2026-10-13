@@ -169,6 +169,14 @@ final class CompanionServiceProvider: Idb_CompanionService.SimpleServiceProtocol
     }
   }
 
+  func profile(request: RPCAsyncSequence<Idb_ProfileRequest, any Error>, response: RPCWriter<Idb_ProfileResponse>, context: ServerContext) async throws {
+    let reader = RequestStreamReader(request)
+    try await trackedBidiStreaming(context) {
+      try await ProfileMethodHandler(logger: logger, target: target)
+        .handle(requestStream: reader, responseStream: response, context: context)
+    }
+  }
+
   func accessibility_info(request: Idb_AccessibilityInfoRequest, context: ServerContext) async throws -> Idb_AccessibilityInfoResponse {
     return try await trackedUnaryCall(context, request: request) {
       try await AccessibilityInfoMethodHandler(commandExecutor: commandExecutor)

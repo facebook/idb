@@ -46,33 +46,6 @@ private final class FakeRecording: XCTraceRecording, @unchecked Sendable {
 
 private let logger = FBControlCoreLoggerFactory.systemLoggerWriting(toStderr: false, withDebugLogging: false)
 
-private final class CollectingWriter<Element: Sendable>: RPCWriterProtocol, @unchecked Sendable {
-  private let lock = NSLock()
-  private var written: [Element] = []
-
-  var elements: [Element] { lock.withLock { written } }
-
-  func write(_ element: Element) async throws {
-    lock.withLock { written.append(element) }
-  }
-
-  func write(contentsOf elements: some Sequence<Element>) async throws {
-    for element in elements {
-      try await write(element)
-    }
-  }
-}
-
-/// Counts gzip member headers (magic, deflate, Unix OS byte). A client's `tar` stops at the end of the first member,
-/// so anything after it is unread.
-private func gzipMembers(in data: Data) -> Int {
-  let bytes = [UInt8](data)
-  guard bytes.count >= 10 else { return 0 }
-  return (0...(bytes.count - 10)).filter { offset in
-    bytes[offset] == 0x1F && bytes[offset + 1] == 0x8B && bytes[offset + 2] == 0x08 && bytes[offset + 9] == 0x03
-  }.count
-}
-
 /// Extracts a gzipped tar with the system `tar`, as a client does.
 private func extract(_ archive: Data, into destination: URL) throws {
   try FileManager.default.createDirectory(at: destination, withIntermediateDirectories: true)

@@ -57,30 +57,6 @@ private struct StubError: Error, CustomStringConvertible {
   let description: String
 }
 
-/// Collects everything written so a test can see what reached the client before an error did.
-private final class CollectingWriter<Element: Sendable>: RPCWriterProtocol, @unchecked Sendable {
-  private let lock = NSLock()
-  private var written: [Element] = []
-
-  var elements: [Element] {
-    lock.lock()
-    defer { lock.unlock() }
-    return written
-  }
-
-  func write(_ element: Element) async throws {
-    lock.lock()
-    written.append(element)
-    lock.unlock()
-  }
-
-  func write(contentsOf elements: some Sequence<Element>) async throws {
-    for element in elements {
-      try await write(element)
-    }
-  }
-}
-
 /// Decompresses with the system `gzip`, as a client does.
 private func gunzip(_ data: Data) throws -> Data {
   let file = URL(fileURLWithPath: NSTemporaryDirectory()).appendingPathComponent("record-gunzip-\(UUID().uuidString).gz")
