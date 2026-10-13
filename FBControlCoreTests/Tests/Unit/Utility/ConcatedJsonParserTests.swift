@@ -6,50 +6,57 @@
  */
 
 @testable import FBControlCore
-import XCTest
+import Foundation
+import Testing
 
-class ConcatedJsonParserTests: XCTestCase {
+@Suite
+struct ConcatedJsonParserTests {
 
-  func testPlainSmallJsonParse() throws {
+  @Test
+  func plainSmallJsonParse() throws {
     let json = """
       {"hello": "world"}
       """
 
-    try XCTAssertEqual(parse(string: json), ["hello": "world"])
+    #expect(try parse(string: json) == ["hello": "world"])
   }
 
-  func testPlainDoubleJsonParse() throws {
+  @Test
+  func plainDoubleJsonParse() throws {
     let json = """
       {"hello": "world"}
       {"second": "value"}
       """
 
-    try XCTAssertEqual(parse(string: json), ["hello": "world", "second": "value"])
+    #expect(try parse(string: json) == ["hello": "world", "second": "value"])
   }
 
-  func testWithCurlyBracketsInString() throws {
+  @Test
+  func withCurlyBracketsInString() throws {
     let json = """
       {"hello": "wor{ld"}
       {"second": "value"}
       """
 
-    try XCTAssertEqual(parse(string: json), ["hello": "wor{ld", "second": "value"])
+    #expect(try parse(string: json) == ["hello": "wor{ld", "second": "value"])
   }
 
-  func testWithEscapedCharatersInString() throws {
+  @Test
+  func withEscapedCharatersInString() throws {
     let json = """
       {"hello": "worl\\"d"}
       {"second": "value"}
       """
 
-    try XCTAssertEqual(parse(string: json), ["hello": "worl\"d", "second": "value"])
+    #expect(try parse(string: json) == ["hello": "worl\"d", "second": "value"])
   }
 
-  func testThrowsIncorrectJson() throws {
+  @Test
+  func throwsIncorrectJson() throws {
     let json = """
       {"hello": 1"world"1}
       """
-    XCTAssertThrowsError(try parse(string: json))
+    #expect(throws: (any Error).self) { try parse(string: json) }
   }
 
   private func parse(string: String) throws -> [String: String] {
