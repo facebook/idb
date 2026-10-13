@@ -9,12 +9,15 @@
 import FBArtifactStaging
 import FBControlCore
 import FBSimulatorControl
+import Foundation
 import GRPCCore
-import XCTest
+import Testing
 
-final class InstallMethodHandlerTests: XCTestCase {
+@Suite
+struct InstallMethodHandlerTests {
 
-  func testSuspendedApplicationMapsToFailedPrecondition() async {
+  @Test
+  func suspendedApplicationMapsToFailedPrecondition() async {
     do {
       let _: Void = try await InstallMethodHandler.mapSimulatorInstallErrors {
         throw SimulatorApplicationInstallError.processSuspended(
@@ -22,36 +25,38 @@ final class InstallMethodHandlerTests: XCTestCase {
           processIdentifier: 42,
           debuggerAttached: true)
       }
-      XCTFail("Expected a failed-precondition status")
+      Issue.record("Expected a failed-precondition status")
     } catch let status as RPCError {
-      XCTAssertEqual(status.code, .failedPrecondition)
-      XCTAssertTrue(status.message.contains("com.example.app"))
-      XCTAssertTrue(status.message.contains("PID 42"))
-      XCTAssertTrue(status.message.contains("debugger"))
+      #expect(status.code == .failedPrecondition)
+      #expect(status.message.contains("com.example.app"))
+      #expect(status.message.contains("PID 42"))
+      #expect(status.message.contains("debugger"))
     } catch {
-      XCTFail("Expected a RPCError, got \(error)")
+      Issue.record("Expected a RPCError, got \(error)")
     }
   }
 
-  func testDebuggerAttachedApplicationMapsToFailedPrecondition() async {
+  @Test
+  func debuggerAttachedApplicationMapsToFailedPrecondition() async {
     do {
       let _: Void = try await InstallMethodHandler.mapSimulatorInstallErrors {
         throw SimulatorApplicationInstallError.processDebuggerAttached(
           bundleID: "com.example.app",
           processIdentifier: 42)
       }
-      XCTFail("Expected a failed-precondition status")
+      Issue.record("Expected a failed-precondition status")
     } catch let status as RPCError {
-      XCTAssertEqual(status.code, .failedPrecondition)
-      XCTAssertTrue(status.message.contains("com.example.app"))
-      XCTAssertTrue(status.message.contains("PID 42"))
-      XCTAssertTrue(status.message.contains("debugger"))
+      #expect(status.code == .failedPrecondition)
+      #expect(status.message.contains("com.example.app"))
+      #expect(status.message.contains("PID 42"))
+      #expect(status.message.contains("debugger"))
     } catch {
-      XCTFail("Expected a RPCError, got \(error)")
+      Issue.record("Expected a RPCError, got \(error)")
     }
   }
 
-  func testUnmappedUninstallErrorPassesThroughUnchanged() async {
+  @Test
+  func unmappedUninstallErrorPassesThroughUnchanged() async {
     let underlying = NSError(
       domain: "com.example.install",
       code: 42,
@@ -63,19 +68,21 @@ final class InstallMethodHandlerTests: XCTestCase {
           bundleID: "com.example.app",
           underlying: underlying)
       }
-      XCTFail("Expected the original simulator application error")
+      Issue.record("Expected the original simulator application error")
     } catch let error as SimulatorApplicationUninstallError {
       guard case let .uninstallFailed(bundleID, actualUnderlying) = error else {
-        return XCTFail("Expected uninstallFailed, got \(error)")
+        Issue.record("Expected uninstallFailed, got \(error)")
+        return
       }
-      XCTAssertEqual(bundleID, "com.example.app")
-      XCTAssertTrue((actualUnderlying as NSError) === underlying)
+      #expect(bundleID == "com.example.app")
+      #expect((actualUnderlying as NSError) === underlying)
     } catch {
-      XCTFail("Expected SimulatorApplicationUninstallError, got \(error)")
+      Issue.record("Expected SimulatorApplicationUninstallError, got \(error)")
     }
   }
 
-  func testTargetReadinessErrorsMapToFailedPrecondition() async {
+  @Test
+  func targetReadinessErrorsMapToFailedPrecondition() async {
     let errors: [SimulatorApplicationInstallError] = [
       .targetNotBooted(state: "Shutdown"),
       .targetUnavailable(reason: "runtime unavailable"),
@@ -86,12 +93,12 @@ final class InstallMethodHandlerTests: XCTestCase {
         let _: Void = try await InstallMethodHandler.mapSimulatorInstallErrors {
           throw error
         }
-        XCTFail("Expected a failed-precondition status")
+        Issue.record("Expected a failed-precondition status")
       } catch let status as RPCError {
-        XCTAssertEqual(status.code, .failedPrecondition)
-        XCTAssertFalse(status.message.isEmpty)
+        #expect(status.code == .failedPrecondition)
+        #expect(!status.message.isEmpty)
       } catch {
-        XCTFail("Expected a RPCError, got \(error)")
+        Issue.record("Expected a RPCError, got \(error)")
       }
     }
   }
