@@ -7,55 +7,60 @@
 
 @testable import CompanionLib
 import FBControlCore
+import Foundation
 import GRPCCore
 import IDBGRPCSwift
-import XCTest
+import Testing
 
-final class IDBXCTestReporterCoverageTests: XCTestCase {
+@Suite(.serialized)
+final class IDBXCTestReporterCoverageTests {
 
-  private var workingDirectory: URL!
-  private var coverageDirectory: URL!
+  private let workingDirectory: URL
+  private let coverageDirectory: URL
 
-  override func setUpWithError() throws {
+  init() throws {
     workingDirectory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
     coverageDirectory = workingDirectory.appendingPathComponent("coverage")
     try FileManager.default.createDirectory(at: coverageDirectory, withIntermediateDirectories: true)
   }
 
-  override func tearDownWithError() throws {
+  deinit {
     try? FileManager.default.removeItem(at: workingDirectory)
   }
 
-  func testExportedCoverage_IsTheGzippedLLVMExportOfTheProfiledBinary() async throws {
+  @Test
+  func exportedCoverage_IsTheGzippedLLVMExportOfTheProfiledBinary() async throws {
     let binary = try buildAndRunProfiledBinary()
 
     let data = try await exportCoverage(binariesPath: [binary.path])
 
     let export = try gunzip(data)
-    XCTAssertTrue(export.contains("\"llvm.coverage.json.export\""), "Expected an llvm-cov JSON export, got: \(export.prefix(200))")
-    XCTAssertTrue(export.contains("covered.c"), "The export should describe the profiled source")
+    #expect(export.contains("\"llvm.coverage.json.export\""), "Expected an llvm-cov JSON export, got: \(export.prefix(200))")
+    #expect(export.contains("covered.c"), "The export should describe the profiled source")
   }
 
-  func testExportedCoverage_WhenThereIsNothingToMerge_FailsWithTheMergeError() async throws {
+  @Test
+  func exportedCoverage_WhenThereIsNothingToMerge_FailsWithTheMergeError() async throws {
     do {
       _ = try await exportCoverage(binariesPath: [])
-      XCTFail("Merging an empty coverage directory should fail")
+      Issue.record("Merging an empty coverage directory should fail")
     } catch IDBXCTestReporterError.coverageExportFailed(let exitCode, let stderr) {
-      XCTAssertNotEqual(exitCode, 0)
-      XCTAssertFalse(stderr.isEmpty, "The merge tool's stderr should be carried in the error")
+      #expect(exitCode != 0)
+      #expect(!stderr.isEmpty, "The merge tool's stderr should be carried in the error")
     }
   }
 
-  func testExportedCoverage_WhenTheBinaryIsMissing_FailsWithTheExportError() async throws {
+  @Test
+  func exportedCoverage_WhenTheBinaryIsMissing_FailsWithTheExportError() async throws {
     _ = try buildAndRunProfiledBinary()
     let missing = workingDirectory.appendingPathComponent("missing").path
 
     do {
       _ = try await exportCoverage(binariesPath: [missing])
-      XCTFail("Exporting against a missing binary should fail")
+      Issue.record("Exporting against a missing binary should fail")
     } catch IDBXCTestReporterError.coverageExportFailed(let exitCode, let stderr) {
-      XCTAssertNotEqual(exitCode, 0)
-      XCTAssertTrue(stderr.contains("missing"), "The export tool's stderr should be carried in the error, got: \(stderr)")
+      #expect(exitCode != 0)
+      #expect(stderr.contains("missing"), "The export tool's stderr should be carried in the error, got: \(stderr)")
     }
   }
 
@@ -91,7 +96,7 @@ final class IDBXCTestReporterCoverageTests: XCTestCase {
     process.environment = environment
     try process.run()
     process.waitUntilExit()
-    XCTAssertEqual(process.terminationStatus, 0, "\(executable) \(arguments) failed")
+    #expect(process.terminationStatus == 0, "\(executable) \(arguments) failed")
   }
 }
 
