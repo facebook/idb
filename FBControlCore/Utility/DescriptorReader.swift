@@ -65,10 +65,11 @@ public final class DescriptorReader: @unchecked Sendable {
       // A bad descriptor is reported here, without the read handler ever running. The capture of
       // self is what keeps the reader alive until the channel lets go of the descriptor.
       let io = DispatchIO(type: .stream, fileDescriptor: fileDescriptor, queue: queue) { createError in
-        self.relinquished(errno: createError != 0 ? createError : self.readError)
+        // Closed before the waiters resume, so a reader that has finished has let go of an owned descriptor.
         if closeOnEndOfFile {
           close(fileDescriptor)
         }
+        self.relinquished(errno: createError != 0 ? createError : self.readError)
       }
       self.io = io
       io.setLimit(lowWater: 1)
