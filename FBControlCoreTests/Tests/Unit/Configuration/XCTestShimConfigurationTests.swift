@@ -7,9 +7,10 @@
 
 @testable import FBControlCore
 import Foundation
-import XCTest
+import Testing
 
-final class XCTestShimConfigurationTests: XCTestCase {
+@Suite
+struct XCTestShimConfigurationTests {
   private static let iOSShimName = "libShimulator-iOS.dylib"
   private static let macOSShimName = "libShimulator-macOS.dylib"
 
@@ -27,13 +28,14 @@ final class XCTestShimConfigurationTests: XCTestCase {
     return dir
   }
 
-  func testShimConfigurationResolvesRenamedShims() async throws {
+  @Test
+  func shimConfigurationResolvesRenamedShims() async throws {
     let dir = try makeShimDirectory()
     defer { try? FileManager.default.removeItem(atPath: dir) }
 
     let config = try await XCTestShimConfiguration.shimConfiguration(withDirectory: dir)
 
-    XCTAssertEqual(config.iOSSimulatorTestShimPath, (dir as NSString).appendingPathComponent(Self.iOSShimName))
-    XCTAssertEqual(config.macOSTestShimPath, (dir as NSString).appendingPathComponent(Self.macOSShimName))
+    #expect(config.iOSSimulatorTestShimPath == (dir as NSString).appendingPathComponent(Self.iOSShimName))
+    #expect(config.macOSTestShimPath == (dir as NSString).appendingPathComponent(Self.macOSShimName))
   }
 }
