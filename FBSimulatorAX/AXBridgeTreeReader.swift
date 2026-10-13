@@ -74,12 +74,10 @@ extension AXBridgeTreeReader {
 
 /// The derived values used throughout one axbridge tree read.
 private struct AXBridgeReadPlan {
-  let serializationKeys: Set<AXKeys>
+  let serialization: AXSerialization
   let attributes: [String]?
   let traversal: AXTraversal
   let unsatisfiableKeys: Set<AXKeys>
-  let nestedFormat: Bool
-  let collectFrameCoverage: Bool
   let enableProfiling: Bool
   let explainUnreachable: Bool
 
@@ -89,12 +87,10 @@ private struct AXBridgeReadPlan {
     traversal: AXTraversal,
     explainUnreachable: Bool
   ) {
-    self.serializationKeys = serializationKeys
-    self.attributes = AXWire.Node.fetchList(for: AXReadPlan(keys: serializationKeys, depth: .unlimited))
+    self.serialization = AXSerialization(keys: serializationKeys, nested: options.nestedFormat)
+    self.attributes = AXWire.Node.fetchList(for: serialization.readPlan(depth: .unlimited))
     self.traversal = traversal
     self.unsatisfiableKeys = serializationKeys.intersection(traversal.unsatisfiableKeys)
-    self.nestedFormat = options.nestedFormat
-    self.collectFrameCoverage = options.collectFrameCoverage
     self.enableProfiling = options.enableProfiling
     self.explainUnreachable = explainUnreachable
   }
@@ -136,9 +132,9 @@ extension AXBridgeTreeReader {
       await warnIfUnsatisfiable(plan.unsatisfiableKeys, traversal: plan.traversal)
       // A marker read walks the whole tree to find one element, so it costs the same per-node
       // hit-testing a describe-all does while returning far less.
-      await warnIfReachabilityAcrossTree(plan.serializationKeys)
+      await warnIfReachabilityAcrossTree(plan.serialization.keys)
       let elements = AXTreeWalk.describeAllElements(
-        fromTree: read.tree, keys: plan.serializationKeys, nestedFormat: false, pid: read.pid
+        fromTree: read.tree, keys: plan.serialization.keys, nestedFormat: false, pid: read.pid
       )
       guard
         let match = AXTreeWalk.matchingElement(
@@ -149,7 +145,7 @@ extension AXBridgeTreeReader {
       }
       // The match came from a flattened walk, so it carries no children of its own; reporting them
       // keeps a marker read the same shape as any other single-element read of the same format.
-      let matched = plan.nestedFormat ? match.reportingChildren() : match
+      let matched = plan.serialization.nested ? match.reportingChildren() : match
       return AccessibilityElementsResponse(elements: .single(matched), modal: read.modal)
         .withProvenance(
           backend: backend.name,
@@ -166,7 +162,7 @@ extension AXBridgeTreeReader {
       try refuseClientWithoutTranslatorVocabulary(options, traversal: plan.traversal)
       // A single fetch cannot answer reachability (the app hit-tests every node and times out). `.auto`
       // never routes here, so only an explicit choice can; refuse rather than time out in the guest.
-      let unanswerable = plan.serializationKeys.intersection(AXKeys.reachabilityKeys)
+      let unanswerable = plan.serialization.keys.intersection(AXKeys.reachabilityKeys)
       if plan.traversal == .singleFetch, !unanswerable.isEmpty {
         throw UIAutomationError.traversalCannotAnswer(
           backend: backend,
@@ -183,28 +179,20 @@ extension AXBridgeTreeReader {
       )
       await warnIfTruncated(read.truncated)
       await warnIfUnsatisfiable(plan.unsatisfiableKeys, traversal: plan.traversal)
-      await warnIfReachabilityAcrossTree(plan.serializationKeys)
+      await warnIfReachabilityAcrossTree(plan.serialization.keys)
       let serializeStarted = CFAbsoluteTimeGetCurrent()
       let walked = AXTreeWalk.describeAllElements(
-        fromTree: read.tree, keys: plan.serializationKeys, nestedFormat: plan.nestedFormat, pid: read.pid
+        fromTree: read.tree, keys: plan.serialization.keys, nestedFormat: plan.serialization.nested, pid: read.pid
       )
       let screen = read.screen ?? AXTreeWalk.screenInfo(fromTree: read.tree)
-      // The filter and the match both run before the interactable refinement, which is per-element guest
-      // work there is no reason to spend on an element about to be dropped.
-      let elements = try await refiningInteractable(
-        options.narrowing(walked, screen: screen.map(AccessibilityCoverage.bounds(of:))), screen: screen,
-        options: options
-      )
+      var description = AccessibilityTreeDescription(
+        walked: walked, options: options, screenBounds: screen.map(AccessibilityCoverage.bounds(of:)))
+      // The interactable refinement is per-element guest work, so it runs on what survives narrowing.
+      try await description.refineReported { try await refiningInteractable($0, screen: screen, options: options) }
+      let elements = description.reported
       let serializeDuration = CFAbsoluteTimeGetCurrent() - serializeStarted
       // No `additional` coverage: remote-content discovery is accessibility-only.
-      let coverage: AccessibilityCoverage? =
-        plan.collectFrameCoverage
-        ? screen.flatMap {
-          .measured(
-            reported: elements, walked: walked, screenBounds: AccessibilityCoverage.bounds(of: $0),
-            nested: plan.nestedFormat
-          )
-        } : nil
+      let coverage = description.coverage()
       // Judged on the walked elements: the warning is about the tree, and `--filter interactable` drops
       // the zero-framed elements it counts.
       await warnIfMostElementsUnframed(AccessibilityFrameSummary(elements: walked))
@@ -223,7 +211,7 @@ extension AXBridgeTreeReader {
         screen: screen,
         truncated: read.truncated
       )
-      .withNarrowing(options.narrowingReport(walked: walked, reported: elements))
+      .withNarrowing(description.narrowingReport())
       .withClient(options.clientType.map(AccessibilityClientReport.init))
     }
   }

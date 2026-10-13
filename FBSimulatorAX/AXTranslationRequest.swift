@@ -161,29 +161,27 @@ final class AXTranslationRequest {
     let screen = AXReadScreen(display: display, rootFrame: snapshot.frame)
     let seenPids = SeenPIDs()
 
-    let walked = AXNodeSerializer.recursiveDescription(
-      fromSnapshot: snapshot, serialization: serialization, collector: collector, seenPids: seenPids)
     let tree = TranslatedTree(
-      walked: walked, reported: options.narrowing(walked, screen: screen.bounds), pid: snapshot.pid, seenPids: seenPids)
+      description: AccessibilityTreeDescription(
+        walked: AXNodeSerializer.recursiveDescription(
+          fromSnapshot: snapshot, serialization: serialization, collector: collector, seenPids: seenPids),
+        options: options, screenBounds: screen.bounds),
+      pid: snapshot.pid, seenPids: seenPids)
 
     // The grid stays live: remote-content discovery reads it to skip covered points and marks its hits
     // into it.
     let grid: AccessibilityCoverageGrid? =
       options.collectFrameCoverage ? AccessibilityCoverageGrid(screenBounds: screen.bounds) : nil
-    grid?.markFilled(withElements: tree.reported)
+    grid?.markFilled(withElements: tree.description.reported)
 
     guard let remoteOptions = options.remoteContentOptions, let translator else {
       return buildResponse(
-        elements: .tree(tree.reported),
+        elements: .tree(tree.description.reported),
         walkStart: walkStart,
-        coverage: options.collectFrameCoverage
-          ? .measured(
-            reported: tree.reported, walked: walked, screenBounds: screen.bounds,
-            nested: options.nestedFormat
-          ) : nil,
+        coverage: tree.description.coverage(),
         screen: screen.info,
         options: options,
-        narrowing: options.narrowingReport(walked: walked, reported: tree.reported)
+        narrowing: tree.description.narrowingReport()
       )
     }
 
@@ -198,11 +196,9 @@ final class AXTranslationRequest {
     )
   }
 
-  /// The frontmost application's walked tree: every element walked, those the read reports, the
-  /// application's pid, and every pid seen on the way.
+  /// The frontmost application's described tree, the application's pid, and every pid seen on the way.
   private struct TranslatedTree {
-    let walked: [AccessibilityDocumentElement]
-    let reported: [AccessibilityDocumentElement]
+    let description: AccessibilityTreeDescription
     let pid: pid_t
     let seenPids: SeenPIDs
   }
@@ -299,7 +295,7 @@ final class AXTranslationRequest {
     let keptDiscovered = AccessibilityElementRetention.narrowing(
       discoveredElements, filter: options.filter, match: options.match, screen: screen.bounds
     )
-    var elements = tree.reported
+    var elements = tree.description.reported
     if !keptDiscovered.isEmpty {
       if options.nestedFormat, var applicationElement = elements.first {
         applicationElement.children = (applicationElement.children ?? []) + keptDiscovered
@@ -312,17 +308,10 @@ final class AXTranslationRequest {
     return buildResponse(
       elements: .tree(elements),
       walkStart: walkStart,
-      coverage: options.collectFrameCoverage
-        ? .measured(
-          reported: tree.reported, walked: tree.walked, screenBounds: screen.bounds,
-          nested: options.nestedFormat, additional: additionalFrameCoverage
-        ) : nil,
+      coverage: tree.description.coverage(additional: additionalFrameCoverage),
       screen: screen.info,
       options: options,
-      // Discovered elements count as walked too, or a read could report more matched than walked.
-      narrowing: AccessibilityNarrowing(
-        filter: options.filter, match: options.match,
-        walked: tree.walked, discovered: discoveredElements, reported: elements)
+      narrowing: tree.description.narrowingReport(reporting: elements, discovered: discoveredElements)
     )
   }
 
