@@ -75,9 +75,6 @@ final class AXTranslationRequest {
   var logger: ControlCoreLogger?
   var translator: AXPTranslator?
 
-  /// How each element's attributes are fetched, taken from the options of the read in progress.
-  private var translatorReadMode: AXTranslatorReads = .batched
-
   /// Per-request timeout (seconds) applied to each synchronous CoreSimulator
   /// accessibility XPC round-trip. `0` (or negative) is "wait nothing". There is
   /// no "wait forever" mode — a stalled XPC service never hangs the caller.
@@ -122,7 +119,6 @@ final class AXTranslationRequest {
     options: AccessibilityRequestOptions,
     isMarkerMatch: Bool = false
   ) throws -> AccessibilityElementsResponse {
-    translatorReadMode = options.translatorReads
     guard !isMarkerMatch else {
       return runNamedElement(element, options: options)
     }
@@ -141,24 +137,16 @@ final class AXTranslationRequest {
   private func runNamedElement(_ element: AXPlatformElement, options: AccessibilityRequestOptions) -> AccessibilityElementsResponse {
     let walkStart = CFAbsoluteTimeGetCurrent()
     collector.markWalkStart()
-    let keys = Self.serializerKeys(options)
+    let serialization = AXSerialization(options)
     let snapshot = AXElementSnapshot.read(
-      element, plan: AXReadPlan(keys: keys, depth: options.nestedFormat ? .unlimited : .limited(0)), token: token,
-      mode: translatorReadMode)
-    var elements = AXNodeSerializer.formattedDescription(
-      ofSnapshot: snapshot,
-      nestedFormat: options.nestedFormat,
-      keys: keys,
-      collector: collector
-    )
+      element, plan: serialization.readPlan(depth: serialization.nested ? .unlimited : .limited(0)), token: token,
+      mode: options.translatorReads)
+    var elements = AXNodeSerializer.formattedDescription(ofSnapshot: snapshot, serialization: serialization, collector: collector)
     if let children = elements.children {
       elements.children = options.filter.apply(to: children, screen: nil)
     }
     // Without a display snapshot, marker callers can recover legacy bounds from the root.
-    return buildResponse(
-      elements: .single(elements), walkStart: walkStart, coverage: nil, screen: display?.screen,
-      reportProfile: options.enableProfiling
-    )
+    return buildResponse(elements: .single(elements), walkStart: walkStart, coverage: nil, screen: display?.screen, options: options)
   }
 
   // MARK: - Frontmost Application
@@ -167,19 +155,14 @@ final class AXTranslationRequest {
     let walkStart = CFAbsoluteTimeGetCurrent()
     collector.markWalkStart()
 
-    let keys = Self.serializerKeys(options)
+    let serialization = AXSerialization(options)
     let snapshot = AXElementSnapshot.read(
-      element, plan: AXReadPlan(keys: keys, depth: .unlimited), token: token, mode: translatorReadMode)
+      element, plan: serialization.readPlan(depth: .unlimited), token: token, mode: options.translatorReads)
     let screen = AXReadScreen(display: display, rootFrame: snapshot.frame)
     let seenPids = SeenPIDs()
 
     let walked = AXNodeSerializer.recursiveDescription(
-      fromSnapshot: snapshot,
-      nestedFormat: options.nestedFormat,
-      keys: keys,
-      collector: collector,
-      seenPids: seenPids
-    )
+      fromSnapshot: snapshot, serialization: serialization, collector: collector, seenPids: seenPids)
     let tree = TranslatedTree(
       walked: walked, reported: options.narrowing(walked, screen: screen.bounds), pid: snapshot.pid, seenPids: seenPids)
 
@@ -199,7 +182,7 @@ final class AXTranslationRequest {
             nested: options.nestedFormat
           ) : nil,
         screen: screen.info,
-        reportProfile: options.enableProfiling,
+        options: options,
         narrowing: options.narrowingReport(walked: walked, reported: tree.reported)
       )
     }
@@ -210,7 +193,6 @@ final class AXTranslationRequest {
       grid: grid,
       plan: AXRemoteContentPlan(remoteOptions, screenBounds: screen.bounds),
       options: options,
-      keys: keys,
       walkStart: walkStart,
       translator: translator
     )
@@ -232,6 +214,7 @@ final class AXTranslationRequest {
     grid: AccessibilityCoverageGrid?,
     plan: AXRemoteContentPlan,
     keys: Set<AXKeys>,
+    reads: AXTranslatorReads,
     translator: AXPTranslator
   ) throws -> [AccessibilityDocumentElement] {
     var discoveredElements: [AccessibilityDocumentElement] = []
@@ -272,7 +255,7 @@ final class AXTranslationRequest {
 
       // One read serves both the duplicate check and the serialization.
       let hit = AXElementSnapshot.read(
-        hitElement, plan: AXReadPlan(keys: keysWithFrame, depth: .limited(0)), token: token, mode: translatorReadMode)
+        hitElement, plan: AXReadPlan(keys: keysWithFrame, depth: .limited(0)), token: token, mode: reads)
       let hitFrame = hit.frame
       let hitFrameKey = "\(hitFrame.origin.x),\(hitFrame.origin.y),\(hitFrame.size.width),\(hitFrame.size.height)"
       if discoveredFrames.contains(hitFrameKey) {
@@ -294,14 +277,14 @@ final class AXTranslationRequest {
     grid: AccessibilityCoverageGrid?,
     plan: AXRemoteContentPlan,
     options: AccessibilityRequestOptions,
-    keys: Set<AXKeys>,
     walkStart: CFAbsoluteTime,
     translator: AXPTranslator
   ) throws -> AccessibilityElementsResponse {
     let coverageBefore = grid?.coverageRatio() ?? 0
 
     let discoveredElements = try discoverRemoteElements(
-      beyond: tree, grid: grid, plan: plan, keys: keys, translator: translator)
+      beyond: tree, grid: grid, plan: plan, keys: options.serializationKeys, reads: options.translatorReads,
+      translator: translator)
 
     var additionalFrameCoverage: Double?
     if let grid, !discoveredElements.isEmpty {
@@ -335,7 +318,7 @@ final class AXTranslationRequest {
           nested: options.nestedFormat, additional: additionalFrameCoverage
         ) : nil,
       screen: screen.info,
-      reportProfile: options.enableProfiling,
+      options: options,
       // Discovered elements count as walked too, or a read could report more matched than walked.
       narrowing: AccessibilityNarrowing(
         filter: options.filter, match: options.match,
@@ -361,7 +344,7 @@ final class AXTranslationRequest {
     walkStart: CFAbsoluteTime,
     coverage: AccessibilityCoverage?,
     screen: AccessibilityScreenInfo?,
-    reportProfile: Bool,
+    options: AccessibilityRequestOptions,
     narrowing: AccessibilityNarrowing? = nil
   ) -> AccessibilityElementsResponse {
     let walkDuration = CFAbsoluteTimeGetCurrent() - walkStart
@@ -374,21 +357,17 @@ final class AXTranslationRequest {
         roundTrips: profile.xpcCallCount,
         readDuration: profile.readDuration,
         totalDuration: profile.totalDuration,
-        translatorReads: translatorReadMode,
+        translatorReads: options.translatorReads,
         transport: $0.kind)
     }
     return AccessibilityElementsResponse(
       elements: elements,
-      profilingData: reportProfile ? .translator(profile) : nil,
+      profilingData: options.enableProfiling ? .translator(profile) : nil,
       coverage: coverage,
       truncated: false,
       screen: screen,
       narrowing: narrowing,
       translatorMetrics: metrics
     )
-  }
-
-  private static func serializerKeys(_ options: AccessibilityRequestOptions) -> Set<AXKeys> {
-    options.serializationKeys
   }
 }

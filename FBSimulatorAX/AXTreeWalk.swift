@@ -18,12 +18,8 @@ enum AXTreeWalk {
   /// result is unfiltered so a caller can keep both the whole walk and the reported subset.
   static func describeAllElements(fromTree tree: [String: Any], keys: Set<AXKeys>, nestedFormat: Bool, pid: pid_t) -> [AccessibilityDocumentElement] {
     AXNodeSerializer.recursiveDescription(
-      fromSnapshot: snapshot(fromTree: tree, pid: pid),
-      nestedFormat: nestedFormat,
-      keys: keys,
-      collector: nil,
-      seenPids: nil
-    )
+      fromSnapshot: snapshot(fromTree: tree, pid: pid), serialization: AXSerialization(keys: keys, nested: nestedFormat),
+      collector: nil, seenPids: nil)
   }
 
   /// The snapshot a serialization consumes, decoded from an attribute-dictionary tree the guest has

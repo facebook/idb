@@ -281,8 +281,7 @@ final class AXBridgeUIAutomation: AXBridgeTreeReader, @unchecked Sendable {
       }
       let snapshot = AXTreeWalk.snapshot(fromTree: hit.tree, pid: hit.pid)
       var formatted = AXNodeSerializer.formattedDescription(
-        ofSnapshot: snapshot, nestedFormat: options.nestedFormat, keys: options.serializationKeys, collector: nil
-      )
+        ofSnapshot: snapshot, serialization: AXSerialization(options), collector: nil)
       // The hit element is exempt from the filter; its descendants are not.
       if let children = formatted.children {
         formatted.children = options.filter.apply(to: children, screen: nil)

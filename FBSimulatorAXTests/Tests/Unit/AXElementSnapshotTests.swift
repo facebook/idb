@@ -73,12 +73,12 @@ final class AXElementSnapshotTests: XCTestCase {
       Self.element(label: "root", children: [Self.element(label: "a"), Self.element(label: "b")])
     }
     let plan = AXReadPlan(keys: AXKeys.defaultSet, depth: .unlimited)
-    let keys = AXKeys.defaultSet
+    let serialization = AXSerialization(keys: AXKeys.defaultSet, nested: true)
     let batched = AXElementSnapshot.read(tree(), plan: plan, token: "", mode: .batched)
     let perAttribute = AXElementSnapshot.read(tree(), plan: plan, token: "", mode: .perAttribute)
     XCTAssertEqual(
-      AXNodeSerializer.recursiveDescription(fromSnapshot: batched, nestedFormat: true, keys: keys, collector: nil, seenPids: nil),
-      AXNodeSerializer.recursiveDescription(fromSnapshot: perAttribute, nestedFormat: true, keys: keys, collector: nil, seenPids: nil))
+      AXNodeSerializer.recursiveDescription(fromSnapshot: batched, serialization: serialization, collector: nil, seenPids: nil),
+      AXNodeSerializer.recursiveDescription(fromSnapshot: perAttribute, serialization: serialization, collector: nil, seenPids: nil))
   }
 
   func testAPerAttributeReadFetchesOnlyThePlannedAttributesAndTheFrame() {

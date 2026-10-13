@@ -21,27 +21,26 @@ enum AXNodeSerializer {
 
   static func recursiveDescription(
     fromSnapshot snapshot: AXElementSnapshot,
-    nestedFormat: Bool,
-    keys: Set<AXKeys>,
+    serialization: AXSerialization,
     collector: AccessibilityProfilingCollector?,
     seenPids: SeenPIDs?
   ) -> [AccessibilityDocumentElement] {
-    if nestedFormat {
-      return nestedRecursiveDescription(fromSnapshot: snapshot, keys: keys, collector: collector, seenPids: seenPids)
+    if serialization.nested {
+      return nestedRecursiveDescription(fromSnapshot: snapshot, keys: serialization.keys, collector: collector, seenPids: seenPids)
     }
-    return flatRecursiveDescription(fromSnapshot: snapshot, keys: keys, collector: collector, seenPids: seenPids)
+    return flatRecursiveDescription(fromSnapshot: snapshot, keys: serialization.keys, collector: collector, seenPids: seenPids)
   }
 
   /// The one element a caller named. Its descendants are serialized only in the nested format, so a
   /// flat read plans `.limited(0)`.
   static func formattedDescription(
     ofSnapshot snapshot: AXElementSnapshot,
-    nestedFormat: Bool,
-    keys: Set<AXKeys>,
+    serialization: AXSerialization,
     collector: AccessibilityProfilingCollector?
   ) -> AccessibilityDocumentElement {
+    let keys = serialization.keys
     var node = decoratedElement(forSnapshot: snapshot, keys: keys, collector: collector, seenPids: nil, isRemote: false)
-    guard nestedFormat else {
+    guard serialization.nested else {
       return node
     }
     // The target's descendants are built as a subtree of their own, rather than by walking the target
@@ -249,5 +248,26 @@ enum AXNodeSerializer {
     var values = decoratedElement(forSnapshot: snapshot, keys: keys, collector: collector, seenPids: seenPids, isRemote: false)
     values.children = childrenValues
     return [values]
+  }
+}
+
+/// What a serialization reports — which keys, and whether descendants nest under their parent or follow
+/// it in one flat list — and so what a read for it must fetch.
+struct AXSerialization: Equatable {
+  let keys: Set<AXKeys>
+  let nested: Bool
+
+  init(keys: Set<AXKeys>, nested: Bool) {
+    self.keys = keys
+    self.nested = nested
+  }
+
+  init(_ options: AccessibilityRequestOptions) {
+    self.init(keys: options.serializationKeys, nested: options.nestedFormat)
+  }
+
+  /// The read this serialization consumes, to `depth`.
+  func readPlan(depth: AXReadPlan.Depth) -> AXReadPlan {
+    AXReadPlan(keys: keys, depth: depth)
   }
 }
