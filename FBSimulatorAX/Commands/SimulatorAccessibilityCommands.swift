@@ -52,17 +52,20 @@ final class SimulatorAccessibilityCommands: AccessibilityOperations {
   private weak var simulator: Simulator?
 
   private let translationDispatcher: AXTranslationDispatcher?
+  private let transport: (any AXTranslationTransport)?
   private let launchCtl: (any LaunchCtlCommands)?
   private let displays: (any DisplayCommands)?
 
   init(
     simulator: Simulator,
     translationDispatcher: AXTranslationDispatcher? = nil,
+    transport: (any AXTranslationTransport)? = nil,
     launchCtl: (any LaunchCtlCommands)? = nil,
     displays: (any DisplayCommands)? = nil
   ) {
     self.simulator = simulator
     self.translationDispatcher = translationDispatcher
+    self.transport = transport
     self.launchCtl = launchCtl
     self.displays = displays
   }
@@ -71,6 +74,11 @@ final class SimulatorAccessibilityCommands: AccessibilityOperations {
 
   private var resolvedDispatcher: AXTranslationDispatcher? {
     translationDispatcher ?? simulator?.accessibilityTranslationDispatcher
+  }
+
+  /// Where every translator request this simulator's reads make is sent.
+  private func resolvedTransport(_ simulator: Simulator) -> any AXTranslationTransport {
+    transport ?? CoreSimulatorAXTranslationTransport(device: simulator.device)
   }
 
   private func resolvedLaunchCtl(_ simulator: Simulator) -> any LaunchCtlCommands {
@@ -143,9 +151,10 @@ final class SimulatorAccessibilityCommands: AccessibilityOperations {
     guard let dispatcher = resolvedDispatcher else {
       throw AccessibilityError.dispatcherUnavailable
     }
+    request.transport = resolvedTransport(simulator)
     let element: AXWritableElement
     do {
-      element = try await dispatcher.platformElement(withRequest: request, simulator: simulator)
+      element = try await dispatcher.platformElement(withRequest: request)
     } catch AccessibilityError.noTranslationObject where remediationPermitted {
       // On the frontmost path a nil translation usually means SpringBoard (the provider of the
       // frontmost application) is down. Re-label the error when we can confirm that; a probe

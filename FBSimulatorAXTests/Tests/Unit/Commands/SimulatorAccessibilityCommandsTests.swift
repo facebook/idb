@@ -450,6 +450,7 @@ final class SimulatorAccessibilityCommandsTests: XCTestCase {
   /// on the simulator will return it.
   private func setUp(
     withRootElement rootElement: AXPMacPlatformElementDouble,
+    transport: (any AXTranslationTransport)? = nil,
     launchCtl: (any LaunchCtlCommands)? = nil,
     displays: any DisplayCommands = DisplayCommandsDouble([.success(.failed(.unsupported("displayinfo")))])
   ) throws {
@@ -459,7 +460,8 @@ final class SimulatorAccessibilityCommandsTests: XCTestCase {
 
     let sim = SimulatorTestSupport.testableSimulator(withDevice: fixture!.device)
     let dispatcher = Simulator.createAccessibilityTranslationDispatcher(withTranslator: fixture!.translator)
-    let commands = SimulatorAccessibilityCommands(simulator: sim, translationDispatcher: dispatcher, launchCtl: launchCtl, displays: displays)
+    let commands = SimulatorAccessibilityCommands(
+      simulator: sim, translationDispatcher: dispatcher, transport: transport, launchCtl: launchCtl, displays: displays)
     sim.commandCache.register(commands, as: SimulatorAccessibilityCommands.self)
 
     simulator = sim
@@ -498,6 +500,29 @@ final class SimulatorAccessibilityCommandsTests: XCTestCase {
 
     let forwarded = fixture!.device.accessibilityRequests.compactMap { AccessibilityTranslatorRequests.clientType(of: $0) }
     XCTAssertEqual(forwarded, [0, 0])
+  }
+
+  func testTranslatorRequestsGoThroughTheInjectedTransportWithTheirClient() async throws {
+    let transport = AXTranslationTransportDouble()
+    try setUp(withRootElement: defaultElementTree, transport: transport)
+    fixture!.translator.bridgeRequestClientTypes = [0, 5]
+
+    let element = try await simulator.accessibility.resolveElement(for: .frontmost, clientType: .xctest)
+    element.close()
+
+    XCTAssertEqual(transport.requests.map(\.clientType), [AXClientType.xctest.rawValue, AXClientType.xctest.rawValue])
+    XCTAssertEqual(fixture!.device.accessibilityRequests.count, 0, "nothing reaches CoreSimulator's client")
+  }
+
+  func testATransportThatDoesNotAnswerYieldsTheEmptyResponse() async throws {
+    try setUp(withRootElement: defaultElementTree, transport: AXTranslationTransportDouble(answers: false))
+    fixture!.translator.bridgeRequestClientTypes = [0]
+
+    let element = try await simulator.accessibility.resolveElement(for: .frontmost)
+    element.close()
+
+    let response = try XCTUnwrap(fixture!.translator.bridgeResponses.first ?? nil as AnyObject?, "the translator always gets an answer")
+    XCTAssertNil(response.value(forKey: "resultData"), "an unanswered request reads as empty")
   }
 
   func testTheDispatcherStampsTheRequestedClientOnAFrontmostResolution() async throws {

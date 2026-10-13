@@ -5,6 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+@preconcurrency import AccessibilityPlatformTranslation
 import AppKit
 import FBControlCore
 @testable import FBSimulatorAX
@@ -261,6 +262,33 @@ final class AXSnapshotPlatformElementDouble: AXPlatformElement {
   func axSetBridgeDelegateToken(_ token: String?) {}
 }
 
+// MARK: - AXTranslationTransport Double
+
+/// Records every translator request a read sends, and answers each with the empty response — or, when it
+/// does not answer, with nothing, as a transport whose wait timed out does.
+final class AXTranslationTransportDouble: AXTranslationTransport, @unchecked Sendable {
+  private let lock = NSLock()
+  private var _requests: [AXPTranslatorRequest] = []
+  private let answers: Bool
+
+  init(answers: Bool = true) {
+    self.answers = answers
+  }
+
+  var requests: [AXPTranslatorRequest] {
+    lock.lock()
+    defer { lock.unlock() }
+    return _requests
+  }
+
+  func send(_ request: AXPTranslatorRequest, timeout: TimeInterval) -> AXPTranslatorResponse? {
+    lock.lock()
+    _requests.append(request)
+    lock.unlock()
+    return answers ? AXPTranslatorResponse.empty() as? AXPTranslatorResponse : nil
+  }
+}
+
 // MARK: - AXPTranslator Double
 
 class AXPTranslatorDouble: NSObject {
@@ -298,9 +326,13 @@ class AXPTranslatorDouble: NSObject {
     return result
   }
 
+  /// What the bridge delegate answered each request in `bridgeRequestClientTypes` with, in order.
+  private(set) var bridgeResponses: [AnyObject?] = []
+
   private func sendBridgeRequests(token: String) {
     for clientType in bridgeRequestClientTypes {
-      AccessibilityTranslatorRequests.send(AccessibilityTranslatorRequests.make(clientType: clientType), through: bridgeTokenDelegate, token: token)
+      bridgeResponses.append(
+        AccessibilityTranslatorRequests.send(AccessibilityTranslatorRequests.make(clientType: clientType), through: bridgeTokenDelegate, token: token))
     }
   }
 

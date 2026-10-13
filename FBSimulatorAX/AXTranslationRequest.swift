@@ -67,7 +67,8 @@ final class AXTranslationRequest {
   /// The client every translator request for this read carries, resolved by the caller.
   let clientType: AXClientType
   let token: String
-  var device: SimDevice?
+  /// Carries this read's translator requests to the simulator.
+  var transport: (any AXTranslationTransport)?
   /// Owned from construction: the dispatcher records acquisition timings before the caller reaches
   /// `serialize`.
   var collector: AccessibilityProfilingCollector

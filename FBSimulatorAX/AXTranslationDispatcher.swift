@@ -11,14 +11,6 @@ import FBControlCore
 import FBSimulatorControl
 import Foundation
 
-/// Mutable holder so the synchronous bridge can capture the response out of the
-/// `@Sendable` CoreSimulator completion handler. The `DispatchGroup` wait below
-/// establishes the happens-before needed before the value is read, so unchecked
-/// Sendable is safe here.
-private final class AXPResponseBox: @unchecked Sendable {
-  var response: AXPTranslatorResponse?
-}
-
 /// One unit of translator work and its result, carried across the hop onto the AXP
 /// work queue and back. SAFETY: the body runs exactly once, on the serial AXP work
 /// queue; the continuation resume that follows it establishes the happens-before for
@@ -43,10 +35,9 @@ private final class AXPSerializedJob<T>: @unchecked Sendable {
   }
 }
 
-/// Bridges the asynchronous CoreSimulator accessibility API to the synchronous
-/// callback model `AXPTranslator` expects. Holds the token→request registry and,
-/// per request, performs the translator handshake and converts the lazy AXP
-/// attribute callbacks into synchronous CoreSimulator XPC round-trips.
+/// Answers `AXPTranslator`'s synchronous bridge callbacks. Holds the token→request registry and, per
+/// request, performs the translator handshake and hands each translator request to that request's
+/// `AXTranslationTransport`.
 ///
 /// An `@objc`/`NSObject` class only because it conforms to the Objective-C
 /// `AXPTranslationTokenDelegateHelper` protocol and is installed as
@@ -55,7 +46,6 @@ final class AXTranslationDispatcher: NSObject, AXPTranslationTokenDelegateHelper
 
   private weak var translator: AXPTranslator?
   private let logger: ControlCoreLogger?
-  private let callbackQueue: DispatchQueue
   private let lock = NSLock()
   private var tokenToRequest: [String: AXTranslationRequest] = [:]
 
@@ -71,7 +61,6 @@ final class AXTranslationDispatcher: NSObject, AXPTranslationTokenDelegateHelper
   init(translator: AXPTranslator, logger: ControlCoreLogger?) {
     self.translator = translator
     self.logger = logger
-    self.callbackQueue = DispatchQueue(label: "com.facebook.fbsimulatorcontrol.accessibility_translator.callback")
     super.init()
   }
 
@@ -92,11 +81,11 @@ final class AXTranslationDispatcher: NSObject, AXPTranslationTokenDelegateHelper
     return try job.takeResult()
   }
 
-  func platformElement(withRequest request: AXTranslationRequest, simulator: Simulator) async throws -> AXWritableElement {
+  /// Resolves `request`'s root element, through the transport the request already carries.
+  func platformElement(withRequest request: AXTranslationRequest) async throws -> AXWritableElement {
     // The synchronous XPC round-trips driven by the delegate callback must never
     // run on the main queue; the serialized hop below moves them to the AXP work
     // queue, off the main actor and off the cooperative executor.
-    request.device = simulator.device
     request.translator = self.translator
     self.pushRequest(request)
     let translator = self.translator
@@ -162,9 +151,8 @@ final class AXTranslationDispatcher: NSObject, AXPTranslationTokenDelegateHelper
 
   // MARK: - AXPTranslationTokenDelegateHelper
 
-  // Since the CoreSimulator accessibility API is asynchronous but AXPTranslator's
-  // delegation is synchronous, a DispatchGroup acts as a mutex to wait on the
-  // result. The wait must never run on the main queue.
+  // AXPTranslator's delegation is synchronous, so the request's transport waits for each answer. The wait
+  // must never run on the main queue.
   func accessibilityTranslationDelegateBridgeCallback(withToken token: String) -> AXPTranslationCallback {
     guard let request = request(forToken: token) else {
       return { [weak self] _ in
@@ -172,33 +160,26 @@ final class AXTranslationDispatcher: NSObject, AXPTranslationTokenDelegateHelper
         return Self.emptyResponse()
       }
     }
-    let device = request.device
+    let transport = request.transport
     let collector = request.collector
     let logger = request.logger
     let timeoutSeconds = request.requestTimeoutSeconds
     let clientType = request.clientType
-    let callbackQueue = self.callbackQueue
     return { axRequest in
-      axRequest?.clientType = clientType.rawValue
-      logger?.log("Sending Accessibility Request \(String(describing: axRequest))")
-      let group = DispatchGroup()
-      group.enter()
-      let box = AXPResponseBox()
-
-      let xpcStart = CFAbsoluteTimeGetCurrent()
-      device?.sendAccessibilityRequestAsync(axRequest, completionQueue: callbackQueue) { innerResponse in
-        box.response = innerResponse
-        group.leave()
+      guard let axRequest, let transport else {
+        return Self.emptyResponse()
       }
-      let waitResult = group.wait(timeout: .now() + timeoutSeconds)
+      axRequest.clientType = clientType.rawValue
+      logger?.log("Sending Accessibility Request \(String(describing: axRequest))")
+      let xpcStart = CFAbsoluteTimeGetCurrent()
+      let response = transport.send(axRequest, timeout: timeoutSeconds)
       collector.addXPCCallDuration(CFAbsoluteTimeGetCurrent() - xpcStart)
-
-      if waitResult == .timedOut {
+      guard let response else {
         logger?.log("Accessibility request \(String(describing: axRequest)) timed out after \(timeoutSeconds)s — returning empty response")
         return Self.emptyResponse()
       }
-      logger?.log("Got Accessibility Response \(String(describing: box.response))")
-      return box.response
+      logger?.log("Got Accessibility Response \(String(describing: response))")
+      return response
     }
   }
 

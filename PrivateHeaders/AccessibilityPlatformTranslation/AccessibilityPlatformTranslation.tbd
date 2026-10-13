@@ -9,5 +9,6 @@ exports:
     objc-classes:
       - AXPMacPlatformElement
       - AXPTranslator
+      - AXPTranslatorRequest
       - AXPTranslatorResponse
 ...
