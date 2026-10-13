@@ -40,7 +40,16 @@ The package holds:
 
 ### With SwiftPM
 
-Add the package as a dependency, unpacked locally or from a git repository holding it, and depend on the libraries you use by product:
+Each release's libraries are a versioned Swift package at [`facebook/homebrew-fb`](https://github.com/facebook/homebrew-fb), whose products fetch the release's XCFrameworks by URL and checksum:
+
+```swift
+dependencies: [.package(url: "https://github.com/facebook/homebrew-fb", from: "1.7.0")],
+targets: [
+  .executableTarget(name: "Tool", dependencies: [.product(name: "FBSimulatorControl", package: "homebrew-fb")]),
+]
+```
+
+The `Package.swift` in the libraries package offers the same products, for a build of your own: add it as a dependency, unpacked locally or from a git repository holding it:
 
 ```swift
 dependencies: [.package(path: "path/to/idb-libraries")],
