@@ -55,6 +55,8 @@ final class SimulatorAccessibilityCommands: AccessibilityOperations {
   private let transport: (any AXTranslationTransport)?
   private let launchCtl: (any LaunchCtlCommands)?
   private let displays: (any DisplayCommands)?
+  private let transportLock = NSLock()
+  private var bridgeTransport: CoreSimulatorBridgeAXTranslationTransport?
 
   init(
     simulator: Simulator,
@@ -76,9 +78,39 @@ final class SimulatorAccessibilityCommands: AccessibilityOperations {
     translationDispatcher ?? simulator?.accessibilityTranslationDispatcher
   }
 
-  /// Where every translator request this simulator's reads make is sent.
+  /// Where every translator request this simulator's reads make is sent: straight to CoreSimulatorBridge,
+  /// over one connection held for the simulator, unless that cannot be reached.
   private func resolvedTransport(_ simulator: Simulator) -> any AXTranslationTransport {
-    transport ?? CoreSimulatorAXTranslationTransport(device: simulator.device)
+    if let transport {
+      return transport
+    }
+    transportLock.lock()
+    defer { transportLock.unlock() }
+    if let bridgeTransport {
+      return bridgeTransport
+    }
+    let preferred = Self.preferredTransport(connector: .simulator(simulator), logger: simulator.logger) {
+      CoreSimulatorAXTranslationTransport(device: simulator.device)
+    }
+    bridgeTransport = preferred as? CoreSimulatorBridgeAXTranslationTransport
+    return preferred
+  }
+
+  /// The bridge's accessibility service when it can be reached, otherwise CoreSimulator's own client,
+  /// which reaches the same service. A fallback is not kept, so the next read tries the bridge again.
+  static func preferredTransport(
+    connector: SimulatorXPCConnector,
+    logger: ControlCoreLogger?,
+    fallback: () -> any AXTranslationTransport
+  ) -> any AXTranslationTransport {
+    let bridge = CoreSimulatorBridgeAXTranslationTransport(connector: connector)
+    do {
+      try bridge.connect()
+      return bridge
+    } catch {
+      logger?.log("\(CoreSimulatorBridgeAXTranslationTransport.serviceName) is unreachable (\(error)); reading through CoreSimulator's client instead")
+      return fallback()
+    }
   }
 
   private func resolvedLaunchCtl(_ simulator: Simulator) -> any LaunchCtlCommands {

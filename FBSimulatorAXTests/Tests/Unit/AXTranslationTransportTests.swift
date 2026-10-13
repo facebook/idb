@@ -113,3 +113,34 @@ final class AXTranslationTransportTests: XCTestCase {
     XCTAssertEqual(second.connections, 1)
   }
 }
+
+// MARK: - Choosing a transport
+
+final class AXTranslationTransportSelectionTests: XCTestCase {
+
+  private let services = SyntheticXPCServices()
+
+  func testTheBridgeIsPreferredWhenItsServiceCanBeReached() {
+    services.register(CoreSimulatorBridgeAXTranslationTransport.serviceName, respond: SyntheticXPCPeer.silent)
+    let transport = SimulatorAccessibilityCommands.preferredTransport(connector: services.connector, logger: nil) {
+      AXTranslationTransportDouble()
+    }
+    XCTAssertTrue(transport is CoreSimulatorBridgeAXTranslationTransport)
+  }
+
+  func testCoreSimulatorsClientIsTheFallbackWhenTheServiceCannotBeReached() {
+    let transport = SimulatorAccessibilityCommands.preferredTransport(connector: services.connector, logger: nil) {
+      AXTranslationTransportDouble()
+    }
+    XCTAssertTrue(transport is AXTranslationTransportDouble)
+    XCTAssertEqual(services.lookups, [CoreSimulatorBridgeAXTranslationTransport.serviceName])
+  }
+
+  func testAnUnbootedSimulatorFallsBackWithoutLookingUp() {
+    services.simulatorState = .shutdown
+    let transport = SimulatorAccessibilityCommands.preferredTransport(connector: services.connector, logger: nil) {
+      AXTranslationTransportDouble()
+    }
+    XCTAssertTrue(transport is AXTranslationTransportDouble)
+  }
+}

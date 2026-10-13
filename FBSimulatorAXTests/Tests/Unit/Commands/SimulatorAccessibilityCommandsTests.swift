@@ -460,8 +460,11 @@ final class SimulatorAccessibilityCommandsTests: XCTestCase {
 
     let sim = SimulatorTestSupport.testableSimulator(withDevice: fixture!.device)
     let dispatcher = Simulator.createAccessibilityTranslationDispatcher(withTranslator: fixture!.translator)
+    // CoreSimulator's client over the device double, unless a test injects its own: the double vends no
+    // services for the bridge transport to look up.
     let commands = SimulatorAccessibilityCommands(
-      simulator: sim, translationDispatcher: dispatcher, transport: transport, launchCtl: launchCtl, displays: displays)
+      simulator: sim, translationDispatcher: dispatcher,
+      transport: transport ?? CoreSimulatorAXTranslationTransport(device: sim.device), launchCtl: launchCtl, displays: displays)
     sim.commandCache.register(commands, as: SimulatorAccessibilityCommands.self)
 
     simulator = sim
