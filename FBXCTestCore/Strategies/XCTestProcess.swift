@@ -109,6 +109,8 @@ final class XCTestProcess {
       return "XCTest Framework failed loading"
     case 14: // TestShimExitCodeTestListWriteError
       return "Failed to write the test list"
+    case 75: // XCTest's own: an async test failed with `continueAfterFailure = false`, ending the process.
+      return "XCTest stopped the run after an async test failed with continueAfterFailure = false; later tests did not run"
     default:
       return "Unknown xctest exit code \(exitCode)"
     }
