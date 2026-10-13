@@ -5,8 +5,8 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-@testable import FBControlCore
 import FBControlCoreObjC
+@testable import FBSimulatorControl
 import Foundation
 import ObjectiveC
 import Testing
