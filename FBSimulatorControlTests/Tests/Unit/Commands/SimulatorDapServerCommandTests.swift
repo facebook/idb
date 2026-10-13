@@ -7,19 +7,22 @@
 
 import FBControlCore
 @testable import FBSimulatorControl
-import XCTest
+import Foundation
+import Testing
 
 /// The DAP server runs a debugger adapter installed in the simulator's data directory on the host,
 /// speaking the protocol over its standard streams. A script stands in for the adapter here.
-final class SimulatorDapServerCommandTests: XCTestCase {
+@Suite(.serialized)
+final class SimulatorDapServerCommandTests {
 
   private static let adapterPath = "dap/pkg/usr/bin/lldb-vscode"
 
-  private var dataDirectory: URL!
-  private var device: DataDirectoryDevice!
+  private let dataDirectory: URL
+  private let device: DataDirectoryDevice
 
-  override func setUpWithError() throws {
-    dataDirectory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+  init() throws {
+    let dataDirectory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+    self.dataDirectory = dataDirectory
     let adapter = dataDirectory.appendingPathComponent(Self.adapterPath)
     try FileManager.default.createDirectory(at: adapter.deletingLastPathComponent(), withIntermediateDirectories: true)
     // Announces where it was told to log, then echoes the protocol stream back until it closes.
@@ -28,12 +31,13 @@ final class SimulatorDapServerCommandTests: XCTestCase {
     device = DataDirectoryDevice(dataPath: dataDirectory.path)
   }
 
-  override func tearDownWithError() throws {
+  deinit {
     try? FileManager.default.removeItem(at: dataDirectory)
     try? FileManager.default.removeItem(atPath: SimulatorTestSupport.testableSimulator(withDevice: device).coreSimulatorLogsDirectory)
   }
 
-  func testServesTheAdapterOverItsStandardStreamsAndLogsToTheSimulatorLogs() async throws {
+  @Test
+  func servesTheAdapterOverItsStandardStreamsAndLogsToTheSimulatorLogs() async throws {
     let simulator = SimulatorTestSupport.testableSimulator(withDevice: device)
     let output = FBDataBuffer.accumulatingBuffer()
     let input = InputSource()
@@ -45,31 +49,33 @@ final class SimulatorDapServerCommandTests: XCTestCase {
     }
     try await output.awaitFinishedConsuming()
 
-    XCTAssertEqual(status, .exited(0))
+    #expect(status == .exited(0))
     let lines = output.lines().filter { !$0.isEmpty }
-    XCTAssertEqual(lines.count, 2, "\(lines)")
-    let logPath = try XCTUnwrap(lines.first)
-    XCTAssertEqual((logPath as NSString).deletingLastPathComponent, (simulator.coreSimulatorLogsDirectory as NSString).appendingPathComponent("dap"))
-    XCTAssertTrue(FileManager.default.fileExists(atPath: logPath), "The log file exists before the adapter starts")
-    XCTAssertEqual(lines.last, "ping")
+    #expect(lines.count == 2, "\(lines)")
+    let logPath = try #require(lines.first)
+    #expect((logPath as NSString).deletingLastPathComponent == (simulator.coreSimulatorLogsDirectory as NSString).appendingPathComponent("dap"))
+    #expect(FileManager.default.fileExists(atPath: logPath), "The log file exists before the adapter starts")
+    #expect(lines.last == "ping")
   }
 
-  func testTerminatesTheAdapterWhenTheScopeExits() async throws {
+  @Test
+  func terminatesTheAdapterWhenTheScopeExits() async throws {
     let simulator = SimulatorTestSupport.testableSimulator(withDevice: device)
 
     let process = try await simulator.dapServer.withServer(Self.adapterPath, input: InputSource(), output: FBDataBuffer.accumulatingBuffer()) { $0 }
 
     let status = try await process.terminationStatus
-    XCTAssertEqual(status, .signalled(SIGTERM), "An adapter still reading its input is terminated rather than left running")
+    #expect(status == .signalled(SIGTERM), "An adapter still reading its input is terminated rather than left running")
   }
 
-  func testFailsWithoutADataDirectory() async throws {
+  @Test
+  func failsWithoutADataDirectory() async throws {
     let simulator = SimulatorTestSupport.testableSimulator(withDevice: DataDirectoryDevice(dataPath: nil))
     defer { try? FileManager.default.removeItem(atPath: simulator.coreSimulatorLogsDirectory) }
 
     do {
       try await simulator.dapServer.withServer(Self.adapterPath, input: InputSource(), output: FBDataBuffer.accumulatingBuffer()) { _ in }
-      XCTFail("Expected launching without a data directory to fail")
+      Issue.record("Expected launching without a data directory to fail")
     } catch SimulatorDapServerError.noDataDirectory {
       // Expected.
     }
