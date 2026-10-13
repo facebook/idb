@@ -7,9 +7,10 @@
 
 @testable import CompanionLib
 import FBControlCore
+import Foundation
 import GRPCCore
 import IDBGRPCSwift
-import XCTest
+import Testing
 
 private final class ScriptedTail: TailOperation, @unchecked Sendable {
   private let lock = NSLock()
@@ -38,24 +39,28 @@ private final class ForwardedData: @unchecked Sendable {
   func capture(_ consumer: any DataConsumer) { lock.withLock { _consumer = consumer } }
 }
 
-final class TailMethodHandlerTests: XCTestCase {
+@Suite
+struct TailMethodHandlerTests {
 
-  func testAStopCancelsTheTail() async throws {
+  @Test
+  func aStopCancelsTheTail() async throws {
     let tail = ScriptedTail()
     try await TailMethodHandler.tail(send: { _ in }, awaitStop: {}, start: { _ in tail })
-    XCTAssertTrue(tail.wasCancelled)
+    #expect(tail.wasCancelled)
   }
 
-  func testAStreamEndingWithoutAStopFailsTheCall() async throws {
+  @Test
+  func aStreamEndingWithoutAStopFailsTheCall() async throws {
     let tail = ScriptedTail()
     do {
       try await TailMethodHandler.tail(send: { _ in }, awaitStop: { throw StreamEnded() }, start: { _ in tail })
-      XCTFail("the call outlived its request stream")
+      Issue.record("the call outlived its request stream")
     } catch is StreamEnded {}
-    XCTAssertTrue(tail.wasCancelled)
+    #expect(tail.wasCancelled)
   }
 
-  func testEachChunkIsForwardedInOrder() async throws {
+  @Test
+  func eachChunkIsForwardedInOrder() async throws {
     let forwarded = ForwardedData()
     try await TailMethodHandler.tail(
       send: { forwarded.record($0.data) },
@@ -66,10 +71,11 @@ final class TailMethodHandlerTests: XCTestCase {
         consumer.consumeData(Data("b".utf8))
         return ScriptedTail()
       })
-    XCTAssertEqual(forwarded.all, [Data("a".utf8), Data("b".utf8)])
+    #expect(forwarded.all == [Data("a".utf8), Data("b".utf8)])
   }
 
-  func testAFailedSendStopsForwarding() async throws {
+  @Test
+  func aFailedSendStopsForwarding() async throws {
     let attempted = ForwardedData()
     try await TailMethodHandler.tail(
       send: {
@@ -83,10 +89,11 @@ final class TailMethodHandlerTests: XCTestCase {
         consumer.consumeData(Data("b".utf8))
         return ScriptedTail()
       })
-    XCTAssertEqual(attempted.all, [Data("a".utf8)])
+    #expect(attempted.all == [Data("a".utf8)])
   }
 
-  func testDataConsumedAfterTheStopIsNotForwarded() async throws {
+  @Test
+  func dataConsumedAfterTheStopIsNotForwarded() async throws {
     let forwarded = ForwardedData()
     try await TailMethodHandler.tail(
       send: { forwarded.record($0.data) },
@@ -97,6 +104,6 @@ final class TailMethodHandlerTests: XCTestCase {
       })
     forwarded.consumer.consumeData(Data("late".utf8))
     forwarded.consumer.consumeEndOfFile()
-    XCTAssertEqual(forwarded.all, [])
+    #expect(forwarded.all == [])
   }
 }
