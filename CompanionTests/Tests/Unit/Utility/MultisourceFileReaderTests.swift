@@ -11,12 +11,14 @@ import FBArtifactStaging
 import Foundation
 import GRPCCore
 import IDBGRPCSwift
-import XCTest
+import Testing
 import os
 
-final class MultisourceFileReaderTests: XCTestCase {
+@Suite(.serialized)
+struct MultisourceFileReaderTests {
 
-  func testWritePayloadsStopsWhenTheReaderHasGone() async throws {
+  @Test
+  func writePayloadsStopsWhenTheReaderHasGone() async throws {
     let source = ChunkSource()
     source.abandon()
     let pulled = OSAllocatedUnfairLock(initialState: 0)
@@ -26,21 +28,22 @@ final class MultisourceFileReaderTests: XCTestCase {
         initialData: Data([0xFF]),
         from: Self.requestStream(chunkCount: 4, pulled: pulled),
         to: source)
-      XCTFail("Expected the failed write to end the transfer")
+      Issue.record("Expected the failed write to end the transfer")
     } catch {
       let status = ErrorMapping.rpcError(from: error)
-      XCTAssertEqual(status.code, .aborted)
-      XCTAssertEqual(status.message, "The reader stopped before the input ended")
+      #expect(status.code == .aborted)
+      #expect(status.message == "The reader stopped before the input ended")
     }
 
-    XCTAssertEqual(pulled.withLock { $0 }, 0)
+    #expect(pulled.withLock { $0 } == 0)
   }
 
   private struct ClientFailed: Error {}
 
   /// A client stream that fails part way truncates the archive, so the extraction fails too, and the client's failure is
   /// what the call reports.
-  func testAClientStreamFailingPartWayReportsTheExtractionNotTheClient() async throws {
+  @Test
+  func aClientStreamFailingPartWayReportsTheExtractionNotTheClient() async throws {
     let directory = URL(fileURLWithPath: NSTemporaryDirectory()).appendingPathComponent(UUID().uuidString)
     try FileManager.default.createDirectory(at: directory.appendingPathComponent("payload"), withIntermediateDirectories: true)
     var random = Data(count: 1 << 20)
@@ -58,9 +61,9 @@ final class MultisourceFileReaderTests: XCTestCase {
         from: RequestStreamReader(RPCAsyncSequence(wrapping: source)), temporaryDirectory: TemporaryDirectory(logger: logger),
         extractFromSubdir: false
       ) { $0 }
-      XCTFail("Expected a truncated push to fail")
+      Issue.record("Expected a truncated push to fail")
     } catch {
-      XCTAssertTrue(error is ClientFailed, "\(error)")
+      #expect(error is ClientFailed, "\(error)")
     }
   }
 
