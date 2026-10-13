@@ -7,9 +7,10 @@
 
 @testable import FBSimulatorControl
 import Foundation
-import XCTest
+import Testing
 
-final class SimulatorApplicationInstallTests: XCTestCase {
+@Suite
+struct SimulatorApplicationInstallTests {
 
   private enum TestError: Error {
     case conditionNotMet
@@ -26,7 +27,8 @@ final class SimulatorApplicationInstallTests: XCTestCase {
     .installFailed(bundleDescription: "an app", options: "no options")
   }
 
-  func testCleanInstallSucceedsWithoutRetry() async throws {
+  @Test
+  func cleanInstallSucceedsWithoutRetry() async throws {
     var attempts: [SimulatorApplicationInstallAttempt] = []
     var resolveCalls = 0
 
@@ -38,12 +40,13 @@ final class SimulatorApplicationInstallTests: XCTestCase {
       },
       installFailure: installFailure)
 
-    XCTAssertEqual(application, "installed")
-    XCTAssertEqual(attempts, [.initial])
-    XCTAssertEqual(resolveCalls, 1)
+    #expect(application == "installed")
+    #expect(attempts == [.initial])
+    #expect(resolveCalls == 1)
   }
 
-  func testInfoPlistInstallFailureRetriesSuccessfully() async throws {
+  @Test
+  func infoPlistInstallFailureRetriesSuccessfully() async throws {
     var attempts: [SimulatorApplicationInstallAttempt] = []
 
     let application = try await SimulatorApplicationCommands.installAndResolveApplication(
@@ -56,11 +59,12 @@ final class SimulatorApplicationInstallTests: XCTestCase {
       resolveInstalledApplication: { "installed" },
       installFailure: installFailure)
 
-    XCTAssertEqual(application, "installed")
-    XCTAssertEqual(attempts, [.initial, .retry])
+    #expect(application == "installed")
+    #expect(attempts == [.initial, .retry])
   }
 
-  func testInfoPlistLookupFailureRetriesSuccessfully() async throws {
+  @Test
+  func infoPlistLookupFailureRetriesSuccessfully() async throws {
     var attempts: [SimulatorApplicationInstallAttempt] = []
     var resolveCalls = 0
 
@@ -75,44 +79,49 @@ final class SimulatorApplicationInstallTests: XCTestCase {
       },
       installFailure: installFailure)
 
-    XCTAssertEqual(application, "installed")
-    XCTAssertEqual(attempts, [.initial, .retry])
-    XCTAssertEqual(resolveCalls, 2)
+    #expect(application == "installed")
+    #expect(attempts == [.initial, .retry])
+    #expect(resolveCalls == 2)
   }
 
-  func testNonRetryableInitialFailureBecomesInstallFailure() async {
+  @Test
+  func nonRetryableInitialFailureBecomesInstallFailure() async {
     do {
       let _: String = try await SimulatorApplicationCommands.installAndResolveApplication(
         install: { _ in throw TestError.conditionNotMet },
         resolveInstalledApplication: { "installed" },
         installFailure: installFailure)
-      XCTFail("Expected install failure")
+      Issue.record("Expected install failure")
     } catch let error as SimulatorApplicationInstallError {
       guard case .installFailed = error else {
-        return XCTFail("Expected installFailed, got \(error)")
+        Issue.record("Expected installFailed, got \(error)")
+        return
       }
     } catch {
-      XCTFail("Expected installFailed, got \(error)")
+      Issue.record("Expected installFailed, got \(error)")
     }
   }
 
-  func testNonRetryableInitialLookupFailureBecomesInstallFailure() async {
+  @Test
+  func nonRetryableInitialLookupFailureBecomesInstallFailure() async {
     do {
       let _: String = try await SimulatorApplicationCommands.installAndResolveApplication(
         install: { _ in },
         resolveInstalledApplication: { throw TestError.conditionNotMet },
         installFailure: installFailure)
-      XCTFail("Expected install failure")
+      Issue.record("Expected install failure")
     } catch let error as SimulatorApplicationInstallError {
       guard case .installFailed = error else {
-        return XCTFail("Expected installFailed, got \(error)")
+        Issue.record("Expected installFailed, got \(error)")
+        return
       }
     } catch {
-      XCTFail("Expected installFailed, got \(error)")
+      Issue.record("Expected installFailed, got \(error)")
     }
   }
 
-  func testRetryInstallFailureBecomesInstallFailure() async {
+  @Test
+  func retryInstallFailureBecomesInstallFailure() async {
     var attempts: [SimulatorApplicationInstallAttempt] = []
 
     do {
@@ -126,18 +135,20 @@ final class SimulatorApplicationInstallTests: XCTestCase {
         },
         resolveInstalledApplication: { "installed" },
         installFailure: installFailure)
-      XCTFail("Expected install failure")
+      Issue.record("Expected install failure")
     } catch let error as SimulatorApplicationInstallError {
       guard case .installFailed = error else {
-        return XCTFail("Expected installFailed, got \(error)")
+        Issue.record("Expected installFailed, got \(error)")
+        return
       }
     } catch {
-      XCTFail("Expected installFailed, got \(error)")
+      Issue.record("Expected installFailed, got \(error)")
     }
-    XCTAssertEqual(attempts, [.initial, .retry])
+    #expect(attempts == [.initial, .retry])
   }
 
-  func testLookupFailureAfterSuccessfulRetryKeepsOriginalError() async {
+  @Test
+  func lookupFailureAfterSuccessfulRetryKeepsOriginalError() async {
     do {
       let _: String = try await SimulatorApplicationCommands.installAndResolveApplication(
         install: { attempt in
@@ -147,10 +158,10 @@ final class SimulatorApplicationInstallTests: XCTestCase {
         },
         resolveInstalledApplication: { throw TestError.conditionNotMet },
         installFailure: installFailure)
-      XCTFail("Expected lookup error")
+      Issue.record("Expected lookup error")
     } catch TestError.conditionNotMet {
     } catch {
-      XCTFail("Expected original lookup error, got \(error)")
+      Issue.record("Expected original lookup error, got \(error)")
     }
   }
 }
