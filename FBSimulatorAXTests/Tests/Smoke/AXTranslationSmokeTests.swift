@@ -135,9 +135,9 @@ final class AXTranslationSmokeTests: ProvidedSimulatorTestCase {
   ) async throws {
     var settled: (actual: [AccessibilityDocumentElement], expected: [AccessibilityDocumentElement])?
     for _ in 0..<5 {
-      let before = try await expected().map(Self.withSortedTraits)
-      let candidate = try await actual().map(Self.withSortedTraits)
-      let after = try await expected().map(Self.withSortedTraits)
+      let before = try await expected()
+      let candidate = try await actual()
+      let after = try await expected()
       if before == after {
         settled = (candidate, after)
         break
@@ -151,12 +151,5 @@ final class AXTranslationSmokeTests: ProvidedSimulatorTestCase {
     for (index, (actualElement, expectedElement)) in zip(actualElements, expectedElements).enumerated() {
       XCTAssertEqual(actualElement, expectedElement, "\(context), element \(index)", file: file, line: line)
     }
-  }
-
-  /// Traits are decoded from a bitmask into a set, so their order is not part of what either read reports.
-  private static func withSortedTraits(_ element: AccessibilityDocumentElement) -> AccessibilityDocumentElement {
-    var element = element
-    element.traits = element.traits.map { $0?.sorted() }
-    return element
   }
 }

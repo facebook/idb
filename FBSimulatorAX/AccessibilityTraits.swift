@@ -10,7 +10,7 @@ import FBControlCore
 import Foundation
 
 // Each trait paired with the name AXRuntime gives it - the constant minus its
-// `AXTrait` prefix. All traits are single bits, so extraction order is immaterial.
+// `AXTrait` prefix, in bit order, which is the order names are reported in.
 private let axTraitNames: [(AXTraits, String)] = [
   (.button, "Button"),
   (.link, "Link"),
@@ -81,20 +81,20 @@ func AXTraitToNameMap() -> [UInt64: String] {
   axTraitToName
 }
 
-/// The set of trait names present in `traitBitmask`: "None" for an empty mask,
-/// plus "Unknown" when bits remain that no known trait accounts for.
-public func AXExtractTraits(_ traitBitmask: UInt64) -> Set<String> {
+/// The names of the traits present in `traitBitmask`, in bit order so the same mask always reads the
+/// same: "None" for an empty mask, and "Unknown" last when bits remain that no known trait accounts for.
+public func AXExtractTraits(_ traitBitmask: UInt64) -> [String] {
   guard traitBitmask != 0 else {
     return ["None"]
   }
   var remaining = traitBitmask
-  var extracted = Set<String>()
+  var extracted: [String] = []
   for (trait, name) in axTraitNames where (remaining & trait.rawValue) == trait.rawValue {
     remaining -= trait.rawValue
-    extracted.insert(name)
+    extracted.append(name)
   }
   if remaining != 0 {
-    extracted.insert("Unknown")
+    extracted.append("Unknown")
   }
   return extracted
 }

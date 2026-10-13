@@ -116,7 +116,7 @@ extension AXBridgeSnapshotDecoder {
       guard let bitmask = bitmask as? NSNumber else {
         return nil
       }
-      return Array(AXExtractTraits(bitmask.uint64Value))
+      return AXExtractTraits(bitmask.uint64Value)
     }
 
     /// Nil when the read did not ask whether a touch reaches the element.

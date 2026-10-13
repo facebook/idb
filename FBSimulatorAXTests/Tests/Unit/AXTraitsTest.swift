@@ -18,24 +18,22 @@ final class AXTraitsTest: XCTestCase {
   }
 
   func testEmptyTraitExtraction() {
-    XCTAssertEqual(AXExtractTraits(0), Set(["None"]))
+    XCTAssertEqual(AXExtractTraits(0), ["None"])
   }
 
   func testSingleTraitExtraction() {
-    XCTAssertEqual(AXExtractTraits(AXTraits.button.rawValue), Set(["Button"]))
+    XCTAssertEqual(AXExtractTraits(AXTraits.button.rawValue), ["Button"])
   }
 
   func testUnknownTraitExtraction() {
-    XCTAssertEqual(AXExtractTraits(UInt64(1) << 63), Set(["Unknown"]))
+    XCTAssertEqual(AXExtractTraits(UInt64(1) << 63), ["Unknown"])
   }
 
   func testCombinedTraitExtraction() {
-    let expectedSet: Set<String> = Set(["Button", "Selected"])
-    XCTAssertEqual(AXExtractTraits(AXTraits.button.rawValue | AXTraits.selected.rawValue), expectedSet)
+    XCTAssertEqual(AXExtractTraits(AXTraits.selected.rawValue | AXTraits.button.rawValue), ["Button", "Selected"], "bit order")
   }
 
   func testCombinedTraitExtractionWithUnknownTrait() {
-    let expectedSet: Set<String> = Set(["Button", "Unknown"])
-    XCTAssertEqual(AXExtractTraits(AXTraits.button.rawValue | (UInt64(1) << 63)), expectedSet)
+    XCTAssertEqual(AXExtractTraits(AXTraits.button.rawValue | (UInt64(1) << 63)), ["Button", "Unknown"], "unknown bits last")
   }
 }

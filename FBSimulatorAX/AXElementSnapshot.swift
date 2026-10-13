@@ -355,7 +355,7 @@ extension AXElementSnapshot {
       roleDescription = value(.roleDescription) as? String
       subrole = value(.subrole) as? String
       isRequired = flag(.required)
-      traits = (value(.traits) as? NSNumber).map { Array(AXExtractTraits($0.uint64Value)) }
+      traits = (value(.traits) as? NSNumber).map { AXExtractTraits($0.uint64Value) }
       isExpanded = flag(.expanded)
       placeholder = value(.placeholder) as? String
       isHidden = flag(.hidden)

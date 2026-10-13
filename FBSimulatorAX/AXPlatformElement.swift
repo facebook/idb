@@ -95,7 +95,7 @@ extension AXPMacPlatformElement: AXPlatformElement {
     guard let result = perform(selector, with: "AXTraits")?.takeUnretainedValue() as? NSNumber else {
       return nil
     }
-    return Array(AXExtractTraits(result.uint64Value))
+    return AXExtractTraits(result.uint64Value)
   }
 
   func axChildren() -> [AXPlatformElement] {
