@@ -13,6 +13,7 @@ public enum DeviceSocketForwardingError: Error {
   case callUnavailable(function: String)
   case connectionIDUnavailable
   case remoteConnectionFailed(remotePort: Int)
+  case invalidPort(Int)
 }
 
 extension DeviceSocketForwardingError: LocalizedError {
@@ -26,6 +27,8 @@ extension DeviceSocketForwardingError: LocalizedError {
       return "Failed to get ConnectionID from Device"
     case let .remoteConnectionFailed(remotePort):
       return "Failed to connect to remote port \(remotePort)"
+    case let .invalidPort(port):
+      return "Invalid device port \(port); expected 1...65535"
     }
   }
 }
@@ -39,11 +42,24 @@ public struct DeviceSocketForwardingCommands {
 
   // MARK: - Socket forwarding
 
+  /// Keeps the connected device alive until the socket operation and its cleanup finish.
+  public func withPortConnection<Result: Sendable>(
+    port: UInt16,
+    operation: @Sendable (SocketStream) async throws -> Result
+  ) async throws -> Result {
+    guard port > 0 else { throw DeviceSocketForwardingError.invalidPort(Int(port)) }
+    return try await device.withConnectedDevice(purpose: "Socket Connection") { connectedDevice in
+      let descriptor = try Self.openLocalSocket(toRemotePort: Int(port), on: connectedDevice, logger: device.logger)
+      return try await SocketStream.withSocket(adopting: descriptor, operation: operation)
+    }
+  }
+
   public func drainLocalFileInput(
     _ localFileDescriptorInput: Int32,
     localFileOutput localFileDescriptorOutput: Int32,
     remotePort: Int32
   ) async throws {
+    guard (1...65535).contains(remotePort) else { throw DeviceSocketForwardingError.invalidPort(Int(remotePort)) }
     let localConsumer = try FileWriter.asyncWriter(withFileDescriptor: localFileDescriptorOutput, closeOnEndOfFile: false)
     try await device.withConnectedDevice(purpose: "Socket Connection") { connectedDevice in
       let localSocket = try Self.openLocalSocket(toRemotePort: Int(remotePort), on: connectedDevice, logger: device.logger)
@@ -98,6 +114,7 @@ public struct DeviceSocketForwardingCommands {
   }
 
   private static func openLocalSocket(toRemotePort remotePort: Int, on device: any DeviceCommands, logger: (any ControlCoreLogger)?) throws -> Int32 {
+    guard (1...65535).contains(remotePort) else { throw DeviceSocketForwardingError.invalidPort(remotePort) }
     guard let getConnectionID = device.calls.GetConnectionID else {
       throw DeviceSocketForwardingError.callUnavailable(function: "GetConnectionID")
     }
