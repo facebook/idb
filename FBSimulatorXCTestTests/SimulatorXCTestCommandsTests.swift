@@ -9,7 +9,7 @@ import FBControlCore
 @testable import FBSimulatorControl
 @testable import FBSimulatorXCTest
 import Foundation
-import XCTest
+import Testing
 
 /// A `SimDevice` stand-in that returns canned `getenv` values keyed by name.
 private final class GetenvStubDevice {
@@ -27,14 +27,16 @@ private final class GetenvStubDevice {
 }
 
 /// Locks the testmanagerd socket-path resolution without requiring a booted simulator.
-final class SimulatorXCTestCommandsTests: XCTestCase {
+@Suite
+struct SimulatorXCTestCommandsTests {
 
-  func testTestManagerDaemonSocketPathReturnsGetenvValue() async throws {
+  @Test
+  func testManagerDaemonSocketPathReturnsGetenvValue() async throws {
     let simulator = SimulatorTestSupport.testableSimulator(withDevice: GetenvStubDevice(getenvValues: ["TESTMANAGERD_SIM_SOCK": "/tmp/testmanagerd.sock"]))
     let commands = SimulatorXCTestCommands(simulator: simulator)
 
     let path = try await commands.testManagerDaemonSocketPath()
 
-    XCTAssertEqual(path, "/tmp/testmanagerd.sock")
+    #expect(path == "/tmp/testmanagerd.sock")
   }
 }
