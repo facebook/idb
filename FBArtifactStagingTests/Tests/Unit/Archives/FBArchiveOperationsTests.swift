@@ -7,15 +7,16 @@
 
 @testable import FBArtifactStaging
 import FBControlCore
-import XCTest
+import Foundation
+import Testing
 
-final class FBArchiveOperationsTests: XCTestCase {
+@Suite(.serialized)
+final class FBArchiveOperationsTests {
 
-  private var logger: ControlCoreLoggerDouble!
-  private var tempDirectory: String!
+  private let logger: ControlCoreLoggerDouble
+  private let tempDirectory: String
 
-  override func setUp() {
-    super.setUp()
+  init() {
     logger = ControlCoreLoggerDouble()
     tempDirectory = (NSTemporaryDirectory() as NSString)
       .appendingPathComponent(UUID().uuidString)
@@ -24,54 +25,58 @@ final class FBArchiveOperationsTests: XCTestCase {
       withIntermediateDirectories: true)
   }
 
-  override func tearDown() {
+  deinit {
     try? FileManager.default.removeItem(atPath: tempDirectory)
-    super.tearDown()
   }
 
   // MARK: - commandToExtractArchive
 
-  func testCommandToExtractArchive_NoOverrideMTime_NoDebug() {
+  @Test
+  func commandToExtractArchive_NoOverrideMTime_NoDebug() {
     let command = FBArchiveOperations.commandToExtractArchive(
       atPath: "/tmp/archive.tar.gz",
       toPath: "/tmp/output",
       overrideModificationTime: false,
       debugLogging: false)
 
-    XCTAssertEqual(command, ["-zxp", "--no-mac-metadata", "-C", "/tmp/output", "-f", "/tmp/archive.tar.gz"])
+    #expect(command == ["-zxp", "--no-mac-metadata", "-C", "/tmp/output", "-f", "/tmp/archive.tar.gz"])
   }
 
-  func testCommandToExtractArchive_WithOverrideMTime_NoDebug() {
+  @Test
+  func commandToExtractArchive_WithOverrideMTime_NoDebug() {
     let command = FBArchiveOperations.commandToExtractArchive(
       atPath: "/tmp/archive.tar.gz",
       toPath: "/tmp/output",
       overrideModificationTime: true,
       debugLogging: false)
 
-    XCTAssertEqual(command[0], "-zxpm", "Flags should include m when overrideMTime is YES")
+    #expect(command[0] == "-zxpm", "Flags should include m when overrideMTime is YES")
   }
 
-  func testCommandToExtractArchive_NoOverrideMTime_WithDebug() {
+  @Test
+  func commandToExtractArchive_NoOverrideMTime_WithDebug() {
     let command = FBArchiveOperations.commandToExtractArchive(
       atPath: "/tmp/archive.tar.gz",
       toPath: "/tmp/output",
       overrideModificationTime: false,
       debugLogging: true)
 
-    XCTAssertEqual(command[0], "-zxpv", "Flags should include v when debugLogging is YES")
+    #expect(command[0] == "-zxpv", "Flags should include v when debugLogging is YES")
   }
 
-  func testCommandToExtractArchive_WithOverrideMTime_WithDebug() {
+  @Test
+  func commandToExtractArchive_WithOverrideMTime_WithDebug() {
     let command = FBArchiveOperations.commandToExtractArchive(
       atPath: "/tmp/archive.tar.gz",
       toPath: "/tmp/output",
       overrideModificationTime: true,
       debugLogging: true)
 
-    XCTAssertEqual(command[0], "-zxpmv", "Flags should include both m and v")
+    #expect(command[0] == "-zxpmv", "Flags should include both m and v")
   }
 
-  func testCommandToExtractArchive_PreservesPathsExactly() {
+  @Test
+  func commandToExtractArchive_PreservesPathsExactly() {
     let archivePath = "/Users/test/Downloads/my archive (1).tar.gz"
     let extractPath = "/Users/test/Documents/output dir"
 
@@ -81,29 +86,31 @@ final class FBArchiveOperationsTests: XCTestCase {
       overrideModificationTime: false,
       debugLogging: false)
 
-    XCTAssertEqual(command[3], extractPath, "Extract path should be preserved exactly")
-    XCTAssertEqual(command[5], archivePath, "Archive path should be preserved exactly")
+    #expect(command[3] == extractPath, "Extract path should be preserved exactly")
+    #expect(command[5] == archivePath, "Archive path should be preserved exactly")
   }
 
   // MARK: - commandToExtractFromStdIn
 
-  func testCommandToExtractFromStdIn_NoOverrideMTime_NoDebug() {
+  @Test
+  func commandToExtractFromStdIn_NoOverrideMTime_NoDebug() {
     let command = FBArchiveOperations.commandToExtractFromStdIn(
       withExtractPath: "/tmp/output",
       overrideModificationTime: false,
       debugLogging: false)
 
-    XCTAssertEqual(command, ["-zxp", "--no-mac-metadata", "-C", "/tmp/output", "-f", "-"])
+    #expect(command == ["-zxp", "--no-mac-metadata", "-C", "/tmp/output", "-f", "-"])
   }
 
-  func testCommandToExtractFromStdIn_WithOverrideMTime() {
+  @Test
+  func commandToExtractFromStdIn_WithOverrideMTime() {
     let command = FBArchiveOperations.commandToExtractFromStdIn(
       withExtractPath: "/tmp/output",
       overrideModificationTime: true,
       debugLogging: false)
 
-    XCTAssertEqual(command[0], "-zxpm", "overrideMTime should include m flag")
-    XCTAssertEqual(command.last, "-", "Last element should be stdin marker '-'")
+    #expect(command[0] == "-zxpm", "overrideMTime should include m flag")
+    #expect(command.last == "-", "Last element should be stdin marker '-'")
   }
 
   // MARK: - Round-trip extraction
@@ -204,77 +211,72 @@ final class FBArchiveOperationsTests: XCTestCase {
 
   private func posixPermissions(atPath path: String) throws -> Int {
     let attributes = try FileManager.default.attributesOfItem(atPath: path)
-    return try XCTUnwrap(attributes[.posixPermissions] as? NSNumber).intValue
+    return try #require(attributes[.posixPermissions] as? NSNumber).intValue
   }
 
   /// The parts of the fixture that survive every container and read mode.
   private func assertPayloadContents(extractedTo root: String) throws {
     let app = (root as NSString).appendingPathComponent("Payload/Sample.app")
-    XCTAssertEqual(
+    #expect(
       try String(
-        contentsOfFile: (app as NSString).appendingPathComponent("Info.plist"), encoding: .utf8),
-      Self.plistContents)
-    XCTAssertEqual(
+        contentsOfFile: (app as NSString).appendingPathComponent("Info.plist"), encoding: .utf8)
+        == Self.plistContents)
+    #expect(
       try String(
-        contentsOfFile: (app as NSString).appendingPathComponent("Sample"), encoding: .utf8),
-      Self.executableContents)
+        contentsOfFile: (app as NSString).appendingPathComponent("Sample"), encoding: .utf8)
+        == Self.executableContents)
   }
 
   // MARK: - Extraction from a file path
 
-  func testExtractArchiveAtPath_GzippedTar_RestoresContentsPermissionsAndSymlinks() async throws {
+  @Test
+  func extractArchiveAtPath_GzippedTar_RestoresContentsPermissionsAndSymlinks() async throws {
     let archive = try makeArchive(from: try makePayloadFixture(), format: .gzippedTar)
 
     let root = try await extractFromFile(archive)
 
     try assertPayloadContents(extractedTo: root)
-    XCTAssertEqual(
-      try posixPermissions(
-        atPath: (root as NSString).appendingPathComponent("Payload/Sample.app/Sample")),
-      Self.executableMode,
-      "A gzipped tar carries the mode in every entry header")
+    let mode = try posixPermissions(
+      atPath: (root as NSString).appendingPathComponent("Payload/Sample.app/Sample"))
+    #expect(mode == Self.executableMode, "A gzipped tar carries the mode in every entry header")
     let link = (root as NSString).appendingPathComponent("Payload/link")
-    XCTAssertEqual(
-      try FileManager.default.destinationOfSymbolicLink(atPath: link), Self.symlinkDestination)
+    #expect(try FileManager.default.destinationOfSymbolicLink(atPath: link) == Self.symlinkDestination)
   }
 
-  func testExtractArchiveAtPath_Zip_RestoresContentsPermissionsAndSymlinks() async throws {
+  @Test
+  func extractArchiveAtPath_Zip_RestoresContentsPermissionsAndSymlinks() async throws {
     let archive = try makeArchive(from: try makePayloadFixture(), format: .zip)
 
     let root = try await extractFromFile(archive)
 
     try assertPayloadContents(extractedTo: root)
-    XCTAssertEqual(
-      try posixPermissions(
-        atPath: (root as NSString).appendingPathComponent("Payload/Sample.app/Sample")),
-      Self.executableMode,
-      "A seekable read reaches the zip central directory, which holds the Unix mode")
+    let mode = try posixPermissions(
+      atPath: (root as NSString).appendingPathComponent("Payload/Sample.app/Sample"))
+    #expect(mode == Self.executableMode, "A seekable read reaches the zip central directory, which holds the Unix mode")
     let link = (root as NSString).appendingPathComponent("Payload/link")
-    XCTAssertEqual(
-      try FileManager.default.destinationOfSymbolicLink(atPath: link), Self.symlinkDestination)
+    #expect(try FileManager.default.destinationOfSymbolicLink(atPath: link) == Self.symlinkDestination)
   }
 
   // MARK: - Extraction from a stream
 
-  func testExtractArchiveFromStream_GzippedTar_RestoresContentsPermissionsAndSymlinks() async throws {
+  @Test
+  func extractArchiveFromStream_GzippedTar_RestoresContentsPermissionsAndSymlinks() async throws {
     let archive = try makeArchive(from: try makePayloadFixture(), format: .gzippedTar)
 
     let root = try await extractFromStream(archive)
 
     try assertPayloadContents(extractedTo: root)
-    XCTAssertEqual(
-      try posixPermissions(
-        atPath: (root as NSString).appendingPathComponent("Payload/Sample.app/Sample")),
-      Self.executableMode,
-      "Tar entry headers carry the mode, so streaming loses nothing")
+    let mode = try posixPermissions(
+      atPath: (root as NSString).appendingPathComponent("Payload/Sample.app/Sample"))
+    #expect(mode == Self.executableMode, "Tar entry headers carry the mode, so streaming loses nothing")
     let link = (root as NSString).appendingPathComponent("Payload/link")
-    XCTAssertEqual(
-      try FileManager.default.destinationOfSymbolicLink(atPath: link), Self.symlinkDestination)
+    #expect(try FileManager.default.destinationOfSymbolicLink(atPath: link) == Self.symlinkDestination)
   }
 
   // MARK: - Modification time
 
-  func testExtractArchiveAtPath_PreservesModificationTimeByDefault() async throws {
+  @Test
+  func extractArchiveAtPath_PreservesModificationTimeByDefault() async throws {
     let source = try makePayloadFixture()
     let archivedDate = Date(timeIntervalSince1970: 1_000_000_000)
     let plist = (source as NSString).appendingPathComponent("Payload/Sample.app/Info.plist")
@@ -285,12 +287,13 @@ final class FBArchiveOperationsTests: XCTestCase {
 
     let extracted = (root as NSString).appendingPathComponent("Payload/Sample.app/Info.plist")
     let attributes = try FileManager.default.attributesOfItem(atPath: extracted)
-    let extractedDate = try XCTUnwrap(attributes[.modificationDate] as? Date)
-    XCTAssertEqual(
-      extractedDate.timeIntervalSince1970, archivedDate.timeIntervalSince1970, accuracy: 2)
+    let extractedDate = try #require(attributes[.modificationDate] as? Date)
+    #expect(
+      abs(extractedDate.timeIntervalSince1970 - archivedDate.timeIntervalSince1970) <= 2)
   }
 
-  func testExtractArchiveAtPath_OverrideModificationTime_RewritesItToNow() async throws {
+  @Test
+  func extractArchiveAtPath_OverrideModificationTime_RewritesItToNow() async throws {
     let source = try makePayloadFixture()
     let archivedDate = Date(timeIntervalSince1970: 1_000_000_000)
     let plist = (source as NSString).appendingPathComponent("Payload/Sample.app/Info.plist")
@@ -301,70 +304,77 @@ final class FBArchiveOperationsTests: XCTestCase {
 
     let extracted = (root as NSString).appendingPathComponent("Payload/Sample.app/Info.plist")
     let attributes = try FileManager.default.attributesOfItem(atPath: extracted)
-    let extractedDate = try XCTUnwrap(attributes[.modificationDate] as? Date)
-    XCTAssertGreaterThan(
-      extractedDate, Date(timeIntervalSinceNow: -300),
+    let extractedDate = try #require(attributes[.modificationDate] as? Date)
+    #expect(
+      extractedDate > Date(timeIntervalSinceNow: -300),
       "The archive's mtime should be discarded in favour of the current time")
   }
 
   // MARK: - Failure
 
-  func testExtractArchiveAtPath_WhenArchiveIsCorrupt_Fails() async throws {
+  @Test
+  func extractArchiveAtPath_WhenArchiveIsCorrupt_Fails() async throws {
     let archive = (tempDirectory as NSString).appendingPathComponent("corrupt.tar.gz")
     try Data("not an archive at all".utf8).write(to: URL(fileURLWithPath: archive))
 
     do {
       _ = try await extractFromFile(archive)
-      XCTFail("Expected the extraction to fail")
+      Issue.record("Expected the extraction to fail")
     } catch {
       guard case SubprocessError.unacceptableTermination = error else {
-        return XCTFail("Expected bsdtar to fail, got \(error)")
+        Issue.record("Expected bsdtar to fail, got \(error)")
+        return
       }
     }
   }
 
-  func testExtractArchiveAtPath_WhenArchiveIsMissing_Fails() async throws {
+  @Test
+  func extractArchiveAtPath_WhenArchiveIsMissing_Fails() async throws {
     let archive = (tempDirectory as NSString).appendingPathComponent("absent.tar.gz")
 
     do {
       _ = try await extractFromFile(archive)
-      XCTFail("Expected the extraction to fail")
+      Issue.record("Expected the extraction to fail")
     } catch {
       guard case SubprocessError.unacceptableTermination = error else {
-        return XCTFail("Expected bsdtar to fail, got \(error)")
+        Issue.record("Expected bsdtar to fail, got \(error)")
+        return
       }
-      XCTAssertTrue(error.localizedDescription.contains("No such file or directory"), error.localizedDescription)
+      #expect(error.localizedDescription.contains("No such file or directory"), "\(error.localizedDescription)")
     }
   }
 
-  func testBSDTarExtractingAStream_WhenItIsCorrupt_FailsWithBSDTarsStandardError() async throws {
+  @Test
+  func bsdTarExtractingAStream_WhenItIsCorrupt_FailsWithBSDTarsStandardError() async throws {
     let input = ChunkSource(Data("not an archive at all".utf8))
     let root = try makeExtractionDirectory()
 
     do {
       try await input.reading { try await BSDTarExtractor().extract(from: $0, to: root, options: ArchiveExtractOptions(), logger: logger) }
-      XCTFail("Expected the extraction to fail")
+      Issue.record("Expected the extraction to fail")
     } catch {
-      XCTAssertTrue(error.localizedDescription.hasPrefix("Exit Code 1 is not acceptable [0]: "), error.localizedDescription)
-      XCTAssertTrue(error.localizedDescription.contains("Unrecognized archive format"), error.localizedDescription)
+      #expect(error.localizedDescription.hasPrefix("Exit Code 1 is not acceptable [0]: "), "\(error.localizedDescription)")
+      #expect(error.localizedDescription.contains("Unrecognized archive format"), "\(error.localizedDescription)")
     }
   }
 
-  func testBSDTarExtractingAStream_WhenItStopsReadingEarly_FailsRatherThanWaiting() async throws {
+  @Test
+  func bsdTarExtractingAStream_WhenItStopsReadingEarly_FailsRatherThanWaiting() async throws {
     let input = ChunkSource(Self.randomData(count: 8 << 20))
     let root = try makeExtractionDirectory()
 
     do {
       try await input.reading { try await BSDTarExtractor().extract(from: $0, to: root, options: ArchiveExtractOptions(), logger: logger) }
-      XCTFail("Expected the extraction to fail")
+      Issue.record("Expected the extraction to fail")
     } catch {
-      XCTAssertTrue(error.localizedDescription.hasPrefix("Exit Code 1 is not acceptable [0]"), error.localizedDescription)
+      #expect(error.localizedDescription.hasPrefix("Exit Code 1 is not acceptable [0]"), "\(error.localizedDescription)")
     }
   }
 
   // MARK: - Streams larger than a pipe buffer
 
-  func testBSDTarExtractingAStream_LargerThanAPipeBuffer_RestoresEveryByte() async throws {
+  @Test
+  func bsdTarExtractingAStream_LargerThanAPipeBuffer_RestoresEveryByte() async throws {
     let source = try makePayloadFixture()
     let contents = Self.randomData(count: 8 << 20)
     try contents.write(to: URL(fileURLWithPath: (source as NSString).appendingPathComponent("Payload/Sample.app/Large")))
@@ -375,7 +385,7 @@ final class FBArchiveOperationsTests: XCTestCase {
     try await input.reading { try await BSDTarExtractor().extract(from: $0, to: root, options: ArchiveExtractOptions(), logger: logger) }
 
     try assertPayloadContents(extractedTo: root)
-    XCTAssertEqual(try Data(contentsOf: URL(fileURLWithPath: (root as NSString).appendingPathComponent("Payload/Sample.app/Large"))), contents)
+    #expect(try Data(contentsOf: URL(fileURLWithPath: (root as NSString).appendingPathComponent("Payload/Sample.app/Large"))) == contents)
   }
 
   private static func randomData(count: Int) -> Data {
