@@ -1628,6 +1628,114 @@ final class SimulatorAccessibilityCommandsTests: XCTestCase {
     // at a time, even with the first held open waiting for a peer.
     XCTAssertEqual(tracker.maxActive, 1, "resolutions enter the shared translator strictly one at a time")
   }
+
+  // MARK: - Marker search
+
+  /// `App Window` → [`Outer` → [`OK nested`], `OK`]: the nested match comes first depth-first, the shallow one
+  /// first breadth-first, so which one a search returns says how it walked.
+  private var markerSearchTree: AXPMacPlatformElementDouble {
+    let nested = AccessibilityTestElementBuilder.button(
+      withLabel: "OK nested", identifier: "ok_nested", frame: NSRect(x: 20, y: 300, width: 150, height: 44))
+    let outer = AccessibilityTestElementBuilder.element(
+      withLabel: "Outer", frame: NSRect(x: 0, y: 200, width: 390, height: 200), children: [nested])
+    let shallow = AccessibilityTestElementBuilder.button(
+      withLabel: "OK", identifier: "ok_button", frame: NSRect(x: 20, y: 750, width: 150, height: 44))
+    return defaultRoot(withChildren: [outer, shallow])
+  }
+
+  private func markerMatchLabel(_ element: AccessibilityElement) async throws -> String? {
+    var options = AccessibilityRequestOptions()
+    options.keys = [.label]
+    let response = try await element.serialize(with: options)
+    guard case let .single(match) = response.elements else {
+      XCTFail("a marker read yields one element, got \(response.elements)")
+      return nil
+    }
+    return match.label ?? nil
+  }
+
+  func testMarkerResolvesTheFirstContainingMatchDepthFirst() async throws {
+    try setUp(withRootElement: markerSearchTree)
+    let element = try await simulator.accessibility.resolveElement(
+      for: .marker(value: "OK", key: .label, depth: 10, ignoresCase: false))
+    defer { element.close() }
+
+    let label = try await markerMatchLabel(element)
+    XCTAssertEqual(label, "OK nested", "the search descends into the first child before visiting its sibling")
+  }
+
+  func testMarkerDoesNotDescendPastItsDepth() async throws {
+    try setUp(withRootElement: markerSearchTree)
+    let element = try await simulator.accessibility.resolveElement(
+      for: .marker(value: "OK", key: .label, depth: 1, ignoresCase: false))
+    defer { element.close() }
+
+    let label = try await markerMatchLabel(element)
+    XCTAssertEqual(label, "OK", "a depth of one reaches the root's children and no further")
+  }
+
+  func testMarkerMatchCarriesTheRootFrameAndReadsItsOwnValues() async throws {
+    try setUp(withRootElement: markerSearchTree)
+    let element = try await simulator.accessibility.resolveElement(
+      for: .marker(value: "ok_button", key: .uniqueID, depth: 10, ignoresCase: false))
+    defer { element.close() }
+
+    XCTAssertEqual(element.rootBounds, CGRect(x: 0, y: 0, width: 390, height: 844), "the root's frame, read before ownership passed")
+    let frame = try await element.frame()
+    XCTAssertEqual(frame, CGRect(x: 20, y: 750, width: 150, height: 44))
+    let label = try await element.stringValue(forSearchableKey: .label)
+    XCTAssertEqual(label, "OK")
+  }
+
+  func testMarkerMissThrowsNotFoundWithItsDepth() async throws {
+    try setUp(withRootElement: markerSearchTree)
+    do {
+      let element = try await simulator.accessibility.resolveElement(
+        for: .marker(value: "Missing", key: .label, depth: 10, ignoresCase: false))
+      element.close()
+      XCTFail("a marker matching nothing should throw")
+    } catch AccessibilityError.elementNotFound(let key, let value, let depth) {
+      XCTAssertEqual(key, "AXLabel")
+      XCTAssertEqual(value, "Missing")
+      XCTAssertEqual(depth, 10)
+    }
+  }
+
+  func testSearchRecordsTheNonmatchingValuesItVisitedBeforeTheMatch() async throws {
+    try setUp(withRootElement: markerSearchTree)
+    let root = try await simulator.accessibility.resolveElement(for: .frontmost)
+    let result = try await root.searchElement(withValue: "nested", forKey: .label, depth: 10)
+    defer { result.match?.close() }
+
+    XCTAssertNotNil(result.match)
+    XCTAssertEqual(result.diagnostics?.unmatchedValues, ["App Window", "Outer"])
+  }
+
+  func testSearchStopsReadingAtTheFirstMatch() async throws {
+    let shallow = AccessibilityTestElementBuilder.button(
+      withLabel: "OK", identifier: "ok_button", frame: NSRect(x: 20, y: 750, width: 150, height: 44))
+    let nested = AccessibilityTestElementBuilder.button(
+      withLabel: "OK nested", identifier: "ok_nested", frame: NSRect(x: 20, y: 300, width: 150, height: 44))
+    let outer = AccessibilityTestElementBuilder.element(
+      withLabel: "Outer", frame: NSRect(x: 0, y: 200, width: 390, height: 200), children: [nested])
+    try setUp(withRootElement: defaultRoot(withChildren: [outer, shallow]))
+    let element = try await simulator.accessibility.resolveElement(
+      for: .marker(value: "nested", key: .label, depth: 10, ignoresCase: false))
+    defer { element.close() }
+
+    XCTAssertFalse(
+      (shallow.accessedProperties as? Set<String>)?.contains("accessibilityLabel") ?? true,
+      "the sibling after the match is never read")
+  }
+
+  func testSearchMissRecordsEveryValueItVisited() async throws {
+    try setUp(withRootElement: markerSearchTree)
+    let root = try await simulator.accessibility.resolveElement(for: .frontmost)
+    let result = try await root.searchElement(withValue: "Missing", forKey: .label, depth: 10)
+
+    XCTAssertNil(result.match)
+    XCTAssertEqual(result.diagnostics?.unmatchedValues, ["App Window", "Outer", "OK nested", "OK"])
+  }
 }
 
 /// Counts how many resolutions are inside the translator at once. `enter()` brackets
