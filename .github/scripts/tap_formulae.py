@@ -8,9 +8,11 @@
 The templates in .github/formulae/ are the source of truth for the three idb
 formulae; `render` turns them plus a release's inputs (tag, companion tarball,
 wheel, optional `brew bottle --json` output) into the finished formulae and a
-manifest. The Release workflow renders idb-cli.rb to bottle from, then renders
-all three for publication as a run artifact and release assets; CI renders
-against locally built assets to install-test them. Standard library only, so
+manifest. It also renders the tap's Package.swift, which offers idb's libraries
+to SwiftPM, each XCFramework fetched from the release by URL and checksum. The
+Release workflow renders idb-cli.rb to bottle from, then renders everything for
+publication as a run artifact and release assets; CI renders against locally
+built assets to install-test them. Standard library only, so
 it runs anywhere a python3 exists.
 """
 
@@ -29,6 +31,10 @@ IDB_REPO = "facebook/idb"
 
 COMPANION_ASSET = "idb-companion.macos-arm64.tar.gz"
 FORMULAE = ("idb-companion.rb", "idb-cli.rb", "idb.rb")
+PACKAGE = "Package.swift"
+# Everything a full render writes into the tap.
+RENDERED = (*FORMULAE, PACKAGE)
+XCFRAMEWORK_ZIP_SUFFIX = ".xcframework.zip"
 
 TAG_RE = re.compile(r"^v\d+\.\d+\.\d+(?:\.(?:a|b|rc)\d+)?$")
 PRERELEASE_RE = re.compile(r"\.(?:a|b|rc)\d+$")
@@ -229,8 +235,75 @@ def render_formulae(
     return outputs
 
 
+def render_package(tag, asset_base=None, swiftpm=None):
+    """The tap's Package.swift: each of idb's libraries a SwiftPM product, made of
+    the binary targets the release publishes as `<Name>.xcframework.zip`, fetched by
+    URL and checked against its checksum. `swiftpm` holds `products` (each library's
+    binary targets) and `checksums` (each binary target's); a release from before the
+    libraries were published has none, and renders a package with no products."""
+    base = (asset_base or release_asset_base(tag)).rstrip("/")
+    products = dict((swiftpm or {}).get("products") or {})
+    checksums = dict((swiftpm or {}).get("checksums") or {})
+    missing = sorted(
+        {target for targets in products.values() for target in targets} - set(checksums)
+    )
+    if missing:
+        raise FormulaError(f"no checksum for binary target(s) {', '.join(missing)}")
+    lines = [
+        "// swift-tools-version:6.0",
+        # The tap's license, as its formulae carry it.
+        "/*",
+        " * Copyright (c) Meta Platforms, Inc. and affiliates.",
+        " * All rights reserved.",
+        " *",
+        " * This source code is licensed under the BSD-style license found in the",
+        " * LICENSE file in the root directory of this source tree.",
+        " */",
+        "",
+        f"// Rendered for {tag} by facebook/idb's .github/scripts/tap_formulae.py;",
+        "// each binary target is that release's asset. Edit nothing here.",
+        "import PackageDescription",
+        "",
+        "let package = Package(",
+        '  name: "idb",',
+        # No trailing comma before the closing parenthesis: not every Swift accepts one.
+        "  platforms: [.macOS(.v15)]" + ("," if products else ""),
+    ]
+    if products:
+        lines.append("  products: [")
+        for name in sorted(products):
+            quoted = ", ".join(json.dumps(target) for target in products[name])
+            lines.append(f'    .library(name: "{name}", targets: [{quoted}]),')
+        lines += ["  ],", "  targets: ["]
+        for name in sorted(checksums):
+            lines.append(
+                f'    .binaryTarget(name: "{name}", '
+                f'url: "{base}/{name}{XCFRAMEWORK_ZIP_SUFFIX}", '
+                f'checksum: "{checksums[name]}"),'
+            )
+        lines.append("  ]")
+    lines += [")", ""]
+    return "\n".join(lines)
+
+
+def swiftpm_inputs(products_path, checksums_path):
+    """`render_package`'s input from the release's products.json and checksums.json."""
+    checksums = json.loads(Path(checksums_path).read_text())
+    return {
+        "products": json.loads(Path(products_path).read_text()),
+        "checksums": {name: entry["checksum"] for name, entry in checksums.items()},
+    }
+
+
 def render_manifest(
-    tag, outputs, companion_sha, wheel_sha, asset_base, run_url=None, bottle_blocks=None
+    tag,
+    outputs,
+    companion_sha,
+    wheel_sha,
+    asset_base,
+    run_url=None,
+    bottle_blocks=None,
+    swiftpm=None,
 ):
     """What the rendered files were computed from, and their digests so
     whoever applies them can check they arrived intact. Enough to re-render
@@ -244,6 +317,8 @@ def render_manifest(
         "bottle_blocks": dict(bottle_blocks or {}),
         "outputs": {name: sha256_of_text(text) for name, text in outputs.items()},
     }
+    if swiftpm:
+        manifest["swiftpm"] = swiftpm
     if run_url:
         manifest["run_url"] = run_url
     return manifest
@@ -259,7 +334,7 @@ def render_from_manifest(manifest, templates_dir=None, only=None):
     if only is None:
         recorded = manifest.get("outputs") or {}
         only = tuple(name for name in FORMULAE if name in recorded) or None
-    return render_formulae(
+    outputs = render_formulae(
         manifest["tag"],
         manifest.get("companion_sha256"),
         manifest["wheel_sha256"],
@@ -268,6 +343,11 @@ def render_from_manifest(manifest, templates_dir=None, only=None):
         templates_dir=templates_dir,
         only=only,
     )
+    if PACKAGE in (manifest.get("outputs") or {}):
+        outputs[PACKAGE] = render_package(
+            manifest["tag"], manifest.get("asset_base"), manifest.get("swiftpm")
+        )
+    return outputs
 
 
 def cmd_render(args):
@@ -284,6 +364,13 @@ def cmd_render(args):
     wheel_sha = sha256_of_file(_single_glob(args.wheel, "wheel"))
     blocks = bottle_blocks_from_dir(args.bottles) if args.bottles else None
     asset_base = (args.asset_base or release_asset_base(args.tag)).rstrip("/")
+    if bool(args.swiftpm_products) != bool(args.xcframework_checksums):
+        raise FormulaError("--swiftpm-products and --xcframework-checksums go together")
+    swiftpm = (
+        swiftpm_inputs(args.swiftpm_products, args.xcframework_checksums)
+        if args.swiftpm_products
+        else None
+    )
     outputs = render_formulae(
         args.tag,
         companion_sha,
@@ -293,13 +380,22 @@ def cmd_render(args):
         templates_dir=args.templates,
         only=only,
     )
+    if set(only) == set(FORMULAE):
+        outputs[PACKAGE] = render_package(args.tag, asset_base, swiftpm)
     manifest = render_manifest(
-        args.tag, outputs, companion_sha, wheel_sha, asset_base, args.run_url, blocks
+        args.tag,
+        outputs,
+        companion_sha,
+        wheel_sha,
+        asset_base,
+        args.run_url,
+        blocks,
+        swiftpm,
     )
     write_rendered(args.out, outputs, manifest)
-    for name in only:
+    for name in outputs:
         print(f"{name}: rendered")
-    print(f"wrote {len(outputs)} formulae and {MANIFEST} to {args.out}")
+    print(f"wrote {len(outputs)} files and {MANIFEST} to {args.out}")
     return 0
 
 
@@ -351,6 +447,15 @@ def main(argv=None):
     render.add_argument(
         "--run-url",
         help="URL of the workflow run doing the rendering, recorded in the manifest",
+    )
+    render.add_argument(
+        "--swiftpm-products",
+        help="the libraries' products.json, from CI/xcframework_zips.py (with "
+        "--xcframework-checksums; omit for a Package.swift with no products)",
+    )
+    render.add_argument(
+        "--xcframework-checksums",
+        help="the libraries' checksums.json, from CI/xcframework_zips.py",
     )
     render.add_argument("--out", required=True, help="directory to write into")
     render.set_defaults(func=cmd_render)

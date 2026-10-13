@@ -14,6 +14,11 @@ its checksum. For each `<Name>.xcframework` in the package this writes
 
     {"FBControlCore": {"file": "FBControlCore.xcframework.zip", "checksum": "..."}}
 
+`products.json` gives each library's SwiftPM product, the binary targets it is made
+of, as the package's own `Package.swift` has them:
+
+    {"FBControlCore": ["FBControlCore", "FBControlCoreObjC"]}
+
 Zipped with `ditto`, which keeps the symlinks a macOS framework's versioned layout
 is made of, as the stub frameworks' is. The checksum is the zip's SHA-256, which
 is what `swift package compute-checksum` reports.
@@ -30,6 +35,8 @@ import shutil
 import subprocess
 from collections.abc import Callable, Sequence
 from pathlib import Path
+
+from . import library_package
 
 Runner = Callable[[Sequence[str]], None]
 
@@ -85,6 +92,11 @@ def zip_xcframeworks(
         }
     (output / "checksums.json").write_text(
         json.dumps(checksums, indent=2, sort_keys=True) + "\n"
+    )
+    libraries = json.loads((package / "manifest.json").read_text())["libraries"]
+    (output / "products.json").write_text(
+        json.dumps(library_package.product_targets(libraries), indent=2, sort_keys=True)
+        + "\n"
     )
     return checksums
 

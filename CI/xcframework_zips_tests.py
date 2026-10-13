@@ -38,7 +38,21 @@ class XCFrameworkZipsTest(unittest.TestCase):
         for name in ("FBControlCore", "CoreSimulatorStub"):
             (self.package / f"{name}.xcframework" / "macos-arm64").mkdir(parents=True)
         (self.package / "Resources").mkdir()
-        (self.package / "manifest.json").write_text("{}")
+        (self.package / "manifest.json").write_text(
+            json.dumps(
+                {
+                    "libraries": {
+                        "FBControlCore": {
+                            "archives": ["libFBControlCore.a"],
+                            "frameworks": [],
+                            "linker_flags": [],
+                            "resources": [],
+                            "search_paths": [],
+                        }
+                    }
+                }
+            )
+        )
         self.output = self.root / "Zips"
         self.ditto = FakeDitto()
 
@@ -75,6 +89,13 @@ class XCFrameworkZipsTest(unittest.TestCase):
             },
         )
         self.assertEqual(sorted(checksums), ["CoreSimulatorStub", "FBControlCore"])
+
+    def test_the_products_are_the_packages_own(self) -> None:
+        xcframework_zips.zip_xcframeworks(self.package, self.output, self.ditto)
+        self.assertEqual(
+            json.loads((self.output / "products.json").read_text()),
+            {"FBControlCore": ["FBControlCore"]},
+        )
 
     def test_a_package_without_xcframeworks_names_the_build_that_makes_them(
         self,
