@@ -7,24 +7,24 @@
 
 @preconcurrency @testable import FBArtifactStaging
 @preconcurrency @testable import FBControlCore
-import XCTest
+import Foundation
+import Testing
 import os
 
 /// Coverage for extracting a payload of files, rather than an artifact, from a stream.
-final class StagingExtractTests: XCTestCase {
+@Suite(.serialized)
+final class StagingExtractTests {
 
-  private var logger: ControlCoreLoggerDouble!
-  private var scratchRoot: URL!
+  private let logger: ControlCoreLoggerDouble
+  private let scratchRoot: URL
 
-  override func setUp() {
-    super.setUp()
+  init() {
     logger = ControlCoreLoggerDouble()
     scratchRoot = URL(fileURLWithPath: NSTemporaryDirectory()).appendingPathComponent(UUID().uuidString)
   }
 
-  override func tearDown() {
+  deinit {
     try? FileManager.default.removeItem(at: scratchRoot)
-    super.tearDown()
   }
 
   private func extract(_ archive: Data, events: OSAllocatedUnfairLock<[InstallEvent]>) async throws -> [String: Data] {
@@ -39,7 +39,8 @@ final class StagingExtractTests: XCTestCase {
     }
   }
 
-  func testAGzippedTarIsExtractedAndItsRouteReported() async throws {
+  @Test
+  func aGzippedTarIsExtractedAndItsRouteReported() async throws {
     let input = scratchRoot.appendingPathComponent("input")
     try FileManager.default.createDirectory(at: input, withIntermediateDirectories: true)
     try Data("one".utf8).write(to: input.appendingPathComponent("a.txt"))
@@ -49,25 +50,27 @@ final class StagingExtractTests: XCTestCase {
 
     let files = try await extract(try Data(contentsOf: scratchRoot.appendingPathComponent("payload.tar.gz")), events: events)
 
-    XCTAssertEqual(files, ["a.txt": Data("one".utf8), "b.txt": Data("two".utf8)])
+    #expect(files == ["a.txt": Data("one".utf8), "b.txt": Data("two".utf8)])
     let routes = events.withLock { $0 }.compactMap { event -> ExtractionRoute? in
       guard case .route(let route) = event else { return nil }
       return route
     }
-    XCTAssertEqual(routes.map(\.format), [.gzip])
+    #expect(routes.map(\.format) == [.gzip])
   }
 
-  func testAnArchiveThatCannotBeExtractedFailsAsAnExtractionFailure() async throws {
+  @Test
+  func anArchiveThatCannotBeExtractedFailsAsAnExtractionFailure() async throws {
     let events = OSAllocatedUnfairLock<[InstallEvent]>(initialState: [])
     var truncated = try GzippingSource(DataSource(Data(repeating: 7, count: 1 << 16))).readAll()
     truncated.removeLast(truncated.count / 2)
 
     do {
       _ = try await extract(truncated, events: events)
-      XCTFail("Expected a truncated archive to fail extraction")
+      Issue.record("Expected a truncated archive to fail extraction")
     } catch {
       guard case .extractionFailed? = error as? InstallError else {
-        return XCTFail("Expected an extraction failure, got: \(error)")
+        Issue.record("Expected an extraction failure, got: \(error)")
+        return
       }
     }
   }
