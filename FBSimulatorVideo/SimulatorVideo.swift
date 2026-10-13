@@ -25,7 +25,7 @@ public actor SimulatorVideo {
   /// The underlying encode pipeline, exposed so callers can drive overlay/chapter/screenshot on the live
   /// recording. `nonisolated`: a constant of Sendable (actor) type, readable without a hop.
   public nonisolated let stream: SimulatorVideoStream
-  private let fileWriter: SimulatorVideoFileWriter
+  private let fileWriter: any RecordingFileWriter
   private var hasStopped = false
   private var keyFrames: Task<Void, Never>?
 

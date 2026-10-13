@@ -55,7 +55,7 @@ private enum SimulatorVideoFileWriterError: Error, LocalizedError {
 /// (`VTCompressionSessionCompleteFrames`), so it never overlaps `consume`. The
 /// timed-metadata path (`writeTimedMetadata`) arrives from other isolation domains (the stdin
 /// handler), so the chapter state it shares with `consume`/`finish` lives under an `OSAllocatedUnfairLock`.
-final class SimulatorVideoFileWriter: EncodedSampleConsumer, TimedMetadataConsumer, @unchecked Sendable {
+final class SimulatorVideoFileWriter: RecordingFileWriter, @unchecked Sendable {
   private let outputURL: URL
   private let fileType: AVFileType
   private let chaptersEnabled: Bool
@@ -90,6 +90,9 @@ final class SimulatorVideoFileWriter: EncodedSampleConsumer, TimedMetadataConsum
   /// zero. Distinct from `ChapterState.firstPresentationTime`, the first sample actually appended,
   /// which is only tracked when chapters are enabled. Read from the recorder's isolation domain.
   private let anchor = OSAllocatedUnfairLock(initialState: CMTime.invalid)
+
+  /// An MP4 or MOV track is presented at one size, so players stretch frames of any other.
+  let carriesFrameSizeChanges = false
 
   /// The file's media time zero, or nil until the first sample has opened the writer.
   var startPresentationTime: CMTime? {

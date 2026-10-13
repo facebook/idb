@@ -178,9 +178,16 @@ func createTestVideoStreamPusher(_ logger: ControlCoreLogger) -> VideoToolboxFra
     logger: logger)
 }
 
-/// Stands in for a recording's file writer, so a stream treats its output as a file.
-final class DiscardingEncodedSampleConsumer: EncodedSampleConsumer {
+/// Stands in for a recording's MP4 file writer, so a stream treats its output as a file that keeps one frame size.
+final class DiscardingEncodedSampleConsumer: RecordingFileWriter {
+  let carriesFrameSizeChanges = false
+  let startPresentationTime: CMTime? = nil
+
   func consume(_ sampleBuffer: CMSampleBuffer, logger: any ControlCoreLogger) -> Bool {
     true
   }
+
+  func writeTimedMetadata(_ text: String, logger: any ControlCoreLogger) {}
+
+  func finish() async throws {}
 }

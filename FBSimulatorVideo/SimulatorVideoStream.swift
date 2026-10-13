@@ -145,9 +145,9 @@ public actor SimulatorVideoStream: VideoStreamOperation {
   let configuration: VideoStreamConfiguration
   let edgeInsets: VideoStreamEdgeInsets
   let cadence: VideoStreamCadence
-  /// When set (recording), encoded `.compressed` frames are routed to this sink — a `SimulatorVideoFileWriter`
-  /// — instead of being byte-framed to `consumer`. nil for streaming.
-  let encodedSampleConsumerOverride: EncodedSampleConsumer?
+  /// When set (recording), encoded `.compressed` frames are routed to this file instead of being byte-framed to
+  /// `consumer`. nil for streaming.
+  let encodedSampleConsumerOverride: (any RecordingFileWriter)?
   let logger: any ControlCoreLogger
   let clock: any VideoStreamClock
 
@@ -201,9 +201,9 @@ public actor SimulatorVideoStream: VideoStreamOperation {
   /// The surface the framebuffer last reported: the one the stream should show, whether or not it mounted.
   private var latestSurface: IOSurface?
 
-  /// What the encoder's frames are sized to. A live stream follows the mounted surface. A file's frame size cannot
-  /// change mid-recording (players show every frame at the first one's size), so a recording keeps the canvas of its
-  /// first mount and letterboxes any later surface into it.
+  /// What the encoder's frames are sized to. A live stream follows the mounted surface, and so does a recording into a
+  /// file that can change frame size. Any other file's players show every frame at the first one's size, so a recording
+  /// into it keeps the canvas of its first mount and letterboxes any later surface into it.
   private enum CanvasPolicy {
     case followsSurface
     case fixedAtFirstMount
@@ -279,7 +279,7 @@ public actor SimulatorVideoStream: VideoStreamOperation {
   /// Constructs a recording stream: encoded `.compressed` frames are muxed into a file via `fileWriter`
   /// rather than byte-framed to a `DataConsumer`. `edgeInsets` (default zero) reserves overlay bar
   /// regions exactly as on the streaming path. Cadence is derived from `configuration.framesPerSecond`.
-  static func makeRecorder(framebuffer: Framebuffer, configuration: VideoStreamConfiguration, edgeInsets: VideoStreamEdgeInsets = VideoStreamEdgeInsets(top: 0, bottom: 0, left: 0, right: 0), fileWriter: SimulatorVideoFileWriter, logger: any ControlCoreLogger) -> SimulatorVideoStream {
+  static func makeRecorder(framebuffer: Framebuffer, configuration: VideoStreamConfiguration, edgeInsets: VideoStreamEdgeInsets = VideoStreamEdgeInsets(top: 0, bottom: 0, left: 0, right: 0), fileWriter: any RecordingFileWriter, logger: any ControlCoreLogger) -> SimulatorVideoStream {
     return SimulatorVideoStream(
       framebuffer: framebuffer,
       configuration: configuration,
@@ -305,13 +305,13 @@ public actor SimulatorVideoStream: VideoStreamOperation {
     return .eager(framesPerSecond: UInt(framesPerSecond))
   }
 
-  init(framebuffer: Framebuffer, configuration: VideoStreamConfiguration, edgeInsets: VideoStreamEdgeInsets, cadence: VideoStreamCadence, logger: any ControlCoreLogger, encodedSampleConsumerOverride: EncodedSampleConsumer? = nil, clock: any VideoStreamClock = SystemVideoStreamClock()) {
+  init(framebuffer: Framebuffer, configuration: VideoStreamConfiguration, edgeInsets: VideoStreamEdgeInsets, cadence: VideoStreamCadence, logger: any ControlCoreLogger, encodedSampleConsumerOverride: (any RecordingFileWriter)? = nil, clock: any VideoStreamClock = SystemVideoStreamClock()) {
     self.framebuffer = framebuffer
     self.configuration = configuration
     self.edgeInsets = edgeInsets
     self.cadence = cadence
     self.encodedSampleConsumerOverride = encodedSampleConsumerOverride
-    self.canvasPolicy = encodedSampleConsumerOverride == nil ? .followsSurface : .fixedAtFirstMount
+    self.canvasPolicy = encodedSampleConsumerOverride?.carriesFrameSizeChanges == false ? .fixedAtFirstMount : .followsSurface
     self.logger = logger
     self.clock = clock
     self.compositor = OverlayCompositor(edgeInsets: edgeInsets)
@@ -617,7 +617,7 @@ public actor SimulatorVideoStream: VideoStreamOperation {
     // Resolve the timed-metadata (chapter) sink. A recording file writer that supports chapters
     // supplies its own consumer; otherwise the streaming transport writer (fMP4 emsg / MPEG-TS ID3)
     // handles markers, dropping them on transports with no metadata channel.
-    if let recordingMetadata = encodedSampleConsumerOverride as? TimedMetadataConsumer {
+    if let recordingMetadata = encodedSampleConsumerOverride {
       self.timedMetadataConsumer = recordingMetadata
     } else if case .compressedVideo = configuration.format {
       self.timedMetadataConsumer = TransportTimedMetadataConsumer(consumer: consumer, timedMetadataWriter: frameWriters?.timedMetadataWriter)
