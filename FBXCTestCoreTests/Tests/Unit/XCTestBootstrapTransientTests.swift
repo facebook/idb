@@ -6,42 +6,49 @@
  */
 
 @testable import FBXCTestCore
-import XCTest
+import Foundation
+import Testing
 
 // MARK: - CodeCoverageConfiguration Tests
 
-final class CodeCoverageConfigurationTransientTests: XCTestCase {
+@Suite
+struct CodeCoverageConfigurationTransientTests {
 
-  func testDescriptionContainsDirectory() {
+  @Test
+  func descriptionContainsDirectory() {
     let config = CodeCoverageConfiguration(
       directory: "/my/dir",
       format: .exported,
       enableContinuousCoverageCollection: false
     )
     let desc = config.description
-    XCTAssertTrue(desc.contains("/my/dir"), "Description should contain the coverage directory")
+    #expect(desc.contains("/my/dir"), "Description should contain the coverage directory")
   }
 }
 
 // MARK: - TestManagerResultSummary Tests
 
-final class TestManagerResultSummaryTransientTests: XCTestCase {
+@Suite
+struct TestManagerResultSummaryTransientTests {
 
-  func testStatusForStatusString() {
-    XCTAssertEqual(TestManagerResultSummary.status(forStatusString: "passed"), .passed)
-    XCTAssertEqual(TestManagerResultSummary.status(forStatusString: "failed"), .failed)
-    XCTAssertEqual(TestManagerResultSummary.status(forStatusString: "unknown"), .unknown)
-    XCTAssertEqual(TestManagerResultSummary.status(forStatusString: "something-else"), .unknown)
-    XCTAssertEqual(TestManagerResultSummary.status(forStatusString: ""), .unknown)
+  @Test
+  func statusForStatusString() {
+    #expect(TestManagerResultSummary.status(forStatusString: "passed") == .passed)
+    #expect(TestManagerResultSummary.status(forStatusString: "failed") == .failed)
+    #expect(TestManagerResultSummary.status(forStatusString: "unknown") == .unknown)
+    #expect(TestManagerResultSummary.status(forStatusString: "something-else") == .unknown)
+    #expect(TestManagerResultSummary.status(forStatusString: "") == .unknown)
   }
 
-  func testStatusStringForStatus() {
-    XCTAssertEqual(TestManagerResultSummary.statusString(for: .passed), "Passed")
-    XCTAssertEqual(TestManagerResultSummary.statusString(for: .failed), "Failed")
-    XCTAssertEqual(TestManagerResultSummary.statusString(for: .unknown), "Unknown")
+  @Test
+  func statusStringForStatus() {
+    #expect(TestManagerResultSummary.statusString(for: .passed) == "Passed")
+    #expect(TestManagerResultSummary.statusString(for: .failed) == "Failed")
+    #expect(TestManagerResultSummary.statusString(for: .unknown) == "Unknown")
   }
 
-  func testEquality() {
+  @Test
+  func equality() {
     let date = Date(timeIntervalSince1970: 500)
     let summary1 = TestManagerResultSummary(
       testSuite: "Suite", finishTime: date, runCount: 3, failureCount: 1,
@@ -51,10 +58,11 @@ final class TestManagerResultSummaryTransientTests: XCTestCase {
       testSuite: "Suite", finishTime: date, runCount: 3, failureCount: 1,
       unexpected: 0, testDuration: 2.0, totalDuration: 3.0
     )
-    XCTAssertEqual(summary1, summary2)
+    #expect(summary1 == summary2)
   }
 
-  func testInequality() {
+  @Test
+  func inequality() {
     let date = Date(timeIntervalSince1970: 500)
     let summary1 = TestManagerResultSummary(
       testSuite: "Suite", finishTime: date, runCount: 3, failureCount: 1,
@@ -64,10 +72,11 @@ final class TestManagerResultSummaryTransientTests: XCTestCase {
       testSuite: "DifferentSuite", finishTime: date, runCount: 3, failureCount: 1,
       unexpected: 0, testDuration: 2.0, totalDuration: 3.0
     )
-    XCTAssertNotEqual(summary1, summary2)
+    #expect(summary1 != summary2)
   }
 
-  func testInequalityByRunCount() {
+  @Test
+  func inequalityByRunCount() {
     let date = Date(timeIntervalSince1970: 500)
     let summary1 = TestManagerResultSummary(
       testSuite: "Suite", finishTime: date, runCount: 3, failureCount: 1,
@@ -77,19 +86,21 @@ final class TestManagerResultSummaryTransientTests: XCTestCase {
       testSuite: "Suite", finishTime: date, runCount: 99, failureCount: 1,
       unexpected: 0, testDuration: 2.0, totalDuration: 3.0
     )
-    XCTAssertNotEqual(summary1, summary2)
+    #expect(summary1 != summary2)
   }
 
-  func testDescriptionContainsSuiteName() {
+  @Test
+  func descriptionContainsSuiteName() {
     let summary = TestManagerResultSummary(
       testSuite: "DescSuite", finishTime: Date(), runCount: 1, failureCount: 0,
       unexpected: 0, testDuration: 1.0, totalDuration: 1.0
     )
-    XCTAssertTrue(summary.description.contains("DescSuite"))
+    #expect(summary.description.contains("DescSuite"))
   }
 }
 
-final class XCTestRunConfigurationTransientTests: XCTestCase {
+@Suite
+struct XCTestRunConfigurationTransientTests {
 
   // MARK: - ListTestConfiguration
 
@@ -141,27 +152,31 @@ final class XCTestRunConfigurationTransientTests: XCTestCase {
     )
   }
 
-  func testListTestConfigurationTestType() {
+  @Test
+  func listTestConfigurationTestType() {
     let config = makeListConfig()
-    XCTAssertEqual(config.testType, XCTestType.listTest)
+    #expect(config.testType == XCTestType.listTest)
   }
 
-  func testListTestConfigurationDescription() {
+  @Test
+  func listTestConfigurationDescription() {
     let config = makeListConfig()
     let desc = config.description
-    XCTAssertTrue(desc.contains("list-test"), "Description should contain test type")
-    XCTAssertTrue(desc.contains("/bundle.xctest"), "Description should contain bundle path")
+    #expect(desc.contains("list-test"), "Description should contain test type")
+    #expect(desc.contains("/bundle.xctest"), "Description should contain bundle path")
   }
 
-  func testListTestConfigurationEquality() {
+  @Test
+  func listTestConfigurationEquality() {
     let config1 = makeListConfig()
     let config2 = makeListConfig()
-    XCTAssertEqual(config1, config2)
-    XCTAssertEqual(config1.hashValue, config2.hashValue)
+    #expect(config1 == config2)
+    #expect(config1.hashValue == config2.hashValue)
   }
 
   // MARK: - TestManagerTestConfiguration
 
+  @Test
   func testManagerTestConfigurationApplicationTestType() {
     let config = TestManagerTestConfiguration(
       environment: [:],
@@ -176,9 +191,10 @@ final class XCTestRunConfigurationTransientTests: XCTestCase {
       testArtifactsFilenameGlobs: nil,
       osLogPath: nil
     )
-    XCTAssertEqual(config.testType, XCTestType.applicationTest)
+    #expect(config.testType == XCTestType.applicationTest)
   }
 
+  @Test
   func testManagerTestConfigurationUITestType() {
     let config = TestManagerTestConfiguration(
       environment: [:],
@@ -193,9 +209,10 @@ final class XCTestRunConfigurationTransientTests: XCTestCase {
       testArtifactsFilenameGlobs: nil,
       osLogPath: nil
     )
-    XCTAssertEqual(config.testType, XCTestType.uiTest)
+    #expect(config.testType == XCTestType.uiTest)
   }
 
+  @Test
   func testManagerTestConfigurationDescription() {
     let config = TestManagerTestConfiguration(
       environment: [:],
@@ -211,56 +228,63 @@ final class XCTestRunConfigurationTransientTests: XCTestCase {
       osLogPath: nil
     )
     let desc = config.description
-    XCTAssertTrue(desc.contains("ui-test"), "Description should contain test type")
-    XCTAssertTrue(desc.contains("/runner.app"), "Description should contain runner path")
-    XCTAssertTrue(desc.contains("/target.app"), "Description should contain target path")
-    XCTAssertTrue(desc.contains("SomeFilter"), "Description should contain test filter")
+    #expect(desc.contains("ui-test"), "Description should contain test type")
+    #expect(desc.contains("/runner.app"), "Description should contain runner path")
+    #expect(desc.contains("/target.app"), "Description should contain target path")
+    #expect(desc.contains("SomeFilter"), "Description should contain test filter")
   }
 
   // MARK: - LogicTestConfiguration
 
-  func testLogicTestConfigurationTestType() {
+  @Test
+  func logicTestConfigurationTestType() {
     let config = makeLogicConfig()
-    XCTAssertEqual(config.testType, XCTestType.logicTest)
+    #expect(config.testType == XCTestType.logicTest)
   }
 
-  func testLogicTestConfigurationDescription() {
+  @Test
+  func logicTestConfigurationDescription() {
     let config = makeLogicConfig(testFilter: "MyFilter")
     let desc = config.description
-    XCTAssertTrue(desc.contains("logic-test"), "Description should contain test type")
-    XCTAssertTrue(desc.contains("MyFilter"), "Description should contain test filter")
+    #expect(desc.contains("logic-test"), "Description should contain test type")
+    #expect(desc.contains("MyFilter"), "Description should contain test filter")
   }
 
   // MARK: - XCTestRunConfiguration
 
-  func testBuildEnvironmentWithEntries() {
+  @Test
+  func buildEnvironmentWithEntries() {
     let config = makeListConfig()
     let env = config.buildEnvironment(withEntries: ["CUSTOM_KEY": "custom_value"])
-    XCTAssertEqual(env["CUSTOM_KEY"], "custom_value")
-    XCTAssertNil(env["XCTestConfigurationFilePath"])
+    #expect(env["CUSTOM_KEY"] == "custom_value")
+    #expect(env["XCTestConfigurationFilePath"] == nil)
   }
 
-  func testConfigurationDefaultTimeout() {
+  @Test
+  func configurationDefaultTimeout() {
     let config = makeListConfig(timeout: 0)
-    XCTAssertGreaterThan(config.testTimeout, 0)
+    #expect(config.testTimeout > 0)
   }
 
-  func testConfigurationDescription() {
+  @Test
+  func configurationDescription() {
     let config = makeLogicConfig()
     let desc = config.description
-    XCTAssertTrue(desc.contains("logic-test"), "Description should contain the test type")
-    XCTAssertTrue(desc.contains("/logic.xctest"), "Description should contain the test bundle path")
+    #expect(desc.contains("logic-test"), "Description should contain the test type")
+    #expect(desc.contains("/logic.xctest"), "Description should contain the test bundle path")
   }
 }
 
 // MARK: - XCTestType Constants Tests
 
-final class XCTestTypeConstantsTransientTests: XCTestCase {
+@Suite
+struct XCTestTypeConstantsTransientTests {
 
-  func testTypeConstants() {
-    XCTAssertEqual(XCTestType.applicationTest.rawValue, "application-test")
-    XCTAssertEqual(XCTestType.logicTest.rawValue, "logic-test")
-    XCTAssertEqual(XCTestType.listTest.rawValue, "list-test")
-    XCTAssertEqual(XCTestType.uiTest.rawValue, "ui-test")
+  @Test
+  func typeConstants() {
+    #expect(XCTestType.applicationTest.rawValue == "application-test")
+    #expect(XCTestType.logicTest.rawValue == "logic-test")
+    #expect(XCTestType.listTest.rawValue == "list-test")
+    #expect(XCTestType.uiTest.rawValue == "ui-test")
   }
 }
