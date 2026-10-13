@@ -29,7 +29,7 @@ extension Simulator {
   // Process-wide singleton: AXPTranslator is itself a singleton with a single
   // bridgeTokenDelegate slot, so exactly one dispatcher backs every simulator (it
   // disambiguates concurrent requests by token, guarded internally by a lock).
-  private nonisolated(unsafe) static let sharedAccessibilityTranslationDispatcher: AXTranslationDispatcher = {
+  private static let sharedAccessibilityTranslationDispatcher: AXTranslationDispatcher = {
     let translator = unsafeBitCast(AXPTranslator.sharedInstance() as AnyObject, to: AXPTranslator.self)
     return Simulator.createAccessibilityTranslationDispatcher(withTranslator: translator)
   }()

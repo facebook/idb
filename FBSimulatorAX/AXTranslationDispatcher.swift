@@ -42,7 +42,10 @@ private final class AXPSerializedJob<T>: @unchecked Sendable {
 /// An `@objc`/`NSObject` class only because it conforms to the Objective-C
 /// `AXPTranslationTokenDelegateHelper` protocol and is installed as
 /// `AXPTranslator`'s bridge-token delegate.
-final class AXTranslationDispatcher: NSObject, AXPTranslationTokenDelegateHelper {
+// SAFETY: the token registry is only touched under `lock`, `translator` is assigned once in `init`, and every
+// translator interaction runs on the one serial work queue below.
+// patternlint-disable-next-line unchecked-sendable
+final class AXTranslationDispatcher: NSObject, AXPTranslationTokenDelegateHelper, @unchecked Sendable {
 
   private weak var translator: AXPTranslator?
   private let lock = NSLock()

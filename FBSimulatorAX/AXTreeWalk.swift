@@ -147,8 +147,7 @@ enum AXTreeWalk {
     key: AXSearchableKey,
     ignoresCase: Bool = false
   ) -> MarkerTarget {
-    let (resolved, matched) = preferredMatch(inElements: elements, markerValue: markerValue, key: key, ignoresCase: ignoresCase) {
-      element -> MarkerTarget? in
+    let (resolved, matched) = preferredMatch(inElements: elements, markerValue: markerValue, key: key, ignoresCase: ignoresCase) { element -> MarkerTarget? in
       frameCentre(of: element).map { .resolved(element, x: $0.x, y: $0.y) }
     }
     return resolved ?? (matched ? .offScreen : .notFound)
