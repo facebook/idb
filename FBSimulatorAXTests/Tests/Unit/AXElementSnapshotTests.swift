@@ -46,9 +46,45 @@ final class AXElementSnapshotTests: XCTestCase {
 
   // MARK: - Reading
 
-  func testReadFetchesOnlyThePlannedAttributesAndTheFrame() {
+  func testABatchedReadRequestsThePlannedAttributesInOneRequest() {
+    let child = Self.element(label: "child")
+    let root = Self.element(label: "root", children: [child])
+    let snapshot = AXElementSnapshot.read(root, plan: AXReadPlan(attributes: [.label, .role], depth: .unlimited), token: "t")
+
+    XCTAssertEqual(snapshot.label, "root")
+    XCTAssertEqual(snapshot.role, "AXButton")
+    XCTAssertEqual(snapshot.frame, NSRect(x: 1, y: 2, width: 3, height: 4))
+    XCTAssertEqual(snapshot.children.map(\.label), ["child"])
+    XCTAssertEqual(root.multipleAttributeRequests.map(Set.init), [["AXFrame", "AXDescription", "AXRole", "AXChildren"]])
+    XCTAssertEqual(
+      root.accessedProperties as? Set<String>, ["accessibilityMultipleAttributes", "translation"],
+      "no single accessor is read")
+    XCTAssertEqual(child.multipleAttributeRequests.count, 1, "each element is one request")
+  }
+
+  func testABatchedReadAtItsLastLevelDoesNotAskForChildren() {
     let element = Self.element(label: "root")
-    let snapshot = AXElementSnapshot.read(element, plan: AXReadPlan(attributes: [.label], depth: .limited(0)), token: "t")
+    _ = AXElementSnapshot.read(element, plan: AXReadPlan(attributes: [], depth: .limited(0)), token: "")
+    XCTAssertEqual(element.multipleAttributeRequests, [["AXFrame"]])
+  }
+
+  func testBatchedAndPerAttributeReadsAgree() {
+    func tree() -> AXPMacPlatformElementDouble {
+      Self.element(label: "root", children: [Self.element(label: "a"), Self.element(label: "b")])
+    }
+    let plan = AXReadPlan(keys: AXKeys.defaultSet, depth: .unlimited)
+    let keys = AXKeys.defaultSet
+    let batched = AXElementSnapshot.read(tree(), plan: plan, token: "", mode: .batched)
+    let perAttribute = AXElementSnapshot.read(tree(), plan: plan, token: "", mode: .perAttribute)
+    XCTAssertEqual(
+      AXNodeSerializer.recursiveDescription(fromSnapshot: batched, nestedFormat: true, keys: keys, collector: nil, seenPids: nil),
+      AXNodeSerializer.recursiveDescription(fromSnapshot: perAttribute, nestedFormat: true, keys: keys, collector: nil, seenPids: nil))
+  }
+
+  func testAPerAttributeReadFetchesOnlyThePlannedAttributesAndTheFrame() {
+    let element = Self.element(label: "root")
+    let snapshot = AXElementSnapshot.read(
+      element, plan: AXReadPlan(attributes: [.label], depth: .limited(0)), token: "t", mode: .perAttribute)
 
     XCTAssertEqual(snapshot.label, "root")
     XCTAssertEqual(snapshot.frame, NSRect(x: 1, y: 2, width: 3, height: 4))
@@ -73,7 +109,8 @@ final class AXElementSnapshotTests: XCTestCase {
     let child = Self.element(label: "child", children: [grandchild])
     let root = Self.element(label: "root", children: [child])
 
-    let snapshot = AXElementSnapshot.read(root, plan: AXReadPlan(attributes: [.label], depth: .limited(1)), token: "")
+    let snapshot = AXElementSnapshot.read(
+      root, plan: AXReadPlan(attributes: [.label], depth: .limited(1)), token: "", mode: .perAttribute)
 
     XCTAssertEqual(snapshot.children.map(\.label), ["child"])
     XCTAssertEqual(snapshot.children.first?.children.count, 0, "the plan stops one level down")
@@ -83,14 +120,13 @@ final class AXElementSnapshotTests: XCTestCase {
     XCTAssertTrue(grandchild.accessedProperties.count == 0, "nothing below the planned depth is touched")
   }
 
-  func testHittabilityFetchesNothingFurtherWhenTheBackendCannotAnswer() {
+  func testHittabilityAndItsExplanationFetchNothingOnTheTranslator() {
     let element = Self.element(label: "root")
     let snapshot = AXElementSnapshot.read(
-      element, plan: AXReadPlan(attributes: [.hittability], depth: .limited(0)), token: "")
+      element, plan: AXReadPlan(attributes: [.hittability, .explainedBy], depth: .limited(0)), token: "")
 
     XCTAssertNil(snapshot.hittability)
-    XCTAssertEqual(
-      element.accessedProperties as? Set<String>, ["translation", "accessibilityFrame"],
-      "hidden and enabled are read only to explain a hittability the backend reported")
+    XCTAssertNil(snapshot.explainedBy)
+    XCTAssertEqual(element.multipleAttributeRequests, [["AXFrame"]], "the translator has nothing to fetch for either")
   }
 }

@@ -74,6 +74,9 @@ final class AXTranslationRequest {
   var logger: ControlCoreLogger?
   var translator: AXPTranslator?
 
+  /// How each element's attributes are fetched, taken from the options of the read in progress.
+  private var translatorReadMode: AXTranslatorReads = .batched
+
   /// Per-request timeout (seconds) applied to each synchronous CoreSimulator
   /// accessibility XPC round-trip. `0` (or negative) is "wait nothing". There is
   /// no "wait forever" mode — a stalled XPC service never hangs the caller.
@@ -118,6 +121,7 @@ final class AXTranslationRequest {
     options: AccessibilityRequestOptions,
     isMarkerMatch: Bool = false
   ) throws -> AccessibilityElementsResponse {
+    translatorReadMode = options.translatorReads
     guard !isMarkerMatch else {
       return runNamedElement(element, options: options)
     }
@@ -138,7 +142,8 @@ final class AXTranslationRequest {
     collector.markWalkStart()
     let keys = Self.serializerKeys(options)
     let snapshot = AXElementSnapshot.read(
-      element, plan: AXReadPlan(keys: keys, depth: options.nestedFormat ? .unlimited : .limited(0)), token: token)
+      element, plan: AXReadPlan(keys: keys, depth: options.nestedFormat ? .unlimited : .limited(0)), token: token,
+      mode: translatorReadMode)
     var elements = AXNodeSerializer.formattedDescription(
       ofSnapshot: snapshot,
       nestedFormat: options.nestedFormat,
@@ -162,7 +167,8 @@ final class AXTranslationRequest {
     collector.markWalkStart()
 
     let keys = Self.serializerKeys(options)
-    let snapshot = AXElementSnapshot.read(element, plan: AXReadPlan(keys: keys, depth: .unlimited), token: token)
+    let snapshot = AXElementSnapshot.read(
+      element, plan: AXReadPlan(keys: keys, depth: .unlimited), token: token, mode: translatorReadMode)
     let screenBounds = display?.bounds ?? snapshot.frame
     let seenPids = SeenPIDs()
 
@@ -280,7 +286,10 @@ final class AXTranslationRequest {
           continue
         }
 
-        let hitFrame = AXElementSnapshot.read(hitElement, plan: Self.frameOnlyPlan, token: token).frame
+        // One read serves both the duplicate check and the serialization.
+        let hit = AXElementSnapshot.read(
+          hitElement, plan: AXReadPlan(keys: keysWithFrame, depth: .limited(0)), token: token, mode: translatorReadMode)
+        let hitFrame = hit.frame
         let hitFrameKey = "\(hitFrame.origin.x),\(hitFrame.origin.y),\(hitFrame.size.width),\(hitFrame.size.height)"
         if discoveredFrames.contains(hitFrameKey) {
           x += stepSize
@@ -291,8 +300,7 @@ final class AXTranslationRequest {
         coverageGrid?.markFilled(with: hitFrame)
 
         let discovered = AXNodeSerializer.decoratedElement(
-          forSnapshot: AXElementSnapshot.read(
-            hitElement, plan: AXReadPlan(keys: keysWithFrame, depth: .limited(0)), token: token),
+          forSnapshot: hit,
           keys: keysWithFrame,
           collector: collector,
           seenPids: nil,
@@ -417,8 +425,6 @@ final class AXTranslationRequest {
     }
     return AccessibilityScreenInfo(width: Double(bounds.width), height: Double(bounds.height))
   }
-
-  private static let frameOnlyPlan = AXReadPlan(attributes: [], depth: .limited(0))
 
   private static func serializerKeys(_ options: AccessibilityRequestOptions) -> Set<AXKeys> {
     options.serializationKeys

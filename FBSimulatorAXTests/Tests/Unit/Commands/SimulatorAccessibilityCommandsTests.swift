@@ -19,63 +19,42 @@ final class SimulatorAccessibilityCommandsTests: XCTestCase {
 
   // MARK: - Helpers
 
-  /// All properties accessed during full serialization (no key filtering)
-  private var allSerializationProperties: Set<String> {
-    Set([
-      "accessibilityLabel",
-      "accessibilityIdentifier",
-      "accessibilityValue",
-      "accessibilityTitle",
-      "accessibilityHelp",
-      "accessibilityRole",
-      "accessibilityRoleDescription",
-      "accessibilitySubrole",
-      "accessibilityFrame",
-      "accessibilityEnabled",
-      "accessibilityRequired",
-      "accessibilityCustomActions",
-      "accessibilityChildren",
-      "translation",
-    ])
+  /// The attributes a default-keys read requests for an element whose children it walks.
+  private var allSerializationAttributes: Set<String> {
+    singleElementSerializationAttributes.union(["AXChildren"])
   }
 
-  /// Properties accessed for single-element serialization (no children recursion)
-  private var singleElementSerializationProperties: Set<String> {
-    Set([
-      "accessibilityLabel",
-      "accessibilityIdentifier",
-      "accessibilityValue",
-      "accessibilityTitle",
-      "accessibilityHelp",
-      "accessibilityRole",
-      "accessibilityRoleDescription",
-      "accessibilitySubrole",
-      "accessibilityFrame",
-      "accessibilityEnabled",
-      "accessibilityRequired",
-      "accessibilityCustomActions",
-      "translation",
-    ])
+  /// The attributes a default-keys read requests for a single element (no children recursion).
+  private var singleElementSerializationAttributes: Set<String> {
+    [
+      "AXFrame", "AXRole", "AXDescription", "AXValue", "AXIdentifier", "AXTitle", "AXHelp", "AXEnabled",
+      "AXCustomActions", "AXRoleDescription", "AXSubrole", "AXRequired", "AXTraits",
+    ]
   }
 
-  /// Properties accessed for AXLabel and frame key filtering
-  private var labelAndFrameFilteredProperties: Set<String> {
-    Set([
-      "accessibilityLabel",
-      "accessibilityFrame",
-      "accessibilityChildren", // Always accessed for recursion
-      "translation", // Always accessed for pid
-    ])
+  /// The attributes requested for AXLabel and frame key filtering over a tree.
+  private var labelAndFrameFilteredAttributes: Set<String> {
+    ["AXFrame", "AXDescription", "AXChildren"]
   }
 
-  /// Properties accessed for AXLabel, type, and frame key filtering
-  private var labelTypeFrameFilteredProperties: Set<String> {
-    Set([
-      "accessibilityLabel",
-      "accessibilityRole", // Needed for "type" derivation
-      "accessibilityFrame",
-      "translation", // Always accessed for pid
-    ])
+  /// The attributes requested for AXLabel, type, and frame key filtering on a single element; type is
+  /// derived from the role.
+  private var labelTypeFrameFilteredAttributes: Set<String> {
+    ["AXFrame", "AXDescription", "AXRole"]
+  }
+
+  /// Each element is read in exactly one multiple-attribute request naming `attributes`, and through no
+  /// single accessor. The translation is touched for the token and pid. A frontmost root is first read for
+  /// its frame alone, by the SpringBoard staleness check.
+  private func assertReadInOneBatch(
+    _ element: AXPMacPlatformElementDouble, attributes: Set<String>, afterStalenessCheck: Bool = false,
+    _ message: String, file: StaticString = #filePath, line: UInt = #line
+  ) {
+    XCTAssertEqual(
+      element.accessedProperties as! Set<String>, ["accessibilityMultipleAttributes", "translation"], message,
+      file: file, line: line)
+    let expected: [Set<String>] = afterStalenessCheck ? [["AXFrame"], attributes] : [attributes]
+    XCTAssertEqual(element.multipleAttributeRequests.map(Set.init), expected, message, file: file, line: line)
   }
 
   private func assertProfilingData(
@@ -202,15 +181,13 @@ final class SimulatorAccessibilityCommandsTests: XCTestCase {
     XCTAssertEqual(result as NSArray, expected as NSArray)
     XCTAssertTrue(JSONSerialization.isValidJSONObject(result))
 
-    XCTAssertEqual(
-      fixture!.rootElement!.accessedProperties as! Set<String>,
-      allSerializationProperties,
+    assertReadInOneBatch(
+      fixture!.rootElement!, attributes: allSerializationAttributes, afterStalenessCheck: true,
       "All serialization properties should be accessed for root element"
     )
     for child in childElements {
-      XCTAssertEqual(
-        child.accessedProperties as! Set<String>,
-        allSerializationProperties,
+      assertReadInOneBatch(
+        child, attributes: allSerializationAttributes,
         "All serialization properties should be accessed for child element"
       )
     }
@@ -241,9 +218,8 @@ final class SimulatorAccessibilityCommandsTests: XCTestCase {
     XCTAssertEqual(result as NSDictionary, expected as NSDictionary)
     XCTAssertTrue(JSONSerialization.isValidJSONObject(result))
 
-    XCTAssertEqual(
-      elementDouble.accessedProperties as! Set<String>,
-      singleElementSerializationProperties,
+    assertReadInOneBatch(
+      elementDouble, attributes: singleElementSerializationAttributes,
       "Single element at point should access all properties except children"
     )
 
@@ -351,15 +327,13 @@ final class SimulatorAccessibilityCommandsTests: XCTestCase {
     XCTAssertEqual(result as NSArray, expected as NSArray)
     XCTAssertTrue(JSONSerialization.isValidJSONObject(result))
 
-    XCTAssertEqual(
-      fixture!.rootElement!.accessedProperties as! Set<String>,
-      allSerializationProperties,
+    assertReadInOneBatch(
+      fixture!.rootElement!, attributes: allSerializationAttributes, afterStalenessCheck: true,
       "All serialization properties should be accessed for root element"
     )
     for child in childElements {
-      XCTAssertEqual(
-        child.accessedProperties as! Set<String>,
-        allSerializationProperties,
+      assertReadInOneBatch(
+        child, attributes: allSerializationAttributes,
         "All serialization properties should be accessed for child element"
       )
     }
@@ -408,15 +382,13 @@ final class SimulatorAccessibilityCommandsTests: XCTestCase {
     XCTAssertEqual(result as NSArray, expected as NSArray)
     XCTAssertTrue(JSONSerialization.isValidJSONObject(result))
 
-    XCTAssertEqual(
-      fixture!.rootElement!.accessedProperties as! Set<String>,
-      labelAndFrameFilteredProperties,
+    assertReadInOneBatch(
+      fixture!.rootElement!, attributes: labelAndFrameFilteredAttributes, afterStalenessCheck: true,
       "Only label and frame properties should be accessed for root element"
     )
     for child in childElements {
-      XCTAssertEqual(
-        child.accessedProperties as! Set<String>,
-        labelAndFrameFilteredProperties,
+      assertReadInOneBatch(
+        child, attributes: labelAndFrameFilteredAttributes,
         "Only label and frame properties should be accessed for child element"
       )
     }
@@ -454,9 +426,8 @@ final class SimulatorAccessibilityCommandsTests: XCTestCase {
     XCTAssertEqual(result as NSDictionary, expected as NSDictionary)
     XCTAssertTrue(JSONSerialization.isValidJSONObject(result))
 
-    XCTAssertEqual(
-      titleLabel.accessedProperties as! Set<String>,
-      labelTypeFrameFilteredProperties,
+    assertReadInOneBatch(
+      titleLabel, attributes: labelTypeFrameFilteredAttributes,
       "Only label, role (for type), and frame properties should be accessed with key filtering"
     )
 
@@ -667,8 +638,8 @@ final class SimulatorAccessibilityCommandsTests: XCTestCase {
     element.close()
 
     XCTAssertTrue(
-      okButton.accessedProperties.contains("accessibilityLabel"),
-      "Tap operation should access label"
+      okButton.multipleAttributeRequests.contains { $0.contains("AXDescription") },
+      "Tap operation should read the label"
     )
     XCTAssertTrue(
       okButton.accessedProperties.contains("accessibilityActionNames"),
@@ -1724,7 +1695,7 @@ final class SimulatorAccessibilityCommandsTests: XCTestCase {
     defer { element.close() }
 
     XCTAssertTrue(
-      (shallow.accessedProperties as? Set<String>)?.contains("accessibilityLabel") ?? false,
+      shallow.multipleAttributeRequests.contains { $0.contains("AXDescription") },
       "the sibling after the match is read with the rest of the tree; the match is still the first one")
   }
 

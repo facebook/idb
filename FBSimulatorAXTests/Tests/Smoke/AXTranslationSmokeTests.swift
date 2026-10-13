@@ -75,4 +75,54 @@ final class AXTranslationSmokeTests: ProvidedSimulatorTestCase {
       frames.contains { ($0.width ?? 0) > 0 && ($0.height ?? 0) > 0 },
       "At least one element should cover a non-empty area")
   }
+
+  /// The batched read must report exactly what the per-attribute accessors it replaces report, for every key
+  /// the backend answers, on both the flattened and the automation tree, in fewer round trips. How many
+  /// round trips either takes depends on the runtime and the application, so only the difference is asserted.
+  func testBatchedReadMatchesPerAttributeReadInFewerRoundTrips() async throws {
+    try await launchApplication()
+    _ = try await describeFrontmost()
+
+    let automation = try simulator.uiAutomation(backend: .accessibility)
+    for clientType in [AXClientType.noClient, .xctest] {
+      var options = AccessibilityRequestOptions(
+        keys: AXKeys.defaultSet.union([.expanded, .placeholder, .hidden, .focused]), enableProfiling: true,
+        clientType: clientType)
+      func read(_ reads: AXTranslatorReads) async throws -> (elements: [AccessibilityDocumentElement], roundTrips: Int64) {
+        options.translatorReads = reads
+        let response = try await automation.describe(.frontmost, options: options)
+        let roundTrips = try XCTUnwrap(response.profilingData?.translatorProfile?.xpcCallCount)
+        return (response.elements.elements.map(Self.withSortedTraits), roundTrips)
+      }
+      // The application may still be settling, so the comparison is made only across a window in which two
+      // per-attribute reads agree: the batched read between them then saw the same tree.
+      var settled: (batched: (elements: [AccessibilityDocumentElement], roundTrips: Int64), perAttribute: (elements: [AccessibilityDocumentElement], roundTrips: Int64))?
+      for _ in 0..<5 {
+        let before = try await read(.perAttribute)
+        let batched = try await read(.batched)
+        let after = try await read(.perAttribute)
+        if before.elements == after.elements {
+          settled = (batched, after)
+          break
+        }
+        try await Task.sleep(nanoseconds: NSEC_PER_SEC)
+      }
+      let (batched, perAttribute) = try XCTUnwrap(settled, "client \(clientType): the tree never held still between two reads")
+      XCTAssertLessThan(batched.roundTrips, perAttribute.roundTrips, "client \(clientType)")
+      let (actual, expected) = (batched.elements, perAttribute.elements)
+      XCTAssertGreaterThan(expected.count, 1, "client \(clientType)")
+      XCTAssertEqual(actual.count, expected.count, "client \(clientType)")
+      // Element by element, so a mismatch names the element rather than printing two whole trees.
+      for (index, (actualElement, expectedElement)) in zip(actual, expected).enumerated() {
+        XCTAssertEqual(actualElement, expectedElement, "client \(clientType), element \(index)")
+      }
+    }
+  }
+
+  /// Traits are decoded from a bitmask into a set, so their order is not part of what either read reports.
+  private static func withSortedTraits(_ element: AccessibilityDocumentElement) -> AccessibilityDocumentElement {
+    var element = element
+    element.traits = element.traits.map { $0?.sorted() }
+    return element
+  }
 }

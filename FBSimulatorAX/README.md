@@ -8,7 +8,7 @@ It holds the accessibility model its readers answer with, and builds on `FBSimul
 
 `Simulator.uiAutomation(backend:display:)` returns a `UIAutomation`: one query-shaped surface for element reads (`describe`, `wait`, `quiescence`) and element-targeted actions (`tap`, `scroll`, `setValue`, `drag`). The backend decides how the tree is read.
 
-- **`.accessibility`** translates the frontmost application's tree on the host, through the private `AccessibilityPlatformTranslation` framework that `Simulator.app` uses. It reaches only the active display.
+- **`.accessibility`** translates the frontmost application's tree on the host, through the private `AccessibilityPlatformTranslation` framework that `Simulator.app` uses. It reaches only the active display. Each element's attributes are fetched in one multiple-attribute request rather than one request per attribute; `AccessibilityRequestOptions.translatorReads` selects the per-attribute reads instead.
 - **`.axBridge`** reads in the guest, at XCUITest fidelity, through the `SimulatorFrameworkBridge` helper that `FBSimulatorControl` runs inside the booted Simulator. Its persistence chooses which guest serves the read:
   - `.oneShot` spawns a guest per read. It holds nothing, so it costs nothing to reconstruct.
   - `.shared` reads over the Simulator's well-known socket, shared with every other process reading the same Simulator. The connection is released after each round trip so the next reader can have it, and only the guest's own idle timeout ends it.

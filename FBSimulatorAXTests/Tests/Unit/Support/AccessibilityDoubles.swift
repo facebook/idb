@@ -38,6 +38,8 @@ class AXPMacPlatformElementDouble: NSObject {
   private let _children: [AXPMacPlatformElementDouble]
   private var _translation: AXPTranslationObjectDouble
   @objc private(set) var accessedProperties = NSMutableSet()
+  /// The names of each multiple-attribute request, in order.
+  private(set) var multipleAttributeRequests: [[String]] = []
 
   init(
     label: String?,
@@ -176,6 +178,22 @@ extension AXPMacPlatformElementDouble: AXPlatformElement {
   func axChildren() -> [AXPlatformElement] {
     (accessibilityChildren ?? []).compactMap { $0 as? AXPlatformElement }
   }
+  /// Answers as the real element does, one entry per attribute with a value, without touching the single
+  /// accessors, so a test can tell a batched read from a per-attribute one.
+  func axMultipleAttributes(_ names: [String]) -> [String: Any] {
+    accessedProperties.add("accessibilityMultipleAttributes")
+    multipleAttributeRequests.append(names)
+    var values: [String: Any] = [
+      "AXFrame": NSValue(rect: _frame),
+      "AXEnabled": NSNumber(value: _enabled),
+      "AXRequired": NSNumber(value: _required),
+      "AXChildren": _children,
+    ]
+    values["AXDescription"] = _label
+    values["AXIdentifier"] = _identifier
+    values["AXRole"] = _role
+    return values.filter { names.contains($0.key) }
+  }
   var axTranslationPid: pid_t { translation.pid }
   func axSetBridgeDelegateToken(_ token: String?) { translation.bridgeDelegateToken = token }
 }
@@ -218,6 +236,27 @@ final class AXSnapshotPlatformElementDouble: AXPlatformElement {
   func axActionNames() -> [String] { [] }
   func axTraits() -> [String]? { snapshot.traits }
   func axChildren() -> [AXPlatformElement] { snapshot.children.map(AXSnapshotPlatformElementDouble.init) }
+  func axMultipleAttributes(_ names: [String]) -> [String: Any] {
+    var values: [String: Any] = [
+      "AXFrame": NSValue(rect: snapshot.frame),
+      "AXChildren": snapshot.children.map(AXSnapshotPlatformElementDouble.init),
+      "AXEnabled": NSNumber(value: snapshot.isEnabled ?? false),
+      "AXRequired": NSNumber(value: snapshot.isRequired ?? false),
+      "AXExpanded": NSNumber(value: snapshot.isExpanded ?? false),
+      "AXHidden": NSNumber(value: snapshot.isHidden ?? false),
+      "AXFocused": NSNumber(value: snapshot.isFocused ?? false),
+    ]
+    values["AXRole"] = snapshot.role
+    values["AXDescription"] = snapshot.label
+    values["AXValue"] = snapshot.stringValue
+    values["AXIdentifier"] = snapshot.identifier
+    values["AXTitle"] = snapshot.title
+    values["AXHelp"] = snapshot.help
+    values["AXRoleDescription"] = snapshot.roleDescription
+    values["AXSubrole"] = snapshot.subrole
+    values["AXPlaceholderValue"] = snapshot.placeholder
+    return values.filter { names.contains($0.key) }
+  }
   var axTranslationPid: pid_t { snapshot.pid }
   func axSetBridgeDelegateToken(_ token: String?) {}
 }

@@ -36,6 +36,9 @@ protocol AXPlatformElement: AnyObject {
   func axActionNames() -> [String]
   func axTraits() -> [String]?
   func axChildren() -> [AXPlatformElement]
+  /// The values of many NSAccessibility attributes, keyed by name, in one round trip. An attribute with no
+  /// value is absent.
+  func axMultipleAttributes(_ names: [String]) -> [String: Any]
 
   /// The pid of the backing translation object (0 when absent).
   var axTranslationPid: pid_t { get }
@@ -97,6 +100,23 @@ extension AXPMacPlatformElement: AXPlatformElement {
 
   func axChildren() -> [AXPlatformElement] {
     (accessibilityChildren() ?? []).compactMap { $0 as? AXPlatformElement }
+  }
+
+  func axMultipleAttributes(_ names: [String]) -> [String: Any] {
+    // Read by message: `accessibilityMultipleAttributes:` is private to `AXPMacPlatformElement`. It sends one
+    // multiple-attribute request through the bridge for every attribute it does not answer locally.
+    let selector = NSSelectorFromString("accessibilityMultipleAttributes:")
+    guard responds(to: selector),
+      let raw = perform(selector, with: names as NSArray)?.takeUnretainedValue() as? NSDictionary
+    else {
+      return [:]
+    }
+    var values: [String: Any] = [:]
+    for (key, value) in raw {
+      guard let key = key as? String, !(value is NSNull) else { continue }
+      values[key] = value
+    }
+    return values
   }
 
   var axTranslationPid: pid_t { translation?.pid ?? 0 }
