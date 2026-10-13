@@ -7,12 +7,15 @@
 
 @testable import CompanionLib
 import FBSimulatorControl
+import Foundation
 import GRPCCore
 import IDBGRPCSwift
-import XCTest
+import Testing
 
-final class OrientationRequestTranslationTests: XCTestCase {
-  func testAllReadStatesSurviveTheWire() throws {
+@Suite
+struct OrientationRequestTranslationTests {
+  @Test
+  func allReadStatesSurviveTheWire() throws {
     let cases: [(SimulatorDeviceOrientation, Idb_GetOrientationResponse.Orientation)] = [
       (.unknown, .unknown), (.portrait, .portrait), (.portraitUpsideDown, .portraitUpsideDown),
       (.landscapeLeft, .landscapeLeft), (.landscapeRight, .landscapeRight),
@@ -21,20 +24,20 @@ final class OrientationRequestTranslationTests: XCTestCase {
     for (state, expected) in cases {
       let response = OrientationMethodHandler.response(state)
       let decoded = try Idb_GetOrientationResponse(serializedBytes: response.serializedData())
-      XCTAssertEqual(decoded.orientation, expected)
+      #expect(decoded.orientation == expected)
     }
   }
 
-  func testWritesPreservePhysicalDirectionNames() throws {
+  @Test
+  func writesPreservePhysicalDirectionNames() throws {
     let cases: [(Idb_HIDEvent.HIDOrientationType, SimulatorHIDDeviceOrientation)] = [
       (.portrait, .portrait), (.portraitUpsideDown, .portraitUpsideDown),
       (.landscapeLeft, .landscapeLeft), (.landscapeRight, .landscapeRight),
     ]
     for (input, expected) in cases {
-      XCTAssertEqual(try OrientationMethodHandler.orientation(input), expected)
+      #expect(try OrientationMethodHandler.orientation(input) == expected)
     }
-    XCTAssertThrowsError(try OrientationMethodHandler.orientation(.UNRECOGNIZED(99))) { error in
-      XCTAssertEqual((error as? RPCError)?.code, .invalidArgument)
-    }
+    let error = #expect(throws: (any Error).self) { try OrientationMethodHandler.orientation(.UNRECOGNIZED(99)) }
+    #expect((error as? RPCError)?.code == .invalidArgument)
   }
 }
