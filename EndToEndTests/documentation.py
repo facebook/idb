@@ -49,9 +49,6 @@ DOCUMENTED_DEMOS: Mapping[str, str] = {
         "EndToEndTests.test_demos.NotificationDemos"
         ".test_open_an_app_from_a_notification_banner"
     ),
-    "record-through-a-rotation": (
-        "EndToEndTests.test_demos.RotationDemos.test_record_through_a_rotation"
-    ),
     "read-web-content-in-safari": (
         "EndToEndTests.test_demos.WebContentDemos.test_read_web_content_in_safari"
     ),
