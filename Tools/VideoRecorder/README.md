@@ -7,7 +7,7 @@ Build/Distribution/sim-video record recording.mov --set "$DEVICE_SET_PATH" --udi
   --encoding auto --bar top:48 bottom:48 --screenshot-dir screenshots
 ```
 
-`record` writes a video file. H.264 is the default; `hevc` and `mjpeg` are also available. `auto` tries hardware HEVC, then JPEG with software encoding allowed if HEVC cannot produce frames. `auto` and `mjpeg` require a `.mov` output. H.264 and HEVC accept `.mov` or `.mp4`. Existing output files are rejected. If recording fails and leaves a partial file, it is retained for inspection; use a new output path when retrying.
+`record` writes a video file. H.264 is the default; `hevc` and `mjpeg` are also available. `auto` tries hardware HEVC, then JPEG with software encoding allowed if HEVC cannot produce frames. `auto` and `mjpeg` require a `.mov` output. H.264 and HEVC accept `.mov`, `.mp4` or `.webm`. Existing output files are rejected. If recording fails and leaves a partial file, it is retained for inspection; use a new output path when retrying.
 
 `stream` writes raw video to a path or `-` for stdout. Its encodings are `h264`, `hevc`, `mjpeg`, `minicap`, and `bgra`. H.264 and HEVC support `--transport annex-b`, `mpegts`, or `fmp4` (default: `annex-b`). Streaming MJPEG requires a hardware encoder.
 
@@ -38,7 +38,9 @@ With piped stdin and no `--duration`, send one JSON object per line. This is a o
 
 Legacy `topStatus` and `bottomStatus` commands remain accepted. Malformed or unknown commands are logged and the session continues. Closing stdin, SIGINT, and SIGTERM also stop a session. With `--duration`, recording stops after that duration or a signal and does not process stdin commands.
 
-After recording stops, the tool decodes a frame and checks for a positive duration. Success writes `<output>.json` with the selected encoding, dimensions, and duration. This distinguishes a playable recording from a successfully closed empty file. A force-killed process cannot guarantee a finalized file.
+An `.mp4` or `.mov` is presented at one size, so the recording keeps its first frame's canvas and letterboxes a later screen of another shape, after a rotation or a switch to another display, into it. A `.webm` recording follows the screen's size instead: each keyframe carries its parameter sets, and Chrome plays the file correctly through every change. QuickTime cannot open WebM. Chapters are written as the file's chapters.
+
+After recording stops, the tool decodes a frame and checks for a positive duration. A `.webm` is checked by decoding its first keyframe with VideoToolbox, since AVFoundation cannot read it. Success writes `<output>.json` with the selected encoding, dimensions, and duration. This distinguishes a playable recording from a successfully closed empty file. A force-killed process cannot guarantee a finalized file.
 
 JPEG/MOV avoids requiring an H.264 or HEVC hardware encoder, using the existing VideoToolbox and AVFoundation pipeline without a transcoder. Software JPEG availability depends on the macOS installation. JPEG recordings are readable by AVFoundation; browser playback support varies. GitHub runner support must be confirmed by its own CI run.
 

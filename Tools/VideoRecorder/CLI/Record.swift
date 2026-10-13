@@ -14,6 +14,8 @@ import FBSimulatorControl
 import FBSimulatorVideo
 import FBVideoCore
 import Foundation
+import VideoToolbox
+import os
 
 struct Record: AsyncParsableCommand {
   static let configuration = CommandConfiguration(abstract: "Record a playable file with overlay and chapter control")
@@ -21,17 +23,17 @@ struct Record: AsyncParsableCommand {
   @OptionGroup var video: VideoOptions
   @Option(help: "h264 (default), hevc, mjpeg, or auto (HEVC then JPEG)") var encoding: RecordingEncoding = .h264
   @Option(help: "Stop after this many seconds (disables stdin controls); otherwise wait for stdin shutdown or a signal") var duration: Double?
-  @Argument(help: "Output .mp4 or .mov path; mjpeg and auto require .mov") var output: String
+  @Argument(help: "Output .mp4, .mov or .webm path; mjpeg and auto require .mov. A .webm recording follows the screen's size and plays in Chrome, not QuickTime") var output: String
 
   func validate() throws {
     if let duration, !duration.isFinite || duration <= 0 {
       throw ValidationError("--duration must be positive")
     }
-    guard ["mp4", "mov"].contains((output as NSString).pathExtension.lowercased()) else {
-      throw ValidationError("Output must end in .mp4 or .mov")
+    guard let container = Self.container(of: output) else {
+      throw ValidationError("Output must end in .mp4, .mov or .webm")
     }
     if encoding == .mjpeg || encoding == .auto {
-      guard (output as NSString).pathExtension.lowercased() == "mov" else {
+      guard case .mov = container else {
         throw ValidationError("mjpeg and auto recordings require a .mov output")
       }
     }
@@ -40,6 +42,15 @@ struct Record: AsyncParsableCommand {
     else {
       throw ValidationError("Output already exists: \(output)")
     }
+  }
+
+  /// The container the output path names; `validate` has refused any other.
+  private var container: SimulatorVideoContainer {
+    Self.container(of: output) ?? .mp4
+  }
+
+  private static func container(of path: String) -> SimulatorVideoContainer? {
+    SimulatorVideoContainer(pathExtension: (path as NSString).pathExtension)
   }
 
   @MainActor
@@ -66,7 +77,7 @@ struct Record: AsyncParsableCommand {
     }
     let url = try await recording.stop()
     let startedAt = await recording.startedAt()
-    let report = try await RecordingReport.read(url: url, encoding: selected.rawValue, startedAt: startedAt)
+    let report = try await RecordingReport.read(url: url, container: container, encoding: selected.rawValue, startedAt: startedAt)
     try JSONEncoder().encode(report).write(to: URL(fileURLWithPath: output + ".json"), options: .atomic)
     logger.info().log("Recorded \(report.duration) seconds to \(output) (\(selected.rawValue))")
   }
@@ -76,7 +87,7 @@ struct Record: AsyncParsableCommand {
     let candidates: [RecordingEncoding] = encoding == .auto ? [.hevc, .mjpeg] : [encoding]
     for candidate in candidates {
       let configuration = video.configuration(format: candidate.format)
-      let recording = SimulatorVideo.video(withFramebuffer: framebuffer, configuration: configuration, filePath: output, container: (output as NSString).pathExtension.lowercased() == "mov" ? .mov : .mp4, edgeInsets: insets, chaptersEnabled: chapters, logger: logger)
+      let recording = SimulatorVideo.video(withFramebuffer: framebuffer, configuration: configuration, filePath: output, container: container, edgeInsets: insets, chaptersEnabled: chapters, logger: logger)
       do {
         try await recording.startRecording()
         let deadline = ContinuousClock.now + .seconds(10)
@@ -138,7 +149,40 @@ struct RecordingReport: Encodable {
   /// place them on the recording's timeline. Absent when the recorder could not establish it.
   let startedAt: Double?
 
-  static func read(url: URL, encoding: String, startedAt: Double?) async throws -> Self {
+  static func read(url: URL, container: SimulatorVideoContainer, encoding: String, startedAt: Double?) async throws -> Self {
+    switch container {
+    case .mp4, .mov:
+      return try await readMovie(url: url, encoding: encoding, startedAt: startedAt)
+    case .webm:
+      // AVFoundation cannot open WebM, so the first keyframe is decoded with VideoToolbox directly.
+      let summary = try WebMFileReader.read(url)
+      guard summary.duration.isFinite, summary.duration > 0 else { throw RecordingError.unreadable }
+      let (width, height) = try decodedSize(of: summary.firstKeyFrame)
+      return Self(encoding: encoding, width: width, height: height, duration: summary.duration, startedAt: startedAt)
+    @unknown default:
+      return try await readMovie(url: url, encoding: encoding, startedAt: startedAt)
+    }
+  }
+
+  private static func decodedSize(of sample: CMSampleBuffer) throws -> (Int, Int) {
+    guard let format = CMSampleBufferGetFormatDescription(sample) else { throw RecordingError.unreadable }
+    var session: VTDecompressionSession?
+    guard VTDecompressionSessionCreate(allocator: nil, formatDescription: format, decoderSpecification: nil, imageBufferAttributes: nil, outputCallback: nil, decompressionSessionOut: &session) == noErr, let session else {
+      throw RecordingError.unreadable
+    }
+    defer { VTDecompressionSessionInvalidate(session) }
+    let size = OSAllocatedUnfairLock<(Int, Int)?>(initialState: nil)
+    let status = VTDecompressionSessionDecodeFrame(session, sampleBuffer: sample, flags: [], infoFlagsOut: nil) { status, _, imageBuffer, _, _ in
+      guard status == noErr, let imageBuffer else { return }
+      let decoded = (CVPixelBufferGetWidth(imageBuffer), CVPixelBufferGetHeight(imageBuffer))
+      size.withLock { $0 = decoded }
+    }
+    VTDecompressionSessionWaitForAsynchronousFrames(session)
+    guard status == noErr, let decoded = size.withLock({ $0 }) else { throw RecordingError.unreadable }
+    return decoded
+  }
+
+  private static func readMovie(url: URL, encoding: String, startedAt: Double?) async throws -> Self {
     let asset = AVURLAsset(url: url)
     guard let track = try await asset.loadTracks(withMediaType: .video).first else { throw RecordingError.unreadable }
     let reader = try AVAssetReader(asset: asset)

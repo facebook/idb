@@ -62,7 +62,7 @@ struct Clip: AsyncParsableCommand {
     // cancelled after the last sample can still reach here with a complete clip in hand. Nothing
     // is published after that point.
     try Task.checkCancellation()
-    let report = try await RecordingReport.read(url: staging.clip, encoding: RecordingEncoding.h264.rawValue, startedAt: nil)
+    let report = try await RecordingReport.read(url: staging.clip, container: .mp4, encoding: RecordingEncoding.h264.rawValue, startedAt: nil)
     try JSONEncoder().encode(report).write(to: staging.report, options: .atomic)
     try Task.checkCancellation()
     try staging.promote(to: destination)
