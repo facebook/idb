@@ -1615,15 +1615,11 @@ final class SimulatorAccessibilityCommandsTests: XCTestCase {
     let transport = AXTranslationTransportDouble(resultData: NSNumber(value: 777))
     try setUp(withRootElement: root, transport: transport)
 
-    // BUG: the translator sends its application-object request with no bridge-delegate token, so the dispatcher
-    // finds no request to route it to, never reaches the transport, and the read fails — flipped in the following
-    // commit.
-    do {
-      let element = try await simulator.accessibility.resolveElement(for: .application(pid: 777))
-      element.close()
-      XCTFail("expected the by-pid resolve to fail")
-    } catch AccessibilityError.noTranslationObject {}
-    XCTAssertTrue(transport.requests.isEmpty, "the request never reaches the transport")
+    let element = try await simulator.accessibility.resolveElement(for: .application(pid: 777))
+    defer { element.close() }
+
+    XCTAssertEqual(element.processIdentifier, 777, "a by-pid resolve reads the app with that pid")
+    XCTAssertEqual(transport.requests.map(\.requestType), [1], "the untokened application-object request reaches the transport")
   }
 
   // MARK: - Concurrent access to the shared translator

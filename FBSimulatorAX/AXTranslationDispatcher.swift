@@ -50,6 +50,10 @@ final class AXTranslationDispatcher: NSObject, AXPTranslationTokenDelegateHelper
   private weak var translator: AXPTranslator?
   private let lock = NSLock()
   private var tokenToRequest: [String: AXTranslationRequest] = [:]
+  /// The request resolving its root on the work queue, which a callback without a token belongs to: the
+  /// translator sends some root lookups (an application by pid) with no translation, and so no token, and
+  /// only one request is ever inside the translator at a time.
+  private var resolvingRequest: AXTranslationRequest?
 
   // AXPTranslator is a process-wide singleton whose internal state (nonatomic
   // properties, shared element caches) is not synchronized, so its API contract is
@@ -95,7 +99,8 @@ final class AXTranslationDispatcher: NSObject, AXPTranslationTokenDelegateHelper
       return try await performSerialized { () throws -> AXWritableElement in
         let collector = request.collector
         let translationStart = CFAbsoluteTimeGetCurrent()
-        guard let translator, let translation = try request.perform(withTranslator: translator) else {
+        guard let translator, let translation = try self.resolving(request, { try request.perform(withTranslator: translator) })
+        else {
           throw AccessibilityError.noTranslationObject
         }
         collector.translationDuration = CFAbsoluteTimeGetCurrent() - translationStart
@@ -132,9 +137,19 @@ final class AXTranslationDispatcher: NSObject, AXPTranslationTokenDelegateHelper
     tokenToRequest.removeValue(forKey: request.token)
   }
 
+  private func resolving<T>(_ request: AXTranslationRequest, _ body: () throws -> T) rethrows -> T {
+    lock.withLock { resolvingRequest = request }
+    defer { lock.withLock { resolvingRequest = nil } }
+    return try body()
+  }
+
+  /// The request a callback belongs to: by its token, or the resolving request when it carries none.
   private func request(forToken token: String) -> AXTranslationRequest? {
     lock.lock()
     defer { lock.unlock() }
+    guard !token.isEmpty else {
+      return resolvingRequest
+    }
     return tokenToRequest[token]
   }
 
