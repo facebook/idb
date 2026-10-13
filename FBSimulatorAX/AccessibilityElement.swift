@@ -179,7 +179,7 @@ final class AccessibilityElement {
     // ownership passes to a matching descendant.
     let root = try await read(AXReadPlan(searching: key, depth: .limited(depth)))
     var diagnostics = AccessibilitySearchDiagnostics()
-    guard let found = Self.firstMatch(withValue: value, forKey: key, in: root, ignoresCase: ignoresCase, diagnostics: &diagnostics),
+    guard let found = Self.preferredMatch(withValue: value, forKey: key, in: root, ignoresCase: ignoresCase, diagnostics: &diagnostics),
       let handle = found.handle
     else {
       close()
@@ -197,34 +197,44 @@ final class AccessibilityElement {
 
   // MARK: - Private helpers
 
-  /// The first snapshot, depth first, whose `key` value contains `value`, recording the nonmatching
-  /// values visited before it.
-  private static func firstMatch(
+  /// The snapshot a marker names, depth first: the first whose `key` value equals `value`, otherwise the
+  /// first that contains it — the rule axbridge applies over its serialized tree, so a marker names the
+  /// same element on either backend. Records the nonmatching values visited before the first containing
+  /// element.
+  private static func preferredMatch(
     withValue value: String,
     forKey key: AXSearchableKey,
-    in snapshot: AXElementSnapshot,
+    in root: AXElementSnapshot,
     ignoresCase: Bool,
     diagnostics: inout AccessibilitySearchDiagnostics
   ) -> AXElementSnapshot? {
-    if let propertyValue = snapshot.searchableValue(for: key) {
-      if contains(value, in: propertyValue, ignoringCase: ignoresCase) {
+    let predicate = AccessibilityMatch(value: value, key: key, ignoresCase: ignoresCase)
+    var firstContaining: AXElementSnapshot?
+    var pending = [root]
+    while let snapshot = pending.popLast() {
+      pending.append(contentsOf: snapshot.children.reversed())
+      guard let candidate = snapshot.searchableValue(for: key) else {
+        continue
+      }
+      // An empty marker matches every element carrying the key, so the first of them wins.
+      guard let predicate else {
         return snapshot
       }
-      diagnostics.record(propertyValue)
-    }
-    for child in snapshot.children {
-      if let found = firstMatch(withValue: value, forKey: key, in: child, ignoresCase: ignoresCase, diagnostics: &diagnostics) {
-        return found
+      guard predicate.matches(candidate) else {
+        if firstContaining == nil {
+          diagnostics.record(candidate)
+        }
+        continue
       }
+      if isEqual(candidate, to: predicate) {
+        return snapshot
+      }
+      firstContaining = firstContaining ?? snapshot
     }
-    return nil
+    return firstContaining
   }
 
-  /// The same substring test as `AccessibilityMatch`; an empty marker matches every value.
-  private static func contains(_ value: String, in candidate: String, ignoringCase: Bool) -> Bool {
-    guard let match = AccessibilityMatch(value: value, ignoresCase: ignoringCase) else {
-      return true
-    }
-    return match.matches(candidate)
+  private static func isEqual(_ candidate: String, to predicate: AccessibilityMatch) -> Bool {
+    predicate.ignoresCase ? candidate.caseInsensitiveCompare(predicate.value) == .orderedSame : candidate == predicate.value
   }
 }

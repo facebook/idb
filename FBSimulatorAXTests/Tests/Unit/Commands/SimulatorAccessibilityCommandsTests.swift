@@ -1677,9 +1677,7 @@ final class SimulatorAccessibilityCommandsTests: XCTestCase {
     defer { element.close() }
 
     let label = try await markerMatchLabel(element)
-    // BUG: returns "OK nested", the first element that contains the marker, although "OK" equals it; axbridge
-    // returns the exact match for the same tree — flipped in the following commit.
-    XCTAssertEqual(label, "OK nested", "the search descends into the first child before visiting its sibling")
+    XCTAssertEqual(label, "OK", "an element equal to the marker wins over an earlier one that only contains it")
   }
 
   func testMarkerDoesNotDescendPastItsDepth() async throws {
