@@ -18,10 +18,12 @@ jobs:
   # CI's own conclusion also counts shards and jobs the site does not depend
   # on, so this reads the conclusion of the one job that does. A run with no
   # job of that name fails here rather than quietly never deploying again
-  # after a rename in ci.yml.
+  # after a rename in ci.yml. A cancelled run, superseded by a newer push, is
+  # skipped instead: it can stop before that job exists, and built nothing.
   demos-built:
     if: >-
       github.event.workflow_run.event == 'push'
+      && github.event.workflow_run.conclusion != 'cancelled'
       && github.event.workflow_run.repository.full_name == github.repository
       && github.event.workflow_run.head_repository.full_name == github.repository
     runs-on: ubuntu-latest
