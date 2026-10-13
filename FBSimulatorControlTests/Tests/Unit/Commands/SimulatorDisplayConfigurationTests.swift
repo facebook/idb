@@ -253,12 +253,16 @@ final class SimulatorDisplayConfigurationTests: XCTestCase {
   }
 
   func testStreamCarriesAConfigurationAnotherReaderObserved() async throws {
-    let displays = DisplayCommandsDouble([.success(cover)])
+    // Pushes that stay open keep the following waiting on them. Without pushes it would poll at once, and a poll that
+    // begins after `inner` was numbered, but is observed first, would rightly make `inner` stale.
+    let (pushes, push) = AsyncThrowingStream<SimulatorDisplayReport, Error>.makeStream()
+    let displays = DisplayCommandsDouble([.success(cover)], pushes: pushes)
     var stream = displays.followConfigurations(polling: .seconds(60)).makeAsyncIterator()
     _ = await stream.next()
     _ = try displays.configurationTracker.observe(inner)
     let next = await stream.next()
     XCTAssertEqual(next?.active, .identified(display("inner")))
+    withExtendedLifetime(push) {}
   }
 
   func testAFollowingStoppedMidReadDoesNotReachTheNextStream() async {
