@@ -106,7 +106,7 @@ final class AXTranslationRequest {
   func perform(withTranslator translator: AXPTranslator) throws -> AXPTranslationObject? {
     switch kind {
     case .frontmostApplication:
-      return translator.frontmostApplication(withDisplayId: display?.accessibilityID ?? 0, bridgeDelegateToken: token)
+      return translator.frontmostApplication(withDisplayId: displayID, bridgeDelegateToken: token)
     case .point(let point):
       return try translation(at: point, translator: translator)
     case .applicationForPid(let pid):
@@ -170,7 +170,7 @@ final class AXTranslationRequest {
     let keys = Self.serializerKeys(options)
     let snapshot = AXElementSnapshot.read(
       element, plan: AXReadPlan(keys: keys, depth: .unlimited), token: token, mode: translatorReadMode)
-    let screenBounds = display?.bounds ?? snapshot.frame
+    let screen = AXReadScreen(display: display, rootFrame: snapshot.frame)
     let seenPids = SeenPIDs()
 
     let walked = AXNodeSerializer.recursiveDescription(
@@ -180,58 +180,58 @@ final class AXTranslationRequest {
       collector: collector,
       seenPids: seenPids
     )
-    let mainAppElements = options.narrowing(walked, screen: screenBounds)
+    let tree = TranslatedTree(
+      walked: walked, reported: options.narrowing(walked, screen: screen.bounds), pid: snapshot.pid, seenPids: seenPids)
 
     // The grid stays live: remote-content discovery reads it to skip covered points and marks its hits
     // into it.
     let grid: AccessibilityCoverageGrid? =
-      options.collectFrameCoverage ? AccessibilityCoverageGrid(screenBounds: screenBounds) : nil
-    grid?.markFilled(withElements: mainAppElements)
+      options.collectFrameCoverage ? AccessibilityCoverageGrid(screenBounds: screen.bounds) : nil
+    grid?.markFilled(withElements: tree.reported)
 
     guard let remoteOptions = options.remoteContentOptions, let translator else {
       return buildResponse(
-        elements: .tree(mainAppElements),
+        elements: .tree(tree.reported),
         walkStart: walkStart,
         coverage: options.collectFrameCoverage
           ? .measured(
-            reported: mainAppElements, walked: walked, screenBounds: screenBounds,
+            reported: tree.reported, walked: walked, screenBounds: screen.bounds,
             nested: options.nestedFormat
           ) : nil,
-        screen: display?.screen ?? Self.screenInfo(fromBounds: screenBounds),
+        screen: screen.info,
         reportProfile: options.enableProfiling,
-        narrowing: options.narrowingReport(walked: walked, reported: mainAppElements)
+        narrowing: options.narrowingReport(walked: walked, reported: tree.reported)
       )
     }
 
-    let frontmostPid = snapshot.pid
     return try processRemoteContent(
-      mainAppElements: mainAppElements,
-      nestedFormat: options.nestedFormat,
-      filter: options.filter,
-      match: options.match,
-      screenBounds: screenBounds,
-      frontmostPid: frontmostPid,
-      seenPids: seenPids,
-      coverageGrid: grid,
-      walkedElements: walked,
-      collectFrameCoverage: options.collectFrameCoverage,
-      reportProfile: options.enableProfiling,
-      walkStart: walkStart,
+      tree: tree,
+      screen: screen,
+      grid: grid,
+      plan: AXRemoteContentPlan(remoteOptions, screenBounds: screen.bounds),
+      options: options,
       keys: keys,
-      remoteOptions: remoteOptions,
+      walkStart: walkStart,
       translator: translator
     )
+  }
+
+  /// The frontmost application's walked tree: every element walked, those the read reports, the
+  /// application's pid, and every pid seen on the way.
+  private struct TranslatedTree {
+    let walked: [AccessibilityDocumentElement]
+    let reported: [AccessibilityDocumentElement]
+    let pid: pid_t
+    let seenPids: SeenPIDs
   }
 
   // MARK: - Remote content
 
   private func discoverRemoteElements(
-    screenBounds: CGRect,
-    frontmostPid: pid_t,
-    seenPids: SeenPIDs,
-    coverageGrid: AccessibilityCoverageGrid?,
+    beyond tree: TranslatedTree,
+    grid: AccessibilityCoverageGrid?,
+    plan: AXRemoteContentPlan,
     keys: Set<AXKeys>,
-    remoteOptions: AccessibilityRemoteContentOptions,
     translator: AXPTranslator
   ) throws -> [AccessibilityDocumentElement] {
     var discoveredElements: [AccessibilityDocumentElement] = []
@@ -241,117 +241,71 @@ final class AXTranslationRequest {
     var keysWithFrame = keys
     keysWithFrame.insert(.frame)
 
-    let stepSize = remoteOptions.gridStepSize > 0 ? remoteOptions.gridStepSize : 50.0
-    let region = remoteOptions.region.isNull ? screenBounds : remoteOptions.region
-    let maxPoints = remoteOptions.maxPoints
-    var pointCount: UInt = 0
-
-    var y = stepSize
-    while y < region.size.height - stepSize {
-      var x = stepSize
-      while x < region.size.width - stepSize {
-        if maxPoints > 0, pointCount >= maxPoints {
-          break
-        }
-
-        let point = CGPoint(x: region.origin.x + x, y: region.origin.y + y)
-
-        if let coverageGrid, coverageGrid.isFilled(at: point) {
-          x += stepSize
-          continue
-        }
-
-        pointCount += 1
-
-        // A caller's region can reach past the routed display, where no point translates.
-        let translated: AXPTranslationObject?
-        do {
-          translated = try translation(at: point, translator: translator)
-        } catch SimulatorDisplayInteractionError.invalidPoint {
-          translated = nil
-        }
-        guard let hitTranslation = translated else {
-          x += stepSize
-          continue
-        }
-        hitTranslation.bridgeDelegateToken = token
-        let hitPid = hitTranslation.pid
-
-        if seenPids.contains(hitPid) || hitPid <= 0 || hitPid == frontmostPid {
-          x += stepSize
-          continue
-        }
-
-        guard let hitElement = translator.macPlatformElement(fromTranslation: hitTranslation) as? AXPlatformElement else {
-          x += stepSize
-          continue
-        }
-
-        // One read serves both the duplicate check and the serialization.
-        let hit = AXElementSnapshot.read(
-          hitElement, plan: AXReadPlan(keys: keysWithFrame, depth: .limited(0)), token: token, mode: translatorReadMode)
-        let hitFrame = hit.frame
-        let hitFrameKey = "\(hitFrame.origin.x),\(hitFrame.origin.y),\(hitFrame.size.width),\(hitFrame.size.height)"
-        if discoveredFrames.contains(hitFrameKey) {
-          x += stepSize
-          continue
-        }
-        discoveredFrames.insert(hitFrameKey)
-
-        coverageGrid?.markFilled(with: hitFrame)
-
-        let discovered = AXNodeSerializer.decoratedElement(
-          forSnapshot: hit,
-          keys: keysWithFrame,
-          collector: collector,
-          seenPids: nil,
-          isRemote: true
-        )
-        discoveredElements.append(discovered)
-
-        x += stepSize
-      }
-      if maxPoints > 0, pointCount >= maxPoints {
+    var visited: UInt = 0
+    for point in plan.points {
+      if plan.isExhausted(afterVisiting: visited) {
         break
       }
-      y += stepSize
-    }
+      if let grid, grid.isFilled(at: point) {
+        continue
+      }
+      visited += 1
 
+      // A caller's region can reach past the routed display, where no point translates.
+      let translated: AXPTranslationObject?
+      do {
+        translated = try translation(at: point, translator: translator)
+      } catch SimulatorDisplayInteractionError.invalidPoint {
+        translated = nil
+      }
+      guard let hitTranslation = translated else {
+        continue
+      }
+      hitTranslation.bridgeDelegateToken = token
+      let hitPid = hitTranslation.pid
+      if tree.seenPids.contains(hitPid) || hitPid <= 0 || hitPid == tree.pid {
+        continue
+      }
+      guard let hitElement = translator.macPlatformElement(fromTranslation: hitTranslation) as? AXPlatformElement else {
+        continue
+      }
+
+      // One read serves both the duplicate check and the serialization.
+      let hit = AXElementSnapshot.read(
+        hitElement, plan: AXReadPlan(keys: keysWithFrame, depth: .limited(0)), token: token, mode: translatorReadMode)
+      let hitFrame = hit.frame
+      let hitFrameKey = "\(hitFrame.origin.x),\(hitFrame.origin.y),\(hitFrame.size.width),\(hitFrame.size.height)"
+      if discoveredFrames.contains(hitFrameKey) {
+        continue
+      }
+      discoveredFrames.insert(hitFrameKey)
+      grid?.markFilled(with: hitFrame)
+
+      discoveredElements.append(
+        AXNodeSerializer.decoratedElement(
+          forSnapshot: hit, keys: keysWithFrame, collector: collector, seenPids: nil, isRemote: true))
+    }
     return discoveredElements
   }
 
   private func processRemoteContent(
-    mainAppElements: [AccessibilityDocumentElement],
-    nestedFormat: Bool,
-    filter: AccessibilityElementFilter,
-    match: AccessibilityMatch?,
-    screenBounds: CGRect,
-    frontmostPid: pid_t,
-    seenPids: SeenPIDs,
-    coverageGrid: AccessibilityCoverageGrid?,
-    walkedElements: [AccessibilityDocumentElement],
-    collectFrameCoverage: Bool,
-    reportProfile: Bool,
-    walkStart: CFAbsoluteTime,
+    tree: TranslatedTree,
+    screen: AXReadScreen,
+    grid: AccessibilityCoverageGrid?,
+    plan: AXRemoteContentPlan,
+    options: AccessibilityRequestOptions,
     keys: Set<AXKeys>,
-    remoteOptions: AccessibilityRemoteContentOptions,
+    walkStart: CFAbsoluteTime,
     translator: AXPTranslator
   ) throws -> AccessibilityElementsResponse {
-    let coverageBefore = coverageGrid?.coverageRatio() ?? 0
+    let coverageBefore = grid?.coverageRatio() ?? 0
 
     let discoveredElements = try discoverRemoteElements(
-      screenBounds: screenBounds,
-      frontmostPid: frontmostPid,
-      seenPids: seenPids,
-      coverageGrid: coverageGrid,
-      keys: keys,
-      remoteOptions: remoteOptions,
-      translator: translator
-    )
+      beyond: tree, grid: grid, plan: plan, keys: keys, translator: translator)
 
     var additionalFrameCoverage: Double?
-    if let coverageGrid, !discoveredElements.isEmpty {
-      let additionalCoverage = coverageGrid.coverageRatio() - coverageBefore
+    if let grid, !discoveredElements.isEmpty {
+      let additionalCoverage = grid.coverageRatio() - coverageBefore
       if additionalCoverage > 0 {
         additionalFrameCoverage = Double(additionalCoverage)
       }
@@ -360,11 +314,11 @@ final class AXTranslationRequest {
     // Discovered elements honour the same filter and match as the main tree. `additionalFrameCoverage`
     // is measured before narrowing: it reports what hit-testing found that the tree did not expose.
     let keptDiscovered = AccessibilityElementRetention.narrowing(
-      discoveredElements, filter: filter, match: match, screen: screenBounds
+      discoveredElements, filter: options.filter, match: options.match, screen: screen.bounds
     )
-    var elements = mainAppElements
+    var elements = tree.reported
     if !keptDiscovered.isEmpty {
-      if nestedFormat, var applicationElement = elements.first {
+      if options.nestedFormat, var applicationElement = elements.first {
         applicationElement.children = (applicationElement.children ?? []) + keptDiscovered
         elements[0] = applicationElement
       } else {
@@ -375,23 +329,28 @@ final class AXTranslationRequest {
     return buildResponse(
       elements: .tree(elements),
       walkStart: walkStart,
-      coverage: collectFrameCoverage
+      coverage: options.collectFrameCoverage
         ? .measured(
-          reported: mainAppElements, walked: walkedElements, screenBounds: screenBounds,
-          nested: nestedFormat, additional: additionalFrameCoverage
+          reported: tree.reported, walked: tree.walked, screenBounds: screen.bounds,
+          nested: options.nestedFormat, additional: additionalFrameCoverage
         ) : nil,
-      screen: display?.screen ?? Self.screenInfo(fromBounds: screenBounds),
-      reportProfile: reportProfile,
+      screen: screen.info,
+      reportProfile: options.enableProfiling,
       // Discovered elements count as walked too, or a read could report more matched than walked.
       narrowing: AccessibilityNarrowing(
-        filter: filter, match: match,
-        walked: walkedElements, discovered: discoveredElements, reported: elements)
+        filter: options.filter, match: options.match,
+        walked: tree.walked, discovered: discoveredElements, reported: elements)
     )
+  }
+
+  /// The display the translator resolves against; 0 is the main display, which needs no name.
+  private var displayID: UInt32 {
+    display?.accessibilityID ?? 0
   }
 
   private func translation(at point: CGPoint, translator: AXPTranslator) throws -> AXPTranslationObject? {
     let unrotated = try display?.geometry.unrotatedPoint(from: point) ?? point
-    return translator.object(at: unrotated, displayId: display?.accessibilityID ?? 0, bridgeDelegateToken: token)
+    return translator.object(at: unrotated, displayId: displayID, bridgeDelegateToken: token)
   }
 
   // MARK: - Helpers
@@ -427,15 +386,6 @@ final class AXTranslationRequest {
       narrowing: narrowing,
       translatorMetrics: metrics
     )
-  }
-
-  /// The screen bounds a read's frames are relative to; `nil` for a degenerate rectangle, so an unknown
-  /// screen is reported as unknown rather than zero-sized.
-  static func screenInfo(fromBounds bounds: CGRect) -> AccessibilityScreenInfo? {
-    guard bounds.width > 0, bounds.height > 0 else {
-      return nil
-    }
-    return AccessibilityScreenInfo(width: Double(bounds.width), height: Double(bounds.height))
   }
 
   private static func serializerKeys(_ options: AccessibilityRequestOptions) -> Set<AXKeys> {
