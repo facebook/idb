@@ -560,3 +560,261 @@ public final class WebMFileWriter {
     }
   }
 }
+
+// MARK: - WebMFileReader
+
+public enum WebMFileReaderError: Error, LocalizedError {
+  case malformed(String)
+  case noKeyFrame
+  case unsupportedCodec(String)
+  case failedToCreateSample(OSStatus)
+
+  public var errorDescription: String? {
+    switch self {
+    case let .malformed(reason):
+      return "Not a readable WebM file: \(reason)"
+    case .noKeyFrame:
+      return "The WebM file has no keyframe"
+    case let .unsupportedCodec(codecID):
+      return "The WebM file's codec \(codecID) is not H.264 or HEVC"
+    case let .failedToCreateSample(status):
+      return "Failed to describe the WebM file's first keyframe: \(status)"
+    }
+  }
+}
+
+/// Reads back what a WebM recording needs to be checked for playability: its duration, and its first keyframe as a
+/// sample buffer that a decoder can take, described by the parameter sets that keyframe carries.
+public enum WebMFileReader {
+  public struct Summary {
+    /// The duration in seconds: the file's own, or the time of its last block when it was never finished.
+    public let duration: Double
+    public let firstKeyFrame: CMSampleBuffer
+  }
+
+  private struct Element {
+    let id: UInt32
+    let data: Range<Int>
+  }
+
+  public static func read(_ fileURL: URL) throws -> Summary {
+    let bytes = try Data(contentsOf: fileURL)
+    let top = try elements(bytes, in: 0..<bytes.count)
+    guard top.first?.id == WebM.ID.ebml, let segment = top.first(where: { $0.id == WebM.ID.segment }) else {
+      throw WebMFileReaderError.malformed("no EBML header and segment")
+    }
+    let children = try elements(bytes, in: segment.data)
+    var timestampScale: UInt64 = WebM.timestampScaleNanoseconds
+    var duration: Double?
+    if let info = children.first(where: { $0.id == WebM.ID.info }) {
+      for element in try elements(bytes, in: info.data) {
+        switch element.id {
+        case WebM.ID.timestampScale:
+          timestampScale = unsigned(bytes, element)
+        case WebM.ID.duration where element.data.count == 8:
+          duration = Double(bitPattern: unsigned(bytes, element))
+        case WebM.ID.duration where element.data.count == 4:
+          duration = Double(Float(bitPattern: UInt32(unsigned(bytes, element))))
+        default:
+          break
+        }
+      }
+    }
+    guard let tracks = children.first(where: { $0.id == WebM.ID.tracks }),
+      let entry = try elements(bytes, in: tracks.data).first(where: { $0.id == WebM.ID.trackEntry }),
+      let codecIDElement = try elements(bytes, in: entry.data).first(where: { $0.id == WebM.ID.codecID })
+    else {
+      throw WebMFileReaderError.malformed("no video track")
+    }
+    let trackNumber = try elements(bytes, in: entry.data).first { $0.id == WebM.ID.trackNumber }.map { unsigned(bytes, $0) } ?? WebM.trackNumber
+    let codecID = String(decoding: bytes[codecIDElement.data], as: UTF8.self)
+    let codec: VideoStreamCodec
+    switch codecID {
+    case WebM.codecID(.h264):
+      codec = .h264
+    case WebM.codecID(.hevc):
+      codec = .hevc
+    default:
+      throw WebMFileReaderError.unsupportedCodec(codecID)
+    }
+
+    var firstKeyFrame: [UInt8]?
+    var lastTime: Int64 = 0
+    for cluster in children where cluster.id == WebM.ID.cluster {
+      let clusterChildren = try elements(bytes, in: cluster.data)
+      let clusterTime = clusterChildren.first { $0.id == WebM.ID.timestamp }.map { Int64(unsigned(bytes, $0)) } ?? 0
+      for element in clusterChildren where element.id == WebM.ID.simpleBlock {
+        guard let block = try simpleBlock(bytes, element), block.trackNumber == trackNumber else {
+          continue
+        }
+        lastTime = max(lastTime, clusterTime + Int64(block.relativeTime))
+        if firstKeyFrame == nil, block.isKeyFrame {
+          firstKeyFrame = Array(bytes[block.frame])
+        }
+      }
+    }
+    guard let firstKeyFrame else {
+      throw WebMFileReaderError.noKeyFrame
+    }
+    let seconds = (duration ?? Double(lastTime)) * Double(timestampScale) / 1_000_000_000
+    return Summary(duration: seconds, firstKeyFrame: try sampleBuffer(firstKeyFrame, codec: codec))
+  }
+
+  private struct SimpleBlock {
+    let trackNumber: UInt64
+    let relativeTime: Int16
+    let isKeyFrame: Bool
+    let frame: Range<Int>
+  }
+
+  /// A SimpleBlock's header and frame: a variable-length track number, a signed 16-bit time from its cluster's, then
+  /// flags. Nil for a block too short to hold its header. A laced block holds several frames behind lacing framing,
+  /// which this writer never produces, so it is refused rather than misread as one frame.
+  private static func simpleBlock(_ bytes: Data, _ element: Element) throws -> SimpleBlock? {
+    let start = element.data.lowerBound
+    guard !element.data.isEmpty else {
+      return nil
+    }
+    let trackLength = bytes[start].leadingZeroBitCount + 1
+    guard trackLength <= 8, element.data.count >= trackLength + 3 else {
+      return nil
+    }
+    var trackNumber = UInt64(bytes[start] & (0xFF >> trackLength))
+    for byte in bytes[(start + 1)..<(start + trackLength)] {
+      trackNumber = trackNumber << 8 | UInt64(byte)
+    }
+    let timeOffset = start + trackLength
+    let flags = bytes[timeOffset + 2]
+    guard flags & 0x06 == 0 else {
+      throw WebMFileReaderError.malformed("a laced block, which an idb recording never writes")
+    }
+    return SimpleBlock(
+      trackNumber: trackNumber, relativeTime: Int16(bitPattern: UInt16(bytes[timeOffset]) << 8 | UInt16(bytes[timeOffset + 1])),
+      isKeyFrame: flags & 0x80 != 0, frame: (timeOffset + 3)..<element.data.upperBound)
+  }
+
+  /// The keyframe as a one-sample buffer: its leading parameter sets become the format description, and the rest of
+  /// its NAL units the sample data. Any other leading NAL units, such as SEI, stay in the sample, as decoders expect.
+  private static func sampleBuffer(_ frame: [UInt8], codec: VideoStreamCodec) throws -> CMSampleBuffer {
+    var parameterSets: [[UInt8]] = []
+    var sliceData: [UInt8] = []
+    var position = 0
+    while position + 4 <= frame.count {
+      let length = Int(frame[position..<position + 4].reduce(UInt32(0)) { $0 << 8 | UInt32($1) })
+      guard length > 0, length <= frame.count - position - 4 else {
+        throw WebMFileReaderError.malformed("a NAL unit overruns its block")
+      }
+      let unit = Array(frame[(position + 4)..<(position + 4 + length)])
+      let isParameterSet: Bool
+      switch codec {
+      case .h264:
+        isParameterSet = [7, 8].contains(unit[0] & 0x1F)
+      case .hevc:
+        isParameterSet = [32, 33, 34].contains((unit[0] >> 1) & 0x3F)
+      }
+      if isParameterSet {
+        parameterSets.append(unit)
+      } else {
+        sliceData.append(contentsOf: frame[position..<(position + 4 + length)])
+      }
+      position += 4 + length
+    }
+    guard !parameterSets.isEmpty, !sliceData.isEmpty else {
+      throw WebMFileReaderError.malformed("the first keyframe carries no parameter sets or no picture")
+    }
+
+    var formatDescription: CMFormatDescription?
+    let pointers = parameterSets.map { set -> UnsafeMutablePointer<UInt8> in
+      let pointer = UnsafeMutablePointer<UInt8>.allocate(capacity: set.count)
+      pointer.initialize(from: set, count: set.count)
+      return pointer
+    }
+    defer { pointers.forEach { $0.deallocate() } }
+    let constPointers = pointers.map { UnsafePointer($0) }
+    let sizes = parameterSets.map(\.count)
+    var status: OSStatus
+    switch codec {
+    case .h264:
+      status = CMVideoFormatDescriptionCreateFromH264ParameterSets(
+        allocator: nil, parameterSetCount: parameterSets.count, parameterSetPointers: constPointers, parameterSetSizes: sizes,
+        nalUnitHeaderLength: 4, formatDescriptionOut: &formatDescription)
+    case .hevc:
+      status = CMVideoFormatDescriptionCreateFromHEVCParameterSets(
+        allocator: nil, parameterSetCount: parameterSets.count, parameterSetPointers: constPointers, parameterSetSizes: sizes,
+        nalUnitHeaderLength: 4, extensions: nil, formatDescriptionOut: &formatDescription)
+    }
+    guard status == noErr, let formatDescription else {
+      throw WebMFileReaderError.failedToCreateSample(status)
+    }
+
+    var blockBuffer: CMBlockBuffer?
+    status = CMBlockBufferCreateWithMemoryBlock(
+      allocator: nil, memoryBlock: nil, blockLength: sliceData.count, blockAllocator: nil, customBlockSource: nil, offsetToData: 0,
+      dataLength: sliceData.count, flags: kCMBlockBufferAssureMemoryNowFlag, blockBufferOut: &blockBuffer)
+    guard status == noErr, let blockBuffer else {
+      throw WebMFileReaderError.failedToCreateSample(status)
+    }
+    status = sliceData.withUnsafeBytes { bytes -> OSStatus in
+      guard let base = bytes.baseAddress else {
+        return kCMBlockBufferBadPointerParameterErr
+      }
+      return CMBlockBufferReplaceDataBytes(with: base, blockBuffer: blockBuffer, offsetIntoDestination: 0, dataLength: sliceData.count)
+    }
+    guard status == noErr else {
+      throw WebMFileReaderError.failedToCreateSample(status)
+    }
+    var sample: CMSampleBuffer?
+    var size = sliceData.count
+    status = CMSampleBufferCreateReady(
+      allocator: nil, dataBuffer: blockBuffer, formatDescription: formatDescription, sampleCount: 1, sampleTimingEntryCount: 0,
+      sampleTimingArray: nil, sampleSizeEntryCount: 1, sampleSizeArray: &size, sampleBufferOut: &sample)
+    guard status == noErr, let sample else {
+      throw WebMFileReaderError.failedToCreateSample(status)
+    }
+    return sample
+  }
+
+  private static func unsigned(_ bytes: Data, _ element: Element) -> UInt64 {
+    bytes[element.data].reduce(UInt64(0)) { $0 << 8 | UInt64($1) }
+  }
+
+  /// The elements in `range`, in order. An element of unknown size runs to the end of the range, which is how an
+  /// unfinished recording's segment reads, and a recording cut off part way through an element reads up to it.
+  private static func elements(_ bytes: Data, in range: Range<Int>) throws -> [Element] {
+    var elements: [Element] = []
+    var position = range.lowerBound
+    while position < range.upperBound {
+      let idLength = bytes[position].leadingZeroBitCount + 1
+      guard idLength <= 4 else {
+        throw WebMFileReaderError.malformed("an element ID at \(position)")
+      }
+      guard position + idLength < range.upperBound else {
+        break
+      }
+      let id = bytes[position..<(position + idLength)].reduce(UInt32(0)) { $0 << 8 | UInt32($1) }
+      position += idLength
+      let sizeLength = bytes[position].leadingZeroBitCount + 1
+      guard sizeLength <= 8 else {
+        throw WebMFileReaderError.malformed("an element size at \(position)")
+      }
+      guard position + sizeLength <= range.upperBound else {
+        break
+      }
+      var size = UInt64(bytes[position] & (0xFF >> sizeLength))
+      var allOnes = size == UInt64(0xFF >> sizeLength)
+      for byte in bytes[(position + 1)..<(position + sizeLength)] {
+        size = size << 8 | UInt64(byte)
+        allOnes = allOnes && byte == 0xFF
+      }
+      position += sizeLength
+      let end = allOnes ? range.upperBound : position + Int(size)
+      // A recording cut off mid-cluster ends with a truncated element; what precedes it is still readable.
+      guard end <= range.upperBound else {
+        break
+      }
+      elements.append(Element(id: id, data: position..<end))
+      position = end
+    }
+    return elements
+  }
+}

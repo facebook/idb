@@ -329,3 +329,104 @@ extension Array where Element == UInt8 {
     return (0...(count - needle.count)).contains { Array(self[$0..<$0 + needle.count]) == needle }
   }
 }
+
+// MARK: - WebMFileReader
+
+final class WebMFileReaderTests: XCTestCase {
+
+  private var fileURL: URL!
+
+  override func setUp() {
+    super.setUp()
+    fileURL = FileManager.default.temporaryDirectory.appendingPathComponent("\(UUID().uuidString).webm")
+  }
+
+  override func tearDown() {
+    try? FileManager.default.removeItem(at: fileURL)
+    super.tearDown()
+  }
+
+  func testReadsTheDurationAndTheFirstKeyFrameDescribedByItsOwnParameterSets() throws {
+    let writer = WebMFileWriter(fileURL: fileURL)
+    let first = makeH264SampleBuffer(isKeyFrame: true, pts90k: 0)
+    try writer.write(first)
+    try writer.write(makeH264SampleBuffer(isKeyFrame: false, pts90k: 90000))
+    try writer.finish()
+
+    let summary = try WebMFileReader.read(fileURL)
+    XCTAssertEqual(summary.duration, 1.033, accuracy: 0.0001)
+    let format = try XCTUnwrap(CMSampleBufferGetFormatDescription(summary.firstKeyFrame))
+    XCTAssertEqual(CMFormatDescriptionGetMediaSubType(format), kCMVideoCodecType_H264)
+    XCTAssertEqual(try format.parameterSets(for: .h264).first, defaultTestSPS)
+    let data = try XCTUnwrap(CMSampleBufferGetDataBuffer(summary.firstKeyFrame))
+    var bytes = Data()
+    try data.appendBytes(to: &bytes)
+    XCTAssertEqual([UInt8](bytes), defaultTestAVCCBytes, "the parameter sets are taken out of the picture's data")
+  }
+
+  func testAnUnfinishedRecordingReadsToItsLastBlock() throws {
+    let writer = WebMFileWriter(fileURL: fileURL)
+    try writer.write(makeH264SampleBuffer(isKeyFrame: true, pts90k: 0))
+    try writer.write(makeH264SampleBuffer(isKeyFrame: false, pts90k: 45000))
+    try writer.write(makeH264SampleBuffer(isKeyFrame: true, pts90k: 90000))
+
+    XCTAssertEqual(try WebMFileReader.read(fileURL).duration, 0.5, accuracy: 0.0001)
+    withExtendedLifetime(writer) {}
+  }
+
+  func testReadsHEVC() throws {
+    let writer = WebMFileWriter(fileURL: fileURL)
+    try writer.write(try XCTUnwrap(makeHEVCSampleBuffer(isKeyFrame: true)))
+    try writer.finish()
+
+    let format = try XCTUnwrap(CMSampleBufferGetFormatDescription(try WebMFileReader.read(fileURL).firstKeyFrame))
+    XCTAssertEqual(CMFormatDescriptionGetMediaSubType(format), kCMVideoCodecType_HEVC)
+  }
+
+  func testReadsAFourByteDuration() throws {
+    let writer = WebMFileWriter(fileURL: fileURL)
+    try writer.write(makeH264SampleBuffer(isKeyFrame: true, pts90k: 0))
+    try writer.finish()
+    // The eight-byte Duration becomes a four-byte one, padded with a Void to the same size.
+    var bytes = [UInt8](try Data(contentsOf: fileURL))
+    let duration: [UInt8] = [0x44, 0x89, 0x88]
+    let index = try XCTUnwrap((0..<(bytes.count - 2)).first { Array(bytes[$0..<$0 + 3]) == duration })
+    let fourBytes = withUnsafeBytes(of: Float(1250).bitPattern.bigEndian) { Array($0) }
+    bytes.replaceSubrange(index..<index + 11, with: [0x44, 0x89, 0x84] + fourBytes + [0xEC, 0x82, 0x00, 0x00])
+    try Data(bytes).write(to: fileURL)
+
+    XCTAssertEqual(try WebMFileReader.read(fileURL).duration, 1.25, accuracy: 0.0001)
+  }
+
+  func testARecordingCutOffAfterAnElementIDReadsUpToIt() throws {
+    let writer = WebMFileWriter(fileURL: fileURL)
+    try writer.write(makeH264SampleBuffer(isKeyFrame: true, pts90k: 0))
+    try writer.write(makeH264SampleBuffer(isKeyFrame: true, pts90k: 90000))
+    let handle = try FileHandle(forWritingTo: fileURL)
+    try handle.seekToEnd()
+    try handle.write(contentsOf: EBML.id(WebM.ID.cluster))
+    try handle.close()
+
+    XCTAssertNoThrow(try WebMFileReader.read(fileURL))
+    withExtendedLifetime(writer) {}
+  }
+
+  func testALacedBlockIsRefusedRatherThanMisread() throws {
+    let writer = WebMFileWriter(fileURL: fileURL)
+    try writer.write(makeH264SampleBuffer(isKeyFrame: true, pts90k: 0))
+    try writer.finish()
+    // A SimpleBlock on track 1 at time 0 with the keyframe flag, then with Xiph lacing set as well.
+    var bytes = [UInt8](try Data(contentsOf: fileURL))
+    let header: [UInt8] = [0x81, 0x00, 0x00, 0x80]
+    let index = try XCTUnwrap((0..<(bytes.count - 3)).first { Array(bytes[$0..<$0 + 4]) == header })
+    bytes[index + 3] = 0x82
+    try Data(bytes).write(to: fileURL)
+
+    XCTAssertThrowsError(try WebMFileReader.read(fileURL))
+  }
+
+  func testAFileThatIsNotWebMIsRefused() throws {
+    try Data([0x00, 0x00, 0x00, 0x18, 0x66, 0x74, 0x79, 0x70]).write(to: fileURL)
+    XCTAssertThrowsError(try WebMFileReader.read(fileURL))
+  }
+}
