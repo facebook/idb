@@ -7,9 +7,11 @@
 
 import FBControlCore
 @testable import FBSimulatorControl
-import XCTest
+import Foundation
+import Testing
 
-final class SimulatorPrivacyCommandsTests: XCTestCase {
+@Suite
+struct SimulatorPrivacyCommandsTests {
 
   // MARK: - Helpers
 
@@ -24,26 +26,26 @@ final class SimulatorPrivacyCommandsTests: XCTestCase {
   ) async {
     do {
       try await expression()
-      XCTFail(message)
+      Issue.record(Comment(rawValue: message))
     } catch let error as SimulatorPrivacyError where isExpected(error) {
       // Expected.
     } catch {
-      XCTFail("\(message); threw \(error)")
+      Issue.record("\(message); threw \(error)")
     }
   }
 
   // MARK: - Magic Deeplink Key
 
-  func testMagicDeeplinkKeyFormatsCorrectly() {
+  @Test
+  func magicDeeplinkKeyFormatsCorrectly() {
     let key = SimulatorPrivacyCommands.magicDeeplinkKey(forScheme: "myapp")
-    XCTAssertEqual(
-      key, "com.apple.CoreSimulator.CoreSimulatorBridge-->myapp",
-      "Deeplink key should use CoreSimulatorBridge prefix with --> separator")
+    #expect(key == "com.apple.CoreSimulator.CoreSimulatorBridge-->myapp", "Deeplink key should use CoreSimulatorBridge prefix with --> separator")
   }
 
   // MARK: - Grant/Revoke Access Input Validation
 
-  func testGrantAccessRejectsEmptyServices() async {
+  @Test
+  func grantAccessRejectsEmptyServices() async {
     let simulator = makeSimulator()
     await assertThrowsAsync(
       "grantAccess should reject empty services set",
@@ -53,7 +55,8 @@ final class SimulatorPrivacyCommandsTests: XCTestCase {
     ) { if case .noServicesToGrant = $0 { return true } else { return false } }
   }
 
-  func testGrantAccessRejectsEmptyBundleIDs() async {
+  @Test
+  func grantAccessRejectsEmptyBundleIDs() async {
     let simulator = makeSimulator()
     await assertThrowsAsync(
       "grantAccess should reject empty bundle IDs set",
@@ -63,7 +66,8 @@ final class SimulatorPrivacyCommandsTests: XCTestCase {
     ) { if case .noBundleIDsToGrant = $0 { return true } else { return false } }
   }
 
-  func testRevokeAccessRejectsEmptyServices() async {
+  @Test
+  func revokeAccessRejectsEmptyServices() async {
     let simulator = makeSimulator()
     await assertThrowsAsync(
       "revokeAccess should reject empty services set",
@@ -73,7 +77,8 @@ final class SimulatorPrivacyCommandsTests: XCTestCase {
     ) { if case .noServicesToRevoke = $0 { return true } else { return false } }
   }
 
-  func testRevokeAccessRejectsEmptyBundleIDs() async {
+  @Test
+  func revokeAccessRejectsEmptyBundleIDs() async {
     let simulator = makeSimulator()
     await assertThrowsAsync(
       "revokeAccess should reject empty bundle IDs set",
@@ -85,7 +90,8 @@ final class SimulatorPrivacyCommandsTests: XCTestCase {
 
   // MARK: - Deeplink Access Validation
 
-  func testGrantDeeplinkRejectsEmptyScheme() async {
+  @Test
+  func grantDeeplinkRejectsEmptyScheme() async {
     let simulator = makeSimulator()
     await assertThrowsAsync(
       "grantAccess(toDeeplink:) should reject empty scheme",
@@ -95,7 +101,8 @@ final class SimulatorPrivacyCommandsTests: XCTestCase {
     ) { if case .emptyScheme = $0 { return true } else { return false } }
   }
 
-  func testGrantDeeplinkRejectsEmptyBundleIDs() async {
+  @Test
+  func grantDeeplinkRejectsEmptyBundleIDs() async {
     let simulator = makeSimulator()
     await assertThrowsAsync(
       "grantAccess(toDeeplink:) should reject empty bundle IDs",
@@ -105,7 +112,8 @@ final class SimulatorPrivacyCommandsTests: XCTestCase {
     ) { if case .emptyBundleIDs = $0 { return true } else { return false } }
   }
 
-  func testRevokeDeeplinkRejectsEmptyScheme() async {
+  @Test
+  func revokeDeeplinkRejectsEmptyScheme() async {
     let simulator = makeSimulator()
     await assertThrowsAsync(
       "revokeAccess(toDeeplink:) should reject empty scheme",
@@ -115,7 +123,8 @@ final class SimulatorPrivacyCommandsTests: XCTestCase {
     ) { if case .emptyScheme = $0 { return true } else { return false } }
   }
 
-  func testRevokeDeeplinkRejectsEmptyBundleIDs() async {
+  @Test
+  func revokeDeeplinkRejectsEmptyBundleIDs() async {
     let simulator = makeSimulator()
     await assertThrowsAsync(
       "revokeAccess(toDeeplink:) should reject empty bundle IDs",
@@ -127,50 +136,48 @@ final class SimulatorPrivacyCommandsTests: XCTestCase {
 
   // MARK: - Guest Invocations
 
-  func testEveryTCCServiceMapsToItsGuestName() {
+  @Test
+  func everyTCCServiceMapsToItsGuestName() {
     let invocations = SimulatorPrivacyCommands.privacyInvocations(
       bundleIDs: ["com.test"],
       services: [.camera, .microphone, .photos, .contacts],
       approve: true)
 
-    XCTAssertEqual(
-      invocations,
-      [.init(action: "approve", arguments: ["com.test", "camera", "contacts", "microphone", "photos"])])
+    #expect(invocations == [.init(action: "approve", arguments: ["com.test", "camera", "contacts", "microphone", "photos"])])
   }
 
-  func testServicesAreBatchedIntoOneCallPerBundleID() {
+  @Test
+  func servicesAreBatchedIntoOneCallPerBundleID() {
     let invocations = SimulatorPrivacyCommands.privacyInvocations(
       bundleIDs: ["com.b", "com.a"],
       services: [.camera, .photos],
       approve: true)
 
-    XCTAssertEqual(
-      invocations,
-      [
+    #expect(
+      invocations == [
         .init(action: "approve", arguments: ["com.a", "camera", "photos"]),
         .init(action: "approve", arguments: ["com.b", "camera", "photos"]),
       ],
       "Each bundle id gets one call carrying every service, ordered for a comparable trace")
   }
 
-  func testRevokeUsesTheRevokeAction() {
+  @Test
+  func revokeUsesTheRevokeAction() {
     let invocations = SimulatorPrivacyCommands.privacyInvocations(
       bundleIDs: ["com.test"],
       services: [.contacts],
       approve: false)
 
-    XCTAssertEqual(invocations, [.init(action: "revoke", arguments: ["com.test", "contacts"])])
+    #expect(invocations == [.init(action: "revoke", arguments: ["com.test", "contacts"])])
   }
 
-  func testServicesTheGuestDoesNotHandleAreNotSentToIt() {
+  @Test
+  func servicesTheGuestDoesNotHandleAreNotSentToIt() {
     let invocations = SimulatorPrivacyCommands.privacyInvocations(
       bundleIDs: ["com.test"],
       services: [.camera, .location],
       approve: true)
 
-    XCTAssertEqual(
-      invocations,
-      [.init(action: "approve", arguments: ["com.test", "camera"])],
-      "Location is routed through CoreSimulator, not the guest")
+    #expect(invocations == [.init(action: "approve", arguments: ["com.test", "camera"])], "Location is routed through CoreSimulator, not the guest")
   }
 }
