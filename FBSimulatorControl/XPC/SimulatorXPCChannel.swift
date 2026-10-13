@@ -10,7 +10,7 @@ import Foundation
 import os
 
 /// What arrives on a channel other than a reply.
-enum SimulatorXPCEvent {
+package enum SimulatorXPCEvent {
   /// A message the peer sent unprompted, such as a pushed stream event awaiting acknowledgement.
   case message(xpc_object_t)
   /// The peer went away. XPC reconnects on the next send, so the channel is still usable, but
@@ -31,7 +31,7 @@ enum SimulatorXPCEvent {
 }
 
 /// How a request on a channel went unanswered.
-enum SimulatorXPCError: Error, Equatable, CustomStringConvertible {
+package enum SimulatorXPCError: Error, Equatable, CustomStringConvertible {
   /// XPC answered on the peer's behalf, so no peer took the message.
   case peerUnavailable(String)
   /// Nothing answered within the request's deadline.
@@ -44,7 +44,7 @@ enum SimulatorXPCError: Error, Equatable, CustomStringConvertible {
       xpc_dictionary_get_string(reply, XPC_ERROR_KEY_DESCRIPTION).map { String(cString: $0) } ?? "unknown XPC error")
   }
 
-  var description: String {
+  package var description: String {
     switch self {
     case let .peerUnavailable(detail): detail
     case .timedOut: "no reply before the deadline"
@@ -60,8 +60,8 @@ enum SimulatorXPCError: Error, Equatable, CustomStringConvertible {
 
  Events and callback replies are delivered on `queue`, the connection's target queue.
  */
-final class SimulatorXPCChannel: Sendable {
-  let queue: DispatchQueue
+package final class SimulatorXPCChannel: Sendable {
+  package let queue: DispatchQueue
   // SAFETY: XPC connections support concurrent sending and cancellation.
   // patternlint-disable-next-line swift-nonisolated-unsafe
   nonisolated(unsafe) private let connection: xpc_connection_t
@@ -74,14 +74,14 @@ final class SimulatorXPCChannel: Sendable {
   }
 
   /// Takes an unresumed connection, as `SimulatorXPCConnector` returns it.
-  init(connection: xpc_connection_t, queue: DispatchQueue) {
+  package init(connection: xpc_connection_t, queue: DispatchQueue) {
     self.connection = connection
     self.queue = queue
     xpc_connection_set_target_queue(connection, queue)
   }
 
   /// Installs the event handler and resumes the connection. Only the first call takes effect.
-  func activate(events: @escaping @Sendable (SimulatorXPCEvent) -> Void) {
+  package func activate(events: @escaping @Sendable (SimulatorXPCEvent) -> Void) {
     guard
       lifecycle.withLock({ lifecycle in
         guard case .suspended = lifecycle else { return false }
@@ -122,7 +122,7 @@ final class SimulatorXPCChannel: Sendable {
 
   /// Sends `message` and hands its reply to `reply` on `queue`, or the `SimulatorXPCError` XPC
   /// answered with instead of the peer.
-  func request(_ message: xpc_object_t, reply: @escaping @Sendable (sending Result<xpc_object_t, SimulatorXPCError>) -> Void) {
+  package func request(_ message: xpc_object_t, reply: @escaping @Sendable (sending Result<xpc_object_t, SimulatorXPCError>) -> Void) {
     xpc_connection_send_message_with_reply(connection, message, queue) { [weak self] object in
       guard xpc_get_type(object) == XPC_TYPE_ERROR else { return reply(.success(object)) }
       // The reply can arrive ahead of the invalidation event, and the caller may send next.
@@ -165,7 +165,7 @@ final class SimulatorXPCChannel: Sendable {
 
   /// Cancels the connection. XPC will not release a suspended connection, so one never activated is
   /// activated first.
-  func cancel() {
+  package func cancel() {
     activate { _ in }
     invalidate()
     xpc_connection_cancel(connection)

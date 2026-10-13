@@ -13,7 +13,7 @@ import XPC
 
 /// Why a host XPC connection to a guest service could not be built. Each transport maps these onto
 /// its own error vocabulary, so the mapping is decided where the consequences are known.
-enum SimulatorXPCConnectionError: Error, Equatable {
+package enum SimulatorXPCConnectionError: Error, Equatable {
   /// The private `_4sim` endpoint symbols are not in this process. A property of the toolchain.
   case symbolsUnavailable
   /// The simulator is not booted, so it vends nothing yet.
@@ -26,7 +26,7 @@ enum SimulatorXPCConnectionError: Error, Equatable {
   /// CoreSimulator reports a service the runtime does not vend as `SimError` 405, as opposed to a
   /// lookup that failed for an operational reason. It gives every lookup before the boot completes
   /// the same 405, which is why the connector reports those as `notBooted` without looking up.
-  var isServiceUnsupported: Bool {
+  package var isServiceUnsupported: Bool {
     guard case let .lookupFailed(_, underlying) = self else { return false }
     return underlying?.domain == "com.apple.CoreSimulator.SimError" && underlying?.code == 405
   }
@@ -35,10 +35,14 @@ enum SimulatorXPCConnectionError: Error, Equatable {
 /// Where a guest service name becomes a host connection to it. Every XPC connection into a simulator,
 /// CoreDevice and DTUHID alike, is built here, so it is the one place a test substitutes its own
 /// peers. The connection is returned unresumed.
-struct SimulatorXPCConnector: Sendable {
-  let namespace: any SimulatorXPCNamespace
+package struct SimulatorXPCConnector: Sendable {
+  package let namespace: any SimulatorXPCNamespace
 
-  func connect(_ service: String) throws -> xpc_connection_t {
+  package init(namespace: any SimulatorXPCNamespace) {
+    self.namespace = namespace
+  }
+
+  package func connect(_ service: String) throws -> xpc_connection_t {
     let state = namespace.simulatorState
     guard state == .booted else {
       throw SimulatorXPCConnectionError.notBooted(service: service, state: state)
@@ -47,13 +51,13 @@ struct SimulatorXPCConnector: Sendable {
   }
 
   /// Resolves once the simulator is no longer booting.
-  func bootFinished() async throws {
+  package func bootFinished() async throws {
     try await namespace.bootFinished()
   }
 }
 
 /// The simulator whose bootstrap namespace a connector looks services up in.
-protocol SimulatorXPCNamespace: Sendable {
+package protocol SimulatorXPCNamespace: Sendable {
   var simulatorState: TargetState { get }
   func lookup(_ service: String) throws -> xpc_connection_t
   func bootFinished() async throws
@@ -61,7 +65,7 @@ protocol SimulatorXPCNamespace: Sendable {
 
 extension SimulatorXPCConnector {
   /// Looks services up in `simulator`'s bootstrap namespace.
-  static func simulator(_ simulator: Simulator) -> SimulatorXPCConnector {
+  package static func simulator(_ simulator: Simulator) -> SimulatorXPCConnector {
     SimulatorXPCConnector(namespace: SimDeviceNamespace(device: simulator.device, queue: simulator.workQueue))
   }
 }
