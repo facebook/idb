@@ -10,12 +10,13 @@
 import FBVideoCore
 import Foundation
 import IDBGRPCSwift
-import XCTest
+import Testing
 
 /// Pins the `video_stream` request → configuration translation. Every field is a proto3 scalar, so
 /// what an unset one means is decided here and nowhere else; getting it wrong changes how every
 /// stream is encoded without changing any caller.
-final class VideoStreamRequestTranslationTests: XCTestCase {
+@Suite
+struct VideoStreamRequestTranslationTests {
 
   private func configuration(
     _ mutate: (inout Idb_VideoStreamRequest.Start) -> Void = { _ in }
@@ -27,57 +28,65 @@ final class VideoStreamRequestTranslationTests: XCTestCase {
 
   // MARK: - Key frame rate
 
-  func testAnUnsetKeyFrameRateIsTheDefaultCadence() {
+  @Test
+  func anUnsetKeyFrameRateIsTheDefaultCadence() {
     // Zero survives into the configuration, and VideoToolbox reads a zero
     // MaxKeyFrameIntervalDuration as no limit at all -- so a stream that asked for nothing would
     // emit one keyframe and never sync again. Only nil takes the four-second default.
-    XCTAssertEqual(configuration().keyFrameRate, 4)
+    #expect(configuration().keyFrameRate == 4)
   }
 
-  func testAPositiveKeyFrameRateIsPassedThrough() {
-    XCTAssertEqual(configuration { $0.keyFrameRate = 2 }.keyFrameRate, 2)
+  @Test
+  func aPositiveKeyFrameRateIsPassedThrough() {
+    #expect(configuration { $0.keyFrameRate = 2 }.keyFrameRate == 2)
   }
 
   // MARK: - Scale
 
-  func testAnUnsetScaleFactorIsNoScaling() {
+  @Test
+  func anUnsetScaleFactorIsNoScaling() {
     // Zero would scale the output to nothing; unset has to mean the native size.
-    XCTAssertNil(configuration().scaleFactor)
+    #expect(configuration().scaleFactor == nil)
   }
 
-  func testAPositiveScaleFactorIsPassedThrough() {
-    XCTAssertEqual(configuration { $0.scaleFactor = 0.5 }.scaleFactor, 0.5)
+  @Test
+  func aPositiveScaleFactorIsPassedThrough() {
+    #expect(configuration { $0.scaleFactor = 0.5 }.scaleFactor == 0.5)
   }
 
   // MARK: - Frame rate and rate control
 
-  func testAnUnsetFrameRateIsTheDisplaysOwnRate() {
+  @Test
+  func anUnsetFrameRateIsTheDisplaysOwnRate() {
     // Unlike a recording, which pins 30.
-    XCTAssertNil(configuration().framesPerSecond)
-    XCTAssertEqual(configuration { $0.fps = 15 }.framesPerSecond, 15)
+    #expect(configuration().framesPerSecond == nil)
+    #expect(configuration { $0.fps = 15 }.framesPerSecond == 15)
   }
 
-  func testEitherRateControlIsHonoured() {
-    XCTAssertEqual(configuration().rateControl, .automatic)
-    XCTAssertEqual(configuration { $0.avgBitrate = 800_000 }.rateControl, .bitrate(800_000))
-    XCTAssertEqual(configuration { $0.compressionQuality = 0.75 }.rateControl, .quality(0.75))
+  @Test
+  func eitherRateControlIsHonoured() {
+    #expect(configuration().rateControl == .automatic)
+    #expect(configuration { $0.avgBitrate = 800_000 }.rateControl == .bitrate(800_000))
+    #expect(configuration { $0.compressionQuality = 0.75 }.rateControl == .quality(0.75))
   }
 
   // MARK: - Format
 
-  func testEveryWireFormatMaps() {
-    XCTAssertEqual(configuration { $0.format = .h264 }.format, .compressedVideo(withCodec: .h264, transport: .annexB))
-    XCTAssertEqual(configuration { $0.format = .rbga }.format, .bgra)
-    XCTAssertEqual(configuration { $0.format = .mjpeg }.format, .mjpeg(encoder: .requireHardware))
-    XCTAssertEqual(configuration { $0.format = .minicap }.format, .minicap)
+  @Test
+  func everyWireFormatMaps() {
+    #expect(configuration { $0.format = .h264 }.format == .compressedVideo(withCodec: .h264, transport: .annexB))
+    #expect(configuration { $0.format = .rbga }.format == .bgra)
+    #expect(configuration { $0.format = .mjpeg }.format == .mjpeg(encoder: .requireHardware))
+    #expect(configuration { $0.format = .minicap }.format == .minicap)
   }
 
-  func testAFormatThisCompanionCannotProduceFallsBackToH264() {
+  @Test
+  func aFormatThisCompanionCannotProduceFallsBackToH264() {
     // I420 is in the proto but unimplemented, and an unrecognized value is what a newer client's
     // format deserializes as. Both stream something playable rather than failing the call.
-    XCTAssertEqual(configuration { $0.format = .i420 }.format, .compressedVideo(withCodec: .h264, transport: .annexB))
-    XCTAssertEqual(
-      configuration { $0.format = .UNRECOGNIZED(99) }.format,
-      .compressedVideo(withCodec: .h264, transport: .annexB))
+    #expect(configuration { $0.format = .i420 }.format == .compressedVideo(withCodec: .h264, transport: .annexB))
+    #expect(
+      configuration { $0.format = .UNRECOGNIZED(99) }.format
+        == .compressedVideo(withCodec: .h264, transport: .annexB))
   }
 }
