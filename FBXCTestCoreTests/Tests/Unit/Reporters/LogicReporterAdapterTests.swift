@@ -6,7 +6,8 @@
  */
 
 import FBXCTestCore
-import XCTest
+import Foundation
+import Testing
 
 private func beginTestSuiteDict() -> [String: Any] {
   return [
@@ -23,35 +24,38 @@ private func testEventDict() -> [String: Any] {
   ]
 }
 
-final class LogicReporterAdapterTests: XCTestCase {
+@Suite
+struct LogicReporterAdapterTests {
 
-  var adapter: LogicReporterAdapter!
-  var reporterDouble: XCTestReporterDouble!
+  let adapter: LogicReporterAdapter
+  let reporterDouble: XCTestReporterDouble
 
-  override func setUp() {
-    super.setUp()
+  init() {
     reporterDouble = XCTestReporterDouble()
     adapter = LogicReporterAdapter(reporter: reporterDouble, logger: nil)
   }
 
-  func test_LogicReporter_testSuiteDidStart() throws {
+  @Test
+  func logicReporter_testSuiteDidStart() throws {
     let data = try JSONSerialization.data(withJSONObject: beginTestSuiteDict())
 
     adapter.handleEventJSONData(data)
-    XCTAssertEqual(reporterDouble.startedSuites, ["NARANJA"])
+    #expect(reporterDouble.startedSuites == ["NARANJA"])
   }
 
-  func test_LogicReporter_testCaseDidStart() throws {
+  @Test
+  func logicReporter_testCaseDidStart() throws {
     var event = testEventDict()
     event["event"] = "begin-test"
 
     let data = try JSONSerialization.data(withJSONObject: event)
     adapter.handleEventJSONData(data)
 
-    XCTAssertEqual(reporterDouble.startedTests, [[event["className"] as! String, event["methodName"] as! String]])
+    #expect(reporterDouble.startedTests == [[event["className"] as! String, event["methodName"] as! String]])
   }
 
-  func test_LogicReporter_testCaseDidFail_fromFailure() throws {
+  @Test
+  func logicReporter_testCaseDidFail_fromFailure() throws {
     var event = testEventDict()
     let duration: TimeInterval = 0.0050642
     event["totalDuration"] = duration
@@ -72,10 +76,11 @@ final class LogicReporterAdapterTests: XCTestCase {
     let data = try JSONSerialization.data(withJSONObject: event)
     adapter.handleEventJSONData(data)
 
-    XCTAssertEqual(reporterDouble.failedTests, [[event["className"] as! String, event["methodName"] as! String]])
+    #expect(reporterDouble.failedTests == [[event["className"] as! String, event["methodName"] as! String]])
   }
 
-  func test_LogicReporter_testCaseDidFail_fromError() throws {
+  @Test
+  func logicReporter_testCaseDidFail_fromError() throws {
     var event = testEventDict()
     let duration: TimeInterval = 0.0050642
     event["totalDuration"] = duration
@@ -96,10 +101,11 @@ final class LogicReporterAdapterTests: XCTestCase {
     let data = try JSONSerialization.data(withJSONObject: event)
     adapter.handleEventJSONData(data)
 
-    XCTAssertEqual(reporterDouble.failedTests, [[event["className"] as! String, event["methodName"] as! String]])
+    #expect(reporterDouble.failedTests == [[event["className"] as! String, event["methodName"] as! String]])
   }
 
-  func test_LogicReporter_testCaseDidSucceed() throws {
+  @Test
+  func logicReporter_testCaseDidSucceed() throws {
     var event = testEventDict()
     let duration: TimeInterval = 0.0050642
     event["totalDuration"] = duration
@@ -109,10 +115,11 @@ final class LogicReporterAdapterTests: XCTestCase {
     let data = try JSONSerialization.data(withJSONObject: event)
     adapter.handleEventJSONData(data)
 
-    XCTAssertEqual(reporterDouble.passedTests, [[event["className"] as! String, event["methodName"] as! String]])
+    #expect(reporterDouble.passedTests == [[event["className"] as! String, event["methodName"] as! String]])
   }
 
-  func test_LogicReporter_testSuiteDidEnd() throws {
+  @Test
+  func logicReporter_testSuiteDidEnd() throws {
     let dict: [String: Any] = [
       "event": "end-test-suite",
       "suite": "Toplevel Test Suite",
@@ -127,6 +134,6 @@ final class LogicReporterAdapterTests: XCTestCase {
     let data = try JSONSerialization.data(withJSONObject: dict)
     adapter.handleEventJSONData(data)
 
-    XCTAssertEqual(reporterDouble.endedSuites, ["Toplevel Test Suite"])
+    #expect(reporterDouble.endedSuites == ["Toplevel Test Suite"])
   }
 }
