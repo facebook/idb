@@ -7,9 +7,10 @@
 
 @testable import FBSimulatorControl
 import Foundation
-import XCTest
+import Testing
 
-final class SimulatorCapabilitiesTests: XCTestCase {
+@Suite
+struct SimulatorCapabilitiesTests {
 
   private func display(_ id: String, integrated: Bool = true) -> SimulatorDisplay {
     SimulatorDisplay(
@@ -21,26 +22,32 @@ final class SimulatorCapabilitiesTests: XCTestCase {
     SimulatorDisplayConfiguration(generation: 1, displays: displays, active: displays.first.map { .identified($0) } ?? .unresolved, phase: .settled)
   }
 
-  func testAnIPhoneDuoHasEveryCapability() throws {
+  @Test
+  func anIPhoneDuoHasEveryCapability() throws {
     let capabilities = try SimulatorCapabilities(
       motion: MotionCapabilities(hingeAngle: true, deviceMotionState: true), displays: .success(configuration([display("cover"), display("inner")])))
-    XCTAssertEqual(capabilities, SimulatorCapabilities(hingeAngle: true, deviceMotion: true, multipleDisplays: true))
+    #expect(capabilities == SimulatorCapabilities(hingeAngle: true, deviceMotion: true, multipleDisplays: true))
   }
 
-  func testOnlyIntegratedDisplaysCount() throws {
+  @Test
+  func onlyIntegratedDisplaysCount() throws {
     let capabilities = try SimulatorCapabilities(motion: .none, displays: .success(configuration([display("lcd"), display("tv", integrated: false)])))
-    XCTAssertEqual(capabilities, SimulatorCapabilities(hingeAngle: false, deviceMotion: false, multipleDisplays: false))
+    #expect(capabilities == SimulatorCapabilities(hingeAngle: false, deviceMotion: false, multipleDisplays: false))
   }
 
-  func testARuntimeWithoutDisplayReportsHasOneDisplay() throws {
+  @Test
+  func aRuntimeWithoutDisplayReportsHasOneDisplay() throws {
     let capabilities = try SimulatorCapabilities(
       motion: MotionCapabilities(hingeAngle: nil, deviceMotionState: true), displays: .failure(SimulatorCoreDeviceError.unsupported("display info")))
-    XCTAssertEqual(capabilities, SimulatorCapabilities(hingeAngle: false, deviceMotion: true, multipleDisplays: false))
+    #expect(capabilities == SimulatorCapabilities(hingeAngle: false, deviceMotion: true, multipleDisplays: false))
   }
 
-  func testAServiceThatIsNotReadyIsThrown() {
-    XCTAssertThrowsError(try SimulatorCapabilities(motion: .none, displays: .failure(SimulatorCoreDeviceError.timedOut))) {
-      XCTAssertEqual(SimulatorFailureKind($0), .notReady)
-    }
+  @Test
+  func aServiceThatIsNotReadyIsThrown() throws {
+    let error = try #require(
+      #expect(throws: (any Error).self) {
+        try SimulatorCapabilities(motion: .none, displays: .failure(SimulatorCoreDeviceError.timedOut))
+      })
+    #expect(SimulatorFailureKind(error) == .notReady)
   }
 }
