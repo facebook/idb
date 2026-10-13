@@ -71,6 +71,7 @@ public struct IDBPortsConfiguration {
     static let grpcDomainSock = "-grpc-domain-sock"
     static let tlsCertPath = "-tls-cert-path"
     static let grpcPort = "-grpc-port"
+    static let allowedForwardPorts = "-allowed-forward-ports"
   }
 
   private let grpcDomainSocket: String?
@@ -81,6 +82,9 @@ public struct IDBPortsConfiguration {
 
   /// If nil, the TCP port listens unencrypted.
   let tlsCertPath: String?
+
+  /// Forwarding is disabled unless an explicit device port list is supplied.
+  let allowedForwardPorts: String?
 
   public var swiftServerTarget: GRPCConnectionTarget {
     if let grpcDomainSocket, !grpcDomainSocket.isEmpty {
@@ -95,5 +99,6 @@ public struct IDBPortsConfiguration {
     self.grpcPort = arguments.string(forKey: Key.grpcPort).flatMap(Int.init) ?? 10882
     self.grpcDomainSocket = arguments.string(forKey: Key.grpcDomainSock)
     self.tlsCertPath = arguments.string(forKey: Key.tlsCertPath)
+    self.allowedForwardPorts = arguments.string(forKey: Key.allowedForwardPorts)
   }
 }

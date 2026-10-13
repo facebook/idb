@@ -16,6 +16,8 @@ service CompanionService {
   rpc debugserver(stream DebugServerRequest)
       returns (stream DebugServerResponse) {}
   rpc dap(stream DapRequest) returns (stream DapResponse) {}
+  rpc forward_port(stream ForwardPortRequest)
+      returns (stream ForwardPortResponse) {}
   rpc describe(TargetDescriptionRequest) returns (TargetDescriptionResponse) {}
   rpc install(stream InstallRequest) returns (stream InstallResponse) {}
   rpc instruments_run(stream InstrumentsRunRequest)
@@ -89,6 +91,32 @@ service CompanionService {
   rpc pull(PullRequest) returns (stream PullResponse) {}
   rpc push(stream PushRequest) returns (PushResponse) {}
   rpc tail(stream TailRequest) returns (stream TailResponse) {}
+}
+
+// One RPC opens one connection to the companion's selected physical device.
+// The first request must be Open. Subsequent requests are opaque byte chunks,
+// each at most 64 KiB. Client stream completion flushes accepted writes and
+// starts a bounded response drain before closing the device connection.
+message ForwardPortRequest {
+  message Open {
+    uint32 port = 1; // 1...65535
+  }
+  oneof event {
+    Open open = 1;
+    bytes data = 2;
+  }
+}
+
+message ForwardPortResponse {
+  message Opened {}
+  // Opened acknowledges a successful device connection. Response stream
+  // completion ends the connection. Empty data is not EOF.
+  // Final non-OK status means the connection failed;
+  // interrupted connections must not be automatically reopened or replayed.
+  oneof event {
+    Opened opened = 1;
+    bytes data = 2;
+  }
 }
 
 message GetOrientationRequest {}

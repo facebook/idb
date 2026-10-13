@@ -23,6 +23,7 @@ final class CompanionServiceProvider: Idb_CompanionService.SimpleServiceProtocol
   private let telemetry: CompanionTelemetry
   /// Tracks in-flight calls so the companion can shut down when idle.
   private let idleMonitor: IdleMonitor?
+  private let allowedForwardPorts: Set<UInt16>
   /// Owns the single in-progress REPL screen recording. Held here, at target scope,
   /// because a recording can outlive the `repl` stream that started it (the app
   /// context keeps the app -- and the recording -- alive across reconnects).
@@ -33,7 +34,8 @@ final class CompanionServiceProvider: Idb_CompanionService.SimpleServiceProtocol
     commandExecutor: IDBCommandExecutor,
     reporter: EventReporter,
     logger: IDBLogger,
-    idleMonitor: IdleMonitor? = nil
+    idleMonitor: IdleMonitor? = nil,
+    allowedForwardPorts: Set<UInt16> = []
   ) {
     self.target = target
     self.commandExecutor = commandExecutor
@@ -41,6 +43,7 @@ final class CompanionServiceProvider: Idb_CompanionService.SimpleServiceProtocol
     self.logger = logger
     self.telemetry = CompanionTelemetry(logger: logger, reporter: reporter)
     self.idleMonitor = idleMonitor
+    self.allowedForwardPorts = allowedForwardPorts
     self.replRecordingCoordinator = ReplRecordingCoordinator(
       auxillaryDirectory: commandExecutor.auxillaryDirectory, logger: target.logger)
   }
@@ -135,6 +138,14 @@ final class CompanionServiceProvider: Idb_CompanionService.SimpleServiceProtocol
     return try await trackedUnaryCall(context, request: request) {
       try await DescribeMethodHandler(reporter: reporter, logger: logger, target: target)
         .handle(request: request, context: context)
+    }
+  }
+
+  func forward_port(request: RPCAsyncSequence<Idb_ForwardPortRequest, any Error>, response: RPCWriter<Idb_ForwardPortResponse>, context: ServerContext) async throws {
+    let reader = RequestStreamReader(request)
+    try await trackedBidiStreaming(context) {
+      try await ForwardPortMethodHandler(target: target, allowedPorts: allowedForwardPorts)
+        .handle(requestStream: reader, responseStream: response)
     }
   }
 

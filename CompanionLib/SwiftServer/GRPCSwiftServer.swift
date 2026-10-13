@@ -62,6 +62,7 @@ public final class GRPCSwiftServer: @unchecked Sendable {
     idleMonitor: IdleMonitor?,
     onShutdownStarted: (@Sendable () -> Void)? = nil
   ) throws {
+    let allowedForwardPorts = try ForwardPortMethodHandler.parseAllowedPorts(ports.allowedForwardPorts)
     let group = MultiThreadedEventLoopGroup(numberOfThreads: 4)
 
     let provider = CompanionServiceProvider(
@@ -69,7 +70,8 @@ public final class GRPCSwiftServer: @unchecked Sendable {
       commandExecutor: commandExecutor,
       reporter: reporter,
       logger: logger,
-      idleMonitor: idleMonitor)
+      idleMonitor: idleMonitor,
+      allowedForwardPorts: allowedForwardPorts)
 
     let transportSecurity: HTTP2ServerTransport.Posix.TransportSecurity
     if ports.swiftServerTarget.supportsTLSCert, let pem = Self.loadCertificatePEM(tlsCertPath: ports.tlsCertPath, logger: logger) {
