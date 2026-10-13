@@ -127,6 +127,20 @@ final class LogicTestRunStrategyTests: XCTestCase {
     XCTAssertEqual(reporter.calls.last, "didCrash")
   }
 
+  // XCTest exits 75 when an async test stops after a failure (`continueAfterFailure = false`): the failure is
+  // already reported, and every test after it in the run is skipped without a word.
+  func testExitCode75ExplainsTheStoppedRun() async throws {
+    let (_, _, result) = try await runTests(running: "exit 75")
+
+    guard case .failure(LogicTestRunError.xctestProcessFailed(let exitCode, let exitDescription, _)) = result else {
+      return XCTFail("Expected the run to fail, got \(result)")
+    }
+    XCTAssertEqual(exitCode, 75)
+    // BUG: an unexplained number, though 75 always means XCTest stopped the run after a failing async test with
+    // `continueAfterFailure = false` — flipped in the following commit.
+    XCTAssertEqual(exitDescription, "Unknown xctest exit code 75")
+  }
+
   func testExitCodeOneIsNotAFailure() async throws {
     let (_, reporter, result) = try await runTests(running: "exit 1")
 
