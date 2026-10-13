@@ -117,6 +117,23 @@ final class AccessibilityElement {
     }
   }
 
+  /// Perform a named accessibility custom action exposed by the element.
+  func performCustomAction(named name: String) async throws {
+    if closed {
+      throw AccessibilityError.closedElement(operation: "perform custom action on")
+    }
+    let element = self.element
+    try await dispatcher.performSerialized {
+      let actionNames = element.axCustomActionNames()
+      guard actionNames.contains(name) else {
+        throw AccessibilityError.pressUnsupported(supportedActions: CollectionInformation.oneLineDescription(from: actionNames))
+      }
+      guard element.axPerformCustomAction(name) else {
+        throw AccessibilityError.pressFailed
+      }
+    }
+  }
+
   /// Perform an accessibility scroll on the element.
   func scroll(with direction: AccessibilityScrollDirection) async throws {
     if closed {

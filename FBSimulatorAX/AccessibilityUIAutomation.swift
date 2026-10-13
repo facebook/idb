@@ -118,6 +118,14 @@ final class AccessibilityUIAutomation: UIAutomation, @unchecked Sendable {
     }
   }
 
+  func performCustomAction(named name: String, for query: AccessibilityElementQuery) async throws {
+    try await Self.translatingBackendErrors(query) {
+      let element = try await operations.resolveElement(for: query, clientType: AccessibilityRequestOptions.unconfiguredClientType)
+      defer { element.close() }
+      try await element.performCustomAction(named: name)
+    }
+  }
+
   func wait(
     _ query: AccessibilityElementQuery,
     timeout: TimeInterval,

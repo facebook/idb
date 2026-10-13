@@ -32,6 +32,7 @@ from collections.abc import Callable
 from dataclasses import dataclass
 
 from idb.cli.commands.accessibility import (
+    AccessibilityCustomActionCommand,
     AccessibilityDescribeMarkerCommand,
     AccessibilityDragAndDropCommand,
     AccessibilityInfoAllCommand,
@@ -326,6 +327,7 @@ def build_builtin_commands(shell_command: ShellCommand) -> list[Command]:
                 AccessibilityQuietCommand(),
                 AccessibilityScrollCommand(),
                 AccessibilitySetValueCommand(),
+                AccessibilityCustomActionCommand(),
                 AccessibilityDragAndDropCommand(),
                 TapCommand(),
                 MultiTapCommand(),

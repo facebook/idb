@@ -486,6 +486,10 @@ message AccessibilityActionRequest {
     string value = 1;
   }
 
+  message CustomAction {
+    string name = 1;
+  }
+
   // Press and hold the request's target, drag to the destination below, and
   // release. All durations are in seconds; a zero value means the server
   // default noted against each field.
@@ -523,6 +527,7 @@ message AccessibilityActionRequest {
     Scroll scroll = 6;
     SetValue set_value = 7;
     Drag drag = 8;
+    CustomAction custom_action = 14;
   }
 }
 

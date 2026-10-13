@@ -821,6 +821,49 @@ class AccessibilitySetValueCommand(ClientCommand):
         )
 
 
+class AccessibilityCustomActionCommand(ClientCommand):
+    @property
+    def description(self) -> str:
+        return "Perform a named custom accessibility action on an element"
+
+    @property
+    def name(self) -> str:
+        return "custom-action"
+
+    def add_parser_arguments(self, parser: ArgumentParser) -> None:
+        super().add_parser_arguments(parser)
+        parser.add_argument("name", help="Exact custom accessibility action name")
+        parser.add_argument(
+            "target", nargs="+", help="'x y' coordinates or a single marker string"
+        )
+        parser.add_argument(
+            "--match-key",
+            choices=list(ACCESSIBILITY_KEY_BY_NAME),
+            default="AXLabel",
+            help="Accessibility key to match a marker against",
+        )
+        parser.add_argument(
+            "--depth", type=int, default=10, help="Maximum tree depth to search"
+        )
+        _add_ignore_case_arg(parser, subject="the marker")
+        _add_backend_arg(parser)
+
+    async def run_with_client(self, args: Namespace, client: Client) -> None:
+        target = _parse_target(
+            args.target,
+            match_key=ACCESSIBILITY_KEY_BY_NAME[args.match_key],
+            depth=args.depth,
+        )
+        if target is None:
+            raise IdbException("custom-action requires 'x y' coordinates or a marker")
+        await client.accessibility_custom_action(
+            target=target,
+            name=args.name,
+            ignore_case=args.ignore_case,
+            backend=action_backend(args),
+        )
+
+
 class AccessibilityDragAndDropCommand(ClientCommand):
     @property
     def description(self) -> str:
