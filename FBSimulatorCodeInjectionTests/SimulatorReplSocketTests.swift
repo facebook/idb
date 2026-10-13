@@ -8,109 +8,119 @@
 @testable import FBSimulatorCodeInjection
 @testable import FBSimulatorControl
 import Foundation
-// Matches the existing XCTest-based FBSimulatorControl unit suite.
-// ast-grep-ignore: swift-testing/swift/no-new-xctest
-import XCTest
+import Testing
 
 /// Coverage of the app-context REPL reattach helpers: the deterministic socket
 /// path (and its stable hash), the liveness probe, and stale-socket reaping.
-final class SimulatorReplSocketTests: XCTestCase {
+@Suite
+struct SimulatorReplSocketTests {
 
   // MARK: - stableHashHex
 
-  func testStableHashMatchesKnownFNV1aVectors() {
+  @Test
+  func stableHashMatchesKnownFNV1aVectors() {
     // Canonical FNV-1a 64-bit vectors. Pinning them guards against silently
     // switching to a per-process hash (e.g. `Hasher`), which would give a
     // different socket path on every run and break reattach.
-    XCTAssertEqual(stableHashHex(""), "cbf29ce484222325")
-    XCTAssertEqual(stableHashHex("a"), "af63dc4c8601ec8c")
+    #expect(stableHashHex("") == "cbf29ce484222325")
+    #expect(stableHashHex("a") == "af63dc4c8601ec8c")
   }
 
-  func testStableHashIsAlways16HexDigits() {
+  @Test
+  func stableHashIsAlways16HexDigits() {
     for input in ["", "a", "com.facebook.SomeVeryLongBundleIdentifier.Extension"] {
       let hex = stableHashHex(input)
-      XCTAssertEqual(hex.count, 16, "expected 16 digits for \(input.debugDescription)")
-      XCTAssertTrue(hex.allSatisfy { $0.isHexDigit }, "expected hex digits for \(input.debugDescription)")
+      #expect(hex.count == 16, "expected 16 digits for \(input.debugDescription)")
+      #expect(hex.allSatisfy { $0.isHexDigit }, "expected hex digits for \(input.debugDescription)")
     }
   }
 
   // MARK: - replSocketPath
 
-  func testSocketPathHasExpectedShape() {
+  @Test
+  func socketPathHasExpectedShape() {
     let path = replSocketPath(udid: "SOME-UDID", bundleID: "com.example.app")
-    XCTAssertTrue(path.hasPrefix("/tmp/idb_repl_"), path)
-    XCTAssertTrue(path.hasSuffix(".sock"), path)
+    #expect(path.hasPrefix("/tmp/idb_repl_"), "\(path)")
+    #expect(path.hasSuffix(".sock"), "\(path)")
     // The leading "/tmp/idb_repl_<uid>" directory is variable-length (the uid
     // differs by user), so pin the basename shape instead: 16 hex digits + ".sock".
     let base = (path as NSString).lastPathComponent
     let hash = String(base.dropLast(".sock".count))
-    XCTAssertEqual(hash.count, 16, path)
-    XCTAssertTrue(hash.allSatisfy { $0.isHexDigit }, path)
+    #expect(hash.count == 16, "\(path)")
+    #expect(hash.allSatisfy { $0.isHexDigit }, "\(path)")
   }
 
-  func testSocketPathIsDeterministic() {
-    XCTAssertEqual(
-      replSocketPath(udid: "U", bundleID: "com.example.app"),
-      replSocketPath(udid: "U", bundleID: "com.example.app"))
+  @Test
+  func socketPathIsDeterministic() {
+    #expect(
+      replSocketPath(udid: "U", bundleID: "com.example.app")
+        == replSocketPath(udid: "U", bundleID: "com.example.app"))
   }
 
-  func testSocketPathFitsSunPathEvenForLongInputs() {
+  @Test
+  func socketPathFitsSunPathEvenForLongInputs() {
     // The reason the path is hashed: a raw udid + bundle id would overflow the
     // 104-byte sockaddr_un.sun_path. Confirm the hashed path always fits.
     let longBundleID = "com.example." + String(repeating: "a", count: 300)
     let path = replSocketPath(udid: String(repeating: "U", count: 64), bundleID: longBundleID)
-    XCTAssertLessThan(path.utf8.count, 104, path)
+    #expect(path.utf8.count < 104, "\(path)")
   }
 
-  func testSocketPathVariesByUDID() {
-    XCTAssertNotEqual(
-      replSocketPath(udid: "udid-1", bundleID: "com.example.app"),
-      replSocketPath(udid: "udid-2", bundleID: "com.example.app"))
+  @Test
+  func socketPathVariesByUDID() {
+    #expect(
+      replSocketPath(udid: "udid-1", bundleID: "com.example.app")
+        != replSocketPath(udid: "udid-2", bundleID: "com.example.app"))
   }
 
-  func testSocketPathVariesByBundleID() {
-    XCTAssertNotEqual(
-      replSocketPath(udid: "U", bundleID: "com.example.one"),
-      replSocketPath(udid: "U", bundleID: "com.example.two"))
+  @Test
+  func socketPathVariesByBundleID() {
+    #expect(
+      replSocketPath(udid: "U", bundleID: "com.example.one")
+        != replSocketPath(udid: "U", bundleID: "com.example.two"))
   }
 
-  func testSocketPathSeparatorPreventsFieldAmbiguity() {
+  @Test
+  func socketPathSeparatorPreventsFieldAmbiguity() {
     // udid and bundle id are joined with a NUL separator, so shifting the
     // boundary between them yields a different path.
-    XCTAssertNotEqual(
-      replSocketPath(udid: "ab", bundleID: "c"),
-      replSocketPath(udid: "a", bundleID: "bc"))
+    #expect(
+      replSocketPath(udid: "ab", bundleID: "c")
+        != replSocketPath(udid: "a", bundleID: "bc"))
   }
 
   // MARK: - replListenerIsAlive
 
-  func testListenerNotAliveForMissingPath() async {
+  @Test
+  func listenerNotAliveForMissingPath() async {
     let alive = await replListenerIsAlive(at: Self.temporarySocketPath())
-    XCTAssertFalse(alive)
+    #expect(!alive)
   }
 
-  func testListenerNotAliveForStaleSocketFile() async {
+  @Test
+  func listenerNotAliveForStaleSocketFile() async {
     // A bound-then-closed socket leaves its file behind with nothing listening --
     // the "app exited" case that must fall through to a relaunch.
     let path = Self.temporarySocketPath()
     let fd = Self.makeListeningSocket(at: path)
-    XCTAssertGreaterThanOrEqual(fd, 0)
+    #expect(fd >= 0)
     Darwin.close(fd) // file remains, but nothing is listening
     defer { Darwin.unlink(path) }
     let alive = await replListenerIsAlive(at: path)
-    XCTAssertFalse(alive)
+    #expect(!alive)
   }
 
-  func testListenerAliveForBoundSocket() async {
+  @Test
+  func listenerAliveForBoundSocket() async {
     let path = Self.temporarySocketPath()
     let fd = Self.makeListeningSocket(at: path)
-    XCTAssertGreaterThanOrEqual(fd, 0)
+    #expect(fd >= 0)
     defer {
       Darwin.close(fd)
       Darwin.unlink(path)
     }
     let alive = await replListenerIsAlive(at: path)
-    XCTAssertTrue(alive)
+    #expect(alive)
   }
 
   /// A short, unique `/tmp` socket path (kept in `/tmp` like the production path
