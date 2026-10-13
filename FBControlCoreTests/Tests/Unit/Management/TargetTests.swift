@@ -7,18 +7,20 @@
 
 @testable import FBControlCore
 import Foundation
-import XCTest
+import Testing
 
-final class TargetTests: XCTestCase {
-  func testVersionComponentsDetermineOrdering() {
+@Suite
+struct TargetTests {
+  @Test
+  func versionComponentsDetermineOrdering() {
     let earlier = TargetDouble()
     let later = TargetDouble()
     earlier.osVersion = .generic(withName: "FutureOS 27.9")
     later.osVersion = .generic(withName: "FutureOS 27.10")
-    XCTAssertEqual(earlier.compare(later), .orderedAscending)
+    #expect(earlier.compare(later) == .orderedAscending)
     earlier.osVersion = .generic(withName: "FutureOS 27.10")
     later.osVersion = .generic(withName: "FutureOS 27.10.1")
-    XCTAssertEqual(earlier.compare(later), .orderedAscending)
+    #expect(earlier.compare(later) == .orderedAscending)
   }
 
   static var iPhoneDeviceTypes: [DeviceType] {
@@ -29,7 +31,8 @@ final class TargetTests: XCTestCase {
     ["Pad A", "Pad B"].map { DeviceType(model: DeviceModel(rawValue: $0), family: .iPad) }
   }
 
-  func testDevicesOrderedFirst() {
+  @Test
+  func devicesOrderedFirst() {
     let first = TargetDouble()
     first.targetType = .device
     first.state = .booted
@@ -42,10 +45,11 @@ final class TargetTests: XCTestCase {
     second.deviceType = DeviceType(model: DeviceModel(rawValue: "Future Phone"), family: .iPhone)
     second.osVersion = OSVersion.generic(withName: "FutureOS 99.0")
 
-    XCTAssertEqual(first.compare(second), .orderedDescending)
+    #expect(first.compare(second) == .orderedDescending)
   }
 
-  func testOSVersionOrdering() {
+  @Test
+  func osVersionOrdering() {
     let first = TargetDouble()
     first.targetType = .device
     first.state = .booted
@@ -57,10 +61,11 @@ final class TargetTests: XCTestCase {
     second.deviceType = DeviceType(model: DeviceModel(rawValue: "Future Phone"), family: .iPhone)
     second.osVersion = OSVersion.generic(withName: "FutureOS 99.1")
 
-    XCTAssertEqual(first.compare(second), .orderedAscending)
+    #expect(first.compare(second) == .orderedAscending)
   }
 
-  func testiPhoneComesBeforeiPad() {
+  @Test
+  func iPhoneComesBeforeiPad() {
     let deviceTypes = TargetTests.iPhoneDeviceTypes + TargetTests.iPadDeviceTypes
     var input: [any TargetInfo] = []
     for deviceType in deviceTypes {
@@ -72,11 +77,11 @@ final class TargetTests: XCTestCase {
       input.append(target)
     }
     let output = input.sorted { $0.compare($1) == .orderedAscending }
-    XCTAssertEqual(input.count, output.count)
+    #expect(input.count == output.count)
     for index in 0..<input.count {
       let expected = input[index].deviceType.model
       let actual = output[index].deviceType.model
-      XCTAssertEqual(expected, actual)
+      #expect(expected == actual)
     }
   }
 }
