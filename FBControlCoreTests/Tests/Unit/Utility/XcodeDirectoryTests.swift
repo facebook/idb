@@ -6,15 +6,19 @@
  */
 
 @testable import FBControlCore
-import XCTest
+import Foundation
+import Testing
 
-final class XcodeDirectoryTests: XCTestCase {
-  func testXcodeSelect() throws {
+@Suite
+struct XcodeDirectoryTests {
+  @Test
+  func xcodeSelect() throws {
     let directory = try XcodeDirectory.xcodeSelectDeveloperDirectory()
     assertDirectory(directory)
   }
 
-  func testFromSymlink() throws {
+  @Test
+  func fromSymlink() throws {
     let directory = try XcodeDirectory.symlinkedDeveloperDirectory()
     assertDirectory(directory)
   }
@@ -22,8 +26,8 @@ final class XcodeDirectoryTests: XCTestCase {
   func assertDirectory(_ directory: String) {
     var isDirectory: ObjCBool = false
     let exists = FileManager.default.fileExists(atPath: directory, isDirectory: &isDirectory)
-    XCTAssertTrue(exists)
-    XCTAssertTrue(isDirectory.boolValue)
+    #expect(exists)
+    #expect(isDirectory.boolValue)
 
     // `Platforms` is the stable marker of a Developer directory; `Applications` moved out of Contents/Developer in Xcode 27.
     let expectedContents = NSSet(array: ["Platforms"])
@@ -31,6 +35,6 @@ final class XcodeDirectoryTests: XCTestCase {
     let intersection = NSMutableSet(array: actualContents ?? [])
     intersection.intersect(expectedContents as! Set<AnyHashable>)
 
-    XCTAssertEqual(intersection.copy() as! NSSet, expectedContents)
+    #expect((intersection.copy() as! NSSet) == expectedContents)
   }
 }
