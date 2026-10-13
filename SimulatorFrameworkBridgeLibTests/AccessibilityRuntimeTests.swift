@@ -6,6 +6,7 @@
  */
 
 import Darwin
+import FBSimulatorBridgeProtocol
 import Foundation
 @_implementationOnly import SimulatorFrameworkBridgeRuntime
 @_implementationOnly import SimulatorFrameworkBridgeSupport
@@ -1735,7 +1736,7 @@ final class AccessibilityRuntimeTests: XCTestCase {
     let root = FBAXFakeElement.readable("UIApplication")
     root.attributes = [kAXElementType: "UIApplication"]
     runtime.applicationElements[NSNumber(value: kAppPid)] = root
-    runtime.translatorAttributeValues = [NSNumber(value: FBAXPAttribute.attributeLabel.rawValue): "Settings"]
+    runtime.translatorAttributeValues = [NSNumber(value: BridgeAXTranslatorAttribute.label.rawValue): "Settings"]
 
     let response = FBAccessibilityService.handleRequest(
       [
@@ -1754,8 +1755,8 @@ final class AccessibilityRuntimeTests: XCTestCase {
     root.attributes = [kAXElementType: "UIApplication"]
     runtime.applicationElements[NSNumber(value: kAppPid)] = root
     runtime.translatorAttributeValues = [
-      NSNumber(value: FBAXPAttribute.attributeLabel.rawValue): "Settings",
-      NSNumber(value: FBAXPAttribute.attributeChildren.rawValue): [FBAXFakeElement.readable("UIView"), FBAXFakeElement.readable("UIView")],
+      NSNumber(value: BridgeAXTranslatorAttribute.label.rawValue): "Settings",
+      NSNumber(value: BridgeAXTranslatorAttribute.children.rawValue): [FBAXFakeElement.readable("UIView"), FBAXFakeElement.readable("UIView")],
     ]
 
     _ = FBAccessibilityService.handleRequest(
@@ -1774,7 +1775,7 @@ final class AccessibilityRuntimeTests: XCTestCase {
 
   func testATranslatorReadEmitsTheEnabledAnswerItFetched() {
     runtime.applicationElements[NSNumber(value: kAppPid)] = FBAXFakeElement.readable("UIApplication")
-    runtime.translatorAttributeValues = [NSNumber(value: FBAXPAttribute.attributeLabel.rawValue): "General", NSNumber(value: FBAXPAttribute.attributeIsEnabled.rawValue): NSNumber(value: false)]
+    runtime.translatorAttributeValues = [NSNumber(value: BridgeAXTranslatorAttribute.label.rawValue): "General", NSNumber(value: BridgeAXTranslatorAttribute.isEnabled.rawValue): NSNumber(value: false)]
 
     let response =
       FBAccessibilityService.handleRequest(["verb": "describe", "pid": NSNumber(value: kAppPid), "traversal": "semantic"])
@@ -1785,7 +1786,7 @@ final class AccessibilityRuntimeTests: XCTestCase {
 
   func testATranslatorReadEmitsTheTranslatorsOwnRoleUnmapped() {
     runtime.applicationElements[NSNumber(value: kAppPid)] = FBAXFakeElement.readable("UIApplication")
-    runtime.translatorAttributeValues = [NSNumber(value: FBAXPAttribute.attributeRole.rawValue): NSNumber(value: 9)]
+    runtime.translatorAttributeValues = [NSNumber(value: BridgeAXTranslatorAttribute.role.rawValue): NSNumber(value: 9)]
 
     let tree =
       axValue(FBAccessibilityService.handleRequest(["verb": "describe", "pid": NSNumber(value: kAppPid), "traversal": "semantic"]), "tree")
@@ -1798,7 +1799,7 @@ final class AccessibilityRuntimeTests: XCTestCase {
   func testATranslatorReadEmitsTheVisiblePoint() {
     runtime.applicationElements[NSNumber(value: kAppPid)] = FBAXFakeElement.readable("UIApplication")
     runtime.translatorAttributeValues = [
-      NSNumber(value: FBAXPAttribute.attributeVisiblePoint.rawValue): NSValue(cgPoint: CGPoint(x: 201, y: 311))
+      NSNumber(value: BridgeAXTranslatorAttribute.visiblePoint.rawValue): NSValue(cgPoint: CGPoint(x: 201, y: 311))
     ]
 
     let tree =
@@ -1810,7 +1811,7 @@ final class AccessibilityRuntimeTests: XCTestCase {
 
   func testATranslatorReadEmitsTheTraitsBitmask() {
     runtime.applicationElements[NSNumber(value: kAppPid)] = FBAXFakeElement.readable("UIApplication")
-    runtime.translatorAttributeValues = [NSNumber(value: FBAXPAttribute.attributeTraits.rawValue): NSNumber(value: 1 << 6)]
+    runtime.translatorAttributeValues = [NSNumber(value: BridgeAXTranslatorAttribute.traits.rawValue): NSNumber(value: 1 << 6)]
 
     let tree =
       axValue(FBAccessibilityService.handleRequest(["verb": "describe", "pid": NSNumber(value: kAppPid), "traversal": "semantic"]), "tree")
@@ -1820,7 +1821,7 @@ final class AccessibilityRuntimeTests: XCTestCase {
 
   func testATranslatorReadEmitsAPerElementIdentity() {
     runtime.applicationElements[NSNumber(value: kAppPid)] = FBAXFakeElement.readable("UIApplication")
-    runtime.translatorAttributeValues = [NSNumber(value: FBAXPAttribute.attributeMemoryAddress.rawValue): NSNumber(value: 0x600001234560)]
+    runtime.translatorAttributeValues = [NSNumber(value: BridgeAXTranslatorAttribute.memoryAddress.rawValue): NSNumber(value: 0x600001234560)]
 
     let tree =
       axValue(FBAccessibilityService.handleRequest(["verb": "describe", "pid": NSNumber(value: kAppPid), "traversal": "semantic"]), "tree")
@@ -1843,7 +1844,7 @@ final class AccessibilityRuntimeTests: XCTestCase {
   // probe fails this.
   func testATranslatorReadOfAnUnavailableApplicationFailsRatherThanFabricatingARoot() {
     runtime.applicationElements[NSNumber(value: kAppPid)] = FBAXFakeElement.applicationUnavailable()
-    runtime.translatorAttributeValues = [NSNumber(value: FBAXPAttribute.attributeRole.rawValue): NSNumber(value: 1), NSNumber(value: FBAXPAttribute.attributeIsEnabled.rawValue): NSNumber(value: true)]
+    runtime.translatorAttributeValues = [NSNumber(value: BridgeAXTranslatorAttribute.role.rawValue): NSNumber(value: 1), NSNumber(value: BridgeAXTranslatorAttribute.isEnabled.rawValue): NSNumber(value: true)]
 
     let response =
       FBAccessibilityService.handleRequest(["verb": "describe", "pid": NSNumber(value: kAppPid), "traversal": "semantic"])
@@ -1856,7 +1857,7 @@ final class AccessibilityRuntimeTests: XCTestCase {
   func testAFusedFrontmostTranslatorReadStillNamesTheResolverThatRan() {
     runtime.windowServerOutcome = FBAXFrontmostOutcome.resolved(kAppPid)
     runtime.applicationElements[NSNumber(value: kAppPid)] = FBAXFakeElement.readable("UIApplication")
-    runtime.translatorAttributeValues = [NSNumber(value: FBAXPAttribute.attributeLabel.rawValue): "SampleApp"]
+    runtime.translatorAttributeValues = [NSNumber(value: BridgeAXTranslatorAttribute.label.rawValue): "SampleApp"]
 
     let response =
       FBAccessibilityService.handleRequest(["verb": "describe", "x": NSNumber(value: 201), "y": NSNumber(value: 437), "traversal": "semantic"])

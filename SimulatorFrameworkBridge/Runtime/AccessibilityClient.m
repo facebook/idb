@@ -7,7 +7,6 @@
 
 #import "AccessibilityClient.h"
 
-#import "Private/AXPAttributes.h"
 #import "Private/AccessibilityElement_Private.h"
 
 static void FBAXClientException(NSException *exception, NSError **error)
@@ -120,33 +119,6 @@ static void FBAXClientException(NSException *exception, NSError **error)
     FBAXClientException(exception, error);
     return nil;
   }
-}
-
-@end
-
-@interface FBAXTranslatorRead ()
-- (instancetype)initWithValues:(nullable NSDictionary<NSNumber *, id> *)values;
-@end
-
-@implementation FBAXTranslatorRead
-- (instancetype)initWithValues:(NSDictionary<NSNumber *, id> *)values
-{
-  self = [super init];
-  if (self) {
-    _available = values != nil;
-    _label = values[@(FBAXPAttributeLabel)];
-    _frame = values[@(FBAXPAttributeFrame)];
-    _identifier = values[@(FBAXPAttributeIdentifier)];
-    _value = values[@(FBAXPAttributeValue)];
-    _visible = values[@(FBAXPAttributeIsVisible)];
-    _enabled = values[@(FBAXPAttributeIsEnabled)];
-    _role = values[@(FBAXPAttributeRole)];
-    _subrole = values[@(FBAXPAttributeSubrole)];
-    _visiblePoint = values[@(FBAXPAttributeVisiblePoint)];
-    _traits = values[@(FBAXPAttributeTraits)];
-    _memoryAddress = values[@(FBAXPAttributeMemoryAddress)];
-  }
-  return self;
 }
 
 @end
@@ -403,35 +375,36 @@ static id FBAXCopyAttributeContainers(id value)
   }
 }
 
-- (FBAXTranslatorRead *)translatorAttributesOfElement:(FBAXElement *)element clientType:(NSUInteger)clientType error:(NSError **)error
+- (FBAXOptionalValue<NSDictionary<NSNumber *, id> *> *)translatorAttributes:(NSArray<NSNumber *> *)attributes
+                                                                  ofElement:(FBAXElement *)element
+                                                                 clientType:(NSUInteger)clientType
+                                                                      error:(NSError **)error
 {
   @try {
-    NSArray<NSNumber *> *attributes = @[
-      @(FBAXPAttributeLabel), @(FBAXPAttributeFrame), @(FBAXPAttributeIdentifier),
-      @(FBAXPAttributeValue), @(FBAXPAttributeIsVisible), @(FBAXPAttributeIsEnabled),
-      @(FBAXPAttributeRole), @(FBAXPAttributeSubrole), @(FBAXPAttributeVisiblePoint),
-      @(FBAXPAttributeTraits), @(FBAXPAttributeMemoryAddress),
-    ];
-    return [[FBAXTranslatorRead alloc] initWithValues:[_runtime translatorAttributes:attributes ofElement:element.value clientType:clientType]];
+    NSDictionary<NSNumber *, id> *values = [_runtime translatorAttributes:attributes ofElement:element.value clientType:clientType];
+    return [[FBAXOptionalValue alloc] initWithValue:values ? FBAXCopyAttributeContainers(values) : nil];
   } @catch (NSException *exception) {
     FBAXClientException(exception, error);
     return nil;
   }
 }
 
-- (NSArray<FBAXElement *> *)translatorChildrenOfElement:(FBAXElement *)element clientType:(NSUInteger)clientType error:(NSError **)error
+- (NSArray<FBAXElement *> *)translatorElements:(NSInteger)attribute
+                                     ofElement:(FBAXElement *)element
+                                    clientType:(NSUInteger)clientType
+                                         error:(NSError **)error
 {
   @try {
-    NSDictionary<NSNumber *, id> *values = [_runtime translatorAttributes:@[@(FBAXPAttributeChildren)] ofElement:element.value clientType:clientType];
-    id list = values[@(FBAXPAttributeChildren)];
+    NSDictionary<NSNumber *, id> *values = [_runtime translatorAttributes:@[@(attribute)] ofElement:element.value clientType:clientType];
+    id list = values[@(attribute)];
     if (![list isKindOfClass:NSArray.class]) {
       return @[];
     }
-    NSMutableArray<FBAXElement *> *children = [NSMutableArray array];
+    NSMutableArray<FBAXElement *> *elements = [NSMutableArray array];
     for (id value in list) {
-      [children addObject:[[FBAXElement alloc] initWithValue:value]];
+      [elements addObject:[[FBAXElement alloc] initWithValue:value]];
     }
-    return children;
+    return elements;
   } @catch (NSException *exception) {
     FBAXClientException(exception, error);
     return nil;

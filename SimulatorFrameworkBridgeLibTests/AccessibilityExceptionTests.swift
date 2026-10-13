@@ -5,6 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+import FBSimulatorBridgeProtocol
 import Foundation
 @_implementationOnly import SimulatorFrameworkBridgeRuntime
 @_implementationOnly import SimulatorFrameworkBridgeSupport
@@ -114,7 +115,7 @@ final class AccessibilityExceptionTests: XCTestCase {
     runtime.hitTestOutcome = FBAXHitTestOutcome.hit(root, owningProcessIdentifier: 4321)
     runtime.windowServerOutcome = FBAXFrontmostOutcome.resolved(4321)
     runtime.runningBoardOutcome = FBAXFrontmostOutcome.resolved(4321)
-    runtime.translatorAttributeValues = [NSNumber(value: FBAXPAttribute.attributeLabel.rawValue): "root"]
+    runtime.translatorAttributeValues = [NSNumber(value: BridgeAXTranslatorAttribute.label.rawValue): "root"]
     runtime.deviceSettings[NSNumber(value: FBAXDeviceSetting.reduceMotion.rawValue)] = false
     return runtime
   }

@@ -602,6 +602,11 @@ private final class AccessibilityRequest {
 
   // MARK: - Translator vocabulary
 
+  // What a translator node reads in its one request. Children are read separately, below.
+  private var translatorNodeAttributes: [BridgeAXTranslatorAttribute] {
+    [.label, .frame, .identifier, .value, .isVisible, .isEnabled, .role, .subrole, .visiblePoint, .traits, .memoryAddress]
+  }
+
   // Builds a node through the translator's vocabulary, keyed the same way the XCTest walk keys it where the
   // two vocabularies agree, so the serializer above needs no knowledge of which one produced a tree. The two
   // attributes XCTest has no counterpart for — `enabled` and the translator's own `role` — are keyed in the
@@ -620,10 +625,14 @@ private final class AccessibilityRequest {
     traversal.remainingNodes -= 1
 
     FBAXBridgeCountRoundTrip()
-    let values = try client.translatorAttributes(of: element, clientType: UInt(traversal.clientType.rawValue))
+    let read = try client.translatorAttributes(
+      translatorNodeAttributes.map { NSNumber(value: $0.rawValue) },
+      of: element,
+      clientType: UInt(traversal.clientType.rawValue)
+    )
     // Nil is "could not read", not "empty element": building a node from it would report a failed bind as a
     // healthy application with no content.
-    guard values.isAvailable else {
+    guard let values = BridgeAXTranslatorAnswer(resultData: read.value) else {
       return nil
     }
     var node = [String: Any]()
@@ -632,51 +641,51 @@ private final class AccessibilityRequest {
       let identity = try client.readAttributes([axWindowDisplayID], of: element)
       node[axWindowDisplayID] = identity.attributes?[axWindowDisplayID]
     }
-    if values.label != nil {
-      node[axLabel] = values.label
+    if values[.label] != nil {
+      node[axLabel] = values[.label]
     }
-    if values.identifier != nil {
-      node[axIdentifier] = values.identifier
+    if values[.identifier] != nil {
+      node[axIdentifier] = values[.identifier]
     }
-    if values.value != nil {
+    if values[.value] != nil {
       node[axValue] = try FBAXBridgeJSONSafeValue(
         client: client,
-        value: values.value,
+        value: values[.value],
         key: axValue
       )
     }
-    if values.frame != nil {
+    if values[.frame] != nil {
       node[axFrame] = try FBAXBridgeJSONSafeValue(
         client: client,
-        value: values.frame,
+        value: values[.frame],
         key: axFrame
       )
     }
-    if values.visible != nil {
-      node[axisVisible] = values.visible
+    if values[.isVisible] != nil {
+      node[axisVisible] = values[.isVisible]
     }
-    if values.enabled != nil {
-      node[nodeIsEnabled] = values.enabled
+    if values[.isEnabled] != nil {
+      node[nodeIsEnabled] = values[.isEnabled]
     }
-    if values.role != nil {
-      node[nodeTranslatorRole] = values.role
+    if values[.role] != nil {
+      node[nodeTranslatorRole] = values[.role]
     }
-    if values.subrole != nil {
-      node[nodeTranslatorSubrole] = values.subrole
+    if values[.subrole] != nil {
+      node[nodeTranslatorSubrole] = values[.subrole]
     }
-    if values.traits != nil {
-      node[nodeTraits] = values.traits
+    if values[.traits] != nil {
+      node[nodeTraits] = values[.traits]
     }
-    if values.memoryAddress != nil {
-      node[nodeElementIdentity] = values.memoryAddress
+    if values[.memoryAddress] != nil {
+      node[nodeElementIdentity] = values[.memoryAddress]
     }
     // Keyed as XCTest names it, because the host derives `interactable` from that key and the two answer
     // the same question. Without it the derivation has hittability and no point, which is the shape it
     // reports as no verdict at all.
-    if values.visiblePoint != nil {
+    if values[.visiblePoint] != nil {
       node[axVisiblePoint] = try FBAXBridgeJSONSafeValue(
         client: client,
-        value: values.visiblePoint,
+        value: values[.visiblePoint],
         key: axVisiblePoint
       )
     }
@@ -685,7 +694,11 @@ private final class AccessibilityRequest {
     // Children are a separate request (the handler special-cases the attribute out of the batch). Asked even
     // at the depth cap, because `truncated` needs to know whether this node has children.
     FBAXBridgeCountRoundTrip()
-    let childElements = try client.translatorChildren(of: element, clientType: UInt(traversal.clientType.rawValue))
+    let childElements = try client.translatorElements(
+      BridgeAXTranslatorAttribute.children.rawValue,
+      of: element,
+      clientType: UInt(traversal.clientType.rawValue)
+    )
     if depth < maxDepth {
       for child in childElements {
         let built = try FBAXBridgeBuildTranslatorNode(

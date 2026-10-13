@@ -540,7 +540,7 @@ typedef void (^FBAXQuiescenceHandler)(FBAXQuiescenceReport report, pid_t pid);
 - (FBAXFrontmostOutcome *)runningBoardFrontmost;
 
 /**
- * Reads `FBAXPAttribute`s off `element` through the in-guest translator, in one round trip. A separate
+ * Reads translator attributes (`BridgeAXTranslatorAttribute` raw values) off `element` through the in-guest translator, in one round trip. A separate
  * vocabulary from XCTest's `XC_kAXXCAttribute*` names with its own server-side handlers; the two
  * disagree on some screens. `element` may be an element handle or a translation object from an earlier
  * translator read. The result omits attributes the server did not answer; nil means the read could not

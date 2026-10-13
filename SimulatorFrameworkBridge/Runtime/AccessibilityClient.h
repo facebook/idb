@@ -44,24 +44,6 @@ NS_ASSUME_NONNULL_BEGIN
 + (instancetype)new NS_UNAVAILABLE;
 @end
 
-/** Semantic translator attributes, independent of its private numeric vocabulary. */
-@interface FBAXTranslatorRead : NSObject
-@property (nonatomic, readonly, getter = isAvailable) BOOL available;
-@property (nullable, nonatomic, readonly) id label;
-@property (nullable, nonatomic, readonly) id frame;
-@property (nullable, nonatomic, readonly) id identifier;
-@property (nullable, nonatomic, readonly) id value;
-@property (nullable, nonatomic, readonly) id visible;
-@property (nullable, nonatomic, readonly) id enabled;
-@property (nullable, nonatomic, readonly) id role;
-@property (nullable, nonatomic, readonly) id subrole;
-@property (nullable, nonatomic, readonly) id visiblePoint;
-@property (nullable, nonatomic, readonly) id traits;
-@property (nullable, nonatomic, readonly) id memoryAddress;
-- (instancetype)init NS_UNAVAILABLE;
-+ (instancetype)new NS_UNAVAILABLE;
-@end
-
 /** An `FBAXQuiescenceMonitor` whose requests take wrapped elements and contain private exceptions. */
 @interface FBAXQuiescenceMonitorClient : NSObject
 - (nullable FBAXWriteOutcome *)requestSignal:(FBAXQuiescenceSignal)signal fromApplication:(FBAXElement *)element error:(NSError **)error;
@@ -99,10 +81,17 @@ NS_ASSUME_NONNULL_BEGIN
 - (nullable NSNumber *)setAutomationModeEnabled:(BOOL)enabled error:(NSError **)error;
 - (nullable FBAXDeviceSettingOutcome *)enabledStateForDeviceSetting:(FBAXDeviceSetting)setting error:(NSError **)error;
 - (nullable FBAXDeviceSettingOutcome *)setEnabled:(BOOL)enabled forDeviceSetting:(FBAXDeviceSetting)setting error:(NSError **)error;
-- (nullable FBAXTranslatorRead *)translatorAttributesOfElement:(FBAXElement *)element clientType:(NSUInteger)clientType error:(NSError **)error;
-- (nullable NSArray<FBAXElement *> *)translatorChildrenOfElement:(FBAXElement *)element
-                                                      clientType:(NSUInteger)clientType
-                                                           error:(NSError **)error;
+/** The translator's answer for `attributes`, numbers in its own vocabulary (`BridgeAXTranslatorAttribute`), keyed by the same
+    numbers and detached from the runtime. A nil value means the read could not be performed. */
+- (nullable FBAXOptionalValue<NSDictionary<NSNumber *, id> *> *)translatorAttributes:(NSArray<NSNumber *> *)attributes
+                                                                           ofElement:(FBAXElement *)element
+                                                                          clientType:(NSUInteger)clientType
+                                                                               error:(NSError **)error;
+/** The elements the translator answers for an element-list attribute such as its children; empty for any other answer. */
+- (nullable NSArray<FBAXElement *> *)translatorElements:(NSInteger)attribute
+                                              ofElement:(FBAXElement *)element
+                                             clientType:(NSUInteger)clientType
+                                                  error:(NSError **)error;
 /** Nil when the runtime cannot observe or raised, with `*error` saying which. */
 - (nullable FBAXQuiescenceMonitorClient *)quiescenceMonitorWithHandler:(FBAXQuiescenceHandler)handler error:(NSError **)error;
 
