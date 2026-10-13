@@ -7,9 +7,11 @@
 
 import FBControlCore
 @testable import FBXCTestCore
-import XCTest
+import Foundation
+import Testing
 
-final class XCTestProcessTests: XCTestCase {
+@Suite(.serialized)
+struct XCTestProcessTests {
 
   private struct NoCrashLog: Error {}
 
@@ -18,17 +20,19 @@ final class XCTestProcessTests: XCTestCase {
     return try await XCTestProcess.awaitExitCode(of: process, processName: "sh", completesWithin: 30, crashLogCommands: crashLogCommands(process.processIdentifier), logger: ControlCoreGlobalConfiguration.defaultLogger)
   }
 
-  func testASignalledProcessWithoutCrashLogCommandsFailsWithTheSignal() async throws {
+  @Test
+  func aSignalledProcessWithoutCrashLogCommandsFailsWithTheSignal() async throws {
     do {
       _ = try await awaitExitCodeOfAProcessKilledBySignal { _ in nil }
-      XCTFail("Expected the wait to fail")
+      Issue.record("Expected the wait to fail")
     } catch let ProcessTerminationError.exitedWithSignal(_, processName, signal) {
-      XCTAssertEqual(processName, "sh")
-      XCTAssertEqual(signal, SIGKILL)
+      #expect(processName == "sh")
+      #expect(signal == SIGKILL)
     }
   }
 
-  func testASignalledProcessWithACrashLogFailsWithTheCrash() async throws {
+  @Test
+  func aSignalledProcessWithACrashLogFailsWithTheCrash() async throws {
     let crashPath = (NSTemporaryDirectory() as NSString).appendingPathComponent("\(UUID().uuidString).crash")
     try "raw crash log".write(toFile: crashPath, atomically: true, encoding: .utf8)
     defer { try? FileManager.default.removeItem(atPath: crashPath) }
@@ -51,39 +55,42 @@ final class XCTestProcessTests: XCTestCase {
         crash = crashOfTheProcess
         return StubCrashLogCommands { crashOfTheProcess }
       }
-      XCTFail("Expected the wait to fail")
+      Issue.record("Expected the wait to fail")
     } catch let XCTestProcessError.crashed(info, rawLog) {
-      XCTAssertEqual(info, String(describing: try XCTUnwrap(crash)))
-      XCTAssertEqual(rawLog, "raw crash log")
+      let recordedCrash = try #require(crash)
+      #expect(info == String(describing: recordedCrash))
+      #expect(rawLog == "raw crash log")
     }
   }
 
-  func testASignalledProcessWithoutACrashLogPointsAtTheDiagnosticReports() async throws {
+  @Test
+  func aSignalledProcessWithoutACrashLogPointsAtTheDiagnosticReports() async throws {
     do {
       _ = try await awaitExitCodeOfAProcessKilledBySignal { _ in StubCrashLogCommands { throw NoCrashLog() } }
-      XCTFail("Expected the wait to fail")
+      Issue.record("Expected the wait to fail")
     } catch {
       let description = (error as NSError).localizedDescription
-      XCTAssertTrue(description.hasPrefix("xctest process ("), description)
-      XCTAssertTrue(description.hasSuffix(") exited abnormally with no crash log, to check for yourself look in ~/Library/Logs/DiagnosticReports"), description)
+      #expect(description.hasPrefix("xctest process ("), "\(description)")
+      #expect(description.hasSuffix(") exited abnormally with no crash log, to check for yourself look in ~/Library/Logs/DiagnosticReports"), "\(description)")
       let cause = (error as NSError).userInfo[NSUnderlyingErrorKey] as? NSError
-      XCTAssertEqual(cause?.domain, (NoCrashLog() as NSError).domain, "The lookup's failure is the cause")
+      #expect(cause?.domain == (NoCrashLog() as NSError).domain, "The lookup's failure is the cause")
     }
   }
 
-  func testAStalledProcessWhoseStackshotCannotBeSampledIsTerminated() async throws {
+  @Test
+  func aStalledProcessWhoseStackshotCannotBeSampledIsTerminated() async throws {
     struct SamplingFailed: Error {}
     let process = try await Subprocess(executable: "/bin/sh", arguments: ["-c", "sleep 60"]).launch(output: .closed, error: .closed)
     do {
       _ = try await XCTestProcess.awaitExitCode(of: process, processName: "sh", completesWithin: 0.5, crashLogCommands: nil, logger: ControlCoreGlobalConfiguration.defaultLogger) { _ in
         throw SamplingFailed()
       }
-      XCTFail("Expected the wait to fail")
+      Issue.record("Expected the wait to fail")
     } catch let XCTestProcessError.stalled(timeout, processIdentifier, stackshot) {
-      XCTAssertEqual(timeout, 0.5)
-      XCTAssertEqual(processIdentifier, process.processIdentifier)
-      XCTAssertTrue(stackshot.hasPrefix("stackshot unavailable: "), stackshot)
+      #expect(timeout == 0.5)
+      #expect(processIdentifier == process.processIdentifier)
+      #expect(stackshot.hasPrefix("stackshot unavailable: "), "\(stackshot)")
     }
-    XCTAssertNotEqual(kill(process.processIdentifier, 0), 0, "The stalled process is terminated")
+    #expect(kill(process.processIdentifier, 0) != 0, "The stalled process is terminated")
   }
 }
