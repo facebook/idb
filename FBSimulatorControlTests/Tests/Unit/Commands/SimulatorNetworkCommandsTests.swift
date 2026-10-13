@@ -7,9 +7,11 @@
 
 import FBControlCore
 @testable import FBSimulatorControl
-import XCTest
+import Foundation
+import Testing
 
-final class SimulatorNetworkCommandsTests: XCTestCase {
+@Suite
+struct SimulatorNetworkCommandsTests {
 
   // MARK: - Helpers
 
@@ -24,17 +26,18 @@ final class SimulatorNetworkCommandsTests: XCTestCase {
   ) async {
     do {
       try await expression()
-      XCTFail(message)
+      Issue.record(Comment(rawValue: message))
     } catch let error as SimulatorNetworkError where isExpected(error) {
       // Expected.
     } catch {
-      XCTFail("\(message); threw \(error)")
+      Issue.record("\(message); threw \(error)")
     }
   }
 
   // MARK: - DNS Validation
 
-  func testDnsSetRejectsEmptyArray() async {
+  @Test
+  func dnsSetRejectsEmptyArray() async {
     let simulator = makeSimulator()
     await assertThrowsAsync(
       "dns.set should reject an empty array",
