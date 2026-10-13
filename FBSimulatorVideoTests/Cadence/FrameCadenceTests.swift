@@ -33,8 +33,11 @@ final class FrameCadenceTests: XCTestCase {
       lateness.append(ContinuousClock.now - expected)
     }
     lateness.sort()
-    // The median, so one preempted tick on a loaded host does not decide the test.
-    XCTAssertLessThan(lateness[5], .milliseconds(10), "median tick lateness \(lateness[5])")
+    // The median, so one preempted tick on a loaded host does not decide the test. A timer the
+    // kernel coalesces lands each tick 25-40 ms late; the strict timer lands within a fraction of
+    // a millisecond, plus however long a loaded host takes to resume the waiting task, which on a
+    // hosted runner has reached 10 ms. 20 ms keeps the two apart.
+    XCTAssertLessThan(lateness[5], .milliseconds(20), "median tick lateness \(lateness[5])")
   }
 
   func testStallCatchesUpWithASingleTick() async throws {
