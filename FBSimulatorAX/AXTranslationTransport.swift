@@ -15,7 +15,17 @@ import Foundation
 ///
 /// Synchronous because `AXPTranslator` asks its bridge delegate for an answer synchronously: the transport
 /// is the one place that waits, and it never waits longer than `timeout`.
+/// Which path carried a read's translator requests.
+public enum AXTranslationTransportKind: String, Sendable {
+  /// Straight to CoreSimulatorBridge's accessibility service.
+  case bridge
+  /// Through CoreSimulator's own client.
+  case coreSimulator = "coresimulator"
+}
+
 protocol AXTranslationTransport: Sendable {
+  var kind: AXTranslationTransportKind { get }
+
   /// The service's answer, or nil when none arrived within `timeout`. Must not be called on the main queue.
   func send(_ request: AXPTranslatorRequest, timeout: TimeInterval) -> AXPTranslatorResponse?
 }
@@ -23,6 +33,8 @@ protocol AXTranslationTransport: Sendable {
 /// Sends translator requests through CoreSimulator's own client,
 /// `-[SimDevice sendAccessibilityRequestAsync:completionQueue:completionHandler:]`.
 final class CoreSimulatorAXTranslationTransport: AXTranslationTransport, @unchecked Sendable {
+  let kind = AXTranslationTransportKind.coreSimulator
+
   // SAFETY: both are only read after init; `SimDevice` messages its service from any queue.
   private let device: SimDevice
   private let completionQueue: DispatchQueue
@@ -56,6 +68,8 @@ final class CoreSimulatorAXTranslationTransport: AXTranslationTransport, @unchec
 /// translator would touch it off the queue that serializes it.
 final class CoreSimulatorBridgeAXTranslationTransport: AXTranslationTransport, @unchecked Sendable {
   static let serviceName = "com.apple.CoreSimulator.accessibility"
+
+  let kind = AXTranslationTransportKind.bridge
 
   // SAFETY: `channel` is only read or replaced under `lock`; the rest is immutable.
   private let connector: SimulatorXPCConnector

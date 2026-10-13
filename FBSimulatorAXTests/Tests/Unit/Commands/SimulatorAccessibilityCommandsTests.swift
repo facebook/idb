@@ -517,6 +517,23 @@ final class SimulatorAccessibilityCommandsTests: XCTestCase {
     XCTAssertEqual(fixture!.device.accessibilityRequests.count, 0, "nothing reaches CoreSimulator's client")
   }
 
+  func testEveryReadCarriesItsMetricsWithoutAProfile() async throws {
+    try setUp(withRootElement: defaultElementTree, transport: AXTranslationTransportDouble())
+    let element = try await simulator.accessibility.resolveElement(for: .frontmost)
+    defer { element.close() }
+
+    let response = try await element.serialize(with: AccessibilityRequestOptions())
+
+    XCTAssertNil(response.profilingData, "no profile was asked for")
+    let metrics = try XCTUnwrap(response.translatorMetrics)
+    XCTAssertEqual(metrics.elementCount, 4, "the root and its three children")
+    XCTAssertEqual(metrics.translatorReads, .batched)
+    XCTAssertEqual(metrics.transport, .coreSimulator, "named by the transport that carried the read")
+    XCTAssertFalse(
+      String(decoding: try response.formattedOutputJSON(format: .complete), as: UTF8.self).contains("translatorMetrics"),
+      "the metrics never reach the document")
+  }
+
   func testATransportThatDoesNotAnswerYieldsTheEmptyResponse() async throws {
     try setUp(withRootElement: defaultElementTree, transport: AXTranslationTransportDouble(answers: false))
     fixture!.translator.bridgeRequestClientTypes = [0]

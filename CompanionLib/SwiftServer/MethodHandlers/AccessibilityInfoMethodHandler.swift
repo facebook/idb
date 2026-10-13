@@ -15,11 +15,11 @@ import IDBGRPCSwift
 /// Seam over the two `IDBCommandExecutor` reads this handler drives, so the request-to-options wiring
 /// can be tested against a double.
 protocol AccessibilityDescribing {
-  func accessibility_describe(
+  func accessibility_describe_response(
     query: AccessibilityElementQuery,
     options: AccessibilityRequestOptions,
     backend: UIAutomationBackend
-  ) async throws -> Data
+  ) async throws -> AccessibilityElementsResponse
 
   func accessibility_info_at_point(
     _ value: NSValue?,
@@ -52,16 +52,40 @@ struct AccessibilityInfoMethodHandler {
     // A marker selects a single element to describe; without one the request
     // describes the element at a point, or the whole frontmost app.
     if let query = AccessibilityInfoRequestTranslation.markerQuery(from: request) {
-      let data = try await commandExecutor.accessibility_describe(query: query, options: options, backend: backend)
+      let response = try await commandExecutor.accessibility_describe_response(query: query, options: options, backend: backend)
+      AccessibilityReadTelemetry.record(response, into: CallTelemetry.current)
+      let data = try response.formattedOutputJSON(format: options.format)
       return .with {
         $0.json = String(data: data, encoding: .utf8) ?? ""
       }
     }
     let response = try await commandExecutor.accessibility_info_at_point(
       AccessibilityInfoRequestTranslation.point(from: request), options: options, backend: backend)
+    AccessibilityReadTelemetry.record(response, into: CallTelemetry.current)
     let jsonData = try AccessibilityInfoRequestTranslation.responseJSON(from: response, format: format)
     return .with {
       $0.json = String(data: jsonData, encoding: .utf8) ?? ""
     }
+  }
+}
+
+/// How each read went, on the call's own row, whether or not the caller asked for a profile — so a
+/// change to how reads are made can be measured across every read rather than the few that profile.
+///
+/// The element count, durations and backend use the column names the CLI already logs from complete
+/// documents, so one query reads both. Translator-backed reads are the only ones that report metrics.
+enum AccessibilityReadTelemetry {
+  static func record(_ response: AccessibilityElementsResponse, into call: CallTelemetry?) {
+    guard let call else { return }
+    if let backend = response.backend {
+      call.setNormal(backend.rawValue, forKey: "ax_backend")
+    }
+    guard let metrics = response.translatorMetrics else { return }
+    call.setInt(Int(metrics.elementCount), forKey: "ax_element_count")
+    call.setInt(Int(metrics.roundTrips), forKey: "ax_round_trips")
+    call.setInt(Int(metrics.readDuration * 1000), forKey: "ax_profile_read_ms")
+    call.setInt(Int(metrics.totalDuration * 1000), forKey: "ax_profile_total_ms")
+    call.setNormal(metrics.translatorReads.rawValue, forKey: "ax_translator_reads")
+    call.setNormal(metrics.transport.rawValue, forKey: "ax_transport")
   }
 }

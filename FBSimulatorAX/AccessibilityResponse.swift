@@ -215,6 +215,10 @@ public struct AccessibilityElementsResponse: Sendable {
   /// The client the read's translator requests claimed to come from, when the read named one.
   public let client: AccessibilityClientReport?
 
+  /// How a translator-backed read went, whether or not the caller asked for a profile. Never encoded:
+  /// it is for the reader's own telemetry, not the document.
+  public let translatorMetrics: AccessibilityTranslatorReadMetrics?
+
   public init(
     elements: AccessibilityElementPayload,
     profilingData: AccessibilityProfile? = nil,
@@ -226,7 +230,8 @@ public struct AccessibilityElementsResponse: Sendable {
     target: AccessibilityTargetDescriptor? = nil,
     automation: AccessibilityAutomationState? = nil,
     narrowing: AccessibilityNarrowing? = nil,
-    client: AccessibilityClientReport? = nil
+    client: AccessibilityClientReport? = nil,
+    translatorMetrics: AccessibilityTranslatorReadMetrics? = nil
   ) {
     self.elements = elements
     self.profilingData = profilingData
@@ -239,6 +244,7 @@ public struct AccessibilityElementsResponse: Sendable {
     self.automation = automation
     self.narrowing = narrowing
     self.client = client
+    self.translatorMetrics = translatorMetrics
   }
 
   /// A copy carrying the read's provenance; a `nil` argument leaves the existing value in place.
@@ -259,7 +265,8 @@ public struct AccessibilityElementsResponse: Sendable {
       target: target ?? self.target,
       automation: automation,
       narrowing: narrowing,
-      client: client
+      client: client,
+      translatorMetrics: translatorMetrics
     )
   }
 
@@ -276,7 +283,8 @@ public struct AccessibilityElementsResponse: Sendable {
       target: target,
       automation: automation,
       narrowing: narrowing,
-      client: client
+      client: client,
+      translatorMetrics: translatorMetrics
     )
   }
 
@@ -293,7 +301,8 @@ public struct AccessibilityElementsResponse: Sendable {
       target: target,
       automation: automation,
       narrowing: narrowing,
-      client: client
+      client: client,
+      translatorMetrics: translatorMetrics
     )
   }
 
@@ -310,7 +319,8 @@ public struct AccessibilityElementsResponse: Sendable {
       target: target,
       automation: automation,
       narrowing: narrowing,
-      client: client
+      client: client,
+      translatorMetrics: translatorMetrics
     )
   }
 
@@ -339,5 +349,32 @@ public struct AccessibilityElementsResponse: Sendable {
 extension AccessibilityElementsResponse: CustomStringConvertible {
   public var description: String {
     "<AccessibilityElementsResponse: elements=\(Swift.type(of: elements)), profiling=\(String(describing: profilingData)), coverage=\(String(describing: coverage)), modal=\(String(describing: modal))>"
+  }
+}
+
+/// The cost of one translator-backed read, collected on every read rather than only a profiled one.
+public struct AccessibilityTranslatorReadMetrics: Sendable, Equatable {
+  public let elementCount: Int64
+  /// Round trips to the simulator's accessibility service, acquisition included.
+  public let roundTrips: Int64
+  public let readDuration: CFAbsoluteTime
+  public let totalDuration: CFAbsoluteTime
+  public let translatorReads: AXTranslatorReads
+  public let transport: AXTranslationTransportKind
+
+  public init(
+    elementCount: Int64,
+    roundTrips: Int64,
+    readDuration: CFAbsoluteTime,
+    totalDuration: CFAbsoluteTime,
+    translatorReads: AXTranslatorReads,
+    transport: AXTranslationTransportKind
+  ) {
+    self.elementCount = elementCount
+    self.roundTrips = roundTrips
+    self.readDuration = readDuration
+    self.totalDuration = totalDuration
+    self.translatorReads = translatorReads
+    self.transport = transport
   }
 }

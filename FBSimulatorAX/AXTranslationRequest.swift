@@ -406,15 +406,26 @@ final class AXTranslationRequest {
     narrowing: AccessibilityNarrowing? = nil
   ) -> AccessibilityElementsResponse {
     let walkDuration = CFAbsoluteTimeGetCurrent() - walkStart
-    // Collected always (cheap); reported only when profiling was requested.
-    let profilingData = reportProfile ? collector.finalize(withWalkDuration: walkDuration) : nil
+    // Collected always (cheap) and kept as metrics on every read; reported as a profile only when
+    // profiling was requested.
+    let profile = collector.finalize(withWalkDuration: walkDuration)
+    let metrics = transport.map {
+      AccessibilityTranslatorReadMetrics(
+        elementCount: profile.elementCount,
+        roundTrips: profile.xpcCallCount,
+        readDuration: profile.readDuration,
+        totalDuration: profile.totalDuration,
+        translatorReads: translatorReadMode,
+        transport: $0.kind)
+    }
     return AccessibilityElementsResponse(
       elements: elements,
-      profilingData: profilingData.map { .translator($0) },
+      profilingData: reportProfile ? .translator(profile) : nil,
       coverage: coverage,
       truncated: false,
       screen: screen,
-      narrowing: narrowing
+      narrowing: narrowing,
+      translatorMetrics: metrics
     )
   }
 

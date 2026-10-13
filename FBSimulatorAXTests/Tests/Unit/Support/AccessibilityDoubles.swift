@@ -267,6 +267,7 @@ final class AXSnapshotPlatformElementDouble: AXPlatformElement {
 /// Records every translator request a read sends, and answers each with the empty response — or, when it
 /// does not answer, with nothing, as a transport whose wait timed out does.
 final class AXTranslationTransportDouble: AXTranslationTransport, @unchecked Sendable {
+  let kind = AXTranslationTransportKind.coreSimulator
   private let lock = NSLock()
   private var _requests: [AXPTranslatorRequest] = []
   private let answers: Bool

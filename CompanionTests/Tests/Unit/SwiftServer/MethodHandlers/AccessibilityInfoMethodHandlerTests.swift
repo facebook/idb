@@ -21,15 +21,20 @@ private final class RecordingAccessibilityExecutor: AccessibilityDescribing {
   private(set) var describeOptions: AccessibilityRequestOptions?
   private(set) var describeQuery: AccessibilityElementQuery?
   private(set) var pointReadCount = 0
+  private let response: AccessibilityElementsResponse
 
-  func accessibility_describe(
+  init(response: AccessibilityElementsResponse = AccessibilityElementsResponse(elements: .single(AccessibilityDocumentElement()))) {
+    self.response = response
+  }
+
+  func accessibility_describe_response(
     query: AccessibilityElementQuery,
     options: AccessibilityRequestOptions,
     backend: UIAutomationBackend
-  ) async throws -> Data {
+  ) async throws -> AccessibilityElementsResponse {
     describeQuery = query
     describeOptions = options
-    return Data("{}".utf8)
+    return response
   }
 
   func accessibility_info_at_point(
@@ -38,7 +43,7 @@ private final class RecordingAccessibilityExecutor: AccessibilityDescribing {
     backend: UIAutomationBackend
   ) async throws -> AccessibilityElementsResponse {
     pointReadCount += 1
-    return AccessibilityElementsResponse(elements: .single(AccessibilityDocumentElement()))
+    return response
   }
 }
 
@@ -81,5 +86,42 @@ struct AccessibilityInfoMethodHandlerTests {
     #expect(options.enableProfiling, "--profile is a read option and a marker read is a read")
     #expect(
       options.collectFrameCoverage, "--collect-frame-coverage is a read option and a marker read is a read")
+  }
+
+  // MARK: - Read telemetry
+
+  private static let translatorResponse = AccessibilityElementsResponse(
+    elements: .single(AccessibilityDocumentElement()),
+    backend: .ax,
+    translatorMetrics: AccessibilityTranslatorReadMetrics(
+      elementCount: 114, roundTrips: 225, readDuration: 0.072, totalDuration: 0.081,
+      translatorReads: .batched, transport: .bridge))
+
+  @Test(arguments: [false, true])
+  func everyReadRecordsHowItWentWithoutAskingForAProfile(byMarker: Bool) async throws {
+    let executor = RecordingAccessibilityExecutor(response: Self.translatorResponse)
+    var request = Idb_AccessibilityInfoRequest()
+    if byMarker {
+      request.marker = "OK"
+    }
+    let call = CallTelemetry()
+
+    let response = try await CallTelemetry.$current.withValue(call) {
+      try await AccessibilityInfoMethodHandler.respond(to: request, using: executor)
+    }
+
+    #expect(
+      call.ints == ["ax_element_count": 114, "ax_round_trips": 225, "ax_profile_read_ms": 72, "ax_profile_total_ms": 81])
+    #expect(call.normals == ["ax_backend": "ax", "ax_translator_reads": "batched", "ax_transport": "bridge"])
+    #expect(!response.json.contains("profile"), "the caller did not ask for a profile, so none is reported")
+  }
+
+  @Test
+  func aReadWithoutTranslatorMetricsRecordsOnlyItsBackend() {
+    let call = CallTelemetry()
+    AccessibilityReadTelemetry.record(
+      AccessibilityElementsResponse(elements: .single(AccessibilityDocumentElement()), backend: .axBridgeExclusive), into: call)
+    #expect(call.ints.isEmpty)
+    #expect(call.normals == ["ax_backend": "axbridge-exclusive"])
   }
 }

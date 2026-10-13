@@ -158,11 +158,18 @@ public final class IDBCommandExecutor {
 
   /// Describes the single element `query` names, serialized in `options.format`.
   public func accessibility_describe(query: AccessibilityElementQuery, options: AccessibilityRequestOptions, backend: UIAutomationBackend = .accessibility) async throws -> Data {
+    try await accessibility_describe_response(query: query, options: options, backend: backend)
+      .formattedOutputJSON(format: options.format)
+  }
+
+  /// The read itself, before it is formatted, so a caller can also report how the read went.
+  public func accessibility_describe_response(
+    query: AccessibilityElementQuery, options: AccessibilityRequestOptions, backend: UIAutomationBackend = .accessibility
+  ) async throws -> AccessibilityElementsResponse {
     guard let simulator = target as? Simulator else {
       throw IDBCommandError.simulatorOnlyOperation(operation: "describe accessibility", targetDescription: String(describing: target))
     }
     return try await simulator.uiAutomation(backend: backend).describe(query, options: options)
-      .formattedOutputJSON(format: options.format)
   }
 
   public func accessibility_wait(query: AccessibilityElementQuery, backend: UIAutomationBackend, timeout: TimeInterval, pollInterval: TimeInterval) async throws {
