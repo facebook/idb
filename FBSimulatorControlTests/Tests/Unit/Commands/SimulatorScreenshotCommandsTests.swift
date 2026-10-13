@@ -6,7 +6,8 @@
  */
 
 @testable import FBSimulatorControl
-import XCTest
+import Foundation
+import Testing
 
 private let inner = SimulatorDisplay(
   uniqueID: "inner", name: "inner", activity: .active, isPrimary: false, isIntegrated: true,
@@ -23,22 +24,26 @@ private func capture(
   try await SimulatorScreenshotCommands.capture(resolveDisplay: resolveDisplay, display: display, mainScreen: mainScreen, logger: logger)
 }
 
-final class SimulatorScreenshotCommandsTests: XCTestCase {
-  func testActiveDisplayIsCaptured() async throws {
+@Suite
+struct SimulatorScreenshotCommandsTests {
+  @Test
+  func activeDisplayIsCaptured() async throws {
     let captured = try await capture()
-    XCTAssertEqual(captured, "display inner")
+    #expect(captured == "display inner")
   }
 
-  func testActiveDisplayFailures() async throws {
+  @Test
+  func activeDisplayFailures() async throws {
     let logger = CapturingLogger()
     let unselected = try await capture(resolveDisplay: { throw Failure() }, logger: logger)
-    XCTAssertEqual(unselected, "main screen")
+    #expect(unselected == "main screen")
     let uncaptured = try await capture(display: { _ in throw Failure() }, logger: logger)
-    XCTAssertEqual(uncaptured, "main screen")
-    XCTAssertEqual(logger.messages.count, 2)
+    #expect(uncaptured == "main screen")
+    #expect(logger.messages.count == 2)
   }
 
-  func testOnlyAnIdentifiedActiveDisplayIsCaptured() async throws {
+  @Test
+  func onlyAnIdentifiedActiveDisplayIsCaptured() async throws {
     let lcd = SimulatorDisplay(
       uniqueID: "lcd", name: "lcd", activity: .inactive, isPrimary: true, isIntegrated: true, bounds: inner.bounds, scale: 3,
       rotation: .upright)
@@ -51,27 +56,30 @@ final class SimulatorScreenshotCommandsTests: XCTestCase {
     ]
     for (resolution, expected) in resolutions {
       let captured = try await capture(resolveDisplay: { resolution })
-      XCTAssertEqual(captured, expected, "\(resolution)")
+      #expect(captured == expected, "\(resolution)")
     }
   }
 
-  func testTheDisplayIsResolvedOnceATransitionSettles() async throws {
+  @Test
+  func theDisplayIsResolvedOnceATransitionSettles() async throws {
     let displays = DisplayCommandsDouble([.success(.transitioning(incoming: nil)), .success(.reporting(.selected(inner)))])
     let resolved = try await SimulatorScreenshotCommands.resolution(of: displays)
-    XCTAssertEqual(resolved, .target(.selected(inner)))
+    #expect(resolved == .target(.selected(inner)))
   }
 
-  func testCancellationIsNotAFallback() async {
+  @Test
+  func cancellationIsNotAFallback() async {
     do {
       _ = try await capture(resolveDisplay: { throw CancellationError() })
-      XCTFail("Expected cancellation")
-    } catch { XCTAssertTrue(error is CancellationError) }
+      Issue.record("Expected cancellation")
+    } catch { #expect(error is CancellationError) }
   }
 
-  func testMainScreenFailureFailsTheScreenshot() async {
+  @Test
+  func mainScreenFailureFailsTheScreenshot() async {
     do {
       _ = try await capture(resolveDisplay: { throw Failure() }, mainScreen: { throw Failure() })
-      XCTFail("Expected the main screen failure")
-    } catch { XCTAssertTrue(error is Failure) }
+      Issue.record("Expected the main screen failure")
+    } catch { #expect(error is Failure) }
   }
 }
