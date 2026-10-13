@@ -7,42 +7,47 @@
 
 import FBControlCore
 @testable import FBSimulatorControl
-import XCTest
+import Foundation
+import Testing
 
 /// What `launchConsumingOutput` hands back from a process spawned inside the simulator,
 /// driven against a device double that writes both streams and exits at once.
-final class SimulatorRuntimeToolCommandsTests: XCTestCase {
+@Suite
+struct SimulatorRuntimeToolCommandsTests {
 
-  func testCapturesBothStreamsAndReturnsANonZeroExitCode() async throws {
+  @Test
+  func capturesBothStreamsAndReturnsANonZeroExitCode() async throws {
     let device = ToolSpawnDevice(stdOut: Data("out\n".utf8), stdErr: Data("err\n".utf8), statLoc: 3 << 8)
     let commands = SimulatorRuntimeToolCommands(simulator: SimulatorTestSupport.testableSimulator(withDevice: device))
 
     let output = try await commands.launchConsumingOutput(launchPath: "/bin/sh", arguments: ["-c", "true"], environment: ["E": "1"])
 
-    XCTAssertEqual(output.stdout, Data("out\n".utf8))
-    XCTAssertEqual(output.stderr, Data("err\n".utf8))
-    XCTAssertEqual(output.exitCode, 3, "Exit codes are not interpreted, so a non-zero exit is returned rather than thrown")
-    let options = try XCTUnwrap(device.spawnedOptions)
-    XCTAssertEqual(options["arguments"] as? [String], ["/bin/sh", "-c", "true"])
-    XCTAssertEqual(options["environment"] as? [String: String], ["E": "1"])
+    #expect(output.stdout == Data("out\n".utf8))
+    #expect(output.stderr == Data("err\n".utf8))
+    #expect(output.exitCode == 3, "Exit codes are not interpreted, so a non-zero exit is returned rather than thrown")
+    let options = try #require(device.spawnedOptions)
+    #expect(options["arguments"] as? [String] == ["/bin/sh", "-c", "true"])
+    #expect(options["environment"] as? [String: String] == ["E": "1"])
   }
 
-  func testGivesTheProcessOnlyTheEnvironmentItIsHanded() async throws {
+  @Test
+  func givesTheProcessOnlyTheEnvironmentItIsHanded() async throws {
     let device = ToolSpawnDevice()
     let commands = SimulatorRuntimeToolCommands(simulator: SimulatorTestSupport.testableSimulator(withDevice: device))
 
     _ = try await commands.launchConsumingOutput(launchPath: "/bin/sh")
 
-    XCTAssertEqual(device.spawnedOptions?["environment"] as? [String: String], [:])
+    #expect(device.spawnedOptions?["environment"] as? [String: String] == [:])
   }
 
-  func testThrowsWhenTheProcessIsSignalled() async throws {
+  @Test
+  func throwsWhenTheProcessIsSignalled() async throws {
     let device = ToolSpawnDevice(statLoc: SIGKILL)
     let commands = SimulatorRuntimeToolCommands(simulator: SimulatorTestSupport.testableSimulator(withDevice: device))
 
     do {
       let output = try await commands.launchConsumingOutput(launchPath: "/bin/sh")
-      XCTFail("Expected a signalled process to throw, but it returned exit code \(output.exitCode)")
+      Issue.record("Expected a signalled process to throw, but it returned exit code \(output.exitCode)")
     } catch {
       // Expected: there is no exit code to report.
     }
