@@ -7,6 +7,7 @@
 
 import CoreGraphics
 import FBControlCore
+import FBSimulatorBridgeProtocol
 import FBSimulatorControl
 import Foundation
 
@@ -171,7 +172,7 @@ extension AXBridgeSnapshotDecoder {
       guard let raw = (node[AXWire.Node.translatorSubrole.rawValue] as? NSNumber)?.intValue else {
         return nil
       }
-      return AXRoleVocabulary.name(forTranslatorSubrole: raw)
+      return BridgeAXTranslatorSubrole(rawValue: raw)?.name
     }
 
     /// The role name for the translator's own role integer, or nil when the wire carries none or the
@@ -180,7 +181,7 @@ extension AXBridgeSnapshotDecoder {
       guard let raw = (node[AXWire.Node.translatorRole.rawValue] as? NSNumber)?.intValue else {
         return nil
       }
-      return AXRoleVocabulary.name(forTranslatorRole: raw)
+      return BridgeAXTranslatorRole(rawValue: raw)?.name
     }
 
     /// The attribute when it arrived as a class name; nil when it arrived as a number.
