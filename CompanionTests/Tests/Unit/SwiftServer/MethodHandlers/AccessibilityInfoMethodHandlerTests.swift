@@ -9,9 +9,10 @@
 @preconcurrency import FBControlCore
 import FBSimulatorAX
 import FBSimulatorControl
+import Foundation
 import GRPCCore
 import IDBGRPCSwift
-import XCTest
+import Testing
 
 /// Records the options the handler hands the command executor, so a test can read them without a
 /// simulator. `IDBCommandExecutor` is a `public final class`; `AccessibilityDescribing` is the seam
@@ -45,9 +46,11 @@ private final class RecordingAccessibilityExecutor: AccessibilityDescribing {
 /// lose the request's `--key`/`--profile`/`--collect-frame-coverage` by reaching the executor with a
 /// format-only options set. `AccessibilityInfoRequestTranslation.options(from:)` carries them for
 /// both paths, so coverage on that translation alone does not guard the marker path.
-final class AccessibilityInfoMethodHandlerTests: XCTestCase {
+@Suite
+struct AccessibilityInfoMethodHandlerTests {
 
-  func testMarkerReadCarriesTheRequestedKeysToTheExecutor() async throws {
+  @Test
+  func markerReadCarriesTheRequestedKeysToTheExecutor() async throws {
     let executor = RecordingAccessibilityExecutor()
     var request = Idb_AccessibilityInfoRequest()
     request.marker = "OK"
@@ -55,16 +58,17 @@ final class AccessibilityInfoMethodHandlerTests: XCTestCase {
 
     _ = try await AccessibilityInfoMethodHandler.respond(to: request, using: executor)
 
-    let options = try XCTUnwrap(
+    let options = try #require(
       executor.describeOptions, "a marker read must reach the describe executor, not the at-point path")
-    let label = try XCTUnwrap(AXKeys(rawValue: "AXLabel"))
-    XCTAssertEqual(
-      options.keys, Set([label]),
+    let label = try #require(AXKeys(rawValue: "AXLabel"))
+    #expect(
+      options.keys == Set([label]),
       "the request's --key must reach the executor on the marker path, not a format-only default set")
-    XCTAssertEqual(executor.pointReadCount, 0, "a marker read must not fall through to the at-point read")
+    #expect(executor.pointReadCount == 0, "a marker read must not fall through to the at-point read")
   }
 
-  func testMarkerReadCarriesProfilingAndFrameCoverageToTheExecutor() async throws {
+  @Test
+  func markerReadCarriesProfilingAndFrameCoverageToTheExecutor() async throws {
     let executor = RecordingAccessibilityExecutor()
     var request = Idb_AccessibilityInfoRequest()
     request.marker = "OK"
@@ -73,9 +77,9 @@ final class AccessibilityInfoMethodHandlerTests: XCTestCase {
 
     _ = try await AccessibilityInfoMethodHandler.respond(to: request, using: executor)
 
-    let options = try XCTUnwrap(executor.describeOptions)
-    XCTAssertTrue(options.enableProfiling, "--profile is a read option and a marker read is a read")
-    XCTAssertTrue(
+    let options = try #require(executor.describeOptions)
+    #expect(options.enableProfiling, "--profile is a read option and a marker read is a read")
+    #expect(
       options.collectFrameCoverage, "--collect-frame-coverage is a read option and a marker read is a read")
   }
 }
