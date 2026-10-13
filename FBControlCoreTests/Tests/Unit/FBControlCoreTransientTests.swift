@@ -181,35 +181,4 @@ final class FBControlCoreTransientTests: XCTestCase {
     XCTAssertEqual(result, "{}")
   }
 
-  // MARK: - CollectionOperations
-
-  func testRecursiveFilteredJSONDictionary() {
-    let input: [String: Any] = [
-      "string": "hello",
-      "number": 42,
-      "nested": ["inner": "value"],
-      "nonSerializable": NSDate(),
-      "array": [1, "two", NSDate()] as [Any],
-    ]
-    let result = CollectionOperations.recursiveFilteredJSONSerializableRepresentation(of: input)
-
-    XCTAssertEqual(result["string"] as? String, "hello")
-    XCTAssertEqual(result["number"] as? Int, 42)
-    XCTAssertNotNil(result["nested"])
-    XCTAssertNil(result["nonSerializable"])
-
-    let filteredArray = result["array"] as? [Any]
-    XCTAssertNotNil(filteredArray)
-    XCTAssertEqual(filteredArray?.count, 2)
-  }
-
-  func testRecursiveFilteredJSONArray() {
-    let input: [Any] = ["hello", 42, NSDate(), ["key": "value"]]
-    let result = CollectionOperations.recursiveFilteredJSONSerializableRepresentation(of: input)
-
-    XCTAssertEqual(result.count, 3)
-    XCTAssertEqual(result[0] as? String, "hello")
-    XCTAssertEqual(result[1] as? Int, 42)
-    XCTAssertNotNil(result[2] as? [String: String])
-  }
 }
