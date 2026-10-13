@@ -253,8 +253,6 @@ struct AccessibilityInfoRequestTranslationTests {
   func optionsPinTheHandlerDefaults() throws {
     let options = try AccessibilityInfoRequestTranslation.options(from: .init(), format: .nested)
     #expect((options.format) == (.nested))
-    // Per-element logging is off by default: it floods stderr on the serialization critical path.
-    #expect(!(options.enableLogging))
     #expect(!(options.enableProfiling), "profiling is collected only when the request asks")
     #expect(!(options.collectFrameCoverage), "frame coverage is collected only when the request asks")
   }

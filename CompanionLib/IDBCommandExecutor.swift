@@ -230,7 +230,7 @@ public final class IDBCommandExecutor {
 
   public func accessibility_info_at_point(_ value: NSValue?, format: AccessibilityOutputFormat) async throws -> AccessibilityElementsResponse {
     return try await accessibility_info_at_point(
-      value, options: AccessibilityRequestOptions(format: format, enableLogging: false))
+      value, options: AccessibilityRequestOptions(format: format))
   }
 
   public func accessibility_info_at_point(_ value: NSValue?, options: AccessibilityRequestOptions, backend: UIAutomationBackend = .accessibility) async throws -> AccessibilityElementsResponse {

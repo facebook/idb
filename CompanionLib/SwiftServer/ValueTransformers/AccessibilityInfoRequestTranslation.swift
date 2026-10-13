@@ -72,7 +72,6 @@ enum AccessibilityInfoRequestTranslation {
     return AccessibilityRequestOptions(
       format: format,
       keys: keys,
-      enableLogging: false,
       enableProfiling: request.profile,
       collectFrameCoverage: request.collectFrameCoverage,
       filter: filter(from: request.filter),

@@ -21,7 +21,7 @@ extension Simulator {
   /// a mock `AXPTranslator`.
   static func createAccessibilityTranslationDispatcher(withTranslator translator: Any) -> AXTranslationDispatcher {
     let axTranslator = unsafeBitCast(translator as AnyObject, to: AXPTranslator.self)
-    let dispatcher = AXTranslationDispatcher(translator: axTranslator, logger: nil)
+    let dispatcher = AXTranslationDispatcher(translator: axTranslator)
     axTranslator.bridgeTokenDelegate = dispatcher
     return dispatcher
   }

@@ -226,9 +226,6 @@ public struct AccessibilityRequestOptions: Sendable {
   /// Which properties a read returns.
   public var keys: Set<AXKeys>
 
-  /// Log accessibility requests and responses to the simulator's logger. Default: `false`.
-  public var enableLogging: Bool
-
   /// Collect profiling data (element counts, timing metrics). Default: `false`.
   public var enableProfiling: Bool
 
@@ -272,7 +269,6 @@ public struct AccessibilityRequestOptions: Sendable {
   public init(
     format: AccessibilityOutputFormat = .default,
     keys: Set<AXKeys> = AXKeys.defaultSet,
-    enableLogging: Bool = false,
     enableProfiling: Bool = false,
     collectFrameCoverage: Bool = false,
     remoteContentOptions: AccessibilityRemoteContentOptions? = nil,
@@ -284,7 +280,6 @@ public struct AccessibilityRequestOptions: Sendable {
   ) {
     self.format = format
     self.keys = keys
-    self.enableLogging = enableLogging
     self.enableProfiling = enableProfiling
     self.collectFrameCoverage = collectFrameCoverage
     self.remoteContentOptions = remoteContentOptions
@@ -298,6 +293,6 @@ public struct AccessibilityRequestOptions: Sendable {
 
 extension AccessibilityRequestOptions: CustomStringConvertible {
   public var description: String {
-    "<AccessibilityRequestOptions: format=\(format.rawValue), keys=\(keys), logging=\(enableLogging), profiling=\(enableProfiling), collectFrameCoverage=\(collectFrameCoverage), remote=\(String(describing: remoteContentOptions)), filter=\(filter.rawValue), match=\(match.map(String.init(describing:)) ?? "none"), traversal=\(traversalStrategy.rawValue), translatorReads=\(translatorReads.rawValue)\(clientType.map { ", clientType=\($0)" } ?? "")>"
+    "<AccessibilityRequestOptions: format=\(format.rawValue), keys=\(keys), profiling=\(enableProfiling), collectFrameCoverage=\(collectFrameCoverage), remote=\(String(describing: remoteContentOptions)), filter=\(filter.rawValue), match=\(match.map(String.init(describing:)) ?? "none"), traversal=\(traversalStrategy.rawValue), translatorReads=\(translatorReads.rawValue)\(clientType.map { ", clientType=\($0)" } ?? "")>"
   }
 }

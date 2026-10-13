@@ -63,8 +63,6 @@ final class AccessibilityElement {
     if closed {
       throw AccessibilityError.closedElement(operation: "serialize")
     }
-    // The dispatcher's XPC callbacks read `request.logger`.
-    request.logger = options.enableLogging ? simulator?.logger : nil
     let request = self.request
     let element = self.element
     let isMarkerMatch = self.isMarkerMatch

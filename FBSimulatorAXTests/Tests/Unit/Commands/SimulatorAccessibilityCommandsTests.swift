@@ -94,7 +94,6 @@ final class SimulatorAccessibilityCommandsTests: XCTestCase {
 
     var options = AccessibilityRequestOptions()
     options.format = .default
-    options.enableLogging = true
     options.enableProfiling = enableProfiling
 
     let response = try await element.serialize(with: options)
@@ -208,7 +207,6 @@ final class SimulatorAccessibilityCommandsTests: XCTestCase {
 
     var options = AccessibilityRequestOptions()
     options.format = .default
-    options.enableLogging = true
     options.enableProfiling = enableProfiling
 
     let response = try await element.serialize(with: options)
@@ -235,7 +233,6 @@ final class SimulatorAccessibilityCommandsTests: XCTestCase {
 
     var options = AccessibilityRequestOptions()
     options.format = .nested
-    options.enableLogging = true
     options.enableProfiling = enableProfiling
 
     let response = try await element.serialize(with: options)
@@ -351,7 +348,6 @@ final class SimulatorAccessibilityCommandsTests: XCTestCase {
     var options = AccessibilityRequestOptions()
     options.format = .default
     options.keys = Set([AXKeys.label, .frameDict])
-    options.enableLogging = true
     options.enableProfiling = enableProfiling
 
     let response = try await element.serialize(with: options)
@@ -409,7 +405,6 @@ final class SimulatorAccessibilityCommandsTests: XCTestCase {
     var options = AccessibilityRequestOptions()
     options.format = .default
     options.keys = Set([AXKeys.label, .type, .frameDict])
-    options.enableLogging = true
     options.enableProfiling = enableProfiling
 
     let response = try await element.serialize(with: options)

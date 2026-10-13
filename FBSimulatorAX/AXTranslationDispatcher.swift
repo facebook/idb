@@ -45,7 +45,6 @@ private final class AXPSerializedJob<T>: @unchecked Sendable {
 final class AXTranslationDispatcher: NSObject, AXPTranslationTokenDelegateHelper {
 
   private weak var translator: AXPTranslator?
-  private let logger: ControlCoreLogger?
   private let lock = NSLock()
   private var tokenToRequest: [String: AXTranslationRequest] = [:]
 
@@ -58,9 +57,8 @@ final class AXTranslationDispatcher: NSObject, AXPTranslationTokenDelegateHelper
   // also keeps their synchronous XPC waits off the cooperative thread pool.
   private static let axpWorkQueue = DispatchQueue(label: "com.facebook.fbsimulatorcontrol.accessibility_translator.work")
 
-  init(translator: AXPTranslator, logger: ControlCoreLogger?) {
+  init(translator: AXPTranslator) {
     self.translator = translator
-    self.logger = logger
     super.init()
   }
 
@@ -122,21 +120,13 @@ final class AXTranslationDispatcher: NSObject, AXPTranslationTokenDelegateHelper
     lock.lock()
     defer { lock.unlock() }
     tokenToRequest[request.token] = request
-    logger?.log("Registered request with token \(request.token)")
   }
 
+  /// Idempotent: remediation may already have replaced the request.
   func popRequest(_ request: AXTranslationRequest) {
     lock.lock()
-    let present = tokenToRequest[request.token] != nil
-    if present {
-      tokenToRequest.removeValue(forKey: request.token)
-    }
-    lock.unlock()
-    if present {
-      logger?.log("Removed request with token \(request.token)")
-    } else {
-      logger?.log("popRequest: token \(request.token) not found (already popped or replaced by remediation), ignoring")
-    }
+    defer { lock.unlock() }
+    tokenToRequest.removeValue(forKey: request.token)
   }
 
   private func request(forToken token: String) -> AXTranslationRequest? {
@@ -155,14 +145,10 @@ final class AXTranslationDispatcher: NSObject, AXPTranslationTokenDelegateHelper
   // must never run on the main queue.
   func accessibilityTranslationDelegateBridgeCallback(withToken token: String) -> AXPTranslationCallback {
     guard let request = request(forToken: token) else {
-      return { [weak self] _ in
-        self?.logger?.log("Request with token \(token) is gone. Returning empty response")
-        return Self.emptyResponse()
-      }
+      return { _ in Self.emptyResponse() }
     }
     let transport = request.transport
     let collector = request.collector
-    let logger = request.logger
     let timeoutSeconds = request.requestTimeoutSeconds
     let clientType = request.clientType
     return { axRequest in
@@ -170,16 +156,11 @@ final class AXTranslationDispatcher: NSObject, AXPTranslationTokenDelegateHelper
         return Self.emptyResponse()
       }
       axRequest.clientType = clientType.rawValue
-      logger?.log("Sending Accessibility Request \(String(describing: axRequest))")
       let xpcStart = CFAbsoluteTimeGetCurrent()
       let response = transport.send(axRequest, timeout: timeoutSeconds)
       collector.addXPCCallDuration(CFAbsoluteTimeGetCurrent() - xpcStart)
-      guard let response else {
-        logger?.log("Accessibility request \(String(describing: axRequest)) timed out after \(timeoutSeconds)s — returning empty response")
-        return Self.emptyResponse()
-      }
-      logger?.log("Got Accessibility Response \(String(describing: response))")
-      return response
+      // Unanswered within the timeout: the translator reads the empty response as "no value".
+      return response ?? Self.emptyResponse()
     }
   }
 
@@ -188,7 +169,6 @@ final class AXTranslationDispatcher: NSObject, AXPTranslationTokenDelegateHelper
   }
 
   func accessibilityTranslationRootParent(withToken token: String) -> Any? {
-    logger?.log("Delegate method 'accessibilityTranslationRootParentWithToken:', with unknown implementation called with token \(token). Returning nil.")
-    return nil
+    nil
   }
 }
