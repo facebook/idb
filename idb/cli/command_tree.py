@@ -74,6 +74,7 @@ from idb.cli.commands.file import (
     FSWriteCommand,
 )
 from idb.cli.commands.focus import FocusCommand
+from idb.cli.commands.forward import ForwardCommand
 from idb.cli.commands.framework import FrameworkInstallCommand
 from idb.cli.commands.help import HelpCommand
 from idb.cli.commands.hid import (
@@ -237,6 +238,7 @@ def build_builtin_commands(shell_command: ShellCommand) -> list[Command]:
     """
     return [
         HelpCommand(),
+        ForwardCommand(),
         AppInstallCommand(),
         AppUninstallCommand(),
         AppListCommand(),
