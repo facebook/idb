@@ -126,7 +126,7 @@ extension BridgeAXTraversal {
 }
 
 /// How the accessibility-translation backend fetches each element's attributes. Ignored by axbridge, whose
-/// guest fetches the tree itself.
+/// guest fetches the tree itself. Reported on every read's metrics; only idb's own equivalence checks select it.
 public enum AXTranslatorReads: String, Sendable, CaseIterable {
   /// One multiple-attribute request per element.
   case batched
@@ -248,8 +248,9 @@ public struct AccessibilityRequestOptions: Sendable {
   /// How the read asks to traverse.
   public var traversalStrategy: AXTraversalStrategy
 
-  /// How the accessibility-translation backend fetches each element's attributes. Default: `.batched`.
-  public var translatorReads: AXTranslatorReads
+  /// How the accessibility-translation backend fetches each element's attributes. Always `.batched` for a
+  /// caller outside idb; package-scoped so idb's smoke suite can compare against the per-attribute reads.
+  package var translatorReads: AXTranslatorReads = .batched
 
   /// The assistive client the read's translator requests claim to come from, or nil for the default.
   /// Only `resolvedClientType` should be read below this layer.
@@ -275,7 +276,6 @@ public struct AccessibilityRequestOptions: Sendable {
     filter: AccessibilityElementFilter = .all,
     match: AccessibilityMatch? = nil,
     traversalStrategy: AXTraversalStrategy = .auto,
-    translatorReads: AXTranslatorReads = .batched,
     clientType: AXClientType? = nil
   ) {
     self.format = format
@@ -286,7 +286,6 @@ public struct AccessibilityRequestOptions: Sendable {
     self.filter = filter
     self.match = match
     self.traversalStrategy = traversalStrategy
-    self.translatorReads = translatorReads
     self.clientType = clientType
   }
 }

@@ -87,8 +87,8 @@ final class AXTranslationSmokeTests: ProvidedSimulatorTestCase {
     for clientType in [AXClientType.noClient, .xctest] {
       var roundTrips: [AXTranslatorReads: Int64] = [:]
       func read(_ reads: AXTranslatorReads) async throws -> [AccessibilityDocumentElement] {
-        let options = AccessibilityRequestOptions(
-          keys: Self.comparedKeys, enableProfiling: true, translatorReads: reads, clientType: clientType)
+        var options = AccessibilityRequestOptions(keys: Self.comparedKeys, enableProfiling: true, clientType: clientType)
+        options.translatorReads = reads
         let response = try await automation.describe(.frontmost, options: options)
         roundTrips[reads] = try XCTUnwrap(response.profilingData?.translatorProfile?.xpcCallCount)
         return response.elements.elements
