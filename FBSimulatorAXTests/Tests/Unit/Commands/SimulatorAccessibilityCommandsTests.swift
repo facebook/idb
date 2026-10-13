@@ -1609,14 +1609,21 @@ final class SimulatorAccessibilityCommandsTests: XCTestCase {
   }
 
   func testResolveApplicationByPidExposesProcessIdentifier() async throws {
-    // A by-pid target reads that specific app (regardless of what is frontmost), surfacing its pid.
+    // A by-pid target reads that specific app (regardless of what is frontmost), surfacing its pid. The service
+    // answers the application-object request.
     let root = AccessibilityTestElementBuilder.application(withLabel: "App", frame: CGRect(x: 0, y: 0, width: 100, height: 100), children: [])
-    try setUp(withRootElement: root)
+    let transport = AXTranslationTransportDouble(resultData: NSNumber(value: 777))
+    try setUp(withRootElement: root, transport: transport)
 
-    let element = try await simulator.accessibility.resolveElement(for: .application(pid: 777))
-    defer { element.close() }
-
-    XCTAssertEqual(element.processIdentifier, 777, "a by-pid resolve reads the app with that pid")
+    // BUG: the translator sends its application-object request with no bridge-delegate token, so the dispatcher
+    // finds no request to route it to, never reaches the transport, and the read fails — flipped in the following
+    // commit.
+    do {
+      let element = try await simulator.accessibility.resolveElement(for: .application(pid: 777))
+      element.close()
+      XCTFail("expected the by-pid resolve to fail")
+    } catch AccessibilityError.noTranslationObject {}
+    XCTAssertTrue(transport.requests.isEmpty, "the request never reaches the transport")
   }
 
   // MARK: - Concurrent access to the shared translator

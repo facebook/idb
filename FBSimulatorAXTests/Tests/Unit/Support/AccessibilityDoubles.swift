@@ -271,9 +271,12 @@ final class AXTranslationTransportDouble: AXTranslationTransport, @unchecked Sen
   private let lock = NSLock()
   private var _requests: [AXPTranslatorRequest] = []
   private let answers: Bool
+  private let resultData: NSNumber?
 
-  init(answers: Bool = true) {
+  /// `resultData` is what every answer carries; the empty response carries none.
+  init(answers: Bool = true, resultData: NSNumber? = nil) {
     self.answers = answers
+    self.resultData = resultData
   }
 
   var requests: [AXPTranslatorRequest] {
@@ -286,7 +289,11 @@ final class AXTranslationTransportDouble: AXTranslationTransport, @unchecked Sen
     lock.lock()
     _requests.append(request)
     lock.unlock()
-    return answers ? AXPTranslatorResponse.empty() as? AXPTranslatorResponse : nil
+    guard answers, let response = AXPTranslatorResponse.empty() as? AXPTranslatorResponse else {
+      return nil
+    }
+    response.resultData = resultData
+    return response
   }
 }
 
@@ -357,8 +364,17 @@ class AXPTranslatorDouble: NSObject {
   }
 
   @objc(translationApplicationObjectForPid:)
+  /// As the real translator does: asks the bridge with an application-object request that carries no
+  /// translation, and so no bridge-delegate token, and answers only if the bridge did.
   func translationApplicationObject(forPid pid: pid_t) -> AXPTranslationObjectDouble? {
     methodCalls.add("translationApplicationObjectForPid:\(pid)")
+    let request = AccessibilityTranslatorRequests.make(clientType: 0)
+    request?.setValue(1, forKey: "requestType")
+    request?.setValue(["pid": pid], forKey: "parameters")
+    let response = AccessibilityTranslatorRequests.send(request, through: bridgeTokenDelegate, token: "")
+    guard response?.value(forKey: "resultData") != nil else {
+      return nil
+    }
     let translation = AXPTranslationObjectDouble()
     translation.pid = pid
     return translation
