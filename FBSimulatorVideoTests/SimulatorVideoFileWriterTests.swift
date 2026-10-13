@@ -352,11 +352,18 @@ final class FBSimulatorVideoTests: XCTestCase {
   /// A recorder over a fake display surface writing to a temp path removed at teardown. The eager
   /// cadence (positive framesPerSecond) pushes frames on the clock from the mounted surface without
   /// needing frame-rendered events from the fake.
-  private func makeRecordingFixture(immediateSurface: IOSurface?, format: VideoStreamFormat = .compressedVideo(withCodec: .h264, transport: .fmp4), fileType: AVFileType = .mp4, chaptersEnabled: Bool = false, framesPerSecond: Int? = 30) -> (video: SimulatorVideo, path: String) {
-    let extensionName = fileType == .mov ? "mov" : "mp4"
+  private func makeRecordingFixture(immediateSurface: IOSurface?, format: VideoStreamFormat = .compressedVideo(withCodec: .h264, transport: .fmp4), container: SimulatorVideoContainer = .mp4, chaptersEnabled: Bool = false, framesPerSecond: Int? = 30, surface: FakeFramebufferSurface = FakeFramebufferSurface()) -> (video: SimulatorVideo, path: String) {
+    let extensionName: String
+    switch container {
+    case .mp4:
+      extensionName = "mp4"
+    case .mov:
+      extensionName = "mov"
+    case .webm:
+      extensionName = "webm"
+    }
     let path = (NSTemporaryDirectory() as NSString).appendingPathComponent("FBSimulatorVideoTests-\(UUID().uuidString).\(extensionName)")
     addTeardownBlock { try? FileManager.default.removeItem(atPath: path) }
-    let surface = FakeFramebufferSurface()
     surface.immediateSurface = immediateSurface
     let framebuffer = Framebuffer(surface: surface, logger: CapturingLogger())
     let configuration = VideoStreamConfiguration(
@@ -365,7 +372,7 @@ final class FBSimulatorVideoTests: XCTestCase {
       rateControl: nil,
       scaleFactor: nil,
       keyFrameRate: nil)
-    let video = SimulatorVideo.video(withFramebuffer: framebuffer, configuration: configuration, filePath: path, fileType: fileType, chaptersEnabled: chaptersEnabled, logger: CapturingLogger())
+    let video = SimulatorVideo.video(withFramebuffer: framebuffer, configuration: configuration, filePath: path, container: container, chaptersEnabled: chaptersEnabled, logger: CapturingLogger())
     return (video, path)
   }
 
@@ -412,7 +419,7 @@ final class FBSimulatorVideoTests: XCTestCase {
   func testJPEGRecordingHasDecodableFramesAndChapters() async throws {
     let (video, _) = makeRecordingFixture(
       immediateSurface: makeTestIOSurface(width: 128, height: 128),
-      format: .mjpeg(encoder: .allowSoftware), fileType: .mov, chaptersEnabled: true)
+      format: .mjpeg(encoder: .allowSoftware), container: .mov, chaptersEnabled: true)
     addTeardownBlock { _ = try? await video.stop() }
     try await video.startRecording()
     await video.stream.writeTimedMetadata("First")
@@ -498,6 +505,39 @@ final class FBSimulatorVideoTests: XCTestCase {
 
     let longest = try await Self.longestStretchWithoutASyncSample(in: url, over: recorded)
     XCTAssertLessThanOrEqual(longest, fragmentInterval, "longest stretch without a sync sample")
+  }
+
+  func testWebMRecordingFollowsADisplaySwitchAtEachSize() async throws {
+    try VideoEncodingHostSupport.skipUnlessHardwareH264Encoding()
+    let surface = FakeFramebufferSurface()
+    let (video, path) = makeRecordingFixture(immediateSurface: makeTestIOSurface(width: 128, height: 128), container: .webm, chaptersEnabled: true, surface: surface)
+
+    try await video.startRecording()
+    try await waitForFirstSample(at: path)
+    await video.stream.writeTimedMetadata("square")
+    surface.ioSurfaceChanged?(makeTestIOSurface(width: 96, height: 160))
+    try await Task.sleep(for: .seconds(1))
+    await video.stream.writeTimedMetadata("tall")
+    try await Task.sleep(for: .milliseconds(200))
+    _ = try await video.stop()
+
+    let recording = try WebMTestReader(path: path)
+    XCTAssertEqual(recording.docType, "webm")
+    let sizes = try recording.keyFrameDimensions().map { "\($0.width)x\($0.height)" }
+    XCTAssertEqual(sizes.first, "128x128")
+    XCTAssertEqual(sizes.last, "96x160", "the recording follows the switch at the new surface's size rather than letterboxing it")
+    XCTAssertEqual(recording.chapterTitles, ["square", "tall"])
+  }
+
+  func testWebMRecordingRefusesAnEncodingOtherThanH264OrHEVC() async throws {
+    let (video, _) = makeRecordingFixture(immediateSurface: makeTestIOSurface(width: 128, height: 128), format: .mjpeg(encoder: .allowSoftware), container: .webm)
+
+    do {
+      try await video.startRecording()
+      XCTFail("a WebM recording of MJPEG should not start")
+    } catch {
+      XCTAssertEqual(error.localizedDescription, "A WebM recording must be encoded as H.264 or HEVC")
+    }
   }
 
   func testSecondStopReturnsSameURLWithoutRefinalizing() async throws {

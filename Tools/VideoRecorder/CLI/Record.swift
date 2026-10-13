@@ -76,7 +76,7 @@ struct Record: AsyncParsableCommand {
     let candidates: [RecordingEncoding] = encoding == .auto ? [.hevc, .mjpeg] : [encoding]
     for candidate in candidates {
       let configuration = video.configuration(format: candidate.format)
-      let recording = SimulatorVideo.video(withFramebuffer: framebuffer, configuration: configuration, filePath: output, fileType: (output as NSString).pathExtension.lowercased() == "mov" ? .mov : .mp4, edgeInsets: insets, chaptersEnabled: chapters, logger: logger)
+      let recording = SimulatorVideo.video(withFramebuffer: framebuffer, configuration: configuration, filePath: output, container: (output as NSString).pathExtension.lowercased() == "mov" ? .mov : .mp4, edgeInsets: insets, chaptersEnabled: chapters, logger: logger)
       do {
         try await recording.startRecording()
         let deadline = ContinuousClock.now + .seconds(10)

@@ -11,9 +11,46 @@ import FBSimulatorControl
 import FBVideoCore
 import Foundation
 
+/// The file format a recording is written in.
+public enum SimulatorVideoContainer: Sendable {
+  /// An MP4 plays everywhere but presents every frame at one size, so a recording into it keeps its first frame's
+  /// canvas and letterboxes a later screen of another shape into it.
+  case mp4
+  /// A QuickTime movie, which behaves as an MP4.
+  case mov
+  /// WebM with H.264 or HEVC. A recording into it follows the screen's size through rotations and display switches,
+  /// for players that handle a change of size, such as Chrome. QuickTime cannot open it.
+  case webm
+
+  /// The container a file extension names, or nil for an extension that names none.
+  public init?(pathExtension: String) {
+    switch pathExtension.lowercased() {
+    case "mp4":
+      self = .mp4
+    case "mov":
+      self = .mov
+    case "webm":
+      self = .webm
+    default:
+      return nil
+    }
+  }
+}
+
+enum SimulatorVideoError: Error, LocalizedError {
+  case webMRequiresCompressedVideo
+
+  var errorDescription: String? {
+    switch self {
+    case .webMRequiresCompressedVideo:
+      return "A WebM recording must be encoded as H.264 or HEVC"
+    }
+  }
+}
+
 /// Records simulator video in-process. Drives the framebuffer through the shared
 /// `SimulatorVideoStream` encode pipeline with the configured cadence and muxes encoded frames
-/// into MP4 or MOV via `SimulatorVideoFileWriter` (`AVAssetWriter`).
+/// into MP4 or MOV via `SimulatorVideoFileWriter` (`AVAssetWriter`), or into WebM via `SimulatorVideoWebMWriter`.
 /// The byte-stream consumer is unused; only the recording file is produced.
 ///
 /// An actor: `hasStopped` guards the single stop and is set before the first suspension, so
@@ -22,6 +59,8 @@ public actor SimulatorVideo {
 
   /// The URL of the recording file.
   let outputURL: URL
+  private let container: SimulatorVideoContainer
+  private let format: VideoStreamFormat
   /// The underlying encode pipeline, exposed so callers can drive overlay/chapter/screenshot on the live
   /// recording. `nonisolated`: a constant of Sendable (actor) type, readable without a hop.
   public nonisolated let stream: SimulatorVideoStream
@@ -41,13 +80,23 @@ public actor SimulatorVideo {
   /// its own, so the gap is bounded by this interval whatever the screen is doing.
   private static let keyFrameInterval = Duration.seconds(SimulatorVideoFileWriter.movieFragmentInterval.seconds / 2)
 
-  public static func video(withFramebuffer framebuffer: Framebuffer, configuration: VideoStreamConfiguration, filePath: String, fileType: AVFileType = .mp4, edgeInsets: VideoStreamEdgeInsets = VideoStreamEdgeInsets(top: 0, bottom: 0, left: 0, right: 0), chaptersEnabled: Bool = false, logger: any ControlCoreLogger) -> SimulatorVideo {
-    SimulatorVideo(framebuffer: framebuffer, configuration: configuration, filePath: filePath, fileType: fileType, edgeInsets: edgeInsets, chaptersEnabled: chaptersEnabled, logger: logger)
+  public static func video(withFramebuffer framebuffer: Framebuffer, configuration: VideoStreamConfiguration, filePath: String, container: SimulatorVideoContainer = .mp4, edgeInsets: VideoStreamEdgeInsets = VideoStreamEdgeInsets(top: 0, bottom: 0, left: 0, right: 0), chaptersEnabled: Bool = false, logger: any ControlCoreLogger) -> SimulatorVideo {
+    SimulatorVideo(framebuffer: framebuffer, configuration: configuration, filePath: filePath, container: container, edgeInsets: edgeInsets, chaptersEnabled: chaptersEnabled, logger: logger)
   }
 
-  private init(framebuffer: Framebuffer, configuration: VideoStreamConfiguration, filePath: String, fileType: AVFileType, edgeInsets: VideoStreamEdgeInsets, chaptersEnabled: Bool, logger: any ControlCoreLogger) {
+  private init(framebuffer: Framebuffer, configuration: VideoStreamConfiguration, filePath: String, container: SimulatorVideoContainer, edgeInsets: VideoStreamEdgeInsets, chaptersEnabled: Bool, logger: any ControlCoreLogger) {
     self.outputURL = URL(fileURLWithPath: filePath)
-    let fileWriter = SimulatorVideoFileWriter(filePath: filePath, fileType: fileType, chaptersEnabled: chaptersEnabled, logger: logger)
+    self.container = container
+    self.format = configuration.format
+    let fileWriter: any RecordingFileWriter
+    switch container {
+    case .mp4:
+      fileWriter = SimulatorVideoFileWriter(filePath: filePath, fileType: .mp4, chaptersEnabled: chaptersEnabled, logger: logger)
+    case .mov:
+      fileWriter = SimulatorVideoFileWriter(filePath: filePath, fileType: .mov, chaptersEnabled: chaptersEnabled, logger: logger)
+    case .webm:
+      fileWriter = SimulatorVideoWebMWriter(filePath: filePath, chaptersEnabled: chaptersEnabled, logger: logger)
+    }
     self.fileWriter = fileWriter
     self.stream = SimulatorVideoStream.makeRecorder(framebuffer: framebuffer, configuration: configuration, edgeInsets: edgeInsets, fileWriter: fileWriter, logger: logger)
   }
@@ -55,6 +104,11 @@ public actor SimulatorVideo {
   // MARK: - Recording
 
   public func startRecording() async throws {
+    if case .webm = container {
+      guard case .compressedVideo = format else {
+        throw SimulatorVideoError.webMRequiresCompressedVideo
+      }
+    }
     // Encoded frames are routed to `fileWriter` (which opens lazily on its first sample, since
     // passthrough muxing needs that sample's format); the stream's byte consumer is unused, so a
     // no-op consumer satisfies its streaming bookkeeping (and never reports back-pressure).

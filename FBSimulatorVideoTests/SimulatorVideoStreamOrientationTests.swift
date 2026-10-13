@@ -33,7 +33,7 @@ final class SimulatorVideoStreamOrientationTests: XCTestCase {
   }
 
   private func startStream(
-    insets: VideoStreamEdgeInsets = VideoStreamEdgeInsets(top: 0, bottom: 0, left: 0, right: 0), recording: Bool = false,
+    insets: VideoStreamEdgeInsets = VideoStreamEdgeInsets(top: 0, bottom: 0, left: 0, right: 0), recordingFile: (any RecordingFileWriter)? = nil,
     configurationAtStart: SimulatorDisplayConfiguration? = nil
   ) async throws -> Started {
     let surface = FakeFramebufferSurface()
@@ -45,7 +45,7 @@ final class SimulatorVideoStreamOrientationTests: XCTestCase {
       edgeInsets: insets,
       cadence: .lazy,
       logger: CapturingLogger(),
-      encodedSampleConsumerOverride: recording ? DiscardingEncodedSampleConsumer() : nil)
+      encodedSampleConsumerOverride: recordingFile)
     try await stream.startStreaming(FBDataBuffer.accumulatingBuffer())
     return Started(stream: stream, surface: surface)
   }
@@ -91,7 +91,7 @@ final class SimulatorVideoStreamOrientationTests: XCTestCase {
   func testARecordingThroughARotation() async throws {
     let upright = display(width: 20, height: 30, rotation: .upright)
     let started = try await startStream(
-      insets: VideoStreamEdgeInsets(top: 4, bottom: 4, left: 0, right: 0), recording: true, configurationAtStart: configuration(upright))
+      insets: VideoStreamEdgeInsets(top: 4, bottom: 4, left: 0, right: 0), recordingFile: DiscardingEncodedSampleConsumer(), configurationAtStart: configuration(upright))
     started.surface.configurationChanged?(configuration(display(width: 20, height: 30, rotation: .clockwise), generation: 2))
     try await waitUntil { await started.stream.mountedSource?.width == 30 }
 
@@ -105,7 +105,7 @@ final class SimulatorVideoStreamOrientationTests: XCTestCase {
   func testARecordingThroughASwitchToALargerSurface() async throws {
     let upright = display(width: 20, height: 30, rotation: .upright)
     let started = try await startStream(
-      insets: VideoStreamEdgeInsets(top: 4, bottom: 4, left: 0, right: 0), recording: true, configurationAtStart: configuration(upright))
+      insets: VideoStreamEdgeInsets(top: 4, bottom: 4, left: 0, right: 0), recordingFile: DiscardingEncodedSampleConsumer(), configurationAtStart: configuration(upright))
     started.surface.ioSurfaceChanged?(makeTestIOSurface(width: 40, height: 60))
     try await waitUntil { await started.stream.mountedSource?.width == 40 }
 
@@ -116,10 +116,27 @@ final class SimulatorVideoStreamOrientationTests: XCTestCase {
     try await started.stream.stopStreaming()
   }
 
+  func testAWebMRecordingFollowsARotation() async throws {
+    let path = (NSTemporaryDirectory() as NSString).appendingPathComponent("\(UUID().uuidString).webm")
+    addTeardownBlock { try? FileManager.default.removeItem(atPath: path) }
+    let upright = display(width: 20, height: 30, rotation: .upright)
+    let started = try await startStream(
+      insets: VideoStreamEdgeInsets(top: 4, bottom: 4, left: 0, right: 0),
+      recordingFile: SimulatorVideoWebMWriter(filePath: path, logger: CapturingLogger()), configurationAtStart: configuration(upright))
+    started.surface.configurationChanged?(configuration(display(width: 20, height: 30, rotation: .clockwise), generation: 2))
+    try await waitUntil { await started.stream.mountedSource?.width == 30 }
+
+    let canvas = await started.stream.canvasSize
+    let screenshot = try pngSize(try await started.stream.captureCompositedScreenshot())
+    XCTAssertEqual(canvas, CGSize(width: 30, height: 28), "a WebM file can change size, so the recording follows the turned screen")
+    XCTAssertEqual(screenshot, CGSize(width: 30, height: 20))
+    try await started.stream.stopStreaming()
+  }
+
   func testARecordingStartedInARotatedInterfaceIsInItsOrientation() async throws {
     let turned = display(width: 20, height: 30, rotation: .clockwise)
     let started = try await startStream(
-      insets: VideoStreamEdgeInsets(top: 4, bottom: 4, left: 0, right: 0), recording: true, configurationAtStart: configuration(turned))
+      insets: VideoStreamEdgeInsets(top: 4, bottom: 4, left: 0, right: 0), recordingFile: DiscardingEncodedSampleConsumer(), configurationAtStart: configuration(turned))
     try await waitUntil { await started.stream.mountedSource?.width == 30 }
 
     let canvas = await started.stream.canvasSize
