@@ -1326,6 +1326,15 @@ class Client(ABC):
     async def focus(self) -> None:
         pass
 
+    async def forward_port(
+        self,
+        device_port: int,
+        input_stream: StreamReader,
+        output_stream: StreamWriter,
+    ) -> None:
+        """Forward one TCP connection until it ends; never replay it."""
+        raise NotImplementedError("Device port forwarding not implemented")
+
     async def dap(
         self,
         dap_path: str,

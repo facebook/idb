@@ -191,6 +191,7 @@ from idb.grpc.instruments import (
     translate_instruments_timings,
 )
 from idb.grpc.launch import drain_launch_stream, wait_for_launch_stream
+from idb.grpc.port_forward import forward_port
 from idb.grpc.screenshot import screenshot_from_grpc, screenshot_to_grpc
 from idb.grpc.status_details import RetryVerdictCodec
 from idb.grpc.stream import (
@@ -1973,6 +1974,15 @@ class Client(ClientBase):
                         self.logger.info(f"Trace written to {trace_file}")
 
             return result
+
+    @log_and_handle_exceptions("forward_port")
+    async def forward_port(
+        self,
+        device_port: int,
+        input_stream: StreamReader,
+        output_stream: StreamWriter,
+    ) -> None:
+        await forward_port(self.stub, device_port, input_stream, output_stream)
 
     @log_and_handle_exceptions("dap")
     async def dap(
