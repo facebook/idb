@@ -43,6 +43,7 @@ targets:
     type: library.static
     platform: macOS
     deploymentTarget: "15.0"
+    scheme: {}
     sources:
       - path: Tools/SimScope/SimScopeProtocol
     settings:
@@ -69,6 +70,7 @@ targets:
     type: library.static
     platform: macOS
     deploymentTarget: "15.0"
+    scheme: {}
     sources:
       - path: SimulatorIPC
     settings:
@@ -123,6 +125,7 @@ targets:
     type: library.static
     platform: macOS
     deploymentTarget: "15.0"
+    scheme: {}
     sources:
       - path: FBSimulatorBridgeProtocol
     settings:
@@ -318,6 +321,7 @@ targets:
     type: library.static
     platform: macOS
     deploymentTarget: "15.0"
+    scheme: {}
     sources:
       - path: Shims/Shimulator/Protocol
     settings:
@@ -371,6 +375,7 @@ targets:
     type: library.static
     platform: macOS
     deploymentTarget: "15.0"
+    scheme: {}
     sources:
       - path: Shims/Shimulator/AudioInjection/AudioInjectionController.swift
     settings:
@@ -397,6 +402,7 @@ targets:
     type: library.static
     platform: macOS
     deploymentTarget: "15.0"
+    scheme: {}
     sources:
       - path: ZstdDecompress
         excludes:
@@ -420,6 +426,7 @@ targets:
     type: library.static
     platform: macOS
     deploymentTarget: "15.0"
+    scheme: {}
     sources:
       - path: FBControlCoreObjC
         excludes:
