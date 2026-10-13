@@ -1336,6 +1336,22 @@ final class AXBridgeReadsTests: XCTestCase {
     XCTAssertEqual(label, "General Settings")
   }
 
+  // An element equal to the marker wins over an earlier one that only contains it.
+  func testMarkerPrefersAnExactMatchOverAnEarlierContainingOne() throws {
+    let elements = AXTreeWalk.describeAllElements(
+      fromTree: [
+        AXWire.Node.label.rawValue: "root",
+        AXWire.Node.children.rawValue: [
+          [AXWire.Node.label.rawValue: "OK nested", AXWire.Node.children.rawValue: [[String: Any]]()] as [String: Any],
+          [AXWire.Node.label.rawValue: "OK", AXWire.Node.children.rawValue: [[String: Any]]()] as [String: Any],
+        ],
+      ],
+      keys: AXKeys.defaultSet, nestedFormat: false, pid: 1
+    )
+    let match = AXTreeWalk.matchingElement(inElements: elements, markerValue: "OK", key: .label)
+    XCTAssertEqual(match?.label ?? nil, "OK")
+  }
+
   func testMarkerFrameCentreMatchesBySubstring() throws {
     // `tap`/`wait`/`set-value` resolve through frameCenter, so it must use the same predicate as the
     // describe matcher — otherwise a marker could be describable but not tappable.
