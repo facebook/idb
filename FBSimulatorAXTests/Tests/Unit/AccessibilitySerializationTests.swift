@@ -68,7 +68,7 @@ final class AccessibilitySerializationTests: XCTestCase {
 
   // Neither the profiling collector nor the seen-pid/is_remote decorator may change default-set node output.
   func testNodeDictionaryIsCollectorNeutral() throws {
-    let root = AXTreeWalk.snapshot(fromTree: Self.sampleTree(), keys: AXKeys.defaultSet, pid: 7)
+    let root = AXTreeWalk.snapshot(fromTree: Self.sampleTree(), pid: 7)
     for snapshot in [root] + root.children {
       let bare = AXNodeSerializer.nodeElement(
         forSnapshot: snapshot, keys: AXKeys.defaultSet, collector: nil
@@ -92,7 +92,7 @@ final class AccessibilitySerializationTests: XCTestCase {
   func testDecoratorTagsIsRemoteProvenanceAsBool() throws {
     var keysWithRemote = AXKeys.defaultSet
     keysWithRemote.insert(.isRemote)
-    let root = AXTreeWalk.snapshot(fromTree: Self.sampleTree(), keys: keysWithRemote, pid: 7)
+    let root = AXTreeWalk.snapshot(fromTree: Self.sampleTree(), pid: 7)
 
     let local = AXNodeSerializer.decoratedElement(
       forSnapshot: root, keys: keysWithRemote,
@@ -258,7 +258,7 @@ final class AccessibilitySerializationTests: XCTestCase {
     // *match* to a handle that still carries the root's `.frontmostApplication` request. This reproduces
     // that: the request kind says "tree", the element is the match, and `isMarkerMatch` is what tells
     // the request the caller asked for this element rather than the tree it was found in.
-    let match = AXTreeWalk.buildPlatformElementTree(from: Self.valueOnlyMatchTree(), pid: 7)
+    let match = AXSnapshotPlatformElementDouble(AXTreeWalk.snapshot(fromTree: Self.valueOnlyMatchTree(), pid: 7))
     var options = AccessibilityRequestOptions()
     options.keys = [.label, .value]
     options.filter = filter
@@ -870,7 +870,7 @@ final class AccessibilitySerializationTests: XCTestCase {
   // The named target is never filtered (it would not survive `.interactable` here); its descendants are walked
   // with the caller's filter exactly as a whole-tree read walks them.
   func testSingleElementReadKeepsTheTargetAndFiltersItsDescendants() throws {
-    let element = AXTreeWalk.buildPlatformElementTree(from: Self.unlabeledTargetTree(), pid: 7)
+    let element = AXSnapshotPlatformElementDouble(AXTreeWalk.snapshot(fromTree: Self.unlabeledTargetTree(), pid: 7))
     var options = AccessibilityRequestOptions()
     options.keys = [.label]
     options.filter = .interactable

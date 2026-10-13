@@ -168,13 +168,6 @@ extension AXPMacPlatformElementDouble: AXPlatformElement {
   func axIsExpanded() -> Bool { false }
   func axIsHidden() -> Bool { false }
   func axIsFocused() -> Bool { false }
-  // This double stands in for the legacy `AXPMacPlatformElement`, which has no counterpart for any of
-  // these, so declining to answer is what the real backend does too.
-  func axIsHittable() -> Bool? { nil }
-  func axHittablePoint() -> CGPoint? { nil }
-  func axCentrePoint() -> CGPoint? { nil }
-  func axIsUserInteractionEnabled() -> Bool? { nil }
-  func axExplainedBy() -> AXPlatformElement? { nil }
   func axCustomActionNames() -> [String] {
     (accessibilityCustomActions ?? []).compactMap { ($0 as? NSAccessibilityCustomAction)?.name }
   }
@@ -192,6 +185,41 @@ extension AXPMacPlatformElementDouble: AXWritableElement {
   func axPerformPress() -> Bool { accessibilityPerformPress() }
   func axScroll(_ direction: AccessibilityScrollDirection) {}
   func axSetValue(_ value: Any?) {}
+}
+
+// MARK: - Snapshot-backed AXPlatformElement Double
+
+/// Presents a decoded snapshot as a translator element, so a translator read can be driven from the same
+/// attribute-dictionary fixtures the guest-backed suites use. Attributes the snapshot does not carry read
+/// as the translator's defaults.
+final class AXSnapshotPlatformElementDouble: AXPlatformElement {
+  private let snapshot: AXElementSnapshot
+
+  init(_ snapshot: AXElementSnapshot) {
+    self.snapshot = snapshot
+  }
+
+  func axFrame() -> NSRect { snapshot.frame }
+  func axRole() -> String? { snapshot.role }
+  func axLabel() -> String? { snapshot.label }
+  func axValue() -> Any? { snapshot.stringValue }
+  func axIdentifier() -> String? { snapshot.identifier }
+  func axTitle() -> String? { snapshot.title }
+  func axHelp() -> String? { snapshot.help }
+  func axRoleDescription() -> String? { snapshot.roleDescription }
+  func axSubrole() -> String? { snapshot.subrole }
+  func axPlaceholderValue() -> String? { snapshot.placeholder }
+  func axIsEnabled() -> Bool? { snapshot.isEnabled }
+  func axIsRequired() -> Bool { snapshot.isRequired ?? false }
+  func axIsExpanded() -> Bool { snapshot.isExpanded ?? false }
+  func axIsHidden() -> Bool { snapshot.isHidden ?? false }
+  func axIsFocused() -> Bool { snapshot.isFocused ?? false }
+  func axCustomActionNames() -> [String] { snapshot.customActionNames ?? [] }
+  func axActionNames() -> [String] { [] }
+  func axTraits() -> [String]? { snapshot.traits }
+  func axChildren() -> [AXPlatformElement] { snapshot.children.map(AXSnapshotPlatformElementDouble.init) }
+  var axTranslationPid: pid_t { snapshot.pid }
+  func axSetBridgeDelegateToken(_ token: String?) {}
 }
 
 // MARK: - AXPTranslator Double

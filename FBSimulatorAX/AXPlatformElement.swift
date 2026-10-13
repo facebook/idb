@@ -11,8 +11,8 @@ import FBControlCore
 import FBSimulatorControl
 import Foundation
 
-/// The read-only accessibility attribute and traversal surface. Actions live in `AXWritableElement`,
-/// so the read-only axbridge projection conforms here without pretending it can act.
+/// A translator element as `AXElementSnapshot.read` sees it: one accessor per attribute, each a round trip
+/// to the simulator. Actions live in `AXWritableElement`.
 ///
 /// `AXPMacPlatformElement` is a private-framework class tests cannot subclass; the protocol admits test
 /// doubles without unsafe casts.
@@ -27,33 +27,11 @@ protocol AXPlatformElement: AnyObject {
   func axRoleDescription() -> String?
   func axSubrole() -> String?
   func axPlaceholderValue() -> String?
-  /// Whether the element is enabled, or nil when the backend cannot tell.
-  ///
-  /// Optional for the same reason as the attributes below: the guest-backed wires have no `enabled` to
-  /// send — the `XC_kAXXCAttribute*` namespace has no such member — so a definite `true` from them would
-  /// be invented rather than measured, and indistinguishable from a measured one.
   func axIsEnabled() -> Bool?
   func axIsRequired() -> Bool
   func axIsExpanded() -> Bool
   func axIsHidden() -> Bool
   func axIsFocused() -> Bool
-
-  /// Whether the accessibility server believes a touch reaches this element at all, the point it
-  /// believes a touch reaches, the element's own centre, and whether the view takes touches.
-  ///
-  /// Optional throughout, because "cannot answer" is a real answer here and has to be distinguishable
-  /// from a definite `false`: these come from `XC_kAXXC*` attributes that only the guest-backed wires
-  /// carry, and the legacy `AXPMacPlatformElement` path has no NSAccessibility counterpart for any of
-  /// them. A backend that answers nil reports `interactable` as an explicit null rather than fabricating
-  /// a judgement from attributes it never read.
-  func axIsHittable() -> Bool?
-  func axHittablePoint() -> CGPoint?
-  func axCentrePoint() -> CGPoint?
-  func axIsUserInteractionEnabled() -> Bool?
-
-  /// The element a hit-test at this one's centre found. Nil when the read did not ask, the backend
-  /// cannot answer, or nothing was there.
-  func axExplainedBy() -> AXPlatformElement?
   func axCustomActionNames() -> [String]
   func axActionNames() -> [String]
   func axTraits() -> [String]?
@@ -91,14 +69,6 @@ extension AXPMacPlatformElement: AXPlatformElement {
   func axIsExpanded() -> Bool { isAccessibilityExpanded() }
   func axIsHidden() -> Bool { isAccessibilityHidden() }
   func axIsFocused() -> Bool { isAccessibilityFocused() }
-
-  // NSAccessibility has no counterpart for any of these — `isAccessibilityHidden` is a self-declared
-  // property, not "something is on top of me" — so this backend declines to answer rather than guessing.
-  func axIsHittable() -> Bool? { nil }
-  func axHittablePoint() -> CGPoint? { nil }
-  func axCentrePoint() -> CGPoint? { nil }
-  func axIsUserInteractionEnabled() -> Bool? { nil }
-  func axExplainedBy() -> AXPlatformElement? { nil }
   func axCustomActionNames() -> [String] { (accessibilityCustomActions() ?? []).map { $0.name } }
   func axActionNames() -> [String] {
     // Read by message: the instance `accessibilityActionNames` is shadowed by a

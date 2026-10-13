@@ -18,7 +18,7 @@ enum AXTreeWalk {
   /// result is unfiltered so a caller can keep both the whole walk and the reported subset.
   static func describeAllElements(fromTree tree: [String: Any], keys: Set<AXKeys>, nestedFormat: Bool, pid: pid_t) -> [AccessibilityDocumentElement] {
     AXNodeSerializer.recursiveDescription(
-      fromSnapshot: snapshot(fromTree: tree, keys: keys, pid: pid),
+      fromSnapshot: snapshot(fromTree: tree, pid: pid),
       nestedFormat: nestedFormat,
       keys: keys,
       collector: nil,
@@ -26,37 +26,24 @@ enum AXTreeWalk {
     )
   }
 
-  /// The snapshot a serialization over `keys` consumes, read from an attribute-dictionary tree the guest
-  /// has already fetched.
-  static func snapshot(fromTree tree: [String: Any], keys: Set<AXKeys>, pid: pid_t) -> AXElementSnapshot {
-    AXElementSnapshot.read(
-      buildPlatformElementTree(from: tree, pid: pid),
-      plan: AXReadPlan(keys: keys, depth: .unlimited),
-      token: ""
-    )
+  /// The snapshot a serialization consumes, decoded from an attribute-dictionary tree the guest has
+  /// already fetched.
+  static func snapshot(fromTree tree: [String: Any], pid: pid_t) -> AXElementSnapshot {
+    AXBridgeSnapshotDecoder.snapshot(fromTree: tree, pid: pid)
   }
 
   /// The bounds a whole-tree read's frames are relative to, taken from the root node's own frame — for
   /// an application read the root is the application element, which spans the screen. `nil` when the
   /// root reports no usable frame, so an unknown screen is reported as unknown rather than as zero.
   ///
-  /// Reads the frame through the same element type the serializer uses, so this cannot disagree with
-  /// the frames on the elements it describes.
+  /// Decodes the frame as the serializer's snapshots do, so this cannot disagree with the frames on the
+  /// elements it describes.
   static func screenInfo(fromTree tree: [String: Any]) -> AccessibilityScreenInfo? {
-    let root = AXBridgePlatformElement(attributes: tree, children: [], pid: 0)
-    let frame = root.axFrame()
+    let frame = AXBridgeSnapshotDecoder.snapshot(fromNode: tree, pid: 0).frame
     guard frame.width > 0, frame.height > 0 else {
       return nil
     }
     return AccessibilityScreenInfo(width: Double(frame.width), height: Double(frame.height))
-  }
-
-  /// Recursively builds an `AXBridgePlatformElement` from a nested attribute-dictionary
-  /// node, tagging every node with the owning application's pid.
-  static func buildPlatformElementTree(from node: [String: Any], pid: pid_t) -> AXBridgePlatformElement {
-    let childNodes = (node[AXWire.Node.children.rawValue] as? [[String: Any]]) ?? []
-    let children = childNodes.map { buildPlatformElementTree(from: $0, pid: pid) }
-    return AXBridgePlatformElement(attributes: node, children: children, pid: pid)
   }
 
   /// The element a marker names: the first whose `key` value equals `markerValue`, otherwise the first

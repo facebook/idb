@@ -279,7 +279,7 @@ final class AXBridgeUIAutomation: AXBridgeTreeReader, @unchecked Sendable {
       guard let hit = try AXTreeRead(hitTestResponse: response) else {
         return nil
       }
-      let snapshot = AXTreeWalk.snapshot(fromTree: hit.tree, keys: options.serializationKeys, pid: hit.pid)
+      let snapshot = AXTreeWalk.snapshot(fromTree: hit.tree, pid: hit.pid)
       var formatted = AXNodeSerializer.formattedDescription(
         ofSnapshot: snapshot, nestedFormat: options.nestedFormat, keys: options.serializationKeys, collector: nil
       )

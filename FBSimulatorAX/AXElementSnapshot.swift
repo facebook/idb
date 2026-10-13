@@ -232,10 +232,11 @@ extension AXElementSnapshot {
 
 extension AXElementSnapshot {
 
-  /// The plan an explanation is read with: the fields an `AccessibilityElementRef` reports.
-  private static let explanationPlan = AXReadPlan(attributes: [.role, .identifier, .label], depth: .limited(0))
-
-  /// Reads `element` and its descendants against `plan`, one accessor per planned attribute. `token`
+  /// Reads a translator element and its descendants against `plan`, one accessor per planned attribute.
+  ///
+  /// The translator cannot say whether a touch reaches an element — NSAccessibility has no counterpart,
+  /// and `isAccessibilityHidden` is a self-declared property rather than "something is on top of me" — so
+  /// planned hittability and its explanation read as nil, fetching nothing. `token`
   /// routes a translator-backed element's reads to the request that owns them; it is set on every element
   /// before it is read, as the translator requires.
   static func read(_ element: AXPlatformElement, plan: AXReadPlan, token: String) -> AXElementSnapshot {
@@ -263,10 +264,6 @@ extension AXElementSnapshot {
     let placeholder = fetch(.placeholder) { element.axPlaceholderValue() }
     let isHidden = fetch(.hidden) { element.axIsHidden() }
     let isFocused = fetch(.focused) { element.axIsFocused() }
-    let hittability = fetch(.hittability) { readHittability(element) }
-    let explainedBy = fetch(.explainedBy) {
-      element.axExplainedBy().map { Self.read($0, plan: explanationPlan, token: token) }
-    }
     let children: [AXElementSnapshot] =
       plan.depth.descendant.map { depth -> [AXElementSnapshot] in
         let childPlan = AXReadPlan(attributes: attributes, depth: depth)
@@ -294,23 +291,7 @@ extension AXElementSnapshot {
       placeholder: placeholder,
       isHidden: isHidden,
       isFocused: isFocused,
-      hittability: hittability,
-      explainedBy: explainedBy,
       children: children
-    )
-  }
-
-  /// Nil, with nothing else read, when the backend cannot say whether a touch reaches the element.
-  private static func readHittability(_ element: AXPlatformElement) -> AXHittability? {
-    guard let isHittable = element.axIsHittable() else {
-      return nil
-    }
-    return AXHittability(
-      isHittable: isHittable,
-      isHidden: element.axIsHidden(),
-      isEnabled: element.axIsEnabled(),
-      isUserInteractionEnabled: element.axIsUserInteractionEnabled(),
-      hittablePoint: element.axHittablePoint()
     )
   }
 }
