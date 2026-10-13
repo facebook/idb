@@ -7,7 +7,8 @@
 
 import FBControlCore
 @testable import FBSimulatorControl
-import XCTest
+import Foundation
+import Testing
 
 /// A `SimDevice` stand-in that returns a canned `installedApps()` dictionary, letting the
 /// container-selection producers be exercised without a booted simulator. `Simulator`'s
@@ -28,13 +29,15 @@ private final class InstalledAppsStubDevice {
 }
 
 /// Locks the container path-mapping behaviour of `SimulatorFileCommands`.
-final class SimulatorFileCommandsTests: XCTestCase {
+@Suite
+struct SimulatorFileCommandsTests {
 
   private func makeSimulator(installedApps: [String: Any]) -> Simulator {
     SimulatorTestSupport.testableSimulator(withDevice: InstalledAppsStubDevice(apps: installedApps))
   }
 
-  func testApplicationContainersMapsDataContainerPathsAndSkipsAppsWithout() async throws {
+  @Test
+  func applicationContainersMapsDataContainerPathsAndSkipsAppsWithout() async throws {
     let simulator = makeSimulator(installedApps: [
       "com.example.app1": ["DataContainer": URL(fileURLWithPath: "/data/app1")],
       "com.example.app2": ["DataContainer": URL(fileURLWithPath: "/data/app2")],
@@ -43,10 +46,11 @@ final class SimulatorFileCommandsTests: XCTestCase {
 
     let mapping = try await simulator.file.withApplicationContainers { $0.pathMapping }
 
-    XCTAssertEqual(mapping, ["com.example.app1": "/data/app1", "com.example.app2": "/data/app2"])
+    #expect(mapping == ["com.example.app1": "/data/app1", "com.example.app2": "/data/app2"])
   }
 
-  func testGroupContainersMergesGroupPathsAcrossApps() async throws {
+  @Test
+  func groupContainersMergesGroupPathsAcrossApps() async throws {
     let simulator = makeSimulator(installedApps: [
       "com.example.app1": ["GroupContainers": ["group.a": URL(fileURLWithPath: "/groups/a")]],
       "com.example.app2": ["GroupContainers": ["group.b": URL(fileURLWithPath: "/groups/b")]],
@@ -55,6 +59,6 @@ final class SimulatorFileCommandsTests: XCTestCase {
 
     let mapping = try await simulator.file.withGroupContainers { $0.pathMapping }
 
-    XCTAssertEqual(mapping, ["group.a": "/groups/a", "group.b": "/groups/b"])
+    #expect(mapping == ["group.a": "/groups/a", "group.b": "/groups/b"])
   }
 }
