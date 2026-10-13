@@ -5,6 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+@preconcurrency import FBControlCore
 import Foundation
 
 private let ExtraDeviceSupportDirEnv = "IDB_EXTRA_DEVICE_SUPPORT_DIR"
@@ -192,11 +193,10 @@ public struct DeveloperDiskImage: Sendable, CustomStringConvertible {
   }
 
   public func compare(_ other: DeveloperDiskImage) -> ComparisonResult {
-    var comparison = version.majorVersion.compared(to: other.version.majorVersion)
-    if comparison != .orderedSame { return comparison }
-    comparison = version.minorVersion.compared(to: other.version.minorVersion)
-    if comparison != .orderedSame { return comparison }
-    return version.patchVersion.compared(to: other.version.patchVersion)
+    let lhs = (version.majorVersion, version.minorVersion, version.patchVersion)
+    let rhs = (other.version.majorVersion, other.version.minorVersion, other.version.patchVersion)
+    if lhs == rhs { return .orderedSame }
+    return lhs < rhs ? .orderedAscending : .orderedDescending
   }
 
 }
