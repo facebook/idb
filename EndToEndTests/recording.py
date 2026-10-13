@@ -48,6 +48,10 @@ def container_for(encoding: str) -> str:
     return container
 
 
+# What the recorder logs when it cannot identify the active display and records the main screen instead.
+MAIN_SCREEN_FALLBACK = "Capturing the main screen, as no active display is identified"
+
+
 class Recording:
     def __init__(
         self,
@@ -104,6 +108,12 @@ class Recording:
         self.annotate(self.log, "generic_text_log")
         self.annotate(Path(self.trace.name), "generic_text_log")
         self.annotate(Path(self.output.name), "generic_text_log")
+
+    def reads_display_configuration(self) -> bool:
+        """Whether the recorder could read the simulator's display configuration, which is how it follows a
+        rotation or a switch between displays. Where CoreSimulator lacks the display-info feature, it records the
+        main screen as it is laid out when recording starts, and says so in its log."""
+        return MAIN_SCREEN_FALLBACK not in self.log.read_text(errors="replace")
 
     async def wait_until_ready(self) -> None:
         deadline = time.monotonic() + 60

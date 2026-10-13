@@ -2566,6 +2566,40 @@ class RecordingResultTests(unittest.TestCase):
         self.run_case("case_skip").finish_test.assert_called_once_with("skipped")
 
 
+class RecordingDisplayConfigurationTests(unittest.TestCase):
+    def recording(self, directory: str, log: str) -> Recording:
+        process = mock.Mock()
+        process.stdin = io.BytesIO()
+        with mock.patch.object(
+            recording_module.subprocess, "Popen", return_value=process
+        ):
+            recording = Recording(
+                Path("/recorder"), "udid", Path("/set"), Path(directory), "test"
+            )
+        self.addCleanup(recording.close_logs)
+        recording.log.write_text(log)
+        return recording
+
+    def test_a_recorder_that_identified_the_active_display_reads_the_configuration(
+        self,
+    ) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            recording = self.recording(
+                directory,
+                "Framebuffer: registered new-style SimScreen frame callbacks\n",
+            )
+            self.assertTrue(recording.reads_display_configuration())
+
+    def test_a_recorder_on_the_main_screen_fallback_does_not(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            recording = self.recording(
+                directory,
+                "[udid] Capturing the main screen, as no active display is identified: "
+                'fallback(unreadable(unsupported("com.apple.coredevice.feature.getdisplayinfo")))\n',
+            )
+            self.assertFalse(recording.reads_display_configuration())
+
+
 class UnavailableRecordingTests(unittest.IsolatedAsyncioTestCase):
     async def test_commands_remain_logged_after_encoder_failure(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
