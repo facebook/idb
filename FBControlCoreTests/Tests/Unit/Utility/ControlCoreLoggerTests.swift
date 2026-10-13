@@ -6,10 +6,13 @@
  */
 
 @testable import FBControlCore
-import XCTest
+import Foundation
+import Testing
 
-final class ControlCoreLoggerTests: XCTestCase {
-  func testLoggingToFileDescriptor() throws {
+@Suite
+struct ControlCoreLoggerTests {
+  @Test
+  func loggingToFileDescriptor() throws {
     let filename = "\(UUID().uuidString).log"
     let temporaryFilePath = NSTemporaryDirectory().appending(filename)
     FileManager.default.createFile(atPath: temporaryFilePath, contents: nil, attributes: nil)
@@ -20,30 +23,32 @@ final class ControlCoreLoggerTests: XCTestCase {
     fileHandle.synchronizeFile()
     fileHandle.closeFile()
 
-    let fileContent = try XCTUnwrap(try? String(contentsOfFile: temporaryFilePath, encoding: .utf8))
-    XCTAssertTrue(fileContent.hasSuffix("Some content\n"), "Unexpected fileContent: \(fileContent)")
+    let fileContent = try #require(try? String(contentsOfFile: temporaryFilePath, encoding: .utf8))
+    #expect(fileContent.hasSuffix("Some content\n"), "Unexpected fileContent: \(fileContent)")
   }
 
-  func testLoggingToConsumer() {
+  @Test
+  func loggingToConsumer() {
     let consumer = FBDataBuffer.consumableBuffer()
     var logger = FBControlCoreLoggerFactory.logger(to: consumer)
 
     logger.log("HELLO")
     logger.log("WORLD")
 
-    XCTAssertEqual(consumer.consumeLineString(), "HELLO")
-    XCTAssertEqual(consumer.consumeLineString(), "WORLD")
+    #expect(consumer.consumeLineString() == "HELLO")
+    #expect(consumer.consumeLineString() == "WORLD")
 
     logger = logger.withName("foo")
 
     logger.log("HELLO")
     logger.log("WORLD")
 
-    XCTAssertEqual(consumer.consumeLineString(), "[foo] HELLO")
-    XCTAssertEqual(consumer.consumeLineString(), "[foo] WORLD")
+    #expect(consumer.consumeLineString() == "[foo] HELLO")
+    #expect(consumer.consumeLineString() == "[foo] WORLD")
   }
 
-  func testThreadSafetyOfConsumableLogger() {
+  @Test
+  func threadSafetyOfConsumableLogger() {
     let consumer = FBDataBuffer.consumableBuffer()
     let logger = FBControlCoreLoggerFactory.logger(to: consumer)
 
@@ -57,14 +62,15 @@ final class ControlCoreLoggerTests: XCTestCase {
     let expected = NSSet(array: ["1", "2", "3", ""])
     let actual = NSSet(array: consumer.lines())
 
-    XCTAssertEqual(expected, actual)
+    #expect(expected == actual)
   }
 
-  func testSystemLoggerLevelFollowsDebugLogging() {
+  @Test
+  func systemLoggerLevelFollowsDebugLogging() {
     let info = FBControlCoreLoggerFactory.systemLoggerWriting(toStderr: false, withDebugLogging: false)
     let debug = FBControlCoreLoggerFactory.systemLoggerWriting(toStderr: false, withDebugLogging: true)
 
-    XCTAssertEqual(info.level, .info)
-    XCTAssertEqual(debug.level, .debug)
+    #expect(info.level == .info)
+    #expect(debug.level == .debug)
   }
 }
