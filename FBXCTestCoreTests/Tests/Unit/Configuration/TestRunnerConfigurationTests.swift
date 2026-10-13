@@ -7,11 +7,14 @@
 
 import FBControlCore
 @testable import FBXCTestCore
-import XCTest
+import Foundation
+import Testing
 
-final class TestRunnerConfigurationTests: XCTestCase {
+@Suite
+struct TestRunnerConfigurationTests {
 
-  func testLaunchEnvironment() {
+  @Test
+  func launchEnvironment() {
     let testBundleBinary = BinaryDescriptor(name: "TestBinaryName", architectures: Set(), uuid: UUID(), path: "/blackhole/xctwda.xctest/test")
     let testBundle = BundleDescriptor(name: "TestBundleName", identifier: "TestBundleIdentifier", path: "/blackhole/xctwda.xctest", binary: testBundleBinary)
 
@@ -41,41 +44,45 @@ final class TestRunnerConfigurationTests: XCTestCase {
       testConfigurationPath: "/booo/magic.xctestconfiguration",
       frameworkSearchPaths: ["/Apple"]
     )
-    XCTAssertEqual(expected as NSDictionary, actual as NSDictionary)
+    #expect((expected as NSDictionary) == (actual as NSDictionary))
   }
 
-  func testOrdinaryTestEnvironmentDefaultsToUnarmed() {
+  @Test
+  func ordinaryTestEnvironmentDefaultsToUnarmed() {
     let environment = XCTestShimConfiguration.unarmedAudioInjectionEnvironment(["DYLD_INSERT_LIBRARIES": "test-shim", "MAGIC": "keep"])
-    XCTAssertEqual(environment, ["DYLD_INSERT_LIBRARIES": "test-shim", "MAGIC": "keep", "IDB_AUDIO_INJECTION": "0"])
+    #expect(environment == ["DYLD_INSERT_LIBRARIES": "test-shim", "MAGIC": "keep", "IDB_AUDIO_INJECTION": "0"])
   }
 
-  func testExplicitTestArmingValuesArePreserved() {
+  @Test
+  func explicitTestArmingValuesArePreserved() {
     for value in ["1", "0", "", "custom"] {
-      XCTAssertEqual(
-        XCTestShimConfiguration.unarmedAudioInjectionEnvironment(["IDB_AUDIO_INJECTION": value])["IDB_AUDIO_INJECTION"], value)
+      #expect(
+        XCTestShimConfiguration.unarmedAudioInjectionEnvironment(["IDB_AUDIO_INJECTION": value])["IDB_AUDIO_INJECTION"] == value)
     }
   }
 
-  func testCustomOptInIsNotOverwrittenByDefault() {
+  @Test
+  func customOptInIsNotOverwrittenByDefault() {
     let custom = TestRunnerConfiguration.addAdditionalEnvironmentVariables(
       ["MAGIC": "keep"], source: ["CUSTOM_IDB_AUDIO_INJECTION": "1", "IGNORED": "value"])
-    XCTAssertEqual(
-      XCTestShimConfiguration.unarmedAudioInjectionEnvironment(custom),
-      ["MAGIC": "keep", "IDB_AUDIO_INJECTION": "1"])
+    #expect(
+      XCTestShimConfiguration.unarmedAudioInjectionEnvironment(custom)
+        == ["MAGIC": "keep", "IDB_AUDIO_INJECTION": "1"])
   }
 
-  func testTestedApplicationReceivesResolvedTestArmingIntent() {
+  @Test
+  func testedApplicationReceivesResolvedTestArmingIntent() {
     let original = ["DYLD_INSERT_LIBRARIES": "bootstrap", "LLVM_PROFILE_FILE": "coverage"]
     let defaulted = TestRunnerConfiguration.audioInjectionTestedApplicationEnvironment(
       original, applicationEnvironment: [:], runnerEnvironment: [:])
-    XCTAssertEqual(defaulted["IDB_AUDIO_INJECTION"], "0")
+    #expect(defaulted["IDB_AUDIO_INJECTION"] == "0")
     let optedIn = TestRunnerConfiguration.audioInjectionTestedApplicationEnvironment(
       original, applicationEnvironment: ["IDB_AUDIO_INJECTION": "1"], runnerEnvironment: ["IDB_AUDIO_INJECTION": "0"])
-    XCTAssertEqual(optedIn["IDB_AUDIO_INJECTION"], "1")
+    #expect(optedIn["IDB_AUDIO_INJECTION"] == "1")
     let explicitZero = TestRunnerConfiguration.audioInjectionTestedApplicationEnvironment(
       original, applicationEnvironment: ["IDB_AUDIO_INJECTION": "0"], runnerEnvironment: ["IDB_AUDIO_INJECTION": "1"])
-    XCTAssertEqual(explicitZero["IDB_AUDIO_INJECTION"], "0")
-    XCTAssertEqual(explicitZero["DYLD_INSERT_LIBRARIES"], "bootstrap")
-    XCTAssertEqual(explicitZero["LLVM_PROFILE_FILE"], "coverage")
+    #expect(explicitZero["IDB_AUDIO_INJECTION"] == "0")
+    #expect(explicitZero["DYLD_INSERT_LIBRARIES"] == "bootstrap")
+    #expect(explicitZero["LLVM_PROFILE_FILE"] == "coverage")
   }
 }
