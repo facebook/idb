@@ -6,20 +6,24 @@
  */
 
 @testable import FBSimulatorControl
-import XCTest
+import Foundation
+import Testing
 
-final class SimulatorLifecycleErrorTests: XCTestCase {
+@Suite
+struct SimulatorLifecycleErrorTests {
 
   private let url = URL(string: "https://fbidb.io/docs/idb")!
 
-  func testOpenURLFailedWithAReasonGivesTheReason() {
+  @Test
+  func openURLFailedWithAReasonGivesTheReason() {
     let underlying = NSError(domain: NSPOSIXErrorDomain, code: 60, userInfo: [NSLocalizedDescriptionKey: "Operation timed out"])
     let error = SimulatorLifecycleError.openURLFailed(url: url, simulatorDescription: "iPhone 16", underlying: underlying)
-    XCTAssertEqual(error.errorDescription, "Failed to open URL https://fbidb.io/docs/idb on simulator iPhone 16: \(underlying)")
+    #expect(error.errorDescription == "Failed to open URL https://fbidb.io/docs/idb on simulator iPhone 16: \(underlying)")
   }
 
-  func testOpenURLFailedWithoutAReasonOmitsIt() {
+  @Test
+  func openURLFailedWithoutAReasonOmitsIt() {
     let error = SimulatorLifecycleError.openURLFailed(url: url, simulatorDescription: "iPhone 16", underlying: nil)
-    XCTAssertEqual(error.errorDescription, "Failed to open URL https://fbidb.io/docs/idb on simulator iPhone 16")
+    #expect(error.errorDescription == "Failed to open URL https://fbidb.io/docs/idb on simulator iPhone 16")
   }
 }
