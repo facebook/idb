@@ -110,6 +110,32 @@ final class AccessibilityUIAutomation: UIAutomation, @unchecked Sendable {
     }
   }
 
+  func performCustomAction(named name: String, on query: AccessibilityElementQuery) async throws {
+    try await Self.translatingBackendErrors(query) {
+      let element: AccessibilityElement
+      switch query {
+      case let .marker(value, key, depth, ignoresCase):
+        let root = try await operations.resolveElement(for: .frontmost, clientType: AccessibilityRequestOptions.unconfiguredClientType)
+        element = try await root.findElement(
+          withValue: value,
+          forKey: key,
+          depth: depth,
+          ignoresCase: ignoresCase,
+          matchExactly: true
+        )
+      case .point:
+        element = try await operations.resolveElement(for: query, clientType: AccessibilityRequestOptions.unconfiguredClientType)
+      case .frontmost, .application:
+        throw UIAutomationError.pointOrMarkerRequired(
+          backend: .accessibility,
+          operation: "A custom action target"
+        )
+      }
+      defer { element.close() }
+      try await element.performCustomAction(named: name)
+    }
+  }
+
   func setValue(_ value: String, for query: AccessibilityElementQuery) async throws {
     try await Self.translatingBackendErrors(query) {
       let element = try await operations.resolveElement(for: query, clientType: AccessibilityRequestOptions.unconfiguredClientType)

@@ -517,6 +517,16 @@ final class AXBridgeUIAutomation: AXBridgeTreeReader, @unchecked Sendable {
     try await resolveAndWrite(.perform(.press), for: query, operation: "A tap", callerAssertion: options.assertion)
   }
 
+  func performCustomAction(named name: String, on query: AccessibilityElementQuery) async throws {
+    if needsDisplay {
+      return try await withDisplay { try await $0.performCustomAction(named: name, on: query) }
+    }
+    throw UIAutomationError.operationUnsupported(
+      backend: backend,
+      operation: "Named custom accessibility actions"
+    )
+  }
+
   func setValue(_ value: String, for query: AccessibilityElementQuery) async throws {
     if needsDisplay {
       return try await withDisplay { try await $0.setValue(value, for: query) }

@@ -20,6 +20,15 @@ public enum AccessibilityError: LocalizedError, Sendable {
   /// The element does not support an accessibility press.
   case pressUnsupported(supportedActions: String)
 
+  /// The requested custom action name is not advertised by the element.
+  case customActionUnsupported(name: String, supportedActions: String)
+
+  /// More than one advertised custom action has the requested name.
+  case customActionAmbiguous(name: String, count: Int)
+
+  /// The advertised custom action ran but reported failure.
+  case customActionFailed(name: String)
+
   case pressFailed
 
   /// No descendant matched the search within the depth bound.
@@ -49,6 +58,12 @@ public enum AccessibilityError: LocalizedError, Sendable {
       return "No string value for key \(key)"
     case .pressUnsupported(let supportedActions):
       return "Element does not support pressing. Supported: \(supportedActions)"
+    case .customActionUnsupported(let name, let supportedActions):
+      return "Element does not expose custom action '\(name)'. Supported: \(supportedActions)"
+    case .customActionAmbiguous(let name, let count):
+      return "Element exposes \(count) custom actions named '\(name)'; the action is ambiguous"
+    case .customActionFailed(let name):
+      return "Custom action '\(name)' reported failure"
     case .pressFailed:
       return "accessibilityPerformPress did not succeed"
     case .elementNotFound(let key, let value, let depth):

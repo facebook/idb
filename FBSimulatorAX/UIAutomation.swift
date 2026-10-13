@@ -190,6 +190,12 @@ public protocol UIAutomation: Sendable {
     options: TapOptions
   ) async throws
 
+  /// Performs the named custom accessibility action advertised by the element.
+  func performCustomAction(
+    named name: String,
+    on query: AccessibilityElementQuery
+  ) async throws
+
   /// Sets `value` on the element named by `query`. `.point`/`.marker` targets only.
   func setValue(
     _ value: String,
@@ -239,6 +245,11 @@ public protocol UIAutomation: Sendable {
 }
 
 public extension UIAutomation {
+
+  /// Existing conformers that do not implement custom actions decline the operation.
+  func performCustomAction(named name: String, on query: AccessibilityElementQuery) async throws {
+    throw UIAutomationError.operationUnsupported(backend: .accessibility, operation: "Custom actions")
+  }
 
   /// Taps the element named by `query` with no hold duration and no value assertion.
   func tap(_ query: AccessibilityElementQuery) async throws {

@@ -36,8 +36,11 @@ class AXPMacPlatformElementDouble: NSObject {
   private let _enabled: Bool
   private let _required: Bool
   private let _actionNames: [String]
+  private let _customActionNames: [String]
+  private let _customActionResult: Bool
   private let _children: [AXPMacPlatformElementDouble]
   private var _translation: AXPTranslationObjectDouble
+  private(set) var performedCustomActions: [String] = []
   @objc private(set) var accessedProperties = NSMutableSet()
   /// The names of each multiple-attribute request, in order.
   private(set) var multipleAttributeRequests: [[String]] = []
@@ -49,6 +52,8 @@ class AXPMacPlatformElementDouble: NSObject {
     frame: NSRect,
     enabled: Bool,
     actionNames: [String]?,
+    customActionNames: [String] = [],
+    customActionResult: Bool = true,
     children: [AXPMacPlatformElementDouble]?
   ) {
     _label = label
@@ -58,6 +63,8 @@ class AXPMacPlatformElementDouble: NSObject {
     _enabled = enabled
     _required = false
     _actionNames = actionNames ?? []
+    _customActionNames = customActionNames
+    _customActionResult = customActionResult
     _children = children ?? []
     _translation = AXPTranslationObjectDouble()
     super.init()
@@ -125,7 +132,13 @@ class AXPMacPlatformElementDouble: NSObject {
 
   @objc var accessibilityCustomActions: [Any]? {
     accessedProperties.add("accessibilityCustomActions")
-    return nil
+    return _customActionNames.map { name in
+      NSAccessibilityCustomAction(name: name) { [weak self] in
+        guard let self else { return false }
+        performedCustomActions.append(name)
+        return _customActionResult
+      }
+    }
   }
 
   @objc var accessibilityChildren: [Any]? {
@@ -202,6 +215,16 @@ extension AXPMacPlatformElementDouble: AXPlatformElement {
 // Only press is exercised (via `AccessibilityElement.tap()`); scroll and set-value are inert.
 extension AXPMacPlatformElementDouble: AXWritableElement {
   func axPerformPress() -> Bool { accessibilityPerformPress() }
+  func axPerformCustomAction(named name: String) -> Bool {
+    guard
+      let action = (accessibilityCustomActions ?? [])
+        .compactMap({ $0 as? NSAccessibilityCustomAction })
+        .first(where: { $0.name == name })
+    else {
+      return false
+    }
+    return invokeAccessibilityCustomAction(action)
+  }
   func axScroll(_ direction: AccessibilityScrollDirection) {}
   func axSetValue(_ value: Any?) {}
 }

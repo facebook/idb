@@ -5,10 +5,39 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+import AppKit
 import FBControlCore
 @testable import FBSimulatorAX
 @testable import FBSimulatorControl
 import XCTest
+
+private final class AccessibilityCustomActionTarget: NSObject {
+  private let result: Bool
+  private(set) var performedAction: NSAccessibilityCustomAction?
+  private(set) var scalarActionInvocationCount = 0
+
+  init(result: Bool = true) {
+    self.result = result
+  }
+
+  @objc func runAccessibilityAction(_ action: NSAccessibilityCustomAction) -> Bool {
+    performedAction = action
+    return result
+  }
+
+  @objc func runVoidAccessibilityAction(_ action: NSAccessibilityCustomAction) {
+    performedAction = action
+  }
+
+  @objc func runScalarAccessibilityAction(_ value: Int) -> Bool {
+    scalarActionInvocationCount += 1
+    return result
+  }
+
+  @objc func runVoidScalarAccessibilityAction(_ value: Double) {
+    scalarActionInvocationCount += 1
+  }
+}
 
 final class SimulatorAccessibilityCommandsTests: XCTestCase {
 
@@ -685,6 +714,187 @@ final class SimulatorAccessibilityCommandsTests: XCTestCase {
       okButton.accessedProperties.contains("accessibilityActionNames"),
       "Tap operation should access action names"
     )
+  }
+
+  func testAccessibilityPerformCustomActionUsesExactAdvertisedName() async throws {
+    let card = AXPMacPlatformElementDouble(
+      label: "Story card",
+      identifier: "story_card",
+      role: "AXGroup",
+      frame: NSRect(x: 20, y: 100, width: 350, height: 200),
+      enabled: true,
+      actionNames: nil,
+      customActionNames: ["Dismiss"],
+      children: nil
+    )
+    try setUp(withRootElement: card)
+    fixture!.translator.macPlatformElementResult = card
+
+    let element = try await simulator.accessibility.resolveElement(for: .point(CGPoint(x: 100, y: 150)))
+    try await element.performCustomAction(named: "Dismiss")
+    XCTAssertEqual(card.performedCustomActions, ["Dismiss"])
+    element.close()
+  }
+
+  func testAccessibilityPerformCustomActionInvokesTargetSelector() {
+    let target = AccessibilityCustomActionTarget()
+    let action = NSAccessibilityCustomAction(
+      name: "Dismiss",
+      target: target,
+      selector: #selector(AccessibilityCustomActionTarget.runAccessibilityAction(_:))
+    )
+
+    XCTAssertEqual(action.selector.map(NSStringFromSelector), "runAccessibilityAction:")
+    XCTAssertTrue(invokeAccessibilityCustomAction(action))
+    XCTAssertIdentical(target.performedAction, action)
+  }
+
+  func testAccessibilityPerformCustomActionReportsTargetSelectorFailure() {
+    let target = AccessibilityCustomActionTarget(result: false)
+    let action = NSAccessibilityCustomAction(
+      name: "Dismiss",
+      target: target,
+      selector: #selector(AccessibilityCustomActionTarget.runAccessibilityAction(_:))
+    )
+
+    XCTAssertFalse(invokeAccessibilityCustomAction(action))
+    XCTAssertIdentical(target.performedAction, action)
+  }
+
+  func testAccessibilityPerformCustomActionAcceptsVoidTargetSelector() {
+    let target = AccessibilityCustomActionTarget()
+    let action = NSAccessibilityCustomAction(
+      name: "Dismiss",
+      target: target,
+      selector: #selector(AccessibilityCustomActionTarget.runVoidAccessibilityAction(_:))
+    )
+
+    XCTAssertTrue(invokeAccessibilityCustomAction(action))
+    XCTAssertIdentical(target.performedAction, action)
+  }
+
+  func testAccessibilityPerformCustomActionRejectsScalarTargetSelectorsWithoutDispatch() {
+    let target = AccessibilityCustomActionTarget()
+    let selectors = [
+      #selector(AccessibilityCustomActionTarget.runScalarAccessibilityAction(_:)),
+      #selector(AccessibilityCustomActionTarget.runVoidScalarAccessibilityAction(_:)),
+    ]
+    for selector in selectors {
+      let action = NSAccessibilityCustomAction(name: "Dismiss", target: target, selector: selector)
+      XCTAssertFalse(invokeAccessibilityCustomAction(action), NSStringFromSelector(selector))
+    }
+    XCTAssertEqual(target.scalarActionInvocationCount, 0)
+    XCTAssertNil(target.performedAction)
+  }
+
+  func testAccessibilityCustomActionReportsHandlerFailure() async throws {
+    let card = AXPMacPlatformElementDouble(
+      label: "Story card",
+      identifier: "story_card",
+      role: "AXGroup",
+      frame: NSRect(x: 20, y: 100, width: 350, height: 200),
+      enabled: true,
+      actionNames: nil,
+      customActionNames: ["Dismiss"],
+      customActionResult: false,
+      children: nil
+    )
+    try setUp(withRootElement: card)
+    fixture!.translator.macPlatformElementResult = card
+
+    let element = try await simulator.accessibility.resolveElement(for: .point(CGPoint(x: 100, y: 150)))
+    do {
+      try await element.performCustomAction(named: "Dismiss")
+      XCTFail("Expected the failed custom action to be rejected")
+    } catch AccessibilityError.customActionFailed(let name) {
+      XCTAssertEqual(name, "Dismiss")
+    }
+    XCTAssertEqual(card.performedCustomActions, ["Dismiss"])
+    element.close()
+  }
+
+  func testAccessibilityPerformCustomActionUsesExactMarkerMatch() async throws {
+    let containing = AXPMacPlatformElementDouble(
+      label: "Story card details",
+      identifier: "story_card_details",
+      role: "AXGroup",
+      frame: NSRect(x: 20, y: 100, width: 350, height: 200),
+      enabled: true,
+      actionNames: nil,
+      customActionNames: ["Dismiss"],
+      children: nil
+    )
+    let exact = AXPMacPlatformElementDouble(
+      label: "Story card",
+      identifier: "story_card",
+      role: "AXGroup",
+      frame: NSRect(x: 20, y: 320, width: 350, height: 200),
+      enabled: true,
+      actionNames: nil,
+      customActionNames: ["Dismiss"],
+      children: nil
+    )
+    try setUp(withRootElement: defaultRoot(withChildren: [containing, exact]))
+
+    let automation = try simulator.uiAutomation(backend: .accessibility)
+    try await automation.performCustomAction(
+      named: "Dismiss",
+      on: .marker(value: "Story card", key: .label, depth: 10)
+    )
+
+    XCTAssertTrue(containing.performedCustomActions.isEmpty)
+    XCTAssertEqual(exact.performedCustomActions, ["Dismiss"])
+  }
+
+  func testAccessibilityCustomActionRejectsMissingNameWithoutDispatch() async throws {
+    let card = AXPMacPlatformElementDouble(
+      label: "Story card",
+      identifier: "story_card",
+      role: "AXGroup",
+      frame: NSRect(x: 20, y: 100, width: 350, height: 200),
+      enabled: true,
+      actionNames: nil,
+      customActionNames: ["Dismiss"],
+      children: nil
+    )
+    try setUp(withRootElement: card)
+    fixture!.translator.macPlatformElementResult = card
+
+    let element = try await simulator.accessibility.resolveElement(for: .point(CGPoint(x: 100, y: 150)))
+    do {
+      try await element.performCustomAction(named: "Delete")
+      XCTFail("Expected the unadvertised custom action to be rejected")
+    } catch AccessibilityError.customActionUnsupported(let name, _) {
+      XCTAssertEqual(name, "Delete")
+    }
+    XCTAssertTrue(card.performedCustomActions.isEmpty)
+    element.close()
+  }
+
+  func testAccessibilityCustomActionRejectsDuplicateNamesWithoutDispatch() async throws {
+    let card = AXPMacPlatformElementDouble(
+      label: "Story card",
+      identifier: "story_card",
+      role: "AXGroup",
+      frame: NSRect(x: 20, y: 100, width: 350, height: 200),
+      enabled: true,
+      actionNames: nil,
+      customActionNames: ["Dismiss", "Dismiss"],
+      children: nil
+    )
+    try setUp(withRootElement: card)
+    fixture!.translator.macPlatformElementResult = card
+
+    let element = try await simulator.accessibility.resolveElement(for: .point(CGPoint(x: 100, y: 150)))
+    do {
+      try await element.performCustomAction(named: "Dismiss")
+      XCTFail("Expected duplicate custom action names to be rejected")
+    } catch AccessibilityError.customActionAmbiguous(let name, let count) {
+      XCTAssertEqual(name, "Dismiss")
+      XCTAssertEqual(count, 2)
+    }
+    XCTAssertTrue(card.performedCustomActions.isEmpty)
+    element.close()
   }
 
   func testDisplayBoundPointReadRoutesAndRotatesWithoutChangingReturnedFrame() async throws {

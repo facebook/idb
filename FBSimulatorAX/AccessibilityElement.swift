@@ -115,6 +115,30 @@ final class AccessibilityElement {
     }
   }
 
+  /// Performs the named custom accessibility action advertised by the element.
+  func performCustomAction(named name: String) async throws {
+    if closed {
+      throw AccessibilityError.closedElement(operation: "perform a custom action on")
+    }
+    let element = self.element
+    try await dispatcher.performSerialized {
+      let customActions = element.axCustomActionNames()
+      let matches = customActions.filter { $0 == name }
+      guard !matches.isEmpty else {
+        throw AccessibilityError.customActionUnsupported(
+          name: name,
+          supportedActions: CollectionInformation.oneLineDescription(from: customActions)
+        )
+      }
+      guard matches.count == 1 else {
+        throw AccessibilityError.customActionAmbiguous(name: name, count: matches.count)
+      }
+      guard element.axPerformCustomAction(named: name) else {
+        throw AccessibilityError.customActionFailed(name: name)
+      }
+    }
+  }
+
   /// Perform an accessibility scroll on the element.
   func scroll(with direction: AccessibilityScrollDirection) async throws {
     if closed {
@@ -156,9 +180,19 @@ final class AccessibilityElement {
   /// closed without popping. If not found, the receiver is closed and an error
   /// is thrown.
   func findElement(
-    withValue value: String, forKey key: AXSearchableKey, depth: UInt, ignoresCase: Bool = false
+    withValue value: String,
+    forKey key: AXSearchableKey,
+    depth: UInt,
+    ignoresCase: Bool = false,
+    matchExactly: Bool = false
   ) async throws -> AccessibilityElement {
-    let result = try await searchElement(withValue: value, forKey: key, depth: depth, ignoresCase: ignoresCase)
+    let result = try await searchElement(
+      withValue: value,
+      forKey: key,
+      depth: depth,
+      ignoresCase: ignoresCase,
+      matchExactly: matchExactly
+    )
     guard let match = result.match else {
       throw AccessibilityError.elementNotFound(key: key.rawValue, value: value, depth: depth)
     }
@@ -168,7 +202,11 @@ final class AccessibilityElement {
   /// Consumes this root handle, transferring its request to the match or closing it on a miss.
   /// Nonmatching values come from the same traversal and never require another attribute read.
   func searchElement(
-    withValue value: String, forKey key: AXSearchableKey, depth: UInt, ignoresCase: Bool = false
+    withValue value: String,
+    forKey key: AXSearchableKey,
+    depth: UInt,
+    ignoresCase: Bool = false,
+    matchExactly: Bool = false
   ) async throws -> AccessibilitySearchResult<AccessibilityElement> {
     if closed {
       throw AccessibilityError.closedElement(operation: "search")
@@ -177,7 +215,7 @@ final class AccessibilityElement {
     // ownership passes to a matching descendant.
     let root = try await read(AXReadPlan(searching: key, depth: .limited(depth)))
     var diagnostics = AccessibilitySearchDiagnostics()
-    guard let found = Self.preferredMatch(withValue: value, forKey: key, in: root, ignoresCase: ignoresCase, diagnostics: &diagnostics),
+    guard let found = Self.preferredMatch(withValue: value, forKey: key, in: root, ignoresCase: ignoresCase, matchExactly: matchExactly, diagnostics: &diagnostics),
       let handle = found.handle
     else {
       close()
@@ -204,6 +242,7 @@ final class AccessibilityElement {
     forKey key: AXSearchableKey,
     in root: AXElementSnapshot,
     ignoresCase: Bool,
+    matchExactly: Bool,
     diagnostics: inout AccessibilitySearchDiagnostics
   ) -> AXElementSnapshot? {
     let predicate = AccessibilityMatch(value: value, key: key, ignoresCase: ignoresCase)
@@ -212,6 +251,13 @@ final class AccessibilityElement {
     while let snapshot = pending.popLast() {
       pending.append(contentsOf: snapshot.children.reversed())
       guard let candidate = snapshot.searchableValue(for: key) else {
+        continue
+      }
+      if matchExactly {
+        if ignoresCase ? candidate.caseInsensitiveCompare(value) == .orderedSame : candidate == value {
+          return snapshot
+        }
+        diagnostics.record(candidate)
         continue
       }
       // An empty marker matches every element carrying the key, so the first of them wins.

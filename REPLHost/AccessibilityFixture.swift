@@ -53,11 +53,18 @@ private struct FixtureRow {
   }
 }
 
+// This open-source fixture cannot depend on internal METAUIKit.
+// ast-grep-ignore: ig-core/swift/meta-no-coding-uikit-subclass
 private final class FixtureListController: UITableViewController {
   static let openingRowLabel = "General"
+  static let customActionName = "Mark complete"
+  static let customActionPendingValue = "Pending"
+  static let customActionCompletedValue = "Completed"
   private static let cellReuseIdentifier = "row"
   private static let rows =
     [FixtureRow(label: openingRowLabel)] + (2...40).map { FixtureRow(label: "Row \($0)") }
+
+  private var customActionCompleted = false
 
   init() {
     super.init(style: .insetGrouped)
@@ -75,6 +82,8 @@ private final class FixtureListController: UITableViewController {
     // In the header rather than the navigation item, so that writing to it
     // doesn't raise a search controller that moves the list under it.
     let search = UISearchBar()
+    // Stable English text keeps the accessibility fixture deterministic.
+    // ast-grep-ignore: common/swift/i18n-hardcoded-ui-property
     search.placeholder = "Search"
     search.searchTextField.accessibilityIdentifier = FixtureIdentifier.search
     search.sizeToFit()
@@ -103,7 +112,29 @@ private final class FixtureListController: UITableViewController {
     cell.accessibilityIdentifier = row.identifier
     cell.accessoryType = row.opensPage ? .disclosureIndicator : .none
     cell.selectionStyle = row.opensPage ? .default : .none
+    if row.opensPage {
+      cell.accessibilityValue =
+        customActionCompleted ? Self.customActionCompletedValue : Self.customActionPendingValue
+      cell.accessibilityCustomActions = [
+        UIAccessibilityCustomAction(
+          name: Self.customActionName,
+          target: self,
+          selector: #selector(markOpeningRowComplete(_:)))
+      ]
+    } else {
+      cell.accessibilityValue = nil
+      cell.accessibilityCustomActions = nil
+    }
     return cell
+  }
+
+  @objc private func markOpeningRowComplete(_ action: UIAccessibilityCustomAction) -> Bool {
+    guard action.name == Self.customActionName else {
+      return false
+    }
+    customActionCompleted = true
+    tableView.cellForRow(at: IndexPath(row: 0, section: 0))?.accessibilityValue = Self.customActionCompletedValue
+    return true
   }
 
   override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
@@ -116,6 +147,8 @@ private final class FixtureListController: UITableViewController {
   }
 }
 
+// This open-source fixture cannot depend on internal METAUIKit.
+// ast-grep-ignore: ig-core/swift/meta-no-coding-uiviewcontroller-subclass
 private final class FixturePageController: UIViewController {
   init(title: String) {
     super.init(nibName: nil, bundle: nil)
@@ -131,6 +164,8 @@ private final class FixturePageController: UIViewController {
     super.viewDidLoad()
     view.backgroundColor = .systemBackground
     let label = UILabel()
+    // Stable English text keeps the accessibility fixture deterministic.
+    // ast-grep-ignore: common/swift/i18n-hardcoded-ui-property
     label.text = "The \(title ?? "") page"
     label.accessibilityIdentifier = FixtureIdentifier.page
     label.translatesAutoresizingMaskIntoConstraints = false
