@@ -929,6 +929,7 @@ targets:
       - path: FBSimulatorControlTests/Tests/Unit/Support/LaunchCtlDoubles.swift
       - path: FBSimulatorControlTests/Tests/Unit/Support/SimulatorRetention.swift
       - path: FBSimulatorControlTests/Tests/Unit/Support/SimulatorTestSupport.swift
+      - path: FBSimulatorControlTests/Tests/Unit/Support/SyntheticXPC.swift
       - path: REPL/IDB/IDBAPI.swiftinterface
         buildPhase: resources
     postBuildScripts:

@@ -85,37 +85,71 @@ final class AXTranslationSmokeTests: ProvidedSimulatorTestCase {
 
     let automation = try simulator.uiAutomation(backend: .accessibility)
     for clientType in [AXClientType.noClient, .xctest] {
-      var options = AccessibilityRequestOptions(
-        keys: AXKeys.defaultSet.union([.expanded, .placeholder, .hidden, .focused]), enableProfiling: true,
-        clientType: clientType)
-      func read(_ reads: AXTranslatorReads) async throws -> (elements: [AccessibilityDocumentElement], roundTrips: Int64) {
-        options.translatorReads = reads
+      var roundTrips: [AXTranslatorReads: Int64] = [:]
+      func read(_ reads: AXTranslatorReads) async throws -> [AccessibilityDocumentElement] {
+        let options = AccessibilityRequestOptions(
+          keys: Self.comparedKeys, enableProfiling: true, translatorReads: reads, clientType: clientType)
         let response = try await automation.describe(.frontmost, options: options)
-        let roundTrips = try XCTUnwrap(response.profilingData?.translatorProfile?.xpcCallCount)
-        return (response.elements.elements.map(Self.withSortedTraits), roundTrips)
+        roundTrips[reads] = try XCTUnwrap(response.profilingData?.translatorProfile?.xpcCallCount)
+        return response.elements.elements
       }
-      // The application may still be settling, so the comparison is made only across a window in which two
-      // per-attribute reads agree: the batched read between them then saw the same tree.
-      var settled: (batched: (elements: [AccessibilityDocumentElement], roundTrips: Int64), perAttribute: (elements: [AccessibilityDocumentElement], roundTrips: Int64))?
-      for _ in 0..<5 {
-        let before = try await read(.perAttribute)
-        let batched = try await read(.batched)
-        let after = try await read(.perAttribute)
-        if before.elements == after.elements {
-          settled = (batched, after)
-          break
-        }
-        try await Task.sleep(nanoseconds: NSEC_PER_SEC)
+      try await assertSettledReadsAgree(
+        expected: { try await read(.perAttribute) }, actual: { try await read(.batched) }, "client \(clientType)")
+      XCTAssertLessThan(try XCTUnwrap(roundTrips[.batched]), try XCTUnwrap(roundTrips[.perAttribute]), "client \(clientType)")
+    }
+  }
+
+  /// Talking to CoreSimulatorBridge's accessibility service directly must read exactly what CoreSimulator's
+  /// own client reads.
+  func testTheBridgeTransportReadsWhatCoreSimulatorsClientReads() async throws {
+    try await launchApplication()
+    _ = try await describeFrontmost()
+
+    let bridge = CoreSimulatorBridgeAXTranslationTransport(connector: .simulator(simulator))
+    try bridge.connect()
+    let viaBridge = SimulatorAccessibilityCommands(simulator: simulator, transport: bridge)
+    let viaCoreSimulator = SimulatorAccessibilityCommands(
+      simulator: simulator, transport: CoreSimulatorAXTranslationTransport(device: simulator.device))
+    for clientType in [AXClientType.noClient, .xctest] {
+      func read(_ commands: SimulatorAccessibilityCommands) async throws -> [AccessibilityDocumentElement] {
+        let element = try await commands.resolveElement(for: .frontmost, clientType: clientType)
+        defer { element.close() }
+        return try await element.serialize(with: AccessibilityRequestOptions(keys: Self.comparedKeys)).elements.elements
       }
-      let (batched, perAttribute) = try XCTUnwrap(settled, "client \(clientType): the tree never held still between two reads")
-      XCTAssertLessThan(batched.roundTrips, perAttribute.roundTrips, "client \(clientType)")
-      let (actual, expected) = (batched.elements, perAttribute.elements)
-      XCTAssertGreaterThan(expected.count, 1, "client \(clientType)")
-      XCTAssertEqual(actual.count, expected.count, "client \(clientType)")
-      // Element by element, so a mismatch names the element rather than printing two whole trees.
-      for (index, (actualElement, expectedElement)) in zip(actual, expected).enumerated() {
-        XCTAssertEqual(actualElement, expectedElement, "client \(clientType), element \(index)")
+      try await assertSettledReadsAgree(
+        expected: { try await read(viaCoreSimulator) }, actual: { try await read(viaBridge) }, "client \(clientType)")
+    }
+  }
+
+  private static let comparedKeys = AXKeys.defaultSet.union([.expanded, .placeholder, .hidden, .focused])
+
+  /// Asserts `actual` reports what `expected` does. The application may still be settling, so the comparison
+  /// is made only across a window in which two `expected` reads agree: the `actual` read between them then
+  /// saw the same tree. Element by element, so a mismatch names the element rather than printing two trees.
+  private func assertSettledReadsAgree(
+    expected: () async throws -> [AccessibilityDocumentElement],
+    actual: () async throws -> [AccessibilityDocumentElement],
+    _ context: String,
+    file: StaticString = #filePath,
+    line: UInt = #line
+  ) async throws {
+    var settled: (actual: [AccessibilityDocumentElement], expected: [AccessibilityDocumentElement])?
+    for _ in 0..<5 {
+      let before = try await expected().map(Self.withSortedTraits)
+      let candidate = try await actual().map(Self.withSortedTraits)
+      let after = try await expected().map(Self.withSortedTraits)
+      if before == after {
+        settled = (candidate, after)
+        break
       }
+      try await Task.sleep(nanoseconds: NSEC_PER_SEC)
+    }
+    let (actualElements, expectedElements) = try XCTUnwrap(
+      settled, "\(context): the tree never held still between two reads", file: file, line: line)
+    XCTAssertGreaterThan(expectedElements.count, 1, context, file: file, line: line)
+    XCTAssertEqual(actualElements.count, expectedElements.count, context, file: file, line: line)
+    for (index, (actualElement, expectedElement)) in zip(actualElements, expectedElements).enumerated() {
+      XCTAssertEqual(actualElement, expectedElement, "\(context), element \(index)", file: file, line: line)
     }
   }
 
