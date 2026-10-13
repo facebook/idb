@@ -88,7 +88,8 @@ struct AXReadPlan: Equatable {
     if keys.contains(.placeholder) { attributes.insert(.placeholder) }
     if keys.contains(.hidden) { attributes.insert(.hidden) }
     if keys.contains(.focused) { attributes.insert(.focused) }
-    if keys.contains(.interactable) {
+    // `occluded_by` enriches `interactable`, so it reads what `interactable` reads.
+    if keys.contains(.interactable) || keys.contains(.occludedBy) {
       attributes.insert(.hittability)
       attributes.insert(.explainedBy)
     }

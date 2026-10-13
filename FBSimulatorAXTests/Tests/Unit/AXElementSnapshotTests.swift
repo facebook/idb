@@ -7,6 +7,7 @@
 
 import AppKit
 @testable import FBSimulatorAX
+@testable import FBSimulatorControl
 import XCTest
 
 final class AXElementSnapshotTests: XCTestCase {
@@ -32,6 +33,22 @@ final class AXElementSnapshotTests: XCTestCase {
 
   func testInteractablePlansHittabilityAndItsExplanation() {
     XCTAssertEqual(AXReadPlan(keys: [.interactable], depth: .unlimited).attributes, [.hittability, .explainedBy])
+  }
+
+  func testOccludedByReadsWhatInteractableReads() {
+    XCTAssertEqual(AXReadPlan(keys: [.occludedBy], depth: .unlimited).attributes, [.hittability, .explainedBy])
+  }
+
+  func testTheGuestFetchListFollowsThePlan() {
+    XCTAssertNil(AXWire.Node.fetchList(for: AXReadPlan(keys: [.traits], depth: .unlimited)), "the default list fetches traits")
+    XCTAssertEqual(
+      AXWire.Node.fetchList(for: AXReadPlan(keys: [.label], depth: .unlimited)),
+      AXWire.Node.defaultFetchList.filter { $0 != AXWire.Node.xcTraits.rawValue },
+      "a plan without traits drops the bitmask")
+    XCTAssertEqual(
+      AXWire.Node.fetchList(for: AXReadPlan(keys: [.traits, .interactable], depth: .unlimited)),
+      AXWire.Node.defaultFetchList + AXWire.Node.interactableAttributes.map(\.rawValue),
+      "a plan reading hittability fetches what it is derived from")
   }
 
   func testKeysAnsweredWithoutAReadPlanNothing() {

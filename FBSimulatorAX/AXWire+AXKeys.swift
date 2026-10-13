@@ -9,21 +9,26 @@ import FBSimulatorBridgeProtocol
 import FBSimulatorControl
 
 extension BridgeAXWire.Node {
-  /// The attribute list a read must request to serialize `keys`, or nil when that is exactly the default
+  /// The attribute list the guest must fetch to satisfy `plan`, or nil when that is exactly the default
   /// list. The traits bitmask is decoded per node inside the application, so it is dropped from the list
-  /// when `keys` does not report `traits`.
+  /// when the plan does not read `traits`.
   ///
   /// Nil rather than "the default list" so the caller can omit the request field entirely, keeping a
   /// default read byte-identical to one from a host that predates the field.
-  static func fetchList(for keys: Set<AXKeys>) -> [String]? {
+  static func fetchList(for plan: AXReadPlan) -> [String]? {
     var list = defaultFetchList
-    if !keys.contains(.traits) {
+    if !plan.attributes.contains(.traits) {
       list.removeAll { $0 == xcTraits.rawValue }
     }
-    if keys.contains(.interactable) || keys.contains(.occludedBy) {
+    if plan.attributes.contains(.hittability) {
       list += interactableAttributes.map(\.rawValue)
     }
     return list == defaultFetchList ? nil : list
+  }
+
+  /// The attribute list a serialization of `keys` needs; see `fetchList(for:)` over a plan.
+  static func fetchList(for keys: Set<AXKeys>) -> [String]? {
+    fetchList(for: AXReadPlan(keys: keys, depth: .unlimited))
   }
 
   /// The node a marker's searched key reads, for the keys a write can assert on — or nil when this

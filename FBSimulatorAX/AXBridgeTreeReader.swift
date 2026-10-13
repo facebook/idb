@@ -90,7 +90,7 @@ private struct AXBridgeReadPlan {
     explainUnreachable: Bool
   ) {
     self.serializationKeys = serializationKeys
-    self.attributes = AXWire.Node.fetchList(for: serializationKeys)
+    self.attributes = AXWire.Node.fetchList(for: AXReadPlan(keys: serializationKeys, depth: .unlimited))
     self.traversal = traversal
     self.unsatisfiableKeys = serializationKeys.intersection(traversal.unsatisfiableKeys)
     self.nestedFormat = options.nestedFormat
