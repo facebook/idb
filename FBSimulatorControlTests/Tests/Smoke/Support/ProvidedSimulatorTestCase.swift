@@ -40,7 +40,8 @@ class ProvidedSimulatorTestCase: XCTestCase {
   private(set) var simulator: Simulator!
 
   override func setUp() async throws {
-    continueAfterFailure = false
+    // `continueAfterFailure` stays on: every case here is async, and XCTest can only honour stopping on a
+    // failure in an async test by ending the process, which skips every later case in the bundle unreported.
     // Acquisition waits out a boot and every case here drives a real guest, both of which outrun
     // the default allowance. Set before acquiring, so the wait is covered too.
     executionTimeAllowance = 600
