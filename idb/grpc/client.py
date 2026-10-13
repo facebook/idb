@@ -820,6 +820,29 @@ class Client(ClientBase):
             request.backend = backend.value
         await self.stub.accessibility_action(request)
 
+    @log_and_handle_exceptions("accessibility_custom_action")
+    async def accessibility_custom_action(
+        self,
+        target: AccessibilityTarget,
+        name: str,
+        ignore_case: bool = False,
+        backend: AccessibilityBackend | None = None,
+    ) -> None:
+        request = AccessibilityActionRequest(
+            custom_action=AccessibilityActionRequest.CustomAction(name=name)
+        )
+        if isinstance(target, AccessibilityMarker):
+            request.marker = target.value
+            request.match_key = target.match_key.value
+            request.depth = target.depth
+        elif isinstance(target, AccessibilityPoint):
+            request.point.x = target.x
+            request.point.y = target.y
+        request.ignore_case = ignore_case
+        if backend is not None:
+            request.backend = backend.value
+        await self.stub.accessibility_action(request)
+
     @log_and_handle_exceptions("accessibility_drag")
     async def accessibility_drag(
         self,

@@ -216,6 +216,17 @@ public final class IDBCommandExecutor {
     try await simulator.uiAutomation(backend: backend).setValue(value, for: query)
   }
 
+  public func accessibility_custom_action(
+    query: AccessibilityElementQuery,
+    backend: UIAutomationBackend = .accessibility,
+    name: String
+  ) async throws {
+    guard let simulator = target as? Simulator else {
+      throw IDBCommandError.simulatorOnlyOperation(operation: "perform custom accessibility action", targetDescription: String(describing: target))
+    }
+    try await simulator.uiAutomation(backend: backend).performCustomAction(named: name, for: query)
+  }
+
   public func accessibility_drag(
     from source: AccessibilityElementQuery,
     to destination: AccessibilityElementQuery,

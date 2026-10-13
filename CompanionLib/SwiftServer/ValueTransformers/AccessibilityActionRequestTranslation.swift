@@ -23,6 +23,7 @@ enum AccessibilityActionRequestTranslation {
     case tap(query: AccessibilityElementQuery, backend: UIAutomationBackend, expectedValue: String?, expectedKey: AXSearchableKey)
     case scroll(query: AccessibilityElementQuery, backend: UIAutomationBackend, direction: AccessibilityScrollDirection)
     case setValue(query: AccessibilityElementQuery, backend: UIAutomationBackend, value: String)
+    case customAction(query: AccessibilityElementQuery, backend: UIAutomationBackend, name: String)
     case drag(
       source: AccessibilityElementQuery, destination: AccessibilityElementQuery, backend: UIAutomationBackend,
       options: DragOptions)
@@ -59,6 +60,13 @@ enum AccessibilityActionRequestTranslation {
     case let .setValue(setValue):
       return .setValue(
         query: try requiredQuery(from: request, action: "set_value"), backend: backend, value: setValue.value)
+    case let .customAction(customAction):
+      guard !customAction.name.isEmpty else {
+        throw RPCError(code: .invalidArgument, message: "custom_action requires a nonempty name")
+      }
+      return .customAction(
+        query: try requiredQuery(from: request, action: "custom_action"),
+        backend: backend, name: customAction.name)
     case let .drag(drag):
       return try dragAction(request: request, drag: drag, backend: backend)
     case .none:

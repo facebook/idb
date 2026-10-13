@@ -41,12 +41,28 @@ protocol AccessibilityActing {
     value: String
   ) async throws
 
+  func accessibility_custom_action(
+    query: AccessibilityElementQuery,
+    backend: UIAutomationBackend,
+    name: String
+  ) async throws
+
   func accessibility_drag(
     from source: AccessibilityElementQuery,
     to destination: AccessibilityElementQuery,
     backend: UIAutomationBackend,
     options: DragOptions
   ) async throws
+}
+
+extension AccessibilityActing {
+  func accessibility_custom_action(
+    query: AccessibilityElementQuery,
+    backend: UIAutomationBackend,
+    name: String
+  ) async throws {
+    throw RPCError(code: .unimplemented, message: "custom accessibility actions are unsupported")
+  }
 }
 
 extension IDBCommandExecutor: AccessibilityActing {}
@@ -76,6 +92,8 @@ struct AccessibilityActionMethodHandler {
       try await commandExecutor.accessibility_scroll(query: query, backend: backend, direction: direction)
     case let .setValue(query, backend, value):
       try await commandExecutor.accessibility_set_value(query: query, backend: backend, value: value)
+    case let .customAction(query, backend, name):
+      try await commandExecutor.accessibility_custom_action(query: query, backend: backend, name: name)
     case let .drag(source, destination, backend, options):
       try await commandExecutor.accessibility_drag(
         from: source, to: destination, backend: backend, options: options)

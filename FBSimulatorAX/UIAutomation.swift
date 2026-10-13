@@ -196,6 +196,12 @@ public protocol UIAutomation: Sendable {
     for query: AccessibilityElementQuery
   ) async throws
 
+  /// Performs a named custom accessibility action on the element named by `query`.
+  func performCustomAction(
+    named name: String,
+    for query: AccessibilityElementQuery
+  ) async throws
+
   /// Polls until the element named by a `.marker` query appears, or throws when `timeout` elapses.
   /// `.point`/`.frontmost` are not waitable.
   func wait(
@@ -239,6 +245,14 @@ public protocol UIAutomation: Sendable {
 }
 
 public extension UIAutomation {
+
+  func performCustomAction(
+    named name: String,
+    for query: AccessibilityElementQuery
+  ) async throws {
+    throw UIAutomationError.operationUnsupported(
+      backend: .accessibility, operation: "Performing a custom accessibility action")
+  }
 
   /// Taps the element named by `query` with no hold duration and no value assertion.
   func tap(_ query: AccessibilityElementQuery) async throws {

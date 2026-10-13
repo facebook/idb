@@ -1259,6 +1259,16 @@ class Client(ABC):
         pass
 
     @abstractmethod
+    async def accessibility_custom_action(
+        self,
+        target: AccessibilityTarget,
+        name: str,
+        ignore_case: bool = False,
+        backend: AccessibilityBackend | None = None,
+    ) -> None:
+        pass
+
+    @abstractmethod
     async def accessibility_drag(
         self,
         source: AccessibilityTarget,
