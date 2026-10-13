@@ -7,8 +7,9 @@
 
 @testable import FBArtifactStaging
 @testable import FBControlCore
+import Foundation
 import Security
-import XCTest
+import Testing
 
 /// A leaf for `idb.test` that expired at the start of 2020, issued by a root no host trusts.
 private let leaf = "MIIBmDCCAT+gAwIBAgIUf5MbB8df1yjj/mm6ZNs5iKDsIMgwCgYIKoZIzj0EAwIwGDEWMBQGA1UEAwwNaWRiIHRlc3Qgcm9vdDAeFw0xOTAxMDEwMDAwMDBaFw0yMDAxMDEwMDAwMDBaMBMxETAPBgNVBAMMCGlkYi50ZXN0MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEWOW1JDIKhQka0u/3iYf+1mOZ6MO60VS8sR6Je1s8AFIqwZVT1dJBHJZi6ZMQSeiufAsAObYYw2HFKewEt1IEMqNsMGowEwYDVR0RBAwwCoIIaWRiLnRlc3QwEwYDVR0lBAwwCgYIKwYBBQUHAwEwHQYDVR0OBBYEFMYdOyTr0V1tBu36jKtYrruKZ64CMB8GA1UdIwQYMBaAFLGAadq3gOc3GhKvIIULnioUDJ0LMAoGCCqGSM49BAMCA0cAMEQCIBsgyBvPSTEHieCkDaT6HDWWgoFihT+y7RZxTR0Z+1eiAiBCsPECzKRgxPHtwPh1LDOdyUT4dPZ0hx0iPdR1UTrYiA=="
@@ -16,36 +17,40 @@ private let root = "MIIBhDCCASugAwIBAgIUeUl6bSZSDGhznsk6ZHIGIyGn7rkwCgYIKoZIzj0E
 
 private func untrustedTrust() throws -> SecTrust {
   let certificates = try [leaf, root].map { encoded in
-    try XCTUnwrap(Data(base64Encoded: encoded).flatMap { SecCertificateCreateWithData(nil, $0 as CFData) })
+    try #require(Data(base64Encoded: encoded).flatMap { SecCertificateCreateWithData(nil, $0 as CFData) })
   }
   var trust: SecTrust?
-  XCTAssertEqual(SecTrustCreateWithCertificates(certificates as CFArray, SecPolicyCreateSSL(true, "idb.test" as CFString), &trust), errSecSuccess)
-  return try XCTUnwrap(trust)
+  let status = SecTrustCreateWithCertificates(certificates as CFArray, SecPolicyCreateSSL(true, "idb.test" as CFString), &trust)
+  #expect(status == errSecSuccess)
+  return try #require(trust)
 }
 
-final class DownloadReportTests: XCTestCase {
+@Suite
+struct DownloadReportTests {
 
-  func testAnUntrustedChainReportsWhyAndEachCertificateItPresented() throws {
+  @Test
+  func anUntrustedChainReportsWhyAndEachCertificateItPresented() throws {
     let trust = DownloadReport.Trust(evaluating: try untrustedTrust())
 
-    XCTAssertNotNil(trust.error)
-    XCTAssertEqual(
-      trust.chain,
-      [
+    #expect(trust.error != nil)
+    #expect(
+      trust.chain == [
         DownloadReport.Certificate(subject: "idb.test", issuer: "idb test root", notAfter: Date(timeIntervalSince1970: 1_577_836_800)),
         DownloadReport.Certificate(subject: "idb test root", issuer: "idb test root", notAfter: Date(timeIntervalSince1970: 2_208_988_800)),
       ])
   }
 
-  func testATLSFailureIsEvaluatedFromThePeerTrustItCarries() throws {
+  @Test
+  func atlsFailureIsEvaluatedFromThePeerTrustItCarries() throws {
     let failure = NSError(
       domain: NSURLErrorDomain, code: NSURLErrorSecureConnectionFailed,
       userInfo: [NSURLErrorFailingURLPeerTrustErrorKey: try untrustedTrust()])
 
-    XCTAssertEqual(DownloadReport.Trust.evaluating(failure: failure)?.chain.map(\.subject), ["idb.test", "idb test root"])
+    #expect(DownloadReport.Trust.evaluating(failure: failure)?.chain.map(\.subject) == ["idb.test", "idb test root"])
   }
 
-  func testAFailureWithoutAPeerTrustHasNoTrust() {
-    XCTAssertNil(DownloadReport.Trust.evaluating(failure: URLError(.networkConnectionLost)))
+  @Test
+  func aFailureWithoutAPeerTrustHasNoTrust() {
+    #expect(DownloadReport.Trust.evaluating(failure: URLError(.networkConnectionLost)) == nil)
   }
 }
