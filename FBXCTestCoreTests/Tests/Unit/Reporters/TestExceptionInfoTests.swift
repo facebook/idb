@@ -6,31 +6,35 @@
  */
 
 import FBXCTestCore
-import XCTest
+import Foundation
+import Testing
 
-final class TestExceptionInfoTests: XCTestCase {
+@Suite
+struct TestExceptionInfoTests {
 
   // MARK: - Initializer Behavioral Contracts
 
-  func testConvenienceInit_DefaultsFileToNilAndLineToZero() {
+  @Test
+  func convenienceInit_DefaultsFileToNilAndLineToZero() {
     let fromConvenience = TestExceptionInfo(message: "error")
     let fromFull = TestExceptionInfo(message: "error", file: "Test.m", line: 10)
 
-    XCTAssertNil(fromConvenience.file, "Convenience init must default file to nil")
-    XCTAssertEqual(fromConvenience.line, 0, "Convenience init must default line to 0")
+    #expect(fromConvenience.file == nil, "Convenience init must default file to nil")
+    #expect(fromConvenience.line == 0, "Convenience init must default line to 0")
 
-    XCTAssertNotNil(fromFull.file, "Full init must preserve the provided file")
-    XCTAssertGreaterThan(fromFull.line, 0, "Full init must preserve the provided line")
+    #expect(fromFull.file != nil, "Full init must preserve the provided file")
+    #expect(fromFull.line > 0, "Full init must preserve the provided line")
   }
 
   // MARK: - Description Formatting
 
-  func testDescription_IncludesMessageFileAndLine() {
+  @Test
+  func description_IncludesMessageFileAndLine() {
     let info = TestExceptionInfo(message: "assertion failed", file: "MyTest.m", line: 55)
     let desc = info.description
 
-    XCTAssertTrue(desc.contains("assertion failed"), "Description must include the exception message")
-    XCTAssertTrue(desc.contains("MyTest.m"), "Description must include the file path")
-    XCTAssertTrue(desc.contains("55"), "Description must include the line number")
+    #expect(desc.contains("assertion failed"), "Description must include the exception message")
+    #expect(desc.contains("MyTest.m"), "Description must include the file path")
+    #expect(desc.contains("55"), "Description must include the line number")
   }
 }
