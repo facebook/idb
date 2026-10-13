@@ -136,11 +136,13 @@ final class AXTranslationRequest {
   private func runNamedElement(_ element: AXPlatformElement, options: AccessibilityRequestOptions) -> AccessibilityElementsResponse {
     let walkStart = CFAbsoluteTimeGetCurrent()
     collector.markWalkStart()
+    let keys = Self.serializerKeys(options)
+    let snapshot = AXElementSnapshot.read(
+      element, plan: AXReadPlan(keys: keys, depth: options.nestedFormat ? .unlimited : .limited(0)), token: token)
     var elements = AXNodeSerializer.formattedDescription(
-      ofElement: element,
-      token: token,
+      ofSnapshot: snapshot,
       nestedFormat: options.nestedFormat,
-      keys: Self.serializerKeys(options),
+      keys: keys,
       collector: collector
     )
     if let children = elements.children {
@@ -156,18 +158,16 @@ final class AXTranslationRequest {
   // MARK: - Frontmost Application
 
   private func runFrontmostApplication(_ element: AXPlatformElement, options: AccessibilityRequestOptions) throws -> AccessibilityElementsResponse {
-    // Marked before the screen-bounds fetch so that fetch is inside the measured walk.
     let walkStart = CFAbsoluteTimeGetCurrent()
     collector.markWalkStart()
 
-    let screenBounds = display?.bounds ?? element.axFrame()
+    let keys = Self.serializerKeys(options)
+    let snapshot = AXElementSnapshot.read(element, plan: AXReadPlan(keys: keys, depth: .unlimited), token: token)
+    let screenBounds = display?.bounds ?? snapshot.frame
     let seenPids = SeenPIDs()
 
-    let keys = Self.serializerKeys(options)
-
     let walked = AXNodeSerializer.recursiveDescription(
-      fromElement: element,
-      token: token,
+      fromSnapshot: snapshot,
       nestedFormat: options.nestedFormat,
       keys: keys,
       collector: collector,
@@ -196,7 +196,7 @@ final class AXTranslationRequest {
       )
     }
 
-    let frontmostPid = element.axTranslationPid
+    let frontmostPid = snapshot.pid
     return try processRemoteContent(
       mainAppElements: mainAppElements,
       nestedFormat: options.nestedFormat,
@@ -280,7 +280,7 @@ final class AXTranslationRequest {
           continue
         }
 
-        let hitFrame = hitElement.axFrame()
+        let hitFrame = AXElementSnapshot.read(hitElement, plan: Self.frameOnlyPlan, token: token).frame
         let hitFrameKey = "\(hitFrame.origin.x),\(hitFrame.origin.y),\(hitFrame.size.width),\(hitFrame.size.height)"
         if discoveredFrames.contains(hitFrameKey) {
           x += stepSize
@@ -291,8 +291,8 @@ final class AXTranslationRequest {
         coverageGrid?.markFilled(with: hitFrame)
 
         let discovered = AXNodeSerializer.decoratedElement(
-          forElement: hitElement,
-          token: token,
+          forSnapshot: AXElementSnapshot.read(
+            hitElement, plan: AXReadPlan(keys: keysWithFrame, depth: .limited(0)), token: token),
           keys: keysWithFrame,
           collector: collector,
           seenPids: nil,
@@ -417,6 +417,8 @@ final class AXTranslationRequest {
     }
     return AccessibilityScreenInfo(width: Double(bounds.width), height: Double(bounds.height))
   }
+
+  private static let frameOnlyPlan = AXReadPlan(attributes: [], depth: .limited(0))
 
   private static func serializerKeys(_ options: AccessibilityRequestOptions) -> Set<AXKeys> {
     options.serializationKeys

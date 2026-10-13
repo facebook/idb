@@ -68,21 +68,19 @@ final class AccessibilitySerializationTests: XCTestCase {
 
   // Neither the profiling collector nor the seen-pid/is_remote decorator may change default-set node output.
   func testNodeDictionaryIsCollectorNeutral() throws {
-    let root = AXTreeWalk.buildPlatformElementTree(from: Self.sampleTree(), pid: 7)
-    var elements: [AXPlatformElement] = [root]
-    elements.append(contentsOf: root.axChildren())
-    for element in elements {
+    let root = AXTreeWalk.snapshot(fromTree: Self.sampleTree(), keys: AXKeys.defaultSet, pid: 7)
+    for snapshot in [root] + root.children {
       let bare = AXNodeSerializer.nodeElement(
-        forElement: element, token: "", keys: AXKeys.defaultSet, collector: nil
+        forSnapshot: snapshot, keys: AXKeys.defaultSet, collector: nil
       )
       let instrumented = AXNodeSerializer.nodeElement(
-        forElement: element, token: "", keys: AXKeys.defaultSet,
+        forSnapshot: snapshot, keys: AXKeys.defaultSet,
         collector: AccessibilityProfilingCollector()
       )
       XCTAssertEqual(bare, instrumented, "the profiling side-channel must not change the node output")
 
       let decorated = AXNodeSerializer.decoratedElement(
-        forElement: element, token: "", keys: AXKeys.defaultSet,
+        forSnapshot: snapshot, keys: AXKeys.defaultSet,
         collector: AccessibilityProfilingCollector(), seenPids: SeenPIDs(), isRemote: true
       )
       XCTAssertEqual(bare, decorated, "the seen-pid/is_remote decorator must not alter default-set node output")
@@ -92,24 +90,24 @@ final class AccessibilitySerializationTests: XCTestCase {
   // `is_remote` is opt-in and, when requested, a *bool* recording provenance — `false` for the main-tree traversal,
   // `true` for remote grid hit-testing.
   func testDecoratorTagsIsRemoteProvenanceAsBool() throws {
-    let root = AXTreeWalk.buildPlatformElementTree(from: Self.sampleTree(), pid: 7)
     var keysWithRemote = AXKeys.defaultSet
     keysWithRemote.insert(.isRemote)
+    let root = AXTreeWalk.snapshot(fromTree: Self.sampleTree(), keys: keysWithRemote, pid: 7)
 
     let local = AXNodeSerializer.decoratedElement(
-      forElement: root, token: "", keys: keysWithRemote,
+      forSnapshot: root, keys: keysWithRemote,
       collector: nil, seenPids: nil, isRemote: false
     )
     XCTAssertEqual(local.isRemote, .some(false), "main-tree nodes tag is_remote=false")
 
     let remote = AXNodeSerializer.decoratedElement(
-      forElement: root, token: "", keys: keysWithRemote,
+      forSnapshot: root, keys: keysWithRemote,
       collector: nil, seenPids: nil, isRemote: true
     )
     XCTAssertEqual(remote.isRemote, .some(true), "remote-discovered nodes tag is_remote=true")
 
     let defaultSet = AXNodeSerializer.decoratedElement(
-      forElement: root, token: "", keys: AXKeys.defaultSet,
+      forSnapshot: root, keys: AXKeys.defaultSet,
       collector: nil, seenPids: nil, isRemote: true
     )
     XCTAssertNil(defaultSet.isRemote as Any?, "is_remote stays absent unless explicitly requested")

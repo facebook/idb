@@ -10,39 +10,37 @@ import FBControlCore
 import FBSimulatorControl
 import Foundation
 
-/// Serializes an `AXPlatformElement` tree into the typed accessibility schema. Values are kept
+/// Serializes an `AXElementSnapshot` tree into the typed accessibility schema. Values are kept
 /// compatible with the SimulatorBridge output downstream consumers parse.
 ///
-/// Each attribute is read into a statically-typed field; `axValue()` is genuinely `Any` and is
-/// classified into `AccessibilityAttributeValue` at the read site.
+/// Serialization reads nothing: every value comes from a snapshot read against the plan for the same
+/// keys (`AXReadPlan(keys:depth:)`).
 enum AXNodeSerializer {
 
   // MARK: - Entry points
 
   static func recursiveDescription(
-    fromElement element: AXPlatformElement,
-    token: String,
+    fromSnapshot snapshot: AXElementSnapshot,
     nestedFormat: Bool,
     keys: Set<AXKeys>,
     collector: AccessibilityProfilingCollector?,
     seenPids: SeenPIDs?
   ) -> [AccessibilityDocumentElement] {
-    element.axSetBridgeDelegateToken(token)
     if nestedFormat {
-      return nestedRecursiveDescription(fromElement: element, token: token, keys: keys, collector: collector, seenPids: seenPids)
+      return nestedRecursiveDescription(fromSnapshot: snapshot, keys: keys, collector: collector, seenPids: seenPids)
     }
-    return flatRecursiveDescription(fromElement: element, token: token, keys: keys, collector: collector, seenPids: seenPids)
+    return flatRecursiveDescription(fromSnapshot: snapshot, keys: keys, collector: collector, seenPids: seenPids)
   }
 
+  /// The one element a caller named. Its descendants are serialized only in the nested format, so a
+  /// flat read plans `.limited(0)`.
   static func formattedDescription(
-    ofElement element: AXPlatformElement,
-    token: String,
+    ofSnapshot snapshot: AXElementSnapshot,
     nestedFormat: Bool,
     keys: Set<AXKeys>,
     collector: AccessibilityProfilingCollector?
   ) -> AccessibilityDocumentElement {
-    element.axSetBridgeDelegateToken(token)
-    var node = decoratedElement(forElement: element, token: token, keys: keys, collector: collector, seenPids: nil, isRemote: false)
+    var node = decoratedElement(forSnapshot: snapshot, keys: keys, collector: collector, seenPids: nil, isRemote: false)
     guard nestedFormat else {
       return node
     }
@@ -50,13 +48,9 @@ enum AXNodeSerializer {
     // itself, so the target is always reported and always carries a `children` array — a filtered walk
     // rooted at the target could drop or replace it. The caller filters these children afterwards.
     var children: [AccessibilityDocumentElement] = []
-    for child in element.axChildren() {
-      child.axSetBridgeDelegateToken(token)
+    for child in snapshot.children {
       children.append(
-        contentsOf: nestedRecursiveDescription(
-          fromElement: child, token: token, keys: keys, collector: collector,
-          seenPids: nil
-        )
+        contentsOf: nestedRecursiveDescription(fromSnapshot: child, keys: keys, collector: collector, seenPids: nil)
       )
     }
     node.children = children
@@ -67,95 +61,91 @@ enum AXNodeSerializer {
 
   /// Builds the node for a single element over `keys`.
   ///
-  /// An attribute is read only when requested, and the result records that: a requested attribute is
-  /// `.some(value-or-nil)` and an unrequested one stays `nil`, which is what lets the encodings emit an
-  /// explicit null for the former and nothing at all for the latter.
+  /// An attribute is reported only when requested, and the result records that: a requested attribute
+  /// is `.some(value-or-nil)` and an unrequested one stays `nil`, which is what lets the encodings emit
+  /// an explicit null for the former and nothing at all for the latter.
   ///
-  /// The collector tallies each fetch in read order, so the order below is load-bearing for the profile
-  /// and must not be rearranged. Seen-pid dedup and the `is_remote` tag live in `decoratedElement`.
+  /// The collector tallies one fetch per requested key, as the plan for `keys` fetched it. Seen-pid dedup
+  /// and the `is_remote` tag live in `decoratedElement`.
   static func nodeElement(
-    forElement element: AXPlatformElement,
-    token: String,
+    forSnapshot snapshot: AXElementSnapshot,
     keys: Set<AXKeys>,
     collector: AccessibilityProfilingCollector?
   ) -> AccessibilityDocumentElement {
-    // The token must always be set so that the right callback is called.
-    element.axSetBridgeDelegateToken(token)
-
     collector?.incrementElementCount()
 
     var node = AccessibilityDocumentElement()
 
-    func read<T>(_ key: AXKeys, _ value: @autoclosure () -> T?) -> T?? {
+    func read<T>(_ key: AXKeys, _ value: T?) -> T?? {
       guard keys.contains(key) else {
         return nil
       }
       collector?.incrementAttributeFetchCount(forKey: key.rawValue)
-      return .some(value())
+      return .some(value)
     }
 
-    // Frame is always computed since it is used by multiple keys.
+    // Frame is always read since it is used by multiple keys.
     collector?.incrementAttributeFetchCount(forKey: AXKeys.frame.rawValue)
-    let frame = element.axFrame()
+    let frame = snapshot.frame
 
     var role: String?
     var rawRole: String?
     if keys.contains(.role) {
       collector?.incrementAttributeFetchCount(forKey: AXKeys.role.rawValue)
-      rawRole = element.axRole()
+      rawRole = snapshot.role
       node.role = .some(rawRole)
     }
     if keys.contains(.type) {
       if rawRole == nil {
         collector?.incrementAttributeFetchCount(forKey: AXKeys.type.rawValue)
-        rawRole = element.axRole()
+        rawRole = snapshot.role
       }
       // accessibilityRole may be prefixed with "AX"; strip it to match the
       // SimulatorBridge implementation.
       role = rawRole.map(AXRoleVocabulary.normalizeRole)
     }
 
-    node.label = read(.label, element.axLabel())
+    node.label = read(.label, snapshot.label)
     if keys.contains(.frame) {
       node.axFrame = .some(NSStringFromRect(frame))
     }
-    node.value = read(.value, AccessibilityAttributeValue(element.axValue()))
-    node.identifier = read(.uniqueID, element.axIdentifier())
+    node.value = read(.value, snapshot.value)
+    node.identifier = read(.uniqueID, snapshot.identifier)
 
     if keys.contains(.type) {
       node.type = .some(role)
     }
 
-    node.title = read(.title, element.axTitle())
+    node.title = read(.title, snapshot.title)
     if keys.contains(.frameDict) {
       collector?.incrementAttributeFetchCount(forKey: AXKeys.frameDict.rawValue)
       node.frame = .some(AccessibilityFrame(frame))
     }
-    node.help = read(.help, element.axHelp())
-    node.enabled = read(.enabled, element.axIsEnabled())
-    node.customActions = read(.customActions, element.axCustomActionNames())
-    node.roleDescription = read(.roleDescription, element.axRoleDescription())
-    node.subrole = read(.subrole, element.axSubrole())
-    node.contentRequired = read(.contentRequired, element.axIsRequired())
-    node.pid = read(.pid, Int64(element.axTranslationPid))
+    node.help = read(.help, snapshot.help)
+    node.enabled = read(.enabled, snapshot.isEnabled)
+    node.customActions = read(.customActions, snapshot.customActionNames)
+    node.roleDescription = read(.roleDescription, snapshot.roleDescription)
+    node.subrole = read(.subrole, snapshot.subrole)
+    node.contentRequired = read(.contentRequired, snapshot.isRequired)
+    node.pid = read(.pid, Int64(snapshot.pid))
     if keys.contains(.traits) {
       collector?.incrementAttributeFetchCount(forKey: AXKeys.traits.rawValue)
-      node.traits = .some(element.axTraits())
+      node.traits = .some(snapshot.traits)
     }
-    node.expanded = read(.expanded, element.axIsExpanded())
-    node.placeholder = read(.placeholder, element.axPlaceholderValue())
-    node.hidden = read(.hidden, element.axIsHidden())
-    node.focused = read(.focused, element.axIsFocused())
+    node.expanded = read(.expanded, snapshot.isExpanded)
+    node.placeholder = read(.placeholder, snapshot.placeholder)
+    node.hidden = read(.hidden, snapshot.isHidden)
+    node.focused = read(.focused, snapshot.isFocused)
     if keys.contains(.interactable) {
       collector?.incrementAttributeFetchCount(forKey: AXKeys.interactable.rawValue)
-      node.interactable = .some(interactable(forElement: element, frame: frame))
-      node.explainedBy = element.axExplainedBy().map { explanation in
+      node.interactable = .some(snapshot.hittability.flatMap { interactable(for: $0, frame: frame) })
+      node.explainedBy = snapshot.explainedBy.map { explanation in
         AccessibilityElementRef(
-          type: explanation.axRole().map(AXRoleVocabulary.normalizeRole),
-          identifier: explanation.axIdentifier(),
-          label: explanation.axLabel(),
-          frame: AccessibilityFrame(explanation.axFrame()),
-          pid: Int64(explanation.axTranslationPid)
+          type: explanation.role.map(AXRoleVocabulary.normalizeRole),
+          identifier: explanation.identifier,
+          label: explanation.label,
+          frame: AccessibilityFrame(explanation.frame),
+          pid: Int64(explanation.pid)
         )
       }
     }
@@ -163,33 +153,29 @@ enum AXNodeSerializer {
     return node
   }
 
-  /// Nil (an explicit null downstream) when the backend cannot answer hittability at all — never
+  /// The caller reports an explicit null when the backend cannot answer hittability at all — never
   /// derived from `enabled`, which would confuse "disabled" with "unreachable". Reasons accumulate
   /// rather than short-circuit: an element is often blocked more than one way.
   private static func interactable(
-    forElement element: AXPlatformElement,
+    for hittability: AXHittability,
     frame: NSRect
   ) -> AccessibilityInteractable? {
-    guard let hittable = element.axIsHittable() else {
-      return nil
-    }
-
     var reasons: [AccessibilityInteractable.Reason] = []
     if frame.width == 0 || frame.height == 0 {
       reasons.append(.zeroSize)
     }
-    if element.axIsHidden() {
+    if hittability.isHidden {
       reasons.append(.hidden)
     }
-    if element.axIsEnabled() == false {
+    if hittability.isEnabled == false {
       reasons.append(.disabled)
     }
-    if element.axIsUserInteractionEnabled() == false {
+    if hittability.isUserInteractionEnabled == false {
       reasons.append(.userInteractionDisabled)
     }
 
-    let hittablePoint = element.axHittablePoint().flatMap(AccessibilityPoint.init)
-    if !hittable {
+    let hittablePoint = hittability.hittablePoint.flatMap(AccessibilityPoint.init)
+    if !hittability.isHittable {
       // No reachable point at all. This attribute cannot say whether the element is covered, clipped,
       // transparent or handled by a relative — naming the cause needs the `occludedBy` hit-test.
       reasons.append(.notHittable)
@@ -216,15 +202,14 @@ enum AXNodeSerializer {
   /// discovered by remote grid hit-testing, `false` for the main-tree traversal. `.isRemote` is not in
   /// `AXKeys.defaultSet`, so a default response is unchanged by the decorator.
   static func decoratedElement(
-    forElement element: AXPlatformElement,
-    token: String,
+    forSnapshot snapshot: AXElementSnapshot,
     keys: Set<AXKeys>,
     collector: AccessibilityProfilingCollector?,
     seenPids: SeenPIDs?,
     isRemote: Bool
   ) -> AccessibilityDocumentElement {
-    var node = nodeElement(forElement: element, token: token, keys: keys, collector: collector)
-    seenPids?.insert(element.axTranslationPid)
+    var node = nodeElement(forSnapshot: snapshot, keys: keys, collector: collector)
+    seenPids?.insert(snapshot.pid)
     if keys.contains(.isRemote) {
       collector?.incrementAttributeFetchCount(forKey: AXKeys.isRemote.rawValue)
       node.isRemote = .some(isRemote)
@@ -236,36 +221,32 @@ enum AXNodeSerializer {
 
   // Flat output lists every node separately, so `children` stays nil.
   private static func flatRecursiveDescription(
-    fromElement element: AXPlatformElement,
-    token: String,
+    fromSnapshot snapshot: AXElementSnapshot,
     keys: Set<AXKeys>,
     collector: AccessibilityProfilingCollector?,
     seenPids: SeenPIDs?
   ) -> [AccessibilityDocumentElement] {
     var values: [AccessibilityDocumentElement] = [
-      decoratedElement(forElement: element, token: token, keys: keys, collector: collector, seenPids: seenPids, isRemote: false)
+      decoratedElement(forSnapshot: snapshot, keys: keys, collector: collector, seenPids: seenPids, isRemote: false)
     ]
-    for child in element.axChildren() {
-      child.axSetBridgeDelegateToken(token)
-      values.append(contentsOf: flatRecursiveDescription(fromElement: child, token: token, keys: keys, collector: collector, seenPids: seenPids))
+    for child in snapshot.children {
+      values.append(contentsOf: flatRecursiveDescription(fromSnapshot: child, keys: keys, collector: collector, seenPids: seenPids))
     }
     return values
   }
 
   // Returns the element as a single nested node carrying its serialized subtree.
   private static func nestedRecursiveDescription(
-    fromElement element: AXPlatformElement,
-    token: String,
+    fromSnapshot snapshot: AXElementSnapshot,
     keys: Set<AXKeys>,
     collector: AccessibilityProfilingCollector?,
     seenPids: SeenPIDs?
   ) -> [AccessibilityDocumentElement] {
     var childrenValues: [AccessibilityDocumentElement] = []
-    for child in element.axChildren() {
-      child.axSetBridgeDelegateToken(token)
-      childrenValues.append(contentsOf: nestedRecursiveDescription(fromElement: child, token: token, keys: keys, collector: collector, seenPids: seenPids))
+    for child in snapshot.children {
+      childrenValues.append(contentsOf: nestedRecursiveDescription(fromSnapshot: child, keys: keys, collector: collector, seenPids: seenPids))
     }
-    var values = decoratedElement(forElement: element, token: token, keys: keys, collector: collector, seenPids: seenPids, isRemote: false)
+    var values = decoratedElement(forSnapshot: snapshot, keys: keys, collector: collector, seenPids: seenPids, isRemote: false)
     values.children = childrenValues
     return [values]
   }

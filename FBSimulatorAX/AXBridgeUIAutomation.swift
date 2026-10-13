@@ -279,9 +279,9 @@ final class AXBridgeUIAutomation: AXBridgeTreeReader, @unchecked Sendable {
       guard let hit = try AXTreeRead(hitTestResponse: response) else {
         return nil
       }
-      let element = AXTreeWalk.buildPlatformElementTree(from: hit.tree, pid: hit.pid)
+      let snapshot = AXTreeWalk.snapshot(fromTree: hit.tree, keys: options.serializationKeys, pid: hit.pid)
       var formatted = AXNodeSerializer.formattedDescription(
-        ofElement: element, token: "", nestedFormat: options.nestedFormat, keys: options.serializationKeys, collector: nil
+        ofSnapshot: snapshot, nestedFormat: options.nestedFormat, keys: options.serializationKeys, collector: nil
       )
       // The hit element is exempt from the filter; its descendants are not.
       if let children = formatted.children {

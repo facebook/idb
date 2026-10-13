@@ -17,14 +17,22 @@ enum AXTreeWalk {
   /// Serializes an attribute-dictionary tree into the schema, tagging each element with `pid`. The
   /// result is unfiltered so a caller can keep both the whole walk and the reported subset.
   static func describeAllElements(fromTree tree: [String: Any], keys: Set<AXKeys>, nestedFormat: Bool, pid: pid_t) -> [AccessibilityDocumentElement] {
-    let root = buildPlatformElementTree(from: tree, pid: pid)
-    return AXNodeSerializer.recursiveDescription(
-      fromElement: root,
-      token: "",
+    AXNodeSerializer.recursiveDescription(
+      fromSnapshot: snapshot(fromTree: tree, keys: keys, pid: pid),
       nestedFormat: nestedFormat,
       keys: keys,
       collector: nil,
       seenPids: nil
+    )
+  }
+
+  /// The snapshot a serialization over `keys` consumes, read from an attribute-dictionary tree the guest
+  /// has already fetched.
+  static func snapshot(fromTree tree: [String: Any], keys: Set<AXKeys>, pid: pid_t) -> AXElementSnapshot {
+    AXElementSnapshot.read(
+      buildPlatformElementTree(from: tree, pid: pid),
+      plan: AXReadPlan(keys: keys, depth: .unlimited),
+      token: ""
     )
   }
 
