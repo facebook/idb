@@ -7,30 +7,34 @@
 
 @testable import CompanionLib
 import GRPCCore
-import XCTest
+import Testing
 
-final class RPCCancellationTests: XCTestCase {
-  func testCompletedOperationDoesNotWaitForDisconnect() async throws {
+@Suite
+struct RPCCancellationTests {
+  @Test
+  func completedOperationDoesNotWaitForDisconnect() async throws {
     let cancellation = ServerContext.RPCCancellationHandle()
     try await withRPCCancellation(cancellation) {}
-    XCTAssertFalse(cancellation.isCancelled)
+    #expect(!cancellation.isCancelled)
   }
 
-  func testAlreadyCancelledRPCDoesNotStartOperation() async {
+  @Test
+  func alreadyCancelledRPCDoesNotStartOperation() async {
     let cancellation = ServerContext.RPCCancellationHandle()
     cancellation.cancel()
     do {
       try await withRPCCancellation(cancellation) {
-        XCTFail("Cancelled RPC must not begin the operation")
+        Issue.record("Cancelled RPC must not begin the operation")
       }
-      XCTFail("Expected cancellation")
+      Issue.record("Expected cancellation")
     } catch is CancellationError {
     } catch {
-      XCTFail("Unexpected error: \(error)")
+      Issue.record("Unexpected error: \(error)")
     }
   }
 
-  func testDisconnectCancelsOperationAndJoinsCleanup() async throws {
+  @Test
+  func disconnectCancelsOperationAndJoinsCleanup() async throws {
     let cancellation = ServerContext.RPCCancellationHandle()
     let (started, continuation) = AsyncStream<Void>.makeStream()
     let cleanup = CleanupState()
@@ -48,13 +52,13 @@ final class RPCCancellationTests: XCTestCase {
     cancellation.cancel()
     do {
       try await result
-      XCTFail("Expected cancellation")
+      Issue.record("Expected cancellation")
     } catch is CancellationError {
     } catch {
-      XCTFail("Unexpected error: \(error)")
+      Issue.record("Unexpected error: \(error)")
     }
     let completed = await cleanup.completed
-    XCTAssertTrue(completed)
+    #expect(completed)
   }
 
   private actor CleanupState {
