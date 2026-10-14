@@ -7,16 +7,20 @@
 
 import FBControlCore
 @testable import FBSimulatorControl
-import XCTest
+import Foundation
+import Testing
 
-final class SimulatorConfigurationTests: XCTestCase {
-  func testCreationRequestKeepsDeviceAndRuntimeSelectionExplicit() {
+@Suite
+struct SimulatorConfigurationTests {
+  @Test
+  func creationRequestKeepsDeviceAndRuntimeSelectionExplicit() {
     let request = SimulatorCreationRequest(device: .identifier("future.device"), runtime: .name("FutureOS 99.0"))
-    XCTAssertEqual(request.device, .identifier("future.device"))
-    XCTAssertEqual(request.runtime, .name("FutureOS 99.0"))
+    #expect(request.device == .identifier("future.device"))
+    #expect(request.runtime == .name("FutureOS 99.0"))
   }
 
-  func testOmittedRuntimeIsResolvedAgainstTheRequestedDevice() throws {
+  @Test
+  func omittedRuntimeIsResolvedAgainstTheRequestedDevice() throws {
     let request = SimulatorCreationRequest(device: .identifier("future.device"))
     let index = SimulatorRuntimeIndex(
       devices: [.init(identifier: "future.device", name: "Future Device")],
@@ -24,8 +28,8 @@ final class SimulatorConfigurationTests: XCTestCase {
         .init(identifier: "incompatible", name: "OtherOS 100.0", version: "100.0", build: "100A1", available: true, supportedDevices: []),
         .init(identifier: "compatible", name: "FutureOS 99.0", version: "99.0", build: "99A1", available: true, supportedDevices: ["future.device"]),
       ])
-    XCTAssertNil(request.runtime)
+    #expect(request.runtime == nil)
     let match = try index.resolve(request)
-    XCTAssertEqual(index.runtimes[match.runtime].identifier, "compatible")
+    #expect(index.runtimes[match.runtime].identifier == "compatible")
   }
 }
