@@ -6,11 +6,14 @@
  */
 
 import FBXCTestCore
-import XCTest
+import Foundation
+import Testing
 
-final class FBTestConfigurationTests: XCTestCase {
+@Suite
+struct FBTestConfigurationTests {
 
-  func testSaveAs() throws {
+  @Test
+  func saveAs() throws {
     let sessionIdentifier = UUID()
     let someRandomPath = NSTemporaryDirectory()
 
@@ -28,20 +31,19 @@ final class FBTestConfigurationTests: XCTestCase {
       reportActivities: false
     )
 
-    XCTAssertTrue(FileManager.default.fileExists(atPath: testConfiguration.path))
+    #expect(FileManager.default.fileExists(atPath: testConfiguration.path))
 
-    let xcTestConfig = try XCTUnwrap(
-      FBTestConfigurationTestHelper.xcTestConfiguration(testConfiguration))
+    let xcTestConfig = try #require(FBTestConfigurationTestHelper.xcTestConfiguration(testConfiguration))
 
-    XCTAssertEqual(FBTestConfigurationTestHelper.productModuleName(xcTestConfig), "ModuleName")
-    XCTAssertEqual(FBTestConfigurationTestHelper.testBundleURL(xcTestConfig), URL(fileURLWithPath: someRandomPath))
-    XCTAssertEqual(FBTestConfigurationTestHelper.initialize(forUITesting: xcTestConfig), true)
-    XCTAssertEqual(FBTestConfigurationTestHelper.targetApplicationPath(xcTestConfig), "targetAppPath")
-    XCTAssertEqual(FBTestConfigurationTestHelper.targetApplicationBundleID(xcTestConfig), "targetBundleID")
-    XCTAssertEqual(FBTestConfigurationTestHelper.reportActivities(xcTestConfig), false)
-    XCTAssertEqual(FBTestConfigurationTestHelper.reportResults(toIDE: xcTestConfig), true)
+    #expect(FBTestConfigurationTestHelper.productModuleName(xcTestConfig) == "ModuleName")
+    #expect(FBTestConfigurationTestHelper.testBundleURL(xcTestConfig) == URL(fileURLWithPath: someRandomPath))
+    #expect(FBTestConfigurationTestHelper.initialize(forUITesting: xcTestConfig) == true)
+    #expect(FBTestConfigurationTestHelper.targetApplicationPath(xcTestConfig) == "targetAppPath")
+    #expect(FBTestConfigurationTestHelper.targetApplicationBundleID(xcTestConfig) == "targetBundleID")
+    #expect(FBTestConfigurationTestHelper.reportActivities(xcTestConfig) == false)
+    #expect(FBTestConfigurationTestHelper.reportResults(toIDE: xcTestConfig) == true)
 
     let capabilities: NSDictionary = ["XCTIssue capability": 1, "ubiquitous test identifiers": 1]
-    XCTAssertEqual(FBTestConfigurationTestHelper.ideCapabilitiesDictionary(xcTestConfig)! as NSDictionary, capabilities)
+    #expect(FBTestConfigurationTestHelper.ideCapabilitiesDictionary(xcTestConfig)! as NSDictionary == capabilities)
   }
 }
