@@ -6,27 +6,29 @@
  */
 
 @testable import FBSimulatorControl
-// Matches the existing XCTest-based FBSimulatorControl unit suite (SimulatorIndigoHIDTests et al.).
-// ast-grep-ignore: swift-testing/swift/no-new-xctest
-import XCTest
+import Foundation
+import Testing
 
 /// Coverage of the Siri Remote focus events: the press expands to a `.remoteButton` down/up pair, and
 /// the keyboard usage each action carries.
-final class SimulatorHIDRemoteButtonTests: XCTestCase {
+@Suite
+struct SimulatorHIDRemoteButtonTests {
 
-  func testRemoteButtonIsAShortRemotePress() {
+  @Test
+  func remoteButtonIsAShortRemotePress() {
     for button in SimulatorHIDRemoteButton.allCases {
-      XCTAssertEqual(
-        SimulatorHIDEvent.remoteButton(button),
-        .composite([
-          .remoteButton(direction: .down, button: button),
-          .remoteButton(direction: .up, button: button),
-        ]),
+      #expect(
+        SimulatorHIDEvent.remoteButton(button)
+          == .composite([
+            .remoteButton(direction: .down, button: button),
+            .remoteButton(direction: .up, button: button),
+          ]),
         "remoteButton(\(button.name)) should be a short press of that remote action")
     }
   }
 
-  func testRemoteButtonKeyboardUsages() {
+  @Test
+  func remoteButtonKeyboardUsages() {
     let expected: [(SimulatorHIDRemoteButton, UInt32)] = [
       (.up, 0x52),
       (.down, 0x51),
@@ -36,14 +38,14 @@ final class SimulatorHIDRemoteButtonTests: XCTestCase {
       (.menu, 0x29), // Escape
     ]
     for (button, keyCode) in expected {
-      XCTAssertEqual(
-        button.keyboardUsage, keyCode, "\(button.name) should carry keyboard usage \(keyCode)")
+      #expect(
+        button.keyboardUsage == keyCode, "\(button.name) should carry keyboard usage \(keyCode)")
     }
   }
 
-  func testRemoteButtonNames() {
-    XCTAssertEqual(
-      SimulatorHIDRemoteButton.allCases.map(\.name),
-      ["up", "down", "left", "right", "select", "menu"])
+  @Test
+  func remoteButtonNames() {
+    #expect(
+      SimulatorHIDRemoteButton.allCases.map(\.name) == ["up", "down", "left", "right", "select", "menu"])
   }
 }
