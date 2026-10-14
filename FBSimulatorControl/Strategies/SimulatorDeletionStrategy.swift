@@ -32,7 +32,7 @@ final class SimulatorDeletionStrategy {
     let logger = simulator.logger
 
     logger.log("Killing Simulator, in preparation for deletion \(simulator)")
-    try await SimulatorShutdownStrategy.shutdown(simulator)
+    try await simulator.power.shutdown()
 
     logger.log("Deleting Simulator \(simulator)")
     try await performDeletion(of: simulator.device, on: deviceSet, queue: simulator.asyncQueue)

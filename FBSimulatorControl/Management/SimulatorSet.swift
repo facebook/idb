@@ -79,7 +79,7 @@ public final class SimulatorSet: TargetSet {
     let simulator = try fetchNewlyMadeSimulatorOrThrow(device)
     logger.debug().log("Created Simulator \(simulator.udid) for request \(request)")
     do {
-      try await SimulatorShutdownStrategy.shutdown(simulator)
+      try await simulator.power.shutdown()
     } catch {
       throw SimulatorSetError.shutdownAfterCreateFailed(reason: error.localizedDescription)
     }
@@ -94,7 +94,7 @@ public final class SimulatorSet: TargetSet {
   // MARK: - Destructive Methods
 
   public func shutdown(_ simulator: Simulator) async throws {
-    try await SimulatorShutdownStrategy.shutdown(simulator)
+    try await simulator.power.shutdown()
   }
 
   public func delete(_ simulator: Simulator) async throws {
@@ -102,7 +102,9 @@ public final class SimulatorSet: TargetSet {
   }
 
   func shutdownAll(_ simulators: [Simulator]) async throws {
-    try await SimulatorShutdownStrategy.shutdownAll(simulators)
+    for simulator in simulators {
+      try await simulator.power.shutdown()
+    }
   }
 
   public func deleteAll(_ simulators: [Simulator]) async throws {
@@ -110,7 +112,7 @@ public final class SimulatorSet: TargetSet {
   }
 
   func shutdownAll() async throws {
-    try await SimulatorShutdownStrategy.shutdownAll(allSimulators)
+    try await shutdownAll(allSimulators)
   }
 
   public func deleteAll() async throws {

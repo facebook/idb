@@ -12,7 +12,7 @@
 final class SimulatorEraseStrategy {
 
   static func erase(_ simulator: Simulator) async throws {
-    try await SimulatorShutdownStrategy.shutdown(simulator)
+    try await simulator.power.shutdown()
     try await eraseContentsAndSettings(simulator)
   }
 
