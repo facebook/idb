@@ -8,7 +8,8 @@
 @preconcurrency import CoreSimulator
 import FBControlCore
 @testable import FBSimulatorControl
-import XCTest
+import Foundation
+import Testing
 
 // MARK: - Test Doubles
 //
@@ -58,21 +59,15 @@ import XCTest
 
 // MARK: - Test Class
 
-final class SimulatorTests: XCTestCase {
+@Suite
+struct SimulatorTests {
 
-  private var stubDevice: TestSimDevice!
-  private var simulator: Simulator!
+  private let stubDevice: TestSimDevice
+  private let simulator: Simulator
 
-  override func setUpWithError() throws {
-    try super.setUpWithError()
+  init() {
     stubDevice = TestSimDevice()
     simulator = Self.createSimulator(with: stubDevice)
-  }
-
-  override func tearDownWithError() throws {
-    simulator = nil
-    stubDevice = nil
-    try super.tearDownWithError()
   }
 
   private static func createSimulator(with device: TestSimDevice) -> Simulator {
@@ -81,85 +76,96 @@ final class SimulatorTests: XCTestCase {
 
   // MARK: - Product Family
 
-  func testProductFamily_WhenFamilyIDIs1_ReturnsiPhone() {
+  @Test
+  func productFamily_WhenFamilyIDIs1_ReturnsiPhone() {
     stubDevice.deviceType.productFamilyID = 1
     let sim = Self.createSimulator(with: stubDevice)
-    XCTAssertEqual(sim.productFamily, .iPhone, "productFamilyID 1 should map to iPhone")
+    #expect(sim.productFamily == .iPhone, "productFamilyID 1 should map to iPhone")
   }
 
-  func testProductFamily_WhenFamilyIDIs2_ReturnsiPad() {
+  @Test
+  func productFamily_WhenFamilyIDIs2_ReturnsiPad() {
     stubDevice.deviceType.productFamilyID = 2
     let sim = Self.createSimulator(with: stubDevice)
-    XCTAssertEqual(sim.productFamily, .iPad, "productFamilyID 2 should map to iPad")
+    #expect(sim.productFamily == .iPad, "productFamilyID 2 should map to iPad")
   }
 
-  func testProductFamily_WhenFamilyIDIs3_ReturnsAppleTV() {
+  @Test
+  func productFamily_WhenFamilyIDIs3_ReturnsAppleTV() {
     stubDevice.deviceType.productFamilyID = 3
     let sim = Self.createSimulator(with: stubDevice)
-    XCTAssertEqual(sim.productFamily, .appleTV, "productFamilyID 3 should map to AppleTV")
+    #expect(sim.productFamily == .appleTV, "productFamilyID 3 should map to AppleTV")
   }
 
-  func testProductFamily_WhenFamilyIDIs4_ReturnsAppleWatch() {
+  @Test
+  func productFamily_WhenFamilyIDIs4_ReturnsAppleWatch() {
     stubDevice.deviceType.productFamilyID = 4
     let sim = Self.createSimulator(with: stubDevice)
-    XCTAssertEqual(sim.productFamily, .appleWatch, "productFamilyID 4 should map to AppleWatch")
+    #expect(sim.productFamily == .appleWatch, "productFamilyID 4 should map to AppleWatch")
   }
 
-  func testProductFamily_WhenFamilyIDIsUnknown_ReturnsUnknown() {
+  @Test
+  func productFamily_WhenFamilyIDIsUnknown_ReturnsUnknown() {
     stubDevice.deviceType.productFamilyID = 99
     let sim = Self.createSimulator(with: stubDevice)
-    XCTAssertEqual(sim.productFamily, .unknown, "Unrecognized productFamilyID should map to Unknown")
+    #expect(sim.productFamily == .unknown, "Unrecognized productFamilyID should map to Unknown")
   }
 
   // MARK: - Custom Device Set Path
 
-  func testCustomDeviceSetPath_WhenDefaultPath_ReturnsNil() {
+  @Test
+  func customDeviceSetPath_WhenDefaultPath_ReturnsNil() {
     stubDevice.deviceSet.setPath = ("~/Library/Developer/CoreSimulator/Devices" as NSString).expandingTildeInPath
     let sim = Self.createSimulator(with: stubDevice)
-    XCTAssertNil(sim.customDeviceSetPath, "customDeviceSetPath should be nil when using the default device set path")
+    #expect(sim.customDeviceSetPath == nil, "customDeviceSetPath should be nil when using the default device set path")
   }
 
-  func testCustomDeviceSetPath_WhenCustomPath_ReturnsPath() {
+  @Test
+  func customDeviceSetPath_WhenCustomPath_ReturnsPath() {
     let customPath = "/custom/simulator/devices"
     stubDevice.deviceSet.setPath = customPath
     let sim = Self.createSimulator(with: stubDevice)
-    XCTAssertEqual(
-      sim.customDeviceSetPath, customPath,
+    #expect(
+      sim.customDeviceSetPath == customPath,
       "customDeviceSetPath should return the custom path when not using the default")
   }
 
   // MARK: - Screen Info
 
-  func testScreenInfo_ReturnsDeviceTypeScreenDimensions() throws {
+  @Test
+  func screenInfo_ReturnsDeviceTypeScreenDimensions() throws {
     stubDevice.deviceType.mainScreenSize = CGSize(width: 1170, height: 2532)
     stubDevice.deviceType.mainScreenScale = 3.0
     let sim = Self.createSimulator(with: stubDevice)
 
-    let screenInfo = try XCTUnwrap(sim.screenInfo, "screenInfo should not be nil")
+    let screenInfo = try #require(sim.screenInfo, "screenInfo should not be nil")
 
-    XCTAssertEqual(screenInfo.widthPixels, 1170, "widthPixels should match device type mainScreenSize.width")
-    XCTAssertEqual(screenInfo.heightPixels, 2532, "heightPixels should match device type mainScreenSize.height")
-    XCTAssertEqual(screenInfo.scale, 3.0, accuracy: 0.001, "scale should match device type mainScreenScale")
+    #expect(screenInfo.widthPixels == 1170, "widthPixels should match device type mainScreenSize.width")
+    #expect(screenInfo.heightPixels == 2532, "heightPixels should match device type mainScreenSize.height")
+    #expect(abs(screenInfo.scale - 3.0) <= 0.001, "scale should match device type mainScreenScale")
   }
 
   // MARK: - Equality and Hashing
 
-  func testIsEqual_WhenSameDevice_ReturnsYES() {
+  @Test
+  func isEqual_WhenSameDevice_ReturnsYES() {
     let sim1 = Self.createSimulator(with: stubDevice)
     let sim2 = Self.createSimulator(with: stubDevice)
-    XCTAssertEqual(sim1, sim2, "Two simulators wrapping the same device should be equal")
+    #expect(sim1 == sim2, "Two simulators wrapping the same device should be equal")
   }
 
-  func testIsEqual_WhenDifferentDevice_ReturnsNO() {
+  @Test
+  func isEqual_WhenDifferentDevice_ReturnsNO() {
     let sim2 = Self.createSimulator(with: TestSimDevice())
-    XCTAssertNotEqual(simulator, sim2, "Two simulators wrapping different devices should not be equal")
+    #expect(simulator != sim2, "Two simulators wrapping different devices should not be equal")
   }
 
-  func testHash_DelegatesToDevice() {
+  @Test
+  func hash_DelegatesToDevice() {
     let sim1 = Self.createSimulator(with: stubDevice)
     let sim2 = Self.createSimulator(with: stubDevice)
-    XCTAssertEqual(sim1.hashValue, sim2.hashValue, "Simulators wrapping the same device should hash identically")
-    XCTAssertEqual(Set([sim1, sim2]).count, 1, "A set should collapse simulators wrapping the same device")
+    #expect(sim1.hashValue == sim2.hashValue, "Simulators wrapping the same device should hash identically")
+    #expect(Set([sim1, sim2]).count == 1, "A set should collapse simulators wrapping the same device")
   }
 
   // MARK: - Temporary Directory (Lazy Init)
@@ -169,56 +175,58 @@ final class SimulatorTests: XCTestCase {
     directory.ephemeralTemporaryDirectory().deletingLastPathComponent()
   }
 
-  func testTemporaryDirectory_ReturnsSameInstanceOnSubsequentAccess() {
+  @Test
+  func temporaryDirectory_ReturnsSameInstanceOnSubsequentAccess() {
     let first = simulator.temporaryDirectory
     let second = simulator.temporaryDirectory
-    XCTAssertEqual(root(of: first), root(of: second), "temporaryDirectory should return the same cached directory on subsequent access")
+    #expect(root(of: first) == root(of: second), "temporaryDirectory should return the same cached directory on subsequent access")
   }
 
-  func testTemporaryDirectory_ConcurrentFirstAccess() {
-    let simulator = simulator!
+  @Test
+  func temporaryDirectory_ConcurrentFirstAccess() {
     let lock = NSLock()
     var directories: [TemporaryDirectory] = []
     DispatchQueue.concurrentPerform(iterations: 64) { _ in
       let directory = simulator.temporaryDirectory
       lock.withLock { directories.append(directory) }
     }
-    XCTAssertEqual(directories.count, 64)
-    XCTAssertTrue(directories.allSatisfy { root(of: $0) == root(of: directories[0]) })
+    #expect(directories.count == 64)
+    #expect(directories.allSatisfy { root(of: $0) == root(of: directories[0]) })
   }
 
   // MARK: - Healthcheck Helpers
 
-  func testLookupBootstrapPortNamed_WhenPortExists_ReturnsPortNumber() throws {
+  @Test
+  func lookupBootstrapPortNamed_WhenPortExists_ReturnsPortNumber() throws {
     stubDevice.lookupPort = 12345
     stubDevice.lookupShouldFail = false
     let sim = Self.createSimulator(with: stubDevice)
 
     let port = try sim.bootstrapPorts.lookup(named: "com.apple.testservice")
 
-    XCTAssertEqual(port, 12345, "Returned port number should match the looked-up port")
+    #expect(port == 12345, "Returned port number should match the looked-up port")
   }
 
   // Both no-port paths throw: the device's own error when it reported one, and a synthesized
   // `SimulatorPortLookupError` when it did not. They are told apart by the error's domain.
-  func testLookupBootstrapPortNamed_WhenPortIsNull_ProducesNoPort() {
+  @Test
+  func lookupBootstrapPortNamed_WhenPortIsNull_ProducesNoPort() throws {
     stubDevice.lookupPort = mach_port_t(MACH_PORT_NULL)
     stubDevice.lookupShouldFail = false
     let sim = Self.createSimulator(with: stubDevice)
 
-    XCTAssertThrowsError(try sim.bootstrapPorts.lookup(named: "com.apple.nonexistent"), "No port should be produced when MACH_PORT_NULL is returned") { error in
-      XCTAssertNotEqual(
-        (error as NSError).domain, "FBSimulatorTestDomain",
-        "A null port is not a lookup failure - the device reported no error of its own")
-    }
+    let error = try #require(#expect(throws: (any Error).self, "No port should be produced when MACH_PORT_NULL is returned") { try sim.bootstrapPorts.lookup(named: "com.apple.nonexistent") })
+    #expect(
+      (error as NSError).domain != "FBSimulatorTestDomain",
+      "A null port is not a lookup failure - the device reported no error of its own")
   }
 
-  func testLookupBootstrapPortNamed_WhenLookupFails_ReturnsNilWithError() {
+  @Test
+  func lookupBootstrapPortNamed_WhenLookupFails_ReturnsNilWithError() throws {
     stubDevice.lookupShouldFail = true
     let sim = Self.createSimulator(with: stubDevice)
 
-    XCTAssertThrowsError(try sim.bootstrapPorts.lookup(named: "com.apple.failing"), "Error should be populated when lookup fails") { error in
-      XCTAssertEqual((error as NSError).domain, "FBSimulatorTestDomain", "The device's own lookup error should surface")
-    }
+    let error = try #require(#expect(throws: (any Error).self, "Error should be populated when lookup fails") { try sim.bootstrapPorts.lookup(named: "com.apple.failing") })
+    #expect((error as NSError).domain == "FBSimulatorTestDomain", "The device's own lookup error should surface")
   }
 }
