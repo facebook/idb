@@ -9,7 +9,7 @@ import FBControlCore
 import FBXCTestCore
 import Foundation
 
-private let FBLogicTestTimeout: TimeInterval = 60 * 60
+private let logicTestTimeout: TimeInterval = 60 * 60
 
 // MARK: - XCTestRunRequest
 
@@ -218,7 +218,7 @@ public struct XCTestRunRequest {
     let testFilter = testsToRunArray.first
 
     // A zero timeout from the client means it did not set one.
-    let timeout = testTimeout.flatMap { $0 != 0 ? $0 : nil } ?? FBLogicTestTimeout
+    let timeout = testTimeout.flatMap { $0 != 0 ? $0 : nil } ?? logicTestTimeout
     let configuration = LogicTestConfiguration(
       environment: environment,
       workingDirectory: workingDirectory.path,
