@@ -165,11 +165,11 @@ struct DeviceControlTransientTests {
 
   @Test
   func springboardServiceName() {
-    #expect((FBSpringboardServiceName) == ("com.apple.springboardservices"))
+    #expect((SpringboardServicesClient.serviceName) == ("com.apple.springboardservices"))
   }
 
   @Test
   func managedConfigServiceName() {
-    #expect((FBManagedConfigService) == ("com.apple.mobile.MCInstall"))
+    #expect((ManagedConfigClient.serviceName) == ("com.apple.mobile.MCInstall"))
   }
 }

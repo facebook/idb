@@ -8,8 +8,6 @@
 @preconcurrency import FBControlCore
 import Foundation
 
-let FBManagedConfigService: String = "com.apple.mobile.MCInstall"
-
 private let OrderedIdentifiers = "OrderedIdentifiers"
 private let ProfileMetadata = "ProfileMetadata"
 private let PayloadUUID = "PayloadUUID"

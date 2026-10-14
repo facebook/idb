@@ -18,8 +18,6 @@ extension WallpaperName {
   public static let lockscreen = WallpaperName(rawValue: "lockscreen")
 }
 
-let FBSpringboardServiceName: String = "com.apple.springboardservices"
-
 private let IconPlistFile = "icons.plist"
 private let IconJSONFile = "icons.json"
 private let IconLayoutSize: UInt = 4
