@@ -118,12 +118,7 @@ struct InstallMethodHandler {
       let options = InstallOptions(overrideModificationTime: overrideModificationTime)
       return try await commandExecutor.install(
         installDestination, from: source, options: options,
-        onEvent: { event in
-          telemetry.observe(event)
-          if case .progress(let progress) = event {
-            progressObserver?.observe(progress)
-          }
-        })
+        observer: InstallObserver(telemetry: telemetry, progressObserver: progressObserver))
     }
 
     switch payload {
@@ -215,6 +210,21 @@ final class InstallPercentages: Sendable {
       return nil
     }
     return event.downloadPercent
+  }
+}
+
+// MARK: - Observing
+
+/// Records each install event in the call's telemetry, and passes its download progress on.
+private struct InstallObserver: InstallEventObserving {
+  let telemetry: InstallTelemetry
+  let progressObserver: (any InstallProgressObserving)?
+
+  func observe(_ event: InstallEvent) {
+    telemetry.observe(event)
+    if case .progress(let progress) = event {
+      progressObserver?.observe(progress)
+    }
   }
 }
 

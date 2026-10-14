@@ -69,6 +69,11 @@ extension IDBCommandError: LocalizedError {
   }
 }
 
+/// Receives the events of an install as it runs.
+public protocol InstallEventObserving: Sendable {
+  func observe(_ event: InstallEvent)
+}
+
 public final class IDBCommandExecutor {
 
   private let target: CompanionTarget
@@ -120,10 +125,10 @@ public final class IDBCommandExecutor {
     _ destination: InstallDestination,
     from source: InstallSource,
     options: InstallOptions = InstallOptions(),
-    onEvent: @escaping @Sendable (InstallEvent) -> Void = { _ in }
+    observer: (any InstallEventObserving)? = nil
   ) async throws -> InstalledArtifact {
     return try await Staging.install(
-      source, as: destination.kind, options: options, temporaryDirectory: temporaryDirectory, logger: target.logger, onEvent: onEvent
+      source, as: destination.kind, options: options, temporaryDirectory: temporaryDirectory, logger: target.logger, onEvent: { observer?.observe($0) }
     ) { artifact, inPlace in
       try await install(artifact, as: destination, inPlace: inPlace)
     }
