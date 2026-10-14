@@ -607,11 +607,6 @@ final class SimulatorAccessibilityCommandsTests: XCTestCase {
     XCTAssertEqual(forwarded, [AXClientType.xctest.rawValue, AXClientType.xctest.rawValue])
   }
 
-  func testARetriedRequestKeepsItsClient() {
-    let request = AXTranslationRequest(kind: .frontmostApplication, clientType: .voiceOver)
-    XCTAssertEqual(request.cloneWithNewToken().clientType, .voiceOver)
-  }
-
   func testAccessibilityCommandsProducesCorrectFlatOutput() async throws {
     let children = [defaultTitleLabel, defaultOkButton, defaultCancelButton]
     try setUp(withRootElement: defaultRoot(withChildren: children))
@@ -961,7 +956,6 @@ final class SimulatorAccessibilityCommandsTests: XCTestCase {
       XCTAssertEqual(response.screen?.display?.rotation, 90)
       XCTAssertNil(response.screen?.display?.uniqueID)
     }
-    XCTAssertEqual(AXTranslationRequest(kind: .frontmostApplication, display: context).cloneWithNewToken().display, context)
   }
 
   func testDisplayBoundPointRejectsOutOfBoundsBeforeTranslatorLookup() async throws {
@@ -1459,15 +1453,6 @@ final class SimulatorAccessibilityCommandsTests: XCTestCase {
   // to record from the moment it exists, so every dispatcher measurement taken before `serialize` lands.
   func testARequestBeginsWithACollector() {
     XCTAssertNotNil(AXTranslationRequest(kind: .frontmostApplication).collector)
-  }
-
-  // A SpringBoard remediation retry replaces the request but not the read: the caller waited for the
-  // failed attempt as well, so the clone keeps the original collector rather than starting a new one.
-  func testARetriedRequestKeepsTheOriginalCollector() {
-    let request = AXTranslationRequest(kind: .frontmostApplication)
-    let clone = request.cloneWithNewToken()
-    XCTAssertNotEqual(clone.token, request.token)
-    XCTAssertTrue(clone.collector === request.collector)
   }
 
   // The baseline the filtered read below is measured against: every node serialized.

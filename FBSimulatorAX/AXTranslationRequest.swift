@@ -71,7 +71,7 @@ final class AXTranslationRequest {
   var transport: (any AXTranslationTransport)?
   /// Owned from construction: the dispatcher records acquisition timings before the caller reaches
   /// `serialize`.
-  var collector: AccessibilityProfilingCollector
+  let collector: AccessibilityProfilingCollector
   var translator: AXPTranslator?
 
   /// Per-request timeout (seconds) applied to each synchronous CoreSimulator
@@ -86,16 +86,6 @@ final class AXTranslationRequest {
     self.token = UUID().uuidString
     self.requestTimeoutSeconds = Self.defaultRequestTimeoutSeconds
     self.collector = AccessibilityProfilingCollector()
-  }
-
-  /// A fresh request of the same kind with a new token, used to retry after
-  /// SpringBoard remediation.
-  ///
-  /// The collector carries over so the profile spans the failed attempt the caller also waited through.
-  func cloneWithNewToken() -> AXTranslationRequest {
-    let clone = AXTranslationRequest(kind: kind, display: display, clientType: clientType)
-    clone.collector = collector
-    return clone
   }
 
   /// Resolves the root translation object for this request's kind.
