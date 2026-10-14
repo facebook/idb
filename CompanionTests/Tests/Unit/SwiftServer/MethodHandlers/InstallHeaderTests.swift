@@ -7,11 +7,13 @@
 
 @testable import CompanionLib
 import FBControlCore
+import Foundation
 import GRPCCore
 import IDBGRPCSwift
-import XCTest
+import Testing
 
-final class InstallHeaderTests: XCTestCase {
+@Suite
+struct InstallHeaderTests {
 
   private static let destination = request { $0.destination = .dsym }
   private static let nameHint = request { $0.nameHint = "A" }
@@ -36,67 +38,75 @@ final class InstallHeaderTests: XCTestCase {
     }
   }
 
-  private func assertRejected(_ frames: [Idb_InstallRequest], _ code: RPCError.Code, _ message: String, file: StaticString = #filePath, line: UInt = #line) async {
+  private func assertRejected(_ frames: [Idb_InstallRequest], _ code: RPCError.Code, _ message: String, sourceLocation: SourceLocation = #_sourceLocation) async {
     do {
       _ = try await read(frames)
-      XCTFail("Expected \(code)", file: file, line: line)
+      Issue.record("Expected \(code)", sourceLocation: sourceLocation)
     } catch let error as RPCError {
-      XCTAssertEqual(error.code, code, file: file, line: line)
-      XCTAssertEqual(error.message, message, file: file, line: line)
+      #expect(error.code == code, sourceLocation: sourceLocation)
+      #expect(error.message == message, sourceLocation: sourceLocation)
     } catch {
-      XCTFail("Expected an RPCError, got \(error)", file: file, line: line)
+      Issue.record("Expected an RPCError, got \(error)", sourceLocation: sourceLocation)
     }
   }
 
-  func testEveryOptionInTheOrderTheCompanionReads() async throws {
+  @Test
+  func everyOptionInTheOrderTheCompanionReads() async throws {
     let header = try await read([Self.destination, Self.nameHint, Self.makeDebuggable, Self.overrideModificationTime, Self.skipSigningBundles, Self.link, Self.zstd, Self.data])
-    XCTAssertEqual(header.destination, .dsym)
-    XCTAssertEqual(header.nameHint, "A")
-    XCTAssertTrue(header.makeDebuggable)
-    XCTAssertTrue(header.overrideModificationTime)
-    XCTAssertTrue(header.skipSigningBundles)
-    XCTAssertEqual(header.linkDsymToBundle?.bundleID, "com.example.app")
-    XCTAssertEqual(header.compression, .ZSTD)
-    XCTAssertEqual(header.payload.data, Data([1, 2, 3]))
+    #expect(header.destination == .dsym)
+    #expect(header.nameHint == "A")
+    #expect(header.makeDebuggable)
+    #expect(header.overrideModificationTime)
+    #expect(header.skipSigningBundles)
+    #expect(header.linkDsymToBundle?.bundleID == "com.example.app")
+    #expect(header.compression == .ZSTD)
+    #expect(header.payload.data == Data([1, 2, 3]))
   }
 
-  func testAnUndeclaredCompressionIsGzip() async throws {
+  @Test
+  func anUndeclaredCompressionIsGzip() async throws {
     let header = try await read([Self.destination, Self.data])
-    XCTAssertNil(header.nameHint)
-    XCTAssertFalse(header.makeDebuggable)
-    XCTAssertNil(header.linkDsymToBundle)
-    XCTAssertEqual(header.compression, .GZIP)
+    #expect(header.nameHint == nil)
+    #expect(!header.makeDebuggable)
+    #expect(header.linkDsymToBundle == nil)
+    #expect(header.compression == .GZIP)
   }
 
-  func testAStreamThatDoesNotStartWithADestination() async {
+  @Test
+  func aStreamThatDoesNotStartWithADestination() async {
     await assertRejected([Self.nameHint, Self.destination, Self.data], .failedPrecondition, "Expected destination as first request in stream")
   }
 
-  func testCompressionBeforeTheLink() async throws {
+  @Test
+  func compressionBeforeTheLink() async throws {
     let header = try await read([Self.destination, Self.zstd, Self.link, Self.data])
-    XCTAssertEqual(header.linkDsymToBundle?.bundleID, "com.example.app")
-    XCTAssertEqual(header.compression, .ZSTD)
-    XCTAssertEqual(header.payload.data, Data([1, 2, 3]))
+    #expect(header.linkDsymToBundle?.bundleID == "com.example.app")
+    #expect(header.compression == .ZSTD)
+    #expect(header.payload.data == Data([1, 2, 3]))
   }
 
-  func testOptionsOutOfTheCompanionsOrder() async throws {
+  @Test
+  func optionsOutOfTheCompanionsOrder() async throws {
     var header = try await read([Self.destination, Self.link, Self.nameHint, Self.data])
-    XCTAssertEqual(header.linkDsymToBundle?.bundleID, "com.example.app")
-    XCTAssertEqual(header.nameHint, "A")
+    #expect(header.linkDsymToBundle?.bundleID == "com.example.app")
+    #expect(header.nameHint == "A")
     header = try await read([Self.destination, Self.skipSigningBundles, Self.makeDebuggable, Self.data])
-    XCTAssertTrue(header.skipSigningBundles)
-    XCTAssertTrue(header.makeDebuggable)
+    #expect(header.skipSigningBundles)
+    #expect(header.makeDebuggable)
   }
 
-  func testARepeatedOption() async {
+  @Test
+  func aRepeatedOption() async {
     await assertRejected([Self.destination, Self.nameHint, Self.nameHint, Self.data], .invalidArgument, "Repeated name_hint in install request stream")
   }
 
-  func testARepeatedCompression() async {
+  @Test
+  func aRepeatedCompression() async {
     await assertRejected([Self.destination, Self.zstd, Self.zstd, Self.data], .invalidArgument, "Repeated compression in install request stream")
   }
 
-  func testAStreamWithoutAPayload() async {
+  @Test
+  func aStreamWithoutAPayload() async {
     await assertRejected([Self.destination, Self.nameHint], .invalidArgument, "Stream ended")
   }
 }
