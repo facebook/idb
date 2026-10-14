@@ -6,6 +6,7 @@
  */
 
 import FBControlCore
+import Foundation
 
 /// The core, transport-agnostic HID value types. Every transport (Indigo, DTUHID) and the
 /// `SimulatorHIDEvent` dispatch share these; they are intentionally independent of any one
@@ -181,6 +182,31 @@ public enum SimulatorHIDDeviceOrientation: Int32, Sendable, CaseIterable {
     case .portraitUpsideDown: return "portrait_upside_down"
     case .landscapeRight: return "landscape_right"
     case .landscapeLeft: return "landscape_left"
+    }
+  }
+}
+
+extension SimulatorHIDDeviceOrientation {
+  func vendorEvent() throws -> IndigoVendorDefinedEvent {
+    let value: String
+    switch self {
+    case .portrait: value = "portrait"
+    case .portraitUpsideDown: value = "pud"
+    case .landscapeLeft: value = "landscape-left"
+    case .landscapeRight: value = "landscape-right"
+    }
+    return try .virtualMachineControl(source: "orientation-picker-control", type: "enum", value: value)
+  }
+}
+
+extension SimulatorHIDDeviceOrientation {
+  // Purple takes interface-style landscape numbers, where BackBoard's physical device convention
+  // swaps them.
+  var physicalPurpleOrientation: Self {
+    switch self {
+    case .landscapeLeft: return .landscapeRight
+    case .landscapeRight: return .landscapeLeft
+    case .portrait, .portraitUpsideDown: return self
     }
   }
 }
