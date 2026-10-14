@@ -7,122 +7,129 @@
 
 import FBControlCore
 @testable import FBSimulatorControl
-import XCTest
+import Foundation
+import Testing
 
-final class SimulatorSettingTests: XCTestCase {
+@Suite
+struct SimulatorSettingTests {
 
   // MARK: - SimulatorSettingResolution Parsing
 
-  func testParseHardwareKeyboardEnableDisable() throws {
-    XCTAssertEqual(try SimulatorSettingResolution(name: "hardware-keyboard", value: "enable", type: nil, domain: nil), .setting(.hardwareKeyboard(true)))
-    XCTAssertEqual(try SimulatorSettingResolution(name: "hardware-keyboard", value: "disable", type: nil, domain: nil), .setting(.hardwareKeyboard(false)))
+  @Test
+  func parseHardwareKeyboardEnableDisable() throws {
+    #expect(try SimulatorSettingResolution(name: "hardware-keyboard", value: "enable", type: nil, domain: nil) == .setting(.hardwareKeyboard(true)))
+    #expect(try SimulatorSettingResolution(name: "hardware-keyboard", value: "disable", type: nil, domain: nil) == .setting(.hardwareKeyboard(false)))
   }
 
-  func testParseSlowAnimationsAndIncreaseContrast() throws {
-    XCTAssertEqual(try SimulatorSettingResolution(name: "slow-animations", value: "enable", type: nil, domain: nil), .setting(.slowAnimations(true)))
-    XCTAssertEqual(try SimulatorSettingResolution(name: "increase-contrast", value: "disable", type: nil, domain: nil), .setting(.increaseContrast(false)))
+  @Test
+  func parseSlowAnimationsAndIncreaseContrast() throws {
+    #expect(try SimulatorSettingResolution(name: "slow-animations", value: "enable", type: nil, domain: nil) == .setting(.slowAnimations(true)))
+    #expect(try SimulatorSettingResolution(name: "increase-contrast", value: "disable", type: nil, domain: nil) == .setting(.increaseContrast(false)))
   }
 
-  func testParseAccessibilitySettings() throws {
-    XCTAssertEqual(
-      try SimulatorSettingResolution(name: "reduce-motion", value: "enable", type: nil, domain: nil),
-      .setting(.reduceMotion(true)))
-    XCTAssertEqual(
-      try SimulatorSettingResolution(name: "reduce-transparency", value: "enable", type: nil, domain: nil),
-      .setting(.reduceTransparency(true)))
-    XCTAssertEqual(
-      try SimulatorSettingResolution(name: "button-shapes", value: "disable", type: nil, domain: nil),
-      .setting(.buttonShapes(false)))
-    XCTAssertEqual(
-      try SimulatorSettingResolution(name: "voiceover", value: "disable", type: nil, domain: nil),
-      .setting(.voiceOver(false)))
+  @Test
+  func parseAccessibilitySettings() throws {
+    #expect(try SimulatorSettingResolution(name: "reduce-motion", value: "enable", type: nil, domain: nil) == .setting(.reduceMotion(true)))
+    #expect(try SimulatorSettingResolution(name: "reduce-transparency", value: "enable", type: nil, domain: nil) == .setting(.reduceTransparency(true)))
+    #expect(try SimulatorSettingResolution(name: "button-shapes", value: "disable", type: nil, domain: nil) == .setting(.buttonShapes(false)))
+    #expect(try SimulatorSettingResolution(name: "voiceover", value: "disable", type: nil, domain: nil) == .setting(.voiceOver(false)))
   }
 
-  func testParseInvalidEnableDisableThrows() {
-    XCTAssertThrowsError(try SimulatorSettingResolution(name: "hardware-keyboard", value: "on", type: nil, domain: nil))
+  @Test
+  func parseInvalidEnableDisableThrows() {
+    #expect(throws: (any Error).self) { try SimulatorSettingResolution(name: "hardware-keyboard", value: "on", type: nil, domain: nil) }
   }
 
-  func testParseAppearance() throws {
-    XCTAssertEqual(try SimulatorSettingResolution(name: "appearance", value: "dark", type: nil, domain: nil), .setting(.appearance(.dark)))
-    XCTAssertEqual(try SimulatorSettingResolution(name: "appearance", value: "light", type: nil, domain: nil), .setting(.appearance(.light)))
+  @Test
+  func parseAppearance() throws {
+    #expect(try SimulatorSettingResolution(name: "appearance", value: "dark", type: nil, domain: nil) == .setting(.appearance(.dark)))
+    #expect(try SimulatorSettingResolution(name: "appearance", value: "light", type: nil, domain: nil) == .setting(.appearance(.light)))
   }
 
-  func testParseInvalidAppearanceThrows() {
-    XCTAssertThrowsError(try SimulatorSettingResolution(name: "appearance", value: "purple", type: nil, domain: nil))
+  @Test
+  func parseInvalidAppearanceThrows() {
+    #expect(throws: (any Error).self) { try SimulatorSettingResolution(name: "appearance", value: "purple", type: nil, domain: nil) }
   }
 
-  func testParseContentSize() throws {
-    XCTAssertEqual(try SimulatorSettingResolution(name: "content-size", value: "large", type: nil, domain: nil), .setting(.contentSize(.large)))
-    XCTAssertEqual(
-      try SimulatorSettingResolution(name: "content-size", value: "accessibility-medium", type: nil, domain: nil),
-      .setting(.contentSize(.accessibilityMedium)))
+  @Test
+  func parseContentSize() throws {
+    #expect(try SimulatorSettingResolution(name: "content-size", value: "large", type: nil, domain: nil) == .setting(.contentSize(.large)))
+    #expect(try SimulatorSettingResolution(name: "content-size", value: "accessibility-medium", type: nil, domain: nil) == .setting(.contentSize(.accessibilityMedium)))
   }
 
-  func testParseInvalidContentSizeThrows() {
-    XCTAssertThrowsError(try SimulatorSettingResolution(name: "content-size", value: "gigantic", type: nil, domain: nil))
+  @Test
+  func parseInvalidContentSizeThrows() {
+    #expect(throws: (any Error).self) { try SimulatorSettingResolution(name: "content-size", value: "gigantic", type: nil, domain: nil) }
   }
 
-  func testParseLocale() throws {
-    XCTAssertEqual(try SimulatorSettingResolution(name: "locale", value: "en_US", type: nil, domain: nil), .setting(.locale(localeIdentifier: "en_US")))
+  @Test
+  func parseLocale() throws {
+    #expect(try SimulatorSettingResolution(name: "locale", value: "en_US", type: nil, domain: nil) == .setting(.locale(localeIdentifier: "en_US")))
   }
 
-  func testParseAutofillPasswords() throws {
-    XCTAssertEqual(try SimulatorSettingResolution(name: "autofill-passwords", value: "disable", type: nil, domain: nil), .setting(.autoFillPasswords(false)))
-    XCTAssertEqual(try SimulatorSettingResolution(name: "autofill-passwords", value: "enable", type: nil, domain: nil), .setting(.autoFillPasswords(true)))
-    XCTAssertThrowsError(try SimulatorSettingResolution(name: "autofill-passwords", value: "off", type: nil, domain: nil))
+  @Test
+  func parseAutofillPasswords() throws {
+    #expect(try SimulatorSettingResolution(name: "autofill-passwords", value: "disable", type: nil, domain: nil) == .setting(.autoFillPasswords(false)))
+    #expect(try SimulatorSettingResolution(name: "autofill-passwords", value: "enable", type: nil, domain: nil) == .setting(.autoFillPasswords(true)))
+    #expect(throws: (any Error).self) { try SimulatorSettingResolution(name: "autofill-passwords", value: "off", type: nil, domain: nil) }
   }
 
-  func testParseUnknownNameFallsBackToPreference() throws {
-    XCTAssertEqual(
-      try SimulatorSettingResolution(name: "com.example.Key", value: "1", type: "int", domain: "com.example"),
-      .preference(name: "com.example.Key", value: "1", type: "int", domain: "com.example"))
+  @Test
+  func parseUnknownNameFallsBackToPreference() throws {
+    #expect(try SimulatorSettingResolution(name: "com.example.Key", value: "1", type: "int", domain: "com.example") == .preference(name: "com.example.Key", value: "1", type: "int", domain: "com.example"))
   }
 
-  func testArgumentNameRoundTrip() {
-    XCTAssertEqual(SimulatorAppearance(argumentName: "dark"), SimulatorAppearance.dark)
-    XCTAssertEqual(SimulatorAppearance.dark.argumentName, "dark")
-    XCTAssertEqual(SimulatorContentSizeCategory(argumentName: "large"), SimulatorContentSizeCategory.large)
-    XCTAssertEqual(SimulatorContentSizeCategory.large.argumentName, "large")
-    XCTAssertNil(SimulatorAppearance(argumentName: "purple"))
+  @Test
+  func argumentNameRoundTrip() {
+    #expect(SimulatorAppearance(argumentName: "dark") == SimulatorAppearance.dark)
+    #expect(SimulatorAppearance.dark.argumentName == "dark")
+    #expect(SimulatorContentSizeCategory(argumentName: "large") == SimulatorContentSizeCategory.large)
+    #expect(SimulatorContentSizeCategory.large.argumentName == "large")
+    #expect(SimulatorAppearance(argumentName: "purple") == nil)
   }
 
-  func testUnknownCoreSimulatorSettingValuesThrow() throws {
-    XCTAssertEqual(try SimulatorPreferencesCommands.appearance(rawValue: 1), .light)
-    XCTAssertThrowsError(try SimulatorPreferencesCommands.appearance(rawValue: 0))
-    XCTAssertEqual(try SimulatorPreferencesCommands.contentSizeCategory(rawValue: 4), .large)
-    XCTAssertThrowsError(try SimulatorPreferencesCommands.contentSizeCategory(rawValue: 0))
+  @Test
+  func unknownCoreSimulatorSettingValuesThrow() throws {
+    #expect(try SimulatorPreferencesCommands.appearance(rawValue: 1) == .light)
+    #expect(throws: (any Error).self) { try SimulatorPreferencesCommands.appearance(rawValue: 0) }
+    #expect(try SimulatorPreferencesCommands.contentSizeCategory(rawValue: 4) == .large)
+    #expect(throws: (any Error).self) { try SimulatorPreferencesCommands.contentSizeCategory(rawValue: 0) }
   }
 
-  func testIncreaseContrastModeValues() {
-    XCTAssertEqual(SimulatorIncreaseContrastMode(rawValue: 1), .disabled)
-    XCTAssertEqual(SimulatorIncreaseContrastMode(rawValue: 2), .enabled)
-    XCTAssertNil(SimulatorIncreaseContrastMode(rawValue: 0))
+  @Test
+  func increaseContrastModeValues() {
+    #expect(SimulatorIncreaseContrastMode(rawValue: 1) == .disabled)
+    #expect(SimulatorIncreaseContrastMode(rawValue: 2) == .enabled)
+    #expect(SimulatorIncreaseContrastMode(rawValue: 0) == nil)
   }
 
-  func testPreferenceBacking() {
+  @Test
+  func preferenceBacking() {
     // nil domain == Apple Global Domain, where the native AutoFill Passwords toggle lives.
-    XCTAssertNil(SimulatorSettingKey.autoFillPasswords.preferenceBacking?.domain)
-    XCTAssertEqual(SimulatorSettingKey.autoFillPasswords.preferenceBacking?.key, "AutoFillPasswords")
-    XCTAssertNil(SimulatorSettingKey.locale.preferenceBacking?.domain)
-    XCTAssertEqual(SimulatorSettingKey.locale.preferenceBacking?.key, "AppleLocale")
-    XCTAssertNil(SimulatorSettingKey.hardwareKeyboard.preferenceBacking)
-    XCTAssertNil(SimulatorSettingKey.appearance.preferenceBacking)
-    XCTAssertEqual(SimulatorSettingKey.reduceMotion.accessibilityBridgeName, "reduce-motion")
-    XCTAssertEqual(SimulatorSettingKey.reduceTransparency.accessibilityBridgeName, "reduce-transparency")
-    XCTAssertEqual(SimulatorSettingKey.buttonShapes.accessibilityBridgeName, "button-shapes")
-    XCTAssertEqual(SimulatorSettingKey.voiceOver.accessibilityBridgeName, "voiceover")
-    XCTAssertNil(SimulatorSettingKey.increaseContrast.accessibilityBridgeName)
+    #expect(SimulatorSettingKey.autoFillPasswords.preferenceBacking?.domain == nil)
+    #expect(SimulatorSettingKey.autoFillPasswords.preferenceBacking?.key == "AutoFillPasswords")
+    #expect(SimulatorSettingKey.locale.preferenceBacking?.domain == nil)
+    #expect(SimulatorSettingKey.locale.preferenceBacking?.key == "AppleLocale")
+    #expect(SimulatorSettingKey.hardwareKeyboard.preferenceBacking == nil)
+    #expect(SimulatorSettingKey.appearance.preferenceBacking == nil)
+    #expect(SimulatorSettingKey.reduceMotion.accessibilityBridgeName == "reduce-motion")
+    #expect(SimulatorSettingKey.reduceTransparency.accessibilityBridgeName == "reduce-transparency")
+    #expect(SimulatorSettingKey.buttonShapes.accessibilityBridgeName == "button-shapes")
+    #expect(SimulatorSettingKey.voiceOver.accessibilityBridgeName == "voiceover")
+    #expect(SimulatorSettingKey.increaseContrast.accessibilityBridgeName == nil)
   }
 
-  func testWeakTargetErrorMessage() {
-    XCTAssertEqual(WeakTargetError.deallocated("Simulator").errorDescription, "Simulator deallocated")
-    XCTAssertEqual(WeakTargetError.simulator.errorDescription, "Simulator deallocated")
+  @Test
+  func weakTargetErrorMessage() {
+    #expect(WeakTargetError.deallocated("Simulator").errorDescription == "Simulator deallocated")
+    #expect(WeakTargetError.simulator.errorDescription == "Simulator deallocated")
   }
 
-  func testCuratedNames() {
-    XCTAssertEqual(SimulatorSetting.curatedNames, SimulatorSettingKey.allCases.map(\.rawValue))
-    XCTAssertTrue(SimulatorSetting.curatedNames.contains("autofill-passwords"))
-    XCTAssertTrue(SimulatorSetting.curatedNames.contains("appearance"))
-    XCTAssertFalse(SimulatorSetting.curatedNames.contains("com.example.Key"))
+  @Test
+  func curatedNames() {
+    #expect(SimulatorSetting.curatedNames == SimulatorSettingKey.allCases.map(\.rawValue))
+    #expect(SimulatorSetting.curatedNames.contains("autofill-passwords"))
+    #expect(SimulatorSetting.curatedNames.contains("appearance"))
+    #expect(!SimulatorSetting.curatedNames.contains("com.example.Key"))
   }
 }
