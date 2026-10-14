@@ -286,17 +286,17 @@ public final class IDBCommandExecutor {
   }
 
   public func addMedia(_ filePaths: [URL]) async throws {
-    try simulatorTarget().media.upload(filePaths)
+    try target.simulator().media.upload(filePaths)
   }
 
   public func injectAudio(_ audioFile: URL) async throws {
-    try await simulatorTarget().audioInjection.inject(from: audioFile)
+    try await target.simulator().audioInjection.inject(from: audioFile)
   }
 
   public func audioInjectionAppLaunchEnvironment(
     _ environment: [String: String]
   ) async -> [String: String] {
-    guard let simulator = try? simulatorTarget() else {
+    guard let simulator = try? target.simulator() else {
       return environment
     }
     return await simulator.audioInjection.appLaunchEnvironment(environment)
@@ -307,49 +307,49 @@ public final class IDBCommandExecutor {
   }
 
   public func clearKeychain() async throws {
-    try await simulatorTarget().keychain.clear()
+    try await target.simulator().keychain.clear()
   }
 
   public func approve(_ services: Set<TargetSettingsService>, forApplication bundleID: String) async throws {
-    try await simulatorTarget().privacy.grantAccess(Set([bundleID]), toServices: services)
+    try await target.simulator().privacy.grantAccess(Set([bundleID]), toServices: services)
   }
 
   public func revoke(_ services: Set<TargetSettingsService>, forApplication bundleID: String) async throws {
-    try await simulatorTarget().privacy.revokeAccess(Set([bundleID]), toServices: services)
+    try await target.simulator().privacy.revokeAccess(Set([bundleID]), toServices: services)
   }
 
   public func approveDeeplink(_ scheme: String, forApplication bundleID: String) async throws {
-    try await simulatorTarget().privacy.grantAccess(Set([bundleID]), toDeeplink: scheme)
+    try await target.simulator().privacy.grantAccess(Set([bundleID]), toDeeplink: scheme)
   }
 
   public func revokeDeeplink(_ scheme: String, forApplication bundleID: String) async throws {
-    try await simulatorTarget().privacy.revokeAccess(Set([bundleID]), toDeeplink: scheme)
+    try await target.simulator().privacy.revokeAccess(Set([bundleID]), toDeeplink: scheme)
   }
 
   public func openUrl(_ url: String) async throws {
     guard let parsed = URL(string: url) else {
       throw IDBCommandError.invalidURL(urlString: url)
     }
-    try await simulatorTarget().lifecycle.open(parsed)
+    try await target.simulator().lifecycle.open(parsed)
   }
 
   public func focus() async throws {
-    try await simulatorTarget().lifecycle.focus()
+    try await target.simulator().lifecycle.focus()
   }
 
   public func updateContacts(_ dbTarData: Data) async throws {
-    let simulator = try simulatorTarget()
+    let simulator = try target.simulator()
     try await temporaryDirectory.withArchiveExtracted(dbTarData) { tempDir in
       try await simulator.contacts.update(tempDir.path)
     }
   }
 
   public func clearContacts() async throws {
-    try await simulatorTarget().contacts.clear()
+    try await target.simulator().contacts.clear()
   }
 
   public func clearPhotos() async throws {
-    try await simulatorTarget().photos.clear()
+    try await target.simulator().photos.clear()
   }
 
   public func listTestBundles() async throws -> [XCTestDescriptor] {
@@ -370,7 +370,7 @@ public final class IDBCommandExecutor {
 
     let finalAppPath = resolvedAppPath
     let testDescriptor = try storageManager.xctest.testDescriptor(withID: bundleID)
-    return try await simulatorTarget().xctest.listTests(forBundleAtPath: testDescriptor.url.path, timeout: IDBCommandExecutor.ListTestBundleTimeout, withAppAtPath: finalAppPath)
+    return try await target.simulator().xctest.listTests(forBundleAtPath: testDescriptor.url.path, timeout: IDBCommandExecutor.ListTestBundleTimeout, withAppAtPath: finalAppPath)
   }
 
   public func uninstallApplication(_ bundleID: String) async throws {
@@ -556,43 +556,43 @@ public final class IDBCommandExecutor {
   }
 
   public func setHardwareKeyboardEnabled(_ enabled: Bool) async throws {
-    try await simulatorTarget().preferences.apply(.hardwareKeyboard(enabled))
+    try await target.simulator().preferences.apply(.hardwareKeyboard(enabled))
   }
 
   public func setPreference(_ name: String, value: String, type: String?, domain: String?) async throws {
-    try await simulatorTarget().preferences.apply(SimulatorSettingResolution(name: name, value: value, type: type, domain: domain))
+    try await target.simulator().preferences.apply(SimulatorSettingResolution(name: name, value: value, type: type, domain: domain))
   }
 
   public func getPreference(_ name: String, domain: String?) async throws -> String {
-    try await simulatorTarget().preferences.currentSettingValue(name: name, domain: domain)
+    try await target.simulator().preferences.currentSettingValue(name: name, domain: domain)
   }
 
   public func setLocaleWithIdentifier(_ identifier: String) async throws {
-    try await simulatorTarget().preferences.apply(.locale(localeIdentifier: identifier))
+    try await target.simulator().preferences.apply(.locale(localeIdentifier: identifier))
   }
 
   public func getOrientation() async throws -> SimulatorDeviceOrientation {
-    try await simulatorTarget().orientation.current()
+    try await target.simulator().orientation.current()
   }
 
   public func setOrientation(_ orientation: SimulatorHIDDeviceOrientation, convention: SimulatorOrientationConvention) async throws {
-    try await simulatorTarget().orientation.set(orientation, convention: convention)
+    try await target.simulator().orientation.set(orientation, convention: convention)
   }
 
   public func shake() async throws {
-    try await simulatorTarget().hardware.shake()
+    try await target.simulator().hardware.shake()
   }
 
   public func hingeAngle() async throws -> Double {
-    try await simulatorTarget().hinge.current().degrees
+    try await target.simulator().hinge.current().degrees
   }
 
   public func setHingeAngle(_ angle: SimulatorHingeAngle) async throws {
-    try await simulatorTarget().hinge.set(angle)
+    try await target.simulator().hinge.set(angle)
   }
 
   public func getCurrentLocaleIdentifier() async throws -> String {
-    try await simulatorTarget().preferences.getCurrentPreference("AppleLocale", domain: nil)
+    try await target.simulator().preferences.getCurrentPreference("AppleLocale", domain: nil)
   }
 
   public func listLocaleIdentifiers() -> [String] {
@@ -678,7 +678,7 @@ public final class IDBCommandExecutor {
   }
 
   public func withDapServer<Result: Sendable>(path dapPath: String, input: InputSource, output: any DataConsumer, _ body: (RunningSubprocess) async throws -> Result) async throws -> Result {
-    try await simulatorTarget().dapServer.withServer(dapPath, input: input, output: output, body)
+    try await target.simulator().dapServer.withServer(dapPath, input: input, output: output, body)
   }
 
   public func clean() async throws {
@@ -689,19 +689,19 @@ public final class IDBCommandExecutor {
   }
 
   public func deliveredNotifications(forBundleID bundleID: String) async throws -> [DeliveredNotification] {
-    try await simulatorTarget().notification.deliveredNotifications(forBundleID: bundleID)
+    try await target.simulator().notification.deliveredNotifications(forBundleID: bundleID)
   }
 
   public func clearDeliveredNotifications(forBundleID bundleID: String) async throws {
-    try await simulatorTarget().notification.clearDeliveredNotifications(forBundleID: bundleID)
+    try await target.simulator().notification.clearDeliveredNotifications(forBundleID: bundleID)
   }
 
   public func sendPushNotification(forBundleID bundleID: String, jsonPayload: String) async throws {
-    try await simulatorTarget().notification.sendPush(forBundleID: bundleID, jsonPayload: jsonPayload)
+    try await target.simulator().notification.sendPush(forBundleID: bundleID, jsonPayload: jsonPayload)
   }
 
   public func simulateMemoryWarning() async throws {
-    try await simulatorTarget().memory.simulateWarning()
+    try await target.simulator().memory.simulateWarning()
   }
 
   // MARK: - Private Methods
@@ -835,15 +835,8 @@ public final class IDBCommandExecutor {
     }
   }
 
-  private func simulatorTarget() throws -> Simulator {
-    guard let simulator = target as? Simulator else {
-      throw IDBCommandError.notASimulator(targetDescription: String(describing: target))
-    }
-    return simulator
-  }
-
   private func connectToHID() async throws -> SimulatorHID {
-    let simulator = try simulatorTarget()
+    let simulator = try target.simulator()
     try SimulatorControlFrameworkLoader.xcodeFrameworks.loadPrivateFrameworks(target.logger)
     return try await simulator.hid.connect()
   }

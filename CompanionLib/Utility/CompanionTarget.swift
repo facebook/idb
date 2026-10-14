@@ -54,3 +54,14 @@ public struct MacUnsupportedVideoCommands: VideoRecordingCommands, VideoStreamCo
     throw MacDeviceError.commandUnsupported(command: "create")
   }
 }
+
+extension VideoTarget {
+
+  /// The target as a `Simulator`, for the commands only a simulator has.
+  func simulator() throws -> Simulator {
+    guard let simulator = self as? Simulator else {
+      throw IDBCommandError.notASimulator(targetDescription: String(describing: self))
+    }
+    return simulator
+  }
+}
