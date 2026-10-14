@@ -7,18 +7,20 @@
 
 import Foundation
 @_implementationOnly import SimulatorFrameworkBridgeSupport
-import XCTest
+import Testing
 
-final class NotificationExceptionTests: XCTestCase {
-  func testPrivateExceptionsAtCommandBoundary() {
+@Suite
+struct NotificationExceptionTests {
+  @Test
+  func privateExceptionsAtCommandBoundary() {
     for operation in [
       "lookup", "write", "list", "allowsNotifications", "authorizationStatus",
       "setAllowsNotifications", "setAuthorizationStatus", "setAlertType", "setLockScreenSetting", "setNotificationCenterSetting",
     ] {
-      XCTAssertEqual(
-        FBNotificationCommandExceptionResult(operation) {
-          Int32(FBNotificationSettingsService.handleNotificationSettingsActionWithGateway(action: $0, bundleID: $1, gateway: $2))
-        } as NSDictionary, ["status": 1] as NSDictionary)
+      let result = FBNotificationCommandExceptionResult(operation) {
+        Int32(FBNotificationSettingsService.handleNotificationSettingsActionWithGateway(action: $0, bundleID: $1, gateway: $2))
+      }
+      #expect(result as NSDictionary == ["status": 1] as NSDictionary)
     }
   }
 }
