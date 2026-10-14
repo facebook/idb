@@ -6,10 +6,13 @@
  */
 
 @testable import FBSimulatorVideo
-import XCTest
+import Foundation
+import Testing
 
-final class EncoderStatsRecorderTests: XCTestCase {
-  func testTheFirstCallbackReportsHowLongAfterItsFrameWasSubmitted() throws {
+@Suite
+struct EncoderStatsRecorderTests {
+  @Test
+  func theFirstCallbackReportsHowLongAfterItsFrameWasSubmitted() throws {
     let logger = CapturingLogger()
     let recorder = EncoderStatsRecorder(logger: logger)
     recorder.recordSubmissionStarting(at: .now - .milliseconds(5))
@@ -17,17 +20,18 @@ final class EncoderStatsRecorderTests: XCTestCase {
     recorder.recordEncodeSubmission(.milliseconds(5))
     recorder.record(.written(encodedBytes: 1))
     let lines = logger.messages.compactMap { $0 as? String }.filter { $0.hasPrefix("First encode callback received") }
-    XCTAssertEqual(lines.count, 1)
-    let line = try XCTUnwrap(lines.first)
-    XCTAssertTrue(line.hasSuffix(" ms after its frame was submitted"), line)
-    let milliseconds = try XCTUnwrap(Double(line.split(separator: " ")[4]))
-    XCTAssertGreaterThanOrEqual(milliseconds, 5)
+    #expect(lines.count == 1)
+    let line = try #require(lines.first)
+    #expect(line.hasSuffix(" ms after its frame was submitted"), "\(line)")
+    let milliseconds = try #require(Double(line.split(separator: " ")[4]))
+    #expect(milliseconds >= 5)
   }
 
-  func testAFirstCallbackWithoutASubmissionReportsNoLatency() {
+  @Test
+  func aFirstCallbackWithoutASubmissionReportsNoLatency() {
     let logger = CapturingLogger()
     let recorder = EncoderStatsRecorder(logger: logger)
     recorder.record(.dropped)
-    XCTAssertEqual(logger.messages.compactMap { $0 as? String }, ["First encode callback received"])
+    #expect(logger.messages.compactMap { $0 as? String } == ["First encode callback received"])
   }
 }
