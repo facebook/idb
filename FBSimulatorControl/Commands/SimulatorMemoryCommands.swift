@@ -9,6 +9,11 @@
 import FBControlCore
 import Foundation
 
+public protocol MemoryCommands {
+
+  func simulateWarning() async throws
+}
+
 public enum SimulatorMemoryError: Error, LocalizedError {
   case selectorUnavailable
 
