@@ -6,27 +6,29 @@
  */
 
 import FBControlCore
+import FBSimulatorControl
+import Foundation
 import GRPCCore
 import IDBGRPCSwift
 
 struct SettingMethodHandler {
 
-  let commandExecutor: IDBCommandExecutor
+  let target: CompanionTarget
 
   func handle(request: Idb_SettingRequest, context: ServerContext) async throws -> Idb_SettingResponse {
     switch request.setting {
     case let .hardwareKeyboard(hardwareKeyboard):
-      try await commandExecutor.setHardwareKeyboardEnabled(hardwareKeyboard.enabled)
+      try await target.simulator().preferences.apply(.hardwareKeyboard(hardwareKeyboard.enabled))
 
     case let .stringSetting(stringSetting):
       switch stringSetting.setting {
       case .locale:
-        try await commandExecutor.setLocaleWithIdentifier(stringSetting.value)
+        try await target.simulator().preferences.apply(.locale(localeIdentifier: stringSetting.value))
 
       case .any:
         let domain = stringSetting.domain.isEmpty ? nil : stringSetting.domain
         let type = stringSetting.valueType.isEmpty ? nil : stringSetting.valueType
-        try await commandExecutor.setPreference(stringSetting.name, value: stringSetting.value, type: type, domain: domain)
+        try await target.simulator().preferences.apply(SimulatorSettingResolution(name: stringSetting.name, value: stringSetting.value, type: type, domain: domain))
 
       case .UNRECOGNIZED:
         throw RPCError(code: .invalidArgument, message: "Unknown setting case")
@@ -41,18 +43,18 @@ struct SettingMethodHandler {
 
 struct GetSettingMethodHandler {
 
-  let commandExecutor: IDBCommandExecutor
+  let target: CompanionTarget
 
   func handle(request: Idb_GetSettingRequest, context: ServerContext) async throws -> Idb_GetSettingResponse {
     switch request.setting {
     case .locale:
-      let localeIdentifier = try await commandExecutor.getCurrentLocaleIdentifier()
+      let localeIdentifier = try await target.simulator().preferences.getCurrentPreference("AppleLocale", domain: nil)
       return .with {
         $0.value = localeIdentifier
       }
     case .any:
       let domain = request.domain.isEmpty ? nil : request.domain
-      let value = try await commandExecutor.getPreference(request.name, domain: domain)
+      let value = try await target.simulator().preferences.currentSettingValue(name: request.name, domain: domain)
       return .with {
         $0.value = value
       }
@@ -64,13 +66,11 @@ struct GetSettingMethodHandler {
 
 struct ListSettingsMethodHandler {
 
-  let commandExecutor: IDBCommandExecutor
-
   func handle(request: Idb_ListSettingRequest, context: ServerContext) async throws -> Idb_ListSettingResponse {
     switch request.setting {
     case .locale:
       return .with {
-        $0.values = commandExecutor.listLocaleIdentifiers()
+        $0.values = NSLocale.availableLocaleIdentifiers
       }
     case .any, .UNRECOGNIZED:
       throw RPCError(code: .invalidArgument, message: "Unknown setting case")

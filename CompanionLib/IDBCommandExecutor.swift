@@ -492,22 +492,6 @@ public final class IDBCommandExecutor {
     try await hid.send(events: events, logger: logger)
   }
 
-  public func setHardwareKeyboardEnabled(_ enabled: Bool) async throws {
-    try await target.simulator().preferences.apply(.hardwareKeyboard(enabled))
-  }
-
-  public func setPreference(_ name: String, value: String, type: String?, domain: String?) async throws {
-    try await target.simulator().preferences.apply(SimulatorSettingResolution(name: name, value: value, type: type, domain: domain))
-  }
-
-  public func getPreference(_ name: String, domain: String?) async throws -> String {
-    try await target.simulator().preferences.currentSettingValue(name: name, domain: domain)
-  }
-
-  public func setLocaleWithIdentifier(_ identifier: String) async throws {
-    try await target.simulator().preferences.apply(.locale(localeIdentifier: identifier))
-  }
-
   public func setOrientation(_ orientation: SimulatorHIDDeviceOrientation, convention: SimulatorOrientationConvention) async throws {
     try await target.simulator().orientation.set(orientation, convention: convention)
   }
@@ -518,14 +502,6 @@ public final class IDBCommandExecutor {
 
   public func setHingeAngle(_ angle: SimulatorHingeAngle) async throws {
     try await target.simulator().hinge.set(angle)
-  }
-
-  public func getCurrentLocaleIdentifier() async throws -> String {
-    try await target.simulator().preferences.getCurrentPreference("AppleLocale", domain: nil)
-  }
-
-  public func listLocaleIdentifiers() -> [String] {
-    return NSLocale.availableLocaleIdentifiers
   }
 
   // MARK: - File Commands

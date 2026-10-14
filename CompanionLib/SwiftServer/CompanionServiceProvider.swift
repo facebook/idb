@@ -329,21 +329,21 @@ final class CompanionServiceProvider: Idb_CompanionService.SimpleServiceProtocol
 
   func setting(request: Idb_SettingRequest, context: ServerContext) async throws -> Idb_SettingResponse {
     return try await trackedUnaryCall(context, request: request) {
-      try await SettingMethodHandler(commandExecutor: commandExecutor)
+      try await SettingMethodHandler(target: target)
         .handle(request: request, context: context)
     }
   }
 
   func get_setting(request: Idb_GetSettingRequest, context: ServerContext) async throws -> Idb_GetSettingResponse {
     return try await trackedUnaryCall(context, request: request) {
-      try await GetSettingMethodHandler(commandExecutor: commandExecutor)
+      try await GetSettingMethodHandler(target: target)
         .handle(request: request, context: context)
     }
   }
 
   func list_settings(request: Idb_ListSettingRequest, context: ServerContext) async throws -> Idb_ListSettingResponse {
     return try await trackedUnaryCall(context, request: request) {
-      try await ListSettingsMethodHandler(commandExecutor: commandExecutor)
+      try await ListSettingsMethodHandler()
         .handle(request: request, context: context)
     }
   }
