@@ -6,53 +6,57 @@
  */
 
 import Foundation
-import XCTest
+import Testing
 
-final class PhotoLibraryMutationTests: XCTestCase {
-  func testClearRetriesAfterSaveFailureAndAcceptsAnEmptyLibrary() throws {
+@Suite
+struct PhotoLibraryMutationTests {
+  @Test
+  func clearRetriesAfterSaveFailureAndAcceptsAnEmptyLibrary() throws {
     let runtime = FBPhotosTestRuntime()
     runtime.saveSucceeds = false
-    XCTAssertEqual(runtime.run(), 1)
-    let failedOperations = try XCTUnwrap(runtime.operations as? [String])
-    XCTAssertTrue(failedOperations.contains("save"))
-    XCTAssertEqual(failedOperations.last, "transactionEnd")
+    #expect(runtime.run() == 1)
+    let failedOperations = try #require(runtime.operations as? [String])
+    #expect(failedOperations.contains("save"))
+    #expect(failedOperations.last == "transactionEnd")
 
     runtime.operations.removeAllObjects()
     runtime.saveSucceeds = true
-    XCTAssertEqual(runtime.run(), 0)
-    XCTAssertEqual(runtime.operations as? [String], failedOperations)
-    XCTAssertTrue(runtime.allMutationsInsideTransaction)
+    #expect(runtime.run() == 0)
+    #expect(runtime.operations as? [String] == failedOperations)
+    #expect(runtime.allMutationsInsideTransaction)
 
     runtime.operations.removeAllObjects()
     runtime.assetCount = 0
-    XCTAssertEqual(runtime.run(), 0)
-    XCTAssertEqual(runtime.operations.count, 0)
+    #expect(runtime.run() == 0)
+    #expect(runtime.operations.count == 0)
   }
 
-  func testEmptyLibraryDoesNotAccessPrivateStorage() {
+  @Test
+  func emptyLibraryDoesNotAccessPrivateStorage() {
     let runtime = FBPhotosTestRuntime()
     runtime.assetCount = 0
-    XCTAssertEqual(runtime.run(), 0)
-    XCTAssertEqual(runtime.operations.count, 0)
+    #expect(runtime.run() == 0)
+    #expect(runtime.operations.count == 0)
   }
 
-  func testDeletesEveryAssetAndSavesInsideOneTransaction() {
+  @Test
+  func deletesEveryAssetAndSavesInsideOneTransaction() {
     for succeeds in [true, false] {
       let runtime = FBPhotosTestRuntime()
       runtime.saveSucceeds = succeeds
-      XCTAssertEqual(runtime.run(), succeeds ? 0 : 1)
-      XCTAssertEqual(
-        runtime.operations as NSArray,
-        [
+      #expect(runtime.run() == (succeeds ? 0 : 1))
+      #expect(
+        runtime.operations as NSArray == [
           "value:_lazyPhotoLibrary", "unwrap", "transactionBegin", "context",
           "id:asset0", "lookup:asset0", "delete:asset0", "id:asset1", "lookup:asset1", "delete:asset1",
           "save", "transactionEnd",
         ] as NSArray)
-      XCTAssertTrue(runtime.allMutationsInsideTransaction)
+      #expect(runtime.allMutationsInsideTransaction)
     }
   }
 
-  func testUnavailablePrivateLibraryStopsBeforeTransaction() {
+  @Test
+  func unavailablePrivateLibraryStopsBeforeTransaction() {
     for (failure, expected) in [
       ("lazyException", ["value:_lazyPhotoLibrary"]),
       ("unwrapException", ["value:_lazyPhotoLibrary", "unwrap"]),
@@ -60,25 +64,25 @@ final class PhotoLibraryMutationTests: XCTestCase {
     ] {
       let runtime = FBPhotosTestRuntime()
       runtime.failure = failure
-      XCTAssertEqual(runtime.run(), 1)
-      XCTAssertEqual(runtime.operations as NSArray, expected as NSArray)
+      #expect(runtime.run() == 1)
+      #expect(runtime.operations as NSArray == expected as NSArray)
     }
   }
 
-  func testWorkerTransactionFinishesBeforeReturningItsSaveResult() {
+  @Test
+  func workerTransactionFinishesBeforeReturningItsSaveResult() {
     for succeeds in [true, false] {
       let runtime = FBPhotosTestRuntime()
       runtime.runTransactionsOnWorkerQueue = true
       runtime.saveSucceeds = succeeds
 
-      XCTAssertEqual(runtime.run(), succeeds ? 0 : 1)
+      #expect(runtime.run() == (succeeds ? 0 : 1))
 
-      XCTAssertTrue(runtime.transactionRanOnWorkerThread)
-      XCTAssertTrue(runtime.allMutationsInsideTransaction)
-      XCTAssertNil(runtime.escapedTransactionException)
-      XCTAssertEqual(
-        runtime.operations as NSArray,
-        [
+      #expect(runtime.transactionRanOnWorkerThread)
+      #expect(runtime.allMutationsInsideTransaction)
+      #expect(runtime.escapedTransactionException == nil)
+      #expect(
+        runtime.operations as NSArray == [
           "value:_lazyPhotoLibrary", "unwrap", "transactionBegin", "context",
           "id:asset0", "lookup:asset0", "delete:asset0", "id:asset1", "lookup:asset1", "delete:asset1",
           "save", "transactionEnd",
@@ -86,7 +90,8 @@ final class PhotoLibraryMutationTests: XCTestCase {
     }
   }
 
-  func testMissingObjectsAndExceptionsStopTheTransactionWithoutSaving() {
+  @Test
+  func missingObjectsAndExceptionsStopTheTransactionWithoutSaving() {
     let prefix = ["value:_lazyPhotoLibrary", "unwrap", "transactionBegin", "context"]
     for (failure, body) in [
       ("contextException", []), ("contextMissing", []),
@@ -97,34 +102,36 @@ final class PhotoLibraryMutationTests: XCTestCase {
     ] {
       let runtime = FBPhotosTestRuntime()
       runtime.failure = failure
-      XCTAssertEqual(runtime.run(), 1)
-      XCTAssertEqual(runtime.operations as NSArray, (prefix + body + ["transactionEnd"]) as NSArray)
-      XCTAssertTrue(runtime.allMutationsInsideTransaction)
+      #expect(runtime.run() == 1)
+      #expect(runtime.operations as NSArray == (prefix + body + ["transactionEnd"]) as NSArray)
+      #expect(runtime.allMutationsInsideTransaction)
     }
   }
-  func testPrivateExceptionsReturnCommandFailure() {
+  @Test
+  func privateExceptionsReturnCommandFailure() {
     for failure in ["transactionException", "idException", "saveException"] {
       let runtime = FBPhotosTestRuntime()
       runtime.failure = failure
-      XCTAssertEqual(runtime.runCatchingException() as NSDictionary, ["status": 1] as NSDictionary)
+      #expect(runtime.runCatchingException() as NSDictionary == ["status": 1] as NSDictionary)
     }
   }
 
-  func testPrivateExceptionsStayInsideTheWorkerTransaction() {
+  @Test
+  func privateExceptionsStayInsideTheWorkerTransaction() {
     for failure in ["contextException", "idException", "lookupException", "deleteException", "saveException"] {
       let runtime = FBPhotosTestRuntime()
       runtime.runTransactionsOnWorkerQueue = true
       runtime.failure = failure
 
-      XCTAssertEqual(runtime.run(), 1, failure)
+      #expect(runtime.run() == 1, "\(failure)")
 
-      XCTAssertTrue(runtime.transactionRanOnWorkerThread, failure)
-      XCTAssertNil(runtime.escapedTransactionException, failure)
-      XCTAssertEqual((runtime.operations as? [String])?.last, "transactionEnd", failure)
+      #expect(runtime.transactionRanOnWorkerThread, "\(failure)")
+      #expect(runtime.escapedTransactionException == nil, "\(failure)")
+      #expect((runtime.operations as? [String])?.last == "transactionEnd", "\(failure)")
       if failure != "saveException" {
-        XCTAssertFalse(runtime.operations.contains("save"), failure)
+        #expect(!runtime.operations.contains("save"), "\(failure)")
       } else {
-        XCTAssertTrue(runtime.operations.contains("save"), failure)
+        #expect(runtime.operations.contains("save"), "\(failure)")
       }
     }
   }
