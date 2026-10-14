@@ -35,12 +35,12 @@ private final class RecordingIDEInterface: NSObject {
 /// The callbacks a test bundle makes over the proxy channel, and what each does to the waits the
 /// connection's driver awaits. The bundle side is reached by invoking the callbacks directly; the
 /// DTX transport itself is not exercised.
-final class FBTestBundleDTXConnectionTests: XCTestCase {
+final class TestBundleDTXConnectionTests: XCTestCase {
 
   private let interface = RecordingIDEInterface()
   private let events = TestBundleEvents()
 
-  private func makeConnection(socket: Int32 = -1) throws -> FBTestBundleDTXConnection {
+  private func makeConnection(socket: Int32 = -1) throws -> TestBundleDTXConnection {
     let sessionIdentifier = UUID()
     let testConfiguration = try TestConfiguration(
       byWritingToFileWithSessionIdentifier: sessionIdentifier,
@@ -66,7 +66,7 @@ final class FBTestBundleDTXConnectionTests: XCTestCase {
         launchMode: .failIfRunning),
       testedApplicationAdditionalEnvironment: [:],
       testConfiguration: testConfiguration)
-    return FBTestBundleDTXConnection(
+    return TestBundleDTXConnection(
       context: context,
       work: DispatchQueue(label: "com.facebook.xctestbootstrap.tests.work"),
       socket: socket,
@@ -76,7 +76,7 @@ final class FBTestBundleDTXConnectionTests: XCTestCase {
       logger: ControlCoreLoggerSink(ControlCoreGlobalConfiguration.defaultLogger))
   }
 
-  private func bundleReady(_ connection: FBTestBundleDTXConnection, protocolVersion: Int, minimumVersion: Int) {
+  private func bundleReady(_ connection: TestBundleDTXConnection, protocolVersion: Int, minimumVersion: Int) {
     _ = connection.perform(
       NSSelectorFromString("_XCT_testBundleReadyWithProtocolVersion:minimumVersion:"),
       with: NSNumber(value: protocolVersion),

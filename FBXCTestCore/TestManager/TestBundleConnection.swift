@@ -50,7 +50,7 @@ enum TestPlanOutcome {
 }
 
 /// What the test bundle and testmanagerd have done over the connection, as events to wait on.
-final class TestBundleEvents: NSObject, FBTestBundleDTXConnectionDelegate, @unchecked Sendable {
+final class TestBundleEvents: NSObject, TestBundleDTXConnectionDelegate, @unchecked Sendable {
   let proxyChannelOpened = AsyncEvent<Void>()
   let sessionStarted = AsyncEvent<Void>()
   let bundleReady = AsyncEvent<Void>()
@@ -134,7 +134,7 @@ final class TestBundleConnection {
   func connectAndRun() async throws {
     logger.log("Connecting Test Bundle")
     let events = TestBundleEvents()
-    let core = FBTestBundleDTXConnection(
+    let core = TestBundleDTXConnection(
       context: context,
       work: target.workQueue,
       socket: socket,

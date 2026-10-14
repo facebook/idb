@@ -11,7 +11,7 @@ import Foundation
 import ObjectiveC
 
 /// Told what the test bundle and testmanagerd do over the connection. Called on the work queue.
-protocol FBTestBundleDTXConnectionDelegate: AnyObject {
+protocol TestBundleDTXConnectionDelegate: AnyObject {
   /// The test bundle opened its proxy channel.
   func testBundleConnectionDidOpenProxyChannel()
   /// testmanagerd answered the session request, with an error if it refused it.
@@ -69,13 +69,13 @@ private let protocolMinimumVersion = 0x8
 /// testmanagerd. It is the object exported over those channels, answering the session callbacks
 /// itself and handing every other callback to the IDE interface.
 @objc(FBTestBundleDTXConnection)
-final class FBTestBundleDTXConnection: NSObject {
+final class TestBundleDTXConnection: NSObject {
 
   private let context: TestManagerContext
   private let workQueue: DispatchQueue
   private let testManagerdSocket: Int32
   private let interface: NSObject
-  private let delegate: FBTestBundleDTXConnectionDelegate
+  private let delegate: TestBundleDTXConnectionDelegate
   private let requestQueue: DispatchQueue
   private let logger: TestManagerLogSink
 
@@ -101,7 +101,7 @@ final class FBTestBundleDTXConnection: NSObject {
     work workQueue: DispatchQueue,
     socket: Int32,
     interface: NSObject,
-    delegate: FBTestBundleDTXConnectionDelegate,
+    delegate: TestBundleDTXConnectionDelegate,
     request requestQueue: DispatchQueue,
     logger: TestManagerLogSink
   ) {
@@ -247,7 +247,7 @@ final class FBTestBundleDTXConnection: NSObject {
   /// has registered them.
   private static let addExportedInterfaceConformances: Void = {
     for name in ["XCTestManager_IDEInterface", "XCTMessagingChannel_DaemonToIDE", "XCTMessagingChannel_RunnerToIDE"] {
-      class_addProtocol(FBTestBundleDTXConnection.self, protocolNamed(name))
+      class_addProtocol(TestBundleDTXConnection.self, protocolNamed(name))
     }
   }()
 
@@ -263,7 +263,7 @@ final class FBTestBundleDTXConnection: NSObject {
 
 // MARK: - XCTestDriverInterface
 
-extension FBTestBundleDTXConnection {
+extension TestBundleDTXConnection {
 
   @objc(_XCT_didFinishExecutingTestPlan)
   func didFinishExecutingTestPlan() -> Any? {
