@@ -17,7 +17,7 @@ struct ListAppsMethodHandler {
   func handle(request: Idb_ListAppsRequest, context: ServerContext) async throws -> Idb_ListAppsResponse {
     let persistedBundleIDs = commandExecutor.storageManager.application.persistedBundleIDs
     let fetchAppProcessState = !request.suppressProcessState
-    let apps = try await commandExecutor.list_apps(fetchAppProcessState)
+    let apps = try await commandExecutor.listApps(fetchAppProcessState)
 
     return .with {
       $0.apps = apps.map { app, processState in
@@ -44,7 +44,7 @@ struct TerminateMethodHandler {
   let commandExecutor: IDBCommandExecutor
 
   func handle(request: Idb_TerminateRequest, context: ServerContext) async throws -> Idb_TerminateResponse {
-    try await commandExecutor.kill_application(request.bundleID)
+    try await commandExecutor.killApplication(request.bundleID)
     return .init()
   }
 }
@@ -54,7 +54,7 @@ struct UninstallMethodHandler {
   let commandExecutor: IDBCommandExecutor
 
   func handle(request: Idb_UninstallRequest, context: ServerContext) async throws -> Idb_UninstallResponse {
-    try await commandExecutor.uninstall_application(request.bundleID)
+    try await commandExecutor.uninstallApplication(request.bundleID)
     return .init()
   }
 }

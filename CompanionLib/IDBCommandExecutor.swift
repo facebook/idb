@@ -95,7 +95,7 @@ public final class IDBCommandExecutor {
 
   // MARK: - Installation
 
-  public func list_apps(_ fetchProcessState: Bool) async throws -> [InstalledApplication: Any] {
+  public func listApps(_ fetchProcessState: Bool) async throws -> [InstalledApplication: Any] {
     let installedApps = try await target.application.installed()
     let runningApps: [String: pid_t]
     if fetchProcessState {
@@ -373,11 +373,11 @@ public final class IDBCommandExecutor {
     return try await simulatorTarget().xctest.listTests(forBundleAtPath: testDescriptor.url.path, timeout: IDBCommandExecutor.ListTestBundleTimeout, withAppAtPath: finalAppPath)
   }
 
-  public func uninstall_application(_ bundleID: String) async throws {
+  public func uninstallApplication(_ bundleID: String) async throws {
     try await target.application.uninstall(bundleID: bundleID)
   }
 
-  public func kill_application(_ bundleID: String) async throws {
+  public func killApplication(_ bundleID: String) async throws {
     do {
       try await target.application.kill(bundleID: bundleID)
     } catch {
@@ -385,7 +385,7 @@ public final class IDBCommandExecutor {
     }
   }
 
-  public func launch_app(_ configuration: ApplicationLaunchConfiguration) async throws -> LaunchedApplication {
+  public func launchApp(_ configuration: ApplicationLaunchConfiguration) async throws -> LaunchedApplication {
     var replacements: [String: String] = [:]
     replacements.merge(storageManager.replacementMapping) { _, new in new }
     replacements.merge(target.replacementMapping()) { _, new in new }
@@ -683,7 +683,7 @@ public final class IDBCommandExecutor {
 
   public func clean() async throws {
     if target.state != .shutdown {
-      try await uninstall_all_applications()
+      try await uninstallAllApplications()
     }
     try await remove_all_storage_and_clear_keychain()
   }
@@ -725,11 +725,11 @@ public final class IDBCommandExecutor {
     try await clear_keychain()
   }
 
-  private func uninstall_all_applications() async throws {
-    let apps = try await list_apps(false)
+  private func uninstallAllApplications() async throws {
+    let apps = try await listApps(false)
     for app in apps.keys where app.installType == .user {
-      try await kill_application(app.bundle.identifier)
-      try await uninstall_application(app.bundle.identifier)
+      try await killApplication(app.bundle.identifier)
+      try await uninstallApplication(app.bundle.identifier)
     }
   }
 

@@ -61,7 +61,7 @@ struct LaunchMethodHandler: @unchecked Sendable {
       stdOut: stdOut,
       stdErr: stdErr,
       launchMode: launchMode)
-    let launchedApp = try await commandExecutor.launch_app(config)
+    let launchedApp = try await commandExecutor.launchApp(config)
     let response = Idb_LaunchResponse.with {
       $0.debugger.pid = UInt64(launchedApp.processIdentifier)
     }
