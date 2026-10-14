@@ -7,34 +7,39 @@
 
 @testable import FBSimulatorControl
 import FBVideoCore
-import XCTest
+import Foundation
+import Testing
 
-final class PeriodicStatsTimerTests: XCTestCase {
+@Suite
+struct PeriodicStatsTimerTests {
 
-  func testFirstTickStartsTimer() {
+  @Test
+  func firstTickStartsTimer() {
     var timer = PeriodicStatsTimer(interval: .seconds(5))
-    XCTAssertFalse(timer.hasStarted)
-    XCTAssertNil(timer.firstTickTime)
+    #expect(!timer.hasStarted)
+    #expect(timer.firstTickTime == nil)
 
-    XCTAssertEqual(timer.tick(), .started)
+    #expect(timer.tick() == .started)
 
-    XCTAssertTrue(timer.hasStarted)
-    XCTAssertNotNil(timer.firstTickTime)
+    #expect(timer.hasStarted)
+    #expect(timer.firstTickTime != nil)
   }
 
-  func testTickPendingWithinInterval() {
+  @Test
+  func tickPendingWithinInterval() {
     var timer = PeriodicStatsTimer(interval: .seconds(5))
-    XCTAssertEqual(timer.tick(), .started)
-    XCTAssertEqual(timer.tick(), .pending)
+    #expect(timer.tick() == .started)
+    #expect(timer.tick() == .pending)
   }
 
-  func testTickElapsedAfterInterval() {
+  @Test
+  func tickElapsedAfterInterval() {
     var timer = PeriodicStatsTimer(interval: .seconds(5))
-    XCTAssertEqual(timer.tick(), .started)
+    #expect(timer.tick() == .started)
     timer.backdateForTesting(by: .seconds(10))
 
     guard case .elapsed = timer.tick() else {
-      XCTFail("Expected .elapsed after backdating past the interval")
+      Issue.record("Expected .elapsed after backdating past the interval")
       return
     }
   }
