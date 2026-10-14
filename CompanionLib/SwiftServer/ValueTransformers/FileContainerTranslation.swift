@@ -9,7 +9,7 @@ import FBControlCore
 import Foundation
 import IDBGRPCSwift
 
-struct FileContainerValueTransformer {
+enum FileContainerTranslation {
 
   static func rawFileContainer(from proto: Idb_FileContainer) -> String {
     return fileContainer(from: proto.kind)?.rawValue ?? proto.bundleID

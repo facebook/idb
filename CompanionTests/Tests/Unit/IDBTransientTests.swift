@@ -20,7 +20,7 @@ import Testing
 @Suite
 struct IDBTransientTests {
 
-  // MARK: - FileContainerValueTransformer Tests
+  // MARK: - FileContainerTranslation Tests
 
   @Test
   func fileContainerMapsAllKnownKinds() {
@@ -43,26 +43,26 @@ struct IDBTransientTests {
       (.symbols, .symbols),
     ]
     for (protoKind, expectedKind) in mappings {
-      let result = FileContainerValueTransformer.fileContainer(from: protoKind)
+      let result = FileContainerTranslation.fileContainer(from: protoKind)
       #expect(result?.rawValue == expectedKind.rawValue, "Mapping failed for \(protoKind)")
     }
   }
 
   @Test
   func fileContainerReturnsNilForApplicationKind() {
-    #expect((FileContainerValueTransformer.fileContainer(from: .application)) == nil)
+    #expect((FileContainerTranslation.fileContainer(from: .application)) == nil)
   }
 
   @Test
   func fileContainerReturnsNilForNoneKind() {
-    #expect((FileContainerValueTransformer.fileContainer(from: .none)) == nil)
+    #expect((FileContainerTranslation.fileContainer(from: .none)) == nil)
   }
 
   @Test
   func rawFileContainerReturnsRawValueForKnownKind() {
     var container = Idb_FileContainer()
     container.kind = .root
-    let result = FileContainerValueTransformer.rawFileContainer(from: container)
+    let result = FileContainerTranslation.rawFileContainer(from: container)
     #expect((result) == (FileContainerKind.root.rawValue))
   }
 
@@ -71,7 +71,7 @@ struct IDBTransientTests {
     var container = Idb_FileContainer()
     container.kind = .application
     container.bundleID = "com.example.app"
-    let result = FileContainerValueTransformer.rawFileContainer(from: container)
+    let result = FileContainerTranslation.rawFileContainer(from: container)
     #expect((result) == ("com.example.app"))
   }
 

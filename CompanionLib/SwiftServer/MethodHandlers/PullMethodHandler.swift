@@ -66,7 +66,7 @@ struct PullMethodHandler {
     request: Idb_PullRequest, using commandExecutor: any FilePulling, logger: any ControlCoreLogger, send: (Idb_PullResponse) async throws -> Void
   ) async throws {
     let path = request.srcPath as NSString
-    let fileContainer = FileContainerValueTransformer.rawFileContainer(from: request.container)
+    let fileContainer = FileContainerTranslation.rawFileContainer(from: request.container)
     let url = commandExecutor.temporaryDirectory.temporaryDirectory()
     let tempPath = url.appendingPathComponent(path.lastPathComponent).path
 
@@ -94,7 +94,7 @@ struct PullMethodHandler {
   private static func sendFilePath(
     request: Idb_PullRequest, using commandExecutor: any FilePulling, logger: any ControlCoreLogger, send: (Idb_PullResponse) async throws -> Void
   ) async throws {
-    let fileContainer = FileContainerValueTransformer.rawFileContainer(from: request.container)
+    let fileContainer = FileContainerTranslation.rawFileContainer(from: request.container)
 
     let filePath = try await commandExecutor.pull_file_path(
       request.srcPath,

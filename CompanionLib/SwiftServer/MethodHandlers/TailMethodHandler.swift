@@ -26,7 +26,7 @@ struct TailMethodHandler {
     else { throw RPCError(code: .failedPrecondition, message: "Expected start control") }
 
     let responseWriter = FIFOStreamWriter(stream: responseStream)
-    let fileContainer = FileContainerValueTransformer.rawFileContainer(from: start.container)
+    let fileContainer = FileContainerTranslation.rawFileContainer(from: start.container)
     try await Self.tail(
       send: { try responseWriter.send($0) },
       awaitStop: {

@@ -22,7 +22,7 @@ struct LsMethodHandler {
   }
 
   func handle(request: Idb_LsRequest, context: ServerContext) async throws -> Idb_LsResponse {
-    let fileContainer = FileContainerValueTransformer.rawFileContainer(from: request.container)
+    let fileContainer = FileContainerTranslation.rawFileContainer(from: request.container)
 
     if request.paths.isEmpty {
       return try await list(path: request.path, fileContainer: fileContainer)
@@ -64,7 +64,7 @@ struct MkdirMethodHandler {
   let commandExecutor: IDBCommandExecutor
 
   func handle(request: Idb_MkdirRequest, context: ServerContext) async throws -> Idb_MkdirResponse {
-    let fileContainer = FileContainerValueTransformer.rawFileContainer(from: request.container)
+    let fileContainer = FileContainerTranslation.rawFileContainer(from: request.container)
     try await commandExecutor.create_directory(request.path, containerType: fileContainer)
     return .init()
   }
@@ -75,7 +75,7 @@ struct MvMethodHandler {
   let commandExecutor: IDBCommandExecutor
 
   func handle(request: Idb_MvRequest, context: ServerContext) async throws -> Idb_MvResponse {
-    let fileContainer = FileContainerValueTransformer.rawFileContainer(from: request.container)
+    let fileContainer = FileContainerTranslation.rawFileContainer(from: request.container)
     try await commandExecutor.move_paths(request.srcPaths, to_path: request.dstPath, containerType: fileContainer)
     return .init()
   }
@@ -86,7 +86,7 @@ struct RmMethodHandler {
   let commandExecutor: IDBCommandExecutor
 
   func handle(request: Idb_RmRequest, context: ServerContext) async throws -> Idb_RmResponse {
-    let fileContainer = FileContainerValueTransformer.rawFileContainer(from: request.container)
+    let fileContainer = FileContainerTranslation.rawFileContainer(from: request.container)
     try await commandExecutor.remove_paths(request.paths, containerType: fileContainer)
     return .init()
   }
@@ -103,7 +103,7 @@ struct PushMethodHandler {
     guard case let .inner(inner) = request.value
     else { throw RPCError(code: .invalidArgument, message: "Expected inner as first request in stream") }
 
-    let fileContainer = FileContainerValueTransformer.rawFileContainer(from: inner.container)
+    let fileContainer = FileContainerTranslation.rawFileContainer(from: inner.container)
     try await MultisourceFileReader.withFilePathURLs(from: requestStream, temporaryDirectory: commandExecutor.temporaryDirectory, extractFromSubdir: false) { extractedFileURLs in
       try await commandExecutor.push_files(extractedFileURLs, to_path: inner.dstPath, containerType: fileContainer)
     }
