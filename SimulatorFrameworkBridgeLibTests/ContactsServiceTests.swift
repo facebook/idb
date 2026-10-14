@@ -7,13 +7,15 @@
 
 import Foundation
 @_implementationOnly import SimulatorFrameworkBridgeSupport
-import XCTest
+import Testing
 
-final class ContactsServiceTests: XCTestCase {
+@Suite
+struct ContactsServiceTests {
 
-  func testUnknownActionReturnsFailure() {
-    XCTAssertEqual(FBContactsService.handleContactsAction(action: "delete"), 1)
-    XCTAssertEqual(FBContactsService.handleContactsAction(action: ""), 1)
-    XCTAssertEqual(FBContactsService.handleContactsAction(action: "add"), 1)
+  @Test
+  func unknownActionReturnsFailure() {
+    #expect(FBContactsService.handleContactsAction(action: "delete") == 1)
+    #expect(FBContactsService.handleContactsAction(action: "") == 1)
+    #expect(FBContactsService.handleContactsAction(action: "add") == 1)
   }
 }
