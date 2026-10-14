@@ -261,3 +261,20 @@ private func applicationLaunchConfiguration(bundleID: String, environment: [Stri
     launchMode: .relaunchIfRunning
   )
 }
+
+public struct TestApplicationsPair: CustomStringConvertible {
+
+  public let applicationUnderTest: InstalledApplication?
+  public let testHostApp: InstalledApplication?
+
+  public init(applicationUnderTest: InstalledApplication?, testHostApp: InstalledApplication?) {
+    self.applicationUnderTest = applicationUnderTest
+    self.testHostApp = testHostApp
+  }
+
+  public var description: String {
+    let autDesc = applicationUnderTest.map { "\($0)" } ?? "(null)"
+    let hostDesc = testHostApp.map { "\($0)" } ?? "(null)"
+    return "AUT \(autDesc), Test Host \(hostDesc)"
+  }
+}
