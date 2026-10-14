@@ -17,7 +17,7 @@ struct XCTestListBundlesMethodHandler {
   let commandExecutor: IDBCommandExecutor
 
   func handle(request: Idb_XctestListBundlesRequest, context: ServerContext) async throws -> Idb_XctestListBundlesResponse {
-    let descriptors = try await commandExecutor.listTestBundles()
+    let descriptors = try commandExecutor.storageManager.xctest.listTestDescriptors()
     return .with {
       $0.bundles = descriptors.map(toBundle(descriptor:))
     }

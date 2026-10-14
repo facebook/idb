@@ -313,10 +313,6 @@ public final class IDBCommandExecutor {
     }
   }
 
-  public func listTestBundles() async throws -> [XCTestDescriptor] {
-    return try storageManager.xctest.listTestDescriptors()
-  }
-
   private static let ListTestBundleTimeout: TimeInterval = 180.0
 
   public func listTestsInBundle(_ bundleID: String, withApp appPath: String?) async throws -> [String] {
