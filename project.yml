@@ -1312,7 +1312,7 @@ targets:
       testTargets:
         - FBSimulatorCodeInjectionTests
     sources:
-      - path: FBSimulatorCodeInjectionTests
+      - path: FBSimulatorCodeInjectionTests/Tests/Unit
       - path: FBSimulatorControlTests/Tests/Unit/Support/SimulatorRetention.swift
       - path: FBSimulatorControlTests/Tests/Unit/Support/SimulatorTestSupport.swift
     postBuildScripts:
