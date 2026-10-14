@@ -25,7 +25,7 @@ struct OpenUrlMethodHandler {
   let commandExecutor: IDBCommandExecutor
 
   func handle(request: Idb_OpenUrlRequest, context: ServerContext) async throws -> Idb_OpenUrlRequest {
-    try await commandExecutor.open_url(request.url)
+    try await commandExecutor.openUrl(request.url)
     return .init()
   }
 }
@@ -35,7 +35,7 @@ struct SetLocationMethodHandler {
   let commandExecutor: IDBCommandExecutor
 
   func handle(request: Idb_SetLocationRequest, context: ServerContext) async throws -> Idb_SetLocationResponse {
-    try await commandExecutor.set_location(request.location.latitude, longitude: request.location.longitude)
+    try await commandExecutor.setLocation(request.location.latitude, longitude: request.location.longitude)
     return .init()
   }
 }
@@ -54,7 +54,7 @@ struct HingeAngleMethodHandler {
   let commandExecutor: IDBCommandExecutor
 
   func handle(request: Idb_HingeAngleRequest, context: ServerContext) async throws -> Idb_HingeAngleResponse {
-    let angle = try await commandExecutor.hinge_angle()
+    let angle = try await commandExecutor.hingeAngle()
     return .with { $0.angle = angle }
   }
 }
@@ -63,11 +63,11 @@ struct OrientationMethodHandler {
   let commandExecutor: IDBCommandExecutor
 
   func get() async throws -> Idb_GetOrientationResponse {
-    Self.response(try await commandExecutor.get_orientation())
+    Self.response(try await commandExecutor.getOrientation())
   }
 
   func set(request: Idb_SetOrientationRequest) async throws -> Idb_SetOrientationResponse {
-    try await commandExecutor.set_orientation(Self.orientation(request.orientation), convention: .device)
+    try await commandExecutor.setOrientation(Self.orientation(request.orientation), convention: .device)
     return .init()
   }
 

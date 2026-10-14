@@ -16,7 +16,7 @@ struct ScreenshotMethodHandler {
   func handle(request: Idb_ScreenshotRequest, context: ServerContext) async throws -> Idb_ScreenshotResponse {
     let configuration = try ScreenshotRequestTranslation.configuration(from: request)
     do {
-      let result = try await commandExecutor.take_screenshot(configuration)
+      let result = try await commandExecutor.takeScreenshot(configuration)
       return ScreenshotRequestTranslation.response(from: result)
     } catch let error as ScreenshotGeometryError {
       // The crop is resolved against the screen that was actually captured, so a rect that

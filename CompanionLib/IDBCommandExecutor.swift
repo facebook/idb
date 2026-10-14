@@ -131,11 +131,11 @@ public final class IDBCommandExecutor {
 
   // MARK: - Public Methods
 
-  public func take_screenshot(_ format: ScreenshotFormat) async throws -> Data {
+  public func takeScreenshot(_ format: ScreenshotFormat) async throws -> Data {
     try await target.screenshot.take(format: format)
   }
 
-  public func take_screenshot(_ configuration: ScreenshotConfiguration) async throws -> ScreenshotResult {
+  public func takeScreenshot(_ configuration: ScreenshotConfiguration) async throws -> ScreenshotResult {
     try await target.screenshot.take(configuration: configuration)
   }
 
@@ -302,7 +302,7 @@ public final class IDBCommandExecutor {
     return await simulator.audioInjection.appLaunchEnvironment(environment)
   }
 
-  public func set_location(_ latitude: Double, longitude: Double) async throws {
+  public func setLocation(_ latitude: Double, longitude: Double) async throws {
     try await target.location.set(longitude: longitude, latitude: latitude)
   }
 
@@ -326,7 +326,7 @@ public final class IDBCommandExecutor {
     try await simulatorTarget().privacy.revokeAccess(Set([bundleID]), toDeeplink: scheme)
   }
 
-  public func open_url(_ url: String) async throws {
+  public func openUrl(_ url: String) async throws {
     guard let parsed = URL(string: url) else {
       throw IDBCommandError.invalidURL(urlString: url)
     }
@@ -571,11 +571,11 @@ public final class IDBCommandExecutor {
     try await simulatorTarget().preferences.apply(.locale(localeIdentifier: identifier))
   }
 
-  public func get_orientation() async throws -> SimulatorDeviceOrientation {
+  public func getOrientation() async throws -> SimulatorDeviceOrientation {
     try await simulatorTarget().orientation.current()
   }
 
-  public func set_orientation(_ orientation: SimulatorHIDDeviceOrientation, convention: SimulatorOrientationConvention) async throws {
+  public func setOrientation(_ orientation: SimulatorHIDDeviceOrientation, convention: SimulatorOrientationConvention) async throws {
     try await simulatorTarget().orientation.set(orientation, convention: convention)
   }
 
@@ -583,11 +583,11 @@ public final class IDBCommandExecutor {
     try await simulatorTarget().hardware.shake()
   }
 
-  public func hinge_angle() async throws -> Double {
+  public func hingeAngle() async throws -> Double {
     try await simulatorTarget().hinge.current().degrees
   }
 
-  public func set_hinge_angle(_ angle: SimulatorHingeAngle) async throws {
+  public func setHingeAngle(_ angle: SimulatorHingeAngle) async throws {
     try await simulatorTarget().hinge.set(angle)
   }
 

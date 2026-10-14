@@ -31,11 +31,11 @@ struct HidMethodHandler {
             return event
           case let .orientation(orientation):
             // Interface numbering is what `idb`'s HID stream has always carried.
-            try await commandExecutor.set_orientation(orientation, convention: .interface)
+            try await commandExecutor.setOrientation(orientation, convention: .interface)
           case .shake:
             try await commandExecutor.shake()
           case let .hinge(angle):
-            try await commandExecutor.set_hinge_angle(angle)
+            try await commandExecutor.setHingeAngle(angle)
           }
           return nil
         })
