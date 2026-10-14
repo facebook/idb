@@ -6,7 +6,8 @@
  */
 
 @testable import FBSimulatorControl
-import XCTest
+import Foundation
+import Testing
 @preconcurrency import XPC
 
 /// A simulator whose CoreDevice services are synthetic peers answering with `reply`.
@@ -37,13 +38,15 @@ private final class Recorder: @unchecked Sendable {
   }
 }
 
-final class SimulatorCoreDeviceClientTests: XCTestCase {
+@Suite
+struct SimulatorCoreDeviceClientTests {
 
   private struct Answer: Decodable, Equatable {
     let answer: Int64
   }
 
-  func testPerformWrapsTheInputInTheActionEnvelopeForTheDevice() async throws {
+  @Test
+  func performWrapsTheInputInTheActionEnvelopeForTheDevice() async throws {
     let recorder = Recorder()
     let peer = recorder.register("com.example.service")
     struct Input: Encodable {
@@ -51,30 +54,32 @@ final class SimulatorCoreDeviceClientTests: XCTestCase {
     }
     let answer = try await recorder.client.perform(
       action: "com.example.action", service: "com.example.service", input: Input(), as: Answer.self)
-    XCTAssertEqual(answer, Answer(answer: 42))
+    #expect(answer == Answer(answer: 42))
 
-    XCTAssertEqual(recorder.services.lookups, ["com.example.service"])
-    let request = try XCTUnwrap(peer.received.first)
-    XCTAssertEqual(String(cString: xpc_dictionary_get_string(request, "CoreDevice.actionIdentifier")!), "com.example.action")
-    XCTAssertEqual(String(cString: xpc_dictionary_get_string(request, "CoreDevice.deviceIdentifier")!), "0000-DEVICE")
-    let version = try XCTUnwrap(xpc_dictionary_get_dictionary(request, "CoreDevice.coreDeviceVersion"))
-    XCTAssertEqual(String(cString: xpc_dictionary_get_string(version, "stringValue")!), "651.13.4")
-    let input = try XCTUnwrap(xpc_dictionary_get_dictionary(request, "CoreDevice.input"))
-    XCTAssertTrue(xpc_dictionary_get_bool(input, "flag"))
+    #expect(recorder.services.lookups == ["com.example.service"])
+    let request = try #require(peer.received.first)
+    #expect(String(cString: xpc_dictionary_get_string(request, "CoreDevice.actionIdentifier")!) == "com.example.action")
+    #expect(String(cString: xpc_dictionary_get_string(request, "CoreDevice.deviceIdentifier")!) == "0000-DEVICE")
+    let version = try #require(xpc_dictionary_get_dictionary(request, "CoreDevice.coreDeviceVersion"))
+    #expect(String(cString: xpc_dictionary_get_string(version, "stringValue")!) == "651.13.4")
+    let input = try #require(xpc_dictionary_get_dictionary(request, "CoreDevice.input"))
+    #expect(xpc_dictionary_get_bool(input, "flag"))
   }
 
-  func testTheVersionIsReadOnceAcrossRequests() async throws {
+  @Test
+  func theVersionIsReadOnceAcrossRequests() async throws {
     let recorder = Recorder()
     let peer = recorder.register("com.example.service")
     for _ in 0..<3 {
       _ = try await recorder.client.perform(
         action: "com.example.action", service: "com.example.service", input: CoreDeviceEmptyInput(), as: Answer.self)
     }
-    XCTAssertEqual(recorder.versionReads, 1)
-    XCTAssertEqual(peer.connections, 3)
+    #expect(recorder.versionReads == 1)
+    #expect(peer.connections == 3)
   }
 
-  func testAVersionFailureIsNotCached() async {
+  @Test
+  func aVersionFailureIsNotCached() async {
     // SAFETY: Read after the awaited requests complete.
     // patternlint-disable-next-line unchecked-sendable
     final class Attempts: @unchecked Sendable {
@@ -93,16 +98,20 @@ final class SimulatorCoreDeviceClientTests: XCTestCase {
     for _ in 0..<2 {
       do {
         _ = try await client.perform(action: "a", service: "s", input: CoreDeviceEmptyInput(), as: Answer.self)
-        XCTFail("Expected the version failure")
+        Issue.record("Expected the version failure")
       } catch {
-        guard case SimulatorCoreDeviceError.unsupported = error else { return XCTFail("\(error)") }
+        guard case SimulatorCoreDeviceError.unsupported = error else {
+          Issue.record("\(error)")
+          return
+        }
       }
     }
-    XCTAssertEqual(attempts.count, 2)
-    XCTAssertEqual(services.lookups, [], "No connection should be made without a version")
+    #expect(attempts.count == 2)
+    #expect(services.lookups == [], "No connection should be made without a version")
   }
 
-  func testPerformSurfacesAProviderErrorAndAMalformedOutput() async {
+  @Test
+  func performSurfacesAProviderErrorAndAMalformedOutput() async {
     let recorder = Recorder()
     recorder.register("s")
     recorder.reply = SimulatorCoreDevice.dictionary([
@@ -110,10 +119,13 @@ final class SimulatorCoreDeviceClientTests: XCTestCase {
     ])
     do {
       _ = try await recorder.client.perform(action: "a", service: "s", input: CoreDeviceEmptyInput(), as: Answer.self)
-      XCTFail("Expected the provider error")
+      Issue.record("Expected the provider error")
     } catch {
-      guard case let SimulatorCoreDeviceError.unavailable(detail) = error else { return XCTFail("\(error)") }
-      XCTAssertEqual(detail, "com.example (3)")
+      guard case let SimulatorCoreDeviceError.unavailable(detail) = error else {
+        Issue.record("\(error)")
+        return
+      }
+      #expect(detail == "com.example (3)")
     }
 
     recorder.reply = SimulatorCoreDevice.dictionary([
@@ -121,10 +133,13 @@ final class SimulatorCoreDeviceClientTests: XCTestCase {
     ])
     do {
       _ = try await recorder.client.perform(action: "a", service: "s", input: CoreDeviceEmptyInput(), as: Answer.self)
-      XCTFail("Expected the malformed output")
+      Issue.record("Expected the malformed output")
     } catch {
-      guard case let SimulatorCoreDeviceError.malformed(detail) = error else { return XCTFail("\(error)") }
-      XCTAssertTrue(detail.hasPrefix("CoreDevice.output.answer:"), detail)
+      guard case let SimulatorCoreDeviceError.malformed(detail) = error else {
+        Issue.record("\(error)")
+        return
+      }
+      #expect(detail.hasPrefix("CoreDevice.output.answer:"), "\(detail)")
     }
   }
 
@@ -134,20 +149,22 @@ final class SimulatorCoreDeviceClientTests: XCTestCase {
     "CoreDevice.output": SimulatorCoreDevice.dictionary(["hingeAngle": xpc_bool_create(true), "deviceMotionState": xpc_bool_create(true)])
   ])
 
-  func testAnAnsweredCapabilityQueryIsKeptForTheSimulator() async throws {
+  @Test
+  func anAnsweredCapabilityQueryIsKeptForTheSimulator() async throws {
     let recorder = Recorder()
     let peer = recorder.register(MotionCapabilities.service)
     recorder.reply = Self.advertised
     for _ in 0..<3 {
       let capabilities = try await recorder.client.motionCapabilities()
-      XCTAssertEqual(capabilities, MotionCapabilities(hingeAngle: true, deviceMotionState: true))
+      #expect(capabilities == MotionCapabilities(hingeAngle: true, deviceMotionState: true))
     }
-    XCTAssertEqual(peer.connections, 1)
-    let request = try XCTUnwrap(peer.received.first)
-    XCTAssertEqual(String(cString: xpc_dictionary_get_string(request, "CoreDevice.actionIdentifier")!), MotionCapabilities.action)
+    #expect(peer.connections == 1)
+    let request = try #require(peer.received.first)
+    #expect(String(cString: xpc_dictionary_get_string(request, "CoreDevice.actionIdentifier")!) == MotionCapabilities.action)
   }
 
-  func testAnUnansweredCapabilityQueryIsAskedAgain() async {
+  @Test
+  func anUnansweredCapabilityQueryIsAskedAgain() async {
     let recorder = Recorder()
     let peer = recorder.register(MotionCapabilities.service)
     recorder.reply = SimulatorCoreDevice.dictionary([
@@ -156,20 +173,24 @@ final class SimulatorCoreDeviceClientTests: XCTestCase {
     for _ in 0..<2 {
       do {
         _ = try await recorder.client.motionCapabilities()
-        XCTFail("Expected the provider error")
+        Issue.record("Expected the provider error")
       } catch {
-        guard case SimulatorCoreDeviceError.unavailable = error else { return XCTFail("\(error)") }
+        guard case SimulatorCoreDeviceError.unavailable = error else {
+          Issue.record("\(error)")
+          return
+        }
       }
     }
-    XCTAssertEqual(peer.connections, 2)
+    #expect(peer.connections == 2)
 
     recorder.reply = Self.advertised
     _ = try? await recorder.client.motionCapabilities()
     _ = try? await recorder.client.motionCapabilities()
-    XCTAssertEqual(peer.connections, 3)
+    #expect(peer.connections == 3)
   }
 
-  func testSendPassesAPlainMessageThroughUnchanged() async throws {
+  @Test
+  func sendPassesAPlainMessageThroughUnchanged() async throws {
     let recorder = Recorder()
     let peer = recorder.register("com.example.plain")
     recorder.reply = SimulatorCoreDevice.dictionary(["currentDeviceOrientation": xpc_string_create("portrait")])
@@ -177,9 +198,10 @@ final class SimulatorCoreDeviceClientTests: XCTestCase {
     let orientation = try await recorder.client.send(service: "com.example.plain", message: message) { reply in
       String(cString: xpc_dictionary_get_string(reply, "currentDeviceOrientation")!)
     }
-    XCTAssertEqual(orientation, "portrait")
-    XCTAssertEqual(recorder.services.lookups, ["com.example.plain"])
-    XCTAssertTrue(xpc_equal(try XCTUnwrap(peer.received.first), message))
-    XCTAssertEqual(recorder.versionReads, 0)
+    #expect(orientation == "portrait")
+    #expect(recorder.services.lookups == ["com.example.plain"])
+    let received = try #require(peer.received.first)
+    #expect(xpc_equal(received, message))
+    #expect(recorder.versionReads == 0)
   }
 }
