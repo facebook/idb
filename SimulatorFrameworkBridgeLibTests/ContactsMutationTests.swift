@@ -6,56 +6,62 @@
  */
 
 import Contacts
-import XCTest
+import Foundation
+import Testing
 
-final class ContactsMutationTests: XCTestCase {
-  func testClearRetriesAfterSaveFailureAndAcceptsAnEmptyStore() {
+@Suite
+struct ContactsMutationTests {
+  @Test
+  func clearRetriesAfterSaveFailureAndAcceptsAnEmptyStore() {
     let contact = CNMutableContact()
     contact.givenName = "Retry"
     let runtime = FBContactsTestRuntime()
     runtime.contacts = [contact]
     runtime.saveSucceeds = false
 
-    XCTAssertEqual(runtime.run(), 1)
-    XCTAssertEqual(runtime.saves, 1)
-    XCTAssertEqual(runtime.deletedContacts.count, 1)
+    #expect(runtime.run() == 1)
+    #expect(runtime.saves == 1)
+    #expect(runtime.deletedContacts.count == 1)
 
     runtime.saveSucceeds = true
-    XCTAssertEqual(runtime.run(), 0)
-    XCTAssertEqual(runtime.requestCreations, 2)
-    XCTAssertEqual(runtime.saves, 2)
-    XCTAssertEqual(runtime.deletedContacts.count, 2)
-    XCTAssertTrue(runtime.savedExpectedRequest)
+    #expect(runtime.run() == 0)
+    #expect(runtime.requestCreations == 2)
+    #expect(runtime.saves == 2)
+    #expect(runtime.deletedContacts.count == 2)
+    #expect(runtime.savedExpectedRequest)
 
     runtime.contacts = []
-    XCTAssertEqual(runtime.run(), 0)
-    XCTAssertEqual(runtime.fetches, 3)
-    XCTAssertEqual(runtime.requestCreations, 2)
-    XCTAssertEqual(runtime.saves, 2)
+    #expect(runtime.run() == 0)
+    #expect(runtime.fetches == 3)
+    #expect(runtime.requestCreations == 2)
+    #expect(runtime.saves == 2)
   }
 
-  func testEmptyStoreDoesNotCreateOrExecuteADeletionRequest() {
+  @Test
+  func emptyStoreDoesNotCreateOrExecuteADeletionRequest() {
     let runtime = FBContactsTestRuntime()
-    XCTAssertEqual(runtime.run(), 0)
-    XCTAssertEqual(runtime.fetches, 1)
-    XCTAssertTrue(runtime.predicateMatches)
-    XCTAssertEqual(runtime.fetchKeyCount, 0)
-    XCTAssertEqual(runtime.requestCreations, 0)
-    XCTAssertEqual(runtime.saves, 0)
-    XCTAssertEqual(runtime.deletedContacts.count, 0)
+    #expect(runtime.run() == 0)
+    #expect(runtime.fetches == 1)
+    #expect(runtime.predicateMatches)
+    #expect(runtime.fetchKeyCount == 0)
+    #expect(runtime.requestCreations == 0)
+    #expect(runtime.saves == 0)
+    #expect(runtime.deletedContacts.count == 0)
   }
 
-  func testFetchFailureDoesNotCreateOrExecuteADeletionRequest() {
+  @Test
+  func fetchFailureDoesNotCreateOrExecuteADeletionRequest() {
     let runtime = FBContactsTestRuntime()
     runtime.contacts = nil
-    XCTAssertEqual(runtime.run(), 1)
-    XCTAssertEqual(runtime.fetches, 1)
-    XCTAssertEqual(runtime.requestCreations, 0)
-    XCTAssertEqual(runtime.saves, 0)
-    XCTAssertEqual(runtime.deletedContacts.count, 0)
+    #expect(runtime.run() == 1)
+    #expect(runtime.fetches == 1)
+    #expect(runtime.requestCreations == 0)
+    #expect(runtime.saves == 0)
+    #expect(runtime.deletedContacts.count == 0)
   }
 
-  func testDeletesMutableCopiesInOneRequestAndPropagatesSaveResult() throws {
+  @Test
+  func deletesMutableCopiesInOneRequestAndPropagatesSaveResult() throws {
     for succeeds in [true, false] {
       let first = CNMutableContact()
       first.givenName = "First"
@@ -64,20 +70,20 @@ final class ContactsMutationTests: XCTestCase {
       let runtime = FBContactsTestRuntime()
       runtime.contacts = [first, second]
       runtime.saveSucceeds = succeeds
-      XCTAssertEqual(runtime.run(), succeeds ? 0 : 1)
-      XCTAssertEqual(runtime.fetches, 1)
-      XCTAssertTrue(runtime.predicateMatches)
-      XCTAssertEqual(runtime.fetchKeyCount, 0)
-      XCTAssertEqual(runtime.requestCreations, 1)
-      XCTAssertEqual(runtime.saves, 1)
-      XCTAssertTrue(runtime.savedExpectedRequest)
-      XCTAssertEqual(runtime.deletedContacts.count, 2)
-      let deleted = try XCTUnwrap(runtime.deletedContacts as? [CNMutableContact])
-      XCTAssertEqual(deleted.map(\.givenName), ["First", "Second"])
-      XCTAssertFalse(deleted[0] === first)
-      XCTAssertFalse(deleted[1] === second)
-      XCTAssertEqual(first.givenName, "First")
-      XCTAssertEqual(second.givenName, "Second")
+      #expect(runtime.run() == (succeeds ? 0 : 1))
+      #expect(runtime.fetches == 1)
+      #expect(runtime.predicateMatches)
+      #expect(runtime.fetchKeyCount == 0)
+      #expect(runtime.requestCreations == 1)
+      #expect(runtime.saves == 1)
+      #expect(runtime.savedExpectedRequest)
+      #expect(runtime.deletedContacts.count == 2)
+      let deleted = try #require(runtime.deletedContacts as? [CNMutableContact])
+      #expect(deleted.map(\.givenName) == ["First", "Second"])
+      #expect(deleted[0] !== first)
+      #expect(deleted[1] !== second)
+      #expect(first.givenName == "First")
+      #expect(second.givenName == "Second")
     }
   }
 }
