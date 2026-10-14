@@ -43,10 +43,9 @@ extension Simulator {
 
 /// Simulator implementation of the accessibility command surface. Resolves the
 /// frontmost / at-point / matching accessibility element via the translation
-/// dispatcher, applying SpringBoard-crash remediation for frontmost lookups.
+/// dispatcher, diagnosing a restarting SpringBoard for frontmost lookups.
 final class SimulatorAccessibilityCommands: AccessibilityOperations {
 
-  private static let coreSimulatorBridgeServiceName = "com.apple.CoreSimulator.bridge"
   private static let springBoardServiceName = "com.apple.SpringBoard"
 
   private weak var simulator: Simulator?
@@ -55,6 +54,8 @@ final class SimulatorAccessibilityCommands: AccessibilityOperations {
   private let transport: (any AXTranslationTransport)?
   private let launchCtl: (any LaunchCtlCommands)?
   private let displays: (any DisplayCommands)?
+  /// When a simulator process started, read from the host.
+  private let processStartDate: (pid_t) -> Date?
   private let transportLock = NSLock()
   private var bridgeTransport: CoreSimulatorBridgeAXTranslationTransport?
 
@@ -63,13 +64,15 @@ final class SimulatorAccessibilityCommands: AccessibilityOperations {
     translationDispatcher: AXTranslationDispatcher? = nil,
     transport: (any AXTranslationTransport)? = nil,
     launchCtl: (any LaunchCtlCommands)? = nil,
-    displays: (any DisplayCommands)? = nil
+    displays: (any DisplayCommands)? = nil,
+    processStartDate: @escaping (pid_t) -> Date? = HostProcess.startDate(of:)
   ) {
     self.simulator = simulator
     self.translationDispatcher = translationDispatcher
     self.transport = transport
     self.launchCtl = launchCtl
     self.displays = displays
+    self.processStartDate = processStartDate
   }
 
   // MARK: - Translation Dispatcher
@@ -142,19 +145,19 @@ final class SimulatorAccessibilityCommands: AccessibilityOperations {
     switch query {
     case let .point(point):
       let request = AXTranslationRequest(kind: .point(point), display: display, clientType: clientType)
-      return try await accessibilityElement(request: request, remediationPermitted: false)
+      return try await accessibilityElement(request: request, diagnosesSpringBoard: false)
     case .frontmost:
       let request = AXTranslationRequest(kind: .frontmostApplication, display: display, clientType: clientType)
-      return try await accessibilityElement(request: request, remediationPermitted: true)
+      return try await accessibilityElement(request: request, diagnosesSpringBoard: true)
     case let .marker(value, key, depth, ignoresCase):
       let request = AXTranslationRequest(kind: .frontmostApplication, display: display, clientType: clientType)
-      let root = try await accessibilityElement(request: request, remediationPermitted: true)
+      let root = try await accessibilityElement(request: request, diagnosesSpringBoard: true)
       return try await root.findElement(withValue: value, forKey: key, depth: depth, ignoresCase: ignoresCase)
     case let .application(pid):
-      // An explicit pid target: read that application directly, no SpringBoard stale-hierarchy
-      // remediation (that is only meaningful for the frontmost read).
+      // An explicit pid target: read that application directly, no SpringBoard diagnosis (that is only
+      // meaningful for the frontmost read).
       let request = AXTranslationRequest(kind: .applicationForPid(pid), display: display, clientType: clientType)
-      return try await accessibilityElement(request: request, remediationPermitted: false)
+      return try await accessibilityElement(request: request, diagnosesSpringBoard: false)
     }
   }
 
@@ -175,8 +178,9 @@ final class SimulatorAccessibilityCommands: AccessibilityOperations {
     try SimulatorControlFrameworkLoader.accessibilityFrameworks.loadPrivateFrameworks(simulator.logger)
   }
 
-  // Remediation retries with `remediationPermitted: false`, bounding it to one attempt.
-  private func accessibilityElement(request: AXTranslationRequest, remediationPermitted: Bool) async throws -> AccessibilityElement {
+  /// Resolves `request`'s root. A frontmost root that SpringBoard cannot currently answer for is reported as
+  /// the precise error rather than read.
+  private func accessibilityElement(request: AXTranslationRequest, diagnosesSpringBoard: Bool) async throws -> AccessibilityElement {
     guard let simulator else {
       throw WeakTargetError.simulator
     }
@@ -187,7 +191,7 @@ final class SimulatorAccessibilityCommands: AccessibilityOperations {
     let element: AXWritableElement
     do {
       element = try await dispatcher.platformElement(withRequest: request)
-    } catch AccessibilityError.noTranslationObject where remediationPermitted {
+    } catch AccessibilityError.noTranslationObject where diagnosesSpringBoard {
       // On the frontmost path a nil translation usually means SpringBoard (the provider of the
       // frontmost application) is down. Re-label the error when we can confirm that; a probe
       // failure or a live reading keeps the original .noTranslationObject (e.g. a genuine
@@ -198,49 +202,52 @@ final class SimulatorAccessibilityCommands: AccessibilityOperations {
       }
       throw AccessibilityError.noTranslationObject
     }
-    if !remediationPermitted {
-      return AccessibilityElement(element: element, request: request, dispatcher: dispatcher, simulator: simulator)
+    if diagnosesSpringBoard {
+      do {
+        try await checkSpringBoardAnswersFor(root: element, simulator: simulator, token: request.token, dispatcher: dispatcher)
+      } catch {
+        // The request's token was pushed by the dispatcher but is not yet wrapped in an AccessibilityElement.
+        dispatcher.popRequest(request)
+        throw error
+      }
     }
-    let requiresRemediation = try await remediationRequired(
-      forSimulator: simulator, element: element, token: request.token, dispatcher: dispatcher)
-    if !requiresRemediation {
-      return AccessibilityElement(element: element, request: request, dispatcher: dispatcher, simulator: simulator)
-    }
-    // The request's token was pushed by the dispatcher but is not yet wrapped in an
-    // AccessibilityElement, so pop it manually before discarding the request.
-    dispatcher.popRequest(request)
-    let nextRequest = request.cloneWithNewToken()
-    try await remediateSpringBoard(forSimulator: simulator)
-    return try await accessibilityElement(request: nextRequest, remediationPermitted: false)
+    return AccessibilityElement(element: element, request: request, dispatcher: dispatcher, simulator: simulator)
   }
 
-  private func remediationRequired(
-    forSimulator simulator: Simulator, element: AXPlatformElement, token: String, dispatcher: AXTranslationDispatcher
-  ) async throws -> Bool {
+  /// Throws when the frontmost root names a process that has exited and SpringBoard is known to be why. After
+  /// SpringBoard restarts, the simulator's accessibility service goes on answering for the SpringBoard that
+  /// exited — a zero-framed root with nothing beneath it — until it refreshes on its own a few seconds later.
+  /// Reading that root would report an empty screen as the frontmost application.
+  ///
+  /// Only a SpringBoard that is not running, or one that started within `springBoardRestartWindow`, is known to
+  /// be the cause. A root whose process is alive, as an application's is while it launches, or one that exited
+  /// while SpringBoard has been up for longer, is read as it is: it is not a SpringBoard condition.
+  private func checkSpringBoardAnswersFor(
+    root element: AXPlatformElement, simulator: Simulator, token: String, dispatcher: AXTranslationDispatcher
+  ) async throws {
     // A quick check: a non-zero accessibility frame indicates a healthy element.
     // An attribute read, so it takes the serialized hop like every other translator touch.
     let root = try await dispatcher.performSerialized {
       AXElementSnapshot.read(element, plan: AXReadPlan(attributes: [], depth: .limited(0)), token: token)
     }
     if !root.frame.equalTo(.zero) {
-      return false
+      return
     }
-    // A zero-framed root is stale unless its owning pid is still a live launchd service.
-    // A launchctl failure is treated as "not live" so recovery is still attempted.
-    let pid = root.pid
-    let pidIsLive = (try? await resolvedLaunchCtl(simulator).processIsRunning(withProcessIdentifier: pid)) ?? false
-    if pidIsLive {
-      return false
+    // A zero-framed root is stale only if its process has exited. A launchctl failure is treated as live, so an
+    // unreadable diagnosis never fails a read that may be healthy.
+    guard let services = try? await resolvedLaunchCtl(simulator).listServices(), !services.values.contains(root.pid) else {
+      return
     }
-    simulator.logger.log("Frontmost accessibility hierarchy is stale: the root element has a zero frame and its owning pid \(pid) is no longer a registered launchd service. SpringBoard has crashed and CoreSimulator's \(Self.coreSimulatorBridgeServiceName) is still bound to the dead pid; restarting \(Self.coreSimulatorBridgeServiceName) to recover.")
-    return true
+    guard let springBoard = services[Self.springBoardServiceName] ?? nil else {
+      throw AccessibilityError.springBoardNotRunning
+    }
+    guard let started = processStartDate(springBoard), Date().timeIntervalSince(started) < Self.springBoardRestartWindow else {
+      return
+    }
+    throw AccessibilityError.springBoardRestarting(exitedProcessIdentifier: root.pid, restartedAgo: Date().timeIntervalSince(started))
   }
 
-  private func remediateSpringBoard(forSimulator simulator: Simulator) async throws {
-    do {
-      _ = try await resolvedLaunchCtl(simulator).stopService(withName: Self.coreSimulatorBridgeServiceName)
-    } catch {
-      throw AccessibilityError.springBoardRemediationFailed(serviceName: Self.coreSimulatorBridgeServiceName)
-    }
-  }
+  /// How recently SpringBoard must have started for an exited frontmost root to be put down to its restart. The
+  /// accessibility service was measured to refresh about six seconds after SpringBoard restarts.
+  private static let springBoardRestartWindow: TimeInterval = 30
 }

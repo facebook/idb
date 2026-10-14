@@ -488,7 +488,8 @@ final class SimulatorAccessibilityCommandsTests: XCTestCase {
     withRootElement rootElement: AXPMacPlatformElementDouble,
     transport: (any AXTranslationTransport)? = nil,
     launchCtl: (any LaunchCtlCommands)? = nil,
-    displays: any DisplayCommands = DisplayCommandsDouble([.success(.failed(.unsupported("displayinfo")))])
+    displays: any DisplayCommands = DisplayCommandsDouble([.success(.failed(.unsupported("displayinfo")))]),
+    processesStarted: [pid_t: Date] = [:]
   ) throws {
     fixture = AccessibilityTestFixture.bootedSimulator()
     fixture!.rootElement = rootElement
@@ -500,7 +501,8 @@ final class SimulatorAccessibilityCommandsTests: XCTestCase {
     // services for the bridge transport to look up.
     let commands = SimulatorAccessibilityCommands(
       simulator: sim, translationDispatcher: dispatcher,
-      transport: transport ?? CoreSimulatorAXTranslationTransport(device: sim.device), launchCtl: launchCtl, displays: displays)
+      transport: transport ?? CoreSimulatorAXTranslationTransport(device: sim.device), launchCtl: launchCtl, displays: displays,
+      processStartDate: { processesStarted[$0] })
     sim.commandCache.register(commands, as: SimulatorAccessibilityCommands.self)
 
     simulator = sim
@@ -1764,19 +1766,18 @@ final class SimulatorAccessibilityCommandsTests: XCTestCase {
 
   // MARK: - SpringBoard Remediation (zero-frame stale hierarchy)
 
-  func testFrontmostRemediatesWhenZeroFramedRootPidIsDead() async throws {
-    // A zero-framed root whose owning pid (12345) is not a live launchd service is the
-    // stale-SpringBoard signal: remediation must restart CoreSimulatorBridge, then retry.
+  func testFrontmostReportsSpringBoardNotRunningWhenZeroFramedRootPidIsDead() async throws {
+    // A zero-framed root whose owning pid (12345) is not a live launchd service, with no SpringBoard running.
     let zeroFrameRoot = AccessibilityTestElementBuilder.application(withLabel: "App", frame: .zero, children: [])
     let launchCtl = LaunchCtlDouble.with(running: [:])
     try setUp(withRootElement: zeroFrameRoot, launchCtl: launchCtl)
 
-    let element = try await simulator.accessibility.resolveElement(for: .frontmost)
-    element.close()
-
-    // BUG: CoreSimulatorBridge is restarted, and the caller is not told SpringBoard is down — flipped in the
-    // following commit.
-    XCTAssertEqual(launchCtl.stoppedServices, ["com.apple.CoreSimulator.bridge"], "a stale hierarchy must restart CoreSimulatorBridge")
+    do {
+      let element = try await simulator.accessibility.resolveElement(for: .frontmost)
+      element.close()
+      XCTFail("Expected springBoardNotRunning")
+    } catch AccessibilityError.springBoardNotRunning {}
+    XCTAssertTrue(launchCtl.stoppedServices.isEmpty, "CoreSimulatorBridge is not restarted")
   }
 
   func testAZeroFramedRootWhoseProcessExitedWhileSpringBoardIsFreshlyRunning() async throws {
@@ -1784,14 +1785,17 @@ final class SimulatorAccessibilityCommandsTests: XCTestCase {
     // state the simulator's accessibility service is in for a few seconds after SpringBoard restarts.
     let zeroFrameRoot = AccessibilityTestElementBuilder.application(withLabel: "App", frame: .zero, children: [])
     let launchCtl = LaunchCtlDouble.with(running: ["com.apple.SpringBoard": 4242])
-    try setUp(withRootElement: zeroFrameRoot, launchCtl: launchCtl)
+    try setUp(withRootElement: zeroFrameRoot, launchCtl: launchCtl, processesStarted: [4242: Date().addingTimeInterval(-2)])
 
-    let element = try await simulator.accessibility.resolveElement(for: .frontmost)
-    element.close()
-
-    // BUG: CoreSimulatorBridge is restarted for a condition that clears by itself a few seconds after SpringBoard
-    // restarts, and the caller is not told — flipped in the following commit.
-    XCTAssertEqual(launchCtl.stoppedServices, ["com.apple.CoreSimulator.bridge"])
+    do {
+      let element = try await simulator.accessibility.resolveElement(for: .frontmost)
+      element.close()
+      XCTFail("Expected springBoardRestarting")
+    } catch let AccessibilityError.springBoardRestarting(exitedProcessIdentifier, restartedAgo) {
+      XCTAssertEqual(exitedProcessIdentifier, 12345)
+      XCTAssertEqual(restartedAgo, 2, accuracy: 1)
+    }
+    XCTAssertTrue(launchCtl.stoppedServices.isEmpty, "CoreSimulatorBridge is not restarted")
   }
 
   func testAZeroFramedRootWhoseProcessExitedWhileSpringBoardHasBeenRunning() async throws {
@@ -1799,13 +1803,12 @@ final class SimulatorAccessibilityCommandsTests: XCTestCase {
     // application exited, which is not a SpringBoard condition.
     let zeroFrameRoot = AccessibilityTestElementBuilder.application(withLabel: "App", frame: .zero, children: [])
     let launchCtl = LaunchCtlDouble.with(running: ["com.apple.SpringBoard": 4243])
-    try setUp(withRootElement: zeroFrameRoot, launchCtl: launchCtl)
+    try setUp(withRootElement: zeroFrameRoot, launchCtl: launchCtl, processesStarted: [4243: Date().addingTimeInterval(-3600)])
 
     let element = try await simulator.accessibility.resolveElement(for: .frontmost)
     element.close()
 
-    // BUG: CoreSimulatorBridge is restarted although SpringBoard did not restart — flipped in the following commit.
-    XCTAssertEqual(launchCtl.stoppedServices, ["com.apple.CoreSimulator.bridge"])
+    XCTAssertTrue(launchCtl.stoppedServices.isEmpty, "read as it is: not a SpringBoard condition, so nothing is restarted")
   }
 
   func testFrontmostDoesNotRemediateWhenZeroFramedRootPidIsLive() async throws {

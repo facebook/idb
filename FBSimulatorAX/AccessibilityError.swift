@@ -43,8 +43,10 @@ public enum AccessibilityError: LocalizedError, Sendable {
 
   case noTranslationObject
 
-  /// SpringBoard crashed and the CoreSimulatorBridge restart that would recover it failed.
-  case springBoardRemediationFailed(serviceName: String)
+  /// SpringBoard restarted `restartedAgo` seconds ago and the simulator's accessibility service still answers
+  /// for the SpringBoard that exited, as it does for a few seconds until it refreshes. Temporary: the same read
+  /// succeeds once it has.
+  case springBoardRestarting(exitedProcessIdentifier: pid_t, restartedAgo: TimeInterval)
 
   /// A frontmost-application accessibility hierarchy was requested but SpringBoard
   /// (the provider of the frontmost application) is not running on the simulator.
@@ -76,8 +78,10 @@ public enum AccessibilityError: LocalizedError, Sendable {
       return "Accessibility translation dispatcher is unavailable"
     case .noTranslationObject:
       return "No translation object returned for simulator. This means you have likely specified a point onscreen that is invalid or invisible due to a fullscreen dialog"
-    case .springBoardRemediationFailed(let serviceName):
-      return "SpringBoard has crashed; could not restart \(serviceName) to recover the frontmost application's accessibility hierarchy."
+    case let .springBoardRestarting(exitedProcessIdentifier, restartedAgo):
+      return String(
+        format: "SpringBoard restarted %.1f seconds ago. The simulator's accessibility service still answers for the SpringBoard that exited (pid %d) until it refreshes, which takes a few seconds; retry the read.",
+        restartedAgo, exitedProcessIdentifier)
     case .springBoardNotRunning:
       return "SpringBoard is not running on the simulator, so there is no frontmost application to describe. Boot/relaunch the simulator (or restart SpringBoard) and retry."
     }
