@@ -11,7 +11,7 @@ import Foundation
 import Testing
 
 @Suite(.serialized)
-final class FBArchiveOperationsTests {
+final class ArchiveOperationsTests {
 
   private let logger: ControlCoreLoggerDouble
   private let tempDirectory: String
@@ -33,7 +33,7 @@ final class FBArchiveOperationsTests {
 
   @Test
   func commandToExtractArchive_NoOverrideMTime_NoDebug() {
-    let command = FBArchiveOperations.commandToExtractArchive(
+    let command = ArchiveOperations.commandToExtractArchive(
       atPath: "/tmp/archive.tar.gz",
       toPath: "/tmp/output",
       overrideModificationTime: false,
@@ -44,7 +44,7 @@ final class FBArchiveOperationsTests {
 
   @Test
   func commandToExtractArchive_WithOverrideMTime_NoDebug() {
-    let command = FBArchiveOperations.commandToExtractArchive(
+    let command = ArchiveOperations.commandToExtractArchive(
       atPath: "/tmp/archive.tar.gz",
       toPath: "/tmp/output",
       overrideModificationTime: true,
@@ -55,7 +55,7 @@ final class FBArchiveOperationsTests {
 
   @Test
   func commandToExtractArchive_NoOverrideMTime_WithDebug() {
-    let command = FBArchiveOperations.commandToExtractArchive(
+    let command = ArchiveOperations.commandToExtractArchive(
       atPath: "/tmp/archive.tar.gz",
       toPath: "/tmp/output",
       overrideModificationTime: false,
@@ -66,7 +66,7 @@ final class FBArchiveOperationsTests {
 
   @Test
   func commandToExtractArchive_WithOverrideMTime_WithDebug() {
-    let command = FBArchiveOperations.commandToExtractArchive(
+    let command = ArchiveOperations.commandToExtractArchive(
       atPath: "/tmp/archive.tar.gz",
       toPath: "/tmp/output",
       overrideModificationTime: true,
@@ -80,7 +80,7 @@ final class FBArchiveOperationsTests {
     let archivePath = "/Users/test/Downloads/my archive (1).tar.gz"
     let extractPath = "/Users/test/Documents/output dir"
 
-    let command = FBArchiveOperations.commandToExtractArchive(
+    let command = ArchiveOperations.commandToExtractArchive(
       atPath: archivePath,
       toPath: extractPath,
       overrideModificationTime: false,
@@ -94,7 +94,7 @@ final class FBArchiveOperationsTests {
 
   @Test
   func commandToExtractFromStdIn_NoOverrideMTime_NoDebug() {
-    let command = FBArchiveOperations.commandToExtractFromStdIn(
+    let command = ArchiveOperations.commandToExtractFromStdIn(
       withExtractPath: "/tmp/output",
       overrideModificationTime: false,
       debugLogging: false)
@@ -104,7 +104,7 @@ final class FBArchiveOperationsTests {
 
   @Test
   func commandToExtractFromStdIn_WithOverrideMTime() {
-    let command = FBArchiveOperations.commandToExtractFromStdIn(
+    let command = ArchiveOperations.commandToExtractFromStdIn(
       withExtractPath: "/tmp/output",
       overrideModificationTime: true,
       debugLogging: false)

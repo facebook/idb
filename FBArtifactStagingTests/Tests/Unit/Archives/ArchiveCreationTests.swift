@@ -169,7 +169,7 @@ final class ArchiveCreationTests: XCTestCase {
   func testADirectoryIsArchivedWithItselfAsTheRoot() async throws {
     let root = try makeTree()
 
-    let entries = try tarEntries(try await FBArchiveOperations.createGzippedTarData(forPath: root.path, logger: logger)).filter { !$0.isAppleDouble }
+    let entries = try tarEntries(try await ArchiveOperations.createGzippedTarData(forPath: root.path, logger: logger)).filter { !$0.isAppleDouble }
     let byPath = Dictionary(entries.map { ($0.path, $0) }, uniquingKeysWith: { first, _ in first })
 
     let long = "./\(Self.longDirectory)/\(Self.longFile)"
@@ -207,7 +207,7 @@ final class ArchiveCreationTests: XCTestCase {
     let file = tempDirectory.appendingPathComponent("single.txt")
     try Data("only".utf8).write(to: file)
 
-    let entries = try tarEntries(try await FBArchiveOperations.createGzippedTarData(forPath: file.path, logger: logger)).filter { !$0.isAppleDouble }
+    let entries = try tarEntries(try await ArchiveOperations.createGzippedTarData(forPath: file.path, logger: logger)).filter { !$0.isAppleDouble }
 
     XCTAssertEqual(entries.map(\.path), ["single.txt"])
     XCTAssertEqual(entries.first?.type, "0")
@@ -215,14 +215,14 @@ final class ArchiveCreationTests: XCTestCase {
   }
 
   func testAnEmptyDirectoryArchivesOnlyItsRoot() async throws {
-    let entries = try tarEntries(try await FBArchiveOperations.createGzippedTarData(forPath: tempDirectory.path, logger: logger)).filter { !$0.isAppleDouble }
+    let entries = try tarEntries(try await ArchiveOperations.createGzippedTarData(forPath: tempDirectory.path, logger: logger)).filter { !$0.isAppleDouble }
 
     XCTAssertEqual(entries.map(\.path), ["./"])
   }
 
   func testAnArchiveExtractsBackToTheSameTree() async throws {
     let root = try makeTree()
-    let archive = try await FBArchiveOperations.createGzippedTarData(forPath: root.path, logger: logger)
+    let archive = try await ArchiveOperations.createGzippedTarData(forPath: root.path, logger: logger)
     let destination = tempDirectory.appendingPathComponent("extracted")
     try FileManager.default.createDirectory(at: destination, withIntermediateDirectories: true)
 
@@ -247,8 +247,8 @@ final class ArchiveCreationTests: XCTestCase {
     let file = tempDirectory.appendingPathComponent("payload")
     try Data((0..<(256 * 1024)).map { UInt8(truncatingIfNeeded: $0 &* 31) }).write(to: file)
 
-    let gzipped = try await FBArchiveOperations.createGzipData(forPath: file.path, logger: logger)
-    let tarred = try await FBArchiveOperations.createGzippedTarData(forPath: file.path, logger: logger)
+    let gzipped = try await ArchiveOperations.createGzipData(forPath: file.path, logger: logger)
+    let tarred = try await ArchiveOperations.createGzippedTarData(forPath: file.path, logger: logger)
 
     for data in [gzipped, tarred] {
       XCTAssertEqual(Array(data.prefix(3)), [0x1F, 0x8B, 0x08], "gzip magic and deflate")
@@ -261,7 +261,7 @@ final class ArchiveCreationTests: XCTestCase {
     let file = tempDirectory.appendingPathComponent("payload")
     try Data("padded".utf8).write(to: file)
 
-    let tarred = try await FBArchiveOperations.createGzippedTarData(forPath: file.path, logger: logger)
+    let tarred = try await ArchiveOperations.createGzippedTarData(forPath: file.path, logger: logger)
 
     XCTAssertNoThrow(try runTool("/usr/bin/gzip", ["-t"], input: tarred))
   }
@@ -273,7 +273,7 @@ final class ArchiveCreationTests: XCTestCase {
     let status = value.withUnsafeBytes { setxattr(file.path, "com.example.pin", $0.baseAddress, value.count, 0, 0) }
     XCTAssertEqual(status, 0)
 
-    let entries = try tarEntries(try await FBArchiveOperations.createGzippedTarData(forPath: tempDirectory.path, logger: logger))
+    let entries = try tarEntries(try await ArchiveOperations.createGzippedTarData(forPath: tempDirectory.path, logger: logger))
 
     XCTAssertEqual(entries.map(\.path), ["./", "./a.txt"])
     XCTAssertEqual(entries.first { $0.path == "./a.txt" }?.extendedAttributes, [])
@@ -283,7 +283,7 @@ final class ArchiveCreationTests: XCTestCase {
     let missing = tempDirectory.appendingPathComponent("absent").path
 
     do {
-      _ = try await FBArchiveOperations.createGzippedTarData(forPath: missing, logger: logger)
+      _ = try await ArchiveOperations.createGzippedTarData(forPath: missing, logger: logger)
       XCTFail("archiving a missing path should fail")
     } catch {
       guard case ArchiveCreationError.pathDoesNotExist(missing) = error else {
@@ -295,7 +295,7 @@ final class ArchiveCreationTests: XCTestCase {
   func testStartingToArchiveAMissingPathNamesIt() {
     let missing = tempDirectory.appendingPathComponent("absent").path
 
-    XCTAssertThrowsError(try FBArchiveOperations.gzippedTarSubprocess(forPath: missing, logger: logger)) { error in
+    XCTAssertThrowsError(try ArchiveOperations.gzippedTarSubprocess(forPath: missing, logger: logger)) { error in
       guard case ArchiveCreationError.pathDoesNotExist(missing) = error else {
         return XCTFail("expected the missing path to be reported, got \(error)")
       }
@@ -312,7 +312,7 @@ final class ArchiveCreationTests: XCTestCase {
     try XCTSkipIf(FileManager.default.isReadableFile(atPath: file), "Permissions do not restrict this user")
 
     do {
-      _ = try await FBArchiveOperations.createGzippedTarData(forPath: directory.path, logger: logger)
+      _ = try await ArchiveOperations.createGzippedTarData(forPath: directory.path, logger: logger)
       XCTFail("archiving an unreadable file should fail")
     } catch {
       guard case ArchiveCreationError.unreadable(path: file, reason: "Permission denied") = error else {
@@ -325,7 +325,7 @@ final class ArchiveCreationTests: XCTestCase {
     let missing = tempDirectory.appendingPathComponent("absent").path
 
     do {
-      _ = try await FBArchiveOperations.createGzipData(forPath: missing, logger: logger)
+      _ = try await ArchiveOperations.createGzipData(forPath: missing, logger: logger)
       XCTFail("compressing a missing path should fail")
     } catch {
       XCTAssertTrue(error.localizedDescription.contains("No such file or directory"), error.localizedDescription)

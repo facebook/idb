@@ -636,7 +636,7 @@ public final class IDBCommandExecutor {
       try await self.withFileContainer(for: containerType) { container in
         _ = try await container.copy(fromContainer: path, toHost: tempPath)
       }
-      return try await FBArchiveOperations.createGzippedTarData(forPath: tempPath, logger: self.target.logger)
+      return try await ArchiveOperations.createGzippedTarData(forPath: tempPath, logger: self.target.logger)
     }
   }
 

@@ -11,7 +11,7 @@ The target frameworks only install what is already a bundle: `ApplicationCommand
 - **Downloads.** URL sources are fetched with `URLSession` and extracted as they arrive (a zip is spooled to disk first, since its index is at the end), with progress and a `DownloadReport` of the transfer.
 - **Archive extraction.** Tar (plain, gzip or zstd) and zip archives are extracted by sniffing the format from the first bytes rather than trusting what the client declared. Zip archives keep their file modes and symlinks, including when they arrive as a stream. Each format goes to whichever extractor is fastest for it (see [Routes](#routes)).
 - **Extracting a payload.** `Staging.extract` extracts a stream of files that is not an artifact, such as a push, through the same extractors, errors and events as an install.
-- **Archive creation.** `TarSource`, `GzippingSource` and `FBArchiveOperations` write the archives the companion sends back to clients, such as pulled files and test results.
+- **Archive creation.** `TarSource`, `GzippingSource` and `ArchiveOperations` write the archives the companion sends back to clients, such as pulled files and test results.
 
 ## How it fits together
 

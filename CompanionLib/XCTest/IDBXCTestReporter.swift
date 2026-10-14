@@ -410,7 +410,7 @@ final class IDBXCTestReporter: XCTestReporter, DataConsumer, @unchecked Sendable
   }
 
   private func gzipFolder(at path: String) async throws -> Data {
-    return try await FBArchiveOperations.createGzippedTarData(forPath: path, logger: logger)
+    return try await ArchiveOperations.createGzippedTarData(forPath: path, logger: logger)
   }
 
   private func getCoverageResponseData(config: CodeCoverageConfiguration, binariesPath: [String]) async throws -> Data {
@@ -460,7 +460,7 @@ final class IDBXCTestReporter: XCTestReporter, DataConsumer, @unchecked Sendable
       .run(output: .file(exportPath), error: .string, exitPolicy: .any, logger: logger)
     try export.checkExitedCleanly { IDBXCTestReporterError.coverageExportFailed(exitCode: $0, stderr: export.standardError) }
 
-    return try await FBArchiveOperations.createGzipData(forPath: exportPath.path, logger: logger)
+    return try await ArchiveOperations.createGzipData(forPath: exportPath.path, logger: logger)
   }
 
   private func createFailureInfo(exceptionInfo: TestExceptionInfo) -> Idb_XctestRunResponse.TestRunInfo.TestRunFailureInfo {

@@ -337,7 +337,7 @@ public enum Staging {
     let head = try await offCooperativePool { try handedOver.value.peek(ArchiveFormat.sniffLength) }.get()
     let file = directory.appendingPathComponent(name)
     if ArchiveFormat.detect(head) == .gzip {
-      try await FBArchiveOperations.extractGzip(from: source, toPath: file.path)
+      try await ArchiveOperations.extractGzip(from: source, toPath: file.path)
       return file
     }
     guard isMachO(head) else {

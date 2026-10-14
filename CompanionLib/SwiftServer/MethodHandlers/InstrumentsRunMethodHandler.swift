@@ -69,7 +69,7 @@ struct InstrumentsRunMethodHandler {
     let processedPath = processed.path
     output.stopForwarding()
 
-    let archive = try FBArchiveOperations.gzippedTarSubprocess(forPath: processedPath, logger: logger)
+    let archive = try ArchiveOperations.gzippedTarSubprocess(forPath: processedPath, logger: logger)
 
     try await FileDrainWriter.performDrain(archive, logger: logger) { data in
       let response = Idb_InstrumentsRunResponse.with {

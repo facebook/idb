@@ -73,7 +73,7 @@ final class ApplicationArchiveTests: XCTestCase {
   }
 
   private func makeGzippedTar(of root: String) async throws -> Data {
-    try await FBArchiveOperations.createGzippedTarData(forPath: root, logger: logger)
+    try await ArchiveOperations.createGzippedTarData(forPath: root, logger: logger)
   }
 
   /// A gzipped tar laid out like an `.ipa`, as raw bytes.

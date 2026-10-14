@@ -54,7 +54,7 @@ final class DataDownloadInputTests: XCTestCase {
       try random.write(
         to: URL(fileURLWithPath: (source as NSString).appendingPathComponent("padding.bin")))
     }
-    return try await FBArchiveOperations.createGzippedTarData(forPath: source, logger: logger)
+    return try await ArchiveOperations.createGzippedTarData(forPath: source, logger: logger)
   }
 
   @discardableResult

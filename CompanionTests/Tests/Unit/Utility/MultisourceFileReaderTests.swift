@@ -50,7 +50,7 @@ struct MultisourceFileReaderTests {
     random.withUnsafeMutableBytes { arc4random_buf($0.baseAddress!, $0.count) }
     try random.write(to: directory.appendingPathComponent("payload/file"))
     let logger = FBControlCoreLoggerFactory.systemLoggerWriting(toStderr: false, withDebugLogging: false)
-    let archive = try await FBArchiveOperations.createGzippedTarData(forPath: directory.appendingPathComponent("payload").path, logger: logger)
+    let archive = try await ArchiveOperations.createGzippedTarData(forPath: directory.appendingPathComponent("payload").path, logger: logger)
     let source = AsyncThrowingStream<Idb_PushRequest, any Error> { continuation in
       continuation.yield(Idb_PushRequest.with { $0.payload = .with { $0.data = archive.prefix(archive.count / 2) } })
       continuation.finish(throwing: ClientFailed())

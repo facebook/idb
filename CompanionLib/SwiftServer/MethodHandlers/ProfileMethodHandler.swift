@@ -83,7 +83,7 @@ struct ProfileMethodHandler {
 
   /// Streams the artifact at `path` as a single gzipped tar, in chunks.
   static func sendArtifact(atPath path: String, responseStream: RPCWriter<Idb_ProfileResponse>, logger: ControlCoreLogger) async throws {
-    let archive = try FBArchiveOperations.gzippedTarSubprocess(forPath: path, logger: logger)
+    let archive = try ArchiveOperations.gzippedTarSubprocess(forPath: path, logger: logger)
     try await FileDrainWriter.performDrain(archive, logger: logger) { data in
       try await responseStream.send(.with { $0.artifact = .with { $0.data = data } })
     }

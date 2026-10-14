@@ -75,7 +75,7 @@ struct PullMethodHandler {
       destination_path: tempPath,
       containerType: fileContainer)
 
-    let archive = try FBArchiveOperations.gzippedTarSubprocess(forPath: filePath, logger: logger)
+    let archive = try ArchiveOperations.gzippedTarSubprocess(forPath: filePath, logger: logger)
 
     var totalBytes = 0
     do {

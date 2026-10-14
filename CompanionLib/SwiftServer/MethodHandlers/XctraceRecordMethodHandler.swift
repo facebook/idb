@@ -120,7 +120,7 @@ struct XctraceRecordMethodHandler {
 
   /// Streams the trace at `path` to the client as a single gzipped tar, in chunks.
   static func sendTrace(atPath path: String, responseStream: RPCWriter<Idb_XctraceRecordResponse>, logger: ControlCoreLogger) async throws {
-    let archive = try FBArchiveOperations.gzippedTarSubprocess(forPath: path, logger: logger)
+    let archive = try ArchiveOperations.gzippedTarSubprocess(forPath: path, logger: logger)
     try await FileDrainWriter.performDrain(archive, logger: logger) { data in
       let response = Idb_XctraceRecordResponse.with {
         $0.payload = .with { $0.data = data }

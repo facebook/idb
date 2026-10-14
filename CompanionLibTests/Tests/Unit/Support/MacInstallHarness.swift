@@ -76,7 +76,7 @@ final class MacInstallHarness {
   }
 
   func gzippedTarData(of item: URL) async throws -> Data {
-    try await FBArchiveOperations.createGzippedTarData(forPath: item.deletingLastPathComponent().path, logger: logger)
+    try await ArchiveOperations.createGzippedTarData(forPath: item.deletingLastPathComponent().path, logger: logger)
   }
 
   /// An uncompressed tar holding `item` and its siblings at its root.
@@ -125,7 +125,7 @@ final class MacInstallHarness {
 
   /// `item` gzipped on its own, as clients stream single files.
   func gzipped(_ item: URL) async throws -> ChunkSource {
-    ChunkSource(try await FBArchiveOperations.createGzipData(forPath: item.path, logger: logger))
+    ChunkSource(try await ArchiveOperations.createGzipData(forPath: item.path, logger: logger))
   }
 }
 

@@ -56,7 +56,7 @@ public struct BSDTarExtractor: ArchiveExtractor {
     options: ArchiveExtractOptions,
     logger: any ControlCoreLogger
   ) async throws {
-    _ = try await FBArchiveOperations.extractArchive(
+    _ = try await ArchiveOperations.extractArchive(
       atPath: path,
       toPath: extractPath,
       overrideModificationTime: options.overrideModificationTime,
@@ -69,7 +69,7 @@ public struct BSDTarExtractor: ArchiveExtractor {
     options: ArchiveExtractOptions,
     logger: any ControlCoreLogger
   ) async throws {
-    try await FBArchiveOperations.extractArchive(
+    try await ArchiveOperations.extractArchive(
       from: source,
       toPath: extractPath,
       overrideModificationTime: options.overrideModificationTime,

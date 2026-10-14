@@ -18,7 +18,7 @@ public enum CompressionFormat: UInt, Sendable {
 }
 
 /// Operations on zip/tar archives.
-public enum FBArchiveOperations {
+public enum ArchiveOperations {
 
   /// A tar made by macOS `tar` carries an AppleDouble entry per file (e.g. for the
   /// `com.apple.provenance` xattr). Restoring them roughly triples extraction time and nothing
