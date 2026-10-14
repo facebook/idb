@@ -97,9 +97,9 @@ struct ActivityRecordTests {
 
     let fb = wrapActivity(record)
 
-    #expect(fb.attachments.count == 2, "Every XCTAttachment in record.attachments must be wrapped into one FBAttachment, preserving order.")
-    #expect(fb.attachments[0].name == "first.txt", "Wrapped FBAttachment must preserve the source attachment's name.")
-    #expect(fb.attachments[1].name == "second.txt", "Wrapped FBAttachment must preserve attachment order.")
+    #expect(fb.attachments.count == 2, "Every XCTAttachment in record.attachments must be wrapped into one Attachment, preserving order.")
+    #expect(fb.attachments[0].name == "first.txt", "Wrapped Attachment must preserve the source attachment's name.")
+    #expect(fb.attachments[1].name == "second.txt", "Wrapped Attachment must preserve attachment order.")
   }
 
   // MARK: - description

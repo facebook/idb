@@ -8,7 +8,7 @@
 import Foundation
 
 /// An attachment recorded by an XCTest activity, copied out of XCTest's own `XCTAttachment`.
-public struct FBAttachment {
+public struct Attachment {
 
   public let payload: Data?
   public let timestamp: Date?
@@ -17,8 +17,8 @@ public struct FBAttachment {
   public let userInfo: [String: Any]?
 
   /// `XCTAttachment` is read through KVC because the XCTest private headers are not importable from Swift.
-  public static func from(_ attachment: NSObject) -> FBAttachment {
-    FBAttachment(attachment)
+  public static func from(_ attachment: NSObject) -> Attachment {
+    Attachment(attachment)
   }
 
   private init(_ attachment: NSObject) {
