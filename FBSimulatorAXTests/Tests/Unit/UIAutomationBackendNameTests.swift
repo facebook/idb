@@ -6,31 +6,37 @@
  */
 
 @testable import FBSimulatorAX
-import XCTest
+import Foundation
+import Testing
 
 /// The backend names that decide which guest a UI automation reads through.
-final class UIAutomationBackendNameTests: XCTestCase {
-  func testEveryResolvedBackendNameRoundTrips() {
+@Suite
+struct UIAutomationBackendNameTests {
+  @Test
+  func everyResolvedBackendNameRoundTrips() {
     let cases: [(AXBridgePersistence, UIAutomationBackendName)] = [
       (.oneShot, .axBridgeOneShot), (.shared, .axBridgePersistent), (.exclusive, .axBridgeExclusive),
     ]
     for (persistence, name) in cases {
       let backend = UIAutomationBackend.axBridge(
         persistence: persistence, frontmostMethod: .windowServer, automationMode: true)
-      XCTAssertEqual(backend.name, name)
-      XCTAssertEqual(UIAutomationBackend(resolvedName: name), backend)
+      #expect(backend.name == name)
+      #expect(UIAutomationBackend(resolvedName: name) == backend)
     }
   }
 
-  func testTheOneShotCaseHasAnExplicitWireName() {
-    XCTAssertEqual(UIAutomationBackendName.axBridgeOneShot.rawValue, "axbridge-oneshot")
+  @Test
+  func theOneShotCaseHasAnExplicitWireName() {
+    #expect(UIAutomationBackendName.axBridgeOneShot.rawValue == "axbridge-oneshot")
   }
 
-  func testTheSharedCaseKeepsTheExistingWireName() {
-    XCTAssertEqual(UIAutomationBackendName.axBridgePersistent.rawValue, "axbridge-persistent")
+  @Test
+  func theSharedCaseKeepsTheExistingWireName() {
+    #expect(UIAutomationBackendName.axBridgePersistent.rawValue == "axbridge-persistent")
   }
 
-  func testTheExclusiveCaseHasItsOwnWireName() {
-    XCTAssertEqual(UIAutomationBackendName.axBridgeExclusive.rawValue, "axbridge-exclusive")
+  @Test
+  func theExclusiveCaseHasItsOwnWireName() {
+    #expect(UIAutomationBackendName.axBridgeExclusive.rawValue == "axbridge-exclusive")
   }
 }
