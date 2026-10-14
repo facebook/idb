@@ -42,11 +42,8 @@ final class TestConfigurationTestHelper {
     )
   }
 
-  /// `TestConfiguration.xcTestConfiguration` is typed `XCTestConfiguration *`, and that class is
-  /// only forward declared in the header, so Swift cannot import the property at all. Read it
-  /// through KVC, like every other accessor here.
   static func xcTestConfiguration(_ testConfiguration: TestConfiguration) -> Any? {
-    return (testConfiguration as NSObject).value(forKey: "xcTestConfiguration")
+    testConfiguration.xcTestConfiguration
   }
 
   static func productModuleName(_ xcTestConfig: Any) -> String? {
