@@ -7,34 +7,39 @@
 
 import FBControlCore
 @testable import FBSimulatorControl
-import XCTest
+import Foundation
+import Testing
 
-final class DefaultsModificationStrategyTests: XCTestCase {
+@Suite
+struct DefaultsModificationStrategyTests {
 
-  func testReadReturnsTrimmedStdoutOnZeroExit() throws {
+  @Test
+  func readReturnsTrimmedStdoutOnZeroExit() throws {
     let output = InSimulatorToolOutput(stdout: Data("value\n".utf8), stderr: Data(), exitCode: 0)
     let result = try DefaultsModificationStrategy.stdout(orThrowFrom: output, command: .read(domain: "d", key: "k"), logger: nil)
-    XCTAssertEqual(result, "value")
+    #expect(result == "value")
   }
 
-  func testReadToleratesMissingKeyNonZeroExit() throws {
+  @Test
+  func readToleratesMissingKeyNonZeroExit() throws {
     // defaults returns 1 for a missing key/domain; a benign optional read, not a failure.
     let output = InSimulatorToolOutput(stdout: Data(), stderr: Data("does not exist\n".utf8), exitCode: 1)
     let result = try DefaultsModificationStrategy.stdout(orThrowFrom: output, command: .read(domain: "d", key: "missing"), logger: nil)
-    XCTAssertEqual(result, "")
+    #expect(result == "")
   }
 
-  func testDeleteToleratesMissingKeyNonZeroExit() throws {
+  @Test
+  func deleteToleratesMissingKeyNonZeroExit() throws {
     let output = InSimulatorToolOutput(stdout: Data(), stderr: Data("does not exist\n".utf8), exitCode: 1)
     let result = try DefaultsModificationStrategy.stdout(orThrowFrom: output, command: .delete(path: "p", key: "k"), logger: nil)
-    XCTAssertEqual(result, "")
+    #expect(result == "")
   }
 
-  func testWriteThrowsOnNonZeroExit() {
+  @Test
+  func writeThrowsOnNonZeroExit() throws {
     let output = InSimulatorToolOutput(stdout: Data(), stderr: Data("bad type\n".utf8), exitCode: 1)
-    XCTAssertThrowsError(try DefaultsModificationStrategy.stdout(orThrowFrom: output, command: .write(domain: "d", key: "k", type: "string", value: "v"), logger: nil)) { error in
-      XCTAssertTrue(String(describing: error).contains("exit code 1"), "got: \(String(describing: error))")
-      XCTAssertTrue(String(describing: error).contains("bad type"), "got: \(String(describing: error))")
-    }
+    let error = try #require(#expect(throws: (any Error).self) { try DefaultsModificationStrategy.stdout(orThrowFrom: output, command: .write(domain: "d", key: "k", type: "string", value: "v"), logger: nil) })
+    #expect(String(describing: error).contains("exit code 1"), "got: \(String(describing: error))")
+    #expect(String(describing: error).contains("bad type"), "got: \(String(describing: error))")
   }
 }
