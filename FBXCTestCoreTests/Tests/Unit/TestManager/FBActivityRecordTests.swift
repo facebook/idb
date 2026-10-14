@@ -6,10 +6,13 @@
  */
 
 import FBXCTestCore
+import Foundation
+import Testing
 import XCTest
 
 /// `XCActivityRecord` lives in `XCTestPrivate`, which cannot be imported alongside `XCTest` (both define `XCTAttachment`/`XCTIssue`), so the input record is built through the Objective-C runtime.
-final class FBActivityRecordTests: XCTestCase {
+@Suite
+struct FBActivityRecordTests {
 
   private func makeXCActivityRecord(
     title: String = "Activity Title",
@@ -42,7 +45,8 @@ final class FBActivityRecordTests: XCTestCase {
 
   // MARK: - from(_:) field mapping
 
-  func testFromXCActivityRecord_CopiesAllScalarFields() {
+  @Test
+  func fromXCActivityRecord_CopiesAllScalarFields() {
     let id = UUID()
     let start = Date(timeIntervalSince1970: 1_700_000_000)
     let finish = Date(timeIntervalSince1970: 1_700_000_042)
@@ -56,32 +60,35 @@ final class FBActivityRecordTests: XCTestCase {
 
     let fb = wrapActivity(record)
 
-    XCTAssertEqual(fb.title, "Tap Login Button")
-    XCTAssertEqual(fb.activityType, "com.apple.dt.xctest.activity-type.userCreated")
-    XCTAssertEqual(fb.uuid, id)
-    XCTAssertEqual(fb.start, start)
-    XCTAssertEqual(fb.finish, finish)
+    #expect(fb.title == "Tap Login Button")
+    #expect(fb.activityType == "com.apple.dt.xctest.activity-type.userCreated")
+    #expect(fb.uuid == id)
+    #expect(fb.start == start)
+    #expect(fb.finish == finish)
   }
 
-  func testFromXCActivityRecord_InitializesSubactivitiesAsEmpty() {
+  @Test
+  func fromXCActivityRecord_InitializesSubactivitiesAsEmpty() {
     let record = makeXCActivityRecord()
 
     let fb = wrapActivity(record)
 
-    XCTAssertEqual(fb.subactivities.count, 0, "Subactivities must start empty; from(_:) does not recursively wrap the source's nested records.")
+    #expect(fb.subactivities.count == 0, "Subactivities must start empty; from(_:) does not recursively wrap the source's nested records.")
     fb.subactivities.append(fb)
-    XCTAssertEqual(fb.subactivities.count, 1, "Reporters nest records into subactivities after from(_:).")
+    #expect(fb.subactivities.count == 1, "Reporters nest records into subactivities after from(_:).")
   }
 
-  func testFromXCActivityRecord_WithoutAttachments_ProducesEmptyArray() {
+  @Test
+  func fromXCActivityRecord_WithoutAttachments_ProducesEmptyArray() {
     let record = makeXCActivityRecord(attachments: [])
 
     let fb = wrapActivity(record)
 
-    XCTAssertEqual(fb.attachments.count, 0, "An XCActivityRecord with no attachments must yield an empty attachments array on the wrapper, not nil.")
+    #expect(fb.attachments.count == 0, "An XCActivityRecord with no attachments must yield an empty attachments array on the wrapper, not nil.")
   }
 
-  func testFromXCActivityRecord_WrapsEachXCTAttachmentAsFBAttachment() {
+  @Test
+  func fromXCActivityRecord_WrapsEachXCTAttachmentAsFBAttachment() {
     let first = XCTAttachment(string: "first-payload")
     first.name = "first.txt"
     let second = XCTAttachment(string: "second-payload")
@@ -90,14 +97,15 @@ final class FBActivityRecordTests: XCTestCase {
 
     let fb = wrapActivity(record)
 
-    XCTAssertEqual(fb.attachments.count, 2, "Every XCTAttachment in record.attachments must be wrapped into one FBAttachment, preserving order.")
-    XCTAssertEqual(fb.attachments[0].name, "first.txt", "Wrapped FBAttachment must preserve the source attachment's name.")
-    XCTAssertEqual(fb.attachments[1].name, "second.txt", "Wrapped FBAttachment must preserve attachment order.")
+    #expect(fb.attachments.count == 2, "Every XCTAttachment in record.attachments must be wrapped into one FBAttachment, preserving order.")
+    #expect(fb.attachments[0].name == "first.txt", "Wrapped FBAttachment must preserve the source attachment's name.")
+    #expect(fb.attachments[1].name == "second.txt", "Wrapped FBAttachment must preserve attachment order.")
   }
 
   // MARK: - description
 
-  func testDescription_IncludesTitleStartFinishAndUUID() {
+  @Test
+  func description_IncludesTitleStartFinishAndUUID() {
     let id = UUID()
     let start = Date(timeIntervalSince1970: 500)
     let finish = Date(timeIntervalSince1970: 700)
@@ -110,9 +118,9 @@ final class FBActivityRecordTests: XCTestCase {
 
     let description = wrapActivity(record).description
 
-    XCTAssertTrue(description.contains("Tap Login Button"), "Description must include the title.")
-    XCTAssertTrue(description.contains(id.uuidString), "Description must include the UUID's string form.")
-    XCTAssertTrue(description.contains((start as NSDate).description), "Description must format `start` through NSDate's description.")
-    XCTAssertTrue(description.contains((finish as NSDate).description), "Description must format `finish` through NSDate's description.")
+    #expect(description.contains("Tap Login Button"), "Description must include the title.")
+    #expect(description.contains(id.uuidString), "Description must include the UUID's string form.")
+    #expect(description.contains((start as NSDate).description), "Description must format `start` through NSDate's description.")
+    #expect(description.contains((finish as NSDate).description), "Description must format `finish` through NSDate's description.")
   }
 }
