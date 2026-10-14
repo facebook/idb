@@ -209,10 +209,15 @@ jobs:
           if-no-files-found: ignore
           retention-days: 14
 
+  # SimScope builds as any consumer of the libraries would: against this commit's
+  # libraries package, taking its SwiftPM products, and bundling this commit's
+  # companion distribution, both as the jobs that built them uploaded them. So
+  # every commit shows an app building and running from the package alone.
   simscope:
-    name: Build SimScope (macOS, experimental)
+    name: Build SimScope from the libraries package (macOS, experimental)
     runs-on: macos-26
-    timeout-minutes: 90
+    timeout-minutes: 30
+    needs: [mac-libraries, mac-companion]
     env:
       XCODEGEN_STRIP_XATTRS: 'false'
     steps:
@@ -220,14 +225,24 @@ jobs:
       - name: Turn off Spotlight indexing
         run: sudo mdutil -a -i off || true
       - name: Install tools
-        run: brew install xcodegen protobuf xcbeautify
-      - name: Cache protoc plugins
-        uses: actions/cache@v5
+        run: brew install xcodegen xcbeautify
+      - uses: actions/download-artifact@v5
         with:
-          path: |
-            Build/Codegen
-          key: protoc-plugins-${{ hashFiles('Package.swift', 'Package.resolved') }}-${{ runner.os }}
+          name: idb-libraries
+          path: artifacts/libraries
+      - uses: actions/download-artifact@v5
+        with:
+          name: idb-companion-distribution
+          path: artifacts/companion
+      - name: Unpack the libraries package and the distribution
+        run: |
+          mkdir -p "$RUNNER_TEMP/LibraryPackage"
+          tar -C "$RUNNER_TEMP/LibraryPackage" -xzf artifacts/libraries/idb-libraries.macos-arm64.tar.gz
+          tar -C "$RUNNER_TEMP" -xzf artifacts/companion/idb-companion-distribution.tgz
       - name: Build the standalone app
+        env:
+          IDB_LIBRARY_PACKAGE: ${{ runner.temp }}/LibraryPackage
+          IDB_DISTRIBUTION: ${{ runner.temp }}/Distribution
         run: ./build.sh build simscope
       - name: Smoke test the archived app
         run: |
@@ -240,6 +255,14 @@ jobs:
           path: Build/SimScope-macos-arm64.zip
           if-no-files-found: error
           retention-days: 30
+      - name: Upload xcodebuild logs on failure
+        if: failure()
+        uses: actions/upload-artifact@v5
+        with:
+          name: simscope-xcodebuild-logs
+          path: Build/Logs/xcodebuild/*.log
+          if-no-files-found: ignore
+          retention-days: 14
 
   # A larger runner, because the build is compile-bound and the end-to-end
   # shards and formulae wait on it.

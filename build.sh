@@ -634,8 +634,10 @@ function report_xcodebuild_failure() {
 }
 
 function invoke_xcodebuild() {
-  local symroot="$BUILD_DIRECTORY/Products"
-  local objroot="$BUILD_DIRECTORY/Intermediates"
+  # IDB_XCODEBUILD_ROOT keeps a project's products apart from the source build's.
+  local root="${IDB_XCODEBUILD_ROOT:-$BUILD_DIRECTORY}"
+  local symroot="$root/Products"
+  local objroot="$root/Intermediates"
   # Use arrays so each setting/argument stays a single word regardless of spaces.
   # Add -skipMacroValidation to work around sandbox restrictions on Swift macro plugins
   # Add ENABLE_USER_SCRIPT_SANDBOXING=NO to disable sandbox for macros
@@ -1007,24 +1009,47 @@ function build_library_package() {
   python3 -m CI.library_package "$BUILD_DIRECTORY" "$BUILD_DIRECTORY/LibraryPackage"
 }
 
+# SimScope builds against the libraries package, as any consumer of the libraries does, and
+# bundles the companion distribution. IDB_LIBRARY_PACKAGE and IDB_DISTRIBUTION name prebuilt
+# ones (CI passes its artifacts); whichever is not given is built from source first.
 function build_simscope() {
-  build_companion_archives SimScope
+  local package="${IDB_LIBRARY_PACKAGE:-}"
+  local dist="${IDB_DISTRIBUTION:-}"
+  if [ -z "$dist" ]; then
+    build_all
+    dist="$BUILD_DIRECTORY/Distribution"
+  fi
+  if [ -z "$package" ]; then
+    build_all_libraries
+    build_library_package
+    package="$BUILD_DIRECTORY/LibraryPackage"
+  fi
+  package="$(cd "$package" && pwd)"
+  dist="$(cd "$dist" && pwd)"
+
+  check_xcodegen
+  echo "Generating SimScope project against $package..."
+  IDB_LIBRARY_PACKAGE="$package" generate_xcodeproj "Tools/SimScope" "SimScope"
+  local resolved_dir="Tools/SimScope/SimScope.xcodeproj/project.xcworkspace/xcshareddata/swiftpm"
+  mkdir -p "$resolved_dir"
+  cp Package.resolved "$resolved_dir/Package.resolved"
+
+  local root="$BUILD_DIRECTORY/SimScope"
   for scheme in SimScope simscope-remote; do
-    invoke_xcodebuild \
+    IDB_XCODEBUILD_ROOT="$root" invoke_xcodebuild \
       ONLY_ACTIVE_ARCH=NO \
-      SWIFT_ENABLE_EXPLICIT_MODULES=NO \
-      -project Companion/idb_companion.xcodeproj \
+      -project Tools/SimScope/SimScope.xcodeproj \
       -scheme "$scheme" \
       -sdk macosx \
-      -derivedDataPath "$BUILD_DIRECTORY" \
+      -derivedDataPath "$root" \
       -configuration Release \
       build
   done
-  local release="$BUILD_DIRECTORY/Products/Release"
+  local release="$root/Products/Release"
   local app="$BUILD_DIRECTORY/Applications/SimScope.app"
   rm -rf "$app"
   /bin/bash Tools/SimScope/package.sh "$release/SimScope.app" \
-    "$BUILD_DIRECTORY/Distribution" "$release/idb-repl" "$release/simscope-remote" "$app"
+    "$dist" "$dist/idb-repl" "$release/simscope-remote" "$app"
   ditto -c -k --sequesterRsrc --keepParent "$app" "$BUILD_DIRECTORY/SimScope-macos-arm64.zip"
 }
 
@@ -1049,7 +1074,6 @@ function build() {
       all)
         build_all;;
       simscope)
-        build_all
         build_simscope;;
       # `frameworks` is the old name, kept so existing scripts keep working.
       libraries|frameworks)
@@ -1198,7 +1222,7 @@ Commands:
     Targets:
       (none)          Build all targets
       all             Build all targets
-      simscope        Build and package SimScope.app with its bundled tools
+      simscope        Build SimScope.app against the libraries package, with its bundled tools
       distribution    Assemble the distribution
       libraries       Build every library, and the guests and shims they need, in Release (also: frameworks)
       library-package Package the built libraries for consumers (after 'build libraries')

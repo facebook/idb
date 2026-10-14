@@ -75,32 +75,6 @@ targets:
         embed: false
       - framework: ../Build/Products/Release/libSimulatorIPC.a
         embed: false
-  SimScope:
-    dependencies:
-      - framework: ../Build/Products/Release/libFBControlCore.a
-        embed: false
-      - framework: ../Build/Products/Release/libFBControlCoreObjC.a
-        embed: false
-      - framework: ../Build/Products/Release/libFBSimulatorAX.a
-        embed: false
-      - framework: ../Build/Products/Release/libFBSimulatorBridgeProtocol.a
-        embed: false
-      - framework: ../Build/Products/Release/libFBSimulatorControl.a
-        embed: false
-      - framework: ../Build/Products/Release/libFBSimulatorVideo.a
-        embed: false
-      - framework: ../Build/Products/Release/libFBVideoCore.a
-        embed: false
-      - framework: ../Build/Products/Release/libIDBConcurrency.a
-        embed: false
-      - framework: ../Build/Products/Release/libSimScopeProtocol.a
-        embed: false
-      - framework: ../Build/Products/Release/libSimulatorIPC.a
-        embed: false
-  simscope-remote:
-    dependencies:
-      - framework: ../Build/Products/Release/libSimScopeProtocol.a
-        embed: false
   staging-bench:
     dependencies:
       - framework: ../Build/Products/Release/libFBArtifactStaging.a

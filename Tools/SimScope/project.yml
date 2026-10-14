@@ -1,0 +1,72 @@
+name: SimScope
+
+# SimScope builds as any other consumer of idb's libraries would: against the
+# libraries package (`./build.sh build library-package`, or the CI artifact),
+# taking its SwiftPM products, with none of the source build's search paths,
+# archives or linker flags. `build.sh build simscope` sets IDB_LIBRARY_PACKAGE.
+
+options:
+  deploymentTarget:
+    macOS: "15.0"
+  createIntermediateGroups: true
+  bundleIdPrefix: com.facebook
+
+packages:
+  idb:
+    path: ${IDB_LIBRARY_PACKAGE}
+  # Pinned as Companion/project.yml pins it; build.sh resolves this project from
+  # the same Package.resolved.
+  swift-argument-parser:
+    url: https://github.com/apple/swift-argument-parser.git
+    exactVersion: 1.8.2
+
+targets:
+  SimScope:
+    type: application
+    platform: macOS
+    sources:
+      - path: SimScope
+      - path: Assets.xcassets
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.facebook.simscope
+        PRODUCT_NAME: SimScope
+        EXECUTABLE_NAME: simscope
+        INFOPLIST_FILE: Info.plist
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        SWIFT_VERSION: "6.0"
+        CODE_SIGN_IDENTITY: "-"
+        CODE_SIGNING_ALLOWED: YES
+        ENABLE_APP_SANDBOX: NO
+      configs:
+        Release:
+          DEBUG_INFORMATION_FORMAT: dwarf-with-dsym
+          STRIP_INSTALLED_PRODUCT: YES
+    dependencies:
+      - package: idb
+        products:
+          - FBControlCore
+          - FBSimulatorAX
+          - FBSimulatorControl
+          - FBSimulatorVideo
+          - FBVideoCore
+          - IDBConcurrency
+          - SimScopeProtocol
+
+  simscope-remote:
+    type: tool
+    platform: macOS
+    sources:
+      - path: SimScopeRemote
+    settings:
+      base:
+        PRODUCT_NAME: simscope-remote
+        SWIFT_VERSION: "6.0"
+        OTHER_SWIFT_FLAGS: $(inherited) -parse-as-library
+        CODE_SIGNING_ALLOWED: NO
+        GENERATE_INFOPLIST_FILE: YES
+    dependencies:
+      - package: idb
+        product: SimScopeProtocol
+      - package: swift-argument-parser
+        product: ArgumentParser

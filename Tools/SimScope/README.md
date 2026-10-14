@@ -34,6 +34,12 @@ brew install xcodegen protobuf
 open Build/Applications/SimScope.app
 ```
 
+SimScope builds the way any other app using idb's libraries would: its Xcode project ([`project.yml`](project.yml)) takes `FBSimulatorControl`, `FBSimulatorAX` and the rest as SwiftPM products of the libraries package, with no search paths, archives or linker flags of its own. `build simscope` builds the package (`build libraries`, then `build library-package`) and the companion distribution it bundles, then the app. To reuse ones already built, as CI does with its own artifacts, name them:
+
+```sh
+IDB_LIBRARY_PACKAGE=path/to/LibraryPackage IDB_DISTRIBUTION=path/to/Distribution ./build.sh build simscope
+```
+
 The downloadable archive is `Build/SimScope-macos-arm64.zip`. To check the assembled app after copying it away from the build tree:
 
 ```sh
