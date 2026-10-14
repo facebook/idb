@@ -169,7 +169,11 @@ class AXPMacPlatformElementDouble: NSObject {
     }
   }
 
+  /// Invoked inside every press, on the thread performing it.
+  var pressHook: (() -> Void)?
+
   @objc func accessibilityPerformPress() -> Bool {
+    pressHook?()
     return true
   }
 }
@@ -569,11 +573,12 @@ class SimDeviceAccessibilityDouble: NSObject {
   @objc var UDID: NSUUID = NSUUID()
   @objc var state: UInt64 = 0
   var accessibilityResponseHandler: AccessibilityResponseHandler?
+  private let requestsLock = NSLock()
   private(set) var accessibilityRequests = NSMutableArray()
 
   @objc
   func sendAccessibilityRequestAsync(_ request: Any, completionQueue queue: DispatchQueue, completionHandler handler: @escaping (Any?) -> Void) {
-    accessibilityRequests.add(request)
+    requestsLock.withLock { accessibilityRequests.add(request) }
     if let responseHandler = accessibilityResponseHandler {
       responseHandler(request) { response in
         queue.async {
@@ -750,8 +755,13 @@ class AccessibilityTestFixture: NSObject {
   /// as before.
   func serveTranslatorRequests() {
     let translator = self.translator
+    // Raw reads arrive concurrently; only the bookkeeping is serialized, so a test can still observe two
+    // requests in flight at once.
+    let bookkeeping = NSLock()
     var nextObjectID: UInt64 = 1
     func element(named translation: AXPTranslationObjectDouble) -> AXPMacPlatformElementDouble? {
+      bookkeeping.lock()
+      defer { bookkeeping.unlock() }
       guard let root = translator.macPlatformElementResult else {
         return nil
       }
@@ -782,7 +792,7 @@ class AccessibilityTestFixture: NSObject {
       case .hitTest:
         let point = (parameters?[BridgeAXTranslatorRequestType.pointParameterKey] as? NSValue)?.pointValue ?? .zero
         let displayID = (parameters?[BridgeAXTranslatorRequestType.displayIDParameterKey] as? NSNumber)?.uint32Value ?? 0
-        translator.rawHitTests.append(AXPTranslatorDouble.HitTest(point: point, displayID: displayID))
+        bookkeeping.withLock { translator.rawHitTests.append(AXPTranslatorDouble.HitTest(point: point, displayID: displayID)) }
         lookup = translator.objectAtPointResult
       case .application:
         lookup = (parameters?[BridgeAXTranslatorRequestType.pidParameterKey] as? NSNumber).map {
@@ -792,7 +802,7 @@ class AccessibilityTestFixture: NSObject {
         lookup = nil
       }
       if let requestType, requestType != .attribute, requestType != .multipleAttribute {
-        translator.rawLookups.append(requestType)
+        bookkeeping.withLock { translator.rawLookups.append(requestType) }
         let response = AXPTranslatorResponse.empty() as? AXPTranslatorResponse
         // By key: the double is not the secure-coding object the property is typed as.
         response?.setValue(lookup, forKey: "resultData")

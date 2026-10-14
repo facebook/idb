@@ -11,10 +11,10 @@ import FBControlCore
 import FBSimulatorControl
 import Foundation
 
-/// One unit of translator work and its result, carried across the hop onto the AXP
-/// work queue and back. SAFETY: the body runs exactly once, on the serial AXP work
-/// queue; the continuation resume that follows it establishes the happens-before for
-/// the result read after the await. The queue is the synchronization.
+/// One unit of work and its result, carried across the hop onto a dispatch queue and
+/// back. SAFETY: the body runs exactly once, on the queue it is dispatched to; the
+/// continuation resume that follows it establishes the happens-before for the result
+/// read after the await.
 // patternlint-disable-next-line unchecked-sendable
 private final class AXPSerializedJob<T>: @unchecked Sendable {
   private struct NeverRan: Error {}
@@ -76,9 +76,28 @@ final class AXTranslationDispatcher: NSObject, AXPTranslationTokenDelegateHelper
   /// attribute reads, and actions — must go through here; the queue is what upholds
   /// the translator singleton's single-threaded contract.
   func performSerialized<T>(_ operation: @escaping () throws -> T) async throws -> T {
+    try await perform(operation, on: Self.axpWorkQueue)
+  }
+
+  /// Runs `operation`, which never touches the translator, on a queue it may block — its transport waits
+  /// synchronously — off the main actor and the cooperative executor, and not behind translator work.
+  func performUnserialized<T>(_ operation: @escaping () throws -> T) async throws -> T {
+    try await perform(operation, on: .global(qos: .userInitiated))
+  }
+
+  /// Runs a read of `handle` on the translator's work queue when it goes through the translator, and off it
+  /// when it is raw.
+  func performRead<T>(
+    of handle: AXElementHandle, for request: AXTranslationRequest, reads: AXTranslatorReads,
+    _ operation: @escaping () throws -> T
+  ) async throws -> T {
+    request.readsRaw(handle, reads: reads) ? try await performUnserialized(operation) : try await performSerialized(operation)
+  }
+
+  private func perform<T>(_ operation: @escaping () throws -> T, on queue: DispatchQueue) async throws -> T {
     let job = AXPSerializedJob(operation)
     await withCheckedContinuation { (continuation: CheckedContinuation<Void, Never>) in
-      Self.axpWorkQueue.async {
+      queue.async {
         job.run()
         continuation.resume()
       }
@@ -86,39 +105,57 @@ final class AXTranslationDispatcher: NSObject, AXPTranslationTokenDelegateHelper
     return try job.takeResult()
   }
 
-  /// Resolves `request`'s root element, through the transport the request already carries.
-  func platformElement(withRequest request: AXTranslationRequest) async throws -> AXWritableElement {
-    // The synchronous XPC round-trips driven by the delegate callback must never
-    // run on the main queue; the serialized hop below moves them to the AXP work
-    // queue, off the main actor and off the cooperative executor.
+  /// Resolves `request`'s root, through the transport the request already carries: its translation when it
+  /// resolves raw, without touching the translator, and its platform element otherwise.
+  func rootHandle(withRequest request: AXTranslationRequest) async throws -> AXElementHandle {
     request.translator = self.translator
+    // Registered either way: actions on the root and its descendants reach the translator, whose callbacks
+    // find the request by its token.
     self.pushRequest(request)
-    let translator = self.translator
-
     do {
-      return try await performSerialized { () throws -> AXWritableElement in
-        let collector = request.collector
+      guard request.resolvesRootRaw else {
+        return .element(try await platformElement(withRequest: request))
+      }
+      return try await performUnserialized { () throws -> AXElementHandle in
         let translationStart = CFAbsoluteTimeGetCurrent()
-        guard let translator, let translation = try self.resolving(request, { try request.resolveRoot(withTranslator: translator) })
-        else {
+        guard let translation = try request.resolveRoot(withTranslator: nil) else {
           throw AccessibilityError.noTranslationObject
         }
-        collector.translationDuration = CFAbsoluteTimeGetCurrent() - translationStart
+        request.collector.translationDuration = CFAbsoluteTimeGetCurrent() - translationStart
         translation.bridgeDelegateToken = request.token
-
-        let conversionStart = CFAbsoluteTimeGetCurrent()
-        let rawElement = request.platformElement(for: translation)
-        collector.elementConversionDuration = CFAbsoluteTimeGetCurrent() - conversionStart
-
-        guard let element = rawElement else {
-          throw AccessibilityError.noTranslationObject
-        }
-        element.axSetBridgeDelegateToken(request.token)
-        return element
+        return .translation(translation)
       }
     } catch {
       self.popRequest(request)
       throw error
+    }
+  }
+
+  /// Resolves `request`'s root element through the translator.
+  private func platformElement(withRequest request: AXTranslationRequest) async throws -> AXWritableElement {
+    // The synchronous XPC round-trips driven by the delegate callback must never
+    // run on the main queue; the serialized hop below moves them to the AXP work
+    // queue, off the main actor and off the cooperative executor.
+    let translator = self.translator
+    return try await performSerialized { () throws -> AXWritableElement in
+      let collector = request.collector
+      let translationStart = CFAbsoluteTimeGetCurrent()
+      guard let translator, let translation = try self.resolving(request, { try request.resolveRoot(withTranslator: translator) })
+      else {
+        throw AccessibilityError.noTranslationObject
+      }
+      collector.translationDuration = CFAbsoluteTimeGetCurrent() - translationStart
+      translation.bridgeDelegateToken = request.token
+
+      let conversionStart = CFAbsoluteTimeGetCurrent()
+      let rawElement = request.platformElement(for: translation)
+      collector.elementConversionDuration = CFAbsoluteTimeGetCurrent() - conversionStart
+
+      guard let element = rawElement else {
+        throw AccessibilityError.noTranslationObject
+      }
+      element.axSetBridgeDelegateToken(request.token)
+      return element
     }
   }
 

@@ -182,10 +182,10 @@ final class AXTranslationSmokeTests: ProvidedSimulatorTestCase {
       let request = AXTranslationRequest(kind: .frontmostApplication, clientType: .noClient)
       request.transport = transport
       defer { dispatcher.popRequest(request) }
-      guard let root = try? await dispatcher.platformElement(withRequest: request) else {
+      guard let root = try? await dispatcher.rootHandle(withRequest: request) else {
         return nil
       }
-      return try? await dispatcher.performSerialized {
+      return try? await dispatcher.performRead(of: root, for: request, reads: .raw) {
         request.snapshot(of: root, plan: AXReadPlan(attributes: [], depth: .limited(1)), reads: .raw)
       }
     }

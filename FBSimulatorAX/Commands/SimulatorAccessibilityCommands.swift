@@ -188,9 +188,9 @@ final class SimulatorAccessibilityCommands: AccessibilityOperations {
       throw AccessibilityError.dispatcherUnavailable
     }
     request.transport = resolvedTransport(simulator)
-    let element: AXWritableElement
+    let root: AXElementHandle
     do {
-      element = try await dispatcher.platformElement(withRequest: request)
+      root = try await dispatcher.rootHandle(withRequest: request)
     } catch AccessibilityError.noTranslationObject where diagnosesSpringBoard {
       // On the frontmost path a nil translation usually means SpringBoard (the provider of the
       // frontmost application) is down. Re-label the error when we can confirm that; a probe
@@ -204,14 +204,14 @@ final class SimulatorAccessibilityCommands: AccessibilityOperations {
     }
     if diagnosesSpringBoard {
       do {
-        try await checkSpringBoardAnswersFor(root: element, simulator: simulator, token: request.token, dispatcher: dispatcher)
+        try await checkSpringBoardAnswersFor(root: root, simulator: simulator, request: request, dispatcher: dispatcher)
       } catch {
         // The request's token was pushed by the dispatcher but is not yet wrapped in an AccessibilityElement.
         dispatcher.popRequest(request)
         throw error
       }
     }
-    return AccessibilityElement(handle: .element(element), request: request, dispatcher: dispatcher, simulator: simulator)
+    return AccessibilityElement(handle: root, request: request, dispatcher: dispatcher, simulator: simulator)
   }
 
   /// Throws when the frontmost root names a process that has exited and SpringBoard is known to be why. After
@@ -223,12 +223,12 @@ final class SimulatorAccessibilityCommands: AccessibilityOperations {
   /// be the cause. A root whose process is alive, as an application's is while it launches, or one that exited
   /// while SpringBoard has been up for longer, is read as it is: it is not a SpringBoard condition.
   private func checkSpringBoardAnswersFor(
-    root element: AXPlatformElement, simulator: Simulator, token: String, dispatcher: AXTranslationDispatcher
+    root handle: AXElementHandle, simulator: Simulator, request: AXTranslationRequest, dispatcher: AXTranslationDispatcher
   ) async throws {
     // A quick check: a non-zero accessibility frame indicates a healthy element.
-    // An attribute read, so it takes the serialized hop like every other translator touch.
-    let root = try await dispatcher.performSerialized {
-      AXElementSnapshot.read(element, plan: AXReadPlan(attributes: [], depth: .limited(0)), token: token)
+    let reads = AccessibilityRequestOptions.defaultTranslatorReads
+    let root = try await dispatcher.performRead(of: handle, for: request, reads: reads) {
+      request.snapshot(of: handle, plan: AXReadPlan(attributes: [], depth: .limited(0)), reads: reads)
     }
     if !root.frame.equalTo(.zero) {
       return

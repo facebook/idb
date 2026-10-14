@@ -66,7 +66,7 @@ final class AccessibilityElement {
     let request = self.request
     let handle = self.handle
     let isMarkerMatch = self.isMarkerMatch
-    return try await dispatcher.performSerialized {
+    return try await dispatcher.performRead(of: handle, for: request, reads: options.translatorReads) {
       try request.run(handle, options: options, isMarkerMatch: isMarkerMatch)
     }
   }
@@ -89,12 +89,14 @@ final class AccessibilityElement {
     return value
   }
 
-  /// Reads this element against `plan` on the translator's work queue.
+  /// Reads this element against `plan`: on the translator's work queue when the read goes through it.
   private func read(_ plan: AXReadPlan) async throws -> AXElementSnapshot {
     let handle = self.handle
     let request = self.request
     let reads = AccessibilityRequestOptions.defaultTranslatorReads
-    return try await dispatcher.performSerialized { request.snapshot(of: handle, plan: plan, reads: reads) }
+    return try await dispatcher.performRead(of: handle, for: request, reads: reads) {
+      request.snapshot(of: handle, plan: plan, reads: reads)
+    }
   }
 
   /// Runs `action` on this element's platform element, built from its handle on the translator's work queue.

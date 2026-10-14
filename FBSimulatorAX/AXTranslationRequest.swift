@@ -88,20 +88,30 @@ final class AXTranslationRequest {
     self.collector = AccessibilityProfilingCollector()
   }
 
+  /// Whether the root resolves in one raw request over the transport, without the translator.
+  var resolvesRootRaw: Bool {
+    transport != nil
+  }
+
+  /// Whether a read of `handle` is raw, and so never touches the translator.
+  func readsRaw(_ handle: AXElementHandle, reads: AXTranslatorReads) -> Bool {
+    reads == .raw && transport != nil && handle.translation != nil
+  }
+
   /// Resolves the root translation object for this request's kind: in one raw request over the transport
   /// when the request has one, through the translator otherwise.
-  func resolveRoot(withTranslator translator: AXPTranslator) throws -> AXTranslationReference? {
+  func resolveRoot(withTranslator translator: AXPTranslator?) throws -> AXTranslationReference? {
     switch kind {
     case .frontmostApplication:
       guard let rawReader else {
-        return translator.frontmostApplication(withDisplayId: displayID, bridgeDelegateToken: token)
+        return translator?.frontmostApplication(withDisplayId: displayID, bridgeDelegateToken: token)
       }
       return rawReader.resolve(.frontmostApplication(displayID: displayID))
     case .point(let point):
       return try translation(at: point, translator: translator)
     case .applicationForPid(let pid):
       guard let rawReader else {
-        return translator.translationApplicationObject(forPid: pid)
+        return translator?.translationApplicationObject(forPid: pid)
       }
       return rawReader.resolve(.application(pid: pid))
     }
@@ -380,10 +390,10 @@ final class AXTranslationRequest {
     display?.accessibilityID ?? 0
   }
 
-  private func translation(at point: CGPoint, translator: AXPTranslator) throws -> AXTranslationReference? {
+  private func translation(at point: CGPoint, translator: AXPTranslator?) throws -> AXTranslationReference? {
     let unrotated = try display?.geometry.unrotatedPoint(from: point) ?? point
     guard let rawReader else {
-      return translator.object(at: unrotated, displayId: displayID, bridgeDelegateToken: token)
+      return translator?.object(at: unrotated, displayId: displayID, bridgeDelegateToken: token)
     }
     return rawReader.resolve(.point(unrotated, displayID: displayID))
   }

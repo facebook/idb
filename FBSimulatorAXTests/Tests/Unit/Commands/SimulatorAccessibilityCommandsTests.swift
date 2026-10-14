@@ -73,15 +73,15 @@ final class SimulatorAccessibilityCommandsTests: XCTestCase {
   }
 
   /// Each element is read in exactly one multiple-attribute request naming `attributes`, sent straight to the
-  /// accessibility service, and never through the platform element — apart from a frontmost root, whose
-  /// frame the SpringBoard staleness check reads through it first.
+  /// accessibility service, and never through the platform element. A frontmost root's frame is read first,
+  /// in a request of its own, by the SpringBoard staleness check.
   private func assertReadInOneRequest(
     _ element: AXPMacPlatformElementDouble, attributes: Set<BridgeAXTranslatorAttribute>, afterStalenessCheck: Bool = false,
     _ message: String, file: StaticString = #filePath, line: UInt = #line
   ) {
-    XCTAssertEqual(rawRequests(naming: element).map(Set.init), [attributes], message, file: file, line: line)
-    let throughElement: [Set<String>] = afterStalenessCheck ? [["AXFrame"]] : []
-    XCTAssertEqual(element.multipleAttributeRequests.map(Set.init), throughElement, message, file: file, line: line)
+    let expected: [Set<BridgeAXTranslatorAttribute>] = afterStalenessCheck ? [[.frame], attributes] : [attributes]
+    XCTAssertEqual(rawRequests(naming: element).map(Set.init), expected, message, file: file, line: line)
+    XCTAssertEqual(element.multipleAttributeRequests, [], message, file: file, line: line)
   }
 
   /// The attributes of each multiple-attribute request the accessibility service received for `element`.
@@ -566,7 +566,7 @@ final class SimulatorAccessibilityCommandsTests: XCTestCase {
     let root = AXPTranslationObjectDouble(pid: 12345, objectID: 0)
     let transport = AXTranslationTransportDouble(root: root)
     try setUp(withRootElement: defaultElementTree, transport: transport)
-    let element = try await simulator.accessibility.resolveElement(for: .frontmost, clientType: .xctest)
+    let element = try await simulator.accessibility.resolveElement(for: .application(pid: 12345), clientType: .xctest)
     defer { element.close() }
 
     sendThroughBridgeCallback(clientTypes: [0, 5], root: root)
@@ -596,7 +596,7 @@ final class SimulatorAccessibilityCommandsTests: XCTestCase {
     let root = AXPTranslationObjectDouble(pid: 12345, objectID: 0)
     let transport = AXTranslationTransportDouble(root: root)
     try setUp(withRootElement: defaultElementTree, transport: transport)
-    let element = try await simulator.accessibility.resolveElement(for: .frontmost)
+    let element = try await simulator.accessibility.resolveElement(for: .application(pid: 12345))
     defer { element.close() }
     let request = AccessibilityTranslatorRequests.make(clientType: 0)
     request?.setValue(1, forKey: "requestType")
@@ -604,7 +604,7 @@ final class SimulatorAccessibilityCommandsTests: XCTestCase {
     let response = try XCTUnwrap(AccessibilityTranslatorRequests.send(request, through: dispatcher, token: ""))
 
     XCTAssertNil(response.value(forKey: "resultData"))
-    XCTAssertEqual(transport.requests.map(\.requestType), [4], "only the frontmost lookup reached the service")
+    XCTAssertEqual(transport.requests.map(\.requestType), [1], "only the application lookup reached the service")
   }
 
   func testATransportThatDoesNotAnswerYieldsTheEmptyResponse() async throws {
@@ -714,6 +714,7 @@ final class SimulatorAccessibilityCommandsTests: XCTestCase {
   }
 
   func testAMarkerMatchBuildsItsPlatformElementOnlyWhenActedOn() async throws {
+    // Resolution names the root by its translation too, so only acting builds an element.
     let okButton = defaultOkButton
     try setUp(withRootElement: defaultRoot(withChildren: [defaultTitleLabel, okButton, defaultCancelButton]))
     func elementsBuilt() -> Int {
@@ -722,11 +723,11 @@ final class SimulatorAccessibilityCommandsTests: XCTestCase {
 
     let match = try await simulator.accessibility.resolveElement(for: .marker(value: "OK", key: .label, depth: 10, ignoresCase: false))
     defer { match.close() }
-    XCTAssertEqual(elementsBuilt(), 1, "reading the tree to find the match builds only the root's element")
+    XCTAssertEqual(elementsBuilt(), 0, "resolving the root and reading the tree to find the match build no elements")
 
     try await match.tap()
 
-    XCTAssertEqual(elementsBuilt(), 2, "acting on the match builds its element")
+    XCTAssertEqual(elementsBuilt(), 1, "acting on the match builds its element")
     XCTAssertEqual(okButton.translation.bridgeDelegateToken, fixture!.translator.frontmostApplicationResult?.bridgeDelegateToken)
   }
 
@@ -1479,7 +1480,6 @@ final class SimulatorAccessibilityCommandsTests: XCTestCase {
   func testTheTranslatorProfileReportsAcquisitionTime() async throws {
     try setUp(withRootElement: defaultRoot(withChildren: []))
     fixture!.translator.frontmostApplicationDelay = 0.02
-    fixture!.translator.macPlatformElementDelay = 0.02
 
     let element = try await simulator.accessibility.resolveElement(for: .frontmost)
     defer { element.close() }
@@ -1489,9 +1489,9 @@ final class SimulatorAccessibilityCommandsTests: XCTestCase {
     let profile = try XCTUnwrap(response.profilingData?.translatorProfile)
 
     XCTAssertGreaterThanOrEqual(profile.translationDuration, 0.02, "the 20 ms spent resolving the translation is reported")
-    XCTAssertGreaterThanOrEqual(profile.elementConversionDuration, 0.02, "as is the 20 ms spent converting it to an element")
+    XCTAssertEqual(profile.elementConversionDuration, 0, "a raw read builds no element, so there is no conversion to time")
     XCTAssertGreaterThan(profile.serializeDuration, 0, "alongside the phase that was already measured")
-    XCTAssertGreaterThanOrEqual(profile.acquireDuration, 0.04, "and the core rolls both acquisition phases up")
+    XCTAssertGreaterThanOrEqual(profile.acquireDuration, 0.02, "and the core rolls acquisition up")
   }
 
   // The mechanism behind the above, pinned directly rather than through a read: a request has somewhere
@@ -1924,7 +1924,32 @@ final class SimulatorAccessibilityCommandsTests: XCTestCase {
 
   // MARK: - Concurrent access to the shared translator
 
-  func testConcurrentResolutionsOverlapInsideTheSharedTranslator() async throws {
+  func testConcurrentActionsEnterTheSharedTranslatorOneAtATime() async throws {
+    let ok = defaultOkButton
+    let cancel = defaultCancelButton
+    try setUp(withRootElement: defaultRoot(withChildren: [defaultTitleLabel, ok, cancel]))
+    let tracker = TranslatorEntryTracker()
+    ok.pressHook = { tracker.enter() }
+    cancel.pressHook = { tracker.enter() }
+    let sim = simulator!
+    let okMatch = try await sim.accessibility.resolveElement(for: .marker(value: "OK", key: .label, depth: 10, ignoresCase: false))
+    let cancelMatch = try await sim.accessibility.resolveElement(for: .marker(value: "Cancel", key: .label, depth: 10, ignoresCase: false))
+    defer {
+      okMatch.close()
+      cancelMatch.close()
+    }
+
+    async let first: Void = okMatch.tap()
+    async let second: Void = cancelMatch.tap()
+    _ = try await (first, second)
+
+    // The translator singleton's internal state is not synchronized, so an action — which goes through the
+    // translator's platform element — runs on its one serial queue, even with the first held open waiting
+    // for a peer.
+    XCTAssertEqual(tracker.maxActive, 1, "actions enter the shared translator strictly one at a time")
+  }
+
+  func testConcurrentRawResolutionsDoNotWaitForEachOther() async throws {
     try setUp(withRootElement: defaultElementTree)
     let tracker = TranslatorEntryTracker()
     fixture!.translator.resolutionEnterHook = { tracker.enter() }
@@ -1937,11 +1962,9 @@ final class SimulatorAccessibilityCommandsTests: XCTestCase {
       element.close()
     }
 
-    // The translator singleton's internal state is not synchronized, so all translator
-    // work — resolving a root and building its element — is serialized onto one queue:
-    // concurrent resolutions run strictly one at a time, even with the first held open
-    // waiting for a peer.
-    XCTAssertEqual(tracker.maxActive, 1, "resolutions enter the shared translator strictly one at a time")
+    // A raw resolution touches only the transport, not the translator singleton whose work is serialized
+    // onto one queue, so the first, held open waiting for a peer, is joined by the second.
+    XCTAssertEqual(tracker.maxActive, 2, "raw resolutions run alongside each other")
   }
 
   // MARK: - Marker search
