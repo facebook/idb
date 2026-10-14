@@ -46,7 +46,36 @@ public struct SimulatorLifecycleCommands: LifecycleCommands, Sendable {
   }
 
   public func boot(_ configuration: SimulatorBootConfiguration) async throws {
-    try await SimulatorBootStrategy.boot(simulator, with: configuration)
+    if simulator.state == .booted {
+      return
+    }
+    if simulator.state != .shutdown {
+      throw SimulatorStateError.notShutdown(operation: "boot", state: simulator.stateString.rawValue)
+    }
+
+    try await performBoot(with: configuration)
+    if configuration.options.contains(.verifyUsable) {
+      try await verifySimulatorIsBooted(simulator)
+    }
+  }
+
+  private func performBoot(with configuration: SimulatorBootConfiguration) async throws {
+    // "persist": the booted Simulator outlives the calling process; `.tieToProcessLifecycle` is its inverse.
+    let persist = !configuration.options.contains(.tieToProcessLifecycle)
+    let options: [String: Any] = [
+      "persist": persist,
+      "env": configuration.environment,
+    ]
+
+    try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
+      simulator.device.bootAsync(options: options, completionQueue: simulator.workQueue) { error in
+        if let error {
+          continuation.resume(throwing: error)
+        } else {
+          continuation.resume(returning: ())
+        }
+      }
+    }
   }
 
   public func resolveState(_ state: TargetState) async throws {
@@ -126,5 +155,82 @@ public struct SimulatorLifecycleCommands: LifecycleCommands, Sendable {
       }
     }
     throw SimulatorLifecycleError.openURLFailed(url: url, simulatorDescription: String(describing: simulator), underlying: lastError)
+  }
+}
+
+private let bootVerificationPollInterval: TimeInterval = 0.5
+private let bootVerificationStallInterval: TimeInterval = 1.5
+
+/// Waits until `simulator` has finished booting. `.booted` is not that signal — it is reported the
+/// moment the boot is underway — so this waits for the state and then for the boot status to reach
+/// a terminal value.
+///
+/// - Parameter deadline: How long to wait for, across both phases. Waits indefinitely when `nil`;
+///   exceeding it throws `PollTimeoutError`.
+///
+/// Public: consumers outside this module wait on simulators they booted for the state only.
+public func verifySimulatorIsBooted(_ simulator: Simulator, deadline: PollDeadline? = nil) async throws {
+  // Started before the first wait, so the two phases share one bound rather than getting one each.
+  let checkExpiry = deadline?.start()
+  try await TargetResolveState(simulator, .booted, deadline: deadline)
+
+  var lastBootInfo: SimDeviceBootInfo?
+  var lastChange = Date()
+
+  while true {
+    try Task.checkCancellation()
+    if let bootInfo = simulator.device.bootStatus() {
+      if bootInfo.isEqual(lastBootInfo) {
+        let stalledFor = Date().timeIntervalSince(lastChange)
+        if stalledFor >= bootVerificationStallInterval {
+          simulator.logger.log("Boot Status has not changed from '\(bootInfo.progressDescription)' for \(stalledFor) seconds")
+        }
+      } else {
+        simulator.logger.debug().log("Boot Status Changed: \(bootInfo.progressDescription)")
+        lastBootInfo = bootInfo
+        lastChange = Date()
+      }
+      if bootInfo.isTerminalStatus {
+        return
+      }
+    }
+    try checkExpiry?()
+    try await Task.sleep(nanoseconds: UInt64(bootVerificationPollInterval * Double(NSEC_PER_SEC)))
+  }
+}
+
+extension SimDeviceBootInfoStatus {
+
+  /// The status as it reads in a log line.
+  var statusName: String {
+    switch self {
+    case .booting:
+      return "Booting"
+    case .waitingOnBackboard:
+      return "WaitingOnBackboard"
+    case .waitingOnDataMigration:
+      return "WaitingOnDataMigration"
+    case .waitingOnSystemApp:
+      return "WaitingOnSystemApp"
+    case .finished:
+      return "Finished"
+    case .dataMigrationFailed:
+      return "DataMigrationFailed"
+    @unknown default:
+      return "Unknown(\(rawValue))"
+    }
+  }
+}
+
+extension SimDeviceBootInfo {
+
+  /// The boot's progress as it reads in a log line: the status and how long it has taken, plus the
+  /// migration detail when that is what it is waiting on.
+  var progressDescription: String {
+    let progress = "\(status.statusName) | Elapsed \(bootElapsedTime)"
+    guard status == .waitingOnDataMigration else {
+      return progress
+    }
+    return "\(progress) | Migration Phase '\(migrationPhaseDescription ?? "")' | Migration Elapsed \(migrationElapsedTime)"
   }
 }
