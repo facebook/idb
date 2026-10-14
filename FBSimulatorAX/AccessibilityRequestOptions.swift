@@ -251,13 +251,13 @@ public struct AccessibilityRequestOptions: Sendable {
   /// How the read asks to traverse.
   public var traversalStrategy: AXTraversalStrategy
 
-  /// How the accessibility-translation backend fetches each element's attributes. Always `.batched` for a
-  /// caller outside idb; package-scoped so idb's smoke suite can compare against the per-attribute reads.
+  /// How the accessibility-translation backend fetches each element's attributes. Always `.raw` for a
+  /// caller outside idb; package-scoped so idb's smoke suite can compare against the reads it replaces.
   package var translatorReads: AXTranslatorReads = Self.defaultTranslatorReads
 
   /// The fetch a read makes when nothing chose another: every read's default, and what element reads —
   /// marker search, frames, value checks — always make, since they take no options.
-  package static let defaultTranslatorReads: AXTranslatorReads = .batched
+  package static let defaultTranslatorReads: AXTranslatorReads = .raw
 
   /// The assistive client the read's translator requests claim to come from, or nil for the default.
   /// Only `resolvedClientType` should be read below this layer.

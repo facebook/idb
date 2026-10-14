@@ -8,6 +8,7 @@
 import AppKit
 import FBControlCore
 @testable import FBSimulatorAX
+import FBSimulatorBridgeProtocol
 @testable import FBSimulatorControl
 import XCTest
 
@@ -49,41 +50,52 @@ final class SimulatorAccessibilityCommandsTests: XCTestCase {
   // MARK: - Helpers
 
   /// The attributes a default-keys read requests for an element whose children it walks.
-  private var allSerializationAttributes: Set<String> {
-    singleElementSerializationAttributes.union(["AXChildren"])
+  private var allSerializationAttributes: Set<BridgeAXTranslatorAttribute> {
+    singleElementSerializationAttributes.union([.children])
   }
 
-  /// The attributes a default-keys read requests for a single element (no children recursion).
-  private var singleElementSerializationAttributes: Set<String> {
-    [
-      "AXFrame", "AXRole", "AXDescription", "AXValue", "AXIdentifier", "AXTitle", "AXHelp", "AXEnabled",
-      "AXCustomActions", "AXRoleDescription", "AXSubrole", "AXRequired", "AXTraits",
-    ]
+  /// The attributes a default-keys read requests for a single element (no children recursion). Role and
+  /// role description bring what their conversion reads.
+  private var singleElementSerializationAttributes: Set<BridgeAXTranslatorAttribute> {
+    [.frame, .role, .isRemoteElement, .label, .value, .identifier, .help, .isEnabled, .roleDescription, .subrole, .traits]
   }
 
   /// The attributes requested for AXLabel and frame key filtering over a tree.
-  private var labelAndFrameFilteredAttributes: Set<String> {
-    ["AXFrame", "AXDescription", "AXChildren"]
+  private var labelAndFrameFilteredAttributes: Set<BridgeAXTranslatorAttribute> {
+    [.frame, .label, .children]
   }
 
   /// The attributes requested for AXLabel, type, and frame key filtering on a single element; type is
   /// derived from the role.
-  private var labelTypeFrameFilteredAttributes: Set<String> {
-    ["AXFrame", "AXDescription", "AXRole"]
+  private var labelTypeFrameFilteredAttributes: Set<BridgeAXTranslatorAttribute> {
+    [.frame, .label, .role, .isRemoteElement]
   }
 
-  /// Each element is read in exactly one multiple-attribute request naming `attributes`, and through no
-  /// single accessor. The translation is touched for the token and pid. A frontmost root is first read for
-  /// its frame alone, by the SpringBoard staleness check.
-  private func assertReadInOneBatch(
-    _ element: AXPMacPlatformElementDouble, attributes: Set<String>, afterStalenessCheck: Bool = false,
+  /// Each element is read in exactly one multiple-attribute request naming `attributes`, sent straight to the
+  /// accessibility service, and never through the platform element — apart from a frontmost root, whose
+  /// frame the SpringBoard staleness check reads through it first.
+  private func assertReadInOneRequest(
+    _ element: AXPMacPlatformElementDouble, attributes: Set<BridgeAXTranslatorAttribute>, afterStalenessCheck: Bool = false,
     _ message: String, file: StaticString = #filePath, line: UInt = #line
   ) {
-    XCTAssertEqual(
-      element.accessedProperties as! Set<String>, ["accessibilityMultipleAttributes", "translation"], message,
-      file: file, line: line)
-    let expected: [Set<String>] = afterStalenessCheck ? [["AXFrame"], attributes] : [attributes]
-    XCTAssertEqual(element.multipleAttributeRequests.map(Set.init), expected, message, file: file, line: line)
+    XCTAssertEqual(rawRequests(naming: element).map(Set.init), [attributes], message, file: file, line: line)
+    let throughElement: [Set<String>] = afterStalenessCheck ? [["AXFrame"]] : []
+    XCTAssertEqual(element.multipleAttributeRequests.map(Set.init), throughElement, message, file: file, line: line)
+  }
+
+  /// The attributes of each multiple-attribute request the accessibility service received for `element`.
+  private func rawRequests(naming element: AXPMacPlatformElementDouble) -> [[BridgeAXTranslatorAttribute]] {
+    let objectID = element.translation.objectID
+    return fixture!.device.accessibilityRequests.compactMap { request -> [BridgeAXTranslatorAttribute]? in
+      let request = request as AnyObject
+      guard (request.value(forKey: "requestType") as? NSNumber)?.intValue == BridgeAXTranslatorRequestType.multipleAttribute.rawValue,
+        (request.value(forKey: "translation") as? AXPTranslationObjectDouble)?.objectID == objectID
+      else {
+        return nil
+      }
+      let numbers = (request.value(forKey: "parameters") as? NSDictionary)?["attributes"] as? [NSNumber] ?? []
+      return numbers.compactMap { BridgeAXTranslatorAttribute(rawValue: $0.intValue) }
+    }
   }
 
   private func assertProfilingData(
@@ -144,7 +156,7 @@ final class SimulatorAccessibilityCommandsTests: XCTestCase {
         "enabled": true,
         "custom_actions": [] as [Any],
         "role": "AXApplication",
-        "role_description": NSNull(),
+        "role_description": "application",
         "subrole": NSNull(),
         "content_required": false,
         "pid": 12345,
@@ -162,7 +174,7 @@ final class SimulatorAccessibilityCommandsTests: XCTestCase {
         "enabled": true,
         "custom_actions": [] as [Any],
         "role": "AXStaticText",
-        "role_description": NSNull(),
+        "role_description": "text",
         "subrole": NSNull(),
         "content_required": false,
         "pid": 12345,
@@ -180,7 +192,7 @@ final class SimulatorAccessibilityCommandsTests: XCTestCase {
         "enabled": true,
         "custom_actions": [] as [Any],
         "role": "AXButton",
-        "role_description": NSNull(),
+        "role_description": "button",
         "subrole": NSNull(),
         "content_required": false,
         "pid": 12345,
@@ -198,7 +210,7 @@ final class SimulatorAccessibilityCommandsTests: XCTestCase {
         "enabled": true,
         "custom_actions": [] as [Any],
         "role": "AXButton",
-        "role_description": NSNull(),
+        "role_description": "button",
         "subrole": NSNull(),
         "content_required": false,
         "pid": 12345,
@@ -209,12 +221,12 @@ final class SimulatorAccessibilityCommandsTests: XCTestCase {
     XCTAssertEqual(result as NSArray, expected as NSArray)
     XCTAssertTrue(JSONSerialization.isValidJSONObject(result))
 
-    assertReadInOneBatch(
+    assertReadInOneRequest(
       fixture!.rootElement!, attributes: allSerializationAttributes, afterStalenessCheck: true,
       "All serialization properties should be accessed for root element"
     )
     for child in childElements {
-      assertReadInOneBatch(
+      assertReadInOneRequest(
         child, attributes: allSerializationAttributes,
         "All serialization properties should be accessed for child element"
       )
@@ -245,7 +257,7 @@ final class SimulatorAccessibilityCommandsTests: XCTestCase {
     XCTAssertEqual(result as NSDictionary, expected as NSDictionary)
     XCTAssertTrue(JSONSerialization.isValidJSONObject(result))
 
-    assertReadInOneBatch(
+    assertReadInOneRequest(
       elementDouble, attributes: singleElementSerializationAttributes,
       "Single element at point should access all properties except children"
     )
@@ -283,7 +295,7 @@ final class SimulatorAccessibilityCommandsTests: XCTestCase {
         "enabled": true,
         "custom_actions": [] as [Any],
         "role": "AXApplication",
-        "role_description": NSNull(),
+        "role_description": "application",
         "subrole": NSNull(),
         "content_required": false,
         "pid": 12345,
@@ -301,7 +313,7 @@ final class SimulatorAccessibilityCommandsTests: XCTestCase {
             "enabled": true,
             "custom_actions": [] as [Any],
             "role": "AXStaticText",
-            "role_description": NSNull(),
+            "role_description": "text",
             "subrole": NSNull(),
             "content_required": false,
             "pid": 12345,
@@ -320,7 +332,7 @@ final class SimulatorAccessibilityCommandsTests: XCTestCase {
             "enabled": true,
             "custom_actions": [] as [Any],
             "role": "AXButton",
-            "role_description": NSNull(),
+            "role_description": "button",
             "subrole": NSNull(),
             "content_required": false,
             "pid": 12345,
@@ -339,7 +351,7 @@ final class SimulatorAccessibilityCommandsTests: XCTestCase {
             "enabled": true,
             "custom_actions": [] as [Any],
             "role": "AXButton",
-            "role_description": NSNull(),
+            "role_description": "button",
             "subrole": NSNull(),
             "content_required": false,
             "pid": 12345,
@@ -353,12 +365,12 @@ final class SimulatorAccessibilityCommandsTests: XCTestCase {
     XCTAssertEqual(result as NSArray, expected as NSArray)
     XCTAssertTrue(JSONSerialization.isValidJSONObject(result))
 
-    assertReadInOneBatch(
+    assertReadInOneRequest(
       fixture!.rootElement!, attributes: allSerializationAttributes, afterStalenessCheck: true,
       "All serialization properties should be accessed for root element"
     )
     for child in childElements {
-      assertReadInOneBatch(
+      assertReadInOneRequest(
         child, attributes: allSerializationAttributes,
         "All serialization properties should be accessed for child element"
       )
@@ -407,12 +419,12 @@ final class SimulatorAccessibilityCommandsTests: XCTestCase {
     XCTAssertEqual(result as NSArray, expected as NSArray)
     XCTAssertTrue(JSONSerialization.isValidJSONObject(result))
 
-    assertReadInOneBatch(
+    assertReadInOneRequest(
       fixture!.rootElement!, attributes: labelAndFrameFilteredAttributes, afterStalenessCheck: true,
       "Only label and frame properties should be accessed for root element"
     )
     for child in childElements {
-      assertReadInOneBatch(
+      assertReadInOneRequest(
         child, attributes: labelAndFrameFilteredAttributes,
         "Only label and frame properties should be accessed for child element"
       )
@@ -450,7 +462,7 @@ final class SimulatorAccessibilityCommandsTests: XCTestCase {
     XCTAssertEqual(result as NSDictionary, expected as NSDictionary)
     XCTAssertTrue(JSONSerialization.isValidJSONObject(result))
 
-    assertReadInOneBatch(
+    assertReadInOneRequest(
       titleLabel, attributes: labelTypeFrameFilteredAttributes,
       "Only label, role (for type), and frame properties should be accessed with key filtering"
     )
@@ -542,7 +554,7 @@ final class SimulatorAccessibilityCommandsTests: XCTestCase {
   }
 
   func testEveryReadCarriesItsMetricsWithoutAProfile() async throws {
-    try setUp(withRootElement: defaultElementTree, transport: AXTranslationTransportDouble())
+    try setUp(withRootElement: defaultElementTree)
     let element = try await simulator.accessibility.resolveElement(for: .frontmost)
     defer { element.close() }
 
@@ -551,7 +563,7 @@ final class SimulatorAccessibilityCommandsTests: XCTestCase {
     XCTAssertNil(response.profilingData, "no profile was asked for")
     let metrics = try XCTUnwrap(response.translatorMetrics)
     XCTAssertEqual(metrics.elementCount, 4, "the root and its three children")
-    XCTAssertEqual(metrics.translatorReads, .batched)
+    XCTAssertEqual(metrics.translatorReads, .raw)
     XCTAssertEqual(metrics.transport, .coreSimulator, "named by the transport that carried the read")
     XCTAssertFalse(
       String(decoding: try response.formattedOutputJSON(format: .complete), as: UTF8.self).contains("translatorMetrics"),
@@ -707,7 +719,7 @@ final class SimulatorAccessibilityCommandsTests: XCTestCase {
       "enabled": true,
       "custom_actions": [] as [Any],
       "role": "AXButton",
-      "role_description": NSNull(),
+      "role_description": "button",
       "subrole": NSNull(),
       "content_required": false,
       "pid": 12345,
@@ -720,7 +732,7 @@ final class SimulatorAccessibilityCommandsTests: XCTestCase {
     element.close()
 
     XCTAssertTrue(
-      okButton.multipleAttributeRequests.contains { $0.contains("AXDescription") },
+      rawRequests(naming: okButton).contains { $0.contains(.label) },
       "Tap operation should read the label"
     )
     XCTAssertTrue(
@@ -1009,7 +1021,7 @@ final class SimulatorAccessibilityCommandsTests: XCTestCase {
       "enabled": true,
       "custom_actions": [] as [Any],
       "role": "AXButton",
-      "role_description": NSNull(),
+      "role_description": "button",
       "subrole": NSNull(),
       "content_required": false,
       "pid": 12345,
@@ -1040,7 +1052,7 @@ final class SimulatorAccessibilityCommandsTests: XCTestCase {
       "enabled": true,
       "custom_actions": [] as [Any],
       "role": "AXButton",
-      "role_description": NSNull(),
+      "role_description": "button",
       "subrole": NSNull(),
       "content_required": false,
       "pid": 12345,
@@ -1579,8 +1591,9 @@ final class SimulatorAccessibilityCommandsTests: XCTestCase {
 
     let named = try await reader.describe(.frontmost, options: AccessibilityRequestOptions(format: .complete, clientType: .xctest))
     XCTAssertEqual(named.client, AccessibilityClientReport(clientType: .xctest))
-    XCTAssertEqual(
-      fixture!.device.accessibilityRequests.compactMap { AccessibilityTranslatorRequests.clientType(of: $0) }, [AXClientType.xctest.rawValue])
+    let clientTypes = fixture!.device.accessibilityRequests.compactMap { AccessibilityTranslatorRequests.clientType(of: $0) }
+    XCTAssertFalse(clientTypes.isEmpty)
+    XCTAssertEqual(Set(clientTypes), [AXClientType.xctest.rawValue], "every request the read sends carries the client")
 
     let unnamed = try await reader.describe(.frontmost, options: AccessibilityRequestOptions(format: .complete))
     XCTAssertNil(unnamed.client)
@@ -1961,7 +1974,7 @@ final class SimulatorAccessibilityCommandsTests: XCTestCase {
     defer { element.close() }
 
     XCTAssertTrue(
-      shallow.multipleAttributeRequests.contains { $0.contains("AXDescription") },
+      rawRequests(naming: shallow).contains { $0.contains(.label) },
       "the sibling after the match is read with the rest of the tree; the match is still the first one")
   }
 

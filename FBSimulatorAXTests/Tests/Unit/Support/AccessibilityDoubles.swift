@@ -221,6 +221,27 @@ extension AXPMacPlatformElementDouble: AXPlatformElement {
   func axSetBridgeDelegateToken(_ token: String?) { translation.bridgeDelegateToken = token }
 }
 
+extension AXPMacPlatformElementDouble {
+  /// The element's descendants, depth first, starting with itself.
+  var subtree: [AXPMacPlatformElementDouble] {
+    [self] + _children.flatMap(\.subtree)
+  }
+
+  /// What the accessibility service answers a multiple-attribute request for this element with: the values
+  /// the double models, in the translator's vocabulary, with its children named by their translations.
+  var translatorAnswer: [BridgeAXTranslatorAttribute: Any] {
+    var values: [BridgeAXTranslatorAttribute: Any] = [
+      .frame: NSValue(rect: _frame),
+      .isEnabled: NSNumber(value: _enabled),
+      .children: _children.map(\.translation),
+    ]
+    values[.label] = _label
+    values[.identifier] = _identifier
+    values[.role] = BridgeAXTranslatorRole.allCases.first { "AX\($0.name)" == _role }.map { NSNumber(value: $0.rawValue) }
+    return values
+  }
+}
+
 // Only press is exercised (via `AccessibilityElement.tap()`); scroll and set-value are inert.
 extension AXPMacPlatformElementDouble: AXWritableElement {
   func axPerformPress() -> Bool { accessibilityPerformPress() }
@@ -388,6 +409,9 @@ class AXPTranslatorDouble: NSObject {
   /// return a distinct element for object-at-point hit-testing (remote content)
   /// versus the frontmost application. Falls back to `macPlatformElementResult`.
   var macPlatformElementResultsByPid: [pid_t: AXPMacPlatformElementDouble] = [:]
+  /// The element for each translation the fixture's tree hands out, so an element a raw read names by its
+  /// translation is the same double the tree holds.
+  var elementsByObjectID: [UInt64: AXPMacPlatformElementDouble] = [:]
   /// Wall time burned inside the two calls the dispatcher times, so a test can assert a floor on the
   /// acquisition phases rather than merely non-negative. Zero by default.
   var frontmostApplicationDelay: TimeInterval = 0
@@ -449,6 +473,9 @@ class AXPTranslatorDouble: NSObject {
     }
     if let cached = cachedElementsByObjectID[translation.objectID] {
       return cached
+    }
+    if let element = elementsByObjectID[translation.objectID] {
+      return element
     }
     let result = macPlatformElementResultsByPid[translation.pid] ?? macPlatformElementResult
     result?.translation = translation
@@ -698,11 +725,54 @@ class AccessibilityTestFixture: NSObject {
     } else {
       translator.macPlatformElementResult = AccessibilityTestElementBuilder.rootElement(withChildren: [])
     }
+    serveTranslatorRequests()
 
     AccessibilityTranslatorSwizzler.installMockTranslator(translator)
   }
 
   func tearDown() {
     AccessibilityTranslatorSwizzler.uninstallMockTranslator()
+  }
+
+  /// Answers multiple-attribute requests as CoreSimulatorBridge's accessibility service does, from the tree
+  /// the translator currently resolves: every element below the root gets a translation of its own, and a
+  /// request naming one is answered with that element's values. The root, and a remote element a hit-test
+  /// resolves, keep the translation the translator's resolution hands them. Other requests go unanswered,
+  /// as before.
+  func serveTranslatorRequests() {
+    let translator = self.translator
+    var nextObjectID: UInt64 = 1
+    func element(named translation: AXPTranslationObjectDouble) -> AXPMacPlatformElementDouble? {
+      guard let root = translator.macPlatformElementResult else {
+        return nil
+      }
+      for descendant in root.subtree.dropFirst() where descendant.translation.objectID == 0 {
+        descendant.translation = AXPTranslationObjectDouble(pid: descendant.translation.pid, objectID: nextObjectID)
+        translator.elementsByObjectID[nextObjectID] = descendant
+        nextObjectID += 1
+      }
+      guard translation.objectID == 0 else {
+        return translator.elementsByObjectID[translation.objectID]
+      }
+      return translator.macPlatformElementResultsByPid[translation.pid] ?? root
+    }
+    device.accessibilityResponseHandler = { request, respond in
+      let request = request as AnyObject
+      guard (request.value(forKey: "requestType") as? NSNumber)?.intValue == BridgeAXTranslatorRequestType.multipleAttribute.rawValue,
+        let translation = request.value(forKey: "translation") as? AXPTranslationObjectDouble,
+        let element = element(named: translation),
+        let response = AXPTranslatorResponse.empty() as? AXPTranslatorResponse
+      else {
+        respond(nil)
+        return
+      }
+      let asked = Set(((request.value(forKey: "parameters") as? NSDictionary)?["attributes"] as? [NSNumber] ?? []).map(\.intValue))
+      let answer = NSMutableDictionary()
+      for (attribute, value) in element.translatorAnswer where asked.contains(attribute.rawValue) {
+        answer[NSNumber(value: attribute.rawValue)] = value
+      }
+      response.resultData = answer
+      respond(response)
+    }
   }
 }

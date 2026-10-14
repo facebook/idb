@@ -46,9 +46,9 @@ The default for reads. The companion translates the frontmost application's tree
 
 This is the same view an assistive technology gets. It is cheap and needs nothing installed in the Simulator, but composed views report as single elements: a view that draws its own content and describes itself with a single label — a custom collection view cell, a composed row of text and images — is reported as that one element, not as the parts it was built from.
 
-The cost model follows from where the read runs: the host walks the tree one element at a time, and each step is a round trip into the Simulator. An element's attributes are asked for together, in one multiple-attribute request, and the translator adds about one more request per element to check whether it is drawn by another process, so a read costs about two round trips per element. The service answers them one at a time, so sending them concurrently does not help.
+The cost model follows from where the read runs: the host walks the tree one element at a time, and each step is a round trip into the Simulator. Everything a read needs of an element is asked for in one multiple-attribute request and converted on the host, so a read costs one round trip per element. The service answers them one at a time, so sending them concurrently does not help.
 
-On an iOS 27.0 Settings screen read as `xctest` (114 elements), that is 225 round trips and 72 ms of read time, where fetching each attribute in a request of its own took 1366 round trips and 202 ms; the default, flattened tree of the same screen takes 11 round trips. axbridge's [single fetch](#how-axbridge-fetches-the-tree) reads a whole tree in one round trip, so a gap remains and it grows with the tree, but on the small trees most reads return it is a few milliseconds.
+On an iOS 27.0 Calendar screen read as `xctest` (159 elements), that is 159 round trips and about 99 ms, where reading through the translator's own elements took 443 round trips and 145 ms, and fetching each attribute in a request of its own costs several times that again; the default, flattened tree of a screen is typically a dozen or so elements. axbridge's [single fetch](#how-axbridge-fetches-the-tree) reads a whole tree in one round trip, so a gap remains and it grows with the tree, but on the small trees most reads return it is a few milliseconds.
 
 ```mermaid
 sequenceDiagram
@@ -81,7 +81,7 @@ A guest read also puts the target into automation mode and leaves it there — s
 |---|---|---|
 | Where the read runs | Host | Inside the Simulator |
 | Detail | Assistive-technology view | Full application tree |
-| Cost per read | About two round trips per element, with nothing to start | One round trip for the tree once warm, after a one-off start |
+| Cost per read | One round trip per element, with nothing to start | One round trip for the tree once warm, after a one-off start |
 | Needs `SimulatorFrameworkBridge` | No | Yes |
 | Best for | Quick checks; anything the composite view is enough for | Full-detail and repeated reads |
 
@@ -344,7 +344,7 @@ The values and their mapping onto the application's own notion of the requesting
 
 On an iOS 27.0 Settings screen, `xctest` returns 155 elements 21 levels deep where the default returns 14 one level deep: container groups, toolbars, scroll indicators, SF Symbol image identifiers, and text split into its parts. Before reaching for it, note that the automation tree:
 
-- **costs round trips in proportion to its size**, about two per element over `--api ax`: on that screen over 200, against about a dozen for the default tree;
+- **costs round trips in proportion to its size**, one per element over `--api ax`: on that screen over 150, against about a dozen for the default tree;
 - **is not a superset** of the default tree: an element the default reports can be absent from it;
 - **is served as stored** by an application that sets `automationElements`, whatever is now on screen;
 - **varies with [automation mode](#automation-mode)**, which makes it finer-grained.
