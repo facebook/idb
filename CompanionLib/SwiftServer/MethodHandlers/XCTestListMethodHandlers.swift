@@ -7,9 +7,29 @@
 
 import FBControlCore
 import FBSimulatorControl
+import FBXCTestCore
 import Foundation
 import GRPCCore
 import IDBGRPCSwift
+
+struct XCTestListBundlesMethodHandler {
+
+  let commandExecutor: IDBCommandExecutor
+
+  func handle(request: Idb_XctestListBundlesRequest, context: ServerContext) async throws -> Idb_XctestListBundlesResponse {
+    let descriptors = try await commandExecutor.list_test_bundles()
+    return .with {
+      $0.bundles = descriptors.map(toBundle(descriptor:))
+    }
+  }
+  private func toBundle(descriptor: XCTestDescriptor) -> Idb_XctestListBundlesResponse.Bundles {
+    return .with {
+      $0.name = descriptor.name
+      $0.bundleID = descriptor.testBundleID
+      $0.architectures = Array(descriptor.architectures)
+    }
+  }
+}
 
 struct XCTestListTestsMethodHandler {
 
