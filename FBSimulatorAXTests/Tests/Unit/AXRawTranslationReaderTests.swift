@@ -179,6 +179,30 @@ final class AXRawTranslationReaderTests: XCTestCase {
 
   // MARK: - Request
 
+  func testARawReadsActionHandleForAnElementTheTranslatorHasAlreadyBuilt() {
+    // The translator built this element for an earlier read, which has since closed.
+    let cached = AccessibilityTestElementBuilder.button(withLabel: "OK", identifier: nil, frame: .zero)
+    cached.translation = Self.reference(2)
+    cached.translation.bridgeDelegateToken = "an earlier read"
+    let translator = AXPTranslatorDouble()
+    translator.cachedElementsByObjectID = [2: cached]
+    let root = AccessibilityTestElementBuilder.application(withLabel: "App", frame: .zero, children: [])
+    root.translation = Self.reference(1)
+    let request = AXTranslationRequest(kind: .frontmostApplication)
+    request.transport = AXRawTranslationTransportDouble(elements: [
+      1: [.role: 1, .children: [Self.reference(2)]],
+      2: [.role: 2, .label: "OK"],
+    ])
+    request.translator = unsafeBitCast(translator as AnyObject, to: AXPTranslator.self)
+
+    let snapshot = request.snapshot(of: root, plan: AXReadPlan(attributes: [.label], depth: .limited(1)), reads: .raw)
+
+    XCTAssertTrue(snapshot.children.first?.handle as AnyObject === cached, "the handle is the translator's element")
+    // BUG: the handle keeps the closed read's token, so an action on it reaches no read and is answered empty —
+    // flipped in the following commit.
+    XCTAssertEqual(cached.translation.bridgeDelegateToken, "an earlier read")
+  }
+
   func testARequestWithoutATransportReadsThroughTheElement() {
     let element = AccessibilityTestElementBuilder.button(withLabel: "General", identifier: nil, frame: NSRect(x: 0, y: 0, width: 10, height: 10))
     let request = AXTranslationRequest(kind: .frontmostApplication)

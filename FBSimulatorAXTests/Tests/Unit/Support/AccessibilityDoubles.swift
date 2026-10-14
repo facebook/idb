@@ -447,10 +447,17 @@ class AXPTranslatorDouble: NSObject {
     if macPlatformElementDelay > 0 {
       Thread.sleep(forTimeInterval: macPlatformElementDelay)
     }
+    if let cached = cachedElementsByObjectID[translation.objectID] {
+      return cached
+    }
     let result = macPlatformElementResultsByPid[translation.pid] ?? macPlatformElementResult
     result?.translation = translation
     return result
   }
+
+  /// Elements the translator has already built, by object ID. Returned as they are, keeping the translation —
+  /// and so the token — they were built with, as the translator's element cache does.
+  var cachedElementsByObjectID: [UInt64: AXPMacPlatformElementDouble] = [:]
 
   @objc(translationApplicationObjectForPid:)
   /// As the real translator does: asks the bridge with an application-object request that carries no
