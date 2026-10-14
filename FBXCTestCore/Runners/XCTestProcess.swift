@@ -45,7 +45,7 @@ extension XCTestProcessError: CustomNSError {
   }
 }
 
-final class XCTestProcess {
+enum XCTestProcess {
 
   /// Waits for `process` to exit within `timeout` and returns its exit code. A process that
   /// overstays is sampled, terminated and reported as stalled; one killed by a signal is reported
