@@ -22,7 +22,7 @@ struct FileBackedOutputTests {
 
   @Test("What the process writes to the FIFO reaches the consumer, followed by end-of-file")
   func fifoDrainsIntoTheConsumer() async throws {
-    let buffer = FBDataBuffer.accumulatingBuffer()
+    let buffer = DataBuffer.accumulatingBuffer()
     let output = try FileBackedOutput.fifo(draining: buffer)
 
     try await Self.writing("printf 'hello\\nworld\\n' > \"$1\"", to: output)
@@ -37,7 +37,7 @@ struct FileBackedOutputTests {
 
   @Test("The drain survives the process closing and reopening the path")
   func fifoOutlivesAWriterClosingIt() async throws {
-    let buffer = FBDataBuffer.accumulatingBuffer()
+    let buffer = DataBuffer.accumulatingBuffer()
     let output = try FileBackedOutput.fifo(draining: buffer)
 
     try await Self.writing("echo first > \"$1\"; echo second > \"$1\"", to: output)
@@ -52,7 +52,7 @@ struct FileBackedOutputTests {
 
   @Test("A writer still holding the FIFO open is abandoned after the grace period, ending the consumer")
   func fifoAbandonsALingeringWriter() async throws {
-    let buffer = FBDataBuffer.accumulatingBuffer()
+    let buffer = DataBuffer.accumulatingBuffer()
     let output = try FileBackedOutput.fifo(draining: buffer)
     let lingering = try await Subprocess(executable: "/bin/sh", arguments: ["-c", "exec 3>\"$1\"; echo early >&3; exec sleep 30", "sh", output.path]).launch(output: .closed, error: .closed)
     defer { lingering.sendSignal(SIGKILL) }
@@ -68,7 +68,7 @@ struct FileBackedOutputTests {
 
   @Test("A FIFO that no process ever opened still finishes, with end-of-file and nothing else")
   func fifoFinishesWithoutAWriter() async throws {
-    let buffer = FBDataBuffer.accumulatingBuffer()
+    let buffer = DataBuffer.accumulatingBuffer()
     let output = try FileBackedOutput.fifo(draining: buffer)
 
     await output.finish()
@@ -79,7 +79,7 @@ struct FileBackedOutputTests {
 
   @Test("Concurrent finishes of a FIFO with a lingering writer all return once the grace period ends")
   func fifoReleasesEveryConcurrentFinish() async throws {
-    let output = try FileBackedOutput.fifo(draining: FBDataBuffer.accumulatingBuffer())
+    let output = try FileBackedOutput.fifo(draining: DataBuffer.accumulatingBuffer())
     let lingering = open(output.path, O_WRONLY)
     try #require(lingering >= 0)
     defer { close(lingering) }
@@ -98,7 +98,7 @@ struct FileBackedOutputTests {
 
   @Test("The FIFO exists for the process before launch and is removed once finished")
   func fifoIsMaterialisedUntilFinished() async throws {
-    let output = try FileBackedOutput.fifo(draining: FBDataBuffer.accumulatingBuffer())
+    let output = try FileBackedOutput.fifo(draining: DataBuffer.accumulatingBuffer())
 
     var info = stat()
     #expect(stat(output.path, &info) == 0)
@@ -111,7 +111,7 @@ struct FileBackedOutputTests {
 
   @Test("A FIFO output released without finishing is removed and ends its consumer")
   func fifoIsCleanedUpWhenReleased() async throws {
-    let buffer = FBDataBuffer.accumulatingBuffer()
+    let buffer = DataBuffer.accumulatingBuffer()
     var output: FileBackedOutput? = try FileBackedOutput.fifo(draining: buffer)
     let path = try #require(output?.path)
     defer { unlink(path) }

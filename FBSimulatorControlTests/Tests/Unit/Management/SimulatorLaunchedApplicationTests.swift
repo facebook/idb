@@ -19,7 +19,7 @@ final class SimulatorLaunchedApplicationTests: XCTestCase {
   override func setUp() {
     super.setUp()
     simulator = SimulatorTestSupport.testableSimulator()
-    output = FBDataBuffer.consumableBuffer()
+    output = DataBuffer.consumableBuffer()
   }
 
   override func tearDown() {

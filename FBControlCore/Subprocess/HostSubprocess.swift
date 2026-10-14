@@ -164,7 +164,7 @@ extension Subprocess.Output {
     case .logger(let logger):
       return (try Self.drainedSink(into: LoggingDataConsumer(logger: logger), logger: nil), { Self.captured(()) })
     case .loggerCapturingErrorMessage(let logger):
-      let buffer = FBDataBuffer.accumulatingBuffer(withCapacity: Subprocess.errorMessageLength)
+      let buffer = DataBuffer.accumulatingBuffer(withCapacity: Subprocess.errorMessageLength)
       // Lossy, because the tail can begin mid-character, and one invalid byte would otherwise empty the whole message.
       return (try Self.drainedSink(into: buffer, logger: logger), { Self.captured(Self.string(from: buffer.data(), lossy: true)) })
     case .pipe:
@@ -177,11 +177,11 @@ extension Subprocess.Output {
       let consumer = LineConsumer(consumer: sink)
       return (try Self.drainedSink(into: consumer, logger: nil), { Self.captured(()) })
     case .data:
-      let buffer = FBDataBuffer.accumulatingBuffer()
+      let buffer = DataBuffer.accumulatingBuffer()
       let sink = try Self.drainedSink(into: buffer, logger: nil)
       return (sink, { Self.captured(buffer.data()) })
     case .string:
-      let buffer = FBDataBuffer.accumulatingBuffer()
+      let buffer = DataBuffer.accumulatingBuffer()
       let sink = try Self.drainedSink(into: buffer, logger: nil)
       return (sink, { Self.captured(Self.string(from: buffer.data())) })
     }

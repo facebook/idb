@@ -140,7 +140,7 @@ public final class TargetStateChangeNotifier: TargetSetDelegate {
 
   private func writeTargetsDataToStdOut(_ data: Data) -> Bool {
     writeToStandardOutput(data)
-    writeToStandardOutput(FBDataBuffer.newlineTerminal())
+    writeToStandardOutput(DataBuffer.newlineTerminal())
     fflush(stdout)
     return true
   }

@@ -169,7 +169,7 @@ func createTestVideoStreamPusher(_ logger: ControlCoreLogger) -> VideoToolboxFra
     rateControl: nil,
     scaleFactor: nil,
     keyFrameRate: 10.0)
-  let consumer = FBDataBuffer.accumulatingBuffer()
+  let consumer = DataBuffer.accumulatingBuffer()
   return VideoToolboxFramePusher(
     settings: VideoToolboxEncoderSettings(configuration: config, cadence: .eager(framesPerSecond: 30), sink: .live),
     scaleFactor: nil,

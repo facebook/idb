@@ -50,7 +50,7 @@ final class SimulatorVideoStreamPushFrameTests: XCTestCase {
     let surface = made.surface
     let ioSurface = made.ioSurface
     let logger = made.logger
-    try await stream.startStreaming(FBDataBuffer.accumulatingBuffer())
+    try await stream.startStreaming(DataBuffer.accumulatingBuffer())
     let pusher = RecordingFramePusher()
     await stream.installFramePusher(pusher)
     return Started(stream: stream, pusher: pusher, surface: surface, ioSurface: ioSurface, logger: logger)

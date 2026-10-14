@@ -41,9 +41,9 @@ public final class ListTestRunner {
 
   public func listTests() async throws -> [String] {
     let shimPath = try await target.xctest.extendedTestShim()
-    let shimBuffer = FBDataBuffer.consumableBuffer()
+    let shimBuffer = DataBuffer.consumableBuffer()
     let shimOutput = try FileBackedOutput.fifo(draining: shimBuffer)
-    let stdErrBuffer = FBDataBuffer.consumableBuffer()
+    let stdErrBuffer = DataBuffer.consumableBuffer()
     let stdErrConsumer: DataConsumer = FBCompositeDataConsumer(consumers: [
       stdErrBuffer,
       LoggingDataConsumer(logger: logger),

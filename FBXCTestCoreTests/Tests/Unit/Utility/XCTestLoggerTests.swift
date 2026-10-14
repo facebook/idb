@@ -15,7 +15,7 @@ final class XCTestLoggerTests: XCTestCase {
     let directory = (NSTemporaryDirectory() as NSString).appendingPathComponent("xctest_logger_\(UUID().uuidString)")
     try FileManager.default.createDirectory(atPath: directory, withIntermediateDirectories: true)
     defer { try? FileManager.default.removeItem(atPath: directory) }
-    let buffer = FBDataBuffer.consumableBuffer()
+    let buffer = DataBuffer.consumableBuffer()
 
     let consumer = try await XCTestLogger.defaultLogger(inDirectory: directory).logConsumption(of: buffer, toFileNamed: "mirror.out", logger: ControlCoreGlobalConfiguration.defaultLogger)
     consumer.consumeData(Data("mirrored output".utf8))

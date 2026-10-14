@@ -95,7 +95,7 @@ struct SubprocessRunTests {
 
   @Test("A logged stream reaches the logger once")
   func loggerSinkDeliversEachChunkOnce() async throws {
-    let logged = FBDataBuffer.consumableBuffer()
+    let logged = DataBuffer.consumableBuffer()
     let logger = FBControlCoreLoggerFactory.logger(to: logged)
 
     _ = try await Self.new("printf 'logged\\n'").run(output: .logger(logger), error: .closed)
@@ -106,7 +106,7 @@ struct SubprocessRunTests {
 
   @Test("An error-message capture logs the whole stream and returns its tail")
   func errorMessageCaptureLogsAndReturnsTheTail() async throws {
-    let logged = FBDataBuffer.consumableBuffer()
+    let logged = DataBuffer.consumableBuffer()
     let logger = FBControlCoreLoggerFactory.logger(to: logged)
 
     let new = try await Self.new("printf 'boom\\n' 1>&2")
@@ -118,7 +118,7 @@ struct SubprocessRunTests {
 
   @Test("An error-message capture retains only the last bytes of a long stream")
   func errorMessageCaptureRetainsOnlyTheTail() async throws {
-    let logger = FBControlCoreLoggerFactory.logger(to: FBDataBuffer.consumableBuffer())
+    let logger = FBControlCoreLoggerFactory.logger(to: DataBuffer.consumableBuffer())
     let total = Subprocess.errorMessageLength * 2
 
     let new = try await Self.new("/usr/bin/head -c \(total) /dev/zero | /usr/bin/tr '\\0' 'x' 1>&2")
@@ -229,7 +229,7 @@ struct SubprocessRunTests {
   @Test("A rejected exit quotes the error-message capture")
   func policyRejectionQuotesTheErrorMessageCapture() async throws {
     let script = "printf 'no space left on device\\n' 1>&2; exit 3"
-    let logger = FBControlCoreLoggerFactory.logger(to: FBDataBuffer.consumableBuffer())
+    let logger = FBControlCoreLoggerFactory.logger(to: DataBuffer.consumableBuffer())
 
     let new = await #expect(throws: SubprocessError.self) {
       _ = try await Self.new(script).run(output: .closed, error: .loggerCapturingErrorMessage(logger))
@@ -242,7 +242,7 @@ struct SubprocessRunTests {
   func policyRejectionQuotesAnErrorMessageThatIsNotValidUTF8() async throws {
     // `\351` is a Latin-1 é, which is not valid UTF-8.
     let script = "printf 'caf\\351: no space left on device' 1>&2; exit 3"
-    let logger = FBControlCoreLoggerFactory.logger(to: FBDataBuffer.consumableBuffer())
+    let logger = FBControlCoreLoggerFactory.logger(to: DataBuffer.consumableBuffer())
 
     let new = await #expect(throws: SubprocessError.self) {
       _ = try await Self.new(script).run(output: .closed, error: .loggerCapturingErrorMessage(logger))

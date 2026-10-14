@@ -117,7 +117,7 @@ public enum ArchiveOperations {
     logger: any ControlCoreLogger
   ) async throws {
     let writer = StandardInputWriter()
-    let standardError = FBDataBuffer.accumulatingBuffer(withCapacity: Subprocess.errorMessageLength)
+    let standardError = DataBuffer.accumulatingBuffer(withCapacity: Subprocess.errorMessageLength)
     let source = HandedOver(source)
     async let written = offCooperativePool { try writer.write(from: source.value) }
     do {

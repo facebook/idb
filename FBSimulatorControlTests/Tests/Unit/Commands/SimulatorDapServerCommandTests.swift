@@ -39,7 +39,7 @@ final class SimulatorDapServerCommandTests {
   @Test
   func servesTheAdapterOverItsStandardStreamsAndLogsToTheSimulatorLogs() async throws {
     let simulator = SimulatorTestSupport.testableSimulator(withDevice: device)
-    let output = FBDataBuffer.accumulatingBuffer()
+    let output = DataBuffer.accumulatingBuffer()
     let input = InputSource()
 
     let status = try await simulator.dapServer.withServer(Self.adapterPath, input: input, output: output) { process in
@@ -62,7 +62,7 @@ final class SimulatorDapServerCommandTests {
   func terminatesTheAdapterWhenTheScopeExits() async throws {
     let simulator = SimulatorTestSupport.testableSimulator(withDevice: device)
 
-    let process = try await simulator.dapServer.withServer(Self.adapterPath, input: InputSource(), output: FBDataBuffer.accumulatingBuffer()) { $0 }
+    let process = try await simulator.dapServer.withServer(Self.adapterPath, input: InputSource(), output: DataBuffer.accumulatingBuffer()) { $0 }
 
     let status = try await process.terminationStatus
     #expect(status == .signalled(SIGTERM), "An adapter still reading its input is terminated rather than left running")
@@ -74,7 +74,7 @@ final class SimulatorDapServerCommandTests {
     defer { try? FileManager.default.removeItem(atPath: simulator.coreSimulatorLogsDirectory) }
 
     do {
-      try await simulator.dapServer.withServer(Self.adapterPath, input: InputSource(), output: FBDataBuffer.accumulatingBuffer()) { _ in }
+      try await simulator.dapServer.withServer(Self.adapterPath, input: InputSource(), output: DataBuffer.accumulatingBuffer()) { _ in }
       Issue.record("Expected launching without a data directory to fail")
     } catch SimulatorDapServerError.noDataDirectory {
       // Expected.

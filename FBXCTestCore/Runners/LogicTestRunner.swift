@@ -208,7 +208,7 @@ public final class LogicTestRunner {
         reporter.testHadOutput(line + "\n")
       })
     stdErrConsumers.append(stdErrReportingConsumer)
-    let stdErrBuffer = FBDataBuffer.consumableBuffer()
+    let stdErrBuffer = DataBuffer.consumableBuffer()
     stdErrConsumers.append(stdErrBuffer)
 
     if mirrorToLogger {

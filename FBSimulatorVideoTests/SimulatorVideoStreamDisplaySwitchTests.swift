@@ -44,7 +44,7 @@ final class SimulatorVideoStreamDisplaySwitchTests: XCTestCase {
       edgeInsets: VideoStreamEdgeInsets(top: 0, bottom: 0, left: 0, right: 0),
       cadence: .lazy,
       logger: CapturingLogger())
-    try await stream.startStreaming(FBDataBuffer.accumulatingBuffer())
+    try await stream.startStreaming(DataBuffer.accumulatingBuffer())
     return Started(stream: stream, surface: surface)
   }
 

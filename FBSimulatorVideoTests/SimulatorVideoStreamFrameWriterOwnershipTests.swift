@@ -27,7 +27,7 @@ final class SimulatorVideoStreamFrameWriterOwnershipTests: XCTestCase {
     let pusher = try SimulatorVideoStream.framePusher(
       configuration: configuration,
       cadence: .lazy,
-      consumer: FBDataBuffer.accumulatingBuffer(),
+      consumer: DataBuffer.accumulatingBuffer(),
       encodedSampleConsumerOverride: nil,
       frameWriters: frameWriters,
       logger: CapturingLogger())
@@ -49,7 +49,7 @@ final class SimulatorVideoStreamFrameWriterOwnershipTests: XCTestCase {
     surface.immediateSurface = makeTestIOSurface(width: 128, height: 128)
     let framebuffer = Framebuffer(surface: surface, logger: CapturingLogger())
     let stream = SimulatorVideoStream.make(framebuffer: framebuffer, configuration: configuration, logger: CapturingLogger())
-    try await stream.startStreaming(FBDataBuffer.accumulatingBuffer())
+    try await stream.startStreaming(DataBuffer.accumulatingBuffer())
     let firstWriter = await stream.frameWriters?.timedMetadataWriter as AnyObject?
     let first = try XCTUnwrap(firstWriter)
 

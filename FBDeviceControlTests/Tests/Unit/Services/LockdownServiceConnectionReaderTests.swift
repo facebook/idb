@@ -63,7 +63,7 @@ struct LockdownServiceConnectionReaderTests {
     calls.ServiceConnectionGetSecureIOContext = { _ in nil }
     calls.ServiceConnectionReceive = endOfFileReceive
     let connection = makeConnection(calls: calls)
-    let consumer = FBDataBuffer.accumulatingBuffer()
+    let consumer = DataBuffer.accumulatingBuffer()
     let queue = DispatchQueue(label: "com.facebook.fbdevicecontrol.tests.reader")
     let reader = connection.readFromConnectionWriting(to: consumer, on: queue)
 
@@ -81,7 +81,7 @@ struct LockdownServiceConnectionReaderTests {
     calls.ServiceConnectionGetSecureIOContext = { _ in nil }
     calls.ServiceConnectionReceive = countingEndOfFileReceive
     let connection = makeConnection(calls: calls)
-    let consumer = FBDataBuffer.accumulatingBuffer()
+    let consumer = DataBuffer.accumulatingBuffer()
     // Running the loop inline is the worst case of the loop's thread winning the race against the rest of `startReading`.
     let reader = LockdownServiceConnectionReader(connection: connection, consumer: consumer) { $0() }
 
@@ -98,7 +98,7 @@ struct LockdownServiceConnectionReaderTests {
     calls.ServiceConnectionGetSecureIOContext = { _ in nil }
     calls.ServiceConnectionReceive = endOfFileReceive
     let connection = makeConnection(calls: calls)
-    let reader = LockdownServiceConnectionReader(connection: connection, consumer: FBDataBuffer.accumulatingBuffer()) { $0() }
+    let reader = LockdownServiceConnectionReader(connection: connection, consumer: DataBuffer.accumulatingBuffer()) { $0() }
     try reader.startReading()
 
     do {
@@ -121,7 +121,7 @@ struct LockdownServiceConnectionReaderTests {
     let connectionRef = "fake-connection-ref" as AnyObject
     let connection = makeConnection(calls: calls, connection: connectionRef)
     _ = Unmanaged.passRetained(connectionRef)
-    let consumer = FBDataBuffer.accumulatingBuffer()
+    let consumer = DataBuffer.accumulatingBuffer()
     let queue = DispatchQueue(label: "com.facebook.fbdevicecontrol.tests.blocked-reader")
     let reader = connection.readFromConnectionWriting(to: consumer, on: queue)
 
@@ -149,7 +149,7 @@ struct LockdownServiceConnectionReaderTests {
       connection.readerDrainTimeout = 0.1
       _ = Unmanaged.passRetained(connectionRef)
       let queue = DispatchQueue(label: "com.facebook.fbdevicecontrol.tests.stuck-reader")
-      reader = connection.readFromConnectionWriting(to: FBDataBuffer.accumulatingBuffer(), on: queue)
+      reader = connection.readFromConnectionWriting(to: DataBuffer.accumulatingBuffer(), on: queue)
       try reader.startReading()
 
       try await connection.invalidate()

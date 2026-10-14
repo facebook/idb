@@ -46,7 +46,7 @@ final class SimulatorVideoStreamOrientationTests: XCTestCase {
       cadence: .lazy,
       logger: CapturingLogger(),
       encodedSampleConsumerOverride: recordingFile)
-    try await stream.startStreaming(FBDataBuffer.accumulatingBuffer())
+    try await stream.startStreaming(DataBuffer.accumulatingBuffer())
     return Started(stream: stream, surface: surface)
   }
 

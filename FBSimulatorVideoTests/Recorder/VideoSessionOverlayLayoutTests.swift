@@ -40,7 +40,7 @@ final class VideoSessionOverlayLayoutTests: XCTestCase {
       cadence: .lazy,
       logger: CapturingLogger(),
       encodedSampleConsumerOverride: recording ? DiscardingEncodedSampleConsumer() : nil)
-    try await stream.startStreaming(FBDataBuffer.accumulatingBuffer())
+    try await stream.startStreaming(DataBuffer.accumulatingBuffer())
     let renderer = OverlayRenderer(
       transform: OverlayCoordinateTransform(
         screenPixelWidth: 20, screenPixelHeight: 30, retinaScale: 1, videoScale: 1, borderTop: 4, scaledBorderTop: 4, borderBottom: 4,

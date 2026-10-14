@@ -347,7 +347,7 @@ struct MPEGTSTests {
   @Test
   func h264MPEGTSFrameWriterKeyframeIsWellFormed() {
     let sampleBuffer = makeH264SampleBuffer(isKeyFrame: true)
-    let consumer = FBDataBuffer.accumulatingBuffer()
+    let consumer = DataBuffer.accumulatingBuffer()
     let logger = ControlCoreLoggerDouble()
     let writer = MPEGTSFrameWriter(codec: .h264)
 
@@ -374,7 +374,7 @@ struct MPEGTSTests {
   @Test
   func h264MPEGTSFrameWriterNotReadyThrows() throws {
     let sampleBuffer = makeNotReadySampleBuffer()
-    let consumer = FBDataBuffer.accumulatingBuffer()
+    let consumer = DataBuffer.accumulatingBuffer()
     let logger = ControlCoreLoggerDouble()
     let writer = MPEGTSFrameWriter(codec: .h264)
 
@@ -386,7 +386,7 @@ struct MPEGTSTests {
   @Test
   func hevcMPEGTSStreamKeyframeUsesHEVCStreamType() throws {
     let sampleBuffer = try #require(makeHEVCSampleBuffer(isKeyFrame: true))
-    let consumer = FBDataBuffer.accumulatingBuffer()
+    let consumer = DataBuffer.accumulatingBuffer()
     let logger = ControlCoreLoggerDouble()
     let writer = MPEGTSFrameWriter(codec: .hevc)
 
@@ -416,7 +416,7 @@ struct MPEGTSTests {
 
   @Test
   func mpegtsKeyframePMTAlwaysDeclaresTheMetadataStream() throws {
-    let consumer = FBDataBuffer.accumulatingBuffer()
+    let consumer = DataBuffer.accumulatingBuffer()
     try MPEGTSFrameWriter(codec: .h264).write(makeH264SampleBuffer(isKeyFrame: true), to: consumer, logger: ControlCoreLoggerDouble())
 
     let pmt = try #require(tsPackets(consumer.data(), pid: 0x0100).first)
@@ -430,7 +430,7 @@ struct MPEGTSTests {
   @Test
   func enableMetadataStreamThenWriteTimedMetadataEmitsOnMetadataPID() {
     let writer = MPEGTSFrameWriter(codec: .h264)
-    let consumer = FBDataBuffer.accumulatingBuffer()
+    let consumer = DataBuffer.accumulatingBuffer()
     writer.writeTimedMetadata("Chapter Zulu", to: consumer)
 
     let output = consumer.data()

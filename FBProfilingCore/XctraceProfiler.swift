@@ -136,8 +136,8 @@ public enum XctraceProfiler {
 
   private static func record(xctrace: String, arguments: [String], environment: [String: String], stop: ProfileStopRequest, logger: any ControlCoreLogger) async throws {
     logger.log("Recording with xctrace \(CollectionInformation.oneLineDescription(from: arguments))")
-    let stdout = FBDataBuffer.accumulatingBuffer()
-    let stderr = FBDataBuffer.accumulatingBuffer()
+    let stdout = DataBuffer.accumulatingBuffer()
+    let stderr = DataBuffer.accumulatingBuffer()
     let subprocess = Subprocess(executable: xctrace, arguments: arguments, environment: .additions(environment))
     let (processIdentifier, status) = try await subprocess.withRunning(output: .consumer(stdout), error: .consumer(stderr), logger: logger) { running in
       (running.processIdentifier, try await recordUntilStopped(running, stop: stop))
@@ -173,8 +173,8 @@ public enum XctraceProfiler {
   }
 
   private static func export(xctrace: String, arguments: [String], logger: any ControlCoreLogger) async throws -> Data {
-    let stdout = FBDataBuffer.accumulatingBuffer()
-    let stderr = FBDataBuffer.accumulatingBuffer()
+    let stdout = DataBuffer.accumulatingBuffer()
+    let stderr = DataBuffer.accumulatingBuffer()
     let (processIdentifier, status) = try await Subprocess(executable: xctrace, arguments: arguments)
       .withRunning(output: .consumer(stdout), error: .consumer(stderr), logger: logger) { running in
         (running.processIdentifier, try await running.terminationStatus)
