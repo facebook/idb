@@ -18,13 +18,13 @@ struct DebugserverMethodHandler {
     for try await request in requestStream {
       switch request.control {
       case let .start(start):
-        let debugServer = try await commandExecutor.debugserver_start(start.bundleID)
+        let debugServer = try await commandExecutor.debugserverStart(start.bundleID)
         try await responseStream.send(debugserverStatusToProto(debugServer: debugServer))
         return
 
       case .status:
         // Status with no server running is an empty response, not an error.
-        if let debugServer = try? commandExecutor.debugserver_status() {
+        if let debugServer = try? commandExecutor.debugserverStatus() {
           try await responseStream.send(debugserverStatusToProto(debugServer: debugServer))
         } else {
           try await responseStream.send(.init())
@@ -32,7 +32,7 @@ struct DebugserverMethodHandler {
         return
 
       case .stop:
-        let debugServer = try await commandExecutor.debugserver_stop()
+        let debugServer = try await commandExecutor.debugserverStop()
         try await responseStream.send(debugserverStatusToProto(debugServer: debugServer))
         return
 

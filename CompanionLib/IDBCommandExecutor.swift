@@ -520,22 +520,22 @@ public final class IDBCommandExecutor {
     return [path]
   }
 
-  public func debugserver_start(_ bundleID: String) async throws -> DebugServer {
-    let bundle = try debugserver_prepare(bundleID)
+  public func debugserverStart(_ bundleID: String) async throws -> DebugServer {
+    let bundle = try debugserverPrepare(bundleID)
     let server = try await target.debugServer.launch(forHostApplication: bundle, port: debugserverPort)
     debugServer = server
     return server
   }
 
-  public func debugserver_status() throws -> DebugServer {
+  public func debugserverStatus() throws -> DebugServer {
     guard let debugServer else {
       throw IDBCommandError.noDebugServer
     }
     return debugServer
   }
 
-  public func debugserver_stop() async throws -> DebugServer {
-    let server = try debugserver_status()
+  public func debugserverStop() async throws -> DebugServer {
+    let server = try debugserverStatus()
     try await server.cancel()
     debugServer = nil
     return server
@@ -733,7 +733,7 @@ public final class IDBCommandExecutor {
     }
   }
 
-  private func debugserver_prepare(_ bundleID: String) throws -> BundleDescriptor {
+  private func debugserverPrepare(_ bundleID: String) throws -> BundleDescriptor {
     if debugServer != nil {
       throw IDBCommandError.debugServerAlreadyRunning
     }
