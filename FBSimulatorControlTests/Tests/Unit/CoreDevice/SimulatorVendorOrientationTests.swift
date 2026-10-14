@@ -6,36 +6,39 @@
  */
 
 @testable import FBSimulatorControl
+import Foundation
 import IOKit
-import XCTest
+import Testing
 import XPC
 
-final class SimulatorVendorOrientationTests: XCTestCase {
-  func testOrientationReportPreservesNamedDirections() throws {
+@Suite
+struct SimulatorVendorOrientationTests {
+  @Test
+  func orientationReportPreservesNamedDirections() throws {
     let cases: [(SimulatorHIDDeviceOrientation, String)] = [
       (.portrait, "portrait"), (.portraitUpsideDown, "pud"),
       (.landscapeLeft, "landscape-left"), (.landscapeRight, "landscape-right"),
     ]
     for (orientation, expected) in cases {
       let event = try orientation.vendorEvent()
-      XCTAssertEqual(event.usagePage, 0xff61)
-      XCTAssertEqual(event.usage, 0x5b)
-      XCTAssertEqual(event.version, 0)
+      #expect(event.usagePage == 0xff61)
+      #expect(event.usage == 0x5b)
+      #expect(event.version == 0)
       let decoded = try event.data.withUnsafeBytes { bytes in
-        try XCTUnwrap(
+        try #require(
           IOCFUnserializeWithSize(
             bytes.baseAddress!.assumingMemoryBound(to: CChar.self), bytes.count, nil, 0, nil) as? [String: String])
       }
-      XCTAssertEqual(
-        decoded,
-        [
+      #expect(
+        decoded == [
           "provider": "com.apple.Virtualization.VirtualMachines",
           "source": "orientation-picker-control", "type": "enum", "value": expected,
         ])
     }
   }
 
-  func testMotionCapabilityIsIndependentOfHinge() throws {
+  @Test
+  func motionCapabilityIsIndependentOfHinge() throws {
     for hinge in [false, true] {
       for motion in [false, true] {
         let reply = SimulatorCoreDevice.dictionary([
@@ -46,30 +49,40 @@ final class SimulatorVendorOrientationTests: XCTestCase {
         if motion {
           try SimulatorMotionCapability.deviceMotionState.requireSupported(in: reply)
         } else {
-          XCTAssertThrowsError(try SimulatorMotionCapability.deviceMotionState.requireSupported(in: reply)) { error in
-            guard case SimulatorCoreDeviceError.unsupported = error else { return XCTFail("Expected unsupported, got \(error)") }
+          let error = #expect(throws: (any Error).self) { try SimulatorMotionCapability.deviceMotionState.requireSupported(in: reply) }
+          guard let error else { continue }
+          guard case SimulatorCoreDeviceError.unsupported = error else {
+            Issue.record("Expected unsupported, got \(error)")
+            continue
           }
         }
       }
     }
   }
 
-  func testUnadvertisedMotionCapabilitySelectsLegacyTransport() {
+  @Test
+  func unadvertisedMotionCapabilitySelectsLegacyTransport() throws {
     let reply = SimulatorCoreDevice.dictionary([
       "CoreDevice.output": SimulatorCoreDevice.dictionary(["hingeAngle": xpc_bool_create(false)])
     ])
-    XCTAssertThrowsError(try SimulatorMotionCapability.deviceMotionState.requireSupported(in: reply)) { error in
-      guard case SimulatorCoreDeviceError.unsupported = error else { return XCTFail("Expected unsupported, got \(error)") }
+    let error = try #require(#expect(throws: (any Error).self) { try SimulatorMotionCapability.deviceMotionState.requireSupported(in: reply) })
+    guard case SimulatorCoreDeviceError.unsupported = error else {
+      Issue.record("Expected unsupported, got \(error)")
+      return
     }
   }
 
-  func testMalformedMotionCapabilityDoesNotSelectLegacyTransport() {
+  @Test
+  func malformedMotionCapabilityDoesNotSelectLegacyTransport() throws {
     for value in [xpc_int64_create(1), xpc_string_create("true"), xpc_null_create()] {
       let output = SimulatorCoreDevice.dictionary(["hingeAngle": xpc_bool_create(true)])
       xpc_dictionary_set_value(output, "deviceMotionState", value)
       let reply = SimulatorCoreDevice.dictionary(["CoreDevice.output": output])
-      XCTAssertThrowsError(try SimulatorMotionCapability.deviceMotionState.requireSupported(in: reply)) { error in
-        guard case SimulatorCoreDeviceError.malformed = error else { return XCTFail("Expected invalid reply, got \(error)") }
+      let error = #expect(throws: (any Error).self) { try SimulatorMotionCapability.deviceMotionState.requireSupported(in: reply) }
+      guard let error else { continue }
+      guard case SimulatorCoreDeviceError.malformed = error else {
+        Issue.record("Expected invalid reply, got \(error)")
+        continue
       }
     }
   }
