@@ -1355,10 +1355,9 @@ class AccessibilityReadinessTests(unittest.IsolatedAsyncioTestCase):
     async def test_probe_waits_while_the_simulator_names_no_frontmost_application(
         self,
     ) -> None:
-        # BUG: the current wording is taken as a setup failure rather than a tree
-        # that is not ready yet — flipped in the following commit.
-        with self.assertRaisesRegex(HarnessError, "Accessibility setup failed"):
-            await self.probe([NOT_READY_NO_FRONTMOST, SUCCEEDED])
+        run = await self.probe([NOT_READY_NO_FRONTMOST, SUCCEEDED])
+
+        self.assertEqual(run.await_count, 2)
 
 
 class FailureReportingTests(unittest.TestCase):
@@ -1680,10 +1679,8 @@ class TransientAccessibilityAnswerTests(unittest.IsolatedAsyncioTestCase):
             with self.subTest(answer=answer.stderr):
                 outcome, run, _ = await self.attempt(DESCRIBE_ALL, [answer, SUCCEEDED])
 
-                # BUG: the current wordings are not taken as a tree that was not
-                # ready, so the read is not repeated — flipped in the following commit.
-                self.assertIsInstance(outcome, Failed)
-                self.assertEqual(run.await_count, 1)
+                self.assertEqual(outcome, SUCCEEDED)
+                self.assertEqual(run.await_count, 2)
 
     async def test_a_tap_in_current_wordings_is_not_repeated(self) -> None:
         for answer in NOT_READY_ANSWERS:

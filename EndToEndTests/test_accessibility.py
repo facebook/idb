@@ -29,7 +29,7 @@ from .harness import (
     _label,
     _on_screen,
     _screen,
-    ACCESSIBILITY_NOT_READY_MARKER,
+    accessibility_not_ready,
     ACCESSIBILITY_READY_TIMEOUT_SECONDS,
     FIXTURE_APP_BUNDLE_ID,
     IdbEndToEndTestCase,
@@ -321,7 +321,7 @@ class AccessibilityFixtureTestCase(IdbEndToEndTestCase):
         async def read() -> dict[str, Any]:
             completed = await self.idb(*DESCRIBE_ALL_ARGS, "--json", check=False)
             if completed.returncode != 0:
-                if ACCESSIBILITY_NOT_READY_MARKER not in completed.error_text:
+                if not accessibility_not_ready(completed):
                     self.fail_or_skip_for(" ".join(DESCRIBE_ALL_ARGS), completed)
                 if FIXTURE_APP_BUNDLE_ID not in await self.simctl.running_bundle_ids():
                     await self.setup_idb(

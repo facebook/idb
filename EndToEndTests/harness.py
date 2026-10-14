@@ -81,9 +81,16 @@ HOST_SERVICE_UNAVAILABLE_MARKERS = (
 # Match the connection error emitted by idb/grpc/client.py.
 COMPANION_UNREACHABLE_MARKERS = ("Failed to connect to companion",)
 
-# The simulator had no accessibility translation object: nothing was read or
+# The simulator's accessibility service named no element: nothing was read or
 # written. Retryable while the simulator starts, and for a read at any time.
-ACCESSIBILITY_NOT_READY_MARKER = "No translation object returned"
+# Older companions print the first wording; current ones name the read made.
+ACCESSIBILITY_NOT_READY_MARKERS = (
+    "No translation object returned",
+    "No accessibility element at (",
+    "The simulator's accessibility service named no frontmost application",
+    "The simulator's accessibility service has no application with pid ",
+    "The simulator's accessibility service no longer has this element",
+)
 ACCESSIBILITY_PROBE_ARGS = ("ui", "describe-all", "--json")
 
 # idb's answers when the accessibility tree was momentarily out of step with a
@@ -298,6 +305,12 @@ def retry_verdict(completed: Completed) -> str | None:
     return match[1] if match else None
 
 
+def accessibility_not_ready(completed: Completed) -> bool:
+    return any(
+        marker in completed.error_text for marker in ACCESSIBILITY_NOT_READY_MARKERS
+    )
+
+
 def worth_repeating(args: Sequence[str], completed: Completed) -> bool:
     """Whether a failed idb command is a transient answer it is safe to repeat.
 
@@ -311,7 +324,7 @@ def worth_repeating(args: Sequence[str], completed: Completed) -> bool:
         return False
     if any(marker in completed.error_text for marker in NOTHING_WRITTEN_MARKERS):
         return True
-    if ACCESSIBILITY_NOT_READY_MARKER in completed.error_text:
+    if accessibility_not_ready(completed):
         return tuple(args[:2]) in READ_COMMANDS
     if UNANSWERED.search(completed.error_text) is None:
         return False
@@ -1216,9 +1229,7 @@ async def wait_for_accessibility(
         if kind is FailureKind.HOST_SERVICE_UNAVAILABLE:
             # Let individual tests report the unavailable service as a skip or failure.
             return
-        if kind is not FailureKind.COMMAND or (
-            ACCESSIBILITY_NOT_READY_MARKER not in completed.error_text
-        ):
+        if kind is not FailureKind.COMMAND or not accessibility_not_ready(completed):
             raise HarnessError(
                 f"Accessibility setup failed: "
                 f"idb {' '.join(ACCESSIBILITY_PROBE_ARGS)} "
