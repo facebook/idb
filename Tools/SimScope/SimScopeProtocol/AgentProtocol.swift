@@ -18,14 +18,14 @@ extension String {
 }
 
 /// Where a tap is aimed: at a named accessibility element, or at a raw screen point.
-public enum AgentTapTarget: Equatable, Sendable {
+@frozen public enum AgentTapTarget: Equatable, Sendable {
   case label(String)
   case point(CGPoint)
 }
 
 /// What the agent asked of the window recording: begin a take, naming the file or taking the default,
 /// or end the one in flight.
-public enum AgentRecordAction: Equatable, Sendable {
+@frozen public enum AgentRecordAction: Equatable, Sendable {
   case start(path: String?)
   case stop
 }
@@ -35,7 +35,7 @@ public enum AgentRecordAction: Equatable, Sendable {
 /// A closed enum rather than a method string beside a bag of optional parameters, so a `tap` with no
 /// target — or a `swipe` with half a path — cannot exist once decoding has succeeded. Everything
 /// downstream switches exhaustively and never re-validates.
-public enum AgentCommand: Equatable, Sendable {
+@frozen public enum AgentCommand: Equatable, Sendable {
   case status
   case describe(includeAll: Bool, traversal: String?)
   case hitTest(point: CGPoint)

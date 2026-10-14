@@ -8,7 +8,7 @@
 import Foundation
 
 /// Who originated an event.
-public enum EventSource: String, Codable, Sendable {
+@frozen public enum EventSource: String, Codable, Sendable {
   case human // the person driving the SimScope UI
   case agent // an external agent, over the control channel
   case replay // SimScope re-issuing recorded actions ("repeat after me")
@@ -16,7 +16,7 @@ public enum EventSource: String, Codable, Sendable {
 }
 
 /// A structured, replayable description of an action. Coordinates are simulator screen points.
-public enum SessionAction: Codable, Equatable, Sendable {
+@frozen public enum SessionAction: Codable, Equatable, Sendable {
   case tap(x: Double, y: Double)
   case swipe(fromX: Double, fromY: Double, toX: Double, toY: Double)
   case type(String) // typed text
