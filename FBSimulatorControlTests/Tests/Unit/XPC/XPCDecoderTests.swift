@@ -6,7 +6,8 @@
  */
 
 @testable import FBSimulatorControl
-import XCTest
+import Foundation
+import Testing
 import XPC
 
 private func dictionary(_ values: [String: xpc_object_t]) -> xpc_object_t {
@@ -21,7 +22,8 @@ private func array(_ values: [xpc_object_t]) -> xpc_object_t {
   return result
 }
 
-final class XPCDecoderTests: XCTestCase {
+@Suite
+struct XPCDecoderTests {
 
   private struct Scalars: Decodable, Equatable {
     let flag: Bool
@@ -44,15 +46,17 @@ final class XPCDecoderTests: XCTestCase {
     "identity": withUnsafeBytes(of: uuid.uuid) { xpc_uuid_create($0.baseAddress!.assumingMemoryBound(to: UInt8.self)) },
   ])
 
-  func testDecodesEveryScalarFromItsNativeXPCType() throws {
-    XCTAssertEqual(
-      try XPCDecoder().decode(Scalars.self, from: Self.scalars),
-      Scalars(
-        flag: true, name: "display", ratio: 0.5, signed: -7, unsigned: 7, small: -128, byte: 255,
-        blob: Data([1, 2, 3]), identity: Self.uuid))
+  @Test
+  func decodesEveryScalarFromItsNativeXPCType() throws {
+    #expect(
+      try XPCDecoder().decode(Scalars.self, from: Self.scalars)
+        == Scalars(
+          flag: true, name: "display", ratio: 0.5, signed: -7, unsigned: 7, small: -128, byte: 255,
+          blob: Data([1, 2, 3]), identity: Self.uuid))
   }
 
-  func testScalarsAreNotCoercedBetweenTypes() {
+  @Test
+  func scalarsAreNotCoercedBetweenTypes() throws {
     let substitutions: [(String, xpc_object_t)] = [
       ("flag", xpc_int64_create(1)), ("flag", xpc_string_create("true")),
       ("name", xpc_int64_create(1)), ("ratio", xpc_int64_create(1)),
@@ -62,30 +66,40 @@ final class XPCDecoderTests: XCTestCase {
     for (key, value) in substitutions {
       let object = xpc_copy(Self.scalars)!
       xpc_dictionary_set_value(object, key, value)
-      XCTAssertThrowsError(try XPCDecoder().decode(Scalars.self, from: object), key) { error in
-        guard case let DecodingError.typeMismatch(_, context) = error else { return XCTFail("\(key): \(error)") }
-        XCTAssertEqual(context.codingPath.map(\.stringValue), [key])
+      let error = #expect(throws: (any Error).self, "\(key)") { try XPCDecoder().decode(Scalars.self, from: object) }
+      guard let error else { continue }
+      guard case let DecodingError.typeMismatch(_, context) = error else {
+        Issue.record("\(key): \(error)")
+        continue
       }
+      #expect(context.codingPath.map(\.stringValue) == [key])
     }
   }
 
-  func testIntegersAreRangeChecked() {
+  @Test
+  func integersAreRangeChecked() throws {
     for (key, value) in [("small", xpc_int64_create(128)), ("byte", xpc_uint64_create(256))] {
       let object = xpc_copy(Self.scalars)!
       xpc_dictionary_set_value(object, key, value)
-      XCTAssertThrowsError(try XPCDecoder().decode(Scalars.self, from: object), key) { error in
-        guard case let DecodingError.dataCorrupted(context) = error else { return XCTFail("\(key): \(error)") }
-        XCTAssertEqual(context.codingPath.map(\.stringValue), [key])
+      let error = #expect(throws: (any Error).self, "\(key)") { try XPCDecoder().decode(Scalars.self, from: object) }
+      guard let error else { continue }
+      guard case let DecodingError.dataCorrupted(context) = error else {
+        Issue.record("\(key): \(error)")
+        continue
       }
+      #expect(context.codingPath.map(\.stringValue) == [key])
     }
   }
 
-  func testStringsMustBeValidUTF8() {
+  @Test
+  func stringsMustBeValidUTF8() throws {
     let invalid: [CChar] = [-1, 0]
     let object = xpc_copy(Self.scalars)!
     xpc_dictionary_set_value(object, "name", invalid.withUnsafeBufferPointer { xpc_string_create($0.baseAddress!) })
-    XCTAssertThrowsError(try XPCDecoder().decode(Scalars.self, from: object)) { error in
-      guard case DecodingError.dataCorrupted = error else { return XCTFail("\(error)") }
+    let error = try #require(#expect(throws: (any Error).self) { try XPCDecoder().decode(Scalars.self, from: object) })
+    guard case DecodingError.dataCorrupted = error else {
+      Issue.record("\(error)")
+      return
     }
   }
 
@@ -96,24 +110,32 @@ final class XPCDecoderTests: XCTestCase {
     let any: XPCValue?
   }
 
-  func testAnAbsentKeyDecodesAsNil() throws {
-    XCTAssertEqual(try XPCDecoder().decode(Optionals.self, from: dictionary([:])), Optionals(flag: nil, any: nil))
+  @Test
+  func anAbsentKeyDecodesAsNil() throws {
+    #expect(try XPCDecoder().decode(Optionals.self, from: dictionary([:])) == Optionals(flag: nil, any: nil))
   }
 
-  func testAMissingRequiredKeyNamesItself() {
-    XCTAssertThrowsError(try XPCDecoder().decode(Scalars.self, from: dictionary([:]))) { error in
-      guard case let DecodingError.keyNotFound(key, _) = error else { return XCTFail("\(error)") }
-      XCTAssertEqual(key.stringValue, "flag")
+  @Test
+  func aMissingRequiredKeyNamesItself() throws {
+    let error = try #require(#expect(throws: (any Error).self) { try XPCDecoder().decode(Scalars.self, from: dictionary([:])) })
+    guard case let DecodingError.keyNotFound(key, _) = error else {
+      Issue.record("\(error)")
+      return
+    }
+    #expect(key.stringValue == "flag")
+  }
+
+  @Test
+  func anXPCNullIsNotATypedValue() throws {
+    let error = try #require(#expect(throws: (any Error).self) { try XPCDecoder().decode(Optionals.self, from: dictionary(["flag": xpc_null_create()])) })
+    guard case DecodingError.typeMismatch = error else {
+      Issue.record("\(error)")
+      return
     }
   }
 
-  func testAnXPCNullIsNotATypedValue() {
-    XCTAssertThrowsError(try XPCDecoder().decode(Optionals.self, from: dictionary(["flag": xpc_null_create()]))) { error in
-      guard case DecodingError.typeMismatch = error else { return XCTFail("\(error)") }
-    }
-  }
-
-  func testXPCValueCapturesAnythingIncludingNull() throws {
+  @Test
+  func xpcValueCapturesAnythingIncludingNull() throws {
     let object = dictionary([
       "any": dictionary([
         "n": xpc_null_create(), "s": xpc_string_create("s"), "u": xpc_uint64_create(1), "i": xpc_int64_create(-1),
@@ -122,14 +144,14 @@ final class XPCDecoderTests: XCTestCase {
       ])
     ])
     let decoded = try XPCDecoder().decode(Optionals.self, from: object)
-    XCTAssertNil(decoded.flag)
-    XCTAssertEqual(
-      decoded.any,
-      .dictionary([
-        "n": .null, "s": .string("s"), "u": .uint64(1), "i": .int64(-1), "d": .double(1.5), "b": .bool(false),
-        "a": .array([.null, .uint64(2)]), "e": .other("error"),
-      ]))
-    XCTAssertEqual(try XPCDecoder().decode(Optionals.self, from: dictionary(["any": xpc_null_create()])).any, .null)
+    #expect(decoded.flag == nil)
+    #expect(
+      decoded.any
+        == .dictionary([
+          "n": .null, "s": .string("s"), "u": .uint64(1), "i": .int64(-1), "d": .double(1.5), "b": .bool(false),
+          "a": .array([.null, .uint64(2)]), "e": .other("error"),
+        ]))
+    #expect(try XPCDecoder().decode(Optionals.self, from: dictionary(["any": xpc_null_create()])).any == .null)
   }
 
   // MARK: - Containers
@@ -146,42 +168,49 @@ final class XPCDecoderTests: XCTestCase {
     let names: [String?]
   }
 
-  func testDecodesArraysOfScalarsDictionariesAndArrays() throws {
+  @Test
+  func decodesArraysOfScalarsDictionariesAndArrays() throws {
     let object = dictionary([
       "components": array([xpc_uint64_create(651), xpc_uint64_create(13)]),
       "points": array([dictionary(["x": xpc_double_create(1), "y": xpc_double_create(2)])]),
       "matrix": array([array([xpc_double_create(0), xpc_double_create(0)]), array([xpc_double_create(2007), xpc_double_create(2853)])]),
       "names": array([xpc_string_create("a"), xpc_null_create(), xpc_string_create("c")]),
     ])
-    XCTAssertEqual(
-      try XPCDecoder().decode(Report.self, from: object),
-      Report(components: [651, 13], points: [Point(x: 1, y: 2)], matrix: [[0, 0], [2007, 2853]], names: ["a", nil, "c"]))
+    #expect(
+      try XPCDecoder().decode(Report.self, from: object) == Report(components: [651, 13], points: [Point(x: 1, y: 2)], matrix: [[0, 0], [2007, 2853]], names: ["a", nil, "c"]))
   }
 
-  func testAContainerOfTheWrongShapeIsAMismatchAtItsPath() {
+  @Test
+  func aContainerOfTheWrongShapeIsAMismatchAtItsPath() throws {
     let object = dictionary(["components": dictionary([:]), "points": array([]), "matrix": array([]), "names": array([])])
-    XCTAssertThrowsError(try XPCDecoder().decode(Report.self, from: object)) { error in
-      guard case let DecodingError.typeMismatch(_, context) = error else { return XCTFail("\(error)") }
-      XCTAssertEqual(context.codingPath.map(\.stringValue), ["components"])
+    let error = try #require(#expect(throws: (any Error).self) { try XPCDecoder().decode(Report.self, from: object) })
+    if case let DecodingError.typeMismatch(_, context) = error {
+      #expect(context.codingPath.map(\.stringValue) == ["components"])
+    } else {
+      Issue.record("\(error)")
     }
-    XCTAssertThrowsError(try XPCDecoder().decode(Report.self, from: array([])))
-    XCTAssertThrowsError(try XPCDecoder().decode(Report.self, from: XPC_ERROR_CONNECTION_INVALID))
+    #expect(throws: (any Error).self) { try XPCDecoder().decode(Report.self, from: array([])) }
+    #expect(throws: (any Error).self) { try XPCDecoder().decode(Report.self, from: XPC_ERROR_CONNECTION_INVALID) }
   }
 
-  func testAnElementFailureNamesItsIndex() {
+  @Test
+  func anElementFailureNamesItsIndex() throws {
     let object = dictionary([
       "components": array([xpc_uint64_create(1), xpc_int64_create(2)]), "points": array([]), "matrix": array([]), "names": array([]),
     ])
-    XCTAssertThrowsError(try XPCDecoder().decode(Report.self, from: object)) { error in
-      guard case let DecodingError.typeMismatch(_, context) = error else { return XCTFail("\(error)") }
-      XCTAssertEqual(context.codingPath.map(\.stringValue), ["components", "Index 1"])
+    let error = try #require(#expect(throws: (any Error).self) { try XPCDecoder().decode(Report.self, from: object) })
+    guard case let DecodingError.typeMismatch(_, context) = error else {
+      Issue.record("\(error)")
+      return
     }
+    #expect(context.codingPath.map(\.stringValue) == ["components", "Index 1"])
   }
 
-  func testDecodesScalarsAndArraysAtTheRoot() throws {
-    XCTAssertEqual(try XPCDecoder().decode(String.self, from: xpc_string_create("root")), "root")
-    XCTAssertEqual(try XPCDecoder().decode([Bool].self, from: array([xpc_bool_create(true), xpc_bool_create(false)])), [true, false])
-    XCTAssertEqual(try XPCDecoder().decode(UUID.self, from: withUnsafeBytes(of: Self.uuid.uuid) { xpc_uuid_create($0.baseAddress!.assumingMemoryBound(to: UInt8.self)) }), Self.uuid)
+  @Test
+  func decodesScalarsAndArraysAtTheRoot() throws {
+    #expect(try XPCDecoder().decode(String.self, from: xpc_string_create("root")) == "root")
+    #expect(try XPCDecoder().decode([Bool].self, from: array([xpc_bool_create(true), xpc_bool_create(false)])) == [true, false])
+    #expect(try XPCDecoder().decode(UUID.self, from: withUnsafeBytes(of: Self.uuid.uuid) { xpc_uuid_create($0.baseAddress!.assumingMemoryBound(to: UInt8.self)) }) == Self.uuid)
   }
 
   private enum Rotation: String, Decodable {
@@ -189,13 +218,15 @@ final class XPCDecoderTests: XCTestCase {
     case clockwise = "rot90"
   }
 
-  func testDecodesRawRepresentableEnums() throws {
-    XCTAssertEqual(try XPCDecoder().decode(Rotation.self, from: xpc_string_create("rot90")), .clockwise)
-    XCTAssertThrowsError(try XPCDecoder().decode(Rotation.self, from: xpc_string_create("rot45")))
-    XCTAssertThrowsError(try XPCDecoder().decode(Rotation.self, from: xpc_int64_create(90)))
+  @Test
+  func decodesRawRepresentableEnums() throws {
+    #expect(try XPCDecoder().decode(Rotation.self, from: xpc_string_create("rot90")) == .clockwise)
+    #expect(throws: (any Error).self) { try XPCDecoder().decode(Rotation.self, from: xpc_string_create("rot45")) }
+    #expect(throws: (any Error).self) { try XPCDecoder().decode(Rotation.self, from: xpc_int64_create(90)) }
   }
 
-  func testHandWrittenUnkeyedDecodeReadsMixedElementTypes() throws {
+  @Test
+  func handWrittenUnkeyedDecodeReadsMixedElementTypes() throws {
     struct Interval: Decodable, Equatable {
       let high: Int64
       let low: UInt64
@@ -203,14 +234,16 @@ final class XPCDecoderTests: XCTestCase {
         var container = try decoder.unkeyedContainer()
         high = try container.decode(Int64.self)
         low = try container.decode(UInt64.self)
-        XCTAssertTrue(container.isAtEnd)
+        #expect(container.isAtEnd)
       }
     }
     let decoded = try XPCDecoder().decode(Interval.self, from: array([xpc_int64_create(0), xpc_uint64_create(100_000_000_000_000_000)]))
-    XCTAssertEqual(decoded.high, 0)
-    XCTAssertEqual(decoded.low, 100_000_000_000_000_000)
-    XCTAssertThrowsError(try XPCDecoder().decode(Interval.self, from: array([xpc_int64_create(0)]))) { error in
-      guard case DecodingError.valueNotFound = error else { return XCTFail("\(error)") }
+    #expect(decoded.high == 0)
+    #expect(decoded.low == 100_000_000_000_000_000)
+    let error = try #require(#expect(throws: (any Error).self) { try XPCDecoder().decode(Interval.self, from: array([xpc_int64_create(0)])) })
+    guard case DecodingError.valueNotFound = error else {
+      Issue.record("\(error)")
+      return
     }
   }
 
@@ -224,9 +257,10 @@ final class XPCDecoderTests: XCTestCase {
     let nested: Point?
   }
 
-  func testRoundTripsThroughXPCEncoder() throws {
+  @Test
+  func roundTripsThroughXPCEncoder() throws {
     let value = Envelope(action: "a", version: [1, 2, 3], channel: Self.uuid, payload: Data([9]), nested: Point(x: 1, y: 2))
     let object = try XPCEncoder().encode(value)
-    XCTAssertEqual(try XPCDecoder().decode(Envelope.self, from: object), value)
+    #expect(try XPCDecoder().decode(Envelope.self, from: object) == value)
   }
 }
