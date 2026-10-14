@@ -306,6 +306,8 @@ final class SimBackend: @unchecked Sendable {
       return parts.joined(separator: " · ")
     case nil:
       return nil
+    @unknown default:
+      return nil
     }
   }
 

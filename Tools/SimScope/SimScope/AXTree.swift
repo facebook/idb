@@ -244,6 +244,8 @@ extension AXNode {
       }
     case nil:
       self.interactability = nil
+    @unknown default:
+      self.interactability = nil
     }
   }
 
@@ -278,6 +280,7 @@ extension AXNode {
     case let .double(double): return String(double)
     case .array, .object: return "…"
     case .null: return "null"
+    @unknown default: return "…"
     }
   }
 }

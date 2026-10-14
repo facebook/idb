@@ -217,6 +217,8 @@ final class SimulatorView: NSView {
           case let .ended(error):
             NSLog("SimScope: framebuffer ended: \(error)")
             return
+          @unknown default:
+            break
           }
         }
       }
