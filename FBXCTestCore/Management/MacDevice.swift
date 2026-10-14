@@ -375,7 +375,7 @@ extension MacDevice: XCTestExtendedCommands {
     guard let typedReporter = reporter as? XCTestReporter else {
       throw MacDeviceError.unexpectedReporter(reporterDescription: String(describing: reporter))
     }
-    try await ManagedTestRunStrategy.runToCompletion(
+    try await ManagedTestRunner.runToCompletion(
       withTarget: self,
       configuration: launchConfiguration,
       codesign: nil,

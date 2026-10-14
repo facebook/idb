@@ -19,7 +19,7 @@ enum ManagedTestRunError: Error, LocalizedError {
   }
 }
 
-public final class ManagedTestRunStrategy {
+public enum ManagedTestRunner {
 
   public static func runToCompletion(withTarget target: any XCTestExtendedTarget, configuration: TestLaunchConfiguration, codesign: CodesignProvider?, workingDirectory: String, reporter: XCTestReporter, logger: ControlCoreLogger) async throws {
     do {

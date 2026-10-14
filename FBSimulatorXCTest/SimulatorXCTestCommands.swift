@@ -185,7 +185,7 @@ public final class SimulatorXCTestCommands: XCTestExtendedCommands {
       throw SimulatorStateError.notBooted(operation: "run tests", state: simulator.stateString.rawValue)
     }
 
-    try await ManagedTestRunStrategy.runToCompletion(
+    try await ManagedTestRunner.runToCompletion(
       withTarget: simulator,
       configuration: testLaunchConfiguration,
       codesign: ControlCoreGlobalConfiguration.confirmCodesignaturesAreValid
