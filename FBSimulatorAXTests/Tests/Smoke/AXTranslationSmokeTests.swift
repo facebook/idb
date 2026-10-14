@@ -144,6 +144,105 @@ final class AXTranslationSmokeTests: ProvidedSimulatorTestCase {
     }
   }
 
+  /// SpringBoard remediation restarts CoreSimulatorBridge and retries the read once. A process that holds its
+  /// connection to the bridge across the restart, as the companion does, must read on that one retry: the read
+  /// straight after the restart has to succeed, not merely a later one. Element handles from before the restart
+  /// are not reused — the restarted bridge's translator knows none of them — so the read resolves its root afresh.
+  func testTheFirstReadAfterCoreSimulatorBridgeRestartsSucceeds() async throws {
+    try await launchApplication()
+    _ = try await describeFrontmost()
+
+    let commands = SimulatorAccessibilityCommands(
+      simulator: simulator, transport: CoreSimulatorBridgeAXTranslationTransport(connector: .simulator(simulator)))
+    func read() async throws -> Int {
+      let element = try await commands.resolveElement(for: .frontmost, clientType: .noClient)
+      defer { element.close() }
+      return try await element.serialize(with: AccessibilityRequestOptions()).elements.elements.count
+    }
+    let before = try await read()
+    XCTAssertGreaterThan(before, 1, "the connection is established and reads before the restart")
+
+    _ = try await simulator.launchCtl.stopService(withName: "com.apple.CoreSimulator.bridge")
+
+    let after = try await read()
+    XCTAssertGreaterThan(after, 1, "the first read after the restart reaches the restarted bridge")
+  }
+
+  /// After SpringBoard restarts, a raw frontmost read with no remediation — no restart of CoreSimulatorBridge —
+  /// must come back to a live root: a running process, with a frame, not the SpringBoard that died. Each
+  /// observation is attached so a failure shows whether the read stuck on the dead process.
+  func testFrontmostRecoversAfterSpringBoardRestartsWithoutRemediation() async throws {
+    try await launchApplication()
+    _ = try await describeFrontmost()
+    try SimulatorControlFrameworkLoader.accessibilityFrameworks.loadPrivateFrameworks(simulator.logger)
+    let launchCtl = simulator.launchCtl
+    let transport = CoreSimulatorBridgeAXTranslationTransport(connector: .simulator(simulator))
+    let dispatcher = simulator.accessibilityTranslationDispatcher
+    func observe() async -> AXElementSnapshot? {
+      let request = AXTranslationRequest(kind: .frontmostApplication, clientType: .noClient)
+      request.transport = transport
+      defer { dispatcher.popRequest(request) }
+      guard let root = try? await dispatcher.platformElement(withRequest: request) else {
+        return nil
+      }
+      return try? await dispatcher.performSerialized {
+        request.snapshot(of: root, plan: AXReadPlan(attributes: [], depth: .limited(1)), reads: .raw)
+      }
+    }
+    func springBoardPid() async throws -> pid_t? {
+      try await launchCtl.listServices()["com.apple.SpringBoard"] ?? nil
+    }
+    var log: [String] = []
+    func record(_ line: String) {
+      log.append(line)
+    }
+    defer {
+      add(XCTAttachment(string: log.joined(separator: "\n")))
+      try? log.joined(separator: "\n").write(toFile: NSTemporaryDirectory() + "springboard-restart.log", atomically: true, encoding: .utf8)
+    }
+
+    // On the home screen SpringBoard is itself the frontmost application, which is where a restart was seen to
+    // leave reads answering for the process that died.
+    try await simulator.application.kill(bundleID: Self.bundleID)
+    try await Task.sleep(nanoseconds: 2 * NSEC_PER_SEC)
+    let currentSpringBoard = try await springBoardPid()
+    let deadSpringBoard = try XCTUnwrap(currentSpringBoard)
+    let observed = await observe()
+    let before = try XCTUnwrap(observed, "frontmost resolves before SpringBoard restarts")
+    XCTAssertEqual(before.pid, deadSpringBoard, "SpringBoard is frontmost on the home screen")
+    record("before: springboard=\(deadSpringBoard) root pid=\(before.pid) frame=\(before.frame) children=\(before.children.count)")
+    _ = try await launchCtl.stopService(withName: "com.apple.SpringBoard")
+
+    let start = Date()
+    func elapsed() -> String { String(format: "%.1fs", Date().timeIntervalSince(start)) }
+    var newSpringBoard: pid_t?
+    while Date().timeIntervalSince(start) < 60 {
+      if let pid = try await springBoardPid(), pid != deadSpringBoard {
+        newSpringBoard = pid
+        break
+      }
+      try await Task.sleep(nanoseconds: 250 * NSEC_PER_MSEC)
+    }
+    record("\(elapsed()) springboard replaced: \(newSpringBoard.map { "\($0)" } ?? "not within 60s")")
+    _ = try XCTUnwrap(newSpringBoard, "launchd relaunches SpringBoard")
+
+    var recovered: AXElementSnapshot?
+    while Date().timeIntervalSince(start) < 90 {
+      let root = await observe()
+      var live = false
+      if let root {
+        live = try await launchCtl.processIsRunning(withProcessIdentifier: root.pid)
+      }
+      record("\(elapsed()) root " + (root.map { "pid=\($0.pid) live=\(live) frame=\($0.frame) children=\($0.children.count)" } ?? "none"))
+      if let root, live, root.pid != deadSpringBoard, root.frame != .zero {
+        recovered = root
+        break
+      }
+      try await Task.sleep(nanoseconds: 500 * NSEC_PER_MSEC)
+    }
+    XCTAssertNotNil(recovered, "a frontmost read reaches a live root again without restarting CoreSimulatorBridge")
+  }
+
   private static let comparedKeys = AXKeys.defaultSet.union([.expanded, .placeholder, .hidden, .focused])
 
   /// Asserts `actual` reports what `expected` does. The application may still be settling, so the comparison
