@@ -8,28 +8,32 @@
 import CoreMedia
 @testable import FBControlCore
 @testable import FBVideoCore
-import XCTest
+import Foundation
+import Testing
 
 /// `DataConsumer.hasCapacityForFrame`: async consumers report overflow, sync consumers never do.
-final class ConsumerBackpressureTests: XCTestCase {
+@Suite
+struct ConsumerBackpressureTests {
 
-  func testHasCapacityWhenNotOverflown() {
+  @Test
+  func hasCapacityWhenNotOverflown() {
     let consumer = FBDataBuffer.accumulatingBuffer()
     let logger = ControlCoreLoggerDouble()
 
     // AccumulatingBuffer does not queue, so it always has capacity.
-    XCTAssertTrue(consumer.hasCapacityForFrame(logger: logger))
+    #expect(consumer.hasCapacityForFrame(logger: logger))
   }
 
-  func testHasNoCapacityWhenOverflown() {
+  @Test
+  func hasNoCapacityWhenOverflown() {
     let consumer = OverflownConsumerDouble()
     let logger = ControlCoreLoggerDouble()
 
     consumer.setUnprocessedDataCount(0)
-    XCTAssertTrue(consumer.hasCapacityForFrame(logger: logger))
+    #expect(consumer.hasCapacityForFrame(logger: logger))
 
     // MaxAllowedUnprocessedDataCounts is 2; > 2 triggers drop
     consumer.setUnprocessedDataCount(3)
-    XCTAssertFalse(consumer.hasCapacityForFrame(logger: logger))
+    #expect(!consumer.hasCapacityForFrame(logger: logger))
   }
 }
