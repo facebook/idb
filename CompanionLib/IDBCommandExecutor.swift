@@ -559,16 +559,6 @@ public final class IDBCommandExecutor {
     }
   }
 
-  func pullFile(_ path: String, containerType: String?) async throws -> Data {
-    return try await temporaryDirectory.withTemporaryDirectory { url in
-      let tempPath = (url.path as NSString).appendingPathComponent((path as NSString).lastPathComponent)
-      try await self.withFileContainer(for: containerType) { container in
-        _ = try await container.copy(fromContainer: path, toHost: tempPath)
-      }
-      return try await ArchiveOperations.createGzippedTarData(forPath: tempPath, logger: self.target.logger)
-    }
-  }
-
   public func tail(_ path: String, to_consumer consumer: DataConsumer, in_container containerType: String?) async throws -> FileContainerTailOperation {
     return try await withFileContainer(for: containerType) { container in
       try await container.tail(path, to: consumer)
