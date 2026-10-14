@@ -85,7 +85,7 @@ final class XCTestReporterDouble: XCTestReporter {
 
   func processUnderTestDidExit() {}
 
-  func testCaseDidFinish(forTestClass testClass: String, method: String, with status: FBTestReportStatus, duration: TimeInterval, logs: [String]?) {
+  func testCaseDidFinish(forTestClass testClass: String, method: String, with status: TestReportStatus, duration: TimeInterval, logs: [String]?) {
     let pairs = [testClass, method]
     switch status {
     case .passed:

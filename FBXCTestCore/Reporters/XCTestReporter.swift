@@ -19,7 +19,7 @@ public protocol XCTestReporter: AnyObject {
 
   func testSuite(_ testSuite: String, didStartAt startTime: String)
 
-  func testCaseDidFinish(forTestClass testClass: String, method: String, with status: FBTestReportStatus, duration: TimeInterval, logs: [String]?)
+  func testCaseDidFinish(forTestClass testClass: String, method: String, with status: TestReportStatus, duration: TimeInterval, logs: [String]?)
 
   func testCaseDidFail(forTestClass testClass: String, method: String, exceptions: [TestExceptionInfo])
 

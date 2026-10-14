@@ -8,7 +8,7 @@
 import Foundation
 
 /// The outcome of a test case.
-@objc public enum FBTestReportStatus: UInt {
+@objc public enum TestReportStatus: UInt {
   case unknown = 0
   case passed = 1
   case failed = 2
@@ -79,7 +79,7 @@ import Foundation
       && finishTime == other.finishTime
   }
 
-  @objc public static func status(forStatusString statusString: String) -> FBTestReportStatus {
+  @objc public static func status(forStatusString statusString: String) -> TestReportStatus {
     if statusString == "passed" {
       return .passed
     } else if statusString == "failed" {
@@ -88,7 +88,7 @@ import Foundation
     return .unknown
   }
 
-  public static func statusString(for status: FBTestReportStatus) -> String {
+  public static func statusString(for status: TestReportStatus) -> String {
     switch status {
     case .passed:
       return "Passed"

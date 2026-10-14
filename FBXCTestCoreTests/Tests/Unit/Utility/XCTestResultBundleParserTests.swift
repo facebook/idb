@@ -16,7 +16,7 @@ private final class RecordingReporter: XCTestReporter, @unchecked Sendable {
   enum Event: Equatable {
     case started(testClass: String, method: String)
     case failed(testClass: String, method: String, messages: [String])
-    case finished(testClass: String, method: String, status: FBTestReportStatus, duration: TimeInterval, logs: [String])
+    case finished(testClass: String, method: String, status: TestReportStatus, duration: TimeInterval, logs: [String])
     case testPlanFailed(message: String)
   }
 
@@ -30,7 +30,7 @@ private final class RecordingReporter: XCTestReporter, @unchecked Sendable {
     events.append(.failed(testClass: testClass, method: method, messages: exceptions.map(\.message)))
   }
 
-  func testCaseDidFinish(forTestClass testClass: String, method: String, with status: FBTestReportStatus, duration: TimeInterval, logs: [String]?) {
+  func testCaseDidFinish(forTestClass testClass: String, method: String, with status: TestReportStatus, duration: TimeInterval, logs: [String]?) {
     events.append(.finished(testClass: testClass, method: method, status: status, duration: duration, logs: logs ?? []))
   }
 

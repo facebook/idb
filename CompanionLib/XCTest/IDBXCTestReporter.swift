@@ -133,7 +133,7 @@ final class IDBXCTestReporter: XCTestReporter, DataConsumer, @unchecked Sendable
     _currentInfo.sync { $0.bundleName = testSuite }
   }
 
-  func testCaseDidFinish(forTestClass testClass: String, method: String, with status: FBTestReportStatus, duration: TimeInterval, logs: [String]?) {
+  func testCaseDidFinish(forTestClass testClass: String, method: String, with status: TestReportStatus, duration: TimeInterval, logs: [String]?) {
     do {
       let info = try createRunInfo(testClass: testClass, method: method, status: status, duration: duration, logs: logs ?? [])
       write(testRunInfo: info)
@@ -202,7 +202,7 @@ final class IDBXCTestReporter: XCTestReporter, DataConsumer, @unchecked Sendable
 
   // MARK: - Privates
 
-  private func createRunInfo(testClass: String, method: String, status: FBTestReportStatus, duration: TimeInterval, logs: [String]) throws -> Idb_XctestRunResponse.TestRunInfo {
+  private func createRunInfo(testClass: String, method: String, status: TestReportStatus, duration: TimeInterval, logs: [String]) throws -> Idb_XctestRunResponse.TestRunInfo {
 
     defer { resetCurrentTestState() }
 

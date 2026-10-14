@@ -19,7 +19,7 @@ protocol TestManagerReportSink: AnyObject {
 
   func testCaseDidFail(forTestClass testClass: String, method: String, exceptions: [TestExceptionInfo])
 
-  func testCaseDidFinish(forTestClass testClass: String, method: String, with status: FBTestReportStatus, duration: TimeInterval, logs: [String]?)
+  func testCaseDidFinish(forTestClass testClass: String, method: String, with status: TestReportStatus, duration: TimeInterval, logs: [String]?)
 
   func finished(with summary: TestManagerResultSummary)
 
@@ -55,7 +55,7 @@ final class XCTestReporterSink: NSObject, TestManagerReportSink {
     reporter.testCaseDidFail(forTestClass: testClass, method: method, exceptions: exceptions)
   }
 
-  func testCaseDidFinish(forTestClass testClass: String, method: String, with status: FBTestReportStatus, duration: TimeInterval, logs: [String]?) {
+  func testCaseDidFinish(forTestClass testClass: String, method: String, with status: TestReportStatus, duration: TimeInterval, logs: [String]?) {
     reporter.testCaseDidFinish(forTestClass: testClass, method: method, with: status, duration: duration, logs: logs)
   }
 

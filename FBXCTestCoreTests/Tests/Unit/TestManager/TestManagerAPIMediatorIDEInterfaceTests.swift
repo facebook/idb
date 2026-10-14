@@ -38,7 +38,7 @@ private final class RecordingReportSink: NSObject, TestManagerReportSink {
     self.exceptions.append(contentsOf: exceptions)
   }
 
-  func testCaseDidFinish(forTestClass testClass: String, method: String, with status: FBTestReportStatus, duration: TimeInterval, logs: [String]?) {
+  func testCaseDidFinish(forTestClass testClass: String, method: String, with status: TestReportStatus, duration: TimeInterval, logs: [String]?) {
     events.append("caseFinish:\(testClass)/\(method):\(status.rawValue):\(duration):\(logs ?? ["nil"])")
   }
 
@@ -222,7 +222,7 @@ struct TestManagerAPIMediatorIDEInterfaceTests {
         "planStart",
         "suiteStart:Suite:12:00",
         "caseStart:Class/testMethod",
-        "caseFinish:Class/testMethod:\(FBTestReportStatus.passed.rawValue):1.5:[]",
+        "caseFinish:Class/testMethod:\(TestReportStatus.passed.rawValue):1.5:[]",
         "planFinish",
       ])
   }
@@ -257,7 +257,7 @@ struct TestManagerAPIMediatorIDEInterfaceTests {
     #expect(
       reporter.events == [
         "caseStart:Class/testMethod",
-        "caseFinish:Class/testMethod:\(FBTestReportStatus.failed.rawValue):0.25:[]",
+        "caseFinish:Class/testMethod:\(TestReportStatus.failed.rawValue):0.25:[]",
       ])
   }
 

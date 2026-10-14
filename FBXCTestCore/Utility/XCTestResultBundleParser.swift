@@ -215,7 +215,7 @@ final class XCTestResultBundleParser {
   }
 
   /// The word a test's closing log line uses for how it ended.
-  private static func logOutcome(_ testStatus: String, _ status: FBTestReportStatus) -> String {
+  private static func logOutcome(_ testStatus: String, _ status: TestReportStatus) -> String {
     if status == .passed {
       return "passed"
     }
@@ -248,7 +248,7 @@ final class XCTestResultBundleParser {
     let testMethodName = try testMethod.string("TestIdentifier")
     let duration = try testMethod.double("Duration")
 
-    var status = FBTestReportStatus.unknown
+    var status = TestReportStatus.unknown
     if testStatus == "Success" {
       status = .passed
     }
@@ -369,7 +369,7 @@ final class XCTestResultBundleParser {
     let testMethodIdentifier = testMethod.unwrappedString("identifier", logger: logger) ?? ""
     let duration = number(from: testMethod.unwrappedValue("duration", logger: logger)) ?? 0
 
-    var status = FBTestReportStatus.unknown
+    var status = TestReportStatus.unknown
     if testStatus == "Success" {
       status = .passed
     }
