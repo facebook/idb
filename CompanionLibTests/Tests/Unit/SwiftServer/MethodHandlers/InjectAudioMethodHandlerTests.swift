@@ -20,6 +20,56 @@ final class InjectAudioMethodHandlerTests {
 
   deinit { temporaryDirectory.cleanOnExit() }
 
+  @Test(arguments: [
+    (
+      SimulatorAudioError.injectionAlreadyRunning(udid: "U"), RPCError.Code.failedPrecondition,
+      "Another audio injection is already playing into simulator U. Injections mix into one microphone input, so they are played one at a time; wait for the first to finish."
+    ),
+    (.injectionUnreadable(path: "/a.wav"), .invalidArgument, "Could not read /a.wav as audio to inject. It must be a 16-bit PCM WAV file."),
+    (
+      .injectionFileUnreadable(path: "/a.wav", reason: "gone"), .invalidArgument,
+      "Could not open /a.wav: gone. Nothing was read, so this says nothing about whether the file is audio the simulator could play."
+    ),
+    (
+      .injectionFileTooLarge(path: "/a.wav", size: 9, maximum: 8), .invalidArgument,
+      "Could not inject /a.wav because it is 9 bytes; the maximum audio payload is 8 bytes."
+    ),
+    (
+      .injectionShimMissing(item: "libShimulator-iOS.dylib"), .internalError,
+      "The companion is missing libShimulator-iOS.dylib from its Resources directory, so audio injection cannot be prepared."
+    ),
+    (
+      .injectionUnclaimed(udid: "U", preparationFailure: nil), .failedPrecondition,
+      "Nothing in simulator U picked the audio up within 10 seconds. Launch the app under test through idb so microphone injection is prepared at process startup, have it start recording, and inject again. An already-running app cannot be armed without a relaunch."
+    ),
+    (
+      .injectionUnclaimed(udid: "U", preparationFailure: "no shim"), .failedPrecondition,
+      "Nothing in simulator U picked the audio up within 10 seconds. The last app launch through idb could not be prepared for microphone injection, so it could not hear injected audio: no shim. Launch the app under test through idb so microphone injection is prepared at process startup, have it start recording, and inject again. An already-running app cannot be armed without a relaunch."
+    ),
+    (
+      .injectionDidNotFinish(udid: "U"), .failedPrecondition,
+      "The audio injected into simulator U started playing but never finished. An app hears injected audio only while it is recording: if it stopped recording part-way through, the rest of the audio has nowhere to go."
+    ),
+    (.injectionSocketUnavailable(path: "/s.sock", reason: "busy"), .internalError, "Could not serve audio injection at /s.sock: busy"),
+    (
+      .injectionUnsupportedPlatform(udid: "U"), .failedPrecondition,
+      "Audio injection supports iPhone and iPad simulators. Simulator U is neither, and the shim is built for the iOS simulator only."
+    ),
+    (
+      .injectionFailedInGuest(udid: "U", process: "App", reason: "denied"), .failedPrecondition,
+      "App in simulator U rejected the audio injection. Guest error: denied"
+    ),
+    (
+      .injectionArmingFailed(udid: "U", stderr: "launchctl failed"), .internalError,
+      "Could not prepare an app's microphone-injection environment on simulator U: launchctl failed"
+    ),
+  ])
+  func everyInjectionFailureEndsTheRPCWithItsStatusAndMessage(_ error: SimulatorAudioError, _ code: RPCError.Code, _ message: String) {
+    let rpcError = InjectAudioMethodHandler.rpcError(for: error)
+    #expect(rpcError.code == code)
+    #expect(rpcError.message == message)
+  }
+
   @Test
   func mapsExpectedAudioFailuresToClientStatuses() {
     #expect(InjectAudioMethodHandler.rpcError(for: .injectionUnreadable(path: "/tmp/not.wav")).code == .invalidArgument)
