@@ -5,9 +5,59 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+import FBControlCore
 import FBSimulatorControl
 import GRPCCore
 import IDBGRPCSwift
+
+struct FocusMethodHandler {
+
+  let commandExecutor: IDBCommandExecutor
+
+  func handle(request: Idb_FocusRequest, context: ServerContext) async throws -> Idb_FocusResponse {
+    try await commandExecutor.focus()
+    return .init()
+  }
+}
+
+struct OpenUrlMethodHandler {
+
+  let commandExecutor: IDBCommandExecutor
+
+  func handle(request: Idb_OpenUrlRequest, context: ServerContext) async throws -> Idb_OpenUrlRequest {
+    try await commandExecutor.open_url(request.url)
+    return .init()
+  }
+}
+
+struct SetLocationMethodHandler {
+
+  let commandExecutor: IDBCommandExecutor
+
+  func handle(request: Idb_SetLocationRequest, context: ServerContext) async throws -> Idb_SetLocationResponse {
+    try await commandExecutor.set_location(request.location.latitude, longitude: request.location.longitude)
+    return .init()
+  }
+}
+
+struct SimulateMemoryWarningMethodHandler {
+
+  let commandExecutor: IDBCommandExecutor
+
+  func handle(request: Idb_SimulateMemoryWarningRequest, context: ServerContext) async throws -> Idb_SimulateMemoryWarningResponse {
+    try await commandExecutor.simulateMemoryWarning()
+    return .init()
+  }
+}
+
+struct HingeAngleMethodHandler {
+  let commandExecutor: IDBCommandExecutor
+
+  func handle(request: Idb_HingeAngleRequest, context: ServerContext) async throws -> Idb_HingeAngleResponse {
+    let angle = try await commandExecutor.hinge_angle()
+    return .with { $0.angle = angle }
+  }
+}
 
 struct OrientationMethodHandler {
   let commandExecutor: IDBCommandExecutor
