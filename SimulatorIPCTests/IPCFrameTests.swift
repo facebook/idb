@@ -7,21 +7,21 @@
 
 import Foundation
 import SimulatorIPC
-import XCTest
+import Testing
 
-final class IPCFrameTests: XCTestCase {
-  func testFrameBoundsAreIdenticalInBothDirections() throws {
-    XCTAssertEqual(try IPCFrame.header(forSize: 258), Data([0, 0, 1, 2]))
+@Suite
+struct IPCFrameTests {
+  @Test
+  func frameBoundsAreIdenticalInBothDirections() throws {
+    #expect(try IPCFrame.header(forSize: 258) == Data([0, 0, 1, 2]))
     for size in [1, IPCFrame.maximumSize] {
-      XCTAssertEqual(try IPCFrame.size(fromHeader: IPCFrame.header(forSize: size)), size)
+      #expect(try IPCFrame.size(fromHeader: IPCFrame.header(forSize: size)) == size)
     }
     for size in [0, -1, IPCFrame.maximumSize + 1] {
-      XCTAssertThrowsError(try IPCFrame.header(forSize: size)) {
-        XCTAssertEqual($0 as? IPCError, .invalidFrameSize(size))
-      }
+      #expect(throws: IPCError.invalidFrameSize(size)) { try IPCFrame.header(forSize: size) }
     }
     for header in [Data(), Data([0, 0, 0]), Data([0, 0, 0, 0]), Data([1, 0, 0, 1]), Data([255, 255, 255, 255])] {
-      XCTAssertThrowsError(try IPCFrame.size(fromHeader: header))
+      #expect(throws: (any Error).self) { try IPCFrame.size(fromHeader: header) }
     }
   }
 }
