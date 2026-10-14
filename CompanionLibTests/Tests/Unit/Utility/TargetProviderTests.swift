@@ -56,7 +56,7 @@ struct TargetProviderTests {
     let target = try await TargetProvider.target(
       withUDID: "first", makingTargetSets: [log.maker("simulators", targets: ["first": mac]), log.maker("devices")], warmUp: false, logger: logger)
     #expect(target is MacDevice)
-    #expect(log.names == ["simulators", "devices"])
+    #expect(log.names == ["simulators"])
   }
 
   @Test func resolvingAUDIDALaterSetHoldsCreatesTheSetsBeforeIt() async throws {
@@ -89,6 +89,6 @@ struct TargetProviderTests {
     let target = try await TargetProvider.target(
       withUDID: "mac", makingTargetSets: [log.maker("simulators"), log.maker("devices")], warmUp: false, logger: logger)
     #expect(target is MacDevice)
-    #expect(log.names == ["simulators", "devices"])
+    #expect(log.names == [])
   }
 }

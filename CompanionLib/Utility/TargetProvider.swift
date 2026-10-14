@@ -45,11 +45,26 @@ public typealias TargetSetMaker = () async throws -> any TargetSet
 
 public final class TargetProvider {
 
-  /// Resolves `udid` against the target sets `makers` create, in order.
+  /// Resolves `udid` against the target sets `makers` create, in order, creating a set only when
+  /// the sets before it cannot resolve the UDID. Resolving the sole or sole booted target needs
+  /// every set, so creates them all; resolving the Mac needs none.
   public static func target(withUDID udid: String, makingTargetSets makers: [TargetSetMaker], warmUp: Bool, logger: ControlCoreLogger) async throws -> CompanionTarget {
     var targetSets: [TargetSet] = []
-    for make in makers {
-      targetSets.append(try await make())
+    switch udid.lowercased() {
+    case "only", "booted":
+      for make in makers {
+        targetSets.append(try await make())
+      }
+    case "mac":
+      break
+    default:
+      for make in makers {
+        let targetSet = try await make()
+        targetSets.append(targetSet)
+        if targetSet.target(withUDID: udid) != nil {
+          break
+        }
+      }
     }
     return try target(withUDID: udid, targetSets: targetSets, warmUp: warmUp, logger: logger)
   }
