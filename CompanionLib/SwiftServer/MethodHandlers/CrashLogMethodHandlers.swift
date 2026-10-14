@@ -15,7 +15,7 @@ struct CrashListMethodHandler {
 
   func handle(request: Idb_CrashLogQuery, context: ServerContext) async throws -> Idb_CrashLogResponse {
     let predicate = CrashLogQueryTranslation.predicate(from: request)
-    let crashes = try await commandExecutor.crash_list(predicate)
+    let crashes = try await commandExecutor.crashList(predicate)
     return Idb_CrashLogResponse.with {
       $0.list = crashes.map(CrashLogInfoTranslation.responseCrashLogInfo(from:))
     }
@@ -32,7 +32,7 @@ struct CrashShowMethodHandler {
     }
 
     let predicate = CrashLogPredicate.name(request.name)
-    let crash = try await commandExecutor.crash_show(predicate)
+    let crash = try await commandExecutor.crashShow(predicate)
     return .with {
       $0.info = CrashLogInfoTranslation.responseCrashLogInfo(from: crash.info)
       $0.contents = crash.contents
@@ -46,7 +46,7 @@ struct CrashDeleteMethodHandler {
 
   func handle(request: Idb_CrashLogQuery, context: ServerContext) async throws -> Idb_CrashLogResponse {
     let predicate = CrashLogQueryTranslation.predicate(from: request)
-    let crashes = try await commandExecutor.crash_delete(predicate)
+    let crashes = try await commandExecutor.crashDelete(predicate)
     return .with {
       $0.list = crashes.map(CrashLogInfoTranslation.responseCrashLogInfo(from:))
     }
