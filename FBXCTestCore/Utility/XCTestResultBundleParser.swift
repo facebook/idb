@@ -121,7 +121,7 @@ private func number(from value: Any?) -> Double? {
   return (value as? String).flatMap(Double.init)
 }
 
-private let FBXCTestResultBundleParser_dateFormatter: DateFormatter = {
+private let resultBundleDateFormatter: DateFormatter = {
   let formatter = DateFormatter()
   formatter.locale = Locale(identifier: "en_US_POSIX")
   formatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ss.SSSZ"
@@ -129,7 +129,7 @@ private let FBXCTestResultBundleParser_dateFormatter: DateFormatter = {
 }()
 
 private func dateFromString(_ date: String) -> Date? {
-  return FBXCTestResultBundleParser_dateFormatter.date(from: date)
+  return resultBundleDateFormatter.date(from: date)
 }
 
 enum XCTestResultBundleError: Error {
