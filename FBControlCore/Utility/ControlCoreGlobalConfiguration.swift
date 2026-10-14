@@ -7,14 +7,14 @@
 
 import Foundation
 
-/// Environment variable; when truthy, the default logger mirrors its output to stderr.
-public let FBControlCoreStderrLogging = "FBCONTROLCORE_LOGGING"
-/// Environment variable; when truthy, the default logger emits debug-level output.
-public let FBControlCoreDebugLogging = "FBCONTROLCORE_DEBUG_LOGGING"
-
 private let ConfirmShimsAreSignedEnv = "FBCONTROLCORE_CONFIRM_SIGNED_SHIMS"
 
 public enum ControlCoreGlobalConfiguration {
+
+  /// Environment variable; when truthy, the default logger mirrors its output to stderr.
+  public static let stderrLoggingEnvironmentVariable = "FBCONTROLCORE_LOGGING"
+  /// Environment variable; when truthy, the default logger emits debug-level output.
+  public static let debugLoggingEnvironmentVariable = "FBCONTROLCORE_DEBUG_LOGGING"
 
   // Guarded by _loggerLock.
   nonisolated(unsafe) private static var _logger: (any ControlCoreLogger)?
@@ -75,12 +75,12 @@ public enum ControlCoreGlobalConfiguration {
   }
 
   private static var stderrLoggingEnabledByDefault: Bool {
-    guard let value = ProcessInfo.processInfo.environment[FBControlCoreStderrLogging] else { return false }
+    guard let value = ProcessInfo.processInfo.environment[stderrLoggingEnvironmentVariable] else { return false }
     return (value as NSString).boolValue
   }
 
   private static var debugLoggingEnabledByDefault: Bool {
-    guard let value = ProcessInfo.processInfo.environment[FBControlCoreDebugLogging] else { return false }
+    guard let value = ProcessInfo.processInfo.environment[debugLoggingEnvironmentVariable] else { return false }
     return (value as NSString).boolValue
   }
 }

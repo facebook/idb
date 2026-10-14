@@ -37,11 +37,11 @@ final class SimulatorBootTestCase: XCTestCase {
 
   override class func setUp() {
     super.setUp()
-    if ProcessInfo.processInfo.environment[FBControlCoreStderrLogging] == nil {
-      setenv(FBControlCoreStderrLogging, "YES", 1)
+    if ProcessInfo.processInfo.environment[ControlCoreGlobalConfiguration.stderrLoggingEnvironmentVariable] == nil {
+      setenv(ControlCoreGlobalConfiguration.stderrLoggingEnvironmentVariable, "YES", 1)
     }
-    if ProcessInfo.processInfo.environment[FBControlCoreDebugLogging] == nil {
-      setenv(FBControlCoreDebugLogging, "NO", 1)
+    if ProcessInfo.processInfo.environment[ControlCoreGlobalConfiguration.debugLoggingEnvironmentVariable] == nil {
+      setenv(ControlCoreGlobalConfiguration.debugLoggingEnvironmentVariable, "NO", 1)
     }
     ControlCoreGlobalConfiguration.defaultLogger.log("Current Configuration => \(ControlCoreGlobalConfiguration.description)")
   }
