@@ -6,10 +6,12 @@
  */
 
 @testable import FBSimulatorControl
-import XCTest
+import Foundation
+import Testing
 import XPC
 
-final class XPCEncoderTests: XCTestCase {
+@Suite
+struct XPCEncoderTests {
 
   private enum Phase: UInt64, Encodable {
     case start = 0
@@ -31,7 +33,8 @@ final class XPCEncoderTests: XCTestCase {
     let optional: Point?
   }
 
-  func testDataUsesNativeXPCDataAtRootAndInSingleValueContainer() throws {
+  @Test
+  func dataUsesNativeXPCDataAtRootAndInSingleValueContainer() throws {
     struct WrappedData: Encodable {
       let data: Data
       func encode(to encoder: Encoder) throws {
@@ -41,59 +44,62 @@ final class XPCEncoderTests: XCTestCase {
     }
     for data in [Data(), Data([0, 255, 1, 0])] {
       for encoded in [try XPCEncoder().encode(data), try XPCEncoder().encode(WrappedData(data: data))] {
-        XCTAssertEqual(xpc_get_type(encoded), XPC_TYPE_DATA)
-        XCTAssertEqual(xpc_data_get_length(encoded), data.count)
+        #expect(xpc_get_type(encoded) == XPC_TYPE_DATA)
+        #expect(xpc_data_get_length(encoded) == data.count)
         if !data.isEmpty {
-          XCTAssertEqual(Data(bytes: xpc_data_get_bytes_ptr(encoded)!, count: data.count), data)
+          #expect(Data(bytes: xpc_data_get_bytes_ptr(encoded)!, count: data.count) == data)
         }
       }
     }
   }
 
-  func testEncodesScalarsNestedAndOmitsNilOptionals() throws {
+  @Test
+  func encodesScalarsNestedAndOmitsNilOptionals() throws {
     let object = try XPCEncoder().encode(
       Sample(name: "hello", flag: false, count: 7, phase: .end, point: Point(x: 0.25, y: 0.75), optional: nil))
 
-    XCTAssertEqual(xpc_get_type(object), XPC_TYPE_DICTIONARY)
-    XCTAssertEqual(String(cString: xpc_dictionary_get_string(object, "name")!), "hello")
+    #expect(xpc_get_type(object) == XPC_TYPE_DICTIONARY)
+    #expect(String(cString: xpc_dictionary_get_string(object, "name")!) == "hello")
 
-    XCTAssertEqual(xpc_get_type(xpc_dictionary_get_value(object, "flag")!), XPC_TYPE_BOOL)
-    XCTAssertFalse(xpc_dictionary_get_bool(object, "flag"))
+    #expect(xpc_get_type(xpc_dictionary_get_value(object, "flag")!) == XPC_TYPE_BOOL)
+    #expect(!xpc_dictionary_get_bool(object, "flag"))
 
-    XCTAssertEqual(xpc_get_type(xpc_dictionary_get_value(object, "count")!), XPC_TYPE_UINT64)
-    XCTAssertEqual(xpc_dictionary_get_uint64(object, "count"), 7)
+    #expect(xpc_get_type(xpc_dictionary_get_value(object, "count")!) == XPC_TYPE_UINT64)
+    #expect(xpc_dictionary_get_uint64(object, "count") == 7)
 
     // A UInt64-raw enum encodes as a uint64 — the wire type follows the model's type.
-    XCTAssertEqual(xpc_get_type(xpc_dictionary_get_value(object, "phase")!), XPC_TYPE_UINT64)
-    XCTAssertEqual(xpc_dictionary_get_uint64(object, "phase"), 2)
+    #expect(xpc_get_type(xpc_dictionary_get_value(object, "phase")!) == XPC_TYPE_UINT64)
+    #expect(xpc_dictionary_get_uint64(object, "phase") == 2)
 
     let point = xpc_dictionary_get_dictionary(object, "point")!
-    XCTAssertEqual(xpc_dictionary_get_double(point, "x"), 0.25, accuracy: 1e-9)
-    XCTAssertEqual(xpc_dictionary_get_double(point, "y"), 0.75, accuracy: 1e-9)
+    #expect(abs(xpc_dictionary_get_double(point, "x") - 0.25) <= 1e-9)
+    #expect(abs(xpc_dictionary_get_double(point, "y") - 0.75) <= 1e-9)
 
-    XCTAssertNil(xpc_dictionary_get_value(object, "optional"))
+    #expect(xpc_dictionary_get_value(object, "optional") == nil)
   }
 
-  func testEncodesPresentOptional() throws {
+  @Test
+  func encodesPresentOptional() throws {
     let object = try XPCEncoder().encode(
       Sample(name: "x", flag: true, count: 0, phase: .start, point: Point(x: 0, y: 0), optional: Point(x: 1, y: 2)))
-    XCTAssertTrue(xpc_dictionary_get_bool(object, "flag"))
+    #expect(xpc_dictionary_get_bool(object, "flag"))
     let optional = xpc_dictionary_get_dictionary(object, "optional")
-    XCTAssertNotNil(optional)
-    XCTAssertEqual(xpc_dictionary_get_double(optional!, "x"), 1, accuracy: 1e-9)
+    #expect(optional != nil)
+    #expect(abs(xpc_dictionary_get_double(optional!, "x") - 1) <= 1e-9)
   }
 
-  func testEncodesDTUHIDMessageEnvelope() throws {
+  @Test
+  func encodesDTUHIDMessageEnvelope() throws {
     let object = try XPCEncoder().encode(
       DTUHIDMessage(messageType: "TestEvent", featureIdentifier: "com.example.feature", payload: Point(x: 0.5, y: 0.5)))
 
-    XCTAssertEqual(String(cString: xpc_dictionary_get_string(object, "messageType")!), "TestEvent")
-    XCTAssertEqual(String(cString: xpc_dictionary_get_string(object, "featureIdentifier")!), "com.example.feature")
-    XCTAssertEqual(xpc_get_type(xpc_dictionary_get_value(object, "isBarrier")!), XPC_TYPE_BOOL)
-    XCTAssertFalse(xpc_dictionary_get_bool(object, "isBarrier"))
+    #expect(String(cString: xpc_dictionary_get_string(object, "messageType")!) == "TestEvent")
+    #expect(String(cString: xpc_dictionary_get_string(object, "featureIdentifier")!) == "com.example.feature")
+    #expect(xpc_get_type(xpc_dictionary_get_value(object, "isBarrier")!) == XPC_TYPE_BOOL)
+    #expect(!xpc_dictionary_get_bool(object, "isBarrier"))
 
     let payload = xpc_dictionary_get_dictionary(object, "payload")!
-    XCTAssertEqual(xpc_dictionary_get_double(payload, "x"), 0.5, accuracy: 1e-9)
+    #expect(abs(xpc_dictionary_get_double(payload, "x") - 0.5) <= 1e-9)
   }
 
   // MARK: - Arrays
@@ -105,49 +111,52 @@ final class XPCEncoderTests: XCTestCase {
     let names: [String?]
   }
 
-  func testEncodesArraysOfScalarsDictionariesAndArrays() throws {
+  @Test
+  func encodesArraysOfScalarsDictionariesAndArrays() throws {
     let object = try XPCEncoder().encode(
       Report(
         components: [651, 13, 4], points: [Point(x: 1, y: 2), Point(x: 3, y: 4)],
         matrix: [[0, 0], [2007, 2853]], names: ["a", nil, "c"]))
 
-    let components = try XCTUnwrap(xpc_dictionary_get_array(object, "components"))
-    XCTAssertEqual(xpc_array_get_count(components), 3)
+    let components = try #require(xpc_dictionary_get_array(object, "components"))
+    #expect(xpc_array_get_count(components) == 3)
     for (index, expected) in [651, 13, 4].enumerated() {
-      XCTAssertEqual(xpc_get_type(xpc_array_get_value(components, index)), XPC_TYPE_UINT64)
-      XCTAssertEqual(xpc_array_get_uint64(components, index), UInt64(expected))
+      #expect(xpc_get_type(xpc_array_get_value(components, index)) == XPC_TYPE_UINT64)
+      #expect(xpc_array_get_uint64(components, index) == UInt64(expected))
     }
 
-    let points = try XCTUnwrap(xpc_dictionary_get_array(object, "points"))
-    XCTAssertEqual(xpc_array_get_count(points), 2)
+    let points = try #require(xpc_dictionary_get_array(object, "points"))
+    #expect(xpc_array_get_count(points) == 2)
     let second = xpc_array_get_value(points, 1)
-    XCTAssertEqual(xpc_get_type(second), XPC_TYPE_DICTIONARY)
-    XCTAssertEqual(xpc_dictionary_get_double(second, "y"), 4, accuracy: 1e-9)
+    #expect(xpc_get_type(second) == XPC_TYPE_DICTIONARY)
+    #expect(abs(xpc_dictionary_get_double(second, "y") - 4) <= 1e-9)
 
-    let matrix = try XCTUnwrap(xpc_dictionary_get_array(object, "matrix"))
+    let matrix = try #require(xpc_dictionary_get_array(object, "matrix"))
     let row = xpc_array_get_value(matrix, 1)
-    XCTAssertEqual(xpc_get_type(row), XPC_TYPE_ARRAY)
-    XCTAssertEqual(xpc_get_type(xpc_array_get_value(row, 0)), XPC_TYPE_DOUBLE)
-    XCTAssertEqual(xpc_array_get_double(row, 1), 2853, accuracy: 1e-9)
+    #expect(xpc_get_type(row) == XPC_TYPE_ARRAY)
+    #expect(xpc_get_type(xpc_array_get_value(row, 0)) == XPC_TYPE_DOUBLE)
+    #expect(abs(xpc_array_get_double(row, 1) - 2853) <= 1e-9)
 
     // A nil element keeps its slot, unlike a nil keyed property which is omitted.
-    let names = try XCTUnwrap(xpc_dictionary_get_array(object, "names"))
-    XCTAssertEqual(xpc_array_get_count(names), 3)
-    XCTAssertEqual(xpc_get_type(xpc_array_get_value(names, 1)), XPC_TYPE_NULL)
-    XCTAssertEqual(String(cString: xpc_array_get_string(names, 2)!), "c")
+    let names = try #require(xpc_dictionary_get_array(object, "names"))
+    #expect(xpc_array_get_count(names) == 3)
+    #expect(xpc_get_type(xpc_array_get_value(names, 1)) == XPC_TYPE_NULL)
+    #expect(String(cString: xpc_array_get_string(names, 2)!) == "c")
   }
 
-  func testEncodesAnArrayAtTheRoot() throws {
+  @Test
+  func encodesAnArrayAtTheRoot() throws {
     let object = try XPCEncoder().encode([true, false])
-    XCTAssertEqual(xpc_get_type(object), XPC_TYPE_ARRAY)
-    XCTAssertEqual(xpc_array_get_count(object), 2)
-    XCTAssertTrue(xpc_array_get_bool(object, 0))
-    XCTAssertFalse(xpc_array_get_bool(object, 1))
+    #expect(xpc_get_type(object) == XPC_TYPE_ARRAY)
+    #expect(xpc_array_get_count(object) == 2)
+    #expect(xpc_array_get_bool(object, 0))
+    #expect(!xpc_array_get_bool(object, 1))
   }
 
   /// CoreDevice encodes a duration as `[int64 high, uint64 low]`, which only a hand-written unkeyed
   /// encode can express; the wire type of each element follows the Swift type it was encoded as.
-  func testUnkeyedContainerPreservesEachElementsWireType() throws {
+  @Test
+  func unkeyedContainerPreservesEachElementsWireType() throws {
     struct Interval: Encodable {
       func encode(to encoder: Encoder) throws {
         var container = encoder.unkeyedContainer()
@@ -156,29 +165,30 @@ final class XPCEncoderTests: XCTestCase {
       }
     }
     let object = try XPCEncoder().encode(Interval())
-    XCTAssertEqual(xpc_get_type(object), XPC_TYPE_ARRAY)
-    XCTAssertEqual(xpc_get_type(xpc_array_get_value(object, 0)), XPC_TYPE_INT64)
-    XCTAssertEqual(xpc_get_type(xpc_array_get_value(object, 1)), XPC_TYPE_UINT64)
-    XCTAssertEqual(xpc_array_get_uint64(object, 1), 100_000_000_000_000_000)
+    #expect(xpc_get_type(object) == XPC_TYPE_ARRAY)
+    #expect(xpc_get_type(xpc_array_get_value(object, 0)) == XPC_TYPE_INT64)
+    #expect(xpc_get_type(xpc_array_get_value(object, 1)) == XPC_TYPE_UINT64)
+    #expect(xpc_array_get_uint64(object, 1) == 100_000_000_000_000_000)
   }
 
   // MARK: - UUID
 
-  func testUUIDUsesNativeXPCUUIDAtRootAndAsAValue() throws {
+  @Test
+  func uuidUsesNativeXPCUUIDAtRootAndAsAValue() throws {
     struct Channel: Encodable {
       let sideChannel: UUID
     }
     let uuid = UUID()
     let root = try XPCEncoder().encode(uuid)
-    XCTAssertEqual(xpc_get_type(root), XPC_TYPE_UUID)
-    XCTAssertEqual(UUID(uuid: UnsafeRawPointer(xpc_uuid_get_bytes(root)!).load(as: uuid_t.self)), uuid)
+    #expect(xpc_get_type(root) == XPC_TYPE_UUID)
+    #expect(UUID(uuid: UnsafeRawPointer(xpc_uuid_get_bytes(root)!).load(as: uuid_t.self)) == uuid)
 
     let keyed = try XPCEncoder().encode(Channel(sideChannel: uuid))
-    let value = try XCTUnwrap(xpc_dictionary_get_value(keyed, "sideChannel"))
-    XCTAssertEqual(xpc_get_type(value), XPC_TYPE_UUID)
-    XCTAssertEqual(UUID(uuid: UnsafeRawPointer(xpc_uuid_get_bytes(value)!).load(as: uuid_t.self)), uuid)
+    let value = try #require(xpc_dictionary_get_value(keyed, "sideChannel"))
+    #expect(xpc_get_type(value) == XPC_TYPE_UUID)
+    #expect(UUID(uuid: UnsafeRawPointer(xpc_uuid_get_bytes(value)!).load(as: uuid_t.self)) == uuid)
 
     let listed = try XPCEncoder().encode([uuid])
-    XCTAssertEqual(xpc_get_type(xpc_array_get_value(listed, 0)), XPC_TYPE_UUID)
+    #expect(xpc_get_type(xpc_array_get_value(listed, 0)) == XPC_TYPE_UUID)
   }
 }
