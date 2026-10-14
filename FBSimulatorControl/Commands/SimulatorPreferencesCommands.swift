@@ -115,7 +115,7 @@ public struct SimulatorPreferencesCommands {
   // MARK: - Reading
 
   public func getCurrentPreference(_ name: String, domain: String?) async throws -> String {
-    try await PreferenceModificationStrategy(simulator: simulator)
+    try await SimulatorDefaults(simulator: simulator)
       .getCurrentPreference(name, domain: domain)
   }
 
@@ -255,7 +255,7 @@ public struct SimulatorPreferencesCommands {
   }
 
   private func setPreference(_ name: String, value: String, type: String?, domain: String?) async throws {
-    try await PreferenceModificationStrategy(simulator: simulator)
+    try await SimulatorDefaults(simulator: simulator)
       .setPreference(name, value: value, type: type, domain: domain)
   }
 }

@@ -234,12 +234,12 @@ public struct SimulatorPrivacyCommands {
   }
 
   private func authorizeLocationSettings(_ bundleIDs: [String]) async throws {
-    try await LocationServicesModificationStrategy(simulator: simulator)
+    try await SimulatorDefaults(simulator: simulator)
       .approveLocationServices(forBundleIDs: bundleIDs)
   }
 
   private func revokeLocationSettings(_ bundleIDs: [String]) async throws {
-    try await LocationServicesModificationStrategy(simulator: simulator)
+    try await SimulatorDefaults(simulator: simulator)
       .revokeLocationServices(forBundleIDs: bundleIDs)
   }
 

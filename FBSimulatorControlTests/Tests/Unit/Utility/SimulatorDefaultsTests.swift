@@ -11,12 +11,12 @@ import Foundation
 import Testing
 
 @Suite
-struct DefaultsModificationStrategyTests {
+struct SimulatorDefaultsTests {
 
   @Test
   func readReturnsTrimmedStdoutOnZeroExit() throws {
     let output = InSimulatorToolOutput(stdout: Data("value\n".utf8), stderr: Data(), exitCode: 0)
-    let result = try DefaultsModificationStrategy.stdout(orThrowFrom: output, command: .read(domain: "d", key: "k"), logger: nil)
+    let result = try SimulatorDefaults.stdout(orThrowFrom: output, command: .read(domain: "d", key: "k"), logger: nil)
     #expect(result == "value")
   }
 
@@ -24,21 +24,21 @@ struct DefaultsModificationStrategyTests {
   func readToleratesMissingKeyNonZeroExit() throws {
     // defaults returns 1 for a missing key/domain; a benign optional read, not a failure.
     let output = InSimulatorToolOutput(stdout: Data(), stderr: Data("does not exist\n".utf8), exitCode: 1)
-    let result = try DefaultsModificationStrategy.stdout(orThrowFrom: output, command: .read(domain: "d", key: "missing"), logger: nil)
+    let result = try SimulatorDefaults.stdout(orThrowFrom: output, command: .read(domain: "d", key: "missing"), logger: nil)
     #expect(result == "")
   }
 
   @Test
   func deleteToleratesMissingKeyNonZeroExit() throws {
     let output = InSimulatorToolOutput(stdout: Data(), stderr: Data("does not exist\n".utf8), exitCode: 1)
-    let result = try DefaultsModificationStrategy.stdout(orThrowFrom: output, command: .delete(path: "p", key: "k"), logger: nil)
+    let result = try SimulatorDefaults.stdout(orThrowFrom: output, command: .delete(path: "p", key: "k"), logger: nil)
     #expect(result == "")
   }
 
   @Test
   func writeThrowsOnNonZeroExit() throws {
     let output = InSimulatorToolOutput(stdout: Data(), stderr: Data("bad type\n".utf8), exitCode: 1)
-    let error = try #require(#expect(throws: (any Error).self) { try DefaultsModificationStrategy.stdout(orThrowFrom: output, command: .write(domain: "d", key: "k", type: "string", value: "v"), logger: nil) })
+    let error = try #require(#expect(throws: (any Error).self) { try SimulatorDefaults.stdout(orThrowFrom: output, command: .write(domain: "d", key: "k", type: "string", value: "v"), logger: nil) })
     #expect(String(describing: error).contains("exit code 1"), "got: \(String(describing: error))")
     #expect(String(describing: error).contains("bad type"), "got: \(String(describing: error))")
   }
