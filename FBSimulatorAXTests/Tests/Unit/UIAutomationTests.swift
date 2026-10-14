@@ -7,20 +7,24 @@
 
 @testable import FBSimulatorAX
 @testable import FBSimulatorControl
-import XCTest
+import Foundation
+import Testing
 
-final class UIAutomationTests: XCTestCase {
+@Suite
+struct UIAutomationTests {
 
-  func testAnchorPointIsScreenCentreInPoints() {
+  @Test
+  func anchorPointIsScreenCentreInPoints() {
     let anchor = AXBridgeUIAutomation.anchorPoint(widthPixels: 828, heightPixels: 1792, scale: 2)
-    XCTAssertEqual(anchor.x, 207, accuracy: 0.001)
-    XCTAssertEqual(anchor.y, 448, accuracy: 0.001)
+    #expect(abs(anchor.x - 207) <= 0.001)
+    #expect(abs(anchor.y - 448) <= 0.001)
   }
 
-  func testAnchorPointGuardsAgainstZeroScale() {
+  @Test
+  func anchorPointGuardsAgainstZeroScale() {
     let anchor = AXBridgeUIAutomation.anchorPoint(widthPixels: 400, heightPixels: 800, scale: 0)
-    XCTAssertEqual(anchor.x, 200, accuracy: 0.001)
-    XCTAssertEqual(anchor.y, 400, accuracy: 0.001)
+    #expect(abs(anchor.x - 200) <= 0.001)
+    #expect(abs(anchor.y - 400) <= 0.001)
   }
 
   // Which transport instance a reader is vended with decides whether the guest `serve` process is
@@ -35,60 +39,71 @@ final class UIAutomationTests: XCTestCase {
     _ simulator: Simulator, _ persistence: AXBridgePersistence
   ) throws -> SimulatorFrameworkBridgePersistentTransport {
     let reader = try simulator.uiAutomation(backend: Self.backend(persistence))
-    let bridgeReader = try XCTUnwrap(reader as? AXBridgeUIAutomation)
-    return try XCTUnwrap(bridgeReader.transport as? SimulatorFrameworkBridgePersistentTransport)
+    let bridgeReader = try #require(reader as? AXBridgeUIAutomation)
+    return try #require(bridgeReader.transport as? SimulatorFrameworkBridgePersistentTransport)
   }
 
-  func testEverySharedBackendCallSharesOneTransport() throws {
+  @Test
+  func everySharedBackendCallSharesOneTransport() throws {
     let simulator = SimulatorTestSupport.testableSimulator()
-    XCTAssertTrue(try transport(simulator, .shared) === (try transport(simulator, .shared)))
+    #expect(try transport(simulator, .shared) === (try transport(simulator, .shared)))
   }
 
-  func testEveryExclusiveBackendCallSharesOneTransport() throws {
+  @Test
+  func everyExclusiveBackendCallSharesOneTransport() throws {
     let simulator = SimulatorTestSupport.testableSimulator()
-    XCTAssertTrue(try transport(simulator, .exclusive) === (try transport(simulator, .exclusive)))
+    #expect(try transport(simulator, .exclusive) === (try transport(simulator, .exclusive)))
   }
 
   // The two scopes reach different guests, so memoization is keyed by persistence, not just by simulator.
-  func testSharedAndExclusiveDoNotShareATransport() throws {
+  @Test
+  func sharedAndExclusiveDoNotShareATransport() throws {
     let simulator = SimulatorTestSupport.testableSimulator()
-    XCTAssertFalse(try transport(simulator, .shared) === (try transport(simulator, .exclusive)))
+    #expect(try transport(simulator, .shared) !== (try transport(simulator, .exclusive)))
   }
 
-  func testTransportsAreNotSharedAcrossSimulators() throws {
+  @Test
+  func transportsAreNotSharedAcrossSimulators() throws {
     let first = try transport(SimulatorTestSupport.testableSimulator(), .shared)
     let second = try transport(SimulatorTestSupport.testableSimulator(), .shared)
-    XCTAssertFalse(first === second)
+    #expect(first !== second)
   }
 
-  func testReadersDifferingOnlyInReaderOptionsShareOneTransport() throws {
+  @Test
+  func readersDifferingOnlyInReaderOptionsShareOneTransport() throws {
     let simulator = SimulatorTestSupport.testableSimulator()
     let shared = try transport(simulator, .shared)
     let otherOptions = UIAutomationBackend.axBridge(
       persistence: .shared, frontmostMethod: .centerPoint, automationMode: nil
     )
-    let reader = try XCTUnwrap(try simulator.uiAutomation(backend: otherOptions) as? AXBridgeUIAutomation)
+    let reader = try #require(try simulator.uiAutomation(backend: otherOptions) as? AXBridgeUIAutomation)
     // `frontmostMethod` and `automationMode` are the reader's, not the transport's, so differing on
     // them must not cost a second guest.
-    XCTAssertTrue((reader.transport as? SimulatorFrameworkBridgePersistentTransport) === shared)
+    #expect((reader.transport as? SimulatorFrameworkBridgePersistentTransport) === shared)
   }
 
-  func testEachOneShotBackendCallBuildsAOneShotTransport() throws {
+  @Test
+  func eachOneShotBackendCallBuildsAOneShotTransport() throws {
     let simulator = SimulatorTestSupport.testableSimulator()
     let backend = UIAutomationBackend.axBridge(
       persistence: .oneShot, frontmostMethod: .windowServer, automationMode: true
     )
     // Two calls: the one-shot transport must be built per call, never memoized.
     for _ in 0..<2 {
-      let reader = try XCTUnwrap(try simulator.uiAutomation(backend: backend) as? AXBridgeUIAutomation)
-      XCTAssertTrue(reader.transport is AXBridgeOneshotTransport)
+      let reader = try #require(try simulator.uiAutomation(backend: backend) as? AXBridgeUIAutomation)
+      #expect(reader.transport is AXBridgeOneshotTransport)
     }
   }
 
-  func testTheAccessibilityBackendRefusesToSelectADisplay() {
+  @Test
+  func theAccessibilityBackendRefusesToSelectADisplay() {
     let simulator = SimulatorTestSupport.testableSimulator()
-    XCTAssertThrowsError(try simulator.uiAutomation(backend: .accessibility, display: .display(uniqueID: "cover"))) { error in
-      guard case UIAutomationError.operationUnsupported(backend: .accessibility, _) = error else { return XCTFail("\(error)") }
+    let error = #expect(throws: (any Error).self) {
+      try simulator.uiAutomation(backend: .accessibility, display: .display(uniqueID: "cover"))
+    }
+    guard let error, case UIAutomationError.operationUnsupported(backend: .accessibility, _) = error else {
+      Issue.record("\(String(describing: error))")
+      return
     }
   }
 }
