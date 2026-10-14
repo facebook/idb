@@ -17,18 +17,18 @@ public enum XCTestBootstrapErrorCode: Int {
   case startupTimeout = 0x5
 }
 
-/// Errors raised by the Objective-C test manager, which cannot see the Swift domain constants.
-@objc public final class XCTestBootstrapErrors: NSObject {
+/// The `NSError`s the test manager reports, in the domains above.
+public enum XCTestBootstrapErrors {
 
   /// A failure to start the test run, in `XCTestBootstrapErrorDomain`.
-  @objc public static func startupFailure(_ description: String, underlyingError: NSError?) -> NSError {
+  public static func startupFailure(_ description: String, underlyingError: NSError?) -> NSError {
     var userInfo: [String: Any] = [NSLocalizedDescriptionKey: description]
     userInfo[NSUnderlyingErrorKey] = underlyingError
     return NSError(domain: XCTestBootstrapErrorDomain, code: XCTestBootstrapErrorCode.startupFailure.rawValue, userInfo: userInfo)
   }
 
   /// A failure attributed to the test process rather than to idb, in `FBTestErrorDomain`.
-  @objc public static func testFailure(_ description: String) -> NSError {
+  public static func testFailure(_ description: String) -> NSError {
     NSError(domain: FBTestErrorDomain, code: 0, userInfo: [NSLocalizedDescriptionKey: description])
   }
 }
