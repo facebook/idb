@@ -38,3 +38,23 @@ struct ListAppsMethodHandler {
     }
   }
 }
+
+struct TerminateMethodHandler {
+
+  let commandExecutor: IDBCommandExecutor
+
+  func handle(request: Idb_TerminateRequest, context: ServerContext) async throws -> Idb_TerminateResponse {
+    try await commandExecutor.kill_application(request.bundleID)
+    return .init()
+  }
+}
+
+struct UninstallMethodHandler {
+
+  let commandExecutor: IDBCommandExecutor
+
+  func handle(request: Idb_UninstallRequest, context: ServerContext) async throws -> Idb_UninstallResponse {
+    try await commandExecutor.uninstall_application(request.bundleID)
+    return .init()
+  }
+}
