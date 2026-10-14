@@ -38,3 +38,42 @@ struct SettingMethodHandler {
     return .init()
   }
 }
+
+struct GetSettingMethodHandler {
+
+  let commandExecutor: IDBCommandExecutor
+
+  func handle(request: Idb_GetSettingRequest, context: ServerContext) async throws -> Idb_GetSettingResponse {
+    switch request.setting {
+    case .locale:
+      let localeIdentifier = try await commandExecutor.get_current_locale_identifier()
+      return .with {
+        $0.value = localeIdentifier
+      }
+    case .any:
+      let domain = request.domain.isEmpty ? nil : request.domain
+      let value = try await commandExecutor.get_preference(request.name, domain: domain)
+      return .with {
+        $0.value = value
+      }
+    case .UNRECOGNIZED:
+      throw RPCError(code: .invalidArgument, message: "Unknown setting case")
+    }
+  }
+}
+
+struct ListSettingsMethodHandler {
+
+  let commandExecutor: IDBCommandExecutor
+
+  func handle(request: Idb_ListSettingRequest, context: ServerContext) async throws -> Idb_ListSettingResponse {
+    switch request.setting {
+    case .locale:
+      return .with {
+        $0.values = commandExecutor.list_locale_identifiers()
+      }
+    case .any, .UNRECOGNIZED:
+      throw RPCError(code: .invalidArgument, message: "Unknown setting case")
+    }
+  }
+}
