@@ -287,14 +287,14 @@ final class CompanionServiceProvider: Idb_CompanionService.SimpleServiceProtocol
 
   func approve(request: Idb_ApproveRequest, context: ServerContext) async throws -> Idb_ApproveResponse {
     return try await trackedUnaryCall(context, request: request) {
-      try await ApproveMethodHandler(commandExecutor: commandExecutor)
+      try await ApproveMethodHandler(target: target)
         .handle(request: request, context: context)
     }
   }
 
   func revoke(request: Idb_RevokeRequest, context: ServerContext) async throws -> Idb_RevokeResponse {
     return try await trackedUnaryCall(context, request: request) {
-      try await RevokeMethodHandler(commandExecutor: commandExecutor)
+      try await RevokeMethodHandler(target: target)
         .handle(request: request, context: context)
     }
   }

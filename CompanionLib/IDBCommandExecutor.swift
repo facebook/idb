@@ -310,22 +310,6 @@ public final class IDBCommandExecutor {
     try await target.simulator().keychain.clear()
   }
 
-  public func approve(_ services: Set<TargetSettingsService>, forApplication bundleID: String) async throws {
-    try await target.simulator().privacy.grantAccess(Set([bundleID]), toServices: services)
-  }
-
-  public func revoke(_ services: Set<TargetSettingsService>, forApplication bundleID: String) async throws {
-    try await target.simulator().privacy.revokeAccess(Set([bundleID]), toServices: services)
-  }
-
-  public func approveDeeplink(_ scheme: String, forApplication bundleID: String) async throws {
-    try await target.simulator().privacy.grantAccess(Set([bundleID]), toDeeplink: scheme)
-  }
-
-  public func revokeDeeplink(_ scheme: String, forApplication bundleID: String) async throws {
-    try await target.simulator().privacy.revokeAccess(Set([bundleID]), toDeeplink: scheme)
-  }
-
   public func openUrl(_ url: String) async throws {
     guard let parsed = URL(string: url) else {
       throw IDBCommandError.invalidURL(urlString: url)

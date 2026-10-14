@@ -11,7 +11,7 @@ import IDBGRPCSwift
 
 struct ApproveMethodHandler {
 
-  let commandExecutor: IDBCommandExecutor
+  let target: CompanionTarget
 
   func handle(request: Idb_ApproveRequest, context: ServerContext) async throws -> Idb_ApproveResponse {
 
@@ -35,11 +35,11 @@ struct ApproveMethodHandler {
     )
     if services.contains(.url) {
       services.remove(.url)
-      try await commandExecutor.approveDeeplink(request.scheme, forApplication: request.bundleID)
+      try await target.simulator().privacy.grantAccess(Set([request.bundleID]), toDeeplink: request.scheme)
     }
 
     if !services.isEmpty {
-      try await commandExecutor.approve(services, forApplication: request.bundleID)
+      try await target.simulator().privacy.grantAccess(Set([request.bundleID]), toServices: services)
     }
     return .init()
   }
@@ -47,7 +47,7 @@ struct ApproveMethodHandler {
 
 struct RevokeMethodHandler {
 
-  let commandExecutor: IDBCommandExecutor
+  let target: CompanionTarget
 
   func handle(request: Idb_RevokeRequest, context: ServerContext) async throws -> Idb_RevokeResponse {
 
@@ -71,11 +71,11 @@ struct RevokeMethodHandler {
     )
     if services.contains(.url) {
       services.remove(.url)
-      try await commandExecutor.revokeDeeplink(request.scheme, forApplication: request.bundleID)
+      try await target.simulator().privacy.revokeAccess(Set([request.bundleID]), toDeeplink: request.scheme)
     }
 
     if !services.isEmpty {
-      try await commandExecutor.revoke(services, forApplication: request.bundleID)
+      try await target.simulator().privacy.revokeAccess(Set([request.bundleID]), toServices: services)
     }
     return .init()
   }
