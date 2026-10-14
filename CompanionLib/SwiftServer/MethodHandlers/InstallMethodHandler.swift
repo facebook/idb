@@ -29,8 +29,8 @@ struct InstallMethodHandler {
       }
       return try await InstallPercentages.reporting(to: { progress in
         try await responseStream.send(Idb_InstallResponse.with { $0.progress = progress })
-      }) { onProgress in
-        try await install(request, isCancelled: isCancelled, onProgress: onProgress)
+      }) { progressObserver in
+        try await install(request, isCancelled: isCancelled, progressObserver: progressObserver)
       }
     }
 
@@ -60,7 +60,7 @@ struct InstallMethodHandler {
   func install(
     _ request: InstallRequest,
     isCancelled: () -> Bool = { false },
-    onProgress: @escaping @Sendable (InstallProgressEvent) -> Void = { _ in }
+    progressObserver: (any InstallProgressObserving)? = nil
   ) async throws -> InstalledArtifact {
     let header = request.header
     let telemetry = InstallTelemetry(payloadKind: request.payload.kind)
@@ -79,7 +79,7 @@ struct InstallMethodHandler {
         overrideModificationTime: header.overrideModificationTime,
         skipSigningBundles: header.skipSigningBundles,
         telemetry: telemetry,
-        onProgress: onProgress)
+        progressObserver: progressObserver)
     } catch {
       telemetry.failed(error, rpcCancelled: isCancelled())
       throw error
@@ -95,7 +95,7 @@ struct InstallMethodHandler {
     overrideModificationTime: Bool,
     skipSigningBundles: Bool,
     telemetry: InstallTelemetry,
-    onProgress: @escaping @Sendable (InstallProgressEvent) -> Void
+    progressObserver: (any InstallProgressObserving)?
   ) async throws -> InstalledArtifact {
 
     let installDestination: InstallDestination
@@ -121,7 +121,7 @@ struct InstallMethodHandler {
         onEvent: { event in
           telemetry.observe(event)
           if case .progress(let progress) = event {
-            onProgress(progress)
+            progressObserver?.observe(progress)
           }
         })
     }
@@ -220,12 +220,19 @@ final class InstallPercentages: Sendable {
 
 // MARK: - Reporting
 
+/// Receives an install's download progress as it arrives.
+protocol InstallProgressObserving: Sendable {
+  func observe(_ event: InstallProgressEvent)
+}
+
+extension InstallPercentages: InstallProgressObserving {}
+
 extension InstallPercentages {
 
   /// Runs `install`, sending each percentage of its download as it arrives and all of them before returning.
   static func reporting<T>(
     to send: @escaping @Sendable (Double) async throws -> Void,
-    _ install: (@escaping @Sendable (InstallProgressEvent) -> Void) async throws -> T
+    _ install: (any InstallProgressObserving) async throws -> T
   ) async throws -> T {
     let percentages = InstallPercentages()
     async let sent: Void = {
@@ -235,7 +242,7 @@ extension InstallPercentages {
     }()
     let result: T
     do {
-      result = try await install(percentages.observe)
+      result = try await install(percentages)
     } catch {
       percentages.finish()
       try? await sent

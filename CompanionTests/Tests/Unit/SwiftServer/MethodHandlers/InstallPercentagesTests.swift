@@ -56,9 +56,9 @@ private struct Refused: Error {}
 
   @Test func everyPercentageIsSentBeforeTheInstallReturns() async throws {
     let sent = OSAllocatedUnfairLock<[Double]>(initialState: [])
-    let name = try await InstallPercentages.reporting(to: { percent in sent.withLock { $0.append(percent) } }) { onProgress in
-      onProgress(downloaded(1, of: 4))
-      onProgress(downloaded(4, of: 4))
+    let name = try await InstallPercentages.reporting(to: { percent in sent.withLock { $0.append(percent) } }) { observer in
+      observer.observe(downloaded(1, of: 4))
+      observer.observe(downloaded(4, of: 4))
       return "com.a"
     }
     #expect(name == "com.a")
@@ -68,8 +68,8 @@ private struct Refused: Error {}
   @Test func aFailedInstallRethrowsAfterSendingWhatItReported() async {
     let sent = OSAllocatedUnfairLock<[Double]>(initialState: [])
     await #expect(throws: Refused.self) {
-      try await InstallPercentages.reporting(to: { percent in sent.withLock { $0.append(percent) } }) { onProgress -> String in
-        onProgress(downloaded(1, of: 2))
+      try await InstallPercentages.reporting(to: { percent in sent.withLock { $0.append(percent) } }) { observer -> String in
+        observer.observe(downloaded(1, of: 2))
         throw Refused()
       }
     }
