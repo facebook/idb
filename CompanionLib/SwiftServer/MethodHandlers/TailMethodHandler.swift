@@ -17,6 +17,11 @@ protocol TailOperation {
 
 extension FileContainerTailOperation: TailOperation {}
 
+/// Starts the tail a `tail` request streams, writing its output to `consumer`.
+protocol TailStarting {
+  func start(consumer: any DataConsumer) async throws -> any TailOperation
+}
+
 struct TailMethodHandler {
 
   let commandExecutor: IDBCommandExecutor
@@ -33,22 +38,20 @@ struct TailMethodHandler {
         guard case .stop = try await requestStream.requiredNext().control
         else { throw RPCError(code: .failedPrecondition, message: "Expected end control") }
       },
-      start: { consumer in
-        try await commandExecutor.tail(start.path, to_consumer: consumer, in_container: fileContainer)
-      })
+      source: RequestedTail(commandExecutor: commandExecutor, path: start.path, fileContainer: fileContainer))
   }
 
-  /// Forwards the tail `start` begins until `awaitStop` returns or throws, then cancels it.
+  /// Forwards the tail `source` starts until `awaitStop` returns or throws, then cancels it.
   static func tail(
     send: @escaping @Sendable (Idb_TailResponse) throws -> Void,
     awaitStop: () async throws -> Void,
-    start: (any DataConsumer) async throws -> any TailOperation
+    source: any TailStarting
   ) async throws {
     let consumer = ResponseForwardingConsumer { data in
       try send(Idb_TailResponse.with { $0.data = data })
     }
 
-    let tail = try await start(consumer)
+    let tail = try await source.start(consumer: consumer)
     do {
       try await awaitStop()
     } catch {
@@ -59,5 +62,16 @@ struct TailMethodHandler {
     }
     try await tail.cancel()
     consumer.stopForwarding()
+  }
+}
+
+/// The file in a container that a `tail` request names.
+private struct RequestedTail: TailStarting {
+  let commandExecutor: IDBCommandExecutor
+  let path: String
+  let fileContainer: String?
+
+  func start(consumer: any DataConsumer) async throws -> any TailOperation {
+    try await commandExecutor.tail(path, to_consumer: consumer, in_container: fileContainer)
   }
 }

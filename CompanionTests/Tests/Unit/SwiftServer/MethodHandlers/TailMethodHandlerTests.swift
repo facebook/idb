@@ -39,13 +39,28 @@ private final class ForwardedData: @unchecked Sendable {
   func capture(_ consumer: any DataConsumer) { lock.withLock { _consumer = consumer } }
 }
 
+/// Captures the consumer, writes `output` to it, then hands back `tail`.
+private struct ScriptedTailStart: TailStarting {
+  var tail = ScriptedTail()
+  var output: [String] = []
+  var capture: ForwardedData?
+
+  func start(consumer: any DataConsumer) async throws -> any TailOperation {
+    capture?.capture(consumer)
+    for chunk in output {
+      consumer.consumeData(Data(chunk.utf8))
+    }
+    return tail
+  }
+}
+
 @Suite
 struct TailMethodHandlerTests {
 
   @Test
   func aStopCancelsTheTail() async throws {
     let tail = ScriptedTail()
-    try await TailMethodHandler.tail(send: { _ in }, awaitStop: {}, start: { _ in tail })
+    try await TailMethodHandler.tail(send: { _ in }, awaitStop: {}, source: ScriptedTailStart(tail: tail))
     #expect(tail.wasCancelled)
   }
 
@@ -53,7 +68,7 @@ struct TailMethodHandlerTests {
   func aStreamEndingWithoutAStopFailsTheCall() async throws {
     let tail = ScriptedTail()
     do {
-      try await TailMethodHandler.tail(send: { _ in }, awaitStop: { throw StreamEnded() }, start: { _ in tail })
+      try await TailMethodHandler.tail(send: { _ in }, awaitStop: { throw StreamEnded() }, source: ScriptedTailStart(tail: tail))
       Issue.record("the call outlived its request stream")
     } catch is StreamEnded {}
     #expect(tail.wasCancelled)
@@ -65,12 +80,7 @@ struct TailMethodHandlerTests {
     try await TailMethodHandler.tail(
       send: { forwarded.record($0.data) },
       awaitStop: { forwarded.consumer.consumeEndOfFile() },
-      start: { consumer in
-        forwarded.capture(consumer)
-        consumer.consumeData(Data("a".utf8))
-        consumer.consumeData(Data("b".utf8))
-        return ScriptedTail()
-      })
+      source: ScriptedTailStart(output: ["a", "b"], capture: forwarded))
     #expect(forwarded.all == [Data("a".utf8), Data("b".utf8)])
   }
 
@@ -83,12 +93,7 @@ struct TailMethodHandlerTests {
         throw SendFailed()
       },
       awaitStop: { attempted.consumer.consumeEndOfFile() },
-      start: { consumer in
-        attempted.capture(consumer)
-        consumer.consumeData(Data("a".utf8))
-        consumer.consumeData(Data("b".utf8))
-        return ScriptedTail()
-      })
+      source: ScriptedTailStart(output: ["a", "b"], capture: attempted))
     #expect(attempted.all == [Data("a".utf8)])
   }
 
@@ -98,10 +103,7 @@ struct TailMethodHandlerTests {
     try await TailMethodHandler.tail(
       send: { forwarded.record($0.data) },
       awaitStop: {},
-      start: { consumer in
-        forwarded.capture(consumer)
-        return ScriptedTail()
-      })
+      source: ScriptedTailStart(capture: forwarded))
     forwarded.consumer.consumeData(Data("late".utf8))
     forwarded.consumer.consumeEndOfFile()
     #expect(forwarded.all == [])
