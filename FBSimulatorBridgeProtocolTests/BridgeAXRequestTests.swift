@@ -7,13 +7,15 @@
 
 import FBSimulatorBridgeProtocol
 import Foundation
-import XCTest
+import Testing
 
-final class BridgeAXRequestTests: XCTestCase {
+@Suite
+struct BridgeAXRequestTests {
   private let options = BridgeAXReadOptions(
     maxDepth: 7, maxNodes: 300, attributes: ["XC_kAXXCAttributeLabel"], explainUnreachable: true, traversal: .viewHierarchy, automationMode: false, clientType: .noClient)
 
-  func testEveryRequestDecodesFromTheFrameItIsSentIn() throws {
+  @Test
+  func everyRequestDecodesFromTheFrameItIsSentIn() throws {
     let requests: [BridgeAXRequest] = [
       .read(pid: 42, options: options, displayID: 3),
       .read(pid: 42, options: BridgeAXReadOptions(maxDepth: 1, maxNodes: 2, attributes: nil, explainUnreachable: false, traversal: .semantic, automationMode: nil, clientType: .noClient)),
@@ -35,81 +37,97 @@ final class BridgeAXRequestTests: XCTestCase {
     ]
     for request in requests {
       let frame = try BridgeRequest(command: request.command).encoded()
-      XCTAssertEqual(try BridgeRequest.decode(frame).command, .accessibility(request))
-      let parameters = try XCTUnwrap(BridgeRequest.accessibilityParameters(of: frame))
-      XCTAssertEqual(try BridgeAXRequest(payload: parameters), request)
+      #expect(try BridgeRequest.decode(frame).command == .accessibility(request))
+      let parameters = try #require(BridgeRequest.accessibilityParameters(of: frame))
+      #expect(try BridgeAXRequest(payload: parameters) == request)
     }
   }
 
-  func testOmittedReadFieldsTakeTheDefaults() throws {
+  @Test
+  func omittedReadFieldsTakeTheDefaults() throws {
     let request = try BridgeAXRequest(payload: ["verb": .string("describe"), "pid": .integer(5)])
     let defaults = BridgeAXReadOptions(
       maxDepth: BridgeAXReadOptions.defaultMaxDepth, maxNodes: BridgeAXReadOptions.defaultMaxNodes, attributes: nil, explainUnreachable: false,
       traversal: .viewHierarchy, automationMode: nil, clientType: .noClient)
-    XCTAssertEqual(request, .read(pid: 5, options: defaults))
+    #expect(request == .read(pid: 5, options: defaults))
   }
 
-  func testEachTraversalDecodesFromItsNameAndStringFlagsReadAsFoundationDoes() throws {
+  @Test
+  func eachTraversalDecodesFromItsNameAndStringFlagsReadAsFoundationDoes() throws {
     for traversal in BridgeAXTraversal.allCases {
       let request = try BridgeAXRequest(payload: [
         "verb": .string("describe"), "pid": .integer(5), "traversal": .string(traversal.rawValue), "explainUnreachable": .string("NO"),
       ])
-      guard case let .read(_, options, _) = request else { return XCTFail("\(request)") }
-      XCTAssertEqual(options.traversal, traversal)
-      XCTAssertFalse(options.explainUnreachable)
+      guard case let .read(_, options, _) = request else {
+        Issue.record("\(request)")
+        return
+      }
+      #expect(options.traversal == traversal)
+      #expect(!options.explainUnreachable)
     }
   }
 
-  func testEachClientTypeDecodesFromItsIntegerOnReadsAndHitTests() throws {
+  @Test
+  func eachClientTypeDecodesFromItsIntegerOnReadsAndHitTests() throws {
     for clientType in BridgeAXClientType.allCases {
       let raw = BridgeJSONValue.integer(Int64(clientType.rawValue))
       guard case let .read(_, options, _) = try BridgeAXRequest(payload: ["verb": .string("describe"), "pid": .integer(5), "traversal": .string("semantic"), "clientType": raw]) else {
-        return XCTFail("not a read")
+        Issue.record("not a read")
+        return
       }
-      XCTAssertEqual(options.clientType, clientType)
+      #expect(options.clientType == clientType)
       guard case let .hitTest(_, _, _, hitClient, _, _) = try BridgeAXRequest(payload: ["verb": .string("hittest"), "x": .integer(1), "y": .integer(2), "clientType": raw])
       else {
-        return XCTFail("not a hit-test")
+        Issue.record("not a hit-test")
+        return
       }
-      XCTAssertEqual(hitClient, clientType)
+      #expect(hitClient == clientType)
     }
   }
 
-  func testAnXCTestTraversalAcceptsOnlyNoClient() throws {
+  @Test
+  func anXCTestTraversalAcceptsOnlyNoClient() throws {
     for traversal in [BridgeAXTraversal.viewHierarchy, .singleFetch] {
       guard
         case let .read(_, options, _) = try BridgeAXRequest(payload: [
           "verb": .string("describe"), "pid": .integer(5), "traversal": .string(traversal.rawValue), "clientType": .integer(0),
         ])
       else {
-        return XCTFail("not a read")
+        Issue.record("not a read")
+        return
       }
-      XCTAssertEqual(options.clientType, .noClient)
+      #expect(options.clientType == .noClient)
     }
   }
 
-  func testARequestWithoutAClientTypeClaimsNoClient() throws {
+  @Test
+  func aRequestWithoutAClientTypeClaimsNoClient() throws {
     guard case let .read(_, options, _) = try BridgeAXRequest(payload: ["verb": .string("describe"), "pid": .integer(5)]) else {
-      return XCTFail("not a read")
+      Issue.record("not a read")
+      return
     }
-    XCTAssertEqual(options.clientType, .noClient)
+    #expect(options.clientType == .noClient)
   }
 
-  func testAReadWithoutATraversalWalksTheViewHierarchy() throws {
+  @Test
+  func aReadWithoutATraversalWalksTheViewHierarchy() throws {
     guard case let .read(_, options, _) = try BridgeAXRequest(payload: ["verb": .string("describe"), "pid": .integer(5)]) else {
-      return XCTFail("not a read")
+      Issue.record("not a read")
+      return
     }
-    XCTAssertEqual(options.traversal, .viewHierarchy)
+    #expect(options.traversal == .viewHierarchy)
   }
 
-  func testNonStringAttributesAreDropped() throws {
+  @Test
+  func nonStringAttributesAreDropped() throws {
     let request = try BridgeAXRequest(payload: [
       "verb": .string("hittest"), "x": .integer(1), "y": .integer(2), "attributes": .array([.string("a"), .integer(3), .string("b")]),
     ])
-    XCTAssertEqual(request, .hitTest(x: 1, y: 2, attributes: ["a", "b"], clientType: .noClient))
+    #expect(request == .hitTest(x: 1, y: 2, attributes: ["a", "b"], clientType: .noClient))
   }
 
-  func testMalformedPayloadsNameWhatIsWrong() {
+  @Test
+  func malformedPayloadsNameWhatIsWrong() {
     let point: [String: BridgeJSONValue] = ["x": .integer(1), "y": .integer(2)]
     let cases: [([String: BridgeJSONValue], BridgeAXRequestError)] = [
       ([:], .unsupportedVerb(nil)),
@@ -143,23 +161,23 @@ final class BridgeAXRequestTests: XCTestCase {
       (["verb": .string("describe"), "pid": .integer(5), "explainUnreachable": .object([:])], .malformedFlag(.explainUnreachable)),
     ]
     for (payload, expected) in cases {
-      XCTAssertThrowsError(try BridgeAXRequest(payload: payload), "\(payload)") { error in
-        XCTAssertEqual(error as? BridgeAXRequestError, expected, "\(payload)")
-      }
+      #expect(throws: expected, "\(payload)") { try BridgeAXRequest(payload: payload) }
     }
   }
 
-  func testAnUndecodableRequestFailsTheFrameButKeepsItsParameters() throws {
+  @Test
+  func anUndecodableRequestFailsTheFrameButKeepsItsParameters() throws {
     let frame = Data(#"{"command":{"accessibility":{"_0":{"verb":"quiet","quietWindowMs":-1}}},"id":"bad","version":2}"#.utf8)
-    XCTAssertThrowsError(try BridgeRequest.decode(frame))
-    XCTAssertEqual(BridgeRequest.identity(of: frame), "bad")
-    XCTAssertEqual(BridgeRequest.accessibilityParameters(of: frame), ["verb": .string("quiet"), "quietWindowMs": .integer(-1)])
-    XCTAssertNil(BridgeRequest.accessibilityParameters(of: try BridgeRequest(command: .ping).encoded()))
+    #expect(throws: (any Error).self) { try BridgeRequest.decode(frame) }
+    #expect(BridgeRequest.identity(of: frame) == "bad")
+    #expect(BridgeRequest.accessibilityParameters(of: frame) == ["verb": .string("quiet"), "quietWindowMs": .integer(-1)])
+    #expect(BridgeRequest.accessibilityParameters(of: try BridgeRequest(command: .ping).encoded()) == nil)
   }
 
   // The exact payloads the host sends for its default requests. A change to any of these is a change to
   // what every guest receives, so it must be deliberate.
-  func testTheDefaultReadPayloadsAreUnchanged() {
+  @Test
+  func theDefaultReadPayloadsAreUnchanged() {
     let base: [String: Any] = ["verb": "describe", "pid": 42, "maxDepth": 100, "maxNodes": 5000, "automationMode": true, "clientType": 0]
     let traversalKeys: [BridgeAXTraversal: [String: Any]] = [
       .viewHierarchy: ["traversal": "view-hierarchy"],
@@ -171,79 +189,83 @@ final class BridgeAXRequestTests: XCTestCase {
         maxDepth: BridgeAXReadOptions.defaultMaxDepth, maxNodes: BridgeAXReadOptions.defaultMaxNodes, attributes: nil,
         explainUnreachable: false, traversal: traversal, automationMode: true, clientType: .noClient)
       let expected = base.merging(traversalKeys[traversal]!) { $1 }
-      XCTAssertEqual(NSDictionary(dictionary: BridgeAXRequest.read(pid: 42, options: options).payload), NSDictionary(dictionary: expected), "\(traversal)")
+      #expect(NSDictionary(dictionary: BridgeAXRequest.read(pid: 42, options: options).payload) == NSDictionary(dictionary: expected), "\(traversal)")
     }
   }
 
-  func testTheDefaultFrontmostReadPayloadIsUnchanged() {
+  @Test
+  func theDefaultFrontmostReadPayloadIsUnchanged() {
     let options = BridgeAXReadOptions(
       maxDepth: BridgeAXReadOptions.defaultMaxDepth, maxNodes: BridgeAXReadOptions.defaultMaxNodes, attributes: nil,
       explainUnreachable: false, traversal: .singleFetch, automationMode: true, clientType: .noClient)
-    XCTAssertEqual(
-      NSDictionary(dictionary: BridgeAXRequest.readFrontmost(x: 195, y: 422, method: .windowServer, options: options).payload),
-      NSDictionary(dictionary: [
-        "verb": "describe", "x": 195.0, "y": 422.0, "method": "window-server", "maxDepth": 100, "maxNodes": 5000, "traversal": "single-fetch", "clientType": 0,
-        "automationMode": true,
-      ]))
+    #expect(
+      NSDictionary(dictionary: BridgeAXRequest.readFrontmost(x: 195, y: 422, method: .windowServer, options: options).payload)
+        == NSDictionary(dictionary: [
+          "verb": "describe", "x": 195.0, "y": 422.0, "method": "window-server", "maxDepth": 100, "maxNodes": 5000, "traversal": "single-fetch", "clientType": 0,
+          "automationMode": true,
+        ]))
   }
 
-  func testTheDefaultHitTestPayloadIsUnchanged() {
-    XCTAssertEqual(
-      NSDictionary(dictionary: BridgeAXRequest.hitTest(x: 1, y: 2, attributes: nil, clientType: .noClient).payload),
-      NSDictionary(dictionary: ["verb": "hittest", "x": 1.0, "y": 2.0, "clientType": 0]))
+  @Test
+  func theDefaultHitTestPayloadIsUnchanged() {
+    #expect(
+      NSDictionary(dictionary: BridgeAXRequest.hitTest(x: 1, y: 2, attributes: nil, clientType: .noClient).payload) == NSDictionary(dictionary: ["verb": "hittest", "x": 1.0, "y": 2.0, "clientType": 0]))
   }
 
-  func testAReadThatLeavesAutomationModeAloneOmitsIt() {
+  @Test
+  func aReadThatLeavesAutomationModeAloneOmitsIt() {
     let options = BridgeAXReadOptions(maxDepth: 1, maxNodes: 1, attributes: nil, explainUnreachable: false, traversal: .viewHierarchy, automationMode: nil, clientType: .noClient)
-    XCTAssertNil(BridgeAXRequest.read(pid: 1, options: options).payload["automationMode"])
+    #expect(BridgeAXRequest.read(pid: 1, options: options).payload["automationMode"] == nil)
   }
 
-  func testClientTypesCarryTheTranslatorsIntegers() {
+  @Test
+  func clientTypesCarryTheTranslatorsIntegers() {
     let expected: [BridgeAXClientType: UInt64] = [
       .noClient: 0, .unidentified: 1, .application: 2, .xcodeHelper: 3, .xctest: 4, .scripter: 5, .systemEvents: 6, .voiceOver: 7,
       .switchControl: 8, .fullKeyboardAccess: 9, .voiceControl: 10, .accessibilityInspector: 11,
     ]
-    XCTAssertEqual(Set(BridgeAXClientType.allCases), Set(expected.keys))
+    #expect(Set(BridgeAXClientType.allCases) == Set(expected.keys))
     for (clientType, value) in expected {
-      XCTAssertEqual(clientType.rawValue, value, "\(clientType)")
+      #expect(clientType.rawValue == value, "\(clientType)")
     }
-    XCTAssertNil(BridgeAXClientType(rawValue: 12))
+    #expect(BridgeAXClientType(rawValue: 12) == nil)
   }
 
   // Names are an output and command-line contract: pinned literally so a renamed case shows up here.
-  func testClientTypesCarryStableNames() {
-    XCTAssertEqual(
-      BridgeAXClientType.allCases.map(\.name),
-      [
+  @Test
+  func clientTypesCarryStableNames() {
+    #expect(
+      BridgeAXClientType.allCases.map(\.name) == [
         "noClient", "unidentified", "application", "xcodeHelper", "xctest", "scripter", "systemEvents", "voiceOver", "switchControl",
         "fullKeyboardAccess", "voiceControl", "accessibilityInspector",
       ])
     for clientType in BridgeAXClientType.allCases {
-      XCTAssertEqual(BridgeAXClientType(name: clientType.name), clientType)
+      #expect(BridgeAXClientType(name: clientType.name) == clientType)
     }
-    XCTAssertNil(BridgeAXClientType(name: "XCTest"))
+    #expect(BridgeAXClientType(name: "XCTest") == nil)
   }
 
-  func testClientTypesMapOntoTheRequestingClientTheGuestTranslatorInstalls() {
+  @Test
+  func clientTypesMapOntoTheRequestingClientTheGuestTranslatorInstalls() {
     let expected: [BridgeAXClientType: UInt32] = [
       .noClient: 0, .unidentified: 0, .application: 1, .xcodeHelper: 2, .xctest: 2, .scripter: 1, .systemEvents: 1, .voiceOver: 3,
       .switchControl: 4, .fullKeyboardAccess: 10, .voiceControl: 5, .accessibilityInspector: 12,
     ]
     for clientType in BridgeAXClientType.allCases {
-      XCTAssertEqual(clientType.requestingClient.rawValue, expected[clientType], "\(clientType)")
+      #expect(clientType.requestingClient.rawValue == expected[clientType], "\(clientType)")
     }
   }
 
-  func testOnlyScriptingAndTestingClientsDeserveTheAutomationTree() {
-    XCTAssertEqual(
-      Set(BridgeAXClientType.allCases.filter(\.deservesAutomation)),
-      [.application, .xcodeHelper, .xctest, .scripter, .systemEvents])
-    XCTAssertEqual(Set(BridgeAXRequestingClient.allCases.filter(\.deservesAutomation)), [.scripting, .xctest, .typist])
+  @Test
+  func onlyScriptingAndTestingClientsDeserveTheAutomationTree() {
+    #expect(
+      Set(BridgeAXClientType.allCases.filter(\.deservesAutomation)) == [.application, .xcodeHelper, .xctest, .scripter, .systemEvents])
+    #expect(Set(BridgeAXRequestingClient.allCases.filter(\.deservesAutomation)) == [.scripting, .xctest, .typist])
   }
 
-  func testRequestingClientsCarryTheRuntimesIntegers() {
-    XCTAssertEqual(
-      BridgeAXRequestingClient.allCases.map(\.rawValue),
-      [0, 1, 2, 3, 4, 5, 6, 7, 8, 10, 11, 12, 13, 14, 15, 16, 17])
+  @Test
+  func requestingClientsCarryTheRuntimesIntegers() {
+    #expect(
+      BridgeAXRequestingClient.allCases.map(\.rawValue) == [0, 1, 2, 3, 4, 5, 6, 7, 8, 10, 11, 12, 13, 14, 15, 16, 17])
   }
 }
