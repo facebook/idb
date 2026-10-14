@@ -308,7 +308,7 @@ final class CompanionServiceProvider: Idb_CompanionService.SimpleServiceProtocol
 
   func contacts_update(request: Idb_ContactsUpdateRequest, context: ServerContext) async throws -> Idb_ContactsUpdateResponse {
     return try await trackedUnaryCall(context, request: request) {
-      try await ContactsUpdateMethodHandler(commandExecutor: commandExecutor)
+      try await ContactsUpdateMethodHandler(target: target, temporaryDirectory: commandExecutor.temporaryDirectory)
         .handle(request: request, context: context)
     }
   }

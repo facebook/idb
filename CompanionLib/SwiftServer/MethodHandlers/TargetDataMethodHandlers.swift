@@ -23,10 +23,14 @@ struct AddMediaMethodHandler {
 
 struct ContactsUpdateMethodHandler {
 
-  let commandExecutor: IDBCommandExecutor
+  let target: CompanionTarget
+  let temporaryDirectory: TemporaryDirectory
 
   func handle(request: Idb_ContactsUpdateRequest, context: ServerContext) async throws -> Idb_ContactsUpdateResponse {
-    try await commandExecutor.updateContacts(request.payload.data)
+    let simulator = try target.simulator()
+    try await temporaryDirectory.withArchiveExtracted(request.payload.data) { tempDir in
+      try await simulator.contacts.update(tempDir.path)
+    }
     return .init()
   }
 }

@@ -294,13 +294,6 @@ public final class IDBCommandExecutor {
     try await target.simulator().keychain.clear()
   }
 
-  public func updateContacts(_ dbTarData: Data) async throws {
-    let simulator = try target.simulator()
-    try await temporaryDirectory.withArchiveExtracted(dbTarData) { tempDir in
-      try await simulator.contacts.update(tempDir.path)
-    }
-  }
-
   private static let ListTestBundleTimeout: TimeInterval = 180.0
 
   public func listTestsInBundle(_ bundleID: String, withApp appPath: String?) async throws -> [String] {
