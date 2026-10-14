@@ -202,11 +202,12 @@ final class AXRawTranslationReaderTests: XCTestCase {
     translator.cachedElementsByObjectID = [2: cached]
     let root = AccessibilityTestElementBuilder.application(withLabel: "App", frame: .zero, children: [])
     root.translation = Self.reference(1)
-    let request = AXTranslationRequest(kind: .frontmostApplication)
-    request.transport = AXRawTranslationTransportDouble(elements: [
-      1: [.role: 1, .children: [Self.reference(2)]],
-      2: [.role: 2, .label: "OK"],
-    ])
+    let request = AXTranslationRequest(
+      kind: .frontmostApplication,
+      transport: AXRawTranslationTransportDouble(elements: [
+        1: [.role: 1, .children: [Self.reference(2)]],
+        2: [.role: 2, .label: "OK"],
+      ]))
     request.translator = unsafeBitCast(translator as AnyObject, to: AXPTranslator.self)
 
     let snapshot = request.snapshot(of: root, plan: AXReadPlan(attributes: [.label], depth: .limited(1)), reads: .raw)
@@ -216,22 +217,11 @@ final class AXRawTranslationReaderTests: XCTestCase {
     XCTAssertEqual(cached.translation.bridgeDelegateToken, request.token, "an action on the handle reaches this read")
   }
 
-  func testARequestWithoutATransportReadsThroughTheElement() {
-    let element = AccessibilityTestElementBuilder.button(withLabel: "General", identifier: nil, frame: NSRect(x: 0, y: 0, width: 10, height: 10))
-    let request = AXTranslationRequest(kind: .frontmostApplication)
-
-    let snapshot = request.snapshot(of: element, plan: AXReadPlan(attributes: [.label], depth: .limited(0)), reads: .raw)
-
-    XCTAssertEqual(snapshot.label, "General")
-    XCTAssertTrue(element.accessedProperties.contains("accessibilityMultipleAttributes"))
-  }
-
   func testARawRequestNamesTheElementsTranslationAndNeverTouchesTheElement() {
     let element = AccessibilityTestElementBuilder.button(withLabel: "Stale", identifier: nil, frame: .zero)
     element.translation = Self.reference(7)
     let transport = AXRawTranslationTransportDouble(elements: [7: [.label: "General"]])
-    let request = AXTranslationRequest(kind: .frontmostApplication)
-    request.transport = transport
+    let request = AXTranslationRequest(kind: .frontmostApplication, transport: transport)
 
     let snapshot = request.snapshot(of: element, plan: AXReadPlan(attributes: [.label], depth: .limited(0)), reads: .raw)
 

@@ -179,8 +179,7 @@ final class AXTranslationSmokeTests: ProvidedSimulatorTestCase {
     let transport = CoreSimulatorBridgeAXTranslationTransport(connector: .simulator(simulator))
     let dispatcher = simulator.accessibilityTranslationDispatcher
     func observe() async -> AXElementSnapshot? {
-      let request = AXTranslationRequest(kind: .frontmostApplication, clientType: .noClient)
-      request.transport = transport
+      let request = AXTranslationRequest(kind: .frontmostApplication, clientType: .noClient, transport: transport)
       defer { dispatcher.popRequest(request) }
       guard let root = try? await dispatcher.rootHandle(withRequest: request) else {
         return nil

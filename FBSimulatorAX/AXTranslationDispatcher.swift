@@ -50,10 +50,6 @@ final class AXTranslationDispatcher: NSObject, AXPTranslationTokenDelegateHelper
   private weak var translator: AXPTranslator?
   private let lock = NSLock()
   private var tokenToRequest: [String: AXTranslationRequest] = [:]
-  /// The request resolving an application by pid on the work queue, which that lookup's callback belongs to:
-  /// the translator sends it with no translation, and so no token, and only one request is ever inside the
-  /// translator at a time. No other resolution claims untokened callbacks.
-  private var resolvingRequest: AXTranslationRequest?
 
   // AXPTranslator is a process-wide singleton whose internal state (nonatomic
   // properties, shared element caches) is not synchronized, so its API contract is
@@ -105,20 +101,16 @@ final class AXTranslationDispatcher: NSObject, AXPTranslationTokenDelegateHelper
     return try job.takeResult()
   }
 
-  /// Resolves `request`'s root, through the transport the request already carries: its translation when it
-  /// resolves raw, without touching the translator, and its platform element otherwise.
+  /// Resolves `request`'s root in one request over its transport, without touching the translator.
   func rootHandle(withRequest request: AXTranslationRequest) async throws -> AXElementHandle {
     request.translator = self.translator
-    // Registered either way: actions on the root and its descendants reach the translator, whose callbacks
-    // find the request by its token.
+    // Registered before resolving: actions on the root and its descendants reach the translator, whose
+    // callbacks find the request by its token.
     self.pushRequest(request)
     do {
-      guard request.resolvesRootRaw else {
-        return .element(try await platformElement(withRequest: request))
-      }
       return try await performUnserialized { () throws -> AXElementHandle in
         let translationStart = CFAbsoluteTimeGetCurrent()
-        guard let translation = try request.resolveRoot(withTranslator: nil) else {
+        guard let translation = try request.resolveRoot() else {
           throw AccessibilityError.noTranslationObject
         }
         request.collector.translationDuration = CFAbsoluteTimeGetCurrent() - translationStart
@@ -128,34 +120,6 @@ final class AXTranslationDispatcher: NSObject, AXPTranslationTokenDelegateHelper
     } catch {
       self.popRequest(request)
       throw error
-    }
-  }
-
-  /// Resolves `request`'s root element through the translator.
-  private func platformElement(withRequest request: AXTranslationRequest) async throws -> AXWritableElement {
-    // The synchronous XPC round-trips driven by the delegate callback must never
-    // run on the main queue; the serialized hop below moves them to the AXP work
-    // queue, off the main actor and off the cooperative executor.
-    let translator = self.translator
-    return try await performSerialized { () throws -> AXWritableElement in
-      let collector = request.collector
-      let translationStart = CFAbsoluteTimeGetCurrent()
-      guard let translator, let translation = try self.resolving(request, { try request.resolveRoot(withTranslator: translator) })
-      else {
-        throw AccessibilityError.noTranslationObject
-      }
-      collector.translationDuration = CFAbsoluteTimeGetCurrent() - translationStart
-      translation.bridgeDelegateToken = request.token
-
-      let conversionStart = CFAbsoluteTimeGetCurrent()
-      let rawElement = request.platformElement(for: translation)
-      collector.elementConversionDuration = CFAbsoluteTimeGetCurrent() - conversionStart
-
-      guard let element = rawElement else {
-        throw AccessibilityError.noTranslationObject
-      }
-      element.axSetBridgeDelegateToken(request.token)
-      return element
     }
   }
 
@@ -174,22 +138,9 @@ final class AXTranslationDispatcher: NSObject, AXPTranslationTokenDelegateHelper
     tokenToRequest.removeValue(forKey: request.token)
   }
 
-  private func resolving<T>(_ request: AXTranslationRequest, _ body: () throws -> T) rethrows -> T {
-    guard case .applicationForPid = request.kind else {
-      return try body()
-    }
-    lock.withLock { resolvingRequest = request }
-    defer { lock.withLock { resolvingRequest = nil } }
-    return try body()
-  }
-
-  /// The request a callback belongs to: by its token, or the resolving request when it carries none.
   private func request(forToken token: String) -> AXTranslationRequest? {
     lock.lock()
     defer { lock.unlock() }
-    guard !token.isEmpty else {
-      return resolvingRequest
-    }
     return tokenToRequest[token]
   }
 
@@ -209,14 +160,8 @@ final class AXTranslationDispatcher: NSObject, AXPTranslationTokenDelegateHelper
     let collector = request.collector
     let timeoutSeconds = request.requestTimeoutSeconds
     let clientType = request.clientType
-    let isUntokened = token.isEmpty
     return { axRequest in
-      guard let axRequest, let transport else {
-        return Self.emptyResponse()
-      }
-      // An untokened lookup that names no pid is answered by the service for its own process, never the one
-      // the read asked for.
-      if isUntokened, axRequest.parameters?["pid"] == nil {
+      guard let axRequest else {
         return Self.emptyResponse()
       }
       axRequest.clientType = clientType.rawValue

@@ -141,23 +141,26 @@ final class SimulatorAccessibilityCommands: AccessibilityOperations {
 
   func resolveElement(for query: AccessibilityElementQuery, clientType: AXClientType) async throws -> AccessibilityElement {
     try validateAccessibility()
+    guard let simulator else {
+      throw WeakTargetError.simulator
+    }
     let display = try await readDisplay()
+    let transport = resolvedTransport(simulator)
+    func request(_ kind: AXTranslationRequest.Kind) -> AXTranslationRequest {
+      AXTranslationRequest(kind: kind, display: display, clientType: clientType, transport: transport)
+    }
     switch query {
     case let .point(point):
-      let request = AXTranslationRequest(kind: .point(point), display: display, clientType: clientType)
-      return try await accessibilityElement(request: request, diagnosesSpringBoard: false)
+      return try await accessibilityElement(request: request(.point(point)), diagnosesSpringBoard: false)
     case .frontmost:
-      let request = AXTranslationRequest(kind: .frontmostApplication, display: display, clientType: clientType)
-      return try await accessibilityElement(request: request, diagnosesSpringBoard: true)
+      return try await accessibilityElement(request: request(.frontmostApplication), diagnosesSpringBoard: true)
     case let .marker(value, key, depth, ignoresCase):
-      let request = AXTranslationRequest(kind: .frontmostApplication, display: display, clientType: clientType)
-      let root = try await accessibilityElement(request: request, diagnosesSpringBoard: true)
+      let root = try await accessibilityElement(request: request(.frontmostApplication), diagnosesSpringBoard: true)
       return try await root.findElement(withValue: value, forKey: key, depth: depth, ignoresCase: ignoresCase)
     case let .application(pid):
       // An explicit pid target: read that application directly, no SpringBoard diagnosis (that is only
       // meaningful for the frontmost read).
-      let request = AXTranslationRequest(kind: .applicationForPid(pid), display: display, clientType: clientType)
-      return try await accessibilityElement(request: request, diagnosesSpringBoard: false)
+      return try await accessibilityElement(request: request(.applicationForPid(pid)), diagnosesSpringBoard: false)
     }
   }
 
@@ -187,7 +190,6 @@ final class SimulatorAccessibilityCommands: AccessibilityOperations {
     guard let dispatcher = resolvedDispatcher else {
       throw AccessibilityError.dispatcherUnavailable
     }
-    request.transport = resolvedTransport(simulator)
     let root: AXElementHandle
     do {
       root = try await dispatcher.rootHandle(withRequest: request)

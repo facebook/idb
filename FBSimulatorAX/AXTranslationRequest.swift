@@ -68,7 +68,7 @@ final class AXTranslationRequest {
   let clientType: AXClientType
   let token: String
   /// Carries this read's translator requests to the simulator.
-  var transport: (any AXTranslationTransport)?
+  let transport: any AXTranslationTransport
   /// Owned from construction: the dispatcher records acquisition timings before the caller reaches
   /// `serialize`.
   let collector: AccessibilityProfilingCollector
@@ -79,40 +79,29 @@ final class AXTranslationRequest {
   /// no "wait forever" mode — a stalled XPC service never hangs the caller.
   var requestTimeoutSeconds: TimeInterval
 
-  init(kind: Kind, display: AXTranslationDisplay? = nil, clientType: AXClientType) {
+  init(kind: Kind, display: AXTranslationDisplay? = nil, clientType: AXClientType, transport: any AXTranslationTransport) {
     self.kind = kind
     self.display = display
     self.clientType = clientType
+    self.transport = transport
     self.token = UUID().uuidString
     self.requestTimeoutSeconds = Self.defaultRequestTimeoutSeconds
     self.collector = AccessibilityProfilingCollector()
   }
 
-  /// Whether the root resolves in one raw request over the transport, without the translator.
-  var resolvesRootRaw: Bool {
-    transport != nil
-  }
-
   /// Whether a read of `handle` is raw, and so never touches the translator.
   func readsRaw(_ handle: AXElementHandle, reads: AXTranslatorReads) -> Bool {
-    reads == .raw && transport != nil && handle.translation != nil
+    reads == .raw && handle.translation != nil
   }
 
-  /// Resolves the root translation object for this request's kind: in one raw request over the transport
-  /// when the request has one, through the translator otherwise.
-  func resolveRoot(withTranslator translator: AXPTranslator?) throws -> AXTranslationReference? {
+  /// Resolves the root translation object for this request's kind, in one request over the transport.
+  func resolveRoot() throws -> AXTranslationReference? {
     switch kind {
     case .frontmostApplication:
-      guard let rawReader else {
-        return translator?.frontmostApplication(withDisplayId: displayID, bridgeDelegateToken: token)
-      }
       return rawReader.resolve(.frontmostApplication(displayID: displayID))
     case .point(let point):
-      return try translation(at: point, translator: translator)
+      return try translation(at: point)
     case .applicationForPid(let pid):
-      guard let rawReader else {
-        return translator?.translationApplicationObject(forPid: pid)
-      }
       return rawReader.resolve(.application(pid: pid))
     }
   }
@@ -173,7 +162,7 @@ final class AXTranslationRequest {
   /// handle has a translation to name, and through its platform element otherwise. An element with neither
   /// reads as one with no values.
   func snapshot(of handle: AXElementHandle, plan: AXReadPlan, reads: AXTranslatorReads) -> AXElementSnapshot {
-    if reads == .raw, let rawReader, let reference = handle.translation {
+    if reads == .raw, let reference = handle.translation {
       return rawReader.read(reference, plan: plan)
     }
     guard let element = element(for: handle) else {
@@ -186,13 +175,10 @@ final class AXTranslationRequest {
     snapshot(of: .element(element), plan: plan, reads: reads)
   }
 
-  /// Sends this request's translator requests itself, over its transport; nil without one.
-  private var rawReader: AXRawTranslationReader? {
-    let token = self.token
-    return transport.map {
-      AXRawTranslationReader(
-        transport: $0, clientType: clientType, timeout: requestTimeoutSeconds, collector: collector, token: token)
-    }
+  /// Sends this request's translator requests itself, over its transport.
+  private var rawReader: AXRawTranslationReader {
+    AXRawTranslationReader(
+      transport: transport, clientType: clientType, timeout: requestTimeoutSeconds, collector: collector, token: token)
   }
 
   // MARK: - A single named element
@@ -238,7 +224,7 @@ final class AXTranslationRequest {
       options.collectFrameCoverage ? AccessibilityCoverageGrid(screenBounds: screen.bounds) : nil
     grid?.markFilled(withElements: tree.description.reported)
 
-    guard let remoteOptions = options.remoteContentOptions, let translator else {
+    guard let remoteOptions = options.remoteContentOptions else {
       return buildResponse(
         elements: .tree(tree.description.reported),
         walkStart: walkStart,
@@ -255,8 +241,7 @@ final class AXTranslationRequest {
       grid: grid,
       plan: AXRemoteContentPlan(remoteOptions, screenBounds: screen.bounds),
       options: options,
-      walkStart: walkStart,
-      translator: translator
+      walkStart: walkStart
     )
   }
 
@@ -274,8 +259,7 @@ final class AXTranslationRequest {
     grid: AccessibilityCoverageGrid?,
     plan: AXRemoteContentPlan,
     keys: Set<AXKeys>,
-    reads: AXTranslatorReads,
-    translator: AXPTranslator
+    reads: AXTranslatorReads
   ) throws -> [AccessibilityDocumentElement] {
     var discoveredElements: [AccessibilityDocumentElement] = []
     var discoveredFrames = Set<String>()
@@ -297,7 +281,7 @@ final class AXTranslationRequest {
       // A caller's region can reach past the routed display, where no point translates.
       let translated: AXTranslationReference?
       do {
-        translated = try translation(at: point, translator: translator)
+        translated = try translation(at: point)
       } catch SimulatorDisplayInteractionError.invalidPoint {
         translated = nil
       }
@@ -343,14 +327,12 @@ final class AXTranslationRequest {
     grid: AccessibilityCoverageGrid?,
     plan: AXRemoteContentPlan,
     options: AccessibilityRequestOptions,
-    walkStart: CFAbsoluteTime,
-    translator: AXPTranslator
+    walkStart: CFAbsoluteTime
   ) throws -> AccessibilityElementsResponse {
     let coverageBefore = grid?.coverageRatio() ?? 0
 
     let discoveredElements = try discoverRemoteElements(
-      beyond: tree, grid: grid, plan: plan, keys: options.serializationKeys, reads: options.translatorReads,
-      translator: translator)
+      beyond: tree, grid: grid, plan: plan, keys: options.serializationKeys, reads: options.translatorReads)
 
     var additionalFrameCoverage: Double?
     if let grid, !discoveredElements.isEmpty {
@@ -390,11 +372,8 @@ final class AXTranslationRequest {
     display?.accessibilityID ?? 0
   }
 
-  private func translation(at point: CGPoint, translator: AXPTranslator?) throws -> AXTranslationReference? {
+  private func translation(at point: CGPoint) throws -> AXTranslationReference? {
     let unrotated = try display?.geometry.unrotatedPoint(from: point) ?? point
-    guard let rawReader else {
-      return translator?.object(at: unrotated, displayId: displayID, bridgeDelegateToken: token)
-    }
     return rawReader.resolve(.point(unrotated, displayID: displayID))
   }
 
@@ -413,15 +392,13 @@ final class AXTranslationRequest {
     // Collected always (cheap) and kept as metrics on every read; reported as a profile only when
     // profiling was requested.
     let profile = collector.finalize(withWalkDuration: walkDuration)
-    let metrics = transport.map {
-      AccessibilityTranslatorReadMetrics(
-        elementCount: profile.elementCount,
-        roundTrips: profile.xpcCallCount,
-        readDuration: profile.readDuration,
-        totalDuration: profile.totalDuration,
-        translatorReads: options.translatorReads,
-        transport: $0.kind)
-    }
+    let metrics = AccessibilityTranslatorReadMetrics(
+      elementCount: profile.elementCount,
+      roundTrips: profile.xpcCallCount,
+      readDuration: profile.readDuration,
+      totalDuration: profile.totalDuration,
+      translatorReads: options.translatorReads,
+      transport: transport.kind)
     return AccessibilityElementsResponse(
       elements: elements,
       profilingData: options.enableProfiling ? .translator(profile) : nil,

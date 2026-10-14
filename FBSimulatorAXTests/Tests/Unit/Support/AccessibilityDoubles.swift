@@ -560,9 +560,9 @@ extension AccessibilityOperations {
 }
 
 extension AXTranslationRequest {
-  /// A request as a default read would make it.
-  convenience init(kind: Kind, display: AXTranslationDisplay? = nil) {
-    self.init(kind: kind, display: display, clientType: AccessibilityRequestOptions().resolvedClientType)
+  /// A request as a default read would make it, over a transport that answers nothing unless given one.
+  convenience init(kind: Kind, display: AXTranslationDisplay? = nil, transport: any AXTranslationTransport = AXTranslationTransportDouble()) {
+    self.init(kind: kind, display: display, clientType: AccessibilityRequestOptions().resolvedClientType, transport: transport)
   }
 }
 
