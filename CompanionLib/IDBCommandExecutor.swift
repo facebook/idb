@@ -555,19 +555,19 @@ public final class IDBCommandExecutor {
     try await hid.send(events: events, logger: logger)
   }
 
-  public func set_hardware_keyboard_enabled(_ enabled: Bool) async throws {
+  public func setHardwareKeyboardEnabled(_ enabled: Bool) async throws {
     try await simulatorTarget().preferences.apply(.hardwareKeyboard(enabled))
   }
 
-  public func set_preference(_ name: String, value: String, type: String?, domain: String?) async throws {
+  public func setPreference(_ name: String, value: String, type: String?, domain: String?) async throws {
     try await simulatorTarget().preferences.apply(SimulatorSettingResolution(name: name, value: value, type: type, domain: domain))
   }
 
-  public func get_preference(_ name: String, domain: String?) async throws -> String {
+  public func getPreference(_ name: String, domain: String?) async throws -> String {
     try await simulatorTarget().preferences.currentSettingValue(name: name, domain: domain)
   }
 
-  public func set_locale_with_identifier(_ identifier: String) async throws {
+  public func setLocaleWithIdentifier(_ identifier: String) async throws {
     try await simulatorTarget().preferences.apply(.locale(localeIdentifier: identifier))
   }
 
@@ -591,11 +591,11 @@ public final class IDBCommandExecutor {
     try await simulatorTarget().hinge.set(angle)
   }
 
-  public func get_current_locale_identifier() async throws -> String {
+  public func getCurrentLocaleIdentifier() async throws -> String {
     try await simulatorTarget().preferences.getCurrentPreference("AppleLocale", domain: nil)
   }
 
-  public func list_locale_identifiers() -> [String] {
+  public func listLocaleIdentifiers() -> [String] {
     return NSLocale.availableLocaleIdentifiers
   }
 
