@@ -150,16 +150,24 @@ public final class SocketStream: @unchecked Sendable {
     }
   }
 
+  /// Cancelling an operation closes the connection, possibly between its `EAGAIN` and this wait. A descriptor already
+  /// gone in a cancelled task is that cancellation, and is reported as one rather than as `EBADF`.
   private func waitForReadiness(read: Bool) async throws {
-    let duplicate = try withDescriptor { descriptor in
-      let duplicate = dup(descriptor)
-      guard duplicate >= 0 else { throw POSIXError(POSIXErrorCode(rawValue: errno) ?? .EIO) }
-      guard fcntl(duplicate, F_SETFD, FD_CLOEXEC) == 0 else {
-        let error = POSIXError(POSIXErrorCode(rawValue: errno) ?? .EIO)
-        Darwin.close(duplicate)
-        throw error
+    let duplicate: Int32
+    do {
+      duplicate = try withDescriptor { descriptor in
+        let duplicate = dup(descriptor)
+        guard duplicate >= 0 else { throw POSIXError(POSIXErrorCode(rawValue: errno) ?? .EIO) }
+        guard fcntl(duplicate, F_SETFD, FD_CLOEXEC) == 0 else {
+          let error = POSIXError(POSIXErrorCode(rawValue: errno) ?? .EIO)
+          Darwin.close(duplicate)
+          throw error
+        }
+        return duplicate
       }
-      return duplicate
+    } catch {
+      try Task.checkCancellation()
+      throw error
     }
     try await SocketReadiness(descriptor: duplicate, read: read).wait()
   }
