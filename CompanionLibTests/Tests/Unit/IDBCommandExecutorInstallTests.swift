@@ -248,7 +248,7 @@ struct IDBCommandExecutorInstallTests {
     let harness = try MacInstallHarness()
     let dylib = try harness.makeFile(named: "libSample.dylib")
 
-    try await harness.executor.push_file_from_tar(try await harness.gzippedTarData(of: dylib), to_path: "nested", containerType: "dylib")
+    try await harness.executor.pushFileFromTar(try await harness.gzippedTarData(of: dylib), toPath: "nested", containerType: "dylib")
 
     let pushed = harness.executor.storageManager.dylib.basePath.appendingPathComponent("nested/libSample.dylib")
     #expect(FileManager.default.contentsEqual(atPath: pushed.path, andPath: dylib.path))

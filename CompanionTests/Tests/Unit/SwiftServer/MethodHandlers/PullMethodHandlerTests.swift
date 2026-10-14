@@ -34,7 +34,7 @@ private final class ScriptedFilePuller: FilePulling, @unchecked Sendable {
     self.onStop = onStop
   }
 
-  func pull_file_path(_ path: String, destination_path destinationPath: String, containerType: String?) async throws -> String {
+  func pullFilePath(_ path: String, destinationPath: String, containerType: String?) async throws -> String {
     onStart()
     guard holdsOpen else {
       try land(destinationPath)
@@ -72,7 +72,7 @@ private final class LocalFilePuller: FilePulling, @unchecked Sendable {
     self.readable = readable
   }
 
-  func pull_file_path(_ path: String, destination_path destinationPath: String, containerType: String?) async throws -> String {
+  func pullFilePath(_ path: String, destinationPath: String, containerType: String?) async throws -> String {
     try contents.write(to: URL(fileURLWithPath: destinationPath))
     if !readable {
       try FileManager.default.setAttributes([.posixPermissions: 0o000], ofItemAtPath: destinationPath)

@@ -16,7 +16,7 @@ import IDBGRPCSwift
 protocol FilePulling: Sendable {
   var temporaryDirectory: TemporaryDirectory { get }
 
-  func pull_file_path(_ path: String, destination_path destinationPath: String, containerType: String?) async throws -> String
+  func pullFilePath(_ path: String, destinationPath: String, containerType: String?) async throws -> String
 }
 
 extension IDBCommandExecutor: FilePulling {}
@@ -70,9 +70,9 @@ struct PullMethodHandler {
     let url = commandExecutor.temporaryDirectory.temporaryDirectory()
     let tempPath = url.appendingPathComponent(path.lastPathComponent).path
 
-    let filePath = try await commandExecutor.pull_file_path(
+    let filePath = try await commandExecutor.pullFilePath(
       request.srcPath,
-      destination_path: tempPath,
+      destinationPath: tempPath,
       containerType: fileContainer)
 
     let archive = try ArchiveOperations.gzippedTarSubprocess(forPath: filePath, logger: logger)
@@ -96,9 +96,9 @@ struct PullMethodHandler {
   ) async throws {
     let fileContainer = FileContainerTranslation.rawFileContainer(from: request.container)
 
-    let filePath = try await commandExecutor.pull_file_path(
+    let filePath = try await commandExecutor.pullFilePath(
       request.srcPath,
-      destination_path: request.dstPath,
+      destinationPath: request.dstPath,
       containerType: fileContainer)
     let response = Idb_PullResponse.with {
       $0.payload = .with { $0.source = .filePath(filePath) }

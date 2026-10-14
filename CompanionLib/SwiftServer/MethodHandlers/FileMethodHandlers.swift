@@ -32,7 +32,7 @@ struct LsMethodHandler {
   }
 
   private func list(path: String, fileContainer: String) async throws -> Idb_LsResponse {
-    let paths = try await commandExecutor.list_path(path, containerType: fileContainer)
+    let paths = try await commandExecutor.listPath(path, containerType: fileContainer)
 
     return .with {
       $0.files = paths.map(toFileInfo)
@@ -40,7 +40,7 @@ struct LsMethodHandler {
   }
 
   private func list(pathList: [String], fileContainer: String) async throws -> Idb_LsResponse {
-    let pathsToPaths = try await commandExecutor.list_paths(pathList, containerType: fileContainer)
+    let pathsToPaths = try await commandExecutor.listPaths(pathList, containerType: fileContainer)
 
     return .with {
       $0.listings = pathsToPaths.map { containerPath, paths in
@@ -65,7 +65,7 @@ struct MkdirMethodHandler {
 
   func handle(request: Idb_MkdirRequest, context: ServerContext) async throws -> Idb_MkdirResponse {
     let fileContainer = FileContainerTranslation.rawFileContainer(from: request.container)
-    try await commandExecutor.create_directory(request.path, containerType: fileContainer)
+    try await commandExecutor.createDirectory(request.path, containerType: fileContainer)
     return .init()
   }
 }
@@ -76,7 +76,7 @@ struct MvMethodHandler {
 
   func handle(request: Idb_MvRequest, context: ServerContext) async throws -> Idb_MvResponse {
     let fileContainer = FileContainerTranslation.rawFileContainer(from: request.container)
-    try await commandExecutor.move_paths(request.srcPaths, to_path: request.dstPath, containerType: fileContainer)
+    try await commandExecutor.movePaths(request.srcPaths, toPath: request.dstPath, containerType: fileContainer)
     return .init()
   }
 }
@@ -87,7 +87,7 @@ struct RmMethodHandler {
 
   func handle(request: Idb_RmRequest, context: ServerContext) async throws -> Idb_RmResponse {
     let fileContainer = FileContainerTranslation.rawFileContainer(from: request.container)
-    try await commandExecutor.remove_paths(request.paths, containerType: fileContainer)
+    try await commandExecutor.removePaths(request.paths, containerType: fileContainer)
     return .init()
   }
 }
@@ -105,7 +105,7 @@ struct PushMethodHandler {
 
     let fileContainer = FileContainerTranslation.rawFileContainer(from: inner.container)
     try await MultisourceFileReader.withFilePathURLs(from: requestStream, temporaryDirectory: commandExecutor.temporaryDirectory, extractFromSubdir: false) { extractedFileURLs in
-      try await commandExecutor.push_files(extractedFileURLs, to_path: inner.dstPath, containerType: fileContainer)
+      try await commandExecutor.pushFiles(extractedFileURLs, toPath: inner.dstPath, containerType: fileContainer)
     }
 
     return .init()

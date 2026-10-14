@@ -601,7 +601,7 @@ public final class IDBCommandExecutor {
 
   // MARK: - File Commands
 
-  public func move_paths(_ originPaths: [String], to_path destinationPath: String, containerType: String?) async throws {
+  public func movePaths(_ originPaths: [String], toPath destinationPath: String, containerType: String?) async throws {
     try await withFileContainer(for: containerType) { container in
       for originPath in originPaths {
         try await container.move(from: originPath, to: destinationPath)
@@ -609,14 +609,14 @@ public final class IDBCommandExecutor {
     }
   }
 
-  func push_file_from_tar(_ tarData: Data, to_path destinationPath: String, containerType: String?) async throws {
+  func pushFileFromTar(_ tarData: Data, toPath destinationPath: String, containerType: String?) async throws {
     try await temporaryDirectory.withArchiveExtracted(tarData) { extractDir in
       let paths = try FileManager.default.contentsOfDirectory(at: extractDir, includingPropertiesForKeys: [.isDirectoryKey], options: [])
-      try await self.push_files(paths, to_path: destinationPath, containerType: containerType)
+      try await self.pushFiles(paths, toPath: destinationPath, containerType: containerType)
     }
   }
 
-  public func push_files(_ paths: [URL], to_path destinationPath: String, containerType: String?) async throws {
+  public func pushFiles(_ paths: [URL], toPath destinationPath: String, containerType: String?) async throws {
     try await withFileContainer(for: containerType) { container in
       for originPath in paths {
         try await container.copy(fromHost: originPath.path, toContainer: destinationPath)
@@ -624,13 +624,13 @@ public final class IDBCommandExecutor {
     }
   }
 
-  public func pull_file_path(_ path: String, destination_path destinationPath: String, containerType: String?) async throws -> String {
+  public func pullFilePath(_ path: String, destinationPath: String, containerType: String?) async throws -> String {
     return try await withFileContainer(for: containerType) { container in
       try await container.copy(fromContainer: path, toHost: destinationPath)
     }
   }
 
-  func pull_file(_ path: String, containerType: String?) async throws -> Data {
+  func pullFile(_ path: String, containerType: String?) async throws -> Data {
     return try await temporaryDirectory.withTemporaryDirectory { url in
       let tempPath = (url.path as NSString).appendingPathComponent((path as NSString).lastPathComponent)
       try await self.withFileContainer(for: containerType) { container in
@@ -646,13 +646,13 @@ public final class IDBCommandExecutor {
     }
   }
 
-  public func create_directory(_ directoryPath: String, containerType: String) async throws {
+  public func createDirectory(_ directoryPath: String, containerType: String) async throws {
     try await withFileContainer(for: containerType) { container in
       try await container.createDirectory(directoryPath)
     }
   }
 
-  public func remove_paths(_ paths: [String], containerType: String?) async throws {
+  public func removePaths(_ paths: [String], containerType: String?) async throws {
     try await withFileContainer(for: containerType) { container in
       for path in paths {
         try await container.remove(path)
@@ -660,13 +660,13 @@ public final class IDBCommandExecutor {
     }
   }
 
-  public func list_path(_ path: String, containerType: String?) async throws -> [String] {
+  public func listPath(_ path: String, containerType: String?) async throws -> [String] {
     return try await withFileContainer(for: containerType) { container in
       try await container.contents(ofDirectory: path)
     }
   }
 
-  public func list_paths(_ paths: [String], containerType: String?) async throws -> [String: [String]] {
+  public func listPaths(_ paths: [String], containerType: String?) async throws -> [String: [String]] {
     return try await withFileContainer(for: containerType) { container in
       var result: [String: [String]] = [:]
       for path in paths {
