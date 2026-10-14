@@ -7,14 +7,16 @@
 
 import FBSimulatorBridgeProtocol
 import Foundation
-import XCTest
+import Testing
 
-final class BridgeProtocolTests: XCTestCase {
+@Suite
+struct BridgeProtocolTests {
   private static func readOptions(maxDepth: Int = 1, maxNodes: Int = 2, automationMode: Bool? = nil) -> BridgeAXReadOptions {
     BridgeAXReadOptions(maxDepth: maxDepth, maxNodes: maxNodes, attributes: nil, explainUnreachable: false, traversal: .viewHierarchy, automationMode: automationMode, clientType: .noClient)
   }
 
-  func testEveryServiceUsesTheSameRequestForArgumentsAndFrames() throws {
+  @Test
+  func everyServiceUsesTheSameRequestForArgumentsAndFrames() throws {
     let commands: [BridgeCommand] = [
       .clearContacts, .clearPhotos,
       .dynamicStore(.snapshot(key: "dns")), .dynamicStore(.restore(key: "State:/custom", snapshot: Data([0, 255]))),
@@ -33,15 +35,16 @@ final class BridgeProtocolTests: XCTestCase {
     for command in commands {
       let request = BridgeRequest(command: command, id: "request-1")
       let arguments = try request.arguments
-      XCTAssertEqual(arguments.count, 2)
-      XCTAssertEqual(arguments[0], "rpc")
+      #expect(arguments.count == 2)
+      #expect(arguments[0] == "rpc")
       let data = Data(arguments[1].utf8)
-      XCTAssertEqual(try BridgeRequest.decode(data), request)
-      XCTAssertEqual(try request.encoded(), data)
+      #expect(try BridgeRequest.decode(data) == request)
+      #expect(try request.encoded() == data)
     }
   }
 
-  func testMutationsCannotBeRetried() {
+  @Test
+  func mutationsCannotBeRetried() {
     let commands: [BridgeCommand] = [
       .clearContacts, .clearPhotos, .dns(.clear), .dns(.set(servers: [])), .proxy(.clear),
       .proxy(.set(host: "localhost", port: 8080, kind: .http)),
@@ -54,63 +57,62 @@ final class BridgeProtocolTests: XCTestCase {
       .accessibility(.deviceSettingWrite("voiceover", enabled: true)),
       .accessibility(.quiescence(pid: nil, busyThresholdMs: nil, quietWindowMs: nil)),
     ]
-    for command in commands { XCTAssertFalse(command.mayRetry, "\(command)") }
+    for command in commands { #expect(!command.mayRetry, "\(command)") }
     for mode: Bool? in [true, false, nil] {
-      XCTAssertTrue(BridgeCommand.accessibility(.read(pid: 1, options: Self.readOptions(automationMode: mode))).mayRetry)
-      XCTAssertTrue(BridgeCommand.accessibility(.readFrontmost(x: 1, y: 2, method: .windowServer, options: Self.readOptions(automationMode: mode))).mayRetry)
+      #expect(BridgeCommand.accessibility(.read(pid: 1, options: Self.readOptions(automationMode: mode))).mayRetry)
+      #expect(BridgeCommand.accessibility(.readFrontmost(x: 1, y: 2, method: .windowServer, options: Self.readOptions(automationMode: mode))).mayRetry)
     }
     let reads: [BridgeCommand] = [
       .dynamicStore(.snapshot(key: "dns")), .ping, .dns(.list), .proxy(.list), .notifications(.list(bundleID: nil)), .notifications(.delivered(bundleID: "app")),
       .health(.list(bundleID: "app")), .accessibility(.hitTest(x: 1, y: 2, attributes: nil, clientType: .noClient)), .accessibility(.deviceSettingRead("voiceover")), .accessibility(.displays),
     ]
     for command in reads {
-      XCTAssertTrue(command.mayRetry, "\(command)")
+      #expect(command.mayRetry, "\(command)")
     }
   }
 
-  func testResponseKeepsFailureOutputAndRequiresMatchingIdentity() throws {
+  @Test
+  func responseKeepsFailureOutputAndRequiresMatchingIdentity() throws {
     let request = BridgeRequest(command: .clearPhotos, id: "first")
     let result = BridgeResult(exitCode: 1, values: [.object(["partial": .bool(true)])])
     let data = try BridgeResponse(request: request, result: result).encoded()
-    XCTAssertEqual(try BridgeResponse.decode(data, for: request).result, result)
+    #expect(try BridgeResponse.decode(data, for: request).result == result)
     let other = BridgeRequest(command: .clearPhotos, id: "second")
-    XCTAssertThrowsError(try BridgeResponse.decode(data, for: other)) {
-      XCTAssertEqual($0 as? BridgeProtocolError, .mismatchedResponse)
-    }
+    #expect(throws: BridgeProtocolError.mismatchedResponse) { try BridgeResponse.decode(data, for: other) }
   }
 
-  func testBinaryPropertyListsSurviveResponseEncodingWithoutJSONCoercion() throws {
+  @Test
+  func binaryPropertyListsSurviveResponseEncodingWithoutJSONCoercion() throws {
     let value: [String: Any] = ["present": true, "value": [Data([0, 255]), Date(timeIntervalSince1970: 1234)]]
     let bytes = try PropertyListSerialization.data(fromPropertyList: value, format: .binary, options: 0)
     let request = BridgeRequest(command: .dynamicStore(.snapshot(key: "dns")))
     let result = BridgeResult(exitCode: 0, propertyList: bytes)
-    XCTAssertEqual(try BridgeResponse.decode(BridgeResponse(request: request, result: result).encoded(), for: request).result, result)
-    XCTAssertEqual(try PropertyListSerialization.propertyList(from: XCTUnwrap(result.propertyList), options: [], format: nil) as? NSDictionary, value as NSDictionary)
+    #expect(try BridgeResponse.decode(BridgeResponse(request: request, result: result).encoded(), for: request).result == result)
+    let propertyList = try #require(result.propertyList)
+    #expect(try PropertyListSerialization.propertyList(from: propertyList, options: [], format: nil) as? NSDictionary == value as NSDictionary)
   }
 
-  func testRejectsUnsupportedVersionsAndMalformedRequests() throws {
+  @Test
+  func rejectsUnsupportedVersionsAndMalformedRequests() throws {
     let request = BridgeRequest(command: .ping)
-    var object = try XCTUnwrap(JSONSerialization.jsonObject(with: request.encoded()) as? [String: Any])
+    var object = try #require(JSONSerialization.jsonObject(with: request.encoded()) as? [String: Any])
     object["version"] = BridgeRequest.currentVersion + 1
-    XCTAssertThrowsError(try BridgeRequest.decode(JSONSerialization.data(withJSONObject: object))) {
-      XCTAssertEqual($0 as? BridgeProtocolError, .unsupportedVersion(BridgeRequest.currentVersion + 1))
-    }
+    #expect(throws: BridgeProtocolError.unsupportedVersion(BridgeRequest.currentVersion + 1)) { try BridgeRequest.decode(JSONSerialization.data(withJSONObject: object)) }
     for text in ["", "null", "[]", "{}", "{", "{\"version\":2,\"id\":\"x\",\"command\":{\"future\":{}}}"] {
-      XCTAssertThrowsError(try BridgeRequest.decode(Data(text.utf8)), text)
+      #expect(throws: (any Error).self, "\(text)") { try BridgeRequest.decode(Data(text.utf8)) }
     }
     for text in ["", "null", "[]", "{}", "{"] {
-      XCTAssertNil(BridgeRequest.identity(of: Data(text.utf8)), text)
+      #expect(BridgeRequest.identity(of: Data(text.utf8)) == nil, "\(text)")
     }
     // A newer peer's command shape is a version gap, not a malformed request.
-    XCTAssertThrowsError(try BridgeRequest.decode(Data(#"{"version":3,"id":"x","command":{"future":{}}}"#.utf8))) {
-      XCTAssertEqual($0 as? BridgeProtocolError, .unsupportedVersion(3))
-    }
-    XCTAssertEqual(BridgeRequest.identity(of: Data(#"{"version":2,"id":"x","command":{"future":{}}}"#.utf8)), "x")
-    XCTAssertEqual(BridgeRequest.identity(of: Data(#"{"version":3,"id":"x"}"#.utf8)), "x")
-    XCTAssertNil(BridgeRequest.identity(of: Data(#"{"version":2,"id":7,"command":{"ping":{}}}"#.utf8)))
+    #expect(throws: BridgeProtocolError.unsupportedVersion(3)) { try BridgeRequest.decode(Data(#"{"version":3,"id":"x","command":{"future":{}}}"#.utf8)) }
+    #expect(BridgeRequest.identity(of: Data(#"{"version":2,"id":"x","command":{"future":{}}}"#.utf8)) == "x")
+    #expect(BridgeRequest.identity(of: Data(#"{"version":3,"id":"x"}"#.utf8)) == "x")
+    #expect(BridgeRequest.identity(of: Data(#"{"version":2,"id":7,"command":{"ping":{}}}"#.utf8)) == nil)
   }
 
-  func testLiteralWireFixturesPinEveryTopLevelCommand() throws {
+  @Test
+  func literalWireFixturesPinEveryTopLevelCommand() throws {
     // The synthesized `_0` payload keys are the wire contract the Python harness and older guests
     // speak; a label or case rename here must fail this test rather than the peer.
     let fixtures: [(String, BridgeCommand)] = [
@@ -133,12 +135,13 @@ final class BridgeProtocolTests: XCTestCase {
     ]
     for (text, command) in fixtures {
       let literal = #"{"command":"# + text + #","id":"fixture","version":2}"#
-      XCTAssertEqual(try BridgeRequest.decode(Data(literal.utf8)).command, command, text)
-      XCTAssertEqual(String(decoding: try BridgeRequest(command: command, id: "fixture").encoded(), as: UTF8.self), literal, text)
+      #expect(try BridgeRequest.decode(Data(literal.utf8)).command == command, "\(text)")
+      #expect(String(decoding: try BridgeRequest(command: command, id: "fixture").encoded(), as: UTF8.self) == literal, "\(text)")
     }
   }
 
-  func testIntegersAndBooleansSurviveJSONWithoutLosingPrecision() throws {
+  @Test
+  func integersAndBooleansSurviveJSONWithoutLosingPrecision() throws {
     let value = BridgeJSONValue.object([
       "signed": .integer(Int64.min), "unsigned": .unsignedInteger(UInt64.max),
       "aboveDoublePrecision": .integer(9_007_199_254_740_993),
@@ -146,15 +149,16 @@ final class BridgeProtocolTests: XCTestCase {
       "nested": .array([.null, .string("quotes\" newline\n NUL\0")]),
     ])
     let data = try JSONEncoder().encode(value)
-    XCTAssertEqual(try JSONDecoder().decode(BridgeJSONValue.self, from: data), value)
-    XCTAssertEqual(try BridgeJSONValue(foundationValue: value.foundationValue), value)
-    XCTAssertEqual(try BridgeJSONValue(foundationValue: NSNumber(value: true)), .bool(true))
-    XCTAssertEqual(try BridgeJSONValue(foundationValue: NSNumber(value: 1)), .integer(1))
-    XCTAssertThrowsError(try BridgeJSONValue(foundationValue: NSNumber(value: Double.nan)))
-    XCTAssertThrowsError(try BridgeJSONValue(foundationValue: Date()))
+    #expect(try JSONDecoder().decode(BridgeJSONValue.self, from: data) == value)
+    #expect(try BridgeJSONValue(foundationValue: value.foundationValue) == value)
+    #expect(try BridgeJSONValue(foundationValue: NSNumber(value: true)) == .bool(true))
+    #expect(try BridgeJSONValue(foundationValue: NSNumber(value: 1)) == .integer(1))
+    #expect(throws: (any Error).self) { try BridgeJSONValue(foundationValue: NSNumber(value: Double.nan)) }
+    #expect(throws: (any Error).self) { try BridgeJSONValue(foundationValue: Date()) }
   }
 
-  func testFoundationJSONPreservesLargeIntegerAndExponentValues() throws {
+  @Test
+  func foundationJSONPreservesLargeIntegerAndExponentValues() throws {
     let object: [String: Any] = [
       "large": NSNumber(value: Int64(9_007_199_254_740_993)),
       "signedMax": NSNumber(value: Int64.max),
@@ -163,38 +167,36 @@ final class BridgeProtocolTests: XCTestCase {
       "twoTo64": NSNumber(value: Double(18_446_744_073_709_551_616)),
     ]
     let bytes = try JSONSerialization.data(withJSONObject: object)
-    XCTAssertEqual(try BridgeJSONValue(foundationValue: JSONSerialization.jsonObject(with: bytes)), try BridgeJSONValue(foundationValue: object))
+    #expect(try BridgeJSONValue(foundationValue: JSONSerialization.jsonObject(with: bytes)) == BridgeJSONValue(foundationValue: object))
     let value = try JSONDecoder().decode(BridgeJSONValue.self, from: Data("[1e3,1.25e-2,-0.0,9007199254740993]".utf8))
-    XCTAssertEqual(value, .array([.integer(1000), .number(0.0125), .integer(0), .integer(9_007_199_254_740_993)]))
+    #expect(value == .array([.integer(1000), .number(0.0125), .integer(0), .integer(9_007_199_254_740_993)]))
   }
 
-  func testNumericRepresentationsHaveJSONEqualityWithoutRoundingLargeIntegers() throws {
+  @Test
+  func numericRepresentationsHaveJSONEqualityWithoutRoundingLargeIntegers() throws {
     for value: BridgeJSONValue in [.unsignedInteger(1), .number(1), .number(-0.0), .unsignedInteger(UInt64.max)] {
-      XCTAssertEqual(try JSONDecoder().decode(BridgeJSONValue.self, from: JSONEncoder().encode(value)), value)
+      #expect(try JSONDecoder().decode(BridgeJSONValue.self, from: JSONEncoder().encode(value)) == value)
     }
-    XCTAssertEqual(BridgeJSONValue.integer(1), .number(1))
-    XCTAssertEqual(BridgeJSONValue.integer(0), .number(-0.0))
-    XCTAssertNotEqual(BridgeJSONValue.integer(1), .bool(true))
-    XCTAssertNotEqual(BridgeJSONValue.integer(9_007_199_254_740_993), .number(9_007_199_254_740_992))
-    XCTAssertNotEqual(BridgeJSONValue.unsignedInteger(UInt64.max), .unsignedInteger(UInt64.max - 1))
+    #expect(BridgeJSONValue.integer(1) == .number(1))
+    #expect(BridgeJSONValue.integer(0) == .number(-0.0))
+    #expect(BridgeJSONValue.integer(1) != .bool(true))
+    #expect(BridgeJSONValue.integer(9_007_199_254_740_993) != .number(9_007_199_254_740_992))
+    #expect(BridgeJSONValue.unsignedInteger(UInt64.max) != .unsignedInteger(UInt64.max - 1))
     for value in [Double.nan, Double.infinity, -Double.infinity] {
-      XCTAssertThrowsError(try JSONEncoder().encode(BridgeJSONValue.number(value)))
+      #expect(throws: (any Error).self) { try JSONEncoder().encode(BridgeJSONValue.number(value)) }
     }
   }
 
-  func testLiteralWireFixturesAndResponseVersionBoundary() throws {
+  @Test
+  func literalWireFixturesAndResponseVersionBoundary() throws {
     let request = try BridgeRequest.decode(Data(#"{"version":2,"id":"fixture","command":{"dns":{"_0":{"set":{"servers":["::1","1.1.1.1"]}}}}}"#.utf8))
-    XCTAssertEqual(request.command, .dns(.set(servers: ["::1", "1.1.1.1"])))
+    #expect(request.command == .dns(.set(servers: ["::1", "1.1.1.1"])))
     let success = Data(#"{"version":2,"id":"fixture","result":{"exitCode":0,"values":[{"ok":true},null,42]}}"#.utf8)
-    XCTAssertEqual(try BridgeResponse.decode(success, for: request).result, BridgeResult(exitCode: 0, values: [.object(["ok": .bool(true)]), .null, .integer(42)]))
+    #expect(try BridgeResponse.decode(success, for: request).result == BridgeResult(exitCode: 0, values: [.object(["ok": .bool(true)]), .null, .integer(42)]))
     let future = Data(#"{"version":3,"id":"fixture","result":{"exitCode":0,"values":[]}}"#.utf8)
-    XCTAssertThrowsError(try BridgeResponse.decode(future, for: request)) {
-      XCTAssertEqual($0 as? BridgeProtocolError, .unsupportedVersion(3))
-    }
+    #expect(throws: BridgeProtocolError.unsupportedVersion(3)) { try BridgeResponse.decode(future, for: request) }
     for text in [#"{"version":2,"result":{"exitCode":0,"values":[]}}"#, #"{"version":2,"id":"different","result":{"exitCode":0,"values":[]}}"#] {
-      XCTAssertThrowsError(try BridgeResponse.decode(Data(text.utf8), for: request)) {
-        XCTAssertEqual($0 as? BridgeProtocolError, .mismatchedResponse)
-      }
+      #expect(throws: BridgeProtocolError.mismatchedResponse) { try BridgeResponse.decode(Data(text.utf8), for: request) }
     }
   }
 }
