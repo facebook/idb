@@ -6,39 +6,43 @@
  */
 
 @testable import FBSimulatorControl
-import XCTest
+import Foundation
+import Testing
 
-final class SimulatorServiceContextErrorTests: XCTestCase {
+@Suite
+struct SimulatorServiceContextErrorTests {
 
-  func testNoFullXcodeSelectedMessageIsStable() {
+  @Test
+  func noFullXcodeSelectedMessageIsStable() {
     // User-facing message; pinned verbatim.
-    XCTAssertEqual(
-      SimulatorServiceContextError.noFullXcodeSelected.errorDescription,
-      "No full Xcode developer directory is selected. Select one with `xcode-select -s` or set DEVELOPER_DIR."
+    #expect(
+      SimulatorServiceContextError.noFullXcodeSelected.errorDescription == "No full Xcode developer directory is selected. Select one with `xcode-select -s` or set DEVELOPER_DIR."
     )
   }
 
-  func testServiceContextUnavailableComposesUnderlyingReason() {
+  @Test
+  func serviceContextUnavailableComposesUnderlyingReason() {
     let error = SimulatorServiceContextError.serviceContextUnavailable(
       developerDirectory: "/Applications/Xcode.app/Contents/Developer",
       reason: "the underlying boom"
     )
-    XCTAssertEqual(
-      error.errorDescription,
-      "Could not create a SimServiceContext for developer directory '/Applications/Xcode.app/Contents/Developer': the underlying boom"
+    #expect(
+      error.errorDescription == "Could not create a SimServiceContext for developer directory '/Applications/Xcode.app/Contents/Developer': the underlying boom"
     )
   }
 
-  func testServiceContextUnavailableWithoutReasonOmitsSuffix() {
+  @Test
+  func serviceContextUnavailableWithoutReasonOmitsSuffix() {
     let error = SimulatorServiceContextError.serviceContextUnavailable(
       developerDirectory: "/dev/dir",
       reason: nil
     )
-    XCTAssertEqual(error.errorDescription, "Could not create a SimServiceContext for developer directory '/dev/dir'")
+    #expect(error.errorDescription == "Could not create a SimServiceContext for developer directory '/dev/dir'")
   }
 
-  func testDescriptionMirrorsErrorDescription() {
+  @Test
+  func descriptionMirrorsErrorDescription() {
     let error = SimulatorServiceContextError.deviceSetPathResolutionFailed(path: "/tmp/set", reason: "No such file or directory")
-    XCTAssertEqual(error.description, error.errorDescription)
+    #expect(error.description == error.errorDescription)
   }
 }
