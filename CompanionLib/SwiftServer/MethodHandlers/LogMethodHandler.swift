@@ -11,6 +11,11 @@ import GRPCCore
 import IDBConcurrency
 import IDBGRPCSwift
 
+/// Starts the log a `log` request streams, writing its output to `consumer`.
+protocol LogStarting: Sendable {
+  func start(consumer: any DataConsumer) async throws -> any LogOperation
+}
+
 struct LogMethodHandler: @unchecked Sendable {
 
   let target: any Target
@@ -18,29 +23,27 @@ struct LogMethodHandler: @unchecked Sendable {
 
   func handle(request: Idb_LogRequest, responseStream: RPCWriter<Idb_LogResponse>, context: ServerContext) async throws {
     let streamWriter = FIFOStreamWriter(stream: responseStream)
-    try await Self.tail(cancellation: context.cancellation, send: { try streamWriter.send($0) }) { consumer in
-      if request.source == .companion {
-        return try await commandExecutor.tailCompanionLogs(consumer)
-      }
-      return try await target.log.tail(arguments: request.arguments, consumer: consumer)
-    }
+    try await Self.tail(
+      cancellation: context.cancellation,
+      send: { try streamWriter.send($0) },
+      log: RequestedLog(request: request, target: target, commandExecutor: commandExecutor))
   }
 
-  /// Forwards the log `start` begins until the log ends, a write fails, or `cancellation` reports the RPC
+  /// Forwards the log `log` starts until the log ends, a write fails, or `cancellation` reports the RPC
   /// cancelled, as it does when the client goes away. Only a write would otherwise notice the client is gone.
   static func tail(
     cancellation: ServerContext.RPCCancellationHandle,
     send: @escaping @Sendable (Idb_LogResponse) throws -> Void,
-    start: @escaping @Sendable (any DataConsumer) async throws -> any LogOperation
+    log: any LogStarting
   ) async throws {
     try await withRPCCancellation(cancellation) {
-      try await forward(send: send, start: start)
+      try await forward(send: send, log: log)
     }
   }
 
   private static func forward(
     send: @escaping @Sendable (Idb_LogResponse) throws -> Void,
-    start: (any DataConsumer) async throws -> any LogOperation
+    log: any LogStarting
   ) async throws {
     let writingDone = AsyncPromise<Void>()
 
@@ -58,7 +61,7 @@ struct LogMethodHandler: @unchecked Sendable {
       }
     }
 
-    let operation = try await start(consumer)
+    let operation = try await log.start(consumer: consumer)
 
     let observeWritingDone = Task<Void, Error> {
       try await writingDone.value
@@ -73,5 +76,22 @@ struct LogMethodHandler: @unchecked Sendable {
     writingDone.resolve(())
 
     observeOperationCompletion.cancel()
+  }
+}
+
+/// The log a request names: the companion's own, or the target's.
+// SAFETY: holds the same non-Sendable target the handler does, which is itself `@unchecked Sendable`
+// for the same reason; the target and executor are thread-safe handles.
+// patternlint-disable-next-line unchecked-sendable
+private struct RequestedLog: LogStarting, @unchecked Sendable {
+  let request: Idb_LogRequest
+  let target: any Target
+  let commandExecutor: IDBCommandExecutor
+
+  func start(consumer: any DataConsumer) async throws -> any LogOperation {
+    if request.source == .companion {
+      return try await commandExecutor.tailCompanionLogs(consumer)
+    }
+    return try await target.log.tail(arguments: request.arguments, consumer: consumer)
   }
 }

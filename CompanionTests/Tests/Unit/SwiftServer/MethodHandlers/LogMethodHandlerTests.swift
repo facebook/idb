@@ -34,6 +34,23 @@ private final class ScriptedLogOperation: LogOperation, @unchecked Sendable {
   }
 }
 
+/// Writes `output` to the consumer, then hands back an operation that ends at once or, with
+/// `holdsOpen`, runs until its waiter is cancelled.
+private struct ScriptedLog: LogStarting {
+  var output: [String] = []
+  let holdsOpen: Bool
+  var onStart: @Sendable () -> Void = {}
+  var onStop: @Sendable () -> Void = {}
+
+  func start(consumer: any DataConsumer) async throws -> any LogOperation {
+    onStart()
+    for chunk in output {
+      consumer.consumeData(Data(chunk.utf8))
+    }
+    return ScriptedLogOperation(consumer: consumer, holdsOpen: holdsOpen, onStop: onStop)
+  }
+}
+
 private final class SentResponses: @unchecked Sendable {
   private let lock = NSLock()
   private var responses: [Idb_LogResponse] = []
@@ -49,21 +66,18 @@ final class LogMethodHandlerTests: XCTestCase {
 
   func testTheLogIsForwardedUntilItEnds() async throws {
     let sent = SentResponses()
-    try await LogMethodHandler.tail(cancellation: ServerContext.RPCCancellationHandle(), send: { sent.append($0) }) { consumer in
-      consumer.consumeData(Data("one".utf8))
-      consumer.consumeData(Data("two".utf8))
-      return ScriptedLogOperation(consumer: consumer, holdsOpen: false)
-    }
+    try await LogMethodHandler.tail(
+      cancellation: ServerContext.RPCCancellationHandle(), send: { sent.append($0) },
+      log: ScriptedLog(output: ["one", "two"], holdsOpen: false))
     XCTAssertEqual(sent.all, [.with { $0.output = Data("one".utf8) }, .with { $0.output = Data("two".utf8) }])
   }
 
   func testAFailedWriteEndsTheCall() async throws {
     struct WriteFailed: Error {}
     do {
-      try await LogMethodHandler.tail(cancellation: ServerContext.RPCCancellationHandle(), send: { _ in throw WriteFailed() }) { consumer in
-        consumer.consumeData(Data("one".utf8))
-        return ScriptedLogOperation(consumer: consumer, holdsOpen: true)
-      }
+      try await LogMethodHandler.tail(
+        cancellation: ServerContext.RPCCancellationHandle(), send: { _ in throw WriteFailed() },
+        log: ScriptedLog(output: ["one"], holdsOpen: true))
       XCTFail("the call outlived its failed write")
     } catch is WriteFailed {}
   }
@@ -75,10 +89,9 @@ final class LogMethodHandlerTests: XCTestCase {
     let stopped = expectation(description: "the log stops")
     let cancellation = ServerContext.RPCCancellationHandle()
     let call = Task {
-      try await LogMethodHandler.tail(cancellation: cancellation, send: { _ in }) { consumer in
-        started.fulfill()
-        return ScriptedLogOperation(consumer: consumer, holdsOpen: true) { stopped.fulfill() }
-      }
+      try await LogMethodHandler.tail(
+        cancellation: cancellation, send: { _ in },
+        log: ScriptedLog(holdsOpen: true, onStart: { started.fulfill() }, onStop: { stopped.fulfill() }))
     }
     await fulfillment(of: [started], timeout: 5)
     cancellation.cancel()
