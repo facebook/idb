@@ -99,7 +99,7 @@ final class AXTranslationDispatcher: NSObject, AXPTranslationTokenDelegateHelper
       return try await performSerialized { () throws -> AXWritableElement in
         let collector = request.collector
         let translationStart = CFAbsoluteTimeGetCurrent()
-        guard let translator, let translation = try self.resolving(request, { try request.perform(withTranslator: translator) })
+        guard let translator, let translation = try self.resolving(request, { try request.resolveRoot(withTranslator: translator) })
         else {
           throw AccessibilityError.noTranslationObject
         }
@@ -107,10 +107,10 @@ final class AXTranslationDispatcher: NSObject, AXPTranslationTokenDelegateHelper
         translation.bridgeDelegateToken = request.token
 
         let conversionStart = CFAbsoluteTimeGetCurrent()
-        let rawElement = translator.macPlatformElement(fromTranslation: translation)
+        let rawElement = request.platformElement(for: translation)
         collector.elementConversionDuration = CFAbsoluteTimeGetCurrent() - conversionStart
 
-        guard let element = rawElement as? AXWritableElement else {
+        guard let element = rawElement else {
           throw AccessibilityError.noTranslationObject
         }
         element.axSetBridgeDelegateToken(request.token)

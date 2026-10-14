@@ -45,6 +45,7 @@ final class SimulatorAccessibilityCommandsTests: XCTestCase {
   // MARK: - Properties
 
   private var fixture: AccessibilityTestFixture?
+  private var dispatcher: AXTranslationDispatcher?
   private var simulator: Simulator!
 
   // MARK: - Helpers
@@ -497,6 +498,7 @@ final class SimulatorAccessibilityCommandsTests: XCTestCase {
 
     let sim = SimulatorTestSupport.testableSimulator(withDevice: fixture!.device)
     let dispatcher = Simulator.createAccessibilityTranslationDispatcher(withTranslator: fixture!.translator)
+    self.dispatcher = dispatcher
     // CoreSimulator's client over the device double, unless a test injects its own: the double vends no
     // services for the bridge transport to look up.
     let commands = SimulatorAccessibilityCommands(
@@ -530,28 +532,46 @@ final class SimulatorAccessibilityCommandsTests: XCTestCase {
     defaultRoot(withChildren: [defaultTitleLabel, defaultOkButton, defaultCancelButton])
   }
 
+  /// Sends a translator request with each client type through the dispatcher's bridge callback for the open
+  /// element's token, as the translator does when it acts on the element, returning each answer.
+  @discardableResult
+  private func sendThroughBridgeCallback(clientTypes: [UInt64], root: AXPTranslationObjectDouble? = nil) -> [AnyObject?] {
+    let token = (root ?? fixture!.translator.frontmostApplicationResult)?.bridgeDelegateToken ?? ""
+    return clientTypes.map {
+      AccessibilityTranslatorRequests.send(AccessibilityTranslatorRequests.make(clientType: $0), through: dispatcher, token: token)
+    }
+  }
+
+  /// The client type of each request a test sent through the bridge callback, among everything `requests` holds:
+  /// those are the only requests with no request type of their own.
+  private func bridgeCallbackClientTypes(_ requests: [Any]) -> [UInt64] {
+    requests
+      .filter { (($0 as AnyObject).value(forKey: "requestType") as? NSNumber)?.intValue == 0 }
+      .compactMap { AccessibilityTranslatorRequests.clientType(of: $0) }
+  }
+
   // MARK: - Tests
 
   func testTheDispatcherForwardsTranslatorRequestsWithTheClientTypeTheTranslatorStamped() async throws {
     try setUp(withRootElement: defaultElementTree)
-    fixture!.translator.bridgeRequestClientTypes = [0, 5]
-
     let element = try await simulator.accessibility.resolveElement(for: .frontmost)
-    element.close()
+    defer { element.close() }
 
-    let forwarded = fixture!.device.accessibilityRequests.compactMap { AccessibilityTranslatorRequests.clientType(of: $0) }
-    XCTAssertEqual(forwarded, [0, 0])
+    sendThroughBridgeCallback(clientTypes: [0, 5])
+
+    XCTAssertEqual(bridgeCallbackClientTypes(fixture!.device.accessibilityRequests as! [Any]), [0, 0])
   }
 
   func testTranslatorRequestsGoThroughTheInjectedTransportWithTheirClient() async throws {
-    let transport = AXTranslationTransportDouble()
+    let root = AXPTranslationObjectDouble(pid: 12345, objectID: 0)
+    let transport = AXTranslationTransportDouble(root: root)
     try setUp(withRootElement: defaultElementTree, transport: transport)
-    fixture!.translator.bridgeRequestClientTypes = [0, 5]
-
     let element = try await simulator.accessibility.resolveElement(for: .frontmost, clientType: .xctest)
-    element.close()
+    defer { element.close() }
 
-    XCTAssertEqual(transport.requests.map(\.clientType), [AXClientType.xctest.rawValue, AXClientType.xctest.rawValue])
+    sendThroughBridgeCallback(clientTypes: [0, 5], root: root)
+
+    XCTAssertEqual(bridgeCallbackClientTypes(transport.requests), [AXClientType.xctest.rawValue, AXClientType.xctest.rawValue])
     XCTAssertEqual(fixture!.device.accessibilityRequests.count, 0, "nothing reaches CoreSimulator's client")
   }
 
@@ -572,39 +592,50 @@ final class SimulatorAccessibilityCommandsTests: XCTestCase {
       "the metrics never reach the document")
   }
 
-  func testAnUntokenedRequestDuringAFrontmostResolution() async throws {
-    let transport = AXTranslationTransportDouble()
+  func testAnUntokenedRequestIsAnsweredEmptyWithoutARoundTrip() async throws {
+    let root = AXPTranslationObjectDouble(pid: 12345, objectID: 0)
+    let transport = AXTranslationTransportDouble(root: root)
     try setUp(withRootElement: defaultElementTree, transport: transport)
-    fixture!.translator.untokenedBridgeRequestCount = 1
-
     let element = try await simulator.accessibility.resolveElement(for: .frontmost)
-    element.close()
+    defer { element.close() }
+    let request = AccessibilityTranslatorRequests.make(clientType: 0)
+    request?.setValue(1, forKey: "requestType")
 
-    XCTAssertEqual(transport.requests.map(\.requestType), [], "answered empty, without a round trip")
-    let response = try XCTUnwrap(fixture!.translator.bridgeResponses.last ?? nil)
+    let response = try XCTUnwrap(AccessibilityTranslatorRequests.send(request, through: dispatcher, token: ""))
+
     XCTAssertNil(response.value(forKey: "resultData"))
+    XCTAssertEqual(transport.requests.map(\.requestType), [4], "only the frontmost lookup reached the service")
   }
 
   func testATransportThatDoesNotAnswerYieldsTheEmptyResponse() async throws {
-    try setUp(withRootElement: defaultElementTree, transport: AXTranslationTransportDouble(answers: false))
-    fixture!.translator.bridgeRequestClientTypes = [0]
-
+    try setUp(withRootElement: defaultElementTree)
     let element = try await simulator.accessibility.resolveElement(for: .frontmost)
-    element.close()
+    defer { element.close() }
+    fixture!.device.accessibilityResponseHandler = { _, respond in respond(nil) }
 
-    let response = try XCTUnwrap(fixture!.translator.bridgeResponses.first ?? nil as AnyObject?, "the translator always gets an answer")
+    let response = try XCTUnwrap(sendThroughBridgeCallback(clientTypes: [0]).first ?? nil, "the translator always gets an answer")
     XCTAssertNil(response.value(forKey: "resultData"), "an unanswered request reads as empty")
   }
 
-  func testTheDispatcherStampsTheRequestedClientOnAFrontmostResolution() async throws {
+  func testTheDispatcherStampsTheRequestedClientOnTheTranslatorsRequests() async throws {
     try setUp(withRootElement: defaultElementTree)
-    fixture!.translator.bridgeRequestClientTypes = [0, 5]
-
     let element = try await simulator.accessibility.resolveElement(for: .frontmost, clientType: .xctest)
-    element.close()
+    defer { element.close() }
 
-    let forwarded = fixture!.device.accessibilityRequests.compactMap { AccessibilityTranslatorRequests.clientType(of: $0) }
-    XCTAssertEqual(forwarded, [AXClientType.xctest.rawValue, AXClientType.xctest.rawValue])
+    sendThroughBridgeCallback(clientTypes: [0, 5])
+
+    XCTAssertEqual(
+      bridgeCallbackClientTypes(fixture!.device.accessibilityRequests as! [Any]), [AXClientType.xctest.rawValue, AXClientType.xctest.rawValue])
+  }
+
+  func testAFrontmostRootIsResolvedInOneLookupWithoutTheTranslator() async throws {
+    try setUp(withRootElement: defaultElementTree)
+    let element = try await simulator.accessibility.resolveElement(for: .frontmost)
+    defer { element.close() }
+
+    XCTAssertEqual(fixture!.translator.rawLookups, [.frontmostApplication])
+    XCTAssertFalse(
+      fixture!.translator.methodCalls.compactMap { $0 as? String }.contains { $0.hasPrefix("frontmostApplicationWithDisplayId:") })
   }
 
   func testAccessibilityCommandsProducesCorrectFlatOutput() async throws {
@@ -931,10 +962,7 @@ final class SimulatorAccessibilityCommandsTests: XCTestCase {
     let automation = try simulator.uiAutomation(backend: .accessibility)
     let response = try await automation.describe(.point(CGPoint(x: 80, y: 120)), options: AccessibilityRequestOptions())
     XCTAssertEqual(displays.reads, 1)
-    XCTAssertTrue(
-      fixture!.translator.methodCalls.compactMap { $0 as? String }.contains {
-        $0.hasPrefix("objectAtPoint:{120.0,320.0} displayId:42 ")
-      })
+    XCTAssertEqual(fixture!.translator.rawHitTests, [AXPTranslatorDouble.HitTest(point: CGPoint(x: 120, y: 320), displayID: 42)])
     XCTAssertEqual(response.screen?.width, 400)
     XCTAssertEqual(response.screen?.height, 600)
     XCTAssertEqual(response.screen?.display?.uniqueID, "selected-display")
@@ -1573,7 +1601,6 @@ final class SimulatorAccessibilityCommandsTests: XCTestCase {
 
   func testALegacyReadReportsTheClientItNamedAndOnlyThen() async throws {
     try setUp(withRootElement: defaultElementTree)
-    fixture!.translator.bridgeRequestClientTypes = [0]
     let reader = AccessibilityUIAutomation(simulator: simulator)
 
     let named = try await reader.describe(.frontmost, options: AccessibilityRequestOptions(format: .complete, clientType: .xctest))
@@ -1867,14 +1894,15 @@ final class SimulatorAccessibilityCommandsTests: XCTestCase {
     // A by-pid target reads that specific app (regardless of what is frontmost), surfacing its pid. The service
     // answers the application-object request.
     let root = AccessibilityTestElementBuilder.application(withLabel: "App", frame: CGRect(x: 0, y: 0, width: 100, height: 100), children: [])
-    let transport = AXTranslationTransportDouble(resultData: NSNumber(value: 777))
+    let transport = AXTranslationTransportDouble(root: AXPTranslationObjectDouble(pid: 777, objectID: 0))
     try setUp(withRootElement: root, transport: transport)
 
     let element = try await simulator.accessibility.resolveElement(for: .application(pid: 777))
     defer { element.close() }
 
     XCTAssertEqual(element.processIdentifier, 777, "a by-pid resolve reads the app with that pid")
-    XCTAssertEqual(transport.requests.map(\.requestType), [1], "the untokened application-object request reaches the transport")
+    XCTAssertEqual(transport.requests.map(\.requestType), [1], "one application-object request reaches the transport")
+    XCTAssertEqual(transport.requests.first?.parameters?[BridgeAXTranslatorRequestType.pidParameterKey] as? NSNumber, 777)
   }
 
   // MARK: - Concurrent access to the shared translator
@@ -1893,8 +1921,9 @@ final class SimulatorAccessibilityCommandsTests: XCTestCase {
     }
 
     // The translator singleton's internal state is not synchronized, so all translator
-    // work is serialized onto one queue: concurrent resolutions enter it strictly one
-    // at a time, even with the first held open waiting for a peer.
+    // work — resolving a root and building its element — is serialized onto one queue:
+    // concurrent resolutions run strictly one at a time, even with the first held open
+    // waiting for a peer.
     XCTAssertEqual(tracker.maxActive, 1, "resolutions enter the shared translator strictly one at a time")
   }
 

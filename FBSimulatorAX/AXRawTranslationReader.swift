@@ -91,18 +91,57 @@ struct AXRawTranslationReader {
   /// The translator's answer for `attributes` of one element; nil when it could not read the element or
   /// did not answer in time, which reads as an element with no values.
   private func answer(for translation: AXTranslationReference, asking attributes: [BridgeAXTranslatorAttribute]) -> BridgeAXTranslatorAnswer? {
+    let response = send(
+      .multipleAttribute, translation: translation,
+      parameters: [BridgeAXTranslatorRequestType.attributesParameterKey: attributes.map { NSNumber(value: $0.rawValue) }])
+    return BridgeAXTranslatorAnswer(resultData: response?.resultData)
+  }
+
+  // MARK: - Roots
+
+  /// The element a read starts from.
+  enum Root {
+    case frontmostApplication(displayID: UInt32)
+    case application(pid: pid_t)
+    /// `point` in the display's hosted coordinates: already unrotated.
+    case point(CGPoint, displayID: UInt32)
+  }
+
+  /// The translation of `root`, in the one request the translator would send for it; nil when nothing is
+  /// there or no answer came in time.
+  func resolve(_ root: Root) -> AXTranslationReference? {
+    let response: AXPTranslatorResponse? =
+      switch root {
+      case let .frontmostApplication(displayID):
+        send(
+          .frontmostApplication, translation: AXPTranslationObject(),
+          parameters: [BridgeAXTranslatorRequestType.displayIDParameterKey: NSNumber(value: displayID)])
+      case let .application(pid):
+        send(.application, translation: nil, parameters: [BridgeAXTranslatorRequestType.pidParameterKey: NSNumber(value: pid)])
+      case let .point(point, displayID):
+        send(
+          .hitTest, translation: AXPTranslationObject(),
+          parameters: [
+            BridgeAXTranslatorRequestType.pointParameterKey: NSValue(point: point),
+            BridgeAXTranslatorRequestType.displayIDParameterKey: NSNumber(value: displayID),
+          ])
+      }
+    return response?.resultData as? AXTranslationReference
+  }
+
+  private func send(
+    _ type: BridgeAXTranslatorRequestType, translation: AXTranslationReference?, parameters: [String: Any]
+  ) -> AXPTranslatorResponse? {
     guard let request = AXPTranslatorRequest.request(withTranslation: translation) as? AXPTranslatorRequest else {
       return nil
     }
-    request.requestType = UInt64(BridgeAXTranslatorRequestType.multipleAttribute.rawValue)
+    request.requestType = UInt64(type.rawValue)
     request.clientType = clientType.rawValue
-    request.parameters = [
-      BridgeAXTranslatorRequestType.attributesParameterKey: attributes.map { NSNumber(value: $0.rawValue) }
-    ]
+    request.parameters = parameters
     let start = CFAbsoluteTimeGetCurrent()
     let response = transport.send(request, timeout: timeout)
     collector.addXPCCallDuration(CFAbsoluteTimeGetCurrent() - start)
-    return BridgeAXTranslatorAnswer(resultData: response?.resultData)
+    return response
   }
 
   /// The translator attributes a plan needs, in one list. Role and role description take the attributes

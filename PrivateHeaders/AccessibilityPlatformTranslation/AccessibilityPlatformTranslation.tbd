@@ -8,6 +8,7 @@ exports:
   - targets: [ arm64-macos ]
     objc-classes:
       - AXPMacPlatformElement
+      - AXPTranslationObject
       - AXPTranslator
       - AXPTranslatorRequest
       - AXPTranslatorResponse

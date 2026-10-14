@@ -326,11 +326,14 @@ final class AXTranslationTransportDouble: AXTranslationTransport, @unchecked Sen
   private var _requests: [AXPTranslatorRequest] = []
   private let answers: Bool
   private let resultData: NSNumber?
+  private let root: AXPTranslationObjectDouble?
 
-  /// `resultData` is what every answer carries; the empty response carries none.
-  init(answers: Bool = true, resultData: NSNumber? = nil) {
+  /// `resultData` is what every answer carries; the empty response carries none. A root lookup is answered
+  /// with `root` instead, so a read can resolve one.
+  init(answers: Bool = true, resultData: NSNumber? = nil, root: AXPTranslationObjectDouble? = nil) {
     self.answers = answers
     self.resultData = resultData
+    self.root = root
   }
 
   var requests: [AXPTranslatorRequest] {
@@ -346,7 +349,13 @@ final class AXTranslationTransportDouble: AXTranslationTransport, @unchecked Sen
     guard answers, let response = AXPTranslatorResponse.empty() as? AXPTranslatorResponse else {
       return nil
     }
-    response.resultData = resultData
+    switch BridgeAXTranslatorRequestType(rawValue: Int(request.requestType)) {
+    case .application, .frontmostApplication, .hitTest:
+      // By key: the double is not the secure-coding object the property is typed as.
+      response.setValue(root, forKey: "resultData")
+    case .attribute, .multipleAttribute, nil:
+      response.resultData = resultData
+    }
     return response
   }
 }
@@ -412,6 +421,14 @@ class AXPTranslatorDouble: NSObject {
   /// The element for each translation the fixture's tree hands out, so an element a raw read names by its
   /// translation is the same double the tree holds.
   var elementsByObjectID: [UInt64: AXPMacPlatformElementDouble] = [:]
+  /// The root lookups the fixture's accessibility service answered, in order.
+  var rawLookups: [BridgeAXTranslatorRequestType] = []
+  /// The point and display of each hit-test the fixture's accessibility service answered, in order.
+  struct HitTest: Equatable {
+    let point: CGPoint
+    let displayID: UInt32
+  }
+  var rawHitTests: [HitTest] = []
   /// Wall time burned inside the two calls the dispatcher times, so a test can assert a floor on the
   /// acquisition phases rather than merely non-negative. Zero by default.
   var frontmostApplicationDelay: TimeInterval = 0
@@ -425,9 +442,6 @@ class AXPTranslatorDouble: NSObject {
   /// The `clientType` of each request to send through the bridge delegate during a frontmost resolution, as
   /// the real translator does when it reads the application's attributes. Empty sends none.
   var bridgeRequestClientTypes: [UInt64] = []
-  /// Requests to send through the bridge delegate with no token during a frontmost resolution, after the
-  /// tokened ones: a lookup that carries no translation, as an application lookup does.
-  var untokenedBridgeRequestCount = 0
 
   @objc
   func frontmostApplication(withDisplayId displayId: Int32, bridgeDelegateToken token: String) -> AXPTranslationObjectDouble? {
@@ -449,11 +463,6 @@ class AXPTranslatorDouble: NSObject {
     for clientType in bridgeRequestClientTypes {
       bridgeResponses.append(
         AccessibilityTranslatorRequests.send(AccessibilityTranslatorRequests.make(clientType: clientType), through: bridgeTokenDelegate, token: token))
-    }
-    for _ in 0..<untokenedBridgeRequestCount {
-      let request = AccessibilityTranslatorRequests.make(clientType: 0)
-      request?.setValue(1, forKey: "requestType")
-      bridgeResponses.append(AccessibilityTranslatorRequests.send(request, through: bridgeTokenDelegate, token: ""))
     }
   }
 
@@ -758,7 +767,39 @@ class AccessibilityTestFixture: NSObject {
     }
     device.accessibilityResponseHandler = { request, respond in
       let request = request as AnyObject
-      guard (request.value(forKey: "requestType") as? NSNumber)?.intValue == BridgeAXTranslatorRequestType.multipleAttribute.rawValue,
+      let requestType = (request.value(forKey: "requestType") as? NSNumber).flatMap { BridgeAXTranslatorRequestType(rawValue: $0.intValue) }
+      let parameters = request.value(forKey: "parameters") as? NSDictionary
+      // Root lookups answer with the translations the translator double would have returned.
+      let lookup: AXPTranslationObjectDouble?
+      switch requestType {
+      case .frontmostApplication:
+        // As the translator double's own frontmost resolution: observable, and as slow as it is told to be.
+        translator.resolutionEnterHook?()
+        if translator.frontmostApplicationDelay > 0 {
+          Thread.sleep(forTimeInterval: translator.frontmostApplicationDelay)
+        }
+        lookup = translator.frontmostApplicationResult
+      case .hitTest:
+        let point = (parameters?[BridgeAXTranslatorRequestType.pointParameterKey] as? NSValue)?.pointValue ?? .zero
+        let displayID = (parameters?[BridgeAXTranslatorRequestType.displayIDParameterKey] as? NSNumber)?.uint32Value ?? 0
+        translator.rawHitTests.append(AXPTranslatorDouble.HitTest(point: point, displayID: displayID))
+        lookup = translator.objectAtPointResult
+      case .application:
+        lookup = (parameters?[BridgeAXTranslatorRequestType.pidParameterKey] as? NSNumber).map {
+          AXPTranslationObjectDouble(pid: $0.int32Value, objectID: 0)
+        }
+      case .attribute, .multipleAttribute, nil:
+        lookup = nil
+      }
+      if let requestType, requestType != .attribute, requestType != .multipleAttribute {
+        translator.rawLookups.append(requestType)
+        let response = AXPTranslatorResponse.empty() as? AXPTranslatorResponse
+        // By key: the double is not the secure-coding object the property is typed as.
+        response?.setValue(lookup, forKey: "resultData")
+        respond(lookup == nil ? nil : response)
+        return
+      }
+      guard requestType == .multipleAttribute,
         let translation = request.value(forKey: "translation") as? AXPTranslationObjectDouble,
         let element = element(named: translation),
         let response = AXPTranslatorResponse.empty() as? AXPTranslatorResponse

@@ -88,16 +88,31 @@ final class AXTranslationRequest {
     self.collector = AccessibilityProfilingCollector()
   }
 
-  /// Resolves the root translation object for this request's kind.
-  func perform(withTranslator translator: AXPTranslator) throws -> AXPTranslationObject? {
+  /// Resolves the root translation object for this request's kind: in one raw request over the transport
+  /// when the request has one, through the translator otherwise.
+  func resolveRoot(withTranslator translator: AXPTranslator) throws -> AXTranslationReference? {
     switch kind {
     case .frontmostApplication:
-      return translator.frontmostApplication(withDisplayId: displayID, bridgeDelegateToken: token)
+      guard let rawReader else {
+        return translator.frontmostApplication(withDisplayId: displayID, bridgeDelegateToken: token)
+      }
+      return rawReader.resolve(.frontmostApplication(displayID: displayID))
     case .point(let point):
       return try translation(at: point, translator: translator)
     case .applicationForPid(let pid):
-      return translator.translationApplicationObject(forPid: pid)
+      guard let rawReader else {
+        return translator.translationApplicationObject(forPid: pid)
+      }
+      return rawReader.resolve(.application(pid: pid))
     }
+  }
+
+  /// The translator's platform element for `reference`, which actions go through. Built locally from the
+  /// translator's element cache, without a request.
+  func platformElement(for reference: AXTranslationReference) -> AXWritableElement? {
+    // Sent by message: the translation is typed by protocol here, so test doubles can stand in for it.
+    translator?.perform(NSSelectorFromString("macPlatformElementFromTranslation:"), with: reference)?
+      .takeUnretainedValue() as? AXWritableElement
   }
 
   /// Serializes the resolved element. The frontmost path adds frame coverage and remote content; the
@@ -124,24 +139,26 @@ final class AXTranslationRequest {
   /// Reads `element` against `plan`, raw over this request's transport when `reads` asks for it and the
   /// element has a translation to name, and through the element otherwise.
   func snapshot(of element: AXPlatformElement, plan: AXReadPlan, reads: AXTranslatorReads) -> AXElementSnapshot {
-    guard reads == .raw, let transport, let reference = element.axTranslationReference else {
+    guard reads == .raw, let rawReader, let reference = element.axTranslationReference else {
       return AXElementSnapshot.read(element, plan: plan, token: token, mode: reads)
     }
-    let translator = self.translator
+    return rawReader.read(reference, plan: plan)
+  }
+
+  /// Sends this request's translator requests itself, over its transport; nil without one.
+  private var rawReader: AXRawTranslationReader? {
     let token = self.token
-    let reader = AXRawTranslationReader(
-      transport: transport, clientType: clientType, timeout: requestTimeoutSeconds, collector: collector, token: token
-    ) { reference in
-      // Sent by message: the translation is typed by protocol here, so test doubles can stand in for it.
-      let element =
-        translator?.perform(NSSelectorFromString("macPlatformElementFromTranslation:"), with: reference)?
-        .takeUnretainedValue() as? AXWritableElement
-      // The translator caches elements by translation, and a cached element keeps the token it was built with:
-      // without this read's token an action on it reaches no read.
-      element?.axSetBridgeDelegateToken(token)
-      return element
+    return transport.map {
+      AXRawTranslationReader(
+        transport: $0, clientType: clientType, timeout: requestTimeoutSeconds, collector: collector, token: token
+      ) { reference in
+        let element = self.platformElement(for: reference)
+        // The translator caches elements by translation, and a cached element keeps the token it was built
+        // with: without this read's token an action on it reaches no read.
+        element?.axSetBridgeDelegateToken(token)
+        return element
+      }
     }
-    return reader.read(reference, plan: plan)
   }
 
   // MARK: - A single named element
@@ -244,7 +261,7 @@ final class AXTranslationRequest {
       visited += 1
 
       // A caller's region can reach past the routed display, where no point translates.
-      let translated: AXPTranslationObject?
+      let translated: AXTranslationReference?
       do {
         translated = try translation(at: point, translator: translator)
       } catch SimulatorDisplayInteractionError.invalidPoint {
@@ -258,7 +275,7 @@ final class AXTranslationRequest {
       if tree.seenPids.contains(hitPid) || hitPid <= 0 || hitPid == tree.pid {
         continue
       }
-      guard let hitElement = translator.macPlatformElement(fromTranslation: hitTranslation) as? AXPlatformElement else {
+      guard let hitElement = platformElement(for: hitTranslation) else {
         continue
       }
 
@@ -332,9 +349,12 @@ final class AXTranslationRequest {
     display?.accessibilityID ?? 0
   }
 
-  private func translation(at point: CGPoint, translator: AXPTranslator) throws -> AXPTranslationObject? {
+  private func translation(at point: CGPoint, translator: AXPTranslator) throws -> AXTranslationReference? {
     let unrotated = try display?.geometry.unrotatedPoint(from: point) ?? point
-    return translator.object(at: unrotated, displayId: displayID, bridgeDelegateToken: token)
+    guard let rawReader else {
+      return translator.object(at: unrotated, displayId: displayID, bridgeDelegateToken: token)
+    }
+    return rawReader.resolve(.point(unrotated, displayID: displayID))
   }
 
   // MARK: - Helpers

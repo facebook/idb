@@ -186,17 +186,32 @@ import Foundation
 }
 
 /// The request kinds `-[AXPTranslator processTranslatorRequest:]` dispatches on, decoded from its jump
-/// table. Only the ones idb sends are named.
+/// table. Only the ones idb sends are named. Each lookup answers with the element's translation object as
+/// its `resultData`, and takes no attributes: reading the element is a request of its own.
 @frozen public enum BridgeAXTranslatorRequestType: Int, Sendable {
+  /// An application, by `parameters["pid"]`. Carries no translation. The handler falls back to its own
+  /// process when the pid is missing, so a sender must always name one.
+  case application = 1
   /// One attribute, named by the request's `attributeType`.
   case attribute = 2
+  /// The frontmost application. The handler reads no parameters; the translator sends `displayId` anyway.
+  case frontmostApplication = 4
   /// Many attributes of one element, carried under `parameters["attributes"]` as an array of
   /// `BridgeAXTranslatorAttribute` raw values, answered as a dictionary keyed by the same numbers. The
   /// handler forwards the batch to `AXUIElementCopyMultipleAttributeValues`, computing the attributes it
   /// has no guest counterpart for in the same pass. Passing an array rather than that dictionary as the
   /// parameters throws inside the guest and takes the reader down with it.
   case multipleAttribute = 5
+  /// The element at `parameters["point"]` (an `NSValue` point, in the display's hosted coordinates) on
+  /// `parameters["displayId"]`. Carries a fresh translation, with no pid: given an element's translation the
+  /// handler answers with an error rather than a hit.
+  case hitTest = 6
 
   /// The `parameters` key a multiple-attribute request carries its attribute list under.
   public static let attributesParameterKey = "attributes"
+  /// The `parameters` key an application lookup names its process under.
+  public static let pidParameterKey = "pid"
+  /// The `parameters` keys a hit-test names its point and display under; a frontmost lookup sends the display too.
+  public static let pointParameterKey = "point"
+  public static let displayIDParameterKey = "displayId"
 }
