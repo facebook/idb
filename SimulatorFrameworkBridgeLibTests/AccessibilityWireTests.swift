@@ -7,10 +7,12 @@
 
 import Foundation
 @_implementationOnly import SimulatorFrameworkBridgeSupport
-import XCTest
+import Testing
 
-final class AccessibilityWireTests: XCTestCase {
-  func testNestedNonFiniteNumbersBecomeNullWithoutChangingOtherScalars() throws {
+@Suite
+struct AccessibilityWireTests {
+  @Test
+  func nestedNonFiniteNumbersBecomeNullWithoutChangingOtherScalars() throws {
     let response: [String: Any] = [
       "ok": true,
       "values": [Double.nan, Double.infinity, -Double.infinity, ["nested": Double.nan]],
@@ -21,10 +23,10 @@ final class AccessibilityWireTests: XCTestCase {
       "null": NSNull(),
     ]
     let encoded = FBAccessibilityService.serializeResponse(response)
-    let decoded = try XCTUnwrap(JSONSerialization.jsonObject(with: encoded) as? [String: Any])
-    XCTAssertEqual(
-      decoded as NSDictionary,
-      [
+    let object = try JSONSerialization.jsonObject(with: encoded)
+    let decoded = try #require(object as? [String: Any])
+    #expect(
+      decoded as NSDictionary == [
         "ok": true,
         "values": [NSNull(), NSNull(), NSNull(), ["nested": NSNull()]],
         "integer": NSNumber(value: Int64.max),
@@ -33,13 +35,14 @@ final class AccessibilityWireTests: XCTestCase {
         "string": "infinity",
         "null": NSNull(),
       ] as NSDictionary)
-    let json = try XCTUnwrap(String(data: encoded, encoding: .utf8))
-    XCTAssertTrue(json.contains(#""ok":true"#))
-    XCTAssertTrue(json.contains(#""false":false"#))
+    let json = try #require(String(data: encoded, encoding: .utf8))
+    #expect(json.contains(#""ok":true"#))
+    #expect(json.contains(#""false":false"#))
   }
 
-  func testUnsupportedNestedValuesKeepTheSerializationFallback() {
+  @Test
+  func unsupportedNestedValuesKeepTheSerializationFallback() {
     let response: [String: Any] = ["ok": true, "values": [["date": Date()]]]
-    XCTAssertEqual(FBAccessibilityService.serializeResponse(response), Data(#"{"ok":false,"error":"response serialization failed"}"#.utf8))
+    #expect(FBAccessibilityService.serializeResponse(response) == Data(#"{"ok":false,"error":"response serialization failed"}"#.utf8))
   }
 }
