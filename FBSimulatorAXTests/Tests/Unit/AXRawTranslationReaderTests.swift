@@ -177,6 +177,21 @@ final class AXRawTranslationReaderTests: XCTestCase {
     XCTAssertEqual(snapshot.customActionNames, [])
   }
 
+  func testCustomActionsAreNamedFromTheTranslatorsAnswer() {
+    let transport = AXRawTranslationTransportDouble(elements: [
+      1: [
+        .role: 2,
+        .customActions: [
+          ["AXPCustomActionName": "Edit mode", "AXPCustomActionIdentifier": "Name:Edit mode"],
+          ["AXPCustomActionName": "Today", "AXPCustomActionIdentifier": "Name:Today"],
+        ],
+      ]
+    ])
+    let snapshot = Self.reader(transport).read(Self.reference(1), plan: AXReadPlan(attributes: [.customActions], depth: .limited(0)))
+    // BUG: the translator's custom actions are dropped and every element reads as having none — flipped in the following commit.
+    XCTAssertEqual(snapshot.customActionNames, [])
+  }
+
   // MARK: - Request
 
   func testARawReadsActionHandleForAnElementTheTranslatorHasAlreadyBuilt() throws {
