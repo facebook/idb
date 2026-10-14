@@ -74,6 +74,23 @@ final class AXRawTranslationReaderTests: XCTestCase {
     XCTAssertEqual(root.children.first?.children.count, 0)
   }
 
+  func testAChildListedTwiceAmongItsParentsChildren() {
+    // A scroll view's scroll bar is listed twice among the scroll view's children for the automation tree, and
+    // the platform element's batched read reports it at both places.
+    let transport = AXRawTranslationTransportDouble(elements: [
+      1: [.role: 1, .children: [Self.reference(2)]],
+      2: [.role: 10, .children: [Self.reference(3), Self.reference(3)]],
+      3: [.role: 13, .label: "Vertical scroll bar"],
+    ])
+
+    let root = Self.reader(transport).read(Self.reference(1), plan: Self.defaultPlan)
+
+    // BUG: the second listing is dropped as if it were a cycle, so the read reports one scroll bar where the
+    // batched read reports two — flipped in the following commit.
+    XCTAssertEqual(root.children.first?.children.map(\.label), ["Vertical scroll bar"])
+    XCTAssertEqual(transport.requestedObjectIDs, [1, 2, 3])
+  }
+
   func testAnUnansweredElementReadsAsOneWithNoValues() {
     let transport = AXRawTranslationTransportDouble(elements: [:])
 
