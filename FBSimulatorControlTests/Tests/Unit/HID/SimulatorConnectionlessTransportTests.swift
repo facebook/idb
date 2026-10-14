@@ -8,29 +8,30 @@
 import FBControlCore
 @testable import FBSimulatorControl
 import Foundation
-import XCTest
+import Testing
 
 /// The connectionless Purple transport holds its target weakly and reaches it on every send, since it
 /// keeps no connection open. That makes "the target is gone" a real state it has to handle, and it is
 /// the one part of it that can be exercised without a live simulator.
-final class SimulatorConnectionlessTransportTests: XCTestCase {
+@Suite
+struct SimulatorConnectionlessTransportTests {
 
   private func assertDeallocatedTarget(
     _ message: String,
-    file: StaticString = #filePath,
-    line: UInt = #line,
+    sourceLocation: SourceLocation = #_sourceLocation,
     _ operation: () async throws -> Void
   ) async {
     do {
       try await operation()
-      XCTFail("\(message): expected a weak-target failure, got success", file: file, line: line)
+      Issue.record("\(message): expected a weak-target failure, got success", sourceLocation: sourceLocation)
     } catch WeakTargetError.deallocated {
     } catch {
-      XCTFail("\(message): expected a weak-target failure, got \(error)", file: file, line: line)
+      Issue.record("\(message): expected a weak-target failure, got \(error)", sourceLocation: sourceLocation)
     }
   }
 
-  func testPurpleTransportReportsADeallocatedTarget() async {
+  @Test
+  func purpleTransportReportsADeallocatedTarget() async {
     let purple = SimulatorPurpleHIDTransport(simulator: nil)
 
     await assertDeallocatedTarget("orientation") { try await purple.sendOrientation(.landscapeLeft) }
@@ -38,7 +39,8 @@ final class SimulatorConnectionlessTransportTests: XCTestCase {
   }
 
   // The failure has to survive the hop back from the private queue; concurrent sends each get their own.
-  func testDeallocatedTargetSurvivesConcurrentSends() async {
+  @Test
+  func deallocatedTargetSurvivesConcurrentSends() async {
     let purple = SimulatorPurpleHIDTransport(simulator: nil)
 
     await withTaskGroup(of: Bool.self) { group in
@@ -58,7 +60,7 @@ final class SimulatorConnectionlessTransportTests: XCTestCase {
       for await ok in group where ok {
         reported += 1
       }
-      XCTAssertEqual(reported, 8, "every concurrent send gets its own failure back")
+      #expect(reported == 8, "every concurrent send gets its own failure back")
     }
   }
 }
