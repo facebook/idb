@@ -1333,6 +1333,33 @@ class AccessibilityReadinessTests(unittest.IsolatedAsyncioTestCase):
             timeout=harness.DEFAULT_COMMAND_TIMEOUT_SECONDS,
         )
 
+    async def probe(self, answers: Sequence[Completed]) -> mock.AsyncMock:
+        environment = SimpleNamespace(
+            idb_bin=Path("/idb"), idb_args=(), setup_idb_bin=Path("/idb")
+        )
+        run = mock.AsyncMock(side_effect=answers)
+        with (
+            mock.patch.object(harness, "run", new=run),
+            mock.patch.object(harness, "POLL_INTERVAL_SECONDS", new=0),
+        ):
+            await wait_for_accessibility(
+                environment, SimpleNamespace(address="/tmp/companion.sock")
+            )
+        return run
+
+    async def test_probe_waits_while_an_older_companion_has_no_tree(self) -> None:
+        run = await self.probe([NOT_READY, SUCCEEDED])
+
+        self.assertEqual(run.await_count, 2)
+
+    async def test_probe_waits_while_the_simulator_names_no_frontmost_application(
+        self,
+    ) -> None:
+        # BUG: the current wording is taken as a setup failure rather than a tree
+        # that is not ready yet — flipped in the following commit.
+        with self.assertRaisesRegex(HarnessError, "Accessibility setup failed"):
+            await self.probe([NOT_READY_NO_FRONTMOST, SUCCEEDED])
+
 
 class FailureReportingTests(unittest.TestCase):
     def test_reports_a_failed_command_with_its_own_output(self) -> None:
@@ -1488,6 +1515,18 @@ NOT_READY = Completed(
     b"specified a point onscreen that is invalid or invisible due to a fullscreen "
     b"dialog\n",
 )
+# Current companions name the read that found no element.
+NOT_READY_ANSWERS = tuple(
+    Completed(1, b"", message)
+    for message in (
+        b"No accessibility element at (200.0, 822.0): the point may be off-screen "
+        b"or covered by a fullscreen dialog\n",
+        b"The simulator's accessibility service named no frontmost application\n",
+        b"The simulator's accessibility service has no application with pid 10891\n",
+        b"The simulator's accessibility service no longer has this element\n",
+    )
+)
+NOT_READY_NO_FRONTMOST = NOT_READY_ANSWERS[1]
 
 
 def with_verdict(completed: Completed, line: bytes) -> Completed:
@@ -1635,6 +1674,24 @@ class TransientAccessibilityAnswerTests(unittest.IsolatedAsyncioTestCase):
 
         self.assertIsInstance(outcome, Failed)
         self.assertEqual(run.await_count, 1)
+
+    async def test_a_read_before_the_tree_was_ready_in_current_wordings(self) -> None:
+        for answer in NOT_READY_ANSWERS:
+            with self.subTest(answer=answer.stderr):
+                outcome, run, _ = await self.attempt(DESCRIBE_ALL, [answer, SUCCEEDED])
+
+                # BUG: the current wordings are not taken as a tree that was not
+                # ready, so the read is not repeated — flipped in the following commit.
+                self.assertIsInstance(outcome, Failed)
+                self.assertEqual(run.await_count, 1)
+
+    async def test_a_tap_in_current_wordings_is_not_repeated(self) -> None:
+        for answer in NOT_READY_ANSWERS:
+            with self.subTest(answer=answer.stderr):
+                outcome, run, _ = await self.attempt(TAP, [answer, SUCCEEDED])
+
+                self.assertIsInstance(outcome, Failed)
+                self.assertEqual(run.await_count, 1)
 
     async def test_an_unrelated_failure_is_not_repeated(self) -> None:
         outcome, run, _ = await self.attempt(SET_VALUE, [FAILED, SUCCEEDED])
