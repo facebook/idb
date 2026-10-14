@@ -32,7 +32,9 @@ struct LsMethodHandler {
   }
 
   private func list(path: String, fileContainer: String) async throws -> Idb_LsResponse {
-    let paths = try await commandExecutor.listPath(path, containerType: fileContainer)
+    let paths = try await commandExecutor.withFileContainer(for: fileContainer) { container in
+      try await container.contents(ofDirectory: path)
+    }
 
     return .with {
       $0.files = paths.map(toFileInfo)
@@ -40,7 +42,14 @@ struct LsMethodHandler {
   }
 
   private func list(pathList: [String], fileContainer: String) async throws -> Idb_LsResponse {
-    let pathsToPaths = try await commandExecutor.listPaths(pathList, containerType: fileContainer)
+    let pathsToPaths = try await commandExecutor.withFileContainer(for: fileContainer) { container in
+      var result: [String: [String]] = [:]
+      for path in pathList {
+        let listing: [String] = try await container.contents(ofDirectory: path)
+        result[path] = listing
+      }
+      return result
+    }
 
     return .with {
       $0.listings = pathsToPaths.map { containerPath, paths in
@@ -65,7 +74,9 @@ struct MkdirMethodHandler {
 
   func handle(request: Idb_MkdirRequest, context: ServerContext) async throws -> Idb_MkdirResponse {
     let fileContainer = FileContainerTranslation.rawFileContainer(from: request.container)
-    try await commandExecutor.createDirectory(request.path, containerType: fileContainer)
+    try await commandExecutor.withFileContainer(for: fileContainer) { container in
+      try await container.createDirectory(request.path)
+    }
     return .init()
   }
 }
@@ -76,7 +87,11 @@ struct MvMethodHandler {
 
   func handle(request: Idb_MvRequest, context: ServerContext) async throws -> Idb_MvResponse {
     let fileContainer = FileContainerTranslation.rawFileContainer(from: request.container)
-    try await commandExecutor.movePaths(request.srcPaths, toPath: request.dstPath, containerType: fileContainer)
+    try await commandExecutor.withFileContainer(for: fileContainer) { container in
+      for originPath in request.srcPaths {
+        try await container.move(from: originPath, to: request.dstPath)
+      }
+    }
     return .init()
   }
 }
@@ -87,7 +102,11 @@ struct RmMethodHandler {
 
   func handle(request: Idb_RmRequest, context: ServerContext) async throws -> Idb_RmResponse {
     let fileContainer = FileContainerTranslation.rawFileContainer(from: request.container)
-    try await commandExecutor.removePaths(request.paths, containerType: fileContainer)
+    try await commandExecutor.withFileContainer(for: fileContainer) { container in
+      for path in request.paths {
+        try await container.remove(path)
+      }
+    }
     return .init()
   }
 }

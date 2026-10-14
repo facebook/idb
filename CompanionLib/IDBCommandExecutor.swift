@@ -471,14 +471,6 @@ public final class IDBCommandExecutor {
 
   // MARK: - File Commands
 
-  public func movePaths(_ originPaths: [String], toPath destinationPath: String, containerType: String?) async throws {
-    try await withFileContainer(for: containerType) { container in
-      for originPath in originPaths {
-        try await container.move(from: originPath, to: destinationPath)
-      }
-    }
-  }
-
   func pushFileFromTar(_ tarData: Data, toPath destinationPath: String, containerType: String?) async throws {
     try await temporaryDirectory.withArchiveExtracted(tarData) { extractDir in
       let paths = try FileManager.default.contentsOfDirectory(at: extractDir, includingPropertiesForKeys: [.isDirectoryKey], options: [])
@@ -503,37 +495,6 @@ public final class IDBCommandExecutor {
   public func tail(_ path: String, to_consumer consumer: DataConsumer, in_container containerType: String?) async throws -> FileContainerTailOperation {
     return try await withFileContainer(for: containerType) { container in
       try await container.tail(path, to: consumer)
-    }
-  }
-
-  public func createDirectory(_ directoryPath: String, containerType: String) async throws {
-    try await withFileContainer(for: containerType) { container in
-      try await container.createDirectory(directoryPath)
-    }
-  }
-
-  public func removePaths(_ paths: [String], containerType: String?) async throws {
-    try await withFileContainer(for: containerType) { container in
-      for path in paths {
-        try await container.remove(path)
-      }
-    }
-  }
-
-  public func listPath(_ path: String, containerType: String?) async throws -> [String] {
-    return try await withFileContainer(for: containerType) { container in
-      try await container.contents(ofDirectory: path)
-    }
-  }
-
-  public func listPaths(_ paths: [String], containerType: String?) async throws -> [String: [String]] {
-    return try await withFileContainer(for: containerType) { container in
-      var result: [String: [String]] = [:]
-      for path in paths {
-        let listing: [String] = try await container.contents(ofDirectory: path)
-        result[path] = listing
-      }
-      return result
     }
   }
 
@@ -588,7 +549,7 @@ public final class IDBCommandExecutor {
     return bundle
   }
 
-  private func withFileContainer<R>(
+  func withFileContainer<R>(
     for containerType: String?,
     body: (any AsyncFileContainer) async throws -> R
   ) async throws -> R {
