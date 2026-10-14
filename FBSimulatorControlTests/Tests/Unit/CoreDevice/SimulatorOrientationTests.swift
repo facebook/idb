@@ -6,98 +6,111 @@
  */
 
 @testable import FBSimulatorControl
-import XCTest
+import Foundation
+import Testing
 import XPC
 
-final class SimulatorOrientationTests: XCTestCase {
-  func testWritablePhysicalOrientationsMapToHID() throws {
+@Suite
+struct SimulatorOrientationTests {
+  @Test
+  func writablePhysicalOrientationsMapToHID() throws {
     let cases: [(SimulatorDeviceOrientation, SimulatorHIDDeviceOrientation)] = [
       (.portrait, .portrait), (.portraitUpsideDown, .portraitUpsideDown),
       (.landscapeLeft, .landscapeLeft), (.landscapeRight, .landscapeRight),
     ]
     for (orientation, expected) in cases {
-      XCTAssertEqual(try orientation.hidOrientation, expected)
+      #expect(try orientation.hidOrientation == expected)
     }
   }
 
-  func testUnwritablePhysicalOrientationsAreInvalidArguments() {
+  @Test
+  func unwritablePhysicalOrientationsAreInvalidArguments() throws {
     for orientation: SimulatorDeviceOrientation in [.unknown, .faceUp, .faceDown] {
-      XCTAssertThrowsError(try orientation.hidOrientation) { error in
-        guard case SimulatorOrientationError.unwritable(orientation) = error else {
-          return XCTFail("Expected an unwritable orientation, got \(error)")
-        }
+      let error = #expect(throws: (any Error).self) { try orientation.hidOrientation }
+      guard let error else { continue }
+      guard case SimulatorOrientationError.unwritable(orientation) = error else {
+        Issue.record("Expected an unwritable orientation, got \(error)")
+        continue
       }
     }
   }
 
-  func testPhysicalPurpleEncodingPreservesLegacyHIDValues() {
-    XCTAssertEqual(SimulatorHIDDeviceOrientation.landscapeLeft.rawValue, 4)
-    XCTAssertEqual(SimulatorHIDDeviceOrientation.landscapeRight.rawValue, 3)
+  @Test
+  func physicalPurpleEncodingPreservesLegacyHIDValues() {
+    #expect(SimulatorHIDDeviceOrientation.landscapeLeft.rawValue == 4)
+    #expect(SimulatorHIDDeviceOrientation.landscapeRight.rawValue == 3)
     let cases: [(SimulatorHIDDeviceOrientation, Int32)] = [
       (.portrait, 1), (.portraitUpsideDown, 2), (.landscapeLeft, 3), (.landscapeRight, 4),
     ]
     for (orientation, expected) in cases {
-      XCTAssertEqual(orientation.physicalPurpleOrientation.rawValue, expected)
+      #expect(orientation.physicalPurpleOrientation.rawValue == expected)
     }
   }
 
-  func testTheVendorBackendIgnoresTheConvention() {
+  @Test
+  func theVendorBackendIgnoresTheConvention() {
     for orientation in SimulatorHIDDeviceOrientation.allCases {
       for convention in [SimulatorOrientationConvention.device, .interface] {
-        XCTAssertEqual(OrientationWrite(orientation, convention: convention, backend: .vendorHID), .vendorHID(orientation))
+        #expect(OrientationWrite(orientation, convention: convention, backend: .vendorHID) == .vendorHID(orientation))
       }
     }
   }
 
-  func testPurpleSwapsLandscapeOnlyForTheDeviceConvention() {
+  @Test
+  func purpleSwapsLandscapeOnlyForTheDeviceConvention() {
     let device: [(SimulatorHIDDeviceOrientation, SimulatorHIDDeviceOrientation)] = [
       (.portrait, .portrait), (.portraitUpsideDown, .portraitUpsideDown),
       (.landscapeLeft, .landscapeRight), (.landscapeRight, .landscapeLeft),
     ]
     for (orientation, sent) in device {
-      XCTAssertEqual(OrientationWrite(orientation, convention: .device, backend: .purple), .purple(sent))
+      #expect(OrientationWrite(orientation, convention: .device, backend: .purple) == .purple(sent))
     }
     for orientation in SimulatorHIDDeviceOrientation.allCases {
-      XCTAssertEqual(OrientationWrite(orientation, convention: .interface, backend: .purple), .purple(orientation))
+      #expect(OrientationWrite(orientation, convention: .interface, backend: .purple) == .purple(orientation))
     }
   }
 
-  func testMotionStatePreservesPhysicalDirectionsAndFlatStates() throws {
+  @Test
+  func motionStatePreservesPhysicalDirectionsAndFlatStates() throws {
     let orientations: [SimulatorDeviceOrientation] = [.unknown, .portrait, .portraitUpsideDown, .landscapeLeft, .landscapeRight, .faceUp, .faceDown]
     for (value, orientation) in orientations.enumerated() {
-      XCTAssertEqual(try SimulatorOrientationCommands.decodeMotionState("{\"orientation\":\(value)}"), orientation)
+      #expect(try SimulatorOrientationCommands.decodeMotionState("{\"orientation\":\(value)}") == orientation)
     }
   }
 
-  func testInvalidMotionStateDoesNotDefaultToPortrait() {
+  @Test
+  func invalidMotionStateDoesNotDefaultToPortrait() {
     for output in ["", "{}", "null", "[]", "{\"orientation\":null}", "{\"orientation\":true}", "{\"orientation\":\"1\"}", "{\"orientation\":1.5}", "{\"orientation\":-1}", "{\"orientation\":7}"] {
-      XCTAssertThrowsError(try SimulatorOrientationCommands.decodeMotionState(output), output)
+      #expect(throws: (any Error).self, "\(output)") { try SimulatorOrientationCommands.decodeMotionState(output) }
     }
   }
 
-  func testLegacyRequestUsesCurrentOrientation() throws {
+  @Test
+  func legacyRequestUsesCurrentOrientation() throws {
     let request = try SimulatorOrientationProtocol.request()
-    XCTAssertEqual(String(cString: xpc_dictionary_get_string(request, "messageType")!), "OrientationRequest")
-    XCTAssertEqual(String(cString: xpc_dictionary_get_string(request, "featureIdentifier")!), SimulatorOrientationProtocol.service)
-    let payload = try XCTUnwrap(xpc_dictionary_get_value(request, "payload"))
-    let current = try XCTUnwrap(xpc_dictionary_get_value(payload, "currentOrientation"))
-    XCTAssertTrue(xpc_get_type(current) == XPC_TYPE_DICTIONARY)
-    XCTAssertEqual(xpc_dictionary_get_count(current), 0)
+    #expect(String(cString: xpc_dictionary_get_string(request, "messageType")!) == "OrientationRequest")
+    #expect(String(cString: xpc_dictionary_get_string(request, "featureIdentifier")!) == SimulatorOrientationProtocol.service)
+    let payload = try #require(xpc_dictionary_get_value(request, "payload"))
+    let current = try #require(xpc_dictionary_get_value(payload, "currentOrientation"))
+    #expect(xpc_get_type(current) == XPC_TYPE_DICTIONARY)
+    #expect(xpc_dictionary_get_count(current) == 0)
   }
 
-  func testLegacyReplyPreservesAllPhysicalOrientations() throws {
+  @Test
+  func legacyReplyPreservesAllPhysicalOrientations() throws {
     for orientation in SimulatorDeviceOrientation.allCases {
       let reply = SimulatorCoreDevice.dictionary(["currentDeviceOrientation": xpc_string_create(orientation.rawValue)])
-      XCTAssertEqual(try SimulatorOrientationProtocol.orientation(reply), orientation)
+      #expect(try SimulatorOrientationProtocol.orientation(reply) == orientation)
     }
   }
 
-  func testInvalidLegacyRepliesFail() {
+  @Test
+  func invalidLegacyRepliesFail() {
     for reply in [xpc_null_create(), xpc_string_create("portrait"), SimulatorCoreDevice.dictionary([:])] {
-      XCTAssertThrowsError(try SimulatorOrientationProtocol.orientation(reply))
+      #expect(throws: (any Error).self) { try SimulatorOrientationProtocol.orientation(reply) }
     }
     for value in [xpc_null_create(), xpc_int64_create(1), xpc_bool_create(true), xpc_string_create("futureOrientation")] {
-      XCTAssertThrowsError(try SimulatorOrientationProtocol.orientation(SimulatorCoreDevice.dictionary(["currentDeviceOrientation": value])))
+      #expect(throws: (any Error).self) { try SimulatorOrientationProtocol.orientation(SimulatorCoreDevice.dictionary(["currentDeviceOrientation": value])) }
     }
   }
 }
