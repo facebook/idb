@@ -8,22 +8,25 @@
 import FBControlCore
 @testable import FBSimulatorAX
 @testable import FBSimulatorControl
-import XCTest
+import Foundation
+import Testing
 
 /// Properties of the profiling collector that the read path depends on.
-final class AccessibilityProfilingCostTests: XCTestCase {
+@Suite
+struct AccessibilityProfilingCostTests {
 
   // `fetchedKeys` is a set bounded by distinct keys; `attributeFetchCount` is a counter. Pinned
   // separately so a change to either is attributable.
-  func testTheFetchedKeySetDoesNotGrowWithCallCount() {
+  @Test
+  func theFetchedKeySetDoesNotGrowWithCallCount() {
     let collector = AccessibilityProfilingCollector()
     for _ in 0..<10000 {
       collector.incrementAttributeFetchCount(forKey: "AXLabel")
     }
-    XCTAssertEqual(
-      collector.fetchedKeys, ["AXLabel"],
+    #expect(
+      collector.fetchedKeys == ["AXLabel"],
       "the key set is bounded by distinct keys, not by how often they were fetched"
     )
-    XCTAssertEqual(collector.attributeFetchCount, 10000)
+    #expect(collector.attributeFetchCount == 10000)
   }
 }
