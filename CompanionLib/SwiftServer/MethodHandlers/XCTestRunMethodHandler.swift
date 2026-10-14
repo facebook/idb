@@ -20,6 +20,12 @@ protocol XCTestRunCompletion {
 
 extension IDBTestOperation: XCTestRunCompletion {}
 
+/// A test run the handler starts, then awaits the reporting of once the run completes.
+protocol XCTestRunStarting: Sendable {
+  func start() async throws -> any XCTestRunCompletion
+  func awaitReportingTerminated() async throws
+}
+
 struct XCTestRunMethodHandler {
 
   let target: any Target
@@ -34,32 +40,19 @@ struct XCTestRunMethodHandler {
     }
 
     let reporter = IDBXCTestReporter(responseStream: responseStream, logger: logger)
-    // The request is not mutated once built, but is not Sendable; rebind as nonisolated(unsafe) so the
-    // run can capture it.
-    nonisolated(unsafe) let request = transformed
-
     try await Self.run(
       cancellation: context.cancellation,
-      start: { [commandExecutor] in
-        let operation = try await commandExecutor.xctestRun(
-          request,
-          reporter: reporter,
-          logger: ControlCoreLoggerFactory.logger(to: reporter))
-        reporter.configuration = .init(legacy: operation.reporterConfiguration)
-        return operation
-      },
-      reportingTerminated: { _ = try await reporter.awaitReportingTerminated() })
+      testRun: RequestedXCTestRun(request: transformed, reporter: reporter, commandExecutor: commandExecutor))
   }
 
-  /// Awaits the run `start` begins, then its reporting, unless `cancellation` reports the RPC cancelled, as
+  /// Awaits the run `testRun` starts, then its reporting, unless `cancellation` reports the RPC cancelled, as
   /// it does when the client goes away, which cancels the run.
   static func run(
     cancellation: ServerContext.RPCCancellationHandle,
-    start: @escaping @Sendable () async throws -> any XCTestRunCompletion,
-    reportingTerminated: @escaping @Sendable () async throws -> Void
+    testRun: any XCTestRunStarting
   ) async throws {
     try await withRPCCancellation(cancellation) {
-      let operation = try await start()
+      let operation = try await testRun.start()
       do {
         try await operation.awaitCompletion()
       } catch let error as NSError {
@@ -69,7 +62,7 @@ struct XCTestRunMethodHandler {
         }
       }
 
-      try await reportingTerminated()
+      try await testRun.awaitReportingTerminated()
     }
   }
 
@@ -136,5 +129,28 @@ struct XCTestRunMethodHandler {
     }
     // fallback to deprecated request field for backwards compatibility
     return CodeCoverageRequest(collect: request.collectCoverage, format: .exported, enableContinuousCoverageCollection: request.codeCoverage.enableContinuousCoverageCollection)
+  }
+}
+
+/// The test run an `xctest_run` request describes, reporting to `reporter`.
+// SAFETY: the request is not mutated once built but is not Sendable; the reporter and executor are
+// thread-safe.
+// patternlint-disable-next-line unchecked-sendable
+private struct RequestedXCTestRun: XCTestRunStarting, @unchecked Sendable {
+  let request: XCTestRunRequest
+  let reporter: IDBXCTestReporter
+  let commandExecutor: IDBCommandExecutor
+
+  func start() async throws -> any XCTestRunCompletion {
+    let operation = try await commandExecutor.xctestRun(
+      request,
+      reporter: reporter,
+      logger: ControlCoreLoggerFactory.logger(to: reporter))
+    reporter.configuration = .init(legacy: operation.reporterConfiguration)
+    return operation
+  }
+
+  func awaitReportingTerminated() async throws {
+    _ = try await reporter.awaitReportingTerminated()
   }
 }

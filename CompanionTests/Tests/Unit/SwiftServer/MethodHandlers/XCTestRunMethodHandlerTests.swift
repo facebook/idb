@@ -37,14 +37,31 @@ private final class ScriptedTestRun: XCTestRunCompletion, @unchecked Sendable {
   }
 }
 
+/// Starts `run`, then reports through `onReportingAwaited` when the handler waits for reporting.
+private struct ScriptedTestRunStart: XCTestRunStarting {
+  let run: ScriptedTestRun
+  var onStart: @Sendable () -> Void = {}
+  var onReportingAwaited: @Sendable () -> Void = {}
+
+  func start() async throws -> any XCTestRunCompletion {
+    onStart()
+    return run
+  }
+
+  func awaitReportingTerminated() async throws {
+    onReportingAwaited()
+  }
+}
+
 final class XCTestRunMethodHandlerTests: XCTestCase {
 
   func testATestBinaryFailureStillWaitsForReporting() async throws {
     let reported = expectation(description: "reporting is awaited")
     try await XCTestRunMethodHandler.run(
       cancellation: ServerContext.RPCCancellationHandle(),
-      start: { ScriptedTestRun(.fails(NSError(domain: TestFailureErrorDomain, code: 1))) },
-      reportingTerminated: { reported.fulfill() })
+      testRun: ScriptedTestRunStart(
+        run: ScriptedTestRun(.fails(NSError(domain: TestFailureErrorDomain, code: 1))),
+        onReportingAwaited: { reported.fulfill() }))
     await fulfillment(of: [reported], timeout: 0)
   }
 
@@ -53,8 +70,9 @@ final class XCTestRunMethodHandlerTests: XCTestCase {
     do {
       try await XCTestRunMethodHandler.run(
         cancellation: ServerContext.RPCCancellationHandle(),
-        start: { ScriptedTestRun(.fails(error)) },
-        reportingTerminated: { XCTFail("reporting was awaited after the run failed") })
+        testRun: ScriptedTestRunStart(
+          run: ScriptedTestRun(.fails(error)),
+          onReportingAwaited: { XCTFail("reporting was awaited after the run failed") }))
       XCTFail("the failure was swallowed")
     } catch let thrown as NSError {
       XCTAssertEqual(thrown, error)
@@ -70,11 +88,9 @@ final class XCTestRunMethodHandlerTests: XCTestCase {
     let call = Task {
       try await XCTestRunMethodHandler.run(
         cancellation: cancellation,
-        start: {
-          started.fulfill()
-          return ScriptedTestRun(.holdsOpen { stopped.fulfill() })
-        },
-        reportingTerminated: {})
+        testRun: ScriptedTestRunStart(
+          run: ScriptedTestRun(.holdsOpen { stopped.fulfill() }),
+          onStart: { started.fulfill() }))
     }
     await fulfillment(of: [started], timeout: 5)
     cancellation.cancel()
