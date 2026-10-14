@@ -40,6 +40,9 @@ final class DataDownloadInput: NSObject, @unchecked Sendable {
 
   private let finished = AsyncLatch()
   private let task = OSAllocatedUnfairLock<URLSessionDataTask?>(initialState: nil)
+  private let cancelRequested = OSAllocatedUnfairLock(initialState: false)
+  // Written with `failure`.
+  private var failedBeforeCancel = false
   // Written only from the session's delegate queue, which is serial.
   private var report = DownloadReport()
   private var failure: Error?
@@ -50,7 +53,14 @@ final class DataDownloadInput: NSObject, @unchecked Sendable {
 
   /// Stops the transfer, which then completes failed and ends `spool`. For a reader that has no use for the rest.
   func cancel() {
+    cancelRequested.withLock { $0 = true }
     task.withLock { $0 }?.cancel()
+  }
+
+  /// Whether the download failed for a reason of its own, rather than because `cancel` stopped it. Read after
+  /// `completed()` throws.
+  var failedOnItsOwn: Bool {
+    failedBeforeCancel
   }
 
   static func dataDownload(withURL url: URL, logger: ControlCoreLogger) -> DataDownloadInput {
@@ -89,6 +99,11 @@ final class DataDownloadInput: NSObject, @unchecked Sendable {
   // The session holds both the delegate and the resumed task for the lifetime of the download, so neither needs storing here.
   // It lets go of the delegate only once invalidated, which `finishTasksAndInvalidate` defers until the task completes.
   private func startDownload(from url: URL, configuration: URLSessionConfiguration) {
+    if let error = spool.creationFailure {
+      // Nothing that arrived could be kept, so nothing is fetched.
+      fail(InstallError.transferFailed(url: url, underlying: error))
+      return
+    }
     let delegateQueue = OperationQueue()
     delegateQueue.name = "FBControlCore.DataDownloadInput.urlSessionDelegate"
     // Callers read the events as an ordered sequence: the response before any
@@ -129,7 +144,16 @@ extension DataDownloadInput: URLSessionDataDelegate {
   }
 
   func urlSession(_ session: URLSession, dataTask: URLSessionDataTask, didReceive data: Data) {
-    spool.append(data)
+    do {
+      try spool.append(data)
+    } catch {
+      // The download is the failure, recorded before the spool's reader can see it, rather than the extraction that
+      // reads a spool cut short.
+      fail(InstallError.transferFailed(url: dataTask.originalRequest?.url, underlying: error, report: report))
+      spool.end(failing: error)
+      dataTask.cancel()
+      return
+    }
     report.receivedBytes += Int64(data.count)
     onEvent?(.data(byteCount: data.count))
   }
@@ -157,6 +181,7 @@ extension DataDownloadInput: URLSessionDataDelegate {
       return
     }
     failure = error
+    failedBeforeCancel = !cancelRequested.withLock { $0 }
     finished.open()
   }
 }

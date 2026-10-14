@@ -423,7 +423,7 @@ public enum Staging {
         do {
           report = try await download.completed()
         } catch {
-          throw extractionFailure.withLock { $0 } ?? error
+          throw (download.failedOnItsOwn ? nil : extractionFailure.withLock { $0 }) ?? error
         }
         onReport(.download(report))
         onProgress(

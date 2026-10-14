@@ -107,11 +107,16 @@ final class DataDownloadInputTests: XCTestCase {
       withURL: url, configuration: configuration, logger: logger,
       spoolDirectory: URL(fileURLWithPath: tempDirectory).appendingPathComponent("missing"))
 
-    let report = try await download.completed()
-
-    // BUG: the download runs to the end and completes as though it had kept every byte it threw away — flipped in
-    // the following commit.
-    XCTAssertEqual(report.receivedBytes, Int64(body.count))
+    do {
+      try await download.completed()
+      XCTFail("Expected the download to fail")
+    } catch {
+      guard case .transferFailed(_, let underlying, let report)? = error as? InstallError else {
+        return XCTFail("Expected a transfer failure, got \(error)")
+      }
+      XCTAssertEqual((underlying as? POSIXError)?.code, .ENOENT)
+      XCTAssertEqual(report.receivedBytes, 0)
+    }
   }
 
   // MARK: - Success

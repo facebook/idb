@@ -30,6 +30,9 @@ final class DownloadSpool: @unchecked Sendable {
   private let writer: FileHandle?
   private let readDescriptor: Int32
 
+  /// Why the spool's file couldn't be created, if it couldn't. Such a spool keeps nothing, and its reader fails at once.
+  let creationFailure: (any Error)?
+
   init(directory: URL = FileManager.default.temporaryDirectory) {
     let path = directory.appendingPathComponent("idb-download-\(UUID().uuidString)").path
     let writeDescriptor = open(path, O_WRONLY | O_CREAT | O_EXCL | O_CLOEXEC, 0o600)
@@ -40,11 +43,13 @@ final class DownloadSpool: @unchecked Sendable {
         close(writeDescriptor)
       }
       writer = nil
-      failure = POSIXError.current
+      creationFailure = POSIXError.current
+      failure = creationFailure
       finished = true
       return
     }
     writer = FileHandle(fileDescriptor: writeDescriptor, closeOnDealloc: true)
+    creationFailure = nil
   }
 
   deinit {
@@ -53,17 +58,13 @@ final class DownloadSpool: @unchecked Sendable {
     }
   }
 
-  /// Appends `data` for the reader, unless it has gone. A failed write ends the spool, and the reader gets the error.
-  func append(_ data: Data) {
+  /// Appends `data` for the reader, unless it has gone or the spool has ended. Throws if `data` can't be written, leaving
+  /// the caller to end the spool with that error once it has recorded it as the download's own.
+  func append(_ data: Data) throws {
     guard let writer, condition.withLock({ !readerGone && !finished }) else {
       return
     }
-    do {
-      try writer.write(contentsOf: data)
-    } catch {
-      end(failing: error)
-      return
-    }
+    try writer.write(contentsOf: data)
     condition.withLock {
       written += data.count
       condition.broadcast()
