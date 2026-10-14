@@ -6,9 +6,11 @@
  */
 
 @testable import FBSimulatorControl
-import XCTest
+import Foundation
+import Testing
 
-final class SimulatorRuntimeResolutionTests: XCTestCase {
+@Suite
+struct SimulatorRuntimeResolutionTests {
   private let device = SimulatorRuntimeIndex.Device(identifier: "future.device", name: "Future Device")
 
   private func runtime(
@@ -29,77 +31,90 @@ final class SimulatorRuntimeResolutionTests: XCTestCase {
     return index.runtimes[match.runtime]
   }
 
-  func testUncataloguedDeviceAndRuntimeResolve() throws {
-    XCTAssertEqual(try resolve([runtime()]).identifier, "future.runtime")
+  @Test
+  func uncataloguedDeviceAndRuntimeResolve() throws {
+    #expect(try resolve([runtime()]).identifier == "future.runtime")
   }
 
-  func testNoMatchingRuntimeThrows() {
-    XCTAssertThrowsError(try resolve([runtime(name: "OtherOS 99.0")]))
+  @Test
+  func noMatchingRuntimeThrows() {
+    #expect(throws: (any Error).self) { try resolve([runtime(name: "OtherOS 99.0")]) }
   }
 
-  func testUnavailableRuntimeDoesNotMatch() {
-    XCTAssertThrowsError(try resolve([runtime(available: false)]))
+  @Test
+  func unavailableRuntimeDoesNotMatch() {
+    #expect(throws: (any Error).self) { try resolve([runtime(available: false)]) }
   }
 
-  func testIncompatibleDeviceDoesNotMatch() {
-    XCTAssertThrowsError(try resolve([runtime(supportedDevices: ["another.device"])]))
+  @Test
+  func incompatibleDeviceDoesNotMatch() {
+    #expect(throws: (any Error).self) { try resolve([runtime(supportedDevices: ["another.device"])]) }
   }
 
-  func testMultipleBuildsChooseNewestRegardlessOfInputOrder() throws {
+  @Test
+  func multipleBuildsChooseNewestRegardlessOfInputOrder() throws {
     let older = runtime(build: "99A9")
     let newer = runtime(build: "99A100")
-    XCTAssertEqual(try resolve([older, newer]).build, newer.build)
-    XCTAssertEqual(try resolve([newer, older]).build, newer.build)
-    XCTAssertEqual(try resolve([older, newer], runtime: .identifier(newer.identifier)).build, newer.build)
-    XCTAssertEqual(try resolve([newer, older], runtime: .identifier(newer.identifier)).build, newer.build)
+    #expect(try resolve([older, newer]).build == newer.build)
+    #expect(try resolve([newer, older]).build == newer.build)
+    #expect(try resolve([older, newer], runtime: .identifier(newer.identifier)).build == newer.build)
+    #expect(try resolve([newer, older], runtime: .identifier(newer.identifier)).build == newer.build)
   }
 
-  func testUnavailableOrIncompatibleNewerBuildDoesNotHideUsableBuild() throws {
+  @Test
+  func unavailableOrIncompatibleNewerBuildDoesNotHideUsableBuild() throws {
     let usable = runtime(build: "99A9")
-    XCTAssertEqual(try resolve([usable, runtime(build: "99A100", available: false)]).build, usable.build)
-    XCTAssertEqual(try resolve([usable, runtime(build: "99A100", supportedDevices: [])]).build, usable.build)
+    #expect(try resolve([usable, runtime(build: "99A100", available: false)]).build == usable.build)
+    #expect(try resolve([usable, runtime(build: "99A100", supportedDevices: [])]).build == usable.build)
   }
 
-  func testLatestFiltersBeforeOrderingVersionComponents() throws {
+  @Test
+  func latestFiltersBeforeOrderingVersionComponents() throws {
     let expected = runtime(identifier: "chosen", name: "FutureOS 99.10.1", version: "99.10.1")
     let runtimes = [
       runtime(version: "99.9"), runtime(version: "99.10"), expected,
       runtime(version: "100.0", available: false), runtime(version: "101.0", supportedDevices: []),
     ]
-    XCTAssertEqual(try resolve(runtimes, runtime: nil).identifier, expected.identifier)
-    XCTAssertEqual(try resolve(Array(runtimes.reversed()), runtime: nil).identifier, expected.identifier)
+    #expect(try resolve(runtimes, runtime: nil).identifier == expected.identifier)
+    #expect(try resolve(Array(runtimes.reversed()), runtime: nil).identifier == expected.identifier)
   }
 
-  func testExplicitRuntimeDoesNotFallBackToNewest() {
-    XCTAssertThrowsError(try resolve([runtime(name: "FutureOS 100.0", version: "100.0")]))
+  @Test
+  func explicitRuntimeDoesNotFallBackToNewest() {
+    #expect(throws: (any Error).self) { try resolve([runtime(name: "FutureOS 100.0", version: "100.0")]) }
   }
 
-  func testRuntimeIdentifierSelectsAmongEqualNames() throws {
+  @Test
+  func runtimeIdentifierSelectsAmongEqualNames() throws {
     let other = runtime(identifier: "another.runtime", build: "99A999")
-    XCTAssertEqual(try resolve([other, runtime()], runtime: .identifier("future.runtime")).identifier, "future.runtime")
+    #expect(try resolve([other, runtime()], runtime: .identifier("future.runtime")).identifier == "future.runtime")
   }
 
-  func testIdentifierDoesNotFallBackToDisplayName() {
-    XCTAssertThrowsError(try resolve([runtime(name: "missing.runtime")], runtime: .identifier("missing.runtime")))
+  @Test
+  func identifierDoesNotFallBackToDisplayName() {
+    #expect(throws: (any Error).self) { try resolve([runtime(name: "missing.runtime")], runtime: .identifier("missing.runtime")) }
   }
 
-  func testAmbiguousDeviceNameRequiresIdentifier() throws {
+  @Test
+  func ambiguousDeviceNameRequiresIdentifier() throws {
     let duplicateName = SimulatorRuntimeIndex.Device(identifier: "another.device", name: device.name)
     let index = SimulatorRuntimeIndex(devices: [duplicateName, device], runtimes: [runtime()])
-    XCTAssertThrowsError(try index.resolve(SimulatorCreationRequest(device: .name(device.name))))
+    #expect(throws: (any Error).self) { try index.resolve(SimulatorCreationRequest(device: .name(device.name))) }
     let match = try index.resolve(SimulatorCreationRequest(device: .identifier(device.identifier)))
-    XCTAssertEqual(index.devices[match.device].identifier, device.identifier)
+    #expect(index.devices[match.device].identifier == device.identifier)
   }
 
-  func testDiscoveryIncludesOnlyAvailableCompatiblePairs() {
+  @Test
+  func discoveryIncludesOnlyAvailableCompatiblePairs() {
     let other = SimulatorRuntimeIndex.Device(identifier: "other.device", name: "Other Device")
     let index = SimulatorRuntimeIndex(
       devices: [device, other], runtimes: [runtime(), runtime(available: false), runtime(supportedDevices: [])])
-    XCTAssertEqual(index.availablePairs, [SimulatorRuntimeIndex.Match(device: 0, runtime: 0)])
+    #expect(index.availablePairs == [SimulatorRuntimeIndex.Match(device: 0, runtime: 0)])
   }
 
-  func testEmptyIndexFailsClearly() {
+  @Test
+  func emptyIndexFailsClearly() {
     let index = SimulatorRuntimeIndex(devices: [], runtimes: [])
-    XCTAssertThrowsError(try index.resolve(SimulatorCreationRequest(device: .name(device.name))))
+    #expect(throws: (any Error).self) { try index.resolve(SimulatorCreationRequest(device: .name(device.name))) }
   }
 }
