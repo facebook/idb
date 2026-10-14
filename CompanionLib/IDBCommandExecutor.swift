@@ -27,6 +27,7 @@ public enum IDBCommandError: Error {
   case replSessionsUnsupported(targetDescription: String)
   case replAppLaunchesUnsupported(targetDescription: String)
   case replHostAppMissing
+  case replIDBLibraryMissing
   case noDebugServer
   case debugServerAlreadyRunning
   case notPersistedApplication(bundleID: String, suitable: [String])
@@ -54,6 +55,8 @@ extension IDBCommandError: LocalizedError {
       return "\(targetDescription) does not support REPL app launches"
     case .replHostAppMissing:
       return "ReplHost.app not found in the companion Resources directory"
+    case .replIDBLibraryMissing:
+      return "libReplIDB-iOS.dylib not found in the companion Resources directory"
     case .noDebugServer:
       return "No debug server running"
     case .debugServerAlreadyRunning:
@@ -434,7 +437,7 @@ public final class IDBCommandExecutor {
     guard let simulator = target as? Simulator else {
       throw IDBCommandError.replTestsUnsupported(targetDescription: String(describing: target))
     }
-    return try await simulator.repl.startTest(bundlePath: bundlePath)
+    return try await simulator.repl.startTest(bundlePath: bundlePath, additionalLibraries: replIDBLibraries())
   }
 
   /// The product family ("iphone", "ipad", "watch", "tv", "mac", "unknown") of
@@ -458,7 +461,7 @@ public final class IDBCommandExecutor {
     guard let simulator = target as? Simulator else {
       throw IDBCommandError.replSessionsUnsupported(targetDescription: String(describing: target))
     }
-    return try await simulator.repl.startSimulator()
+    return try await simulator.repl.startSimulator(additionalLibraries: replIDBLibraries())
   }
 
   /// Launches an installed app with the REPL injected, for the `app` REPL
@@ -469,7 +472,7 @@ public final class IDBCommandExecutor {
     guard let simulator = target as? Simulator else {
       throw IDBCommandError.replSessionsUnsupported(targetDescription: String(describing: target))
     }
-    return try await simulator.repl.startApp(bundleID: bundleID, reuseSession: reuseSession)
+    return try await simulator.repl.startApp(bundleID: bundleID, reuseSession: reuseSession, additionalLibraries: replIDBLibraries())
   }
 
   // Keep in sync with the PRODUCT_BUNDLE_IDENTIFIER in defs.bzl
@@ -494,15 +497,24 @@ public final class IDBCommandExecutor {
     return bundleID
   }
 
-  /// The environment that arms an app launch for the REPL (DYLD-inject libRepl +
-  /// the IDB_REPL_* vars), used by `idb launch --enable-repl`. The control-socket
+  /// The environment that arms an app launch for the REPL (DYLD-inject libRepl and
+  /// libReplIDB + the IDB_REPL_* vars), used by `idb launch --enable-repl`. The control-socket
   /// path is deterministic, so a later `idb-repl app` reattaches. Simulator
   /// targets only.
   public func replAppLaunchEnvironment(bundleID: String) async throws -> [String: String] {
     guard let simulator = target as? Simulator else {
       throw IDBCommandError.replAppLaunchesUnsupported(targetDescription: String(describing: target))
     }
-    return try await simulator.repl.appLaunchEnvironment(bundleID: bundleID)
+    return try await simulator.repl.appLaunchEnvironment(bundleID: bundleID, additionalLibraries: replIDBLibraries())
+  }
+
+  /// The `IDB` command API that injected code calls, loaded into every REPL host alongside the
+  /// shim. The shim itself carries no idb API.
+  private func replIDBLibraries() throws -> [String] {
+    guard let path = BundledResources.path(forItem: "libReplIDB-iOS.dylib") else {
+      throw IDBCommandError.replIDBLibraryMissing
+    }
+    return [path]
   }
 
   public func debugserver_start(_ bundleID: String) async throws -> DebugServer {
