@@ -64,7 +64,7 @@ struct XCTestRunMethodHandler {
         try await operation.awaitCompletion()
       } catch let error as NSError {
         // We should ignore errors that came from test binary. Like when an exception is thrown or binary crashed.
-        if error.domain != FBTestErrorDomain {
+        if error.domain != TestFailureErrorDomain {
           throw error
         }
       }

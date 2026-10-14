@@ -202,12 +202,12 @@ final class TestBundleDTXConnectionTests: XCTestCase {
 
   // MARK: - Connection
 
-  /// `XCTestRunMethodHandler` treats `FBTestErrorDomain` as the test process failing, not idb.
+  /// `XCTestRunMethodHandler` treats `TestFailureErrorDomain` as the test process failing, not idb.
   func testWrappingADeadSocketFailsInTheTestErrorDomain() throws {
     let connection = try makeConnection()
 
     XCTAssertThrowsError(try connection.connect()) { error in
-      XCTAssertEqual((error as NSError).domain, FBTestErrorDomain)
+      XCTAssertEqual((error as NSError).domain, TestFailureErrorDomain)
     }
   }
 

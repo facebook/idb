@@ -9,7 +9,7 @@ import Foundation
 
 public let XCTestBootstrapErrorDomain = "com.facebook.XCTestBootstrap"
 
-public let FBTestErrorDomain = "com.facebook.FBTestError"
+public let TestFailureErrorDomain = "com.facebook.FBTestError"
 
 public enum XCTestBootstrapErrorCode: Int {
   case startupFailure = 0x3
@@ -27,8 +27,8 @@ public enum XCTestBootstrapErrors {
     return NSError(domain: XCTestBootstrapErrorDomain, code: XCTestBootstrapErrorCode.startupFailure.rawValue, userInfo: userInfo)
   }
 
-  /// A failure attributed to the test process rather than to idb, in `FBTestErrorDomain`.
+  /// A failure attributed to the test process rather than to idb, in `TestFailureErrorDomain`.
   public static func testFailure(_ description: String) -> NSError {
-    NSError(domain: FBTestErrorDomain, code: 0, userInfo: [NSLocalizedDescriptionKey: description])
+    NSError(domain: TestFailureErrorDomain, code: 0, userInfo: [NSLocalizedDescriptionKey: description])
   }
 }

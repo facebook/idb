@@ -43,7 +43,7 @@ final class XCTestRunMethodHandlerTests: XCTestCase {
     let reported = expectation(description: "reporting is awaited")
     try await XCTestRunMethodHandler.run(
       cancellation: ServerContext.RPCCancellationHandle(),
-      start: { ScriptedTestRun(.fails(NSError(domain: FBTestErrorDomain, code: 1))) },
+      start: { ScriptedTestRun(.fails(NSError(domain: TestFailureErrorDomain, code: 1))) },
       reportingTerminated: { reported.fulfill() })
     await fulfillment(of: [reported], timeout: 0)
   }
