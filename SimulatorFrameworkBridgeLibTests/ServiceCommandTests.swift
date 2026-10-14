@@ -7,36 +7,40 @@
 
 import Foundation
 @_implementationOnly import SimulatorFrameworkBridgeSupport
-import XCTest
+import Testing
 
-final class ServiceCommandTests: XCTestCase {
-  func testOrientationRejectsWritesAndExtraArguments() {
-    XCTAssertEqual(FBOrientationService.run(action: "set", arguments: []), 1)
-    XCTAssertEqual(FBOrientationService.run(action: "get", arguments: ["ignored"]), 1)
+@Suite
+struct ServiceCommandTests {
+  @Test
+  func orientationRejectsWritesAndExtraArguments() {
+    #expect(FBOrientationService.run(action: "set", arguments: []) == 1)
+    #expect(FBOrientationService.run(action: "get", arguments: ["ignored"]) == 1)
   }
 
-  func testIncompleteCommandDoesNotCallAService() {
+  @Test
+  func incompleteCommandDoesNotCallAService() {
     let services = RecordingServices()
     for arguments in [[], ["bridge"], ["bridge", "dns"]] {
-      XCTAssertEqual(FBBridgeCommand.run(arguments: arguments, services: services), 1)
+      #expect(FBBridgeCommand.run(arguments: arguments, services: services) == 1)
     }
-    XCTAssertTrue(services.calls.isEmpty)
+    #expect(services.calls.isEmpty)
   }
 
-  func testCommandForwardsArgumentsAndExitStatus() {
+  @Test
+  func commandForwardsArgumentsAndExitStatus() {
     let services = RecordingServices()
-    XCTAssertEqual(FBBridgeCommand.run(arguments: ["bridge", "dns", "set", "", "8.8.8.8"], services: services), 23)
-    XCTAssertEqual(services.calls, [Call(service: "dns", action: "set", arguments: ["", "8.8.8.8"])])
+    #expect(FBBridgeCommand.run(arguments: ["bridge", "dns", "set", "", "8.8.8.8"], services: services) == 23)
+    #expect(services.calls == [Call(service: "dns", action: "set", arguments: ["", "8.8.8.8"])])
   }
 
-  func testEachRouteReceivesItsOriginalArgumentShape() {
+  @Test
+  func eachRouteReceivesItsOriginalArgumentShape() {
     let services = RecordingServices()
     for service in ["contacts", "dns", "dynamic-store", "photos", "notifications", "health", "privacy", "proxy", "accessibility", "orientation"] {
-      XCTAssertEqual(FBBridgeCommand.dispatch(service: service, action: "action", arguments: ["bundle", "type1", "type2"], services: services), 23)
+      #expect(FBBridgeCommand.dispatch(service: service, action: "action", arguments: ["bundle", "type1", "type2"], services: services) == 23)
     }
-    XCTAssertEqual(
-      services.calls,
-      [
+    #expect(
+      services.calls == [
         Call(service: "contacts", action: "action", arguments: []),
         Call(service: "dns", action: "action", arguments: ["bundle", "type1", "type2"]),
         Call(service: "dynamic-store", action: "action", arguments: ["bundle", "type1", "type2"]),
@@ -50,49 +54,50 @@ final class ServiceCommandTests: XCTestCase {
       ])
   }
 
-  func testMissingBundleIDsRemainNil() {
+  @Test
+  func missingBundleIDsRemainNil() {
     let services = RecordingServices()
     for service in ["notifications", "health"] {
-      XCTAssertEqual(FBBridgeCommand.dispatch(service: service, action: "list", arguments: [], services: services), 23)
+      #expect(FBBridgeCommand.dispatch(service: service, action: "list", arguments: [], services: services) == 23)
     }
-    XCTAssertEqual(
-      services.calls,
-      [
+    #expect(
+      services.calls == [
         Call(service: "notifications", action: "list", arguments: [nil]),
         Call(service: "health", action: "list", arguments: [nil]),
       ])
   }
 
-  func testDeliveredNotificationsUsesItsOwnRouteAndOnlyTheBundleID() {
+  @Test
+  func deliveredNotificationsUsesItsOwnRouteAndOnlyTheBundleID() {
     let services = RecordingServices()
-    XCTAssertEqual(FBBridgeCommand.dispatch(service: "notifications", action: "delivered", arguments: ["com.example.app", "ignored"], services: services), 23)
-    XCTAssertEqual(FBBridgeCommand.dispatch(service: "notifications", action: "delivered", arguments: [], services: services), 23)
-    XCTAssertEqual(FBBridgeCommand.dispatch(service: "notifications", action: "clear-delivered", arguments: ["com.example.app"], services: services), 23)
-    XCTAssertEqual(
-      services.calls,
-      [
+    #expect(FBBridgeCommand.dispatch(service: "notifications", action: "delivered", arguments: ["com.example.app", "ignored"], services: services) == 23)
+    #expect(FBBridgeCommand.dispatch(service: "notifications", action: "delivered", arguments: [], services: services) == 23)
+    #expect(FBBridgeCommand.dispatch(service: "notifications", action: "clear-delivered", arguments: ["com.example.app"], services: services) == 23)
+    #expect(
+      services.calls == [
         Call(service: "deliveredNotifications", action: "delivered", arguments: ["com.example.app"]),
         Call(service: "deliveredNotifications", action: "delivered", arguments: [nil]),
         Call(service: "deliveredNotifications", action: "clear-delivered", arguments: ["com.example.app"]),
       ])
   }
 
-  func testInvalidServiceAndReplCommandsDoNotCallTheLoader() {
+  @Test
+  func invalidServiceAndReplCommandsDoNotCallTheLoader() {
     let services = RecordingServices()
-    XCTAssertEqual(FBBridgeCommand.dispatch(service: "unknown", action: "start", arguments: [], services: services), 1)
+    #expect(FBBridgeCommand.dispatch(service: "unknown", action: "start", arguments: [], services: services) == 1)
     for (action, arguments) in [("stop", ["socket", "library"]), ("start", []), ("start", ["socket"]), ("start", ["socket", ""])] {
-      XCTAssertEqual(FBBridgeCommand.dispatch(service: "repl", action: action, arguments: arguments, services: services), 1)
+      #expect(FBBridgeCommand.dispatch(service: "repl", action: action, arguments: arguments, services: services) == 1)
     }
-    XCTAssertTrue(services.calls.isEmpty)
+    #expect(services.calls.isEmpty)
   }
 
-  func testReplForwardsSocketLibraryAndAdditionalLibraryPaths() {
+  @Test
+  func replForwardsSocketLibraryAndAdditionalLibraryPaths() {
     let services = RecordingServices()
-    XCTAssertEqual(FBBridgeCommand.dispatch(service: "repl", action: "start", arguments: ["socket", "library"], services: services), 23)
-    XCTAssertEqual(FBBridgeCommand.dispatch(service: "repl", action: "start", arguments: ["socket", "library", "first", "second"], services: services), 23)
-    XCTAssertEqual(
-      services.calls,
-      [
+    #expect(FBBridgeCommand.dispatch(service: "repl", action: "start", arguments: ["socket", "library"], services: services) == 23)
+    #expect(FBBridgeCommand.dispatch(service: "repl", action: "start", arguments: ["socket", "library", "first", "second"], services: services) == 23)
+    #expect(
+      services.calls == [
         Call(service: "repl", action: "start", arguments: ["socket", "library"]),
         Call(service: "repl", action: "start", arguments: ["socket", "library", "first", "second"]),
       ])
