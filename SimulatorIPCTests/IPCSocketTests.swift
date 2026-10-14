@@ -8,112 +8,111 @@
 import Darwin
 import Foundation
 import SimulatorIPC
-import XCTest
+import Testing
 
-final class IPCSocketTests: XCTestCase {
-  private var directory = ""
+@Suite(.serialized)
+final class IPCSocketTests {
+  private let directory: String
 
-  override func setUpWithError() throws {
+  init() throws {
     directory = "/tmp/ipc-\(UUID().uuidString.prefix(8))"
     try IPCSocket.prepareDirectory(directory)
   }
 
-  override func tearDown() {
+  deinit {
     try? FileManager.default.removeItem(atPath: directory)
   }
 
-  func testFramesRoundTripBetweenAListenerAndAClient() throws {
+  @Test
+  func framesRoundTripBetweenAListenerAndAClient() throws {
     let path = "\(directory)/s.sock"
-    let listener = try XCTUnwrap(IPCListener.bind(path: path, backlog: 1))
-    let client = try XCTUnwrap(IPCSocket.connect(path: path, timeoutSeconds: 5))
+    let listener = try #require(try IPCListener.bind(path: path, backlog: 1))
+    let client = try #require(try IPCSocket.connect(path: path, timeoutSeconds: 5))
     defer { close(client) }
     let server = accept(listener.fileDescriptor, nil, nil)
-    XCTAssertGreaterThanOrEqual(server, 0)
+    #expect(server >= 0)
     defer { close(server) }
 
     try IPCSocket.writeFrame(client, Data("ping".utf8))
-    XCTAssertEqual(try IPCSocket.readFrame(server), Data("ping".utf8))
+    #expect(try IPCSocket.readFrame(server) == Data("ping".utf8))
     try IPCSocket.writeFrame(server, Data("pong".utf8))
-    XCTAssertEqual(try IPCSocket.readFrame(client), Data("pong".utf8))
+    #expect(try IPCSocket.readFrame(client) == Data("pong".utf8))
   }
 
-  func testReadingFromAClosedPeerReportsClosed() throws {
+  @Test
+  func readingFromAClosedPeerReportsClosed() throws {
     var descriptors: [Int32] = [0, 0]
-    XCTAssertEqual(socketpair(AF_UNIX, SOCK_STREAM, 0, &descriptors), 0)
+    #expect(socketpair(AF_UNIX, SOCK_STREAM, 0, &descriptors) == 0)
     defer { close(descriptors[0]) }
     close(descriptors[1])
 
-    XCTAssertThrowsError(try IPCSocket.readFrame(descriptors[0])) {
-      XCTAssertEqual($0 as? IPCError, .closed)
-    }
+    #expect(throws: IPCError.closed) { try IPCSocket.readFrame(descriptors[0]) }
   }
 
-  func testASilentPeerTimesOut() throws {
+  @Test
+  func aSilentPeerTimesOut() throws {
     var descriptors: [Int32] = [0, 0]
-    XCTAssertEqual(socketpair(AF_UNIX, SOCK_STREAM, 0, &descriptors), 0)
+    #expect(socketpair(AF_UNIX, SOCK_STREAM, 0, &descriptors) == 0)
     defer {
       close(descriptors[0])
       close(descriptors[1])
     }
     IPCSocket.setTimeout(descriptors[0], seconds: 1)
 
-    XCTAssertThrowsError(try IPCSocket.readFrame(descriptors[0])) {
-      XCTAssertEqual($0 as? IPCError, .timedOut)
-    }
+    #expect(throws: IPCError.timedOut) { try IPCSocket.readFrame(descriptors[0]) }
   }
 
-  func testASecondListenerOnTheSamePathDefersToTheFirst() throws {
+  @Test
+  func aSecondListenerOnTheSamePathDefersToTheFirst() throws {
     let path = "\(directory)/s.sock"
-    let first = try XCTUnwrap(IPCListener.bind(path: path, backlog: 1))
+    let first = try #require(try IPCListener.bind(path: path, backlog: 1))
 
-    XCTAssertNil(try IPCListener.bind(path: path, backlog: 1))
+    #expect(try IPCListener.bind(path: path, backlog: 1) == nil)
     withExtendedLifetime(first) {
-      XCTAssertTrue(FileManager.default.fileExists(atPath: path))
+      #expect(FileManager.default.fileExists(atPath: path))
     }
   }
 
-  func testReleasingAListenerRemovesItsSocket() throws {
+  @Test
+  func releasingAListenerRemovesItsSocket() throws {
     let path = "\(directory)/s.sock"
-    _ = try XCTUnwrap(IPCListener.bind(path: path, backlog: 1))
+    _ = try #require(try IPCListener.bind(path: path, backlog: 1))
 
-    XCTAssertFalse(FileManager.default.fileExists(atPath: path))
-    XCTAssertNil(try IPCSocket.connect(path: path, timeoutSeconds: 1))
+    #expect(!FileManager.default.fileExists(atPath: path))
+    #expect(try IPCSocket.connect(path: path, timeoutSeconds: 1) == nil)
   }
 
-  func testAPathLongerThanSockaddrIsRefused() {
+  @Test
+  func aPathLongerThanSockaddrIsRefused() {
     let path = "/tmp/" + String(repeating: "x", count: IPCSocket.pathCapacity)
 
-    XCTAssertThrowsError(try IPCSocket.connect(path: path, timeoutSeconds: 1)) {
-      XCTAssertEqual($0 as? IPCError, .pathTooLong(path: path, limit: IPCSocket.pathCapacity))
-    }
-    XCTAssertThrowsError(try IPCListener.bind(path: path, backlog: 1))
+    #expect(throws: IPCError.pathTooLong(path: path, limit: IPCSocket.pathCapacity)) { try IPCSocket.connect(path: path, timeoutSeconds: 1) }
+    #expect(throws: (any Error).self) { try IPCListener.bind(path: path, backlog: 1) }
   }
 
-  func testAPrivateDirectoryIsCreatedTightenedAndRefusedWhenNotOwnedOrLinked() throws {
+  @Test
+  func aPrivateDirectoryIsCreatedTightenedAndRefusedWhenNotOwnedOrLinked() throws {
     let owned = "\(directory)/owned"
     try IPCSocket.requirePrivateDirectory(owned, creating: true)
     chmod(owned, 0o777)
-    XCTAssertThrowsError(try IPCSocket.requirePrivateDirectory(owned, creating: false)) {
-      XCTAssertEqual($0 as? IPCError, .sharedDirectory(path: owned))
-    }
+    #expect(throws: IPCError.sharedDirectory(path: owned)) { try IPCSocket.requirePrivateDirectory(owned, creating: false) }
     try IPCSocket.requirePrivateDirectory(owned, creating: true)
     let attributes = try FileManager.default.attributesOfItem(atPath: owned)
-    XCTAssertEqual(attributes[.posixPermissions] as? Int, IPCSocket.ownerOnlyPermissions)
+    #expect(attributes[.posixPermissions] as? Int == IPCSocket.ownerOnlyPermissions)
 
     let linked = "\(directory)/linked"
-    XCTAssertEqual(symlink(owned, linked), 0)
-    XCTAssertThrowsError(try IPCSocket.requirePrivateDirectory(linked, creating: true)) {
-      XCTAssertEqual($0 as? IPCError, .sharedDirectory(path: linked))
-    }
-    XCTAssertNoThrow(try IPCSocket.requirePrivateDirectory("\(directory)/absent", creating: false))
+    #expect(symlink(owned, linked) == 0)
+    #expect(throws: IPCError.sharedDirectory(path: linked)) { try IPCSocket.requirePrivateDirectory(linked, creating: true) }
+    #expect(throws: Never.self) { try IPCSocket.requirePrivateDirectory("\(directory)/absent", creating: false) }
   }
 
-  func testPreparedDirectoriesAreOwnerOnly() throws {
+  @Test
+  func preparedDirectoriesAreOwnerOnly() throws {
     let loose = "\(directory)/loose"
-    XCTAssertEqual(mkdir(loose, 0o777), 0)
+    #expect(mkdir(loose, 0o777) == 0)
     try IPCSocket.prepareDirectory(loose)
 
     let mode = try FileManager.default.attributesOfItem(atPath: loose)[.posixPermissions] as? Int
-    XCTAssertEqual(mode, IPCSocket.ownerOnlyPermissions)
+    #expect(mode == IPCSocket.ownerOnlyPermissions)
   }
 }
