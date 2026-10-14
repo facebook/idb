@@ -7,7 +7,7 @@
 
 @testable import FBSimulatorControl
 import Foundation
-import XCTest
+import Testing
 @preconcurrency import XPC
 
 private func displayValue(id: String, active: Bool) -> xpc_object_t {
@@ -41,23 +41,26 @@ private func target(_ event: xpc_object_t, channel: UUID) throws -> SimulatorDis
   return target
 }
 
-final class SimulatorDisplayUpdatesTests: XCTestCase {
+@Suite
+struct SimulatorDisplayUpdatesTests {
 
-  func testRequestNamesTheSideChannelAndTakesNoInput() throws {
+  @Test
+  func requestNamesTheSideChannelAndTakesNoInput() throws {
     let channel = UUID()
     let request = try CoreDeviceRequest(
       action: SimulatorDisplayUpdatesProtocol.action, deviceID: "device", version: CoreDeviceVersion("651.13.4"),
       input: SimulatorDisplayUpdatesProtocol.StreamInput(channel: channel)
     ).encoded()
-    let input = try XCTUnwrap(xpc_dictionary_get_dictionary(request, "CoreDevice.input"))
-    let proxy = try XCTUnwrap(xpc_dictionary_get_dictionary(input, "streamProxy"))
-    let identifier = try XCTUnwrap(xpc_dictionary_get_value(proxy, "sideChannel"))
-    XCTAssertEqual(xpc_get_type(identifier), XPC_TYPE_UUID)
-    let actualInput = try XCTUnwrap(xpc_dictionary_get_dictionary(input, "actualInput"))
-    XCTAssertEqual(xpc_dictionary_get_count(actualInput), 0)
+    let input = try #require(xpc_dictionary_get_dictionary(request, "CoreDevice.input"))
+    let proxy = try #require(xpc_dictionary_get_dictionary(input, "streamProxy"))
+    let identifier = try #require(xpc_dictionary_get_value(proxy, "sideChannel"))
+    #expect(xpc_get_type(identifier) == XPC_TYPE_UUID)
+    let actualInput = try #require(xpc_dictionary_get_dictionary(input, "actualInput"))
+    #expect(xpc_dictionary_get_count(actualInput) == 0)
   }
 
-  func testTheLatestReportInAPushSelectsTheActiveDisplay() throws {
+  @Test
+  func theLatestReportInAPushSelectsTheActiveDisplay() throws {
     let channel = UUID()
     let target = try target(
       push(
@@ -66,19 +69,24 @@ final class SimulatorDisplayUpdatesTests: XCTestCase {
           report([displayValue(id: "cover", active: true), displayValue(id: "inner", active: false)]),
           report([displayValue(id: "cover", active: false), displayValue(id: "inner", active: true)]),
         ]), channel: channel)
-    guard case let .selected(inner)? = target else { return XCTFail("Expected a selected display, got \(String(describing: target))") }
-    XCTAssertEqual(inner.uniqueID, "inner")
+    guard case let .selected(inner)? = target else {
+      Issue.record("Expected a selected display, got \(String(describing: target))")
+      return
+    }
+    #expect(inner.uniqueID == "inner")
   }
 
-  func testAPushThatCannotSelectADisplayYieldsNothing() throws {
+  @Test
+  func aPushThatCannotSelectADisplayYieldsNothing() throws {
     let channel = UUID()
     let noneActive = report([displayValue(id: "cover", active: false), displayValue(id: "inner", active: false)])
-    XCTAssertNil(try target(push(channel: channel, [noneActive]), channel: channel))
-    XCTAssertNil(try target(push(channel: channel, []), channel: channel))
+    #expect(try target(push(channel: channel, [noneActive]), channel: channel) == nil)
+    #expect(try target(push(channel: channel, []), channel: channel) == nil)
   }
 
-  func testAPushOnAnotherSideChannelIsMalformed() {
+  @Test
+  func aPushOnAnotherSideChannelIsMalformed() {
     let pushed = push(channel: UUID(), [report([displayValue(id: "lcd", active: true)])])
-    XCTAssertThrowsError(try target(pushed, channel: UUID()))
+    #expect(throws: (any Error).self) { try target(pushed, channel: UUID()) }
   }
 }
