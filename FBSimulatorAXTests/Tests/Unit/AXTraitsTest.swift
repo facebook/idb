@@ -8,32 +8,40 @@
 import AXRuntime
 @testable import FBControlCore
 @testable import FBSimulatorAX
-import XCTest
+import Foundation
+import Testing
 
-final class AXTraitsTest: XCTestCase {
-  func testMappingNames() {
+@Suite
+struct AXTraitsTest {
+  @Test
+  func mappingNames() {
     let mapping = AXTraitToNameMap()
-    XCTAssertEqual(mapping[AXTraits.link.rawValue], "Link")
-    XCTAssertEqual(mapping[AXTraits.button.rawValue], "Button")
+    #expect(mapping[AXTraits.link.rawValue] == "Link")
+    #expect(mapping[AXTraits.button.rawValue] == "Button")
   }
 
-  func testEmptyTraitExtraction() {
-    XCTAssertEqual(AXExtractTraits(0), ["None"])
+  @Test
+  func emptyTraitExtraction() {
+    #expect(AXExtractTraits(0) == ["None"])
   }
 
-  func testSingleTraitExtraction() {
-    XCTAssertEqual(AXExtractTraits(AXTraits.button.rawValue), ["Button"])
+  @Test
+  func singleTraitExtraction() {
+    #expect(AXExtractTraits(AXTraits.button.rawValue) == ["Button"])
   }
 
-  func testUnknownTraitExtraction() {
-    XCTAssertEqual(AXExtractTraits(UInt64(1) << 63), ["Unknown"])
+  @Test
+  func unknownTraitExtraction() {
+    #expect(AXExtractTraits(UInt64(1) << 63) == ["Unknown"])
   }
 
-  func testCombinedTraitExtraction() {
-    XCTAssertEqual(AXExtractTraits(AXTraits.selected.rawValue | AXTraits.button.rawValue), ["Button", "Selected"], "bit order")
+  @Test
+  func combinedTraitExtraction() {
+    #expect(AXExtractTraits(AXTraits.selected.rawValue | AXTraits.button.rawValue) == ["Button", "Selected"], "bit order")
   }
 
-  func testCombinedTraitExtractionWithUnknownTrait() {
-    XCTAssertEqual(AXExtractTraits(AXTraits.button.rawValue | (UInt64(1) << 63)), ["Button", "Unknown"], "unknown bits last")
+  @Test
+  func combinedTraitExtractionWithUnknownTrait() {
+    #expect(AXExtractTraits(AXTraits.button.rawValue | (UInt64(1) << 63)) == ["Button", "Unknown"], "unknown bits last")
   }
 }
