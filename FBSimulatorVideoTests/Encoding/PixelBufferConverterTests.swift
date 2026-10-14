@@ -8,39 +8,45 @@
 import CoreVideo
 @testable import FBSimulatorControl
 @testable import FBSimulatorVideo
+import Foundation
+import Testing
 import VideoToolbox
-import XCTest
 
-final class PixelBufferConverterTests: XCTestCase {
+@Suite
+struct PixelBufferConverterTests {
 
-  func testEncoderConverterTellsTheTransferSessionItsDestinationColor() throws {
+  @Test
+  func encoderConverterTellsTheTransferSessionItsDestinationColor() throws {
     let converter = try PixelBufferConverter(outputWidth: 64, outputHeight: 64, pixelFormat: PixelBufferConverter.encoderPixelFormat, destinationColor: .sRGB)
     defer { converter.invalidate() }
-    XCTAssertEqual(
-      converter.destinationColorProperties,
-      [
+    #expect(
+      converter.destinationColorProperties == [
         kVTPixelTransferPropertyKey_DestinationColorPrimaries as String: kCVImageBufferColorPrimaries_ITU_R_709_2 as String,
         kVTPixelTransferPropertyKey_DestinationTransferFunction as String: kCVImageBufferTransferFunction_sRGB as String,
         kVTPixelTransferPropertyKey_DestinationYCbCrMatrix as String: kCVImageBufferYCbCrMatrix_ITU_R_709_2 as String,
       ])
   }
 
-  func testBitmapConverterTellsTheTransferSessionNoDestinationColor() throws {
+  @Test
+  func bitmapConverterTellsTheTransferSessionNoDestinationColor() throws {
     let converter = try PixelBufferConverter(outputWidth: 64, outputHeight: 64, pixelFormat: kCVPixelFormatType_32BGRA)
     defer { converter.invalidate() }
-    XCTAssertEqual(converter.destinationColorProperties, [:])
+    #expect(converter.destinationColorProperties == [:])
   }
 
-  func testConverterProducesTheRequestedFormatAndSize() throws {
+  @Test
+  func converterProducesTheRequestedFormatAndSize() throws {
     let converter = try PixelBufferConverter(outputWidth: 32, outputHeight: 16, pixelFormat: PixelBufferConverter.encoderPixelFormat)
     defer { converter.invalidate() }
     var source: CVPixelBuffer?
-    XCTAssertEqual(CVPixelBufferCreate(nil, 64, 32, kCVPixelFormatType_32BGRA, nil, &source), kCVReturnSuccess)
-    guard case let .converted(destination) = converter.convert(source!) else {
-      return XCTFail("Expected a converted buffer")
+    let status = CVPixelBufferCreate(nil, 64, 32, kCVPixelFormatType_32BGRA, nil, &source)
+    #expect(status == kCVReturnSuccess)
+    guard case let .converted(destination) = converter.convert(try #require(source)) else {
+      Issue.record("Expected a converted buffer")
+      return
     }
-    XCTAssertEqual(CVPixelBufferGetWidth(destination), 32)
-    XCTAssertEqual(CVPixelBufferGetHeight(destination), 16)
-    XCTAssertEqual(CVPixelBufferGetPixelFormatType(destination), PixelBufferConverter.encoderPixelFormat)
+    #expect(CVPixelBufferGetWidth(destination) == 32)
+    #expect(CVPixelBufferGetHeight(destination) == 16)
+    #expect(CVPixelBufferGetPixelFormatType(destination) == PixelBufferConverter.encoderPixelFormat)
   }
 }
