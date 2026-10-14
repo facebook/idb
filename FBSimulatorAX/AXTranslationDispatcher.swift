@@ -50,9 +50,9 @@ final class AXTranslationDispatcher: NSObject, AXPTranslationTokenDelegateHelper
   private weak var translator: AXPTranslator?
   private let lock = NSLock()
   private var tokenToRequest: [String: AXTranslationRequest] = [:]
-  /// The request resolving its root on the work queue, which a callback without a token belongs to: the
-  /// translator sends some root lookups (an application by pid) with no translation, and so no token, and
-  /// only one request is ever inside the translator at a time.
+  /// The request resolving an application by pid on the work queue, which that lookup's callback belongs to:
+  /// the translator sends it with no translation, and so no token, and only one request is ever inside the
+  /// translator at a time. No other resolution claims untokened callbacks.
   private var resolvingRequest: AXTranslationRequest?
 
   // AXPTranslator is a process-wide singleton whose internal state (nonatomic
@@ -138,6 +138,9 @@ final class AXTranslationDispatcher: NSObject, AXPTranslationTokenDelegateHelper
   }
 
   private func resolving<T>(_ request: AXTranslationRequest, _ body: () throws -> T) rethrows -> T {
+    guard case .applicationForPid = request.kind else {
+      return try body()
+    }
     lock.withLock { resolvingRequest = request }
     defer { lock.withLock { resolvingRequest = nil } }
     return try body()
@@ -169,8 +172,14 @@ final class AXTranslationDispatcher: NSObject, AXPTranslationTokenDelegateHelper
     let collector = request.collector
     let timeoutSeconds = request.requestTimeoutSeconds
     let clientType = request.clientType
+    let isUntokened = token.isEmpty
     return { axRequest in
       guard let axRequest, let transport else {
+        return Self.emptyResponse()
+      }
+      // An untokened lookup that names no pid is answered by the service for its own process, never the one
+      // the read asked for.
+      if isUntokened, axRequest.parameters?["pid"] == nil {
         return Self.emptyResponse()
       }
       axRequest.clientType = clientType.rawValue

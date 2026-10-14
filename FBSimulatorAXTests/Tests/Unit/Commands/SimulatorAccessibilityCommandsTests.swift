@@ -566,10 +566,9 @@ final class SimulatorAccessibilityCommandsTests: XCTestCase {
     let element = try await simulator.accessibility.resolveElement(for: .frontmost)
     element.close()
 
-    // BUG: a request with no token, and no pid, is forwarded to the simulator's service while a frontmost root
-    // resolves, where the service answers it for its own process. It used to be answered empty without a round
-    // trip — flipped in the following commit.
-    XCTAssertEqual(transport.requests.map(\.requestType), [1])
+    XCTAssertEqual(transport.requests.map(\.requestType), [], "answered empty, without a round trip")
+    let response = try XCTUnwrap(fixture!.translator.bridgeResponses.last ?? nil)
+    XCTAssertNil(response.value(forKey: "resultData"))
   }
 
   func testATransportThatDoesNotAnswerYieldsTheEmptyResponse() async throws {
