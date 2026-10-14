@@ -7,10 +7,12 @@
 
 import FBSimulatorBridgeProtocol
 import Foundation
-import XCTest
+import Testing
 
-final class BridgeAXResponseTests: XCTestCase {
-  func testADisplayInventoryDecodesFromThePayloadTheGuestSends() throws {
+@Suite
+struct BridgeAXResponseTests {
+  @Test
+  func aDisplayInventoryDecodesFromThePayloadTheGuestSends() throws {
     let inventory = BridgeAXDisplayInventory(
       displayScopedInteractions: true,
       displayScopedTrees: false,
@@ -18,41 +20,44 @@ final class BridgeAXResponseTests: XCTestCase {
       displays: [.init(uniqueID: "main", displayID: 1), .init(uniqueID: "external", displayID: 7)]
     )
     let data = try JSONSerialization.data(withJSONObject: inventory.payload)
-    XCTAssertEqual(try JSONDecoder().decode(BridgeAXDisplayInventory.self, from: data), inventory)
+    #expect(try JSONDecoder().decode(BridgeAXDisplayInventory.self, from: data) == inventory)
   }
 
-  func testADisplayInventoryKeepsItsWireSpelling() throws {
+  @Test
+  func aDisplayInventoryKeepsItsWireSpelling() throws {
     let payload = BridgeAXDisplayInventory(
       displayScopedInteractions: true, displayScopedTrees: true, displayScopedQuiescence: true,
       displays: [.init(uniqueID: "main", displayID: 1)]
     ).payload
-    XCTAssertEqual(
-      Set(payload.keys), ["displayScopedInteractions", "displayScopedTrees", "displayScopedQuiescence", "displays"])
-    let display = try XCTUnwrap((payload["displays"] as? [[String: Any]])?.first)
-    XCTAssertEqual(Set(display.keys), ["uniqueID", "displayID"])
+    #expect(
+      Set(payload.keys) == ["displayScopedInteractions", "displayScopedTrees", "displayScopedQuiescence", "displays"])
+    let display = try #require((payload["displays"] as? [[String: Any]])?.first)
+    #expect(Set(display.keys) == ["uniqueID", "displayID"])
   }
 
-  func testACapabilityTheInventoryDoesNotMentionIsNotAdvertised() throws {
+  @Test
+  func aCapabilityTheInventoryDoesNotMentionIsNotAdvertised() throws {
     let data = Data(#"{"displays":[{"uniqueID":"main","displayID":1}]}"#.utf8)
     let inventory = try JSONDecoder().decode(BridgeAXDisplayInventory.self, from: data)
-    XCTAssertFalse(inventory.displayScopedInteractions || inventory.displayScopedTrees || inventory.displayScopedQuiescence)
-    XCTAssertEqual(inventory.displays, [.init(uniqueID: "main", displayID: 1)])
+    #expect(!(inventory.displayScopedInteractions || inventory.displayScopedTrees || inventory.displayScopedQuiescence))
+    #expect(inventory.displays == [.init(uniqueID: "main", displayID: 1)])
   }
 
-  func testAModalDecodesFromThePayloadTheGuestSends() {
+  @Test
+  func aModalDecodesFromThePayloadTheGuestSends() {
     for modal in [
       BridgeAXModal(kind: .system, elementType: "SBAlertItemWindow", label: nil),
       BridgeAXModal(kind: .app, elementType: "_UIAlertControllerPhoneTVMacView", label: "Allow?"),
     ] {
-      XCTAssertEqual(BridgeAXModal(payload: modal.payload), modal)
+      #expect(BridgeAXModal(payload: modal.payload) == modal)
     }
   }
 
-  func testAModalKeepsItsWireSpellingAndRefusesAnUnknownKind() {
-    XCTAssertEqual(
-      BridgeAXModal(kind: .app, elementType: "Alert", label: "Title").payload,
-      ["kind": "app", "elementType": "Alert", "label": "Title"])
-    XCTAssertNil(BridgeAXModal(payload: ["kind": "dialog", "elementType": "Alert"]))
-    XCTAssertNil(BridgeAXModal(payload: ["kind": "app"]))
+  @Test
+  func aModalKeepsItsWireSpellingAndRefusesAnUnknownKind() {
+    #expect(
+      BridgeAXModal(kind: .app, elementType: "Alert", label: "Title").payload == ["kind": "app", "elementType": "Alert", "label": "Title"])
+    #expect(BridgeAXModal(payload: ["kind": "dialog", "elementType": "Alert"]) == nil)
+    #expect(BridgeAXModal(payload: ["kind": "app"]) == nil)
   }
 }
