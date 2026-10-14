@@ -38,3 +38,27 @@ extension FramePusher {
   func recordTornFrame() {}
   func currentStats() -> VideoEncoderStats? { nil }
 }
+
+/// Set-up frame pushers keyed by the source each was set up for, so a stream that switches between displays
+/// takes one rather than starting an encoder on the switch.
+struct FramePusherPool {
+  private var pushers: [VideoFrameSource: any FramePusher] = [:]
+
+  func contains(_ source: VideoFrameSource) -> Bool {
+    pushers[source] != nil
+  }
+
+  mutating func take(_ source: VideoFrameSource) -> (any FramePusher)? {
+    pushers.removeValue(forKey: source)
+  }
+
+  /// Returns the pusher already kept for `source`, which the caller tears down.
+  mutating func keep(_ pusher: any FramePusher, for source: VideoFrameSource) -> (any FramePusher)? {
+    pushers.updateValue(pusher, forKey: source)
+  }
+
+  mutating func removeAll() -> [any FramePusher] {
+    defer { pushers = [:] }
+    return Array(pushers.values)
+  }
+}
