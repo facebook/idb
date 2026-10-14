@@ -747,3 +747,15 @@ final class AXBridgeUIAutomation: AXBridgeTreeReader, @unchecked Sendable {
     _ = simulator.logger.log("axbridge read reported \(frames.zeroFrame) of \(frames.total) elements with no frame. \(advice)")
   }
 }
+
+/// The bounds applied to each whole-tree axbridge read.
+///
+/// These are authoritative. The host sends them on every request, so the guest reader truncates to
+/// these rather than keeping its own copy. The guest keeps a *separate*, larger fallback pair
+/// (`kDefaultMaxDepth` = 100 / `kDefaultNodeBudget` = 5000 in `AccessibilityService.m`) that applies
+/// only when a request omits the bounds — e.g. the one-shot guest front-end invoked by hand. The two
+/// must not be conflated: a host-driven read always truncates at 50 / 3000.
+enum AXReadLimits {
+  static let maxReadDepth = 50
+  static let maxReadNodes = 3000
+}
