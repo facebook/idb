@@ -193,7 +193,7 @@ public final class IDBCommandExecutor {
     return try await simulator.uiAutomation(backend: backend).quiescence(query, parameters: parameters)
   }
 
-  public func process_id(forBundleID bundleID: String) async throws -> pid_t {
+  public func processId(forBundleID bundleID: String) async throws -> pid_t {
     try await target.application.processID(forBundleID: bundleID)
   }
 
@@ -541,7 +541,7 @@ public final class IDBCommandExecutor {
     return server
   }
 
-  public func tail_companion_logs(_ consumer: DataConsumer) async throws -> any LogOperation {
+  public func tailCompanionLogs(_ consumer: DataConsumer) async throws -> any LogOperation {
     return try await logger.tailToConsumer(consumer)
   }
 

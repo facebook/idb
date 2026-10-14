@@ -20,7 +20,7 @@ struct LogMethodHandler: @unchecked Sendable {
     let streamWriter = FIFOStreamWriter(stream: responseStream)
     try await Self.tail(cancellation: context.cancellation, send: { try streamWriter.send($0) }) { consumer in
       if request.source == .companion {
-        return try await commandExecutor.tail_companion_logs(consumer)
+        return try await commandExecutor.tailCompanionLogs(consumer)
       }
       return try await target.log.tail(arguments: request.arguments, consumer: consumer)
     }

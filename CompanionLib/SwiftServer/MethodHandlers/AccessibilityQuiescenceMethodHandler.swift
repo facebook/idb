@@ -21,7 +21,7 @@ protocol AccessibilityQuiescenceStreaming {
     backend: UIAutomationBackend
   ) async throws -> AsyncThrowingStream<QuiescenceEvent, Error>
 
-  func process_id(forBundleID bundleID: String) async throws -> pid_t
+  func processId(forBundleID bundleID: String) async throws -> pid_t
 }
 
 extension IDBCommandExecutor: AccessibilityQuiescenceStreaming {}
@@ -50,7 +50,7 @@ struct AccessibilityQuiescenceMethodHandler {
       }
       query = .application(pid: pid)
     case let .bundleID(bundleID):
-      query = .application(pid: try await commandExecutor.process_id(forBundleID: bundleID))
+      query = .application(pid: try await commandExecutor.processId(forBundleID: bundleID))
     case nil:
       query = .frontmost
     }

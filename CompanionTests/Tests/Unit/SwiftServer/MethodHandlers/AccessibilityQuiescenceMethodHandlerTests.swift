@@ -46,7 +46,7 @@ private final class ScriptedQuiescenceExecutor: AccessibilityQuiescenceStreaming
     }
   }
 
-  func process_id(forBundleID bundleID: String) async throws -> pid_t {
+  func processId(forBundleID bundleID: String) async throws -> pid_t {
     XCTAssertEqual(bundleID, "com.example.app")
     return 77
   }
