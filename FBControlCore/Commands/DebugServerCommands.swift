@@ -14,3 +14,11 @@ public protocol DebugServerCommands {
     port: in_port_t
   ) async throws -> any DebugServer
 }
+
+public protocol DebugServer: AnyObject {
+
+  var lldbBootstrapCommands: [String] { get }
+
+  /// Cancels the debug server and waits for teardown to complete.
+  func cancel() async throws
+}
