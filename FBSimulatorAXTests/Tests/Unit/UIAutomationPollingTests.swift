@@ -7,35 +7,40 @@
 
 @testable import FBSimulatorAX
 @testable import FBSimulatorControl
-import XCTest
+import Foundation
+import Testing
 
-final class UIAutomationPollingTests: XCTestCase {
-  func testMatchOnTheDeadlineWinsOverTimeout() async throws {
+@Suite
+struct UIAutomationPollingTests {
+  @Test
+  func matchOnTheDeadlineWinsOverTimeout() async throws {
     var now = 0.0
     let result: AccessibilitySearchResult<String> = try await UIAutomationPolling.pollUntilFound(
       timeout: 1, pollInterval: 0.5, clock: { now }, sleep: { now += $0 }
     ) {
       AccessibilitySearchResult(match: now == 1 ? "ready" : nil)
     }
-    XCTAssertEqual(result.match, "ready")
-    XCTAssertEqual(now, 1)
+    #expect(result.match == "ready")
+    #expect(now == 1)
   }
 
-  func testZeroTimeoutStillProbesOnce() async throws {
+  @Test
+  func zeroTimeoutStillProbesOnce() async throws {
     var probes = 0
     let result: AccessibilitySearchResult<String> = try await UIAutomationPolling.pollUntilFound(
       timeout: 0, pollInterval: 0.5, clock: { 0 },
-      sleep: { _ in XCTFail("an expired wait must not sleep") }
+      sleep: { _ in Issue.record("an expired wait must not sleep") }
     ) {
       probes += 1
       return AccessibilitySearchResult(match: nil, diagnostics: AccessibilitySearchDiagnostics(unmatchedValues: ["probe \(probes)"]))
     }
-    XCTAssertNil(result.match)
-    XCTAssertEqual(result.diagnostics?.unmatchedValues, ["probe 1"])
-    XCTAssertEqual(probes, 1)
+    #expect(result.match == nil)
+    #expect(result.diagnostics?.unmatchedValues == ["probe 1"])
+    #expect(probes == 1)
   }
 
-  func testTimeoutDoesNotProbeAgainAfterTheFinalMiss() async throws {
+  @Test
+  func timeoutDoesNotProbeAgainAfterTheFinalMiss() async throws {
     var now = 0.0
     var probes = 0
     let result: AccessibilitySearchResult<String> = try await UIAutomationPolling.pollUntilFound(
@@ -44,13 +49,14 @@ final class UIAutomationPollingTests: XCTestCase {
       probes += 1
       return AccessibilitySearchResult(match: nil, diagnostics: AccessibilitySearchDiagnostics(unmatchedValues: ["probe \(probes)"]))
     }
-    XCTAssertNil(result.match)
-    XCTAssertEqual(result.diagnostics?.unmatchedValues, ["probe 3"])
-    XCTAssertEqual(probes, 3)
-    XCTAssertEqual(now, 1)
+    #expect(result.match == nil)
+    #expect(result.diagnostics?.unmatchedValues == ["probe 3"])
+    #expect(probes == 3)
+    #expect(now == 1)
   }
 
-  func testFinalReadFailureReplacesEarlierValues() async throws {
+  @Test
+  func finalReadFailureReplacesEarlierValues() async throws {
     var now = 0.0
     let result: AccessibilitySearchResult<String> = try await UIAutomationPolling.pollUntilFound(
       timeout: 1, pollInterval: 1, clock: { now }, sleep: { now += $0 }
@@ -61,37 +67,40 @@ final class UIAutomationPollingTests: XCTestCase {
           ? AccessibilitySearchDiagnostics(unmatchedValues: ["old screen"])
           : AccessibilitySearchDiagnostics(readError: "application unavailable"))
     }
-    XCTAssertEqual(result.diagnostics, AccessibilitySearchDiagnostics(readError: "application unavailable"))
+    #expect(result.diagnostics == AccessibilitySearchDiagnostics(readError: "application unavailable"))
   }
 
-  func testMappingAMatchPreservesNonmatches() {
+  @Test
+  func mappingAMatchPreservesNonmatches() {
     let result = AccessibilitySearchResult(match: "ready", diagnostics: AccessibilitySearchDiagnostics(unmatchedValues: ["loading"]))
     let mapped = result.map { $0.count }
-    XCTAssertEqual(mapped.match, 5)
-    XCTAssertEqual(mapped.diagnostics, result.diagnostics)
+    #expect(mapped.match == 5)
+    #expect(mapped.diagnostics == result.diagnostics)
   }
 
-  func testDiagnosticSampleBoundsValuesAndText() {
+  @Test
+  func diagnosticSampleBoundsValuesAndText() {
     let values = AccessibilitySearchDiagnostics(unmatchedValues: (0..<51).map(String.init))
-    XCTAssertEqual(values.unmatchedValues, (0..<50).map(String.init))
-    XCTAssertTrue(values.truncated)
+    #expect(values.unmatchedValues == (0..<50).map(String.init))
+    #expect(values.truncated)
     let text = AccessibilitySearchDiagnostics(unmatchedValues: [String(repeating: "x", count: 201)])
-    XCTAssertEqual(text.unmatchedValues, [String(repeating: "x", count: 200)])
-    XCTAssertTrue(text.truncated)
+    #expect(text.unmatchedValues == [String(repeating: "x", count: 200)])
+    #expect(text.truncated)
   }
 
-  func testProbeFailureAndSleepCancellationPropagate() async throws {
+  @Test
+  func probeFailureAndSleepCancellationPropagate() async throws {
     enum ReadError: Error { case failed }
     do {
       let _: AccessibilitySearchResult<String> = try await UIAutomationPolling.pollUntilFound(
         timeout: 1, pollInterval: 0.5, clock: { 0 },
-        sleep: { _ in XCTFail("a failed probe must not sleep") }
+        sleep: { _ in Issue.record("a failed probe must not sleep") }
       ) {
         throw ReadError.failed
       }
-      XCTFail("a failed probe must throw")
+      Issue.record("a failed probe must throw")
     } catch {
-      XCTAssertTrue(error is ReadError)
+      #expect(error is ReadError)
     }
 
     do {
@@ -101,9 +110,9 @@ final class UIAutomationPollingTests: XCTestCase {
       ) {
         AccessibilitySearchResult(match: nil)
       }
-      XCTFail("cancellation must throw")
+      Issue.record("cancellation must throw")
     } catch {
-      XCTAssertTrue(error is CancellationError)
+      #expect(error is CancellationError)
     }
   }
 }
