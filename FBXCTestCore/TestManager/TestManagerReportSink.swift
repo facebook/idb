@@ -23,9 +23,9 @@ protocol TestManagerReportSink: AnyObject {
 
   func finished(with summary: TestManagerResultSummary)
 
-  func testCase(_ testClass: String, method: String, willStartActivity activity: FBActivityRecord)
+  func testCase(_ testClass: String, method: String, willStartActivity activity: ActivityRecord)
 
-  func testCase(_ testClass: String, method: String, didFinishActivity activity: FBActivityRecord)
+  func testCase(_ testClass: String, method: String, didFinishActivity activity: ActivityRecord)
 }
 
 final class XCTestReporterSink: NSObject, TestManagerReportSink {
@@ -63,11 +63,11 @@ final class XCTestReporterSink: NSObject, TestManagerReportSink {
     reporter.finished(with: summary)
   }
 
-  func testCase(_ testClass: String, method: String, willStartActivity activity: FBActivityRecord) {
+  func testCase(_ testClass: String, method: String, willStartActivity activity: ActivityRecord) {
     reporter.testCase(testClass, method: method, willStartActivity: activity)
   }
 
-  func testCase(_ testClass: String, method: String, didFinishActivity activity: FBActivityRecord) {
+  func testCase(_ testClass: String, method: String, didFinishActivity activity: ActivityRecord) {
     reporter.testCase(testClass, method: method, didFinishActivity: activity)
   }
 }

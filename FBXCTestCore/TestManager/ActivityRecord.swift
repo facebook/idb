@@ -9,7 +9,7 @@ import Foundation
 
 /// An XCTest activity, copied out of XCTest's own `XCActivityRecord`.
 /// Objective-C only constructs it with `from(_:)` and hands it to reporters.
-@objc public final class FBActivityRecord: NSObject {
+@objc public final class ActivityRecord: NSObject {
 
   public let title: String
   public let activityType: String
@@ -21,11 +21,11 @@ import Foundation
   public let duration: Double
   public let name: String
   /// Starts empty; reporters nest records into it themselves.
-  public var subactivities: [FBActivityRecord] = []
+  public var subactivities: [ActivityRecord] = []
 
   /// `XCActivityRecord` is read through KVC because the XCTest private headers are not importable from Swift.
-  @objc(from:) public static func from(_ record: NSObject) -> FBActivityRecord {
-    FBActivityRecord(record)
+  @objc(from:) public static func from(_ record: NSObject) -> ActivityRecord {
+    ActivityRecord(record)
   }
 
   private init(_ record: NSObject) {

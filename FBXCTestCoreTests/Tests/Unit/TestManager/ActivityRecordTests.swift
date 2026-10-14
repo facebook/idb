@@ -12,7 +12,7 @@ import XCTest
 
 /// `XCActivityRecord` lives in `XCTestPrivate`, which cannot be imported alongside `XCTest` (both define `XCTAttachment`/`XCTIssue`), so the input record is built through the Objective-C runtime.
 @Suite
-struct FBActivityRecordTests {
+struct ActivityRecordTests {
 
   private func makeXCActivityRecord(
     title: String = "Activity Title",
@@ -39,8 +39,8 @@ struct FBActivityRecordTests {
     return record
   }
 
-  private func wrapActivity(_ record: NSObject) -> FBActivityRecord {
-    FBActivityRecord.from(record)
+  private func wrapActivity(_ record: NSObject) -> ActivityRecord {
+    ActivityRecord.from(record)
   }
 
   // MARK: - from(_:) field mapping

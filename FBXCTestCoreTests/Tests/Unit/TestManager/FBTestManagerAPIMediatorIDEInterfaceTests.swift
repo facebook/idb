@@ -15,7 +15,7 @@ private final class RecordingReportSink: NSObject, TestManagerReportSink {
   private(set) var events: [String] = []
   private(set) var exceptions: [TestExceptionInfo] = []
   private(set) var summaries: [TestManagerResultSummary] = []
-  private(set) var activities: [FBActivityRecord] = []
+  private(set) var activities: [ActivityRecord] = []
 
   func testSuite(_ testSuite: String, didStartAt startTime: String) {
     events.append("suiteStart:\(testSuite):\(startTime)")
@@ -47,12 +47,12 @@ private final class RecordingReportSink: NSObject, TestManagerReportSink {
     summaries.append(summary)
   }
 
-  func testCase(_ testClass: String, method: String, willStartActivity activity: FBActivityRecord) {
+  func testCase(_ testClass: String, method: String, willStartActivity activity: ActivityRecord) {
     events.append("activityStart:\(testClass)/\(method):\(activity.title)")
     activities.append(activity)
   }
 
-  func testCase(_ testClass: String, method: String, didFinishActivity activity: FBActivityRecord) {
+  func testCase(_ testClass: String, method: String, didFinishActivity activity: ActivityRecord) {
     events.append("activityFinish:\(testClass)/\(method):\(activity.title)")
     activities.append(activity)
   }

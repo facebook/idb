@@ -35,17 +35,17 @@ public protocol XCTestReporter: AnyObject {
 
   func didCrashDuringTest(_ error: Error)
 
-  func testCase(_ testClass: String, method: String, willStartActivity activity: FBActivityRecord)
+  func testCase(_ testClass: String, method: String, willStartActivity activity: ActivityRecord)
 
-  func testCase(_ testClass: String, method: String, didFinishActivity activity: FBActivityRecord)
+  func testCase(_ testClass: String, method: String, didFinishActivity activity: ActivityRecord)
 
   func testPlanDidFail(withMessage message: String)
 }
 
 extension XCTestReporter {
-  public func testCase(_ testClass: String, method: String, willStartActivity activity: FBActivityRecord) {}
+  public func testCase(_ testClass: String, method: String, willStartActivity activity: ActivityRecord) {}
 
-  public func testCase(_ testClass: String, method: String, didFinishActivity activity: FBActivityRecord) {}
+  public func testCase(_ testClass: String, method: String, didFinishActivity activity: ActivityRecord) {}
 
   public func testPlanDidFail(withMessage message: String) {}
 }

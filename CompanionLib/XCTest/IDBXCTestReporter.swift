@@ -44,7 +44,7 @@ extension IDBXCTestReporter {
     var bundleName = ""
     var testClass = ""
     var testMethod = ""
-    var activityRecords: [FBActivityRecord] = []
+    var activityRecords: [ActivityRecord] = []
     var failureInfo: Idb_XctestRunResponse.TestRunInfo.TestRunFailureInfo?
     var otherFailures: [Idb_XctestRunResponse.TestRunInfo.TestRunFailureInfo] = []
   }
@@ -171,7 +171,7 @@ final class IDBXCTestReporter: XCTestReporter, DataConsumer, @unchecked Sendable
     write(response: response)
   }
 
-  func testCase(_ testClass: String, method: String, didFinishActivity activity: FBActivityRecord) {
+  func testCase(_ testClass: String, method: String, didFinishActivity activity: ActivityRecord) {
     _currentInfo.sync {
       $0.activityRecords.append(activity)
     }
@@ -208,7 +208,7 @@ final class IDBXCTestReporter: XCTestReporter, DataConsumer, @unchecked Sendable
 
     return try _currentInfo.sync { currentInfo in
 
-      var stackedActivities: [FBActivityRecord] = []
+      var stackedActivities: [ActivityRecord] = []
       currentInfo.activityRecords.sort(by: { $0.start < $1.start })
 
       while let activity = currentInfo.activityRecords.first {
@@ -233,7 +233,7 @@ final class IDBXCTestReporter: XCTestReporter, DataConsumer, @unchecked Sendable
     }
   }
 
-  private func translate(activity: FBActivityRecord) throws -> Idb_XctestRunResponse.TestRunInfo.TestActivity {
+  private func translate(activity: ActivityRecord) throws -> Idb_XctestRunResponse.TestRunInfo.TestActivity {
     let subactivities = activity.subactivities
     let reportAttachments = configuration?.reportAttachments ?? false
     return try Idb_XctestRunResponse.TestRunInfo.TestActivity.with {
@@ -275,7 +275,7 @@ final class IDBXCTestReporter: XCTestReporter, DataConsumer, @unchecked Sendable
     }
   }
 
-  private func populateSubactivities(root: FBActivityRecord, remaining: inout [FBActivityRecord]) {
+  private func populateSubactivities(root: ActivityRecord, remaining: inout [ActivityRecord]) {
     while let firstRemaining = remaining.first, root.start <= firstRemaining.start && firstRemaining.finish <= root.finish {
       remaining.remove(at: 0)
       populateSubactivities(root: firstRemaining, remaining: &remaining)
