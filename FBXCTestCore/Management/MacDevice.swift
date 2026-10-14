@@ -358,7 +358,7 @@ public final class MacDevice: Target {
       architectures: Set(binary.architectures.map { $0.rawValue })
     )
 
-    return try await ListTestStrategy(target: self, configuration: configuration, logger: self.logger).listTests()
+    return try await ListTestRunner(target: self, configuration: configuration, logger: self.logger).listTests()
   }
 
 }

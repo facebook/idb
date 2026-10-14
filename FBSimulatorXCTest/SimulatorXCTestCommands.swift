@@ -166,7 +166,7 @@ public final class SimulatorXCTestCommands: XCTestExtendedCommands {
       timeout: timeout,
       architectures: architectures)
 
-    return try await ListTestStrategy(target: simulator, configuration: configuration, logger: simulator.logger).listTests()
+    return try await ListTestRunner(target: simulator, configuration: configuration, logger: simulator.logger).listTests()
   }
 
   public func extendedTestShim() async throws -> String {

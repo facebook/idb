@@ -27,7 +27,7 @@ extension ListTestError: LocalizedError {
   }
 }
 
-public final class ListTestStrategy {
+public final class ListTestRunner {
 
   let target: any LogicTestTarget
   private let configuration: ListTestConfiguration
@@ -53,7 +53,7 @@ public final class ListTestStrategy {
     do {
       exitCode = try await TemporaryDirectory(logger: logger).withTemporaryDirectory { temporaryDirectory in
         let libraries = try await OToolDynamicLibs.findFullPath(forSanitiserDyldInBundle: configuration.testBundlePath)
-        let environment = ListTestStrategy.setupEnvironment(withDylibs: libraries, shimPath: shimPath, shimOutputFilePath: shimOutput.path, bundlePath: configuration.testBundlePath, target: target)
+        let environment = ListTestRunner.setupEnvironment(withDylibs: libraries, shimPath: shimPath, shimOutputFilePath: shimOutput.path, bundlePath: configuration.testBundlePath, target: target)
         let subprocess = try await listTestSubprocess(environment: environment, temporaryDirectory: temporaryDirectory)
         let process = try await subprocess.launch(on: target.subprocessLauncher, output: .consumer(LoggingDataConsumer(logger: logger)), error: .consumer(stdErrConsumer), logger: logger)
         return try await XCTestProcess.awaitExitCode(of: process, processName: (subprocess.executable as NSString).lastPathComponent, completesWithin: configuration.testTimeout, crashLogCommands: nil, logger: logger)
@@ -69,7 +69,7 @@ public final class ListTestStrategy {
       throw ListTestError.listingFailed(exitCode: exitCode, exitDescription: description, stdErr: stdErrReversed)
     }
     try await shimBuffer.awaitFinishedConsuming()
-    return try ListTestStrategy.testNames(fromShimOutput: shimBuffer.data())
+    return try ListTestRunner.testNames(fromShimOutput: shimBuffer.data())
   }
 
   // MARK: - Private

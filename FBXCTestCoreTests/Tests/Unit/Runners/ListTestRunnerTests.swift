@@ -9,11 +9,11 @@ import FBControlCore
 @testable import FBXCTestCore
 import XCTest
 
-/// Covers `ListTestStrategy` end to end on the host. The real shim cannot be loaded here, so the
+/// Covers `ListTestRunner` end to end on the host. The real shim cannot be loaded here, so the
 /// target's launcher runs a shell script in place of the `xctest` binary, handing it the environment
 /// and output streams the strategy prepared; the script plays the shim by writing the test list to
 /// `TEST_SHIM_OUTPUT_PATH`.
-final class ListTestStrategyTests: XCTestCase {
+final class ListTestRunnerTests: XCTestCase {
 
   private static let shimPath = "/nonexistent/libShimulator.dylib"
 
@@ -28,7 +28,7 @@ final class ListTestStrategyTests: XCTestCase {
       timeout: timeout,
       architectures: ["arm64"]
     )
-    let tests = try await ListTestStrategy(target: target, configuration: configuration, logger: ControlCoreGlobalConfiguration.defaultLogger).listTests()
+    let tests = try await ListTestRunner(target: target, configuration: configuration, logger: ControlCoreGlobalConfiguration.defaultLogger).listTests()
     return (tests, target)
   }
 
