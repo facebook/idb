@@ -269,11 +269,11 @@ struct IDBTransientTests {
     }
   }
 
-  // MARK: - CrashLogQueryValueTransformer Tests
+  // MARK: - CrashLogQueryTranslation Tests
 
   @Test
   func emptyQueryMatchesEveryCrashLog() {
-    let predicate = CrashLogQueryValueTransformer.predicate(from: Idb_CrashLogQuery())
+    let predicate = CrashLogQueryTranslation.predicate(from: Idb_CrashLogQuery())
     #expect(predicate.description == "all")
   }
 
@@ -281,7 +281,7 @@ struct IDBTransientTests {
   func queryWithSinceSelectsNewerCrashLogs() {
     var query = Idb_CrashLogQuery()
     query.since = 1000
-    let predicate = CrashLogQueryValueTransformer.predicate(from: query)
+    let predicate = CrashLogQueryTranslation.predicate(from: query)
     #expect(predicate.description == "date > \(Date(timeIntervalSince1970: 1000))")
   }
 
@@ -289,7 +289,7 @@ struct IDBTransientTests {
   func queryWithBeforeSelectsOlderCrashLogs() {
     var query = Idb_CrashLogQuery()
     query.before = 2000
-    let predicate = CrashLogQueryValueTransformer.predicate(from: query)
+    let predicate = CrashLogQueryTranslation.predicate(from: query)
     #expect(predicate.description == "!(date > \(Date(timeIntervalSince1970: 2000)))")
   }
 
@@ -297,7 +297,7 @@ struct IDBTransientTests {
   func queryWithNameSelectsByName() {
     var query = Idb_CrashLogQuery()
     query.name = "MyCrash"
-    let predicate = CrashLogQueryValueTransformer.predicate(from: query)
+    let predicate = CrashLogQueryTranslation.predicate(from: query)
     #expect(predicate.description == "name == MyCrash")
   }
 
@@ -305,7 +305,7 @@ struct IDBTransientTests {
   func queryWithBundleIDSelectsByIdentifier() {
     var query = Idb_CrashLogQuery()
     query.bundleID = "com.example.app"
-    let predicate = CrashLogQueryValueTransformer.predicate(from: query)
+    let predicate = CrashLogQueryTranslation.predicate(from: query)
     #expect(predicate.description == "identifier == com.example.app")
   }
 
@@ -315,7 +315,7 @@ struct IDBTransientTests {
     query.since = 1000
     query.before = 2000
     query.name = "Crash"
-    let predicate = CrashLogQueryValueTransformer.predicate(from: query)
+    let predicate = CrashLogQueryTranslation.predicate(from: query)
     #expect(predicate.description.components(separatedBy: " && ").count == 3)
   }
 

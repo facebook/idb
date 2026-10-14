@@ -9,7 +9,7 @@ import FBControlCore
 import Foundation
 import IDBGRPCSwift
 
-enum CrashLogQueryValueTransformer {
+enum CrashLogQueryTranslation {
 
   static func predicate(from request: Idb_CrashLogQuery) -> CrashLogPredicate {
     var predicates: [CrashLogPredicate] = []
