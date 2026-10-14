@@ -11,12 +11,12 @@ import IDBGRPCSwift
 
 struct ScreenshotMethodHandler {
 
-  let commandExecutor: IDBCommandExecutor
+  let target: CompanionTarget
 
   func handle(request: Idb_ScreenshotRequest, context: ServerContext) async throws -> Idb_ScreenshotResponse {
     let configuration = try ScreenshotRequestTranslation.configuration(from: request)
     do {
-      let result = try await commandExecutor.takeScreenshot(configuration)
+      let result = try await target.screenshot.take(configuration: configuration)
       return ScreenshotRequestTranslation.response(from: result)
     } catch let error as ScreenshotGeometryError {
       // The crop is resolved against the screen that was actually captured, so a rect that

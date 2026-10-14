@@ -131,14 +131,6 @@ public final class IDBCommandExecutor {
 
   // MARK: - Public Methods
 
-  public func takeScreenshot(_ format: ScreenshotFormat) async throws -> Data {
-    try await target.screenshot.take(format: format)
-  }
-
-  public func takeScreenshot(_ configuration: ScreenshotConfiguration) async throws -> ScreenshotResult {
-    try await target.screenshot.take(configuration: configuration)
-  }
-
   public func accessibilityTap(label: String) async throws {
     guard let simulator = target as? Simulator else {
       throw IDBCommandError.simulatorOnlyOperation(operation: "tap by accessibility label", targetDescription: String(describing: target))
