@@ -492,12 +492,6 @@ public final class IDBCommandExecutor {
     }
   }
 
-  public func tail(_ path: String, to_consumer consumer: DataConsumer, in_container containerType: String?) async throws -> FileContainerTailOperation {
-    return try await withFileContainer(for: containerType) { container in
-      try await container.tail(path, to: consumer)
-    }
-  }
-
   public func withDapServer<Result: Sendable>(path dapPath: String, input: InputSource, output: any DataConsumer, _ body: (RunningSubprocess) async throws -> Result) async throws -> Result {
     try await target.simulator().dapServer.withServer(dapPath, input: input, output: output, body)
   }

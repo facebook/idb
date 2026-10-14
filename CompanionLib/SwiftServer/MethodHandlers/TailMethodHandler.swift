@@ -72,6 +72,8 @@ private struct RequestedTail: TailStarting {
   let fileContainer: String?
 
   func start(consumer: any DataConsumer) async throws -> any TailOperation {
-    try await commandExecutor.tail(path, to_consumer: consumer, in_container: fileContainer)
+    try await commandExecutor.withFileContainer(for: fileContainer) { container in
+      try await container.tail(path, to: consumer)
+    }
   }
 }
