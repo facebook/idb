@@ -12,8 +12,8 @@ import MobileDeviceAPI
 /// Reinterprets a `dlsym` result as the function pointer the call table expects.
 ///
 /// The optional variant is used so a name that does not resolve is reported as an error naming it.
-/// `symbolFromHandle` asserts instead, which is compiled out of release builds and leaves a
-/// null pointer in the table to be crashed through later.
+/// `symbolFromHandle` traps instead, which would take the process down on a missing symbol rather
+/// than let the loader report which one is absent.
 private func symbol<T>(_ handle: UnsafeMutableRawPointer, _ name: String) throws -> T {
   guard let address = symbolFromHandleIfPresent(handle, name) else {
     throw DeviceControlFrameworkLoaderError.symbolNotFound(name: name)
