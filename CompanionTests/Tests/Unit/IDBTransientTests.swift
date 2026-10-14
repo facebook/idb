@@ -75,7 +75,7 @@ struct IDBTransientTests {
     #expect((result) == ("com.example.app"))
   }
 
-  // MARK: - GrpcDataMappings Tests
+  // MARK: - PayloadExtractable Tests
 
   @Test
   func installRequestExtractsPayload() {
