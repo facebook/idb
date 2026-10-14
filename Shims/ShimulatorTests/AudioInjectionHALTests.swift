@@ -10,7 +10,7 @@ import Foundation
 @_implementationOnly import ShimulatorAudioInjectionHAL
 @_implementationOnly import ShimulatorAudioInjectionPrivate
 import Synchronization
-import XCTest
+import Testing
 
 private func fourCC(_ code: String) -> UInt32 {
   code.utf8.reduce(0) { $0 << 8 | UInt32($1) }
@@ -120,11 +120,11 @@ private let capturingProc: IDBAudioDeviceIOProc = { _, _, input, _, _, _, _ in
   return 17
 }
 
-final class AudioInjectionHALTests: XCTestCase {
+@Suite(.serialized)
+struct AudioInjectionHALTests {
   private let engine = HALAudioInjectionEngine()
 
-  override func setUp() {
-    super.setUp()
+  init() {
     withFake { $0 = Recorded() }
     engine.clear()
   }
@@ -179,66 +179,70 @@ final class AudioInjectionHALTests: XCTestCase {
     }
   }
 
-  func testInjectedSamplesReachTheOriginalCallback() throws {
+  @Test
+  func injectedSamplesReachTheOriginalCallback() throws {
     let (_, handle) = create(8)
     engine.replace(samples: [.max, .min], sampleRate: 48_000, generation: 1)
     _ = engine.pollProgress()
     var output: [Float] = [0, 0]
 
-    XCTAssertEqual(callback(8, input: &output), 17)
-    XCTAssertEqual(output[0], 1, accuracy: 0.0001)
-    XCTAssertEqual(output[1], -1, accuracy: 0.0001)
-    XCTAssertEqual(withFake { $0.originalCallbacks }, 1)
-    XCTAssertEqual(destroy(8, handle), noErr)
+    #expect(callback(8, input: &output) == 17)
+    #expect(abs(output[0] - 1) <= 0.0001)
+    #expect(abs(output[1] + 1) <= 0.0001)
+    #expect(withFake { $0.originalCallbacks } == 1)
+    #expect(destroy(8, handle) == noErr)
   }
 
-  func testUnknownRateDefersInjectionUntilPollingPreparesIt() {
+  @Test
+  func unknownRateDefersInjectionUntilPollingPreparesIt() {
     let (_, handle) = create(8)
     let samples = (1...48).map { Int16($0 * 100) }
     engine.replace(samples: samples, sampleRate: 48_000, generation: 1)
     var input = Array(repeating: Float(0.25), count: 48)
 
-    XCTAssertEqual(callback(8, input: &input), 17)
-    XCTAssertEqual(input, Array(repeating: Float(0.25), count: 48))
-    XCTAssertEqual(engine.pollProgress(), .init(generation: 1, started: false, finished: false))
+    #expect(callback(8, input: &input) == 17)
+    #expect(input == Array(repeating: Float(0.25), count: 48))
+    #expect(engine.pollProgress() == .init(generation: 1, started: false, finished: false))
 
-    XCTAssertEqual(callback(8, input: &input), 17)
+    #expect(callback(8, input: &input) == 17)
     for frame in input.indices {
       let index = Int(Double(frame) * 48_000 / 44_100)
       let expected = index < samples.count ? Float(samples[index]) / Float(Int16.max) : 0
-      XCTAssertEqual(input[frame], expected, accuracy: 0.0001)
+      #expect(abs(input[frame] - expected) <= 0.0001)
     }
-    XCTAssertEqual(engine.pollProgress(), .init(generation: 1, started: true, finished: true))
-    XCTAssertEqual(withFake { $0.originalCallbacks }, 2)
-    XCTAssertEqual(destroy(8, handle), noErr)
+    #expect(engine.pollProgress() == .init(generation: 1, started: true, finished: true))
+    #expect(withFake { $0.originalCallbacks } == 2)
+    #expect(destroy(8, handle) == noErr)
   }
 
-  func testPendingRateKeepsTheClipAvailableForAnotherInputProc() {
+  @Test
+  func pendingRateKeepsTheClipAvailableForAnotherInputProc() {
     let (_, firstHandle) = create(8)
     let samples = (1...48).map { Int16($0 * 100) }
     engine.replace(samples: samples, sampleRate: 48_000, generation: 1)
     _ = engine.pollProgress()
     var first = Array(repeating: Float(0.25), count: 48)
-    XCTAssertEqual(callback(8, input: &first), 17)
+    #expect(callback(8, input: &first) == 17)
 
     let (_, secondHandle) = create(9)
     var second = Array(repeating: Float(0.25), count: 48)
-    XCTAssertEqual(callback(9, input: &second), 17)
-    XCTAssertEqual(second, Array(repeating: Float(0.25), count: 48))
-    XCTAssertEqual(engine.pollProgress(), .init(generation: 1, started: true, finished: false))
+    #expect(callback(9, input: &second) == 17)
+    #expect(second == Array(repeating: Float(0.25), count: 48))
+    #expect(engine.pollProgress() == .init(generation: 1, started: true, finished: false))
 
-    XCTAssertEqual(callback(9, input: &second), 17)
+    #expect(callback(9, input: &second) == 17)
     for frame in second.indices {
       let index = Int(Double(frame) * 48_000 / 44_100)
       let expected = index < samples.count ? Float(samples[index]) / Float(Int16.max) : 0
-      XCTAssertEqual(second[frame], expected, accuracy: 0.0001)
+      #expect(abs(second[frame] - expected) <= 0.0001)
     }
-    XCTAssertEqual(engine.pollProgress(), .init(generation: 1, started: true, finished: true))
-    XCTAssertEqual(destroy(8, firstHandle), noErr)
-    XCTAssertEqual(destroy(9, secondHandle), noErr)
+    #expect(engine.pollProgress() == .init(generation: 1, started: true, finished: true))
+    #expect(destroy(8, firstHandle) == noErr)
+    #expect(destroy(9, secondHandle) == noErr)
   }
 
-  func testResamplingContinuesAcrossCallbacks() throws {
+  @Test
+  func resamplingContinuesAcrossCallbacks() throws {
     let (_, handle) = create(9)
     withFake { $0.propertyRate = 96_000 }
     engine.replace(samples: [.max, 0, .min + 1], sampleRate: 48_000, generation: 1)
@@ -250,25 +254,27 @@ final class AudioInjectionHALTests: XCTestCase {
     _ = callback(9, input: &second)
 
     for (actual, expected) in zip(first + second, [1, 1, 0, 0, -1, -1] as [Float]) {
-      XCTAssertEqual(actual, expected, accuracy: 0.0001)
+      #expect(abs(actual - expected) <= 0.0001)
     }
-    XCTAssertEqual(destroy(9, handle), noErr)
+    #expect(destroy(9, handle) == noErr)
   }
 
-  func testControllerStartsOnlyAfterAnInputCallback() {
+  @Test
+  func controllerStartsOnlyAfterAnInputCallback() {
     let (_, handle) = create(7)
-    XCTAssertEqual(withFake { $0.controllerStarts }, 0)
+    #expect(withFake { $0.controllerStarts } == 0)
 
-    XCTAssertEqual(invoke(7), 17)
-    XCTAssertEqual(withFake { $0.controllerStarts }, 0)
+    #expect(invoke(7) == 17)
+    #expect(withFake { $0.controllerStarts } == 0)
 
     var input: [Float] = [0]
-    XCTAssertEqual(callback(7, input: &input), 17)
-    XCTAssertEqual(withFake { $0.controllerStarts }, 1)
-    XCTAssertEqual(destroy(7, handle), noErr)
+    #expect(callback(7, input: &input) == 17)
+    #expect(withFake { $0.controllerStarts } == 1)
+    #expect(destroy(7, handle) == noErr)
   }
 
-  func testZeroCapacityBufferIsNotWritten() throws {
+  @Test
+  func zeroCapacityBufferIsNotWritten() throws {
     let (_, handle) = create(8)
     engine.replace(samples: [.max, .min], sampleRate: 48_000, generation: 1)
     _ = engine.pollProgress()
@@ -285,38 +291,41 @@ final class AudioInjectionHALTests: XCTestCase {
       withUnsafeMutablePointer(to: &canary) { canary in
         list[0] = AudioBuffer(mNumberChannels: 1, mDataByteSize: UInt32(bytes.count), mData: bytes.baseAddress)
         list[1] = AudioBuffer(mNumberChannels: 1, mDataByteSize: 1, mData: canary)
-        XCTAssertEqual(invoke(8, list.unsafePointer), 17)
+        #expect(invoke(8, list.unsafePointer) == 17)
       }
     }
 
-    XCTAssertEqual(output[0], 1, accuracy: 0.0001)
-    XCTAssertEqual(output[1], -1, accuracy: 0.0001)
-    XCTAssertEqual(canary, 42)
-    XCTAssertEqual(destroy(8, handle), noErr)
+    #expect(abs(output[0] - 1) <= 0.0001)
+    #expect(abs(output[1] + 1) <= 0.0001)
+    #expect(canary == 42)
+    #expect(destroy(8, handle) == noErr)
   }
 
-  func testFailedDestroyKeepsForwardingCallbacks() {
+  @Test
+  func failedDestroyKeepsForwardingCallbacks() {
     let (_, handle) = create(9)
     withFake { $0.destroyStatus = -7 }
 
-    XCTAssertEqual(destroy(9, handle), -7)
-    XCTAssertEqual(invoke(9), 17)
-    XCTAssertEqual(withFake { $0.originalCallbacks }, 1)
+    #expect(destroy(9, handle) == -7)
+    #expect(invoke(9) == 17)
+    #expect(withFake { $0.originalCallbacks } == 1)
 
     withFake { $0.destroyStatus = noErr }
-    XCTAssertEqual(destroy(9, handle), noErr)
+    #expect(destroy(9, handle) == noErr)
   }
 
-  func testCallbackRacingADestroyNeverReachesTheApp() {
+  @Test
+  func callbackRacingADestroyNeverReachesTheApp() {
     let (_, handle) = create(9)
-    XCTAssertEqual(destroy(9, handle), noErr)
+    #expect(destroy(9, handle) == noErr)
 
     var input: [Float] = [0]
-    XCTAssertEqual(callback(9, input: &input), noErr)
-    XCTAssertEqual(withFake { $0.originalCallbacks }, 0)
+    #expect(callback(9, input: &input) == noErr)
+    #expect(withFake { $0.originalCallbacks } == 0)
   }
 
-  func testFinishedStaysReportedUntilTheNextInjection() throws {
+  @Test
+  func finishedStaysReportedUntilTheNextInjection() throws {
     let (_, handle) = create(8)
     engine.replace(samples: [.max, .min], sampleRate: 48_000, generation: 1)
     _ = engine.pollProgress()
@@ -324,59 +333,63 @@ final class AudioInjectionHALTests: XCTestCase {
     _ = callback(8, input: &output)
 
     for _ in 0..<2 {
-      XCTAssertEqual(engine.pollProgress(), .init(generation: 1, started: true, finished: true))
+      #expect(engine.pollProgress() == .init(generation: 1, started: true, finished: true))
     }
 
     engine.replace(samples: [.max, .min], sampleRate: 48_000, generation: 2)
-    XCTAssertEqual(engine.pollProgress(), .init(generation: 2, started: false, finished: false))
-    XCTAssertEqual(destroy(8, handle), noErr)
+    #expect(engine.pollProgress() == .init(generation: 2, started: false, finished: false))
+    #expect(destroy(8, handle) == noErr)
   }
 
-  func testCreateFailureIsReturnedWithoutAHandle() {
+  @Test
+  func createFailureIsReturnedWithoutAHandle() {
     withFake { $0.createStatus = -7 }
 
     let (status, handle) = create(11)
 
-    XCTAssertEqual(status, -7)
-    XCTAssertNil(handle)
+    #expect(status == -7)
+    #expect(handle == nil)
   }
 
-  func testSuccessfulCreateWithoutAHandleIsAnError() {
+  @Test
+  func successfulCreateWithoutAHandleIsAnError() {
     withFake { $0.createdHandle = 0 }
 
     let (status, handle) = create(11)
 
-    XCTAssertEqual(status, -50)
-    XCTAssertNil(handle)
+    #expect(status == -50)
+    #expect(handle == nil)
   }
 
-  func testDeviceWithoutInputOffersTheSyntheticStream() {
+  @Test
+  func deviceWithoutInputOffersTheSyntheticStream() {
     var device: IDBAudioObjectID = 0
-    XCTAssertTrue(property(1, address("dIn "), &device))
-    XCTAssertEqual(device, defaultOutputDevice)
+    #expect(property(1, address("dIn "), &device))
+    #expect(device == defaultOutputDevice)
 
     var stream: IDBAudioObjectID = 0
-    XCTAssertTrue(property(defaultOutputDevice, address("stm#", "inpt"), &stream))
-    XCTAssertTrue(AudioInjectionHAL.isSyntheticStream(stream))
+    #expect(property(defaultOutputDevice, address("stm#", "inpt"), &stream))
+    #expect(AudioInjectionHAL.isSyntheticStream(stream))
 
     var format = AudioStreamBasicDescription()
-    XCTAssertTrue(property(stream, address("sfmt"), &format))
-    XCTAssertEqual(format.mSampleRate, withFake { $0.propertyRate })
-    XCTAssertEqual(format.mFormatID, kAudioFormatLinearPCM)
-    XCTAssertEqual(format.mChannelsPerFrame, 1)
-    XCTAssertEqual(format.mBitsPerChannel, 32)
+    #expect(property(stream, address("sfmt"), &format))
+    #expect(format.mSampleRate == withFake { $0.propertyRate })
+    #expect(format.mFormatID == kAudioFormatLinearPCM)
+    #expect(format.mChannelsPerFrame == 1)
+    #expect(format.mBitsPerChannel == 32)
 
     withFake { $0.inputStreamBytes = UInt32(MemoryLayout<IDBAudioObjectID>.size) }
-    XCTAssertFalse(property(defaultOutputDevice, address("stm#", "inpt"), &stream))
+    #expect(!property(defaultOutputDevice, address("stm#", "inpt"), &stream))
   }
 
-  func testDeviceWithoutInputReceivesInjectedSamples() throws {
+  @Test
+  func deviceWithoutInputReceivesInjectedSamples() throws {
     var stream: IDBAudioObjectID = 0
-    XCTAssertTrue(property(104, address("stm#", "inpt"), &stream))
+    #expect(property(104, address("stm#", "inpt"), &stream))
     var latency: UInt32 = 1
-    XCTAssertTrue(property(stream, address("ltnc"), &latency))
+    #expect(property(stream, address("ltnc"), &latency))
     let (status, handle) = create(104, capturingProc)
-    XCTAssertEqual(status, noErr)
+    #expect(status == noErr)
     engine.replace(samples: [.max, .min], sampleRate: 44_100, generation: 1)
     _ = engine.pollProgress()
     var output: [Float] = [0, 0, 0, 0]
@@ -388,68 +401,72 @@ final class AudioInjectionHALTests: XCTestCase {
       return invoke(104, output: &list)
     }
 
-    XCTAssertEqual(result, 17)
-    XCTAssertEqual(withFake { $0.capturedInput }[0], 1, accuracy: 0.0001)
-    XCTAssertEqual(withFake { $0.capturedInput }[1], -1, accuracy: 0.0001)
-    XCTAssertEqual(withFake { $0.capturedInputBytes }, 2 * 4)
-    XCTAssertEqual(withFake { $0.controllerStarts }, 1)
-    XCTAssertEqual(destroy(104, handle), noErr)
+    #expect(result == 17)
+    #expect(abs(withFake { $0.capturedInput }[0] - 1) <= 0.0001)
+    #expect(abs(withFake { $0.capturedInput }[1] + 1) <= 0.0001)
+    #expect(withFake { $0.capturedInputBytes } == 2 * 4)
+    #expect(withFake { $0.controllerStarts } == 1)
+    #expect(destroy(104, handle) == noErr)
   }
 
-  func testPlaybackOnlyDeviceWithoutInputIsNotFilled() throws {
+  @Test
+  func playbackOnlyDeviceWithoutInputIsNotFilled() throws {
     let (_, handle) = create(105, capturingProc)
     engine.replace(samples: [.max, .min], sampleRate: 44_100, generation: 1)
     _ = engine.pollProgress()
 
-    XCTAssertEqual(invoke(105), 17)
-    XCTAssertEqual(withFake { $0.capturedInput }.first, 0)
-    XCTAssertEqual(withFake { $0.controllerStarts }, 0)
-    XCTAssertFalse(engine.pollProgress().started)
-    XCTAssertEqual(destroy(105, handle), noErr)
+    #expect(invoke(105) == 17)
+    #expect(withFake { $0.capturedInput }.first == 0)
+    #expect(withFake { $0.controllerStarts } == 0)
+    #expect(!engine.pollProgress().started)
+    #expect(destroy(105, handle) == noErr)
   }
 
-  func testHostWithAMicrophoneIsLeftAlone() {
+  @Test
+  func hostWithAMicrophoneIsLeftAlone() {
     withFake { $0.defaultInputDevice = 80 }
     var answer: IDBAudioObjectID = 0
 
-    XCTAssertFalse(property(1, address("dIn "), &answer))
-    XCTAssertFalse(property(defaultOutputDevice, address("stm#", "inpt"), &answer))
+    #expect(!property(1, address("dIn "), &answer))
+    #expect(!property(defaultOutputDevice, address("stm#", "inpt"), &answer))
   }
 
-  func testFailedDefaultInputReadIsLeftAlone() {
+  @Test
+  func failedDefaultInputReadIsLeftAlone() {
     withFake { $0.defaultInputStatus = -7 }
     var answer: IDBAudioObjectID = 0
 
-    XCTAssertFalse(property(1, address("dIn "), &answer))
-    XCTAssertFalse(property(defaultOutputDevice, address("stm#", "inpt"), &answer))
+    #expect(!property(1, address("dIn "), &answer))
+    #expect(!property(defaultOutputDevice, address("stm#", "inpt"), &answer))
   }
 
-  func testLatencyProbeWithoutReadingItDoesNotMakeARecorder() throws {
+  @Test
+  func latencyProbeWithoutReadingItDoesNotMakeARecorder() throws {
     var stream: IDBAudioObjectID = 0
-    XCTAssertTrue(property(106, address("stm#", "inpt"), &stream))
+    #expect(property(106, address("stm#", "inpt"), &stream))
     var latency = address("ltnc")
     var size: UInt32 = 0
-    XCTAssertEqual(
+    #expect(
       AudioInjectionHAL.getPropertyDataSize(
-        hal, object: stream, address: &latency, qualifierDataSize: 0, qualifierData: nil, dataSize: &size),
-      noErr)
-    XCTAssertTrue(AudioInjectionHAL.hasProperty(hal, object: stream, address: &latency))
+        hal, object: stream, address: &latency, qualifierDataSize: 0, qualifierData: nil, dataSize: &size) == noErr)
+    #expect(AudioInjectionHAL.hasProperty(hal, object: stream, address: &latency))
     let (_, handle) = create(106, capturingProc)
     engine.replace(samples: [.max, .min], sampleRate: 44_100, generation: 1)
     _ = engine.pollProgress()
 
-    XCTAssertEqual(invoke(106), 17)
-    XCTAssertEqual(withFake { $0.capturedInput }.first, 0)
-    XCTAssertEqual(withFake { $0.controllerStarts }, 0)
-    XCTAssertEqual(destroy(106, handle), noErr)
+    #expect(invoke(106) == 17)
+    #expect(withFake { $0.capturedInput }.first == 0)
+    #expect(withFake { $0.controllerStarts } == 0)
+    #expect(destroy(106, handle) == noErr)
   }
 
-  func testRecordersThatAllReadLatencyBeforeCreatingAreAllFilled() throws {
+  @Test
+  func recordersThatAllReadLatencyBeforeCreatingAreAllFilled() throws {
     var stream: IDBAudioObjectID = 0
-    XCTAssertTrue(property(109, address("stm#", "inpt"), &stream))
+    #expect(property(109, address("stm#", "inpt"), &stream))
     var latency: UInt32 = 1
     for _ in 0..<9 {
-      XCTAssertTrue(property(stream, address("ltnc"), &latency))
+      #expect(property(stream, address("ltnc"), &latency))
     }
     var handles: [UnsafeMutableRawPointer?] = []
     for _ in 0..<9 {
@@ -458,87 +475,86 @@ final class AudioInjectionHALTests: XCTestCase {
     engine.replace(samples: [.max, .min], sampleRate: 44_100, generation: 1)
     _ = engine.pollProgress()
 
-    XCTAssertEqual(invoke(109), 17)
-    XCTAssertEqual(withFake { $0.capturedInput }.first ?? 0, 1, accuracy: 0.0001)
+    #expect(invoke(109) == 17)
+    #expect(abs((withFake { $0.capturedInput }.first ?? 0) - 1) <= 0.0001)
     for handle in handles {
-      XCTAssertEqual(destroy(109, handle), noErr)
+      #expect(destroy(109, handle) == noErr)
     }
   }
 
-  func testARecorderIndicationEndsWithTheRecorder() throws {
+  @Test
+  func aRecorderIndicationEndsWithTheRecorder() throws {
     var stream: IDBAudioObjectID = 0
-    XCTAssertTrue(property(107, address("stm#", "inpt"), &stream))
+    #expect(property(107, address("stm#", "inpt"), &stream))
     var latency: UInt32 = 1
-    XCTAssertTrue(property(stream, address("ltnc"), &latency))
+    #expect(property(stream, address("ltnc"), &latency))
     let (_, recorder) = create(107, capturingProc)
-    XCTAssertEqual(destroy(107, recorder), noErr)
+    #expect(destroy(107, recorder) == noErr)
 
     let (_, player) = create(107, capturingProc)
     engine.replace(samples: [.max, .min], sampleRate: 44_100, generation: 1)
     _ = engine.pollProgress()
 
-    XCTAssertEqual(invoke(107), 17)
-    XCTAssertEqual(withFake { $0.capturedInput }.first, 0)
-    XCTAssertFalse(engine.pollProgress().started)
-    XCTAssertEqual(destroy(107, player), noErr)
+    #expect(invoke(107) == 17)
+    #expect(withFake { $0.capturedInput }.first == 0)
+    #expect(!engine.pollProgress().started)
+    #expect(destroy(107, player) == noErr)
   }
 
-  func testARecorderThatReadsLatencyAfterCreatingItsIOProcIsFilled() throws {
+  @Test
+  func aRecorderThatReadsLatencyAfterCreatingItsIOProcIsFilled() throws {
     var stream: IDBAudioObjectID = 0
-    XCTAssertTrue(property(108, address("stm#", "inpt"), &stream))
+    #expect(property(108, address("stm#", "inpt"), &stream))
     let (_, handle) = create(108, capturingProc)
     var latency: UInt32 = 1
-    XCTAssertTrue(property(stream, address("ltnc"), &latency))
+    #expect(property(stream, address("ltnc"), &latency))
     engine.replace(samples: [.max, .min], sampleRate: 44_100, generation: 1)
     _ = engine.pollProgress()
 
-    XCTAssertEqual(invoke(108), 17)
-    XCTAssertEqual(withFake { $0.capturedInput }.first ?? 0, 1, accuracy: 0.0001)
-    XCTAssertEqual(destroy(108, handle), noErr)
+    #expect(invoke(108) == 17)
+    #expect(abs((withFake { $0.capturedInput }.first ?? 0) - 1) <= 0.0001)
+    #expect(destroy(108, handle) == noErr)
   }
 
-  func testSyntheticStreamAnswersOnlyItsOwnProperties() {
+  @Test
+  func syntheticStreamAnswersOnlyItsOwnProperties() {
     var stream: IDBAudioObjectID = 0
-    XCTAssertTrue(property(defaultOutputDevice, address("stm#", "inpt"), &stream))
+    #expect(property(defaultOutputDevice, address("stm#", "inpt"), &stream))
     var rate = address("nsrt")
     var value: Double = 0
     var size = UInt32(MemoryLayout<Double>.size)
     var format = address("sfmt")
 
-    XCTAssertEqual(
+    #expect(
       AudioInjectionHAL.getPropertyData(
-        hal, object: stream, address: &rate, qualifierDataSize: 0, qualifierData: nil, dataSize: &size, data: &value),
-      0x7768_6F3F)
-    XCTAssertEqual(
+        hal, object: stream, address: &rate, qualifierDataSize: 0, qualifierData: nil, dataSize: &size, data: &value) == 0x7768_6F3F)
+    #expect(
       AudioInjectionHAL.getPropertyDataSize(
-        hal, object: stream, address: &rate, qualifierDataSize: 0, qualifierData: nil, dataSize: &size),
-      0x7768_6F3F)
-    XCTAssertTrue(AudioInjectionHAL.hasProperty(hal, object: stream, address: &format))
-    XCTAssertFalse(AudioInjectionHAL.hasProperty(hal, object: stream, address: &rate))
-    XCTAssertEqual(
-      AudioInjectionHAL.addPropertyListener(hal, object: stream, address: &rate, listener: nil, clientData: nil), noErr)
-    XCTAssertEqual(
-      AudioInjectionHAL.addPropertyListenerBlock(hal, object: stream, address: &rate, queue: nil, listener: nil), noErr)
+        hal, object: stream, address: &rate, qualifierDataSize: 0, qualifierData: nil, dataSize: &size) == 0x7768_6F3F)
+    #expect(AudioInjectionHAL.hasProperty(hal, object: stream, address: &format))
+    #expect(!AudioInjectionHAL.hasProperty(hal, object: stream, address: &rate))
+    #expect(
+      AudioInjectionHAL.addPropertyListener(hal, object: stream, address: &rate, listener: nil, clientData: nil) == noErr)
+    #expect(
+      AudioInjectionHAL.addPropertyListenerBlock(hal, object: stream, address: &rate, queue: nil, listener: nil) == noErr)
   }
 
-  func testOtherObjectsReachTheHAL() {
+  @Test
+  func otherObjectsReachTheHAL() {
     var rate = address("nsrt")
     var value: Double = 0
     var size = UInt32(MemoryLayout<Double>.size)
 
-    XCTAssertEqual(
+    #expect(
       AudioInjectionHAL.getPropertyData(
         hal, object: defaultOutputDevice, address: &rate, qualifierDataSize: 0, qualifierData: nil, dataSize: &size,
-        data: &value),
-      noErr)
-    XCTAssertEqual(value, withFake { $0.propertyRate })
-    XCTAssertTrue(AudioInjectionHAL.hasProperty(hal, object: defaultOutputDevice, address: &rate))
-    XCTAssertEqual(
-      AudioInjectionHAL.addPropertyListener(hal, object: defaultOutputDevice, address: &rate, listener: nil, clientData: nil),
-      31)
-    XCTAssertEqual(
-      AudioInjectionHAL.addPropertyListenerBlock(hal, object: defaultOutputDevice, address: &rate, queue: nil, listener: nil),
-      32)
+        data: &value) == noErr)
+    #expect(value == withFake { $0.propertyRate })
+    #expect(AudioInjectionHAL.hasProperty(hal, object: defaultOutputDevice, address: &rate))
+    #expect(
+      AudioInjectionHAL.addPropertyListener(hal, object: defaultOutputDevice, address: &rate, listener: nil, clientData: nil) == 31)
+    #expect(
+      AudioInjectionHAL.addPropertyListenerBlock(hal, object: defaultOutputDevice, address: &rate, queue: nil, listener: nil) == 32)
   }
 
   // The shim is loaded into every iOS test process idb runs, armed or not.
@@ -549,32 +565,33 @@ final class AudioInjectionHALTests: XCTestCase {
     return unarmed
   }
 
-  func testUnarmedCreateRegistersTheCallersOwnIOProc() {
+  @Test
+  func unarmedCreateRegistersTheCallersOwnIOProc() {
     var handle: UnsafeMutableRawPointer?
     let clientData = UnsafeMutableRawPointer(bitPattern: 0xBEEF)
 
-    XCTAssertEqual(
+    #expect(
       AudioInjectionHAL.createIOProcID(
-        unarmed, device: 8, proc: originalProc, clientData: clientData, outIOProcID: &handle),
-      noErr)
+        unarmed, device: 8, proc: originalProc, clientData: clientData, outIOProcID: &handle) == noErr)
 
-    XCTAssertEqual(withFake { $0.calls }, ["create"])
-    XCTAssertEqual(
-      withFake { $0.proc.map { unsafeBitCast($0, to: UInt.self) } }, unsafeBitCast(originalProc, to: UInt.self))
-    XCTAssertEqual(withFake { $0.clientData }, 0xBEEF)
-    XCTAssertEqual(handle, UnsafeMutableRawPointer(bitPattern: 0x1234))
+    #expect(withFake { $0.calls } == ["create"])
+    #expect(
+      withFake { $0.proc.map { unsafeBitCast($0, to: UInt.self) } } == unsafeBitCast(originalProc, to: UInt.self))
+    #expect(withFake { $0.clientData } == 0xBEEF)
+    #expect(handle == UnsafeMutableRawPointer(bitPattern: 0x1234))
 
     engine.replace(samples: [.max, .min], sampleRate: 48_000, generation: 1)
     var input: [Float] = [0, 0]
-    XCTAssertEqual(callback(8, input: &input), 17)
-    XCTAssertEqual(input, [0, 0])
-    XCTAssertEqual(withFake { $0.controllerStarts }, 0)
+    #expect(callback(8, input: &input) == 17)
+    #expect(input == [0, 0])
+    #expect(withFake { $0.controllerStarts } == 0)
 
-    XCTAssertEqual(AudioInjectionHAL.destroyIOProcID(unarmed, device: 8, ioProcID: handle), noErr)
-    XCTAssertEqual(withFake { $0.calls }, ["create", "destroy"])
+    #expect(AudioInjectionHAL.destroyIOProcID(unarmed, device: 8, ioProcID: handle) == noErr)
+    #expect(withFake { $0.calls } == ["create", "destroy"])
   }
 
-  func testUnarmedPropertyCallsReachTheHALUnchanged() {
+  @Test
+  func unarmedPropertyCallsReachTheHALUnchanged() {
     withFake { $0.hasPropertyAnswer = false }
     var defaultInput = address("dIn ")
     var device: IDBAudioObjectID = 99
@@ -582,29 +599,25 @@ final class AudioInjectionHALTests: XCTestCase {
     var inputStreams = address("stm#", "inpt")
     var streamBytes: UInt32 = 7
 
-    XCTAssertEqual(
+    #expect(
       AudioInjectionHAL.getPropertyData(
         unarmed, object: 1, address: &defaultInput, qualifierDataSize: 0, qualifierData: nil, dataSize: &deviceSize,
-        data: &device),
-      noErr)
-    XCTAssertEqual(
+        data: &device) == noErr)
+    #expect(
       AudioInjectionHAL.getPropertyDataSize(
         unarmed, object: defaultOutputDevice, address: &inputStreams, qualifierDataSize: 0, qualifierData: nil,
-        dataSize: &streamBytes),
-      noErr)
-    XCTAssertFalse(AudioInjectionHAL.hasProperty(unarmed, object: defaultOutputDevice, address: &inputStreams))
-    XCTAssertEqual(
+        dataSize: &streamBytes) == noErr)
+    #expect(!AudioInjectionHAL.hasProperty(unarmed, object: defaultOutputDevice, address: &inputStreams))
+    #expect(
       AudioInjectionHAL.addPropertyListener(
-        unarmed, object: 0x7F00_0049, address: &inputStreams, listener: nil, clientData: nil),
-      31)
-    XCTAssertEqual(
+        unarmed, object: 0x7F00_0049, address: &inputStreams, listener: nil, clientData: nil) == 31)
+    #expect(
       AudioInjectionHAL.addPropertyListenerBlock(
-        unarmed, object: 0x7F00_0049, address: &inputStreams, queue: nil, listener: nil),
-      32)
+        unarmed, object: 0x7F00_0049, address: &inputStreams, queue: nil, listener: nil) == 32)
 
     // The host's own answers, where an armed process would see the synthetic microphone.
-    XCTAssertEqual(device, 0)
-    XCTAssertEqual(streamBytes, 0)
-    XCTAssertEqual(withFake { $0.calls }, ["get", "size", "has", "listen", "listenBlock"])
+    #expect(device == 0)
+    #expect(streamBytes == 0)
+    #expect(withFake { $0.calls } == ["get", "size", "has", "listen", "listenBlock"])
   }
 }
