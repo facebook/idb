@@ -48,7 +48,7 @@ struct CodeInjectionHostLauncher {
       injectLibraries: [shimPath] + additionalLibraries
     )
 
-    let runner = LogicTestRunStrategy(
+    let runner = LogicTestRunner(
       target: simulator,
       configuration: configuration,
       reporter: ReplNullReporter(),

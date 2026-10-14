@@ -9,9 +9,9 @@ import FBControlCore
 @testable import FBXCTestCore
 import XCTest
 
-/// Covers `LogicTestRunStrategy` end to end on the host. The script plays the shim by writing
+/// Covers `LogicTestRunner` end to end on the host. The script plays the shim by writing
 /// newline-delimited events to `TEST_SHIM_STDOUT_PATH`.
-final class LogicTestRunStrategyTests: XCTestCase {
+final class LogicTestRunnerTests: XCTestCase {
 
   private static let shimPath = "/nonexistent/libShimulator.dylib"
 
@@ -57,9 +57,9 @@ final class LogicTestRunStrategyTests: XCTestCase {
       architectures: ["arm64", "x86_64"],
       injectLibraries: injectLibraries
     )
-    let strategy = LogicTestRunStrategy(target: target, configuration: configuration, reporter: reporter, logger: ControlCoreGlobalConfiguration.defaultLogger)
+    let runner = LogicTestRunner(target: target, configuration: configuration, reporter: reporter, logger: ControlCoreGlobalConfiguration.defaultLogger)
     do {
-      try await strategy.run()
+      try await runner.run()
       return (target, reporter, .success(()))
     } catch {
       return (target, reporter, .failure(error))

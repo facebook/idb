@@ -241,7 +241,7 @@ public struct XCTestRunRequest {
       throw XCTestRunRequestError.logicTestsUnsupported(targetDescription: String(describing: target))
     }
     let adapter = LogicReporterAdapter(reporter: reporter, logger: logger)
-    let runner = LogicTestRunStrategy(
+    let runner = LogicTestRunner(
       target: target,
       configuration: configuration,
       reporter: adapter,

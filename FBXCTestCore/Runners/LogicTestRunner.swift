@@ -33,7 +33,7 @@ extension LogicTestRunError: LocalizedError {
   }
 }
 
-public final class LogicTestRunStrategy {
+public final class LogicTestRunner {
 
   private let target: any LogicTestTarget
   private let configuration: LogicTestConfiguration
@@ -110,7 +110,7 @@ public final class LogicTestRunStrategy {
 
   private func testSubprocess(shimPath: String, shimOutputPath: String, temporaryDirectory: URL) async throws -> Subprocess {
     let libraries = try await OToolDynamicLibs.findFullPath(forSanitiserDyldInBundle: configuration.testBundlePath)
-    let environment = LogicTestRunStrategy.setupEnvironment(withDylibs: configuration.processUnderTestEnvironment, withLibraries: libraries, injectLibraries: configuration.injectLibraries, shimOutputFilePath: shimOutputPath, shimPath: shimPath, bundlePath: configuration.testBundlePath, coverageConfiguration: configuration.coverageConfiguration, logDirectoryPath: configuration.logDirectoryPath, waitForDebugger: configuration.waitForDebugger, target: target)
+    let environment = LogicTestRunner.setupEnvironment(withDylibs: configuration.processUnderTestEnvironment, withLibraries: libraries, injectLibraries: configuration.injectLibraries, shimOutputFilePath: shimOutputPath, shimPath: shimPath, bundlePath: configuration.testBundlePath, coverageConfiguration: configuration.coverageConfiguration, logDirectoryPath: configuration.logDirectoryPath, waitForDebugger: configuration.waitForDebugger, target: target)
     let thinned = try await ArchitectureProcessAdapter.thinExecutable(atPath: target.xctest.path, toAnyArchitectureIn: Set(configuration.architectures.map { Architecture(rawValue: $0) }), temporaryDirectory: temporaryDirectory)
     let arguments = ["-XCTest", configuration.testFilter ?? "All", configuration.testBundlePath]
     let launchEnvironment = XCTestShimConfiguration.unarmedAudioInjectionEnvironment(
