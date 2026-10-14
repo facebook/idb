@@ -23,7 +23,7 @@ struct InstallFailureTelemetryTests {
     harness = try MacInstallHarness()
     handler = InstallMethodHandler(
       commandExecutor: harness.executor,
-      targetLogger: FBControlCoreLoggerFactory.systemLoggerWriting(toStderr: false, withDebugLogging: false))
+      targetLogger: ControlCoreLoggerFactory.systemLoggerWriting(toStderr: false, withDebugLogging: false))
   }
 
   /// Streams a tar of `item` as `destination`, returning the columns the install reported and whether it failed.

@@ -44,7 +44,7 @@ struct XCTestRunMethodHandler {
         let operation = try await commandExecutor.xctest_run(
           request,
           reporter: reporter,
-          logger: FBControlCoreLoggerFactory.logger(to: reporter))
+          logger: ControlCoreLoggerFactory.logger(to: reporter))
         reporter.configuration = .init(legacy: operation.reporterConfiguration)
         return operation
       },

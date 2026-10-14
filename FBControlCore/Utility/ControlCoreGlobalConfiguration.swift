@@ -71,7 +71,7 @@ public enum ControlCoreGlobalConfiguration {
   }
 
   private static func createDefaultLogger() -> any ControlCoreLogger {
-    FBControlCoreLoggerFactory.systemLoggerWriting(toStderr: stderrLoggingEnabledByDefault, withDebugLogging: debugLoggingEnabledByDefault)
+    ControlCoreLoggerFactory.systemLoggerWriting(toStderr: stderrLoggingEnabledByDefault, withDebugLogging: debugLoggingEnabledByDefault)
   }
 
   private static var stderrLoggingEnabledByDefault: Bool {

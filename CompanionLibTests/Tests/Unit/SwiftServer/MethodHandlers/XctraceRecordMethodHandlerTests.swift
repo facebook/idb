@@ -44,7 +44,7 @@ private final class FakeRecording: XCTraceRecording, @unchecked Sendable {
   }
 }
 
-private let logger = FBControlCoreLoggerFactory.systemLoggerWriting(toStderr: false, withDebugLogging: false)
+private let logger = ControlCoreLoggerFactory.systemLoggerWriting(toStderr: false, withDebugLogging: false)
 
 /// Extracts a gzipped tar with the system `tar`, as a client does.
 private func extract(_ archive: Data, into destination: URL) throws {

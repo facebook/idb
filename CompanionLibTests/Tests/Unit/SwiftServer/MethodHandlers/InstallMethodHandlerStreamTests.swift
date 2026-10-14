@@ -25,7 +25,7 @@ struct InstallMethodHandlerStreamTests {
     harness = try MacInstallHarness()
     handler = InstallMethodHandler(
       commandExecutor: harness.executor,
-      targetLogger: FBControlCoreLoggerFactory.systemLoggerWriting(toStderr: false, withDebugLogging: false))
+      targetLogger: ControlCoreLoggerFactory.systemLoggerWriting(toStderr: false, withDebugLogging: false))
   }
 
   private static func request(_ destination: Idb_InstallRequest.Destination, head: Data, rest: AsyncThrowingStream<Data, any Error>) -> InstallRequest {

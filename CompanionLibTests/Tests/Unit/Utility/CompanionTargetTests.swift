@@ -15,7 +15,7 @@ import Testing
 @Suite("CompanionTarget")
 struct CompanionTargetTests {
 
-  private let mac = MacDevice(logger: FBControlCoreLoggerFactory.systemLoggerWriting(toStderr: false, withDebugLogging: false))
+  private let mac = MacDevice(logger: ControlCoreLoggerFactory.systemLoggerWriting(toStderr: false, withDebugLogging: false))
 
   @Test func theMacResolvesToACompanionTarget() {
     #expect(TargetProvider.companionTarget(mac) != nil)

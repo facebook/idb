@@ -9,7 +9,7 @@ import Foundation
 import os
 
 /// Implementations of Loggers.
-public enum FBControlCoreLoggerFactory {
+public enum ControlCoreLoggerFactory {
 
   /// A logger backed by os_log.
   /// `writeToStdErr` additionally mirrors output to stderr unless os_log already does so in this environment.

@@ -33,7 +33,7 @@ struct Terminal: AsyncParsableCommand {
   @MainActor
   mutating func run() async throws {
     // Not stderr: it is usually the same terminal, and log lines would land in the middle of the view.
-    let logger = FBControlCoreLoggerFactory.systemLoggerWriting(toStderr: false, withDebugLogging: false)
+    let logger = ControlCoreLoggerFactory.systemLoggerWriting(toStderr: false, withDebugLogging: false)
     let simulator = try target.simulator(logger: logger)
     let framebuffer = try await simulator.framebuffer.connect(display: .active)
     let attachment = try framebuffer.attach()

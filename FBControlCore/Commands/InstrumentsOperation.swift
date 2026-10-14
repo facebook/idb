@@ -161,8 +161,8 @@ public final class InstrumentsOperation {
     logger.log("Starting instruments with arguments: \(CollectionInformation.oneLineDescription(from: arguments))")
 
     let instrumentsConsumer = InstrumentsConsumer()
-    let instrumentsLogger = FBControlCoreLoggerFactory.logger(to: instrumentsConsumer)
-    let compositeLogger = FBControlCoreLoggerFactory.compositeLogger(with: [logger, instrumentsLogger])
+    let instrumentsLogger = ControlCoreLoggerFactory.logger(to: instrumentsConsumer)
+    let compositeLogger = ControlCoreLoggerFactory.compositeLogger(with: [logger, instrumentsLogger])
 
     let running = try await Subprocess(executable: "/usr/bin/instruments", arguments: arguments)
       .launch(output: .logger(compositeLogger), error: .logger(compositeLogger), logger: logger)

@@ -65,15 +65,15 @@ public final class XCTestLogger: ControlCoreLogger, @unchecked Sendable {
     } catch {
       NSLog("Failed to create log file at path %@: %@", path, error.localizedDescription)
     }
-    let stderrLogger = FBControlCoreLoggerFactory.systemLoggerWriting(toStderr: true, withDebugLogging: true).withDateFormatEnabled(true)
+    let stderrLogger = ControlCoreLoggerFactory.systemLoggerWriting(toStderr: true, withDebugLogging: true).withDateFormatEnabled(true)
     guard let fileHandle = FileHandle(forWritingAtPath: path) else {
       NSLog("Failed to open the log file at path %@ for writing, logging to stderr only", path)
       return XCTestLogger(baseLogger: stderrLogger, logDirectory: directory)
     }
 
-    let baseLogger = FBControlCoreLoggerFactory.compositeLogger(with: [
+    let baseLogger = ControlCoreLoggerFactory.compositeLogger(with: [
       stderrLogger,
-      FBControlCoreLoggerFactory.logger(toFileDescriptor: fileHandle.fileDescriptor, closeOnEndOfFile: false).withDateFormatEnabled(true),
+      ControlCoreLoggerFactory.logger(toFileDescriptor: fileHandle.fileDescriptor, closeOnEndOfFile: false).withDateFormatEnabled(true),
     ])
 
     return XCTestLogger(baseLogger: baseLogger, logDirectory: directory)

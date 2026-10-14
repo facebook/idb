@@ -11,7 +11,7 @@ import Testing
 
 @Suite struct VideoBarsTests {
   @Test func emptyBarArgument() {
-    let logger = FBControlCoreLoggerFactory.systemLoggerWriting(toStderr: true, withDebugLogging: false)
+    let logger = ControlCoreLoggerFactory.systemLoggerWriting(toStderr: true, withDebugLogging: false)
     let result = VideoBars(bars: ["", "top:24"], barStats: []).resolve(deprecatedBottomStatusBar: false, deprecatedTopStatusBar: false, logger: logger)
     #expect(result.parsedBars.count == 1)
     #expect(result.edgeInsets.top == 24)

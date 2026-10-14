@@ -88,7 +88,7 @@ struct Measurement: Codable {
   // MARK: - Measuring
 
   static func measure(_ benchCase: BenchCase, archive: URL, label: String) async throws -> Measurement {
-    let logger = FBControlCoreLoggerFactory.systemLoggerWriting(toStderr: false, withDebugLogging: false)
+    let logger = ControlCoreLoggerFactory.systemLoggerWriting(toStderr: false, withDebugLogging: false)
     let temporaryDirectory = TemporaryDirectory(logger: logger)
     let archiveBytes = try FileManager.default.attributesOfItem(atPath: archive.path)[.size] as? Int ?? 0
     let routes = OSAllocatedUnfairLock<[String]>(initialState: [])

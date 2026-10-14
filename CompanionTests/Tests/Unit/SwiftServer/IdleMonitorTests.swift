@@ -37,7 +37,7 @@ final class IdleMonitorTests: XCTestCase {
   private let idleTime: TimeInterval = 0.2
 
   private static let logger = IDBLogger(
-    loggers: [FBControlCoreLoggerFactory.systemLoggerWriting(toStderr: true, withDebugLogging: false)])
+    loggers: [ControlCoreLoggerFactory.systemLoggerWriting(toStderr: true, withDebugLogging: false)])
 
   private func makeMonitor(onShutdownStarted: (@Sendable () -> Void)? = nil) -> IdleMonitor {
     IdleMonitor(idleTime: idleTime, logger: Self.logger, onShutdownStarted: onShutdownStarted)

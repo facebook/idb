@@ -48,8 +48,8 @@ private final class MakerLog: @unchecked Sendable {
 @Suite("TargetProvider set makers")
 struct TargetProviderTests {
 
-  private let mac = MacDevice(logger: FBControlCoreLoggerFactory.systemLoggerWriting(toStderr: false, withDebugLogging: false))
-  private let logger = FBControlCoreLoggerFactory.systemLoggerWriting(toStderr: false, withDebugLogging: false)
+  private let mac = MacDevice(logger: ControlCoreLoggerFactory.systemLoggerWriting(toStderr: false, withDebugLogging: false))
+  private let logger = ControlCoreLoggerFactory.systemLoggerWriting(toStderr: false, withDebugLogging: false)
 
   @Test func setsCreatedResolvingAUDIDTheFirstSetHolds() async throws {
     let log = MakerLog()

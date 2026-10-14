@@ -38,9 +38,9 @@ struct InstrumentsRunMethodHandler {
     let consumer = ResponseForwardingConsumer { data in
       try responseWriter.send(Idb_InstrumentsRunResponse.with { $0.logOutput = data })
     }
-    let logger = FBControlCoreLoggerFactory.compositeLogger(
+    let logger = ControlCoreLoggerFactory.compositeLogger(
       with: [
-        FBControlCoreLoggerFactory.logger(to: consumer),
+        ControlCoreLoggerFactory.logger(to: consumer),
         targetLogger,
       ].compactMap { $0 })
 
