@@ -9,6 +9,35 @@ import Darwin
 @preconcurrency import FBControlCore
 import Foundation
 
+/// A failure to construct the companion's logger.
+public enum IDBLoggerError: Error, CustomStringConvertible {
+
+  /// The directory containing the requested log file did not exist and could not be created.
+  case logDirectoryCreationFailed(path: String, underlyingError: any Error)
+
+  /// The requested log file could not be opened for appending.
+  case logFileOpenFailed(path: String, code: Int32)
+
+  public var description: String {
+    switch self {
+    case let .logDirectoryCreationFailed(path, underlyingError):
+      return "Couldn't create the log directory at \(path): \(underlyingError)"
+    case let .logFileOpenFailed(path, code):
+      return "Couldn't open the log file at \(path): \(String(cString: strerror(code)))"
+    }
+  }
+}
+
+// MARK: - LocalizedError
+
+// So that a caller reporting through `localizedDescription` — as the companion's top-level
+// error handling does — gets the description above rather than the bare case name.
+extension IDBLoggerError: LocalizedError {
+  public var errorDescription: String? {
+    description
+  }
+}
+
 /// The loggers every `IDBLogger` fans out to in addition to its own, added and removed by the
 /// log operations that tail the companion's output.
 ///
