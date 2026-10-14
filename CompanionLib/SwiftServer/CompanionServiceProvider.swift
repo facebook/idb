@@ -211,26 +211,26 @@ final class CompanionServiceProvider: Idb_CompanionService.SimpleServiceProtocol
 
   func focus(request: Idb_FocusRequest, context: ServerContext) async throws -> Idb_FocusResponse {
     return try await trackedUnaryCall(context, request: request) {
-      try await FocusMethodHandler(commandExecutor: commandExecutor)
+      try await FocusMethodHandler(target: target)
         .handle(request: request, context: context)
     }
   }
 
   func get_orientation(request: Idb_GetOrientationRequest, context: ServerContext) async throws -> Idb_GetOrientationResponse {
     try await trackedUnaryCall(context, request: request) {
-      try await OrientationMethodHandler(commandExecutor: commandExecutor).get()
+      try await OrientationMethodHandler(target: target).get()
     }
   }
 
   func set_orientation(request: Idb_SetOrientationRequest, context: ServerContext) async throws -> Idb_SetOrientationResponse {
     try await trackedUnaryCall(context, request: request) {
-      try await OrientationMethodHandler(commandExecutor: commandExecutor).set(request: request)
+      try await OrientationMethodHandler(target: target).set(request: request)
     }
   }
 
   func hinge_angle(request: Idb_HingeAngleRequest, context: ServerContext) async throws -> Idb_HingeAngleResponse {
     return try await trackedUnaryCall(context, request: request) {
-      try await HingeAngleMethodHandler(commandExecutor: commandExecutor)
+      try await HingeAngleMethodHandler(target: target)
         .handle(request: request, context: context)
     }
   }
@@ -245,14 +245,14 @@ final class CompanionServiceProvider: Idb_CompanionService.SimpleServiceProtocol
 
   func open_url(request: Idb_OpenUrlRequest, context: ServerContext) async throws -> Idb_OpenUrlRequest {
     return try await trackedUnaryCall(context, request: request) {
-      try await OpenUrlMethodHandler(commandExecutor: commandExecutor)
+      try await OpenUrlMethodHandler(target: target)
         .handle(request: request, context: context)
     }
   }
 
   func set_location(request: Idb_SetLocationRequest, context: ServerContext) async throws -> Idb_SetLocationResponse {
     return try await trackedUnaryCall(context, request: request) {
-      try await SetLocationMethodHandler(commandExecutor: commandExecutor)
+      try await SetLocationMethodHandler(target: target)
         .handle(request: request, context: context)
     }
   }
@@ -280,7 +280,7 @@ final class CompanionServiceProvider: Idb_CompanionService.SimpleServiceProtocol
 
   func simulate_memory_warning(request: Idb_SimulateMemoryWarningRequest, context: ServerContext) async throws -> Idb_SimulateMemoryWarningResponse {
     return try await trackedUnaryCall(context, request: request) {
-      try await SimulateMemoryWarningMethodHandler(commandExecutor: commandExecutor)
+      try await SimulateMemoryWarningMethodHandler(target: target)
         .handle(request: request, context: context)
     }
   }

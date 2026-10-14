@@ -302,23 +302,8 @@ public final class IDBCommandExecutor {
     return await simulator.audioInjection.appLaunchEnvironment(environment)
   }
 
-  public func setLocation(_ latitude: Double, longitude: Double) async throws {
-    try await target.location.set(longitude: longitude, latitude: latitude)
-  }
-
   public func clearKeychain() async throws {
     try await target.simulator().keychain.clear()
-  }
-
-  public func openUrl(_ url: String) async throws {
-    guard let parsed = URL(string: url) else {
-      throw IDBCommandError.invalidURL(urlString: url)
-    }
-    try await target.simulator().lifecycle.open(parsed)
-  }
-
-  public func focus() async throws {
-    try await target.simulator().lifecycle.focus()
   }
 
   public func updateContacts(_ dbTarData: Data) async throws {
@@ -547,20 +532,12 @@ public final class IDBCommandExecutor {
     try await target.simulator().preferences.apply(.locale(localeIdentifier: identifier))
   }
 
-  public func getOrientation() async throws -> SimulatorDeviceOrientation {
-    try await target.simulator().orientation.current()
-  }
-
   public func setOrientation(_ orientation: SimulatorHIDDeviceOrientation, convention: SimulatorOrientationConvention) async throws {
     try await target.simulator().orientation.set(orientation, convention: convention)
   }
 
   public func shake() async throws {
     try await target.simulator().hardware.shake()
-  }
-
-  public func hingeAngle() async throws -> Double {
-    try await target.simulator().hinge.current().degrees
   }
 
   public func setHingeAngle(_ angle: SimulatorHingeAngle) async throws {
@@ -662,10 +639,6 @@ public final class IDBCommandExecutor {
       try await uninstallAllApplications()
     }
     try await removeAllStorageAndClearKeychain()
-  }
-
-  public func simulateMemoryWarning() async throws {
-    try await target.simulator().memory.simulateWarning()
   }
 
   // MARK: - Private Methods

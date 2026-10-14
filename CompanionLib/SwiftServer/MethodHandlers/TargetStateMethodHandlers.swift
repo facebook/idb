@@ -7,67 +7,71 @@
 
 import FBControlCore
 import FBSimulatorControl
+import Foundation
 import GRPCCore
 import IDBGRPCSwift
 
 struct FocusMethodHandler {
 
-  let commandExecutor: IDBCommandExecutor
+  let target: CompanionTarget
 
   func handle(request: Idb_FocusRequest, context: ServerContext) async throws -> Idb_FocusResponse {
-    try await commandExecutor.focus()
+    try await target.simulator().lifecycle.focus()
     return .init()
   }
 }
 
 struct OpenUrlMethodHandler {
 
-  let commandExecutor: IDBCommandExecutor
+  let target: CompanionTarget
 
   func handle(request: Idb_OpenUrlRequest, context: ServerContext) async throws -> Idb_OpenUrlRequest {
-    try await commandExecutor.openUrl(request.url)
+    guard let parsed = URL(string: request.url) else {
+      throw IDBCommandError.invalidURL(urlString: request.url)
+    }
+    try await target.simulator().lifecycle.open(parsed)
     return .init()
   }
 }
 
 struct SetLocationMethodHandler {
 
-  let commandExecutor: IDBCommandExecutor
+  let target: CompanionTarget
 
   func handle(request: Idb_SetLocationRequest, context: ServerContext) async throws -> Idb_SetLocationResponse {
-    try await commandExecutor.setLocation(request.location.latitude, longitude: request.location.longitude)
+    try await target.location.set(longitude: request.location.longitude, latitude: request.location.latitude)
     return .init()
   }
 }
 
 struct SimulateMemoryWarningMethodHandler {
 
-  let commandExecutor: IDBCommandExecutor
+  let target: CompanionTarget
 
   func handle(request: Idb_SimulateMemoryWarningRequest, context: ServerContext) async throws -> Idb_SimulateMemoryWarningResponse {
-    try await commandExecutor.simulateMemoryWarning()
+    try await target.simulator().memory.simulateWarning()
     return .init()
   }
 }
 
 struct HingeAngleMethodHandler {
-  let commandExecutor: IDBCommandExecutor
+  let target: CompanionTarget
 
   func handle(request: Idb_HingeAngleRequest, context: ServerContext) async throws -> Idb_HingeAngleResponse {
-    let angle = try await commandExecutor.hingeAngle()
+    let angle = try await target.simulator().hinge.current().degrees
     return .with { $0.angle = angle }
   }
 }
 
 struct OrientationMethodHandler {
-  let commandExecutor: IDBCommandExecutor
+  let target: CompanionTarget
 
   func get() async throws -> Idb_GetOrientationResponse {
-    Self.response(try await commandExecutor.getOrientation())
+    Self.response(try await target.simulator().orientation.current())
   }
 
   func set(request: Idb_SetOrientationRequest) async throws -> Idb_SetOrientationResponse {
-    try await commandExecutor.setOrientation(Self.orientation(request.orientation), convention: .device)
+    try await target.simulator().orientation.set(Self.orientation(request.orientation), convention: .device)
     return .init()
   }
 
