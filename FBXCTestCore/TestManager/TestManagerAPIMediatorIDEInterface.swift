@@ -42,7 +42,7 @@ func makeRemoteInvocationReceipt() -> DTXRemoteInvocationReceiptMessaging? {
 /// test runner and testmanagerd make over DTX. Progress goes to the reporter; process launch and
 /// termination requests go to the mediator. Each method is exported under the selector DTX sends.
 @objc(FBTestManagerAPIMediatorIDEInterface)
-final class FBTestManagerAPIMediatorIDEInterface: NSObject {
+final class TestManagerAPIMediatorIDEInterface: NSObject {
 
   private weak var mediator: TestManagerAPIMediator?
   private let context: TestManagerContext
@@ -64,7 +64,7 @@ final class FBTestManagerAPIMediatorIDEInterface: NSObject {
 
 // MARK: - Process Launch Delegation (UI Tests)
 
-extension FBTestManagerAPIMediatorIDEInterface {
+extension TestManagerAPIMediatorIDEInterface {
 
   /// Called when a UI test calls `-[XCUIApplication launch]`. Answers with a token that identifies
   /// the process in later requests.
@@ -124,7 +124,7 @@ extension FBTestManagerAPIMediatorIDEInterface {
 
 // MARK: - Test Suite Progress
 
-extension FBTestManagerAPIMediatorIDEInterface {
+extension TestManagerAPIMediatorIDEInterface {
 
   @objc(_XCT_testSuite:didStartAt:)
   func testSuite(_ testSuite: String, didStartAt time: String) -> Any? {
@@ -265,7 +265,7 @@ extension FBTestManagerAPIMediatorIDEInterface {
 // MARK: - Unimplemented
 
 /// Callbacks idb does not act on. Each is logged, with the advice to look at Xcode's own handling.
-extension FBTestManagerAPIMediatorIDEInterface {
+extension TestManagerAPIMediatorIDEInterface {
 
   private func unimplemented(_ selector: Selector) -> Any? {
     logger?.log("Received call for unhandled method (\(NSStringFromSelector(selector))). Probably you should have a look at _IDETestManagerAPIMediator in IDEFoundation.framework and implement it. Good luck!")

@@ -112,7 +112,7 @@ private final class IssueDouble: NSObject {
 /// The callbacks the test runner and testmanagerd make over DTX, and what each reports. The callbacks
 /// are invoked by selector, as DTX invokes them.
 @Suite
-struct FBTestManagerAPIMediatorIDEInterfaceTests {
+struct TestManagerAPIMediatorIDEInterfaceTests {
 
   private let reporter = RecordingReportSink()
   private let logger = RecordingLogSink()
@@ -146,7 +146,7 @@ struct FBTestManagerAPIMediatorIDEInterfaceTests {
         launchMode: .failIfRunning),
       testedApplicationAdditionalEnvironment: [:],
       testConfiguration: testConfiguration)
-    return FBTestManagerAPIMediatorIDEInterface(
+    return TestManagerAPIMediatorIDEInterface(
       mediator: unsafeBitCast(mediatorPlaceholder, to: TestManagerAPIMediator.self),
       context: context,
       reporter: reporter,
