@@ -6,11 +6,13 @@
  */
 
 @testable import FBSimulatorControl
-import XCTest
+import Foundation
+import Testing
 
 /// The one place a host connection into a booted simulator is built, and how each transport reads
 /// its failures. The success path needs a live simulator and is exercised by the smoke suites.
-final class SimulatorXPCConnectionTests: XCTestCase {
+@Suite
+struct SimulatorXPCConnectionTests {
 
   private static let unsupported = NSError(domain: "com.apple.CoreSimulator.SimError", code: 405)
   private static let operational = NSError(domain: "com.apple.CoreSimulator.SimError", code: 165)
@@ -22,71 +24,95 @@ final class SimulatorXPCConnectionTests: XCTestCase {
     } catch let error as SimulatorXPCConnectionError {
       return error
     } catch {
-      XCTFail("Unexpected error: \(error)")
+      Issue.record("Unexpected error: \(error)")
       return nil
     }
   }
 
-  func testAFailedLookupCarriesTheServiceAndTheUnderlyingError() {
-    XCTAssertEqual(connect(Self.operational), .lookupFailed(service: "com.example.service", underlying: Self.operational))
-    XCTAssertEqual(connect(nil), .lookupFailed(service: "com.example.service", underlying: nil))
+  @Test
+  func aFailedLookupCarriesTheServiceAndTheUnderlyingError() {
+    #expect(connect(Self.operational) == .lookupFailed(service: "com.example.service", underlying: Self.operational))
+    #expect(connect(nil) == .lookupFailed(service: "com.example.service", underlying: nil))
   }
 
-  func testOnlySimError405MeansTheServiceIsUnsupported() {
-    XCTAssertEqual(connect(Self.unsupported)?.isServiceUnsupported, true)
-    XCTAssertEqual(connect(Self.operational)?.isServiceUnsupported, false)
-    XCTAssertEqual(connect(nil)?.isServiceUnsupported, false)
-    XCTAssertFalse(SimulatorXPCConnectionError.symbolsUnavailable.isServiceUnsupported)
-    XCTAssertFalse(SimulatorXPCConnectionError.connectionFailed.isServiceUnsupported)
+  @Test
+  func onlySimError405MeansTheServiceIsUnsupported() {
+    #expect(connect(Self.unsupported)?.isServiceUnsupported == true)
+    #expect(connect(Self.operational)?.isServiceUnsupported == false)
+    #expect(connect(nil)?.isServiceUnsupported == false)
+    #expect(!SimulatorXPCConnectionError.symbolsUnavailable.isServiceUnsupported)
+    #expect(!SimulatorXPCConnectionError.connectionFailed.isServiceUnsupported)
   }
 
   // MARK: - CoreDevice mapping
 
-  func testCoreDeviceTreatsAnUnsupportedServiceAndMissingSymbolsAsMissingCapabilities() {
+  @Test
+  func coreDeviceTreatsAnUnsupportedServiceAndMissingSymbolsAsMissingCapabilities() {
     let unsupported = SimulatorCoreDeviceError(connection: .lookupFailed(service: "com.example.service", underlying: Self.unsupported))
-    guard case let .unsupported(detail) = unsupported else { return XCTFail("\(unsupported)") }
-    XCTAssertEqual(detail, "com.example.service")
+    guard case let .unsupported(detail) = unsupported else {
+      Issue.record("\(unsupported)")
+      return
+    }
+    #expect(detail == "com.example.service")
 
     guard case .unsupported = SimulatorCoreDeviceError(connection: .symbolsUnavailable) else {
-      return XCTFail("Missing symbols should read as unsupported")
+      Issue.record("Missing symbols should read as unsupported")
+      return
     }
   }
 
-  func testCoreDeviceOnASimulatorThatIsStillBooting() {
+  @Test
+  func coreDeviceOnASimulatorThatIsStillBooting() throws {
     let services = SyntheticXPCServices()
     services.register("com.example.service", respond: SyntheticXPCPeer.silent)
     services.simulatorState = .booting
 
-    XCTAssertThrowsError(try SimulatorCoreDevice.connect(using: services.connector, service: "com.example.service")) { error in
-      guard case SimulatorCoreDeviceError.unavailable = error else { return XCTFail("\(error)") }
+    let error = try #require(#expect(throws: (any Error).self) { try SimulatorCoreDevice.connect(using: services.connector, service: "com.example.service") })
+    guard case SimulatorCoreDeviceError.unavailable = error else {
+      Issue.record("\(error)")
+      return
     }
   }
 
-  func testCoreDeviceTreatsOtherConnectionFailuresAsUnavailable() {
+  @Test
+  func coreDeviceTreatsOtherConnectionFailuresAsUnavailable() {
     for error: SimulatorXPCConnectionError in [
       .lookupFailed(service: "com.example.service", underlying: Self.operational),
       .lookupFailed(service: "com.example.service", underlying: nil),
       .connectionFailed,
     ] {
-      guard case .unavailable = SimulatorCoreDeviceError(connection: error) else { return XCTFail("\(error)") }
+      guard case .unavailable = SimulatorCoreDeviceError(connection: error) else {
+        Issue.record("\(error)")
+        return
+      }
     }
   }
 
   // MARK: - DTUHID mapping
 
-  func testConnectionFailuresMapOntoDTUHIDErrors() {
+  @Test
+  func connectionFailuresMapOntoDTUHIDErrors() {
     let lookup = SimulatorHIDError(dtuhidConnection: .lookupFailed(service: "com.example.service", underlying: Self.operational))
-    guard case let .dtuhidServiceUnavailable(name, underlying) = lookup else { return XCTFail("\(lookup)") }
-    XCTAssertEqual(name, "com.example.service")
-    XCTAssertEqual(underlying as NSError?, Self.operational)
-    XCTAssertFalse(lookup.isPermanentDTUHIDFailure)
+    guard case let .dtuhidServiceUnavailable(name, underlying) = lookup else {
+      Issue.record("\(lookup)")
+      return
+    }
+    #expect(name == "com.example.service")
+    #expect(underlying as NSError? == Self.operational)
+    #expect(!lookup.isPermanentDTUHIDFailure)
 
     let symbols = SimulatorHIDError(dtuhidConnection: .symbolsUnavailable)
-    guard case .dtuhidXPCSymbolsUnavailable = symbols else { return XCTFail("\(symbols)") }
-    XCTAssertTrue(symbols.isPermanentDTUHIDFailure)
+    guard case .dtuhidXPCSymbolsUnavailable = symbols else {
+      Issue.record("\(symbols)")
+      return
+    }
+    #expect(symbols.isPermanentDTUHIDFailure)
 
     let connection = SimulatorHIDError(dtuhidConnection: .connectionFailed)
-    guard case .dtuhidConnectionFailed = connection else { return XCTFail("\(connection)") }
-    XCTAssertFalse(connection.isPermanentDTUHIDFailure)
+    guard case .dtuhidConnectionFailed = connection else {
+      Issue.record("\(connection)")
+      return
+    }
+    #expect(!connection.isPermanentDTUHIDFailure)
   }
 }
