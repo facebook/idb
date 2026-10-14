@@ -7,21 +7,24 @@
 
 import Foundation
 @testable import SimulatorFrameworkBridgeRuntime
-import XCTest
+import Testing
 
-final class PhotosTestRuntimeTests: XCTestCase {
+@Suite
+struct PhotosTestRuntimeTests {
 
   // MARK: - run
 
-  func testRunPropagatesClosureStatus() {
+  @Test
+  func runPropagatesClosureStatus() {
     let runtime = FBPhotosTestRuntime()
 
     let status = runtime.run { _ in 37 }
 
-    XCTAssertEqual(status, 37)
+    #expect(status == 37)
   }
 
-  func testRunBuildsClientWithConfiguredAssets() {
+  @Test
+  func runBuildsClientWithConfiguredAssets() {
     let runtime = FBPhotosTestRuntime()
     runtime.assetCount = 3
 
@@ -29,20 +32,20 @@ final class PhotosTestRuntimeTests: XCTestCase {
       client.deleteAssets() ? 0 : 1
     }
 
-    XCTAssertEqual(status, 0)
-    XCTAssertEqual(
-      runtime.operations as NSArray,
-      [
+    #expect(status == 0)
+    #expect(
+      runtime.operations as NSArray == [
         "value:_lazyPhotoLibrary", "unwrap", "transactionBegin", "context",
         "id:asset0", "lookup:asset0", "delete:asset0",
         "id:asset1", "lookup:asset1", "delete:asset1",
         "id:asset2", "lookup:asset2", "delete:asset2",
         "save", "transactionEnd",
       ] as NSArray)
-    XCTAssertTrue(runtime.allMutationsInsideTransaction)
+    #expect(runtime.allMutationsInsideTransaction)
   }
 
-  func testRunReturnsAfterWorkerTransactionCompletes() {
+  @Test
+  func runReturnsAfterWorkerTransactionCompletes() {
     let runtime = FBPhotosTestRuntime()
     runtime.runTransactionsOnWorkerQueue = true
 
@@ -50,25 +53,27 @@ final class PhotosTestRuntimeTests: XCTestCase {
       client.deleteAssets() ? 0 : 1
     }
 
-    XCTAssertEqual(status, 0)
-    XCTAssertTrue(runtime.transactionRanOnWorkerThread)
-    XCTAssertEqual(runtime.operations.lastObject as? String, "transactionEnd")
-    XCTAssertTrue(runtime.allMutationsInsideTransaction)
-    XCTAssertNil(runtime.escapedTransactionException)
+    #expect(status == 0)
+    #expect(runtime.transactionRanOnWorkerThread)
+    #expect(runtime.operations.lastObject as? String == "transactionEnd")
+    #expect(runtime.allMutationsInsideTransaction)
+    #expect(runtime.escapedTransactionException == nil)
   }
 
   // MARK: - runCatchingException
 
-  func testRunCatchingExceptionPackagesClosureStatus() {
+  @Test
+  func runCatchingExceptionPackagesClosureStatus() {
     let runtime = FBPhotosTestRuntime()
 
     let result = runtime.runCatchingException { _ in 23 }
 
-    XCTAssertEqual(result["status"] as? Int, 23)
-    XCTAssertNil(result["exception"])
+    #expect(result["status"] as? Int == 23)
+    #expect(result["exception"] == nil)
   }
 
-  func testRunCatchingExceptionCapturesObjectiveCException() {
+  @Test
+  func runCatchingExceptionCapturesObjectiveCException() {
     let runtime = FBPhotosTestRuntime()
 
     let result = runtime.runCatchingException { client in
@@ -76,9 +81,7 @@ final class PhotosTestRuntimeTests: XCTestCase {
       return 0
     }
 
-    XCTAssertEqual(
-      result["exception"] as? String,
-      NSExceptionName.undefinedKeyException.rawValue)
-    XCTAssertNil(result["status"])
+    #expect(result["exception"] as? String == NSExceptionName.undefinedKeyException.rawValue)
+    #expect(result["status"] == nil)
   }
 }
