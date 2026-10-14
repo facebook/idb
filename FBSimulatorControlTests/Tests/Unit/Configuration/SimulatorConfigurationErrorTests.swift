@@ -6,18 +6,15 @@
  */
 
 @testable import FBSimulatorControl
-import XCTest
+import Foundation
+import Testing
 
-final class SimulatorConfigurationErrorTests: XCTestCase {
-  func testResolutionErrorsDescribeTheRuntimeIndex() {
-    XCTAssertEqual(
-      SimulatorConfigurationError.noMatchingRuntime(available: "[]").errorDescription,
-      "Could not obtain matching SimRuntime, no matches. Available Runtimes []")
-    XCTAssertEqual(
-      SimulatorConfigurationError.noMatchingDeviceType(available: "[]").errorDescription,
-      "Could not obtain matching DeviceTypes, no matches. Available Device Types []")
-    XCTAssertEqual(
-      SimulatorConfigurationError.ambiguousDeviceType(matches: "[first, second]").description,
-      "Matching Device Types is ambiguous: [first, second]")
+@Suite
+struct SimulatorConfigurationErrorTests {
+  @Test
+  func resolutionErrorsDescribeTheRuntimeIndex() {
+    #expect(SimulatorConfigurationError.noMatchingRuntime(available: "[]").errorDescription == "Could not obtain matching SimRuntime, no matches. Available Runtimes []")
+    #expect(SimulatorConfigurationError.noMatchingDeviceType(available: "[]").errorDescription == "Could not obtain matching DeviceTypes, no matches. Available Device Types []")
+    #expect(SimulatorConfigurationError.ambiguousDeviceType(matches: "[first, second]").description == "Matching Device Types is ambiguous: [first, second]")
   }
 }
