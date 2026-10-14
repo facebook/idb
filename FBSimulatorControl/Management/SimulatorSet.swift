@@ -98,7 +98,35 @@ public final class SimulatorSet: TargetSet {
   }
 
   public func delete(_ simulator: Simulator) async throws {
-    try await SimulatorDeletionStrategy.delete(simulator)
+    // Capture the Log Directory ahead of time as the Simulator will disappear on deletion.
+    let coreSimulatorLogsDirectory = simulator.coreSimulatorLogsDirectory
+    let udid = simulator.udid
+    guard let deviceSet = simulator.device.deviceSet else {
+      throw SimulatorSetError.simulatorHasNoSet(udid: simulator.udid)
+    }
+    let logger = simulator.logger
+
+    logger.log("Killing Simulator, in preparation for deletion \(simulator)")
+    try await simulator.power.shutdown()
+
+    logger.log("Deleting Simulator \(simulator)")
+    try await Self.deleteDevice(simulator.device, on: deviceSet, queue: simulator.asyncQueue)
+
+    logger.log("Simulator \(udid) Deleted")
+
+    if FileManager.default.fileExists(atPath: coreSimulatorLogsDirectory) {
+      logger.log("Deleting Simulator Log Directory at \(coreSimulatorLogsDirectory)")
+      do {
+        try FileManager.default.removeItem(atPath: coreSimulatorLogsDirectory)
+        logger.log("Deleted Simulator Log Directory at \(coreSimulatorLogsDirectory)")
+      } catch {
+        logger.error().log("Failed to delete Simulator Log Directory \(coreSimulatorLogsDirectory): \(error)")
+      }
+    }
+
+    logger.log("Confirming \(udid) has been removed from set")
+    try await Self.confirmSimulatorUDID(udid, isRemovedFromSet: deviceSet)
+    logger.log("\(udid) has been removed from set")
   }
 
   func shutdownAll(_ simulators: [Simulator]) async throws {
@@ -108,7 +136,9 @@ public final class SimulatorSet: TargetSet {
   }
 
   public func deleteAll(_ simulators: [Simulator]) async throws {
-    try await SimulatorDeletionStrategy.deleteAll(simulators)
+    for simulator in simulators {
+      try await delete(simulator)
+    }
   }
 
   func shutdownAll() async throws {
@@ -170,6 +200,47 @@ public final class SimulatorSet: TargetSet {
           continuation.resume(throwing: error ?? SimulatorSetError.deviceCloneFailed)
         }
       }
+    }
+  }
+
+  private static func deleteDevice(_ device: SimDevice, on deviceSet: SimDeviceSet, queue: DispatchQueue) async throws {
+    try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
+      deviceSet.deleteDeviceAsync(device, completionQueue: queue) { error in
+        if let error {
+          continuation.resume(throwing: error)
+        } else {
+          continuation.resume(returning: ())
+        }
+      }
+    }
+  }
+
+  private static func confirmSimulatorUDID(_ udid: String, isRemovedFromSet deviceSet: SimDeviceSet) async throws {
+    // Deleting the device from the set can still leave it around for a few seconds.
+    let timeout = ControlCoreGlobalConfiguration.regularTimeout
+    let deadline = Date().addingTimeInterval(timeout)
+    let pollIntervalNs = UInt64(0.1 * Double(NSEC_PER_SEC))
+    while true {
+      try Task.checkCancellation()
+      let udidsInSet = (deviceSet.availableDevices ?? []).compactMap { ($0 as? SimDevice)?.udid.uuidString }
+      if !udidsInSet.contains(udid) {
+        return
+      }
+      if Date() >= deadline {
+        throw SimulatorDeletionError.removalTimedOut
+      }
+      try await Task.sleep(nanoseconds: pollIntervalNs)
+    }
+  }
+}
+
+public enum SimulatorDeletionError: Error, LocalizedError {
+  case removalTimedOut
+
+  public var errorDescription: String? {
+    switch self {
+    case .removalTimedOut:
+      return "Timed out waiting for Simulator to be removed from set"
     }
   }
 }
