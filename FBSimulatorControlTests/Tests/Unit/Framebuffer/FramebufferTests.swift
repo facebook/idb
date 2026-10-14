@@ -9,9 +9,10 @@ import FBControlCore
 @testable import FBSimulatorControl
 import Foundation
 import IOSurface
-import XCTest
+import Testing
 
-final class FramebufferTests: XCTestCase {
+@Suite
+struct FramebufferTests {
 
   private func makeFramebuffer(surface: FakeFramebufferSurface) -> Framebuffer {
     Framebuffer(surface: surface, logger: CapturingLogger())
@@ -19,7 +20,8 @@ final class FramebufferTests: XCTestCase {
 
   // MARK: - Attach
 
-  func testAttachReturnsImmediatelyAvailableSurface() throws {
+  @Test
+  func attachReturnsImmediatelyAvailableSurface() throws {
     let surface = FakeFramebufferSurface()
     let ioSurface = makeTestIOSurface()
     surface.immediateSurface = ioSurface
@@ -27,51 +29,57 @@ final class FramebufferTests: XCTestCase {
 
     let attachment = try framebuffer.attach()
 
-    XCTAssertIdentical(attachment.initialSurface, ioSurface)
+    #expect(attachment.initialSurface === ioSurface)
   }
 
-  func testAttachReturnsNilWhenNoSurfaceAvailable() throws {
+  @Test
+  func attachReturnsNilWhenNoSurfaceAvailable() throws {
     let surface = FakeFramebufferSurface()
     let framebuffer = makeFramebuffer(surface: surface)
 
     let attachment = try framebuffer.attach()
 
-    XCTAssertNil(attachment.initialSurface)
+    #expect(attachment.initialSurface == nil)
   }
 
-  func testAttachReturnsTheConfigurationReportedWhileRegistering() async throws {
+  @Test
+  func attachReturnsTheConfigurationReportedWhileRegistering() async throws {
     let surface = FakeFramebufferSurface()
     let configuration = SimulatorDisplayConfiguration(generation: 2, displays: [], active: .unresolved, phase: .settled)
     surface.configurationAtRegistration = configuration
 
     let attachment = try makeFramebuffer(surface: surface).attach()
 
-    XCTAssertEqual(attachment.initialConfiguration, configuration)
+    #expect(attachment.initialConfiguration == configuration)
     var events = attachment.events.makeAsyncIterator()
     guard case let .configurationChanged(delivered) = await events.next() else {
-      return XCTFail("The configuration was not the first event")
+      Issue.record("The configuration was not the first event")
+      return
     }
-    XCTAssertEqual(delivered, configuration)
+    #expect(delivered == configuration)
   }
 
-  func testAttachReturnsNoConfigurationWhenNoneWasReported() throws {
+  @Test
+  func attachReturnsNoConfigurationWhenNoneWasReported() throws {
     let attachment = try makeFramebuffer(surface: FakeFramebufferSurface()).attach()
 
-    XCTAssertNil(attachment.initialConfiguration)
+    #expect(attachment.initialConfiguration == nil)
   }
 
-  func testAttachThrowsWhenRegistrationFails() {
+  @Test
+  func attachThrowsWhenRegistrationFails() {
     let surface = FakeFramebufferSurface()
     surface.registerError = FramebufferError.surfaceCallbackRegistrationFailed(underlying: nil)
     let framebuffer = makeFramebuffer(surface: surface)
 
-    XCTAssertThrowsError(try framebuffer.attach())
-    XCTAssertEqual(surface.unregisteredTokens.count, 1)
+    #expect(throws: (any Error).self) { try framebuffer.attach() }
+    #expect(surface.unregisteredTokens.count == 1)
   }
 
   // MARK: - Event stream
 
-  func testConfigurationChangesAreDeliveredInOrderWithSurfaceEvents() async throws {
+  @Test
+  func configurationChangesAreDeliveredInOrderWithSurfaceEvents() async throws {
     let surface = FakeFramebufferSurface()
     let attachment = try makeFramebuffer(surface: surface).attach()
     let configuration = SimulatorDisplayConfiguration(generation: 2, displays: [], active: .unresolved, phase: .settled)
@@ -86,12 +94,14 @@ final class FramebufferTests: XCTestCase {
       if events.count == 3 { break }
     }
     guard events.count == 3, case .frameRendered = events[0], case let .configurationChanged(delivered) = events[1], case .frameRendered = events[2] else {
-      return XCTFail("Unexpected events \(events)")
+      Issue.record("Unexpected events \(events)")
+      return
     }
-    XCTAssertEqual(delivered, configuration)
+    #expect(delivered == configuration)
   }
 
-  func testABoundFramebufferEndsOnceItsConfigurationIsReplaced() async throws {
+  @Test
+  func aBoundFramebufferEndsOnceItsConfigurationIsReplaced() async throws {
     let surface = FakeFramebufferSurface()
     let attachment = try Framebuffer(surface: surface, boundTo: 2, logger: CapturingLogger()).attach()
 
@@ -104,12 +114,14 @@ final class FramebufferTests: XCTestCase {
     var events: [FramebufferEvent] = []
     for await event in attachment.events { events.append(event) }
     guard events.count == 5, case .frameRendered = events[2], case let .configurationChanged(replacement) = events[3], case .ended(.changed) = events[4] else {
-      return XCTFail("Unexpected events \(events)")
+      Issue.record("Unexpected events \(events)")
+      return
     }
-    XCTAssertEqual(replacement.generation, 3)
+    #expect(replacement.generation == 3)
   }
 
-  func testStreamBuffersAndDeliversEventsInOrder() async throws {
+  @Test
+  func streamBuffersAndDeliversEventsInOrder() async throws {
     let surface = FakeFramebufferSurface()
     let framebuffer = makeFramebuffer(surface: surface)
     let attachment = try framebuffer.attach()
@@ -131,30 +143,31 @@ final class FramebufferTests: XCTestCase {
     }
 
     guard events.count == 4 else {
-      XCTFail("Expected 4 events, got \(events.count)")
+      Issue.record("Expected 4 events, got \(events.count)")
       return
     }
     guard case let .surfaceChanged(first) = events[0] else {
-      XCTFail("Expected .surfaceChanged first, got \(events[0])")
+      Issue.record("Expected .surfaceChanged first, got \(events[0])")
       return
     }
-    XCTAssertIdentical(first, ioSurface)
+    #expect(first === ioSurface)
     guard case .frameRendered = events[1] else {
-      XCTFail("Expected .frameRendered second, got \(events[1])")
+      Issue.record("Expected .frameRendered second, got \(events[1])")
       return
     }
     guard case let .surfaceChanged(cleared) = events[2] else {
-      XCTFail("Expected .surfaceChanged third, got \(events[2])")
+      Issue.record("Expected .surfaceChanged third, got \(events[2])")
       return
     }
-    XCTAssertNil(cleared)
+    #expect(cleared == nil)
     guard case .frameRendered = events[3] else {
-      XCTFail("Expected .frameRendered fourth, got \(events[3])")
+      Issue.record("Expected .frameRendered fourth, got \(events[3])")
       return
     }
   }
 
-  func testEchoOfAttachTimeSurfaceIsNotDelivered() async throws {
+  @Test
+  func echoOfAttachTimeSurfaceIsNotDelivered() async throws {
     let surface = FakeFramebufferSurface()
     let ioSurface = makeTestIOSurface()
     surface.immediateSurface = ioSurface
@@ -172,13 +185,14 @@ final class FramebufferTests: XCTestCase {
       break
     }
     guard case .frameRendered = first else {
-      XCTFail("Expected the echo to be dropped and .frameRendered to be first, got \(String(describing: first))")
+      Issue.record("Expected the echo to be dropped and .frameRendered to be first, got \(String(describing: first))")
       return
     }
-    XCTAssertEqual(framebuffer.currentStats().ioSurfaceChangeCount, 1, "the dropped echo is still counted in the stats")
+    #expect(framebuffer.currentStats().ioSurfaceChangeCount == 1, "the dropped echo is still counted in the stats")
   }
 
-  func testRepeatedSurfaceReportsAreDeliveredOnce() async throws {
+  @Test
+  func repeatedSurfaceReportsAreDeliveredOnce() async throws {
     let surface = FakeFramebufferSurface()
     let framebuffer = makeFramebuffer(surface: surface)
     let attachment = try framebuffer.attach()
@@ -204,15 +218,16 @@ final class FramebufferTests: XCTestCase {
     }
 
     guard delivered.count == 3 else {
-      XCTFail("Expected 3 distinct surface changes, got \(delivered.count)")
+      Issue.record("Expected 3 distinct surface changes, got \(delivered.count)")
       return
     }
-    XCTAssertIdentical(delivered[0], first)
-    XCTAssertIdentical(delivered[1], second)
-    XCTAssertNil(delivered[2])
+    #expect(delivered[0] === first)
+    #expect(delivered[1] === second)
+    #expect(delivered[2] == nil)
   }
 
-  func testStreamCancelFinishesIteration() async throws {
+  @Test
+  func streamCancelFinishesIteration() async throws {
     let surface = FakeFramebufferSurface()
     let framebuffer = makeFramebuffer(surface: surface)
     let attachment = try framebuffer.attach()
@@ -225,13 +240,14 @@ final class FramebufferTests: XCTestCase {
     for await _ in attachment.events {
       count += 1
     }
-    XCTAssertEqual(count, 1)
-    XCTAssertEqual(surface.unregisteredTokens.count, 1)
+    #expect(count == 1)
+    #expect(surface.unregisteredTokens.count == 1)
   }
 
   // MARK: - Stats
 
-  func testStreamAttachRecordsStats() throws {
+  @Test
+  func streamAttachRecordsStats() throws {
     let surface = FakeFramebufferSurface()
     let framebuffer = makeFramebuffer(surface: surface)
     let attachment = try framebuffer.attach()
@@ -241,26 +257,28 @@ final class FramebufferTests: XCTestCase {
     surface.frameRendered?()
 
     let stats = framebuffer.currentStats()
-    XCTAssertEqual(stats.ioSurfaceChangeCount, 1)
-    XCTAssertEqual(stats.frameRenderedCount, 1)
+    #expect(stats.ioSurfaceChangeCount == 1)
+    #expect(stats.frameRenderedCount == 1)
   }
 
-  func testStatsStartTimeSetAfterFirstFrame() throws {
+  @Test
+  func statsStartTimeSetAfterFirstFrame() throws {
     let surface = FakeFramebufferSurface()
     let framebuffer = makeFramebuffer(surface: surface)
     let attachment = try framebuffer.attach()
     defer { attachment.cancel() }
 
-    XCTAssertNil(framebuffer.statsStartTime)
+    #expect(framebuffer.statsStartTime == nil)
 
     surface.frameRendered?()
 
-    XCTAssertNotNil(framebuffer.statsStartTime)
+    #expect(framebuffer.statsStartTime != nil)
   }
 
   // MARK: - Attachment lifecycle
 
-  func testAttachmentCancelIsIdempotent() throws {
+  @Test
+  func attachmentCancelIsIdempotent() throws {
     let surface = FakeFramebufferSurface()
     let framebuffer = makeFramebuffer(surface: surface)
     let attachment = try framebuffer.attach()
@@ -268,10 +286,11 @@ final class FramebufferTests: XCTestCase {
     attachment.cancel()
     attachment.cancel()
 
-    XCTAssertEqual(surface.unregisteredTokens.count, 1)
+    #expect(surface.unregisteredTokens.count == 1)
   }
 
-  func testAttachmentKeepsFramebufferAliveUntilCancel() throws {
+  @Test
+  func attachmentKeepsFramebufferAliveUntilCancel() throws {
     let surface = FakeFramebufferSurface()
     let attachment: FramebufferAttachment = try {
       let framebuffer = makeFramebuffer(surface: surface)
@@ -281,10 +300,11 @@ final class FramebufferTests: XCTestCase {
     attachment.cancel()
     attachment.cancel()
 
-    XCTAssertEqual(surface.unregisteredTokens.count, 1)
+    #expect(surface.unregisteredTokens.count == 1)
   }
 
-  func testAttachmentReleaseUnregisters() throws {
+  @Test
+  func attachmentReleaseUnregisters() throws {
     let surface = FakeFramebufferSurface()
     let framebuffer = makeFramebuffer(surface: surface)
 
@@ -292,6 +312,6 @@ final class FramebufferTests: XCTestCase {
       _ = try framebuffer.attach()
     }
 
-    XCTAssertEqual(surface.unregisteredTokens.count, 1)
+    #expect(surface.unregisteredTokens.count == 1)
   }
 }
