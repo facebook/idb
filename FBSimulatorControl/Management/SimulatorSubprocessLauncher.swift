@@ -9,7 +9,52 @@
 @preconcurrency import FBControlCore
 import Foundation
 
-final class SimulatorProcessSpawnStrategy {
+/// Spawns inside a simulator with `SimDevice`.
+///
+/// `SimDevice` addresses stdout and stderr by descriptor but has no way of
+/// connecting a stdin, so only a `.closed` input is accepted.
+public struct SimulatorSubprocessLauncher: SubprocessLauncher {
+
+  let simulator: Simulator
+
+  public init(simulator: Simulator) {
+    self.simulator = simulator
+  }
+
+  public var supportsStandardInput: Bool {
+    false
+  }
+
+  public func spawn(
+    _ subprocess: Subprocess,
+    standardInput: Int32?,
+    standardOutput: Int32?,
+    standardError: Int32?,
+    logger: (any ControlCoreLogger)?
+  ) async throws -> LaunchedProcess {
+    let options = Self.simDeviceLaunchOptions(
+      withSimulator: simulator,
+      launchPath: subprocess.executable,
+      arguments: subprocess.arguments,
+      // Nothing of this process's environment belongs inside the simulator, so
+      // the inheriting cases resolve to nothing and only explicit variables pass.
+      environment: subprocess.environment.resolved(against: [:]),
+      waitForDebugger: false,
+      standardOutput: standardOutput,
+      standardError: standardError,
+      mode: subprocess.mode)
+    let exit = SimulatorExit()
+    let processIdentifier = try await simulator.device.spawnAsync(
+      withPath: subprocess.executable,
+      options: options,
+      terminationQueue: simulator.asyncQueue,
+      terminationHandler: { statLoc in exit.resolve(statLoc) },
+      completionQueue: simulator.asyncQueue
+    )
+    return LaunchedProcess(processIdentifier: processIdentifier) {
+      await exit.statLoc()
+    }
+  }
 
   // MARK: - Launch Options
 
@@ -45,54 +90,6 @@ final class SimulatorProcessSpawnStrategy {
       return true
     case .default:
       return simulator.state != .booted
-    }
-  }
-}
-
-/// Spawns inside a simulator with `SimDevice`.
-///
-/// `SimDevice` addresses stdout and stderr by descriptor but has no way of
-/// connecting a stdin, so only a `.closed` input is accepted.
-public struct SimulatorSubprocessLauncher: SubprocessLauncher {
-
-  let simulator: Simulator
-
-  public init(simulator: Simulator) {
-    self.simulator = simulator
-  }
-
-  public var supportsStandardInput: Bool {
-    false
-  }
-
-  public func spawn(
-    _ subprocess: Subprocess,
-    standardInput: Int32?,
-    standardOutput: Int32?,
-    standardError: Int32?,
-    logger: (any ControlCoreLogger)?
-  ) async throws -> LaunchedProcess {
-    let options = SimulatorProcessSpawnStrategy.simDeviceLaunchOptions(
-      withSimulator: simulator,
-      launchPath: subprocess.executable,
-      arguments: subprocess.arguments,
-      // Nothing of this process's environment belongs inside the simulator, so
-      // the inheriting cases resolve to nothing and only explicit variables pass.
-      environment: subprocess.environment.resolved(against: [:]),
-      waitForDebugger: false,
-      standardOutput: standardOutput,
-      standardError: standardError,
-      mode: subprocess.mode)
-    let exit = SimulatorExit()
-    let processIdentifier = try await simulator.device.spawnAsync(
-      withPath: subprocess.executable,
-      options: options,
-      terminationQueue: simulator.asyncQueue,
-      terminationHandler: { statLoc in exit.resolve(statLoc) },
-      completionQueue: simulator.asyncQueue
-    )
-    return LaunchedProcess(processIdentifier: processIdentifier) {
-      await exit.statLoc()
     }
   }
 }

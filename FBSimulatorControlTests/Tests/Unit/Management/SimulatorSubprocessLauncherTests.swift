@@ -14,7 +14,7 @@ import Testing
 /// handling, `standalone` resolution, stdio keys. Pure-function assertions except the stdin
 /// and teardown cases, which drive the launcher against device doubles.
 @Suite
-struct SimulatorProcessSpawnStrategyTests {
+struct SimulatorSubprocessLauncherTests {
 
   private func simulator(state: TargetState) -> Simulator {
     SimulatorTestSupport.testableSimulator(withDevice: StubStateDevice(state: state))
@@ -24,7 +24,7 @@ struct SimulatorProcessSpawnStrategyTests {
 
   @Test
   func rawSpawnOptionsPrependLaunchPathAsArgv0() {
-    let options = SimulatorProcessSpawnStrategy.simDeviceLaunchOptions(
+    let options = SimulatorSubprocessLauncher.simDeviceLaunchOptions(
       withSimulator: simulator(state: .booted),
       launchPath: "/bin/echo",
       arguments: ["hello", "world"],
@@ -41,7 +41,7 @@ struct SimulatorProcessSpawnStrategyTests {
 
   @Test
   func rawSpawnOptionsCarryEnvironmentAndOmitWaitForDebuggerWhenFalse() {
-    let options = SimulatorProcessSpawnStrategy.simDeviceLaunchOptions(
+    let options = SimulatorSubprocessLauncher.simDeviceLaunchOptions(
       withSimulator: simulator(state: .booted),
       launchPath: "/bin/echo",
       arguments: [],
@@ -59,7 +59,7 @@ struct SimulatorProcessSpawnStrategyTests {
 
   @Test
   func rawSpawnOptionsSetWaitForDebuggerWhenRequested() {
-    let options = SimulatorProcessSpawnStrategy.simDeviceLaunchOptions(
+    let options = SimulatorSubprocessLauncher.simDeviceLaunchOptions(
       withSimulator: simulator(state: .booted),
       launchPath: "/bin/echo",
       arguments: [],
@@ -76,12 +76,12 @@ struct SimulatorProcessSpawnStrategyTests {
   func rawSpawnOptionsStandaloneReflectsMode() {
     let booted = simulator(state: .booted)
 
-    let launchd = SimulatorProcessSpawnStrategy.simDeviceLaunchOptions(
+    let launchd = SimulatorSubprocessLauncher.simDeviceLaunchOptions(
       withSimulator: booted, launchPath: "/bin/echo", arguments: [], environment: [:],
       waitForDebugger: false, standardOutput: nil, standardError: nil, mode: .launchd)
     #expect((launchd["standalone"] as? NSNumber)?.boolValue == false)
 
-    let posix = SimulatorProcessSpawnStrategy.simDeviceLaunchOptions(
+    let posix = SimulatorSubprocessLauncher.simDeviceLaunchOptions(
       withSimulator: booted, launchPath: "/bin/echo", arguments: [], environment: [:],
       waitForDebugger: false, standardOutput: nil, standardError: nil, mode: .posixSpawn)
     #expect((posix["standalone"] as? NSNumber)?.boolValue == true)
@@ -91,23 +91,23 @@ struct SimulatorProcessSpawnStrategyTests {
 
   @Test
   func standaloneIsTrueForPosixSpawnRegardlessOfState() {
-    #expect(SimulatorProcessSpawnStrategy.shouldLaunchStandalone(onSimulator: simulator(state: .booted), mode: .posixSpawn))
-    #expect(SimulatorProcessSpawnStrategy.shouldLaunchStandalone(onSimulator: simulator(state: .shutdown), mode: .posixSpawn))
+    #expect(SimulatorSubprocessLauncher.shouldLaunchStandalone(onSimulator: simulator(state: .booted), mode: .posixSpawn))
+    #expect(SimulatorSubprocessLauncher.shouldLaunchStandalone(onSimulator: simulator(state: .shutdown), mode: .posixSpawn))
   }
 
   @Test
   func standaloneIsFalseForLaunchdRegardlessOfState() {
-    #expect(!SimulatorProcessSpawnStrategy.shouldLaunchStandalone(onSimulator: simulator(state: .booted), mode: .launchd))
-    #expect(!SimulatorProcessSpawnStrategy.shouldLaunchStandalone(onSimulator: simulator(state: .shutdown), mode: .launchd))
+    #expect(!SimulatorSubprocessLauncher.shouldLaunchStandalone(onSimulator: simulator(state: .booted), mode: .launchd))
+    #expect(!SimulatorSubprocessLauncher.shouldLaunchStandalone(onSimulator: simulator(state: .shutdown), mode: .launchd))
   }
 
   @Test
   func standaloneDefaultModeFollowsBootState() {
     #expect(
-      !(SimulatorProcessSpawnStrategy.shouldLaunchStandalone(onSimulator: simulator(state: .booted), mode: .default)),
+      !(SimulatorSubprocessLauncher.shouldLaunchStandalone(onSimulator: simulator(state: .booted), mode: .default)),
       "When booted, default mode launches into launchd (not standalone)")
     #expect(
-      SimulatorProcessSpawnStrategy.shouldLaunchStandalone(onSimulator: simulator(state: .shutdown), mode: .default),
+      SimulatorSubprocessLauncher.shouldLaunchStandalone(onSimulator: simulator(state: .shutdown), mode: .default),
       "When not booted, default mode launches standalone")
   }
 
