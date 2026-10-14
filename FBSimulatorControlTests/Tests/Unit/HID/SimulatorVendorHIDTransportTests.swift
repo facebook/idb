@@ -7,12 +7,14 @@
 
 import CoreGraphics
 @testable import FBSimulatorControl
-import XCTest
+import Foundation
+import Testing
 import XPC
 
 /// The vendor-defined transport connects once and keeps the connection, here to a synthetic vendor
 /// service that answers the liveness barrier.
-final class SimulatorVendorHIDTransportTests: XCTestCase {
+@Suite
+struct SimulatorVendorHIDTransportTests {
 
   private enum ConnectFailure: Error {
     case injected
@@ -51,41 +53,43 @@ final class SimulatorVendorHIDTransportTests: XCTestCase {
     try SimulatorHingeAngle(degrees: 90).vendorEvent()
   }
 
-  func testTheConnectionIsEstablishedOnceAndReusedAcrossSends() async throws {
+  @Test
+  func theConnectionIsEstablishedOnceAndReusedAcrossSends() async throws {
     let connections = Connections()
     let vendor = SimulatorVendorHIDTransport { try await connections.connect() }
     for _ in 0..<3 {
       try await vendor.send(event())
     }
     let attempts = await connections.attempts
-    XCTAssertEqual(attempts, 1)
+    #expect(attempts == 1)
     let peer = await connections.peer
-    XCTAssertEqual(peer.connections, 1)
+    #expect(peer.connections == 1)
     let received = await peer.received(atLeast: 4)
-    XCTAssertEqual(received.map { xpc_dictionary_get_bool($0, "isBarrier") }, [true, false, false, false])
-    XCTAssertEqual(
-      received.map { xpc_dictionary_get_string($0, "messageType").map { String(cString: $0) } },
-      ["IndigoKeyboardButtonEvent"] + Array(repeating: "IndigoVendorDefinedEvent", count: 3))
+    #expect(received.map { xpc_dictionary_get_bool($0, "isBarrier") } == [true, false, false, false])
+    #expect(
+      received.map { xpc_dictionary_get_string($0, "messageType").map { String(cString: $0) } } == ["IndigoKeyboardButtonEvent"] + Array(repeating: "IndigoVendorDefinedEvent", count: 3))
     await vendor.disconnect()
   }
 
-  func testAFailedConnectionIsAttemptedAgainOnTheNextSend() async throws {
+  @Test
+  func aFailedConnectionIsAttemptedAgainOnTheNextSend() async throws {
     let connections = Connections()
     await connections.fail(true)
     let vendor = SimulatorVendorHIDTransport { try await connections.connect() }
     do {
       try await vendor.send(event())
-      XCTFail("Expected the injected failure")
+      Issue.record("Expected the injected failure")
     } catch ConnectFailure.injected {}
     await connections.fail(false)
     try await vendor.send(event())
     try await vendor.send(event())
     let attempts = await connections.attempts
-    XCTAssertEqual(attempts, 2)
+    #expect(attempts == 2)
     await vendor.disconnect()
   }
 
-  func testDisconnectingForgetsTheConnectionAndASendReconnects() async throws {
+  @Test
+  func disconnectingForgetsTheConnectionAndASendReconnects() async throws {
     let connections = Connections()
     let vendor = SimulatorVendorHIDTransport { try await connections.connect() }
     try await vendor.send(event())
@@ -93,22 +97,24 @@ final class SimulatorVendorHIDTransportTests: XCTestCase {
     await vendor.disconnect()
     try await vendor.send(event())
     let attempts = await connections.attempts
-    XCTAssertEqual(attempts, 2)
+    #expect(attempts == 2)
     await vendor.disconnect()
   }
 
-  func testDisconnectingTheHIDCommandsDropsTheVendorConnection() async throws {
+  @Test
+  func disconnectingTheHIDCommandsDropsTheVendorConnection() async throws {
     let connections = Connections()
     let hid = SimulatorHIDCommands(simulator: nil, vendorDefined: SimulatorVendorHIDTransport { try await connections.connect() })
     try await hid.vendorDefined.send(event())
     await hid.disconnect()
     try await hid.vendorDefined.send(event())
     let attempts = await connections.attempts
-    XCTAssertEqual(attempts, 2)
+    #expect(attempts == 2)
     await hid.disconnect()
   }
 
-  func testConcurrentFirstSendsShareOneConnection() async throws {
+  @Test
+  func concurrentFirstSendsShareOneConnection() async throws {
     let connections = Connections()
     let vendor = SimulatorVendorHIDTransport { try await connections.connect() }
     try await withThrowingTaskGroup(of: Void.self) { group in
@@ -118,7 +124,7 @@ final class SimulatorVendorHIDTransportTests: XCTestCase {
       try await group.waitForAll()
     }
     let attempts = await connections.attempts
-    XCTAssertEqual(attempts, 1)
+    #expect(attempts == 1)
     await vendor.disconnect()
   }
 }
