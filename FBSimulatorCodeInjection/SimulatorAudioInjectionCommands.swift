@@ -5,15 +5,25 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-@preconcurrency import CoreSimulator
 import Darwin
 import FBControlCore
+@preconcurrency import FBSimulatorControl
 import Foundation
 internal import ShimulatorAudioInjectionCore
 @_implementationOnly import ShimulatorProtocol
 import SimulatorIPC
 
-extension SimulatorAudioCommands {
+/// Plays audio into the microphone input of apps on a Simulator, through the Shimulator shim
+/// injected into their launch: the second way this library injects into a Simulator's processes,
+/// beside the REPL shim `codeInjection` injects.
+public struct SimulatorAudioInjectionCommands {
+
+  let simulator: Simulator
+
+  init(simulator: Simulator) {
+    self.simulator = simulator
+  }
+
   // MARK: - Microphone injection
 
   public static let injectionShimName = "libShimulator-iOS.dylib"
@@ -31,10 +41,10 @@ extension SimulatorAudioCommands {
     of url: URL,
     read: (Int32, UnsafeMutableRawPointer, Int) throws -> Int = { Darwin.read($0, $1, $2) }
   ) throws -> (duration: Duration, data: Data)? {
-    func unreadable(_ reason: String) -> SimulatorAudioError {
-      .injectionFileUnreadable(path: url.path, reason: reason)
+    func unreadable(_ reason: String) -> AudioInjectionError {
+      .fileUnreadable(path: url.path, reason: reason)
     }
-    func readFailure() -> SimulatorAudioError {
+    func readFailure() -> AudioInjectionError {
       unreadable(POSIXError(POSIXErrorCode(rawValue: errno) ?? .EIO).localizedDescription)
     }
     guard url.isFileURL else {
@@ -56,7 +66,7 @@ extension SimulatorAudioCommands {
     }
     let maximum = ShimulatorAudioInjection.maximumPayloadBytes
     guard metadata.st_size <= off_t(maximum) else {
-      throw SimulatorAudioError.injectionFileTooLarge(
+      throw AudioInjectionError.fileTooLarge(
         path: url.path, size: Int(clamping: metadata.st_size), maximum: maximum)
     }
     var data = Data()
@@ -83,7 +93,7 @@ extension SimulatorAudioCommands {
     guard data.count <= maximum else {
       // A growing file's size is only an observation; the prefix proves at least maximum + 1.
       let observed = fstat(descriptor, &metadata) == 0 ? Int(clamping: metadata.st_size) : data.count
-      throw SimulatorAudioError.injectionFileTooLarge(
+      throw AudioInjectionError.fileTooLarge(
         path: url.path, size: max(data.count, observed), maximum: maximum)
     }
     return WAVAudio(data: data).map { (.seconds(Double($0.samples.count) / $0.sampleRate), data) }
@@ -131,13 +141,13 @@ extension SimulatorAudioCommands {
 
   private func preparedAppLaunchEnvironment(_ environment: [String: String]) async throws -> [String: String] {
     guard let shimPath = BundledResources.path(forItem: Self.injectionShimName) else {
-      throw SimulatorAudioError.injectionShimMissing(item: Self.injectionShimName)
+      throw AudioInjectionError.shimMissing(item: Self.injectionShimName)
     }
     let directory = ShimulatorWireProtocol.socketDirectory()
     do {
       try IPCSocket.requirePrivateDirectory(directory, creating: true)
     } catch {
-      throw SimulatorAudioError.injectionSocketUnavailable(path: directory, reason: String(describing: error))
+      throw AudioInjectionError.socketUnavailable(path: directory, reason: String(describing: error))
     }
     let inherited =
       if environment[Self.insertLibrariesVariable] != nil {
@@ -164,7 +174,7 @@ extension SimulatorAudioCommands {
 
   private func requireInjectableProductFamily() throws {
     guard [.iPhone, .iPad].contains(simulator.productFamily) else {
-      throw SimulatorAudioError.injectionUnsupportedPlatform(udid: simulator.udid)
+      throw AudioInjectionError.unsupportedPlatform(udid: simulator.udid)
     }
   }
 
@@ -175,7 +185,7 @@ extension SimulatorAudioCommands {
     let output = try await simulator.runtimeTools.launchConsumingOutput(
       launchPath: try SimulatorLaunchCtlCommands.launchCtlLaunchPath(for: simulator), arguments: arguments)
     guard output.exitCode == 0, let stdout = String(data: output.stdout, encoding: .utf8) else {
-      throw SimulatorAudioError.injectionArmingFailed(
+      throw AudioInjectionError.armingFailed(
         udid: simulator.udid,
         stderr: "launchctl \(arguments.joined(separator: " ")) exited \(output.exitCode): \(String(decoding: output.stderr, as: UTF8.self))")
     }
@@ -186,10 +196,10 @@ extension SimulatorAudioCommands {
   public func inject(from audioFileURL: URL) async throws {
     try requireInjectableProductFamily()
     guard let audio = try Self.wav(of: audioFileURL) else {
-      throw SimulatorAudioError.injectionUnreadable(path: audioFileURL.path)
+      throw AudioInjectionError.unreadable(path: audioFileURL.path)
     }
     guard BundledResources.path(forItem: Self.injectionShimName) != nil else {
-      throw SimulatorAudioError.injectionShimMissing(item: Self.injectionShimName)
+      throw AudioInjectionError.shimMissing(item: Self.injectionShimName)
     }
     if audio.duration == .zero {
       return
@@ -200,16 +210,16 @@ extension SimulatorAudioCommands {
     do {
       bound = try ShimulatorServer(path: socketPath, parameters: AudioInjectionParameters(path: audioPath))
     } catch {
-      throw SimulatorAudioError.injectionSocketUnavailable(path: socketPath, reason: String(describing: error))
+      throw AudioInjectionError.socketUnavailable(path: socketPath, reason: String(describing: error))
     }
     guard let server = bound else {
-      throw SimulatorAudioError.injectionAlreadyRunning(udid: simulator.udid)
+      throw AudioInjectionError.alreadyRunning(udid: simulator.udid)
     }
     defer { try? FileManager.default.removeItem(atPath: audioPath) }
     do {
       try audio.data.write(to: URL(fileURLWithPath: audioPath), options: .atomic)
     } catch {
-      throw SimulatorAudioError.injectionSocketUnavailable(path: audioPath, reason: error.localizedDescription)
+      throw AudioInjectionError.socketUnavailable(path: audioPath, reason: error.localizedDescription)
     }
 
     var claimed = false
@@ -240,15 +250,15 @@ extension SimulatorAudioCommands {
       case .completed:
         return
       case let .failed(process, message):
-        throw SimulatorAudioError.injectionFailedInGuest(
+        throw AudioInjectionError.failedInGuest(
           udid: simulator.udid,
           process: process,
           reason: message)
       case .unclaimed:
-        throw SimulatorAudioError.injectionUnclaimed(
+        throw AudioInjectionError.unclaimed(
           udid: simulator.udid, preparationFailure: preparation.lastFailure)
       case .didNotFinish:
-        throw SimulatorAudioError.injectionDidNotFinish(udid: simulator.udid)
+        throw AudioInjectionError.didNotFinish(udid: simulator.udid)
       }
     }
   }
@@ -357,5 +367,71 @@ final class AudioInjectionPreparation: @unchecked Sendable {
 
   func record(failure: String?) {
     lock.withLock { self.failure = failure }
+  }
+}
+
+/// Why playing audio into a Simulator's microphone input failed.
+public enum AudioInjectionError: Error, LocalizedError {
+  case alreadyRunning(udid: String)
+  case unreadable(path: String)
+  case fileUnreadable(path: String, reason: String)
+  case fileTooLarge(path: String, size: Int, maximum: Int)
+  case shimMissing(item: String)
+  /// `preparationFailure` is why the last idb app launch went ahead without the shim, if it did.
+  case unclaimed(udid: String, preparationFailure: String?)
+  case didNotFinish(udid: String)
+  case socketUnavailable(path: String, reason: String)
+  case unsupportedPlatform(udid: String)
+  case failedInGuest(
+    udid: String,
+    process: String,
+    reason: String?
+  )
+  case armingFailed(udid: String, stderr: String)
+
+  public var errorDescription: String? {
+    switch self {
+    case let .alreadyRunning(udid):
+      return
+        "Another audio injection is already playing into simulator \(udid). Injections mix into one microphone input, so they are played one at a time; wait for the first to finish."
+    case let .unreadable(path):
+      return "Could not read \(path) as audio to inject. It must be a 16-bit PCM WAV file."
+    case let .fileUnreadable(path, reason):
+      return
+        "Could not open \(path): \(reason). Nothing was read, so this says nothing about whether the file is audio the simulator could play."
+    case let .fileTooLarge(path, size, maximum):
+      return
+        "Could not inject \(path) because it is \(size) bytes; the maximum audio payload is \(maximum) bytes."
+    case let .shimMissing(item):
+      return "The companion is missing \(item) from its Resources directory, so audio injection cannot be prepared."
+    case let .armingFailed(udid, stderr):
+      return "Could not prepare an app's microphone-injection environment on simulator \(udid): \(stderr)"
+    case let .failedInGuest(udid, process, reason):
+      let detail = reason.map { " Guest error: \($0)" } ?? ""
+      return "\(process) in simulator \(udid) rejected the audio injection.\(detail)"
+    case let .unsupportedPlatform(udid):
+      return
+        "Audio injection supports iPhone and iPad simulators. Simulator \(udid) is neither, and the shim is built for the iOS simulator only."
+    case let .socketUnavailable(path, reason):
+      return "Could not serve audio injection at \(path): \(reason)"
+    case let .didNotFinish(udid):
+      return
+        "The audio injected into simulator \(udid) started playing but never finished. An app hears injected audio only while it is recording: if it stopped recording part-way through, the rest of the audio has nowhere to go."
+    case let .unclaimed(udid, preparationFailure):
+      let unprepared =
+        preparationFailure.map {
+          " The last app launch through idb could not be prepared for microphone injection, so it could not hear injected audio: \($0)."
+        } ?? ""
+      return
+        "Nothing in simulator \(udid) picked the audio up within \(SimulatorAudioInjectionCommands.injectionClaimTimeout.components.seconds) seconds.\(unprepared) Launch the app under test through idb so microphone injection is prepared at process startup, have it start recording, and inject again. An already-running app cannot be armed without a relaunch."
+    }
+  }
+}
+
+extension Simulator {
+
+  /// Plays audio into the microphone input of the Simulator's apps.
+  public var audioInjection: SimulatorAudioInjectionCommands {
+    SimulatorAudioInjectionCommands(simulator: self)
   }
 }

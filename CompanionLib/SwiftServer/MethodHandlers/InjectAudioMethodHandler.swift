@@ -6,6 +6,7 @@
  */
 
 import FBControlCore
+import FBSimulatorCodeInjection
 import FBSimulatorControl
 import Foundation
 import GRPCCore
@@ -28,7 +29,7 @@ struct InjectAudioMethodHandler {
       ) { audioFileURL in
         try await commandExecutor.inject_audio(audioFileURL)
       }
-    } catch let error as SimulatorAudioError {
+    } catch let error as AudioInjectionError {
       throw Self.rpcError(for: error)
     } catch let error as IDBCommandError {
       if let rpcError = Self.rpcError(for: error) {
@@ -124,17 +125,16 @@ struct InjectAudioMethodHandler {
       message: "Audio injection input exceeds the \(maximumBytes)-byte limit")
   }
 
-  static func rpcError(for error: SimulatorAudioError) -> RPCError {
+  static func rpcError(for error: AudioInjectionError) -> RPCError {
     let code: RPCError.Code
     switch error {
-    case .injectionUnreadable, .injectionFileUnreadable, .injectionFileTooLarge,
-      .volumeOutOfRange:
+    case .unreadable, .fileUnreadable, .fileTooLarge:
       code = .invalidArgument
-    case .injectionAlreadyRunning, .injectionUnclaimed, .injectionDidNotFinish,
-      .injectionUnsupportedPlatform, .injectionFailedInGuest:
+    case .alreadyRunning, .unclaimed, .didNotFinish, .unsupportedPlatform, .failedInGuest:
       code = .failedPrecondition
-    case .noDataDirectory, .unreadable, .malformed, .volumeMissing,
-      .injectionShimMissing, .injectionSocketUnavailable, .injectionArmingFailed:
+    case .shimMissing, .socketUnavailable, .armingFailed:
+      code = .internalError
+    @unknown default:
       code = .internalError
     }
     return RPCError(code: code, message: error.localizedDescription)

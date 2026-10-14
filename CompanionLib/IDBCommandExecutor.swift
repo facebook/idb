@@ -290,7 +290,7 @@ public final class IDBCommandExecutor {
   }
 
   public func inject_audio(_ audioFile: URL) async throws {
-    try await simulatorTarget().audio.inject(from: audioFile)
+    try await simulatorTarget().audioInjection.inject(from: audioFile)
   }
 
   public func audioInjectionAppLaunchEnvironment(
@@ -299,7 +299,7 @@ public final class IDBCommandExecutor {
     guard let simulator = try? simulatorTarget() else {
       return environment
     }
-    return await simulator.audio.appLaunchEnvironment(environment)
+    return await simulator.audioInjection.appLaunchEnvironment(environment)
   }
 
   public func set_location(_ latitude: Double, longitude: Double) async throws {

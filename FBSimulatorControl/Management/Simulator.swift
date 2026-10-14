@@ -146,7 +146,7 @@ public final class Simulator: Target, Hashable, CustomStringConvertible, @unchec
   // MARK: - Simulator Properties
 
   /// The Product Family of the Simulator.
-  var productFamily: ProductFamily {
+  package var productFamily: ProductFamily {
     switch device.deviceType?.productFamilyID {
     case .some(1):
       return .iPhone

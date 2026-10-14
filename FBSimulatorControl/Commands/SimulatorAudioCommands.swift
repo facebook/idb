@@ -137,22 +137,6 @@ public enum SimulatorAudioError: Error, LocalizedError {
   case volumeMissing(keys: [String])
   /// A volume outside `0...1` was asked for.
   case volumeOutOfRange(volume: Double)
-  case injectionAlreadyRunning(udid: String)
-  case injectionUnreadable(path: String)
-  case injectionFileUnreadable(path: String, reason: String)
-  case injectionFileTooLarge(path: String, size: Int, maximum: Int)
-  case injectionShimMissing(item: String)
-  /// `preparationFailure` is why the last idb app launch went ahead without the shim, if it did.
-  case injectionUnclaimed(udid: String, preparationFailure: String?)
-  case injectionDidNotFinish(udid: String)
-  case injectionSocketUnavailable(path: String, reason: String)
-  case injectionUnsupportedPlatform(udid: String)
-  case injectionFailedInGuest(
-    udid: String,
-    process: String,
-    reason: String?
-  )
-  case injectionArmingFailed(udid: String, stderr: String)
 
   public var errorDescription: String? {
     switch self {
@@ -168,39 +152,6 @@ public enum SimulatorAudioError: Error, LocalizedError {
       return "The simulator's audio settings carry no sim_volume; keys present: \(present)"
     case let .volumeOutOfRange(volume):
       return "A volume of \(volume) is outside the permitted range of 0 to 1"
-    case let .injectionAlreadyRunning(udid):
-      return
-        "Another audio injection is already playing into simulator \(udid). Injections mix into one microphone input, so they are played one at a time; wait for the first to finish."
-    case let .injectionUnreadable(path):
-      return "Could not read \(path) as audio to inject. It must be a 16-bit PCM WAV file."
-    case let .injectionFileUnreadable(path, reason):
-      return
-        "Could not open \(path): \(reason). Nothing was read, so this says nothing about whether the file is audio the simulator could play."
-    case let .injectionFileTooLarge(path, size, maximum):
-      return
-        "Could not inject \(path) because it is \(size) bytes; the maximum audio payload is \(maximum) bytes."
-    case let .injectionShimMissing(item):
-      return "The companion is missing \(item) from its Resources directory, so audio injection cannot be prepared."
-    case let .injectionArmingFailed(udid, stderr):
-      return "Could not prepare an app's microphone-injection environment on simulator \(udid): \(stderr)"
-    case let .injectionFailedInGuest(udid, process, reason):
-      let detail = reason.map { " Guest error: \($0)" } ?? ""
-      return "\(process) in simulator \(udid) rejected the audio injection.\(detail)"
-    case let .injectionUnsupportedPlatform(udid):
-      return
-        "Audio injection supports iPhone and iPad simulators. Simulator \(udid) is neither, and the shim is built for the iOS simulator only."
-    case let .injectionSocketUnavailable(path, reason):
-      return "Could not serve audio injection at \(path): \(reason)"
-    case let .injectionDidNotFinish(udid):
-      return
-        "The audio injected into simulator \(udid) started playing but never finished. An app hears injected audio only while it is recording: if it stopped recording part-way through, the rest of the audio has nowhere to go."
-    case let .injectionUnclaimed(udid, preparationFailure):
-      let unprepared =
-        preparationFailure.map {
-          " The last app launch through idb could not be prepared for microphone injection, so it could not hear injected audio: \($0)."
-        } ?? ""
-      return
-        "Nothing in simulator \(udid) picked the audio up within \(SimulatorAudioCommands.injectionClaimTimeout.components.seconds) seconds.\(unprepared) Launch the app under test through idb so microphone injection is prepared at process startup, have it start recording, and inject again. An already-running app cannot be armed without a relaunch."
     }
   }
 }

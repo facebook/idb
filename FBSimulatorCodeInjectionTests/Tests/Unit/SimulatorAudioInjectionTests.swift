@@ -6,14 +6,14 @@
  */
 
 import Darwin
-@testable import FBSimulatorControl
+@testable import FBSimulatorCodeInjection
 import Foundation
-// Matches the existing XCTest-based FBSimulatorControl unit suite (SimulatorAudioSettingsTests et al.).
+// Matches the XCTest-based suite this moved from (SimulatorAudioSettingsTests et al. in FBSimulatorControl).
 // ast-grep-ignore: swift-testing/swift/no-new-xctest
 import XCTest
 
 final class SimulatorAudioInjectionTests: XCTestCase {
-  private typealias Commands = SimulatorAudioCommands
+  private typealias Commands = SimulatorAudioInjectionCommands
 
   private func appEnvironment(
     _ requested: [String: String] = [:], inherited: String = ""
@@ -85,7 +85,7 @@ final class SimulatorAudioInjectionTests: XCTestCase {
     XCTAssertEqual(unprepared, original)
     XCTAssertEqual(preparation.lastFailure, "launchctl getenv exited 1")
     XCTAssertEqual(logged, ["Launching the app without microphone injection: launchctl getenv exited 1"])
-    let unclaimed = SimulatorAudioError.injectionUnclaimed(
+    let unclaimed = AudioInjectionError.unclaimed(
       udid: "UDID", preparationFailure: preparation.lastFailure
     ).localizedDescription
     XCTAssertTrue(
@@ -104,7 +104,7 @@ final class SimulatorAudioInjectionTests: XCTestCase {
 
     XCTAssertEqual(prepared, ["IDB_AUDIO_INJECTION": "1"])
     XCTAssertNil(preparation.lastFailure)
-    let unclaimed = SimulatorAudioError.injectionUnclaimed(
+    let unclaimed = AudioInjectionError.unclaimed(
       udid: "UDID", preparationFailure: preparation.lastFailure
     ).localizedDescription
     XCTAssertFalse(unclaimed.contains("could not be prepared"), unclaimed)
@@ -539,10 +539,10 @@ final class SimulatorAudioInjectionTests: XCTestCase {
   private func assertWAVTooLarge(
     _ error: Error, path: String, size: Int, file: StaticString = #filePath, line: UInt = #line
   ) {
-    guard let audioError = error as? SimulatorAudioError,
-      case let .injectionFileTooLarge(actualPath, actualSize, maximum) = audioError
+    guard let audioError = error as? AudioInjectionError,
+      case let .fileTooLarge(actualPath, actualSize, maximum) = audioError
     else {
-      XCTFail("Expected injectionFileTooLarge, got \(error)", file: file, line: line)
+      XCTFail("Expected fileTooLarge, got \(error)", file: file, line: line)
       return
     }
     XCTAssertEqual(actualPath, path, file: file, line: line)
@@ -554,10 +554,10 @@ final class SimulatorAudioInjectionTests: XCTestCase {
     _ error: Error, path: String, requiresRegularFileReason: Bool = false,
     file: StaticString = #filePath, line: UInt = #line
   ) {
-    guard let audioError = error as? SimulatorAudioError,
-      case let .injectionFileUnreadable(actualPath, reason) = audioError
+    guard let audioError = error as? AudioInjectionError,
+      case let .fileUnreadable(actualPath, reason) = audioError
     else {
-      XCTFail("Expected injectionFileUnreadable, got \(error)", file: file, line: line)
+      XCTFail("Expected fileUnreadable, got \(error)", file: file, line: line)
       return
     }
     XCTAssertEqual(actualPath, path, file: file, line: line)

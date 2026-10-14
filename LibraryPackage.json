@@ -96,8 +96,6 @@
         "libFBControlCore.a",
         "libFBSimulatorControl.a",
         "libFBControlCoreObjC.a",
-        "libShimulatorProtocol.a",
-        "libShimulatorAudioInjectionCore.a",
         "libSimulatorIPC.a"
       ],
       "frameworks": [
@@ -140,15 +138,15 @@
     "FBSimulatorCodeInjection": {
       "archives": [
         "libFBSimulatorCodeInjection.a",
+        "libShimulatorProtocol.a",
+        "libSimulatorIPC.a",
         "libFBControlCore.a",
         "libFBSimulatorControl.a",
         "libFBSimulatorXCTest.a",
         "libFBXCTestCore.a",
-        "libFBControlCoreObjC.a",
-        "libShimulatorProtocol.a",
         "libShimulatorAudioInjectionCore.a",
-        "libFBSimulatorBridgeProtocol.a",
-        "libSimulatorIPC.a"
+        "libFBControlCoreObjC.a",
+        "libFBSimulatorBridgeProtocol.a"
       ],
       "frameworks": [
         "Cocoa.framework",
@@ -179,8 +177,6 @@
     "FBSimulatorControl": {
       "archives": [
         "libFBSimulatorControl.a",
-        "libShimulatorProtocol.a",
-        "libShimulatorAudioInjectionCore.a",
         "libFBControlCore.a",
         "libFBSimulatorBridgeProtocol.a",
         "libSimulatorIPC.a",
@@ -216,8 +212,6 @@
         "libFBProfilingCore.a",
         "libFBSimulatorControl.a",
         "libFBControlCoreObjC.a",
-        "libShimulatorProtocol.a",
-        "libShimulatorAudioInjectionCore.a",
         "libFBSimulatorBridgeProtocol.a",
         "libSimulatorIPC.a"
       ],
@@ -251,8 +245,6 @@
         "libFBSimulatorControl.a",
         "libFBVideoCore.a",
         "libFBControlCoreObjC.a",
-        "libShimulatorProtocol.a",
-        "libShimulatorAudioInjectionCore.a",
         "libFBSimulatorBridgeProtocol.a",
         "libSimulatorIPC.a"
       ],
@@ -294,8 +286,6 @@
         "libFBSimulatorControl.a",
         "libFBXCTestCore.a",
         "libFBControlCoreObjC.a",
-        "libShimulatorProtocol.a",
-        "libShimulatorAudioInjectionCore.a",
         "libFBSimulatorBridgeProtocol.a",
         "libSimulatorIPC.a"
       ],

@@ -79,7 +79,7 @@ public struct SimulatorRuntimeToolCommands: Sendable {
   /// the runtime does not ship). Exit codes are not interpreted — callers decide
   /// which are acceptable. A tool killed by a signal throws
   /// `InSimulatorToolError.signalled`, with its stderr.
-  func launchConsumingOutput(
+  package func launchConsumingOutput(
     launchPath: String,
     arguments: [String] = [],
     environment: [String: String] = [:]

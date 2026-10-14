@@ -22,6 +22,10 @@ try await session.close()
 - **Additional libraries.** `additionalLibraries` are loaded into the host alongside the shim before any code is injected, so injected code can call into them. `idb-repl` uses this for the idb command API.
 - **The shim.** `.bundled`, the default, is the shim this library carries; `shim: .path(...)` supplies another. `launchEnvironment(forApplication:)` is the environment that arms an ordinary app launch the same way, so a later `inject(into: .application(bundleID:reattach: true))` joins it.
 
+## Microphone injection
+
+The library's second injection mechanism plays audio into a Simulator app's microphone input, through the Shimulator shim rather than the REPL shim. `simulator.audioInjection.appLaunchEnvironment(_:)` arms an app launch by inserting `libShimulator-iOS.dylib` into it, and `inject(from:)` then plays a 16-bit PCM WAV file into every armed app that is recording, returning when playback finishes. Failures are `AudioInjectionError`s. An app that is already running cannot be armed without a relaunch.
+
 ## How it works
 
 The shim, `libRepl`, is this library's resource: a bundle that links the library carries it, and the library finds it there or in the `Resources/` directory beside a standalone binary. It is injected into the host with `DYLD_INSERT_LIBRARIES` for an app, loaded by the guest bridge for the Simulator, and injected by the logic-test runner for a test bundle, which is why this library depends on [`FBSimulatorXCTest`](../FBSimulatorXCTest/README.md).

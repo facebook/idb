@@ -99,7 +99,7 @@ struct CodeInjectionHostLauncher {
     }
 
     // `.relaunchIfRunning` so an app already running without the REPL dylib picks it up.
-    let environment = await simulator.audio.appLaunchEnvironment(
+    let environment = await simulator.audioInjection.appLaunchEnvironment(
       try appLaunchEnvironment(bundleID: bundleID, shim: shim, additionalLibraries: additionalLibraries))
     let configuration = ApplicationLaunchConfiguration(
       bundleID: bundleID,
