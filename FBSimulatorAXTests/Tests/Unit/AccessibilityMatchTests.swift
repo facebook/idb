@@ -9,13 +9,14 @@ import FBControlCore
 @testable import FBSimulatorAX
 @testable import FBSimulatorControl
 import Foundation
-import XCTest
+import Testing
 
 /// `AccessibilityMatch` — the substring narrowing behind `describe-all --match` — and the hoisting it
 /// shares with `AccessibilityElementFilter`.
 ///
 /// Pure functions over the serialized model, so none of this needs a simulator.
-final class AccessibilityMatchTests: XCTestCase {
+@Suite
+struct AccessibilityMatchTests {
 
   private static func element(
     label: String? = nil,
@@ -48,78 +49,88 @@ final class AccessibilityMatchTests: XCTestCase {
   private static func match(
     _ value: String, key: AXSearchableKey = .label, ignoresCase: Bool = false
   ) throws -> AccessibilityMatch {
-    try XCTUnwrap(AccessibilityMatch(value: value, key: key, ignoresCase: ignoresCase))
+    try #require(AccessibilityMatch(value: value, key: key, ignoresCase: ignoresCase))
   }
 
   // MARK: - What matches
 
-  func testTheMatchKeepsEveryElementWhoseLabelContainsTheSubstring() throws {
+  @Test
+  func theMatchKeepsEveryElementWhoseLabelContainsTheSubstring() throws {
     let read = [
       Self.element(label: "Add to Cart"),
       Self.element(label: "Remove from Cart"),
       Self.element(label: "Checkout"),
     ]
-    XCTAssertEqual(Self.labels(try Self.match("Cart").apply(to: read)), ["Add to Cart", "Remove from Cart"])
+    #expect(Self.labels(try Self.match("Cart").apply(to: read)) == ["Add to Cart", "Remove from Cart"])
   }
 
   // Substring, not equality — the contract documented on `AccessibilityElementQuery.marker`.
-  func testTheMatchIsASubstringNotAnEquality() throws {
+  @Test
+  func theMatchIsASubstringNotAnEquality() throws {
     let read = [Self.element(label: "Add to Cart")]
-    XCTAssertEqual(Self.labels(try Self.match("to Ca").apply(to: read)), ["Add to Cart"])
+    #expect(Self.labels(try Self.match("to Ca").apply(to: read)) == ["Add to Cart"])
   }
 
   // Unlike `describe MARKER` (which throws `elementNotFound`), no match is an empty list.
-  func testNoMatchIsAnEmptyListRatherThanAFailure() throws {
-    XCTAssertTrue(try Self.match("Cart").apply(to: [Self.element(label: "Checkout")]).isEmpty)
+  @Test
+  func noMatchIsAnEmptyListRatherThanAFailure() throws {
+    #expect(try Self.match("Cart").apply(to: [Self.element(label: "Checkout")]).isEmpty)
   }
 
-  func testAnEmptyMatchValueIsNoMatchAtAll() {
-    XCTAssertNil(
-      AccessibilityMatch(value: ""),
+  @Test
+  func anEmptyMatchValueIsNoMatchAtAll() {
+    #expect(
+      AccessibilityMatch(value: "") == nil,
       "an empty match would keep every element, which is the absence of a match rather than one"
     )
   }
 
   // MARK: - Case
 
-  func testTheMatchIsCaseSensitiveByDefault() throws {
-    XCTAssertTrue(try Self.match("cart").apply(to: [Self.element(label: "Add to Cart")]).isEmpty)
+  @Test
+  func theMatchIsCaseSensitiveByDefault() throws {
+    #expect(try Self.match("cart").apply(to: [Self.element(label: "Add to Cart")]).isEmpty)
   }
 
-  func testIgnoresCaseComparesCaseInsensitivelyInBothDirections() throws {
+  @Test
+  func ignoresCaseComparesCaseInsensitivelyInBothDirections() throws {
     let read = [Self.element(label: "Add to Cart"), Self.element(label: "SHOPPING BAG")]
     let matched = try Self.match("cart", ignoresCase: true).apply(to: read)
-    XCTAssertEqual(Self.labels(matched), ["Add to Cart"])
-    XCTAssertEqual(
-      Self.labels(try Self.match("Shopping", ignoresCase: true).apply(to: read)), ["SHOPPING BAG"]
+    #expect(Self.labels(matched) == ["Add to Cart"])
+    #expect(
+      Self.labels(try Self.match("Shopping", ignoresCase: true).apply(to: read)) == ["SHOPPING BAG"]
     )
   }
 
   // MARK: - Which attribute
 
-  func testTheMatchSearchesTheKeyItWasGiven() throws {
+  @Test
+  func theMatchSearchesTheKeyItWasGiven() throws {
     let read = [
       Self.element(label: "Continue", identifier: "checkout-button"),
       Self.element(label: "checkout-button", identifier: "continue"),
     ]
-    XCTAssertEqual(
-      Self.labels(try Self.match("checkout", key: .uniqueID).apply(to: read)), ["Continue"]
+    #expect(
+      Self.labels(try Self.match("checkout", key: .uniqueID).apply(to: read)) == ["Continue"]
     )
   }
 
-  func testTheMatchReadsAStringValueAttribute() throws {
+  @Test
+  func theMatchReadsAStringValueAttribute() throws {
     let read = [Self.element(label: "Quantity", value: "3"), Self.element(label: "Total", value: "9")]
-    XCTAssertEqual(Self.labels(try Self.match("3", key: .value).apply(to: read)), ["Quantity"])
+    #expect(Self.labels(try Self.match("3", key: .value).apply(to: read)) == ["Quantity"])
   }
 
   // An attribute the read did not serialize never matches either; the `serializationKeys` widening keeps that case from arising.
-  func testAnAbsentAttributeDoesNotMatch() throws {
-    XCTAssertTrue(try Self.match("Cart", key: .placeholder).apply(to: [Self.element(label: "Cart")]).isEmpty)
+  @Test
+  func anAbsentAttributeDoesNotMatch() throws {
+    #expect(try Self.match("Cart", key: .placeholder).apply(to: [Self.element(label: "Cart")]).isEmpty)
   }
 
   // MARK: - Hoisting
 
-  func testAMatchingDescendantIsHoistedIntoItsDroppedAncestorsPlace() throws {
+  @Test
+  func aMatchingDescendantIsHoistedIntoItsDroppedAncestorsPlace() throws {
     let read = [
       Self.element(
         label: "Product Row",
@@ -127,11 +138,12 @@ final class AccessibilityMatchTests: XCTestCase {
       )
     ]
     let matched = try Self.match("Cart").apply(to: read)
-    XCTAssertEqual(Self.labels(matched), ["Add to Cart"])
-    XCTAssertEqual(matched.first?.children ?? [], [])
+    #expect(Self.labels(matched) == ["Add to Cart"])
+    #expect((matched.first?.children ?? []) == [])
   }
 
-  func testAMatchingAncestorKeepsOnlyItsMatchingDescendants() throws {
+  @Test
+  func aMatchingAncestorKeepsOnlyItsMatchingDescendants() throws {
     let read = [
       Self.element(
         label: "Cart Row",
@@ -139,50 +151,55 @@ final class AccessibilityMatchTests: XCTestCase {
       )
     ]
     let matched = try Self.match("Cart").apply(to: read)
-    XCTAssertEqual(Self.labels(matched), ["Cart Row"])
-    XCTAssertEqual(Self.labels(matched.first?.children ?? []), ["Remove from Cart"])
+    #expect(Self.labels(matched) == ["Cart Row"])
+    #expect(Self.labels(matched.first?.children ?? []) == ["Remove from Cart"])
   }
 
-  func testAFlatReadsElementsDoNotGrowAChildrenKey() throws {
+  @Test
+  func aFlatReadsElementsDoNotGrowAChildrenKey() throws {
     let matched = try Self.match("Cart").apply(to: [Self.element(label: "Add to Cart")])
-    XCTAssertNil(matched.first?.children)
+    #expect(matched.first?.children == nil)
   }
 
   // MARK: - Composition with the filter
 
   // Both `filter` and `match` hoist, so their order is observable when a match sits under a non-interactable container.
-  func testFilterThenMatchKeepsAMatchingElementUnderADroppedContainer() throws {
+  @Test
+  func filterThenMatchKeepsAMatchingElementUnderADroppedContainer() throws {
     var container = AccessibilityDocumentElement()
     container.interactable = .some(nil)
     container.children = [Self.element(label: "Add to Cart", role: "AXButton")]
 
     let filtered = AccessibilityElementFilter.interactable.apply(to: [container], screen: nil)
-    XCTAssertEqual(Self.labels(filtered), ["Add to Cart"], "the unlabelled container is dropped, its child hoisted")
-    XCTAssertEqual(Self.labels(try Self.match("Cart").apply(to: filtered)), ["Add to Cart"])
+    #expect(Self.labels(filtered) == ["Add to Cart"], "the unlabelled container is dropped, its child hoisted")
+    #expect(Self.labels(try Self.match("Cart").apply(to: filtered)) == ["Add to Cart"])
   }
 
   // MARK: - Serialization keys
 
   // The match runs over the serialized model, so the key it searches on has to be fetched — otherwise
   // `--key frame --match Buy` reports nothing rather than the buy button's frame.
-  func testRequestingAMatchWidensTheSerializedKeySet() throws {
+  @Test
+  func requestingAMatchWidensTheSerializedKeySet() throws {
     var options = AccessibilityRequestOptions(keys: [.frame])
     options.match = try Self.match("Buy", key: .placeholder)
-    XCTAssertTrue(options.serializationKeys.contains(.placeholder))
-    XCTAssertTrue(options.serializationKeys.contains(.frame), "the caller's own keys are not replaced")
+    #expect(options.serializationKeys.contains(.placeholder))
+    #expect(options.serializationKeys.contains(.frame), "the caller's own keys are not replaced")
   }
 
   // `complete` reports the raw `role` only through the normalized `type`, so matching on it needs the
   // counterpart the format arm already adds for a requested key.
-  func testMatchingOnRoleUnderCompleteAlsoSerializesItsCounterpart() throws {
+  @Test
+  func matchingOnRoleUnderCompleteAlsoSerializesItsCounterpart() throws {
     var options = AccessibilityRequestOptions(format: .complete, keys: [.label])
     options.match = try Self.match("Button", key: .role)
-    XCTAssertTrue(options.serializationKeys.contains(.role))
-    XCTAssertTrue(options.serializationKeys.contains(.type))
+    #expect(options.serializationKeys.contains(.role))
+    #expect(options.serializationKeys.contains(.type))
   }
 
-  func testNoMatchLeavesTheSerializedKeySetUntouched() {
+  @Test
+  func noMatchLeavesTheSerializedKeySetUntouched() {
     let options = AccessibilityRequestOptions(keys: [.label])
-    XCTAssertEqual(options.serializationKeys, [.label])
+    #expect(options.serializationKeys == [.label])
   }
 }
