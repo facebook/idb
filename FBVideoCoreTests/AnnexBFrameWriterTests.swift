@@ -8,20 +8,23 @@
 import CoreMedia
 @testable import FBControlCore
 @testable import FBVideoCore
-import XCTest
+import Foundation
+import Testing
 
 /// Annex-B framing: start codes, parameter sets ahead of keyframes, one write per frame.
-final class AnnexBFrameWriterTests: XCTestCase {
+@Suite
+struct AnnexBFrameWriterTests {
 
   // MARK: - H264 Annex-B Writer
 
-  func testH264AnnexBKeyframeDetectionWithModernAttachments() {
+  @Test
+  func h264AnnexBKeyframeDetectionWithModernAttachments() {
     let sampleBuffer = makeH264SampleBuffer(isKeyFrame: true)
     let consumer = FBDataBuffer.accumulatingBuffer()
     let logger = ControlCoreLoggerDouble()
     let writer = AnnexBFrameWriter(codec: .h264)
 
-    XCTAssertNoThrow(try writer.write(sampleBuffer, to: consumer, logger: logger))
+    #expect(throws: Never.self) { try writer.write(sampleBuffer, to: consumer, logger: logger) }
 
     let output = consumer.data()
 
@@ -32,25 +35,26 @@ final class AnnexBFrameWriterTests: XCTestCase {
 
     // Expected layout: [start_code][SPS][start_code][PPS][start_code][NAL]
     let spsRange = (output as NSData).range(of: spsData, options: [], in: NSRange(location: 0, length: output.count))
-    XCTAssertNotEqual(spsRange.location, NSNotFound, "SPS should be present for keyframe")
+    #expect(spsRange.location != NSNotFound, "SPS should be present for keyframe")
     let ppsRange = (output as NSData).range(of: ppsData, options: [], in: NSRange(location: 0, length: output.count))
-    XCTAssertNotEqual(ppsRange.location, NSNotFound, "PPS should be present for keyframe")
+    #expect(ppsRange.location != NSNotFound, "PPS should be present for keyframe")
 
-    XCTAssertTrue(spsRange.location < ppsRange.location)
+    #expect(spsRange.location < ppsRange.location)
 
     let startCode: [UInt8] = [0x00, 0x00, 0x00, 0x01]
     let startCodeData = Data(startCode)
     let firstFourBytes = output.subdata(in: 0..<4)
-    XCTAssertEqual(firstFourBytes, startCodeData)
+    #expect(firstFourBytes == startCodeData)
   }
 
-  func testH264AnnexBAVCCToAnnexBConversion() {
+  @Test
+  func h264AnnexBAVCCToAnnexBConversion() {
     let sampleBuffer = makeH264SampleBuffer(isKeyFrame: false)
     let consumer = FBDataBuffer.accumulatingBuffer()
     let logger = ControlCoreLoggerDouble()
     let writer = AnnexBFrameWriter(codec: .h264)
 
-    XCTAssertNoThrow(try writer.write(sampleBuffer, to: consumer, logger: logger))
+    #expect(throws: Never.self) { try writer.write(sampleBuffer, to: consumer, logger: logger) }
 
     let output = consumer.data()
 
@@ -60,12 +64,13 @@ final class AnnexBFrameWriterTests: XCTestCase {
       0x65, 0x88, 0x80, 0x40, 0x00, // NAL unit data
     ]
     let expectedData = Data(expected)
-    XCTAssertEqual(output, expectedData)
+    #expect(output == expectedData)
   }
 
   // MARK: - Malformed AVCC Lengths
 
-  func testAnnexBLengthPrefixShorterThanItsNALIsRefused() throws {
+  @Test
+  func annexBLengthPrefixShorterThanItsNALIsRefused() throws {
     // One eight-byte NAL whose prefix claims three bytes: the bytes after the claimed three do not
     // form a prefix that fits, so the sample is refused rather than emitted with them rewritten.
     let avcc: [UInt8] = [
@@ -73,87 +78,92 @@ final class AnnexBFrameWriterTests: XCTestCase {
       0x65, 0x88, 0x80, 0x40, 0x00, 0x11, 0x22, 0x33,
     ]
     let consumer = FBDataBuffer.accumulatingBuffer()
-    XCTAssertThrowsError(try AnnexBFrameWriter(codec: .h264).write(makeH264SampleBuffer(isKeyFrame: false, avccBytes: avcc), to: consumer, logger: ControlCoreLoggerDouble())) { error in
-      guard case .malformedNALUnitLength(offset: 7, length: 0x4000_1122, remaining: 1) = error as? EncodedFrameWriterError else {
-        return XCTFail("Expected malformedNALUnitLength at the misread prefix, got \(error)")
-      }
+    let error = #expect(throws: (any Error).self) {
+      try AnnexBFrameWriter(codec: .h264).write(makeH264SampleBuffer(isKeyFrame: false, avccBytes: avcc), to: consumer, logger: ControlCoreLoggerDouble())
     }
-    XCTAssertEqual(consumer.data().count, 0, "Nothing reaches the consumer for a refused sample")
+    let isExpectedError = if case .malformedNALUnitLength(offset: 7, length: 0x4000_1122, remaining: 1)? = error as? EncodedFrameWriterError { true } else { false }
+    #expect(isExpectedError, "Expected malformedNALUnitLength at the misread prefix, got \(String(describing: error))")
+    #expect(consumer.data().count == 0, "Nothing reaches the consumer for a refused sample")
   }
 
-  func testAnnexBLengthPrefixLongerThanTheBufferIsRefused() throws {
+  @Test
+  func annexBLengthPrefixLongerThanTheBufferIsRefused() throws {
     // One NAL whose prefix claims 200 bytes; only five follow.
     let avcc: [UInt8] = [
       0x00, 0x00, 0x00, 0xC8,
       0x65, 0x88, 0x80, 0x40, 0x00,
     ]
     let consumer = FBDataBuffer.accumulatingBuffer()
-    XCTAssertThrowsError(try AnnexBFrameWriter(codec: .h264).write(makeH264SampleBuffer(isKeyFrame: false, avccBytes: avcc), to: consumer, logger: ControlCoreLoggerDouble())) { error in
-      guard case .malformedNALUnitLength(offset: 0, length: 200, remaining: 5) = error as? EncodedFrameWriterError else {
-        return XCTFail("Expected malformedNALUnitLength for the oversize prefix, got \(error)")
-      }
+    let error = #expect(throws: (any Error).self) {
+      try AnnexBFrameWriter(codec: .h264).write(makeH264SampleBuffer(isKeyFrame: false, avccBytes: avcc), to: consumer, logger: ControlCoreLoggerDouble())
     }
-    XCTAssertEqual(consumer.data().count, 0)
+    let isExpectedError = if case .malformedNALUnitLength(offset: 0, length: 200, remaining: 5)? = error as? EncodedFrameWriterError { true } else { false }
+    #expect(isExpectedError, "Expected malformedNALUnitLength for the oversize prefix, got \(String(describing: error))")
+    #expect(consumer.data().count == 0)
   }
 
-  func testAnnexBTrailingPartialPrefixIsRefused() throws {
+  @Test
+  func annexBTrailingPartialPrefixIsRefused() throws {
     let avcc: [UInt8] = [
       0x00, 0x00, 0x00, 0x02, 0x65, 0x88,
       0x00, 0x00, // two bytes where a prefix should be
     ]
     let consumer = FBDataBuffer.accumulatingBuffer()
-    XCTAssertThrowsError(try AnnexBFrameWriter(codec: .h264).write(makeH264SampleBuffer(isKeyFrame: false, avccBytes: avcc), to: consumer, logger: ControlCoreLoggerDouble()))
-    XCTAssertEqual(consumer.data().count, 0)
+    #expect(throws: (any Error).self) { try AnnexBFrameWriter(codec: .h264).write(makeH264SampleBuffer(isKeyFrame: false, avccBytes: avcc), to: consumer, logger: ControlCoreLoggerDouble()) }
+    #expect(consumer.data().count == 0)
   }
 
-  func testAnnexBTwoWellFormedNALUnitsBothGetStartCodes() throws {
+  @Test
+  func annexBTwoWellFormedNALUnitsBothGetStartCodes() throws {
     let avcc: [UInt8] = [
       0x00, 0x00, 0x00, 0x02, 0x65, 0x88,
       0x00, 0x00, 0x00, 0x03, 0x41, 0x9a, 0x00,
     ]
     let consumer = FBDataBuffer.accumulatingBuffer()
     try AnnexBFrameWriter(codec: .h264).write(makeH264SampleBuffer(isKeyFrame: false, avccBytes: avcc), to: consumer, logger: ControlCoreLoggerDouble())
-    XCTAssertEqual([UInt8](consumer.data()), [0x00, 0x00, 0x00, 0x01, 0x65, 0x88, 0x00, 0x00, 0x00, 0x01, 0x41, 0x9a, 0x00])
+    #expect([UInt8](consumer.data()) == [0x00, 0x00, 0x00, 0x01, 0x65, 0x88, 0x00, 0x00, 0x00, 0x01, 0x41, 0x9a, 0x00])
   }
 
-  func testH264AnnexBNotReadyBufferReturnsError() throws {
+  @Test
+  func h264AnnexBNotReadyBufferReturnsError() throws {
     let sampleBuffer = makeNotReadySampleBuffer()
     let consumer = FBDataBuffer.accumulatingBuffer()
     let logger = ControlCoreLoggerDouble()
     let writer = AnnexBFrameWriter(codec: .h264)
 
-    XCTAssertThrowsError(try writer.write(sampleBuffer, to: consumer, logger: logger)) { error in
-      XCTAssertTrue(error.localizedDescription.contains("Sample Buffer is not ready"))
-    }
-    XCTAssertEqual(consumer.data().count, 0, "No data should be written for not-ready buffer")
+    let error = #expect(throws: (any Error).self) { try writer.write(sampleBuffer, to: consumer, logger: logger) }
+    #expect(error?.localizedDescription.contains("Sample Buffer is not ready") == true)
+    #expect(consumer.data().count == 0, "No data should be written for not-ready buffer")
   }
 
   // MARK: - HEVC Writers
 
-  func testHEVCAnnexBKeyframeEmitsParameterSets() throws {
-    let sampleBuffer = try XCTUnwrap(makeHEVCSampleBuffer(isKeyFrame: true))
+  @Test
+  func hevcAnnexBKeyframeEmitsParameterSets() throws {
+    let sampleBuffer = try #require(makeHEVCSampleBuffer(isKeyFrame: true))
     let consumer = FBDataBuffer.accumulatingBuffer()
     let logger = ControlCoreLoggerDouble()
     let writer = AnnexBFrameWriter(codec: .hevc)
 
-    XCTAssertNoThrow(try writer.write(sampleBuffer, to: consumer, logger: logger))
+    #expect(throws: Never.self) { try writer.write(sampleBuffer, to: consumer, logger: logger) }
 
     let output = consumer.data()
 
     for (name, set) in [("VPS", hevcVPS), ("SPS", hevcSPS), ("PPS", hevcPPS)] {
       let range = (output as NSData).range(of: Data(set), options: [], in: NSRange(location: 0, length: output.count))
-      XCTAssertNotEqual(range.location, NSNotFound, "\(name) should be present for an HEVC keyframe")
+      #expect(range.location != NSNotFound, "\(name) should be present for an HEVC keyframe")
     }
 
-    XCTAssertEqual(output.subdata(in: 0..<4), Data([0x00, 0x00, 0x00, 0x01]))
+    #expect(output.subdata(in: 0..<4) == Data([0x00, 0x00, 0x00, 0x01]))
   }
 
   // MARK: - Writes Per Frame
 
-  func testAnnexBKeyframeCostsOneWrite() throws {
+  @Test
+  func annexBKeyframeCostsOneWrite() throws {
     let counting = CountingConsumer()
     try AnnexBFrameWriter(codec: .h264).write(makeH264SampleBuffer(isKeyFrame: true), to: counting.consumer, logger: ControlCoreLoggerDouble())
-    XCTAssertEqual(counting.writes, 1)
-    XCTAssertEqual(counting.bytes.count, 4 + 7 + 4 + 4 + 9)
+    #expect(counting.writes == 1)
+    #expect(counting.bytes.count == 4 + 7 + 4 + 4 + 9)
   }
 }
