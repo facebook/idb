@@ -349,11 +349,6 @@ extension Device {
     }
     return details
   }
-
-  /// Activates the device against Apple's activation servers, if it is not already activated.
-  public func activate() async throws {
-    try await DeviceActivationStrategy.activate(self)
-  }
 }
 
 extension Device {

@@ -51,20 +51,20 @@ extension DeviceActivationError: LocalizedError {
   }
 }
 
-final class DeviceActivationStrategy {
+extension Device {
 
   // MARK: - Activation
 
-  static func activate(_ device: Device) async throws {
-    let logger = device.logger
-    let state = try await activationState(device)
+  /// Activates the device against Apple's activation servers, if it is not already activated.
+  public func activate() async throws {
+    let state = try await queryActivationState()
     if state == DeviceActivationState.activated {
       logger.log("Device is already activated, nothing to activate")
       return
     }
     if state == DeviceActivationState.unactivated {
       logger.log("Device is not activated, starting activation")
-      try await performActivation(device)
+      try await performActivation()
       return
     }
     throw DeviceActivationError.invalidActivationState(state: String(describing: state))
@@ -72,32 +72,31 @@ final class DeviceActivationStrategy {
 
   // MARK: - Private
 
-  private static func confirmActivationState(_ device: Device, is activationState: DeviceActivationState) async throws {
-    let actual = try await self.activationState(device)
+  private func confirmActivationState(is activationState: DeviceActivationState) async throws {
+    let actual = try await queryActivationState()
     if activationState != actual {
       throw DeviceActivationError.activationStateMismatch(expected: String(describing: activationState), actual: String(describing: actual))
     }
   }
 
-  private static func performActivation(_ device: Device) async throws {
-    let logger = device.logger
-    try await confirmActivationState(device, is: DeviceActivationState.unactivated)
+  private func performActivation() async throws {
+    try await confirmActivationState(is: DeviceActivationState.unactivated)
     logger.log("Building DRM Handshake Payload")
-    let drmHandshakePayload = try await buildDRMHandshakePayload(device)
+    let drmHandshakePayload = try await buildDRMHandshakePayload()
     logger.log("Obtaining Activation record from DRM Handshake Payload")
-    let activationRecordPayload = try await activationRecordFromDRMHandshakePayload(device, handshakePayload: drmHandshakePayload)
+    let activationRecordPayload = try await activationRecordFromDRMHandshakePayload(drmHandshakePayload)
     logger.log("Performing activation from activation record")
-    try await activateFromActivationRecord(device, activationRecord: activationRecordPayload)
+    try await activateFromActivationRecord(activationRecordPayload)
     logger.log("Confirming activation state is Activated")
-    try await confirmActivationState(device, is: DeviceActivationState.activated)
+    try await confirmActivationState(is: DeviceActivationState.activated)
   }
 
-  private static func withMobileActivationService<T>(_ device: Device, _ body: (LockdownServiceConnection) async throws -> T) async throws -> T {
-    return try await device.withServiceConnection("com.apple.mobileactivationd", body)
+  private func withMobileActivationService<T>(_ body: (LockdownServiceConnection) async throws -> T) async throws -> T {
+    return try await withServiceConnection("com.apple.mobileactivationd", body)
   }
 
-  private static func activationState(_ device: Device) async throws -> DeviceActivationState {
-    try await withMobileActivationService(device) { connection in
+  private func queryActivationState() async throws -> DeviceActivationState {
+    try await withMobileActivationService { connection in
       let response = try connection.sendAndReceiveMessage(["Command": "GetActivationStateRequest"])
       guard let responseDict = response as? NSDictionary,
         let activationState = responseDict["Value"] as? String
@@ -108,32 +107,32 @@ final class DeviceActivationStrategy {
     }
   }
 
-  private static func buildDRMHandshakePayload(_ device: Device) async throws -> Data {
-    try await withMobileActivationService(device) { connection in
+  private func buildDRMHandshakePayload() async throws -> Data {
+    try await withMobileActivationService { connection in
       let response = try connection.sendAndReceiveMessage(["Command": "CreateTunnel1SessionInfoRequest"])
       guard let responseDict = response as? NSDictionary,
         let responsePayload = responseDict["Value"] as? [String: Any]
       else {
         throw DeviceActivationError.noValueInResponse(response: String(describing: response))
       }
-      return try await mobileActivationRequest(forRequestPayload: responsePayload)
+      return try await Self.mobileActivationRequest(forRequestPayload: responsePayload)
     }
   }
 
-  private static func activationRecordFromDRMHandshakePayload(_ device: Device, handshakePayload: Data) async throws -> Data {
-    try await withMobileActivationService(device) { connection in
+  private func activationRecordFromDRMHandshakePayload(_ handshakePayload: Data) async throws -> Data {
+    try await withMobileActivationService { connection in
       let response = try connection.sendAndReceiveMessage(["Command": "CreateTunnel1ActivationInfoRequest", "Value": handshakePayload])
       guard let responseDict = response as? NSDictionary,
         let responsePayload = responseDict["Value"] as? [String: Any]
       else {
         throw DeviceActivationError.noValueInResponse(response: String(describing: response))
       }
-      return try await mobileActivationActivate(forRequestPayload: responsePayload)
+      return try await Self.mobileActivationActivate(forRequestPayload: responsePayload)
     }
   }
 
-  private static func activateFromActivationRecord(_ device: Device, activationRecord: Data) async throws {
-    try await withMobileActivationService(device) { connection in
+  private func activateFromActivationRecord(_ activationRecord: Data) async throws {
+    try await withMobileActivationService { connection in
       _ = try connection.sendAndReceiveMessage(["Command": "HandleActivationInfoWithSessionRequest", "Value": activationRecord])
     }
   }
