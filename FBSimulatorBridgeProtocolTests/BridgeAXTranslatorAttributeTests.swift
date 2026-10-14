@@ -7,17 +7,20 @@
 
 import FBSimulatorBridgeProtocol
 import Foundation
-import XCTest
+import Testing
 
-final class BridgeAXTranslatorAttributeTests: XCTestCase {
-  func testTheNumberingCoversTheTranslatorsBoundExceptItsTwoUnprefixedNames() {
+@Suite
+struct BridgeAXTranslatorAttributeTests {
+
+  @Test
+  func theNumberingCoversTheTranslatorsBoundExceptItsTwoUnprefixedNames() {
     // 59 and 62 are `AXPUserTestingMarzipanSmuggledValues` and `AXPImageData`, which the framework names
     // without the `AXPAttribute` prefix.
-    XCTAssertEqual(
-      BridgeAXTranslatorAttribute.allCases.map(\.rawValue), Array(0...129).filter { $0 != 59 && $0 != 62 })
+    #expect(BridgeAXTranslatorAttribute.allCases.map(\.rawValue) == Array(0...129).filter { $0 != 59 && $0 != 62 })
   }
 
-  func testTheAttributesBothReadersFetchKeepTheirNumbers() {
+  @Test
+  func theAttributesBothReadersFetchKeepTheirNumbers() {
     let numbers: [BridgeAXTranslatorAttribute: Int] = [
       .children: 8, .customActions: 13, .frame: 21, .help: 23, .identifier: 25, .isEnabled: 27,
       .isFocused: 28, .isVisible: 32, .label: 33, .placeholderValue: 42, .role: 45, .roleDescription: 46,
@@ -25,23 +28,25 @@ final class BridgeAXTranslatorAttributeTests: XCTestCase {
       .memoryAddress: 128,
     ]
     for (attribute, number) in numbers {
-      XCTAssertEqual(attribute.rawValue, number, "\(attribute)")
+      #expect(attribute.rawValue == number, "\(attribute)")
     }
   }
 
-  func testAMultipleAttributeRequestIsTypeFiveAndCarriesItsListUnderAttributes() {
-    XCTAssertEqual(BridgeAXTranslatorRequestType.multipleAttribute.rawValue, 5)
-    XCTAssertEqual(BridgeAXTranslatorRequestType.attributesParameterKey, "attributes")
+  @Test
+  func aMultipleAttributeRequestIsTypeFiveAndCarriesItsListUnderAttributes() {
+    #expect(BridgeAXTranslatorRequestType.multipleAttribute.rawValue == 5)
+    #expect(BridgeAXTranslatorRequestType.attributesParameterKey == "attributes")
   }
 
-  func testRolesAndSubrolesAreNamedAsAppKitSpellsThem() {
-    XCTAssertEqual(BridgeAXTranslatorRole.allCases.map(\.rawValue), Array(1...21))
-    XCTAssertEqual(BridgeAXTranslatorRole(rawValue: 2)?.name, "Button")
-    XCTAssertEqual(BridgeAXTranslatorRole(rawValue: 4)?.name, "GenericElement")
-    XCTAssertEqual(BridgeAXTranslatorRole(rawValue: 16)?.name, "WebArea")
-    XCTAssertNil(BridgeAXTranslatorRole(rawValue: 0))
-    XCTAssertEqual(BridgeAXTranslatorSubrole.allCases.map(\.rawValue), Array(1...6))
-    XCTAssertEqual(BridgeAXTranslatorSubrole(rawValue: 3)?.name, "Switch")
-    XCTAssertNil(BridgeAXTranslatorSubrole(rawValue: 7))
+  @Test
+  func rolesAndSubrolesAreNamedAsAppKitSpellsThem() {
+    #expect(BridgeAXTranslatorRole.allCases.map(\.rawValue) == Array(1...21))
+    #expect(BridgeAXTranslatorRole(rawValue: 2)?.name == "Button")
+    #expect(BridgeAXTranslatorRole(rawValue: 4)?.name == "GenericElement")
+    #expect(BridgeAXTranslatorRole(rawValue: 16)?.name == "WebArea")
+    #expect(BridgeAXTranslatorRole(rawValue: 0) == nil)
+    #expect(BridgeAXTranslatorSubrole.allCases.map(\.rawValue) == Array(1...6))
+    #expect(BridgeAXTranslatorSubrole(rawValue: 3)?.name == "Switch")
+    #expect(BridgeAXTranslatorSubrole(rawValue: 7) == nil)
   }
 }
