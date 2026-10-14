@@ -8,9 +8,10 @@
 import Foundation
 @_implementationOnly import SimulatorFrameworkBridgeRuntime
 @_implementationOnly import SimulatorFrameworkBridgeSupport
-import XCTest
+import Testing
 
-final class QuiescenceTrackerTests: XCTestCase {
+@Suite
+final class QuiescenceTrackerTests {
   private var tracker = QuiescenceTracker(busyThreshold: 0.02, quietWindow: 0.25)
 
   private func requestBoth(at time: TimeInterval) {
@@ -18,65 +19,75 @@ final class QuiescenceTrackerTests: XCTestCase {
     tracker.requested(.animationsInactive, at: time)
   }
 
-  func testTheStateIsUnknownUntilEverySignalIsAnsweredOrBusy() {
+  @Test
+  func theStateIsUnknownUntilEverySignalIsAnsweredOrBusy() {
     requestBoth(at: 0)
-    XCTAssertNil(tracker.state(at: 0.01))
+    #expect(tracker.state(at: 0.01) == nil)
     tracker.answered(.runLoopIdle, at: 0.001)
-    XCTAssertNil(tracker.state(at: 0.01))
-    XCTAssertEqual(tracker.state(at: 0.02), .busy([.animationsInactive]))
+    #expect(tracker.state(at: 0.01) == nil)
+    #expect(tracker.state(at: 0.02) == .busy([.animationsInactive]))
   }
 
-  func testPromptAnswersSettleThenGoQuietOnceTheWindowPasses() {
+  @Test
+  func promptAnswersSettleThenGoQuietOnceTheWindowPasses() {
     requestBoth(at: 0)
     tracker.answered(.runLoopIdle, at: 0.001)
     tracker.answered(.animationsInactive, at: 0.002)
-    XCTAssertEqual(tracker.state(at: 0.1), .settling)
-    XCTAssertEqual(tracker.state(at: 0.252), .quiet)
+    #expect(tracker.state(at: 0.1) == .settling)
+    #expect(tracker.state(at: 0.252) == .quiet)
   }
 
-  func testAPromptReArmDoesNotRestartTheWindow() {
+  @Test
+  func aPromptReArmDoesNotRestartTheWindow() {
     requestBoth(at: 0)
     tracker.answered(.runLoopIdle, at: 0.001)
     tracker.answered(.animationsInactive, at: 0.001)
     tracker.requested(.runLoopIdle, at: 0.05)
     tracker.answered(.runLoopIdle, at: 0.051)
-    XCTAssertEqual(tracker.state(at: 0.251), .quiet)
+    #expect(tracker.state(at: 0.251) == .quiet)
   }
 
-  func testABusyAnswerRestartsTheWindowFromTheAnswer() {
+  @Test
+  func aBusyAnswerRestartsTheWindowFromTheAnswer() {
     requestBoth(at: 0)
     tracker.answered(.runLoopIdle, at: 0.001)
     tracker.answered(.animationsInactive, at: 0.001)
     tracker.requested(.animationsInactive, at: 1)
-    XCTAssertEqual(tracker.state(at: 1.5), .busy([.animationsInactive]))
+    #expect(tracker.state(at: 1.5) == .busy([.animationsInactive]))
     tracker.answered(.animationsInactive, at: 2)
-    XCTAssertEqual(tracker.state(at: 2.1), .settling)
-    XCTAssertEqual(tracker.state(at: 2.25), .quiet)
+    #expect(tracker.state(at: 2.1) == .settling)
+    #expect(tracker.state(at: 2.25) == .quiet)
   }
 
-  func testAnAnswerThatWasNotRequestedIsIgnored() {
+  @Test
+  func anAnswerThatWasNotRequestedIsIgnored() {
     tracker.answered(.runLoopIdle, at: 0)
     tracker.answered(.animationsInactive, at: 0)
-    XCTAssertNil(tracker.state(at: 1))
+    #expect(tracker.state(at: 1) == nil)
   }
 
-  func testTheNextDeadlineIsTheEarliestThresholdOrWindowEnd() throws {
+  @Test
+  func theNextDeadlineIsTheEarliestThresholdOrWindowEnd() throws {
     requestBoth(at: 0)
-    XCTAssertEqual(try XCTUnwrap(tracker.nextDeadline(after: 0)), 0.02, accuracy: 1e-9)
+    let firstDeadline = try #require(tracker.nextDeadline(after: 0))
+    #expect(abs(firstDeadline - 0.02) <= 1e-9)
     tracker.answered(.runLoopIdle, at: 0.001)
     tracker.answered(.animationsInactive, at: 0.004)
-    XCTAssertEqual(try XCTUnwrap(tracker.nextDeadline(after: 0.01)), 0.254, accuracy: 1e-9)
+    let windowDeadline = try #require(tracker.nextDeadline(after: 0.01))
+    #expect(abs(windowDeadline - 0.254) <= 1e-9)
     tracker.requested(.runLoopIdle, at: 0.1)
-    XCTAssertEqual(try XCTUnwrap(tracker.nextDeadline(after: 0.1)), 0.12, accuracy: 1e-9)
-    XCTAssertNil(tracker.nextDeadline(after: 0.3), "a busy signal changes only when it is answered")
+    let thresholdDeadline = try #require(tracker.nextDeadline(after: 0.1))
+    #expect(abs(thresholdDeadline - 0.12) <= 1e-9)
+    #expect(tracker.nextDeadline(after: 0.3) == nil, "a busy signal changes only when it is answered")
   }
 
-  func testResetForgetsEverything() {
+  @Test
+  func resetForgetsEverything() {
     requestBoth(at: 0)
     tracker.answered(.runLoopIdle, at: 0.001)
     tracker.answered(.animationsInactive, at: 0.001)
     tracker.reset()
-    XCTAssertNil(tracker.state(at: 1))
-    XCTAssertNil(tracker.nextDeadline(after: 1))
+    #expect(tracker.state(at: 1) == nil)
+    #expect(tracker.nextDeadline(after: 1) == nil)
   }
 }
