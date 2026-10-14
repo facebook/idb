@@ -138,12 +138,18 @@ final class AXTranslationRequest {
       return AXElementSnapshot.read(element, plan: plan, token: token, mode: reads)
     }
     let translator = self.translator
+    let token = self.token
     let reader = AXRawTranslationReader(
       transport: transport, clientType: clientType, timeout: requestTimeoutSeconds, collector: collector, token: token
     ) { reference in
       // Sent by message: the translation is typed by protocol here, so test doubles can stand in for it.
-      translator?.perform(NSSelectorFromString("macPlatformElementFromTranslation:"), with: reference)?
+      let element =
+        translator?.perform(NSSelectorFromString("macPlatformElementFromTranslation:"), with: reference)?
         .takeUnretainedValue() as? AXWritableElement
+      // The translator caches elements by translation, and a cached element keeps the token it was built with:
+      // without this read's token an action on it reaches no read.
+      element?.axSetBridgeDelegateToken(token)
+      return element
     }
     return reader.read(reference, plan: plan)
   }

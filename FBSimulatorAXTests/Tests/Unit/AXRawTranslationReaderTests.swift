@@ -198,9 +198,7 @@ final class AXRawTranslationReaderTests: XCTestCase {
     let snapshot = request.snapshot(of: root, plan: AXReadPlan(attributes: [.label], depth: .limited(1)), reads: .raw)
 
     XCTAssertTrue(snapshot.children.first?.handle as AnyObject === cached, "the handle is the translator's element")
-    // BUG: the handle keeps the closed read's token, so an action on it reaches no read and is answered empty —
-    // flipped in the following commit.
-    XCTAssertEqual(cached.translation.bridgeDelegateToken, "an earlier read")
+    XCTAssertEqual(cached.translation.bridgeDelegateToken, request.token, "an action on the handle reaches this read")
   }
 
   func testARequestWithoutATransportReadsThroughTheElement() {
