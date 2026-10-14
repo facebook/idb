@@ -6,12 +6,14 @@
  */
 
 @testable import FBSimulatorControl
-import XCTest
+import Foundation
+import Testing
 import XPC
 
 /// The CoreDevice action envelope every one-shot and streaming request shares, and the error
 /// envelope every reply parser has to recognise.
-final class SimulatorCoreDeviceEnvelopeTests: XCTestCase {
+@Suite
+struct SimulatorCoreDeviceEnvelopeTests {
 
   private func request(version: String = "651.13.4", input: some Encodable = CoreDeviceEmptyInput()) throws -> xpc_object_t {
     try CoreDeviceRequest(
@@ -19,79 +21,85 @@ final class SimulatorCoreDeviceEnvelopeTests: XCTestCase {
     ).encoded()
   }
 
-  func testRequestCarriesEveryEnvelopeKeyWithItsWireType() throws {
+  @Test
+  func requestCarriesEveryEnvelopeKeyWithItsWireType() throws {
     let request = try request()
-    XCTAssertEqual(xpc_get_type(request), XPC_TYPE_DICTIONARY)
-    XCTAssertEqual(xpc_dictionary_get_count(request), 6)
+    #expect(xpc_get_type(request) == XPC_TYPE_DICTIONARY)
+    #expect(xpc_dictionary_get_count(request) == 6)
 
     let strings = [
       "CoreDevice.actionIdentifier": "com.apple.coredevice.action.example",
       "CoreDevice.deviceIdentifier": "0000-DEVICE",
     ]
     for (key, expected) in strings {
-      let value = try XCTUnwrap(xpc_dictionary_get_value(request, key), key)
-      XCTAssertEqual(xpc_get_type(value), XPC_TYPE_STRING, key)
-      XCTAssertEqual(String(cString: xpc_string_get_string_ptr(value)!), expected, key)
+      let value = try #require(xpc_dictionary_get_value(request, key), "\(key)")
+      #expect(xpc_get_type(value) == XPC_TYPE_STRING, "\(key)")
+      #expect(String(cString: xpc_string_get_string_ptr(value)!) == expected, "\(key)")
     }
 
-    let protocolVersion = try XCTUnwrap(xpc_dictionary_get_value(request, "CoreDevice.CoreDeviceDDIProtocolVersion"))
-    XCTAssertEqual(xpc_get_type(protocolVersion), XPC_TYPE_INT64)
-    XCTAssertEqual(xpc_int64_get_value(protocolVersion), 1)
+    let protocolVersion = try #require(xpc_dictionary_get_value(request, "CoreDevice.CoreDeviceDDIProtocolVersion"))
+    #expect(xpc_get_type(protocolVersion) == XPC_TYPE_INT64)
+    #expect(xpc_int64_get_value(protocolVersion) == 1)
 
-    let input = try XCTUnwrap(xpc_dictionary_get_value(request, "CoreDevice.input"))
-    XCTAssertEqual(xpc_get_type(input), XPC_TYPE_DICTIONARY)
-    XCTAssertEqual(xpc_dictionary_get_count(input), 0)
+    let input = try #require(xpc_dictionary_get_value(request, "CoreDevice.input"))
+    #expect(xpc_get_type(input) == XPC_TYPE_DICTIONARY)
+    #expect(xpc_dictionary_get_count(input) == 0)
   }
 
-  func testRequestEncodesTheInstalledVersionAsComponentsAndString() throws {
+  @Test
+  func requestEncodesTheInstalledVersionAsComponentsAndString() throws {
     let request = try request(version: "651.13.4")
-    let version = try XCTUnwrap(xpc_dictionary_get_dictionary(request, "CoreDevice.coreDeviceVersion"))
-    XCTAssertEqual(xpc_dictionary_get_count(version), 3)
+    let version = try #require(xpc_dictionary_get_dictionary(request, "CoreDevice.coreDeviceVersion"))
+    #expect(xpc_dictionary_get_count(version) == 3)
 
-    let components = try XCTUnwrap(xpc_dictionary_get_array(version, "components"))
-    XCTAssertEqual(xpc_array_get_count(components), 3)
+    let components = try #require(xpc_dictionary_get_array(version, "components"))
+    #expect(xpc_array_get_count(components) == 3)
     for (index, expected) in [651, 13, 4].enumerated() {
       let component = xpc_array_get_value(components, index)
-      XCTAssertEqual(xpc_get_type(component), XPC_TYPE_UINT64)
-      XCTAssertEqual(xpc_uint64_get_value(component), UInt64(expected))
+      #expect(xpc_get_type(component) == XPC_TYPE_UINT64)
+      #expect(xpc_uint64_get_value(component) == UInt64(expected))
     }
 
-    let count = try XCTUnwrap(xpc_dictionary_get_value(version, "originalComponentsCount"))
-    XCTAssertEqual(xpc_get_type(count), XPC_TYPE_INT64)
-    XCTAssertEqual(xpc_int64_get_value(count), 3)
+    let count = try #require(xpc_dictionary_get_value(version, "originalComponentsCount"))
+    #expect(xpc_get_type(count) == XPC_TYPE_INT64)
+    #expect(xpc_int64_get_value(count) == 3)
 
-    let string = try XCTUnwrap(xpc_dictionary_get_value(version, "stringValue"))
-    XCTAssertEqual(xpc_get_type(string), XPC_TYPE_STRING)
-    XCTAssertEqual(String(cString: xpc_string_get_string_ptr(string)!), "651.13.4")
+    let string = try #require(xpc_dictionary_get_value(version, "stringValue"))
+    #expect(xpc_get_type(string) == XPC_TYPE_STRING)
+    #expect(String(cString: xpc_string_get_string_ptr(string)!) == "651.13.4")
   }
 
-  func testRequestPassesTheInputThrough() throws {
+  @Test
+  func requestPassesTheInputThrough() throws {
     struct Input: Encodable {
       let flag = true
     }
     let request = try request(input: Input())
-    let carried = try XCTUnwrap(xpc_dictionary_get_value(request, "CoreDevice.input"))
-    XCTAssertTrue(xpc_dictionary_get_bool(carried, "flag"))
+    let carried = try #require(xpc_dictionary_get_value(request, "CoreDevice.input"))
+    #expect(xpc_dictionary_get_bool(carried, "flag"))
   }
 
-  func testEachRequestHasAFreshInvocationIdentifier() throws {
+  @Test
+  func eachRequestHasAFreshInvocationIdentifier() throws {
     var identifiers: Set<String> = []
     for _ in 0..<3 {
-      let value = try XCTUnwrap(xpc_dictionary_get_value(try request(), "CoreDevice.invocationIdentifier"))
-      XCTAssertEqual(xpc_get_type(value), XPC_TYPE_STRING)
+      let value = try #require(xpc_dictionary_get_value(try request(), "CoreDevice.invocationIdentifier"))
+      #expect(xpc_get_type(value) == XPC_TYPE_STRING)
       let identifier = String(cString: xpc_string_get_string_ptr(value)!)
-      XCTAssertNotNil(UUID(uuidString: identifier), identifier)
+      #expect(UUID(uuidString: identifier) != nil, "\(identifier)")
       identifiers.insert(identifier)
     }
-    XCTAssertEqual(identifiers.count, 3)
+    #expect(identifiers.count == 3)
   }
 
-  func testRequestRejectsVersionsThatAreNotDottedIntegers() {
+  @Test
+  func requestRejectsVersionsThatAreNotDottedIntegers() throws {
     for version in ["", "651..4", "a.b", "651.13.4-beta", "-1.2", "1.2."] {
-      XCTAssertThrowsError(try request(version: version), version) { error in
-        guard case SimulatorCoreDeviceError.unavailable = error else {
-          return XCTFail("Expected an unavailable error for \(version), got \(error)")
-        }
+      let error = #expect(throws: (any Error).self, "\(version)") { try request(version: version) }
+      guard let error else { continue }
+      guard case SimulatorCoreDeviceError.unavailable = error else {
+        Issue.record("Expected an unavailable error for \(version), got \(error)")
+        continue
       }
     }
   }
@@ -104,49 +112,65 @@ final class SimulatorCoreDeviceEnvelopeTests: XCTestCase {
     ])
   }
 
-  func testEveryReplyParserSurfacesTheProviderErrorAsUnavailable() throws {
+  @Test
+  func everyReplyParserSurfacesTheProviderErrorAsUnavailable() throws {
     let reply = errorReply()
-    XCTAssertEqual(SimulatorDisplayProtocol.report(reply), .failed(.unavailable("com.example.provider (7)")))
-    XCTAssertThrowsError(try SimulatorMotionCapability.hingeAngle.requireSupported(in: reply)) { error in
-      guard case let SimulatorCoreDeviceError.unavailable(detail) = error else { return XCTFail("Capability: \(error)") }
-      XCTAssertEqual(detail, "com.example.provider (7)")
+    #expect(SimulatorDisplayProtocol.report(reply) == .failed(.unavailable("com.example.provider (7)")))
+    let capabilityError = try #require(#expect(throws: (any Error).self) { try SimulatorMotionCapability.hingeAngle.requireSupported(in: reply) })
+    if case let SimulatorCoreDeviceError.unavailable(detail) = capabilityError {
+      #expect(detail == "com.example.provider (7)")
+    } else {
+      Issue.record("Capability: \(capabilityError)")
     }
-    XCTAssertThrowsError(try CoreDeviceReply.validate(reply)) { error in
-      guard case let SimulatorCoreDeviceError.unavailable(detail) = error else { return XCTFail("Stream final reply: \(error)") }
-      XCTAssertEqual(detail, "com.example.provider (7)")
+    let streamError = try #require(#expect(throws: (any Error).self) { try CoreDeviceReply.validate(reply) })
+    if case let SimulatorCoreDeviceError.unavailable(detail) = streamError {
+      #expect(detail == "com.example.provider (7)")
+    } else {
+      Issue.record("Stream final reply: \(streamError)")
     }
   }
 
-  func testAMalformedProviderErrorIsStillAnError() {
+  @Test
+  func aMalformedProviderErrorIsStillAnError() {
     let malformed = [
       errorReply(domain: xpc_int64_create(1)),
       errorReply(code: xpc_string_create("7")),
       SimulatorCoreDevice.dictionary(["CoreDevice.error": xpc_string_create("boom")]),
     ]
     for reply in malformed {
-      guard case .failed = SimulatorDisplayProtocol.report(reply) else { return XCTFail("Display report: \(reply)") }
-      XCTAssertThrowsError(try SimulatorMotionCapability.hingeAngle.requireSupported(in: reply))
-      XCTAssertThrowsError(try CoreDeviceReply.validate(reply))
+      guard case .failed = SimulatorDisplayProtocol.report(reply) else {
+        Issue.record("Display report: \(reply)")
+        return
+      }
+      #expect(throws: (any Error).self) { try SimulatorMotionCapability.hingeAngle.requireSupported(in: reply) }
+      #expect(throws: (any Error).self) { try CoreDeviceReply.validate(reply) }
     }
   }
 
-  func testARepliedErrorTakesPrecedenceOverAValidOutput() throws {
+  @Test
+  func aRepliedErrorTakesPrecedenceOverAValidOutput() throws {
     let reply = errorReply()
     xpc_dictionary_set_value(
       reply, "CoreDevice.output",
       SimulatorCoreDevice.dictionary(["hingeAngle": xpc_bool_create(true)]))
-    XCTAssertThrowsError(try SimulatorMotionCapability.hingeAngle.requireSupported(in: reply)) { error in
-      guard case SimulatorCoreDeviceError.unavailable = error else { return XCTFail("Capability: \(error)") }
+    let error = try #require(#expect(throws: (any Error).self) { try SimulatorMotionCapability.hingeAngle.requireSupported(in: reply) })
+    if case SimulatorCoreDeviceError.unavailable = error {
+    } else {
+      Issue.record("Capability: \(error)")
     }
-    XCTAssertThrowsError(try CoreDeviceReply.validate(reply))
+    #expect(throws: (any Error).self) { try CoreDeviceReply.validate(reply) }
   }
 
-  func testARepliedOutputThatIsNotADictionaryIsRejected() {
+  @Test
+  func aRepliedOutputThatIsNotADictionaryIsRejected() {
     for output: xpc_object_t in [xpc_null_create(), xpc_string_create("ok"), xpc_array_create(nil, 0)] {
       let reply = SimulatorCoreDevice.dictionary(["CoreDevice.output": output])
-      guard case .failed = SimulatorDisplayProtocol.report(reply) else { return XCTFail("Display report: \(reply)") }
-      XCTAssertThrowsError(try SimulatorMotionCapability.hingeAngle.requireSupported(in: reply))
-      XCTAssertThrowsError(try CoreDeviceReply.validate(reply))
+      guard case .failed = SimulatorDisplayProtocol.report(reply) else {
+        Issue.record("Display report: \(reply)")
+        return
+      }
+      #expect(throws: (any Error).self) { try SimulatorMotionCapability.hingeAngle.requireSupported(in: reply) }
+      #expect(throws: (any Error).self) { try CoreDeviceReply.validate(reply) }
     }
   }
 }
