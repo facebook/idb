@@ -152,10 +152,6 @@ public final class IDBCommandExecutor {
   }
 
   /// Describes the single element `query` names, serialized in `options.format`.
-  public func accessibilityDescribe(query: AccessibilityElementQuery, options: AccessibilityRequestOptions, backend: UIAutomationBackend = .accessibility) async throws -> Data {
-    try await accessibilityDescribeResponse(query: query, options: options, backend: backend)
-      .formattedOutputJSON(format: options.format)
-  }
 
   /// The read itself, before it is formatted, so a caller can also report how the read went.
   public func accessibilityDescribeResponse(
