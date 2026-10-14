@@ -404,10 +404,6 @@ public final class IDBCommandExecutor {
     return try await target.application.launch(derived)
   }
 
-  public func crashList(_ predicate: CrashLogPredicate) async throws -> [CrashLogInfo] {
-    return try await target.crashLog.crashes(matching: predicate, useCache: false)
-  }
-
   public func crashShow(_ predicate: CrashLogPredicate) async throws -> CrashReport {
     let crashArray = try await target.crashLog.crashes(matching: predicate, useCache: true)
     if crashArray.count > 1 {
@@ -417,10 +413,6 @@ public final class IDBCommandExecutor {
       throw IDBCommandError.noCrashLogs(predicateDescription: String(describing: predicate))
     }
     return try first.obtainCrashLog()
-  }
-
-  public func crashDelete(_ predicate: CrashLogPredicate) async throws -> [CrashLogInfo] {
-    return try await target.crashLog.prune(matching: predicate)
   }
 
   public func xctestRun(_ request: XCTestRunRequest, reporter: XCTestReporter, logger: ControlCoreLogger) async throws -> IDBTestOperation {

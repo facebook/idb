@@ -11,11 +11,11 @@ import IDBGRPCSwift
 
 struct CrashListMethodHandler {
 
-  let commandExecutor: IDBCommandExecutor
+  let target: CompanionTarget
 
   func handle(request: Idb_CrashLogQuery, context: ServerContext) async throws -> Idb_CrashLogResponse {
     let predicate = CrashLogQueryTranslation.predicate(from: request)
-    let crashes = try await commandExecutor.crashList(predicate)
+    let crashes = try await target.crashLog.crashes(matching: predicate, useCache: false)
     return Idb_CrashLogResponse.with {
       $0.list = crashes.map(CrashLogInfoTranslation.responseCrashLogInfo(from:))
     }
@@ -42,11 +42,11 @@ struct CrashShowMethodHandler {
 
 struct CrashDeleteMethodHandler {
 
-  let commandExecutor: IDBCommandExecutor
+  let target: CompanionTarget
 
   func handle(request: Idb_CrashLogQuery, context: ServerContext) async throws -> Idb_CrashLogResponse {
     let predicate = CrashLogQueryTranslation.predicate(from: request)
-    let crashes = try await commandExecutor.crashDelete(predicate)
+    let crashes = try await target.crashLog.prune(matching: predicate)
     return .with {
       $0.list = crashes.map(CrashLogInfoTranslation.responseCrashLogInfo(from:))
     }

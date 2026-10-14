@@ -418,14 +418,14 @@ final class CompanionServiceProvider: Idb_CompanionService.SimpleServiceProtocol
 
   func crash_delete(request: Idb_CrashLogQuery, context: ServerContext) async throws -> Idb_CrashLogResponse {
     return try await trackedUnaryCall(context, request: request) {
-      try await CrashDeleteMethodHandler(commandExecutor: commandExecutor)
+      try await CrashDeleteMethodHandler(target: target)
         .handle(request: request, context: context)
     }
   }
 
   func crash_list(request: Idb_CrashLogQuery, context: ServerContext) async throws -> Idb_CrashLogResponse {
     return try await trackedUnaryCall(context, request: request) {
-      try await CrashListMethodHandler(commandExecutor: commandExecutor)
+      try await CrashListMethodHandler(target: target)
         .handle(request: request, context: context)
     }
   }
