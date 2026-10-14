@@ -9,19 +9,20 @@ import Darwin
 import FBSimulatorBridgeProtocol
 @testable import FBSimulatorControl
 import Foundation
-import XCTest
+import Testing
 
 /// A streamed response read off a connection whose far end is a socket this test plays the guest on.
-final class AXBridgeStreamTests: XCTestCase {
+@Suite
+final class AXBridgeStreamTests {
 
   private var host: Int32 = -1
   private var guest: Int32 = -1
   private var connection: SimulatorFrameworkBridgeConnection?
   private let request = BridgeRequest(command: .accessibility(.quiescence(pid: nil, busyThresholdMs: nil, quietWindowMs: nil)))
 
-  override func setUpWithError() throws {
+  init() {
     var pair: [Int32] = [-1, -1]
-    XCTAssertEqual(socketpair(AF_UNIX, SOCK_STREAM, 0, &pair), 0)
+    #expect(socketpair(AF_UNIX, SOCK_STREAM, 0, &pair) == 0)
     connection = SimulatorFrameworkBridgeConnection(fileDescriptor: pair[0], ownership: .shared(nil))
     host = pair[0]
     guest = pair[1]
@@ -30,7 +31,7 @@ final class AXBridgeStreamTests: XCTestCase {
     setsockopt(host, SOL_SOCKET, SO_NOSIGPIPE, &noSigPipe, socklen_t(MemoryLayout<Int32>.size))
   }
 
-  override func tearDownWithError() throws {
+  deinit {
     connection = nil
     if guest >= 0 {
       close(guest)
@@ -54,9 +55,10 @@ final class AXBridgeStreamTests: XCTestCase {
     guest = -1
   }
 
-  func testTheRequestIsSentAndEveryResultIsYieldedUntilTheGuestCloses() async throws {
-    let stream = try XCTUnwrap(connection).stream(request)
-    XCTAssertEqual(try readGuestRequest(), request)
+  @Test
+  func theRequestIsSentAndEveryResultIsYieldedUntilTheGuestCloses() async throws {
+    let stream = try #require(connection).stream(request)
+    #expect(try readGuestRequest() == request)
     try writeGuestResult(event("one"))
     try writeGuestResult(event("two"))
     closeGuest()
@@ -65,55 +67,59 @@ final class AXBridgeStreamTests: XCTestCase {
     for try await result in stream {
       results.append(result)
     }
-    XCTAssertEqual(results, [event("one"), event("two")])
+    #expect(results == [event("one"), event("two")])
   }
 
-  func testAFrameAnsweringAnotherRequestIsAnError() async throws {
-    let stream = try XCTUnwrap(connection).stream(request)
+  @Test
+  func aFrameAnsweringAnotherRequestIsAnError() async throws {
+    let stream = try #require(connection).stream(request)
     _ = try readGuestRequest()
     try writeGuestResult(event("one"), id: "someone-else")
     do {
       for try await _ in stream {}
-      XCTFail("a frame for another request must not be yielded")
+      Issue.record("a frame for another request must not be yielded")
     } catch {
-      XCTAssertEqual(error as? BridgeProtocolError, .mismatchedResponse)
+      #expect(error as? BridgeProtocolError == .mismatchedResponse)
     }
   }
 
-  func testAGuestThatClosesMidFrameIsAnError() async throws {
-    let stream = try XCTUnwrap(connection).stream(request)
+  @Test
+  func aGuestThatClosesMidFrameIsAnError() async throws {
+    let stream = try #require(connection).stream(request)
     _ = try readGuestRequest()
     let header: [UInt8] = [0, 0, 0, 9, 0x61]
-    XCTAssertEqual(send(guest, header, header.count, 0), header.count)
+    #expect(send(guest, header, header.count, 0) == header.count)
     closeGuest()
     do {
       for try await _ in stream {}
-      XCTFail("a truncated frame must not read as the end of the stream")
+      Issue.record("a truncated frame must not read as the end of the stream")
     } catch {
-      XCTAssertTrue(error.localizedDescription.contains("serve socket closed by peer"), error.localizedDescription)
+      #expect(error.localizedDescription.contains("serve socket closed by peer"), "\(error.localizedDescription)")
     }
   }
 
   // Nothing bounds the silence between frames: a quiet application sends nothing for as long as it stays quiet.
-  func testTheReceiveDeadlineIsLiftedForAStream() async throws {
+  @Test
+  func theReceiveDeadlineIsLiftedForAStream() async throws {
     var deadline = timeval(tv_sec: SimulatorFrameworkBridgeConnection.receiveTimeoutSeconds, tv_usec: 0)
     setsockopt(host, SOL_SOCKET, SO_RCVTIMEO, &deadline, socklen_t(MemoryLayout<timeval>.size))
-    let stream = try XCTUnwrap(connection).stream(request)
+    let stream = try #require(connection).stream(request)
     _ = try readGuestRequest()
 
     var lifted = timeval(tv_sec: -1, tv_usec: -1)
     var length = socklen_t(MemoryLayout<timeval>.size)
-    XCTAssertEqual(getsockopt(host, SOL_SOCKET, SO_RCVTIMEO, &lifted, &length), 0)
-    XCTAssertEqual(lifted.tv_sec, 0)
-    XCTAssertEqual(lifted.tv_usec, 0)
+    #expect(getsockopt(host, SOL_SOCKET, SO_RCVTIMEO, &lifted, &length) == 0)
+    #expect(lifted.tv_sec == 0)
+    #expect(lifted.tv_usec == 0)
     closeGuest()
     for try await _ in stream {}
   }
 
   // The guest learns the consumer has gone from the connection closing, so it can stop and exit.
-  func testAConsumerThatStopsClosesTheConnection() async throws {
-    try await consumeFirstResult(of: XCTUnwrap(connection).stream(request))
-    XCTAssertNil(try SimulatorFrameworkBridgeConnection.readFrameUnlessClosed(guest, guest: nil))
+  @Test
+  func aConsumerThatStopsClosesTheConnection() async throws {
+    try await consumeFirstResult(of: #require(connection).stream(request))
+    #expect(try SimulatorFrameworkBridgeConnection.readFrameUnlessClosed(guest, guest: nil) == nil)
   }
 
   // Takes the stream so that it is released on return, as a consumer that stops would release it.
@@ -121,53 +127,56 @@ final class AXBridgeStreamTests: XCTestCase {
     _ = try readGuestRequest()
     try writeGuestResult(event("first"))
     for try await result in stream {
-      XCTAssertEqual(result, event("first"))
+      #expect(result == event("first"))
       break
     }
   }
 
-  func testTheTransportYieldsEachResultAsItsAccessibilityResponse() async throws {
-    let connection = try XCTUnwrap(connection)
+  @Test
+  func theTransportYieldsEachResultAsItsAccessibilityResponse() async throws {
+    let connection = try #require(connection)
     let transport = SimulatorFrameworkBridgePersistentTransport(connector: StreamOnlyConnector(stream: connection))
     let stream = try await transport.stream(.quiescence(pid: 42, busyThresholdMs: nil, quietWindowMs: nil))
     let sent = try readGuestRequest()
-    XCTAssertEqual(sent.command, .accessibility(.quiescence(pid: 42, busyThresholdMs: nil, quietWindowMs: nil)))
+    #expect(sent.command == .accessibility(.quiescence(pid: 42, busyThresholdMs: nil, quietWindowMs: nil)))
     try SimulatorFrameworkBridgeConnection.writeFrame(guest, BridgeResponse(request: sent, result: event("one")).encoded())
     closeGuest()
 
     var envelopes: [NSDictionary] = []
     for try await data in stream {
-      envelopes.append(try XCTUnwrap(JSONSerialization.jsonObject(with: data) as? NSDictionary))
+      envelopes.append(try #require(JSONSerialization.jsonObject(with: data) as? NSDictionary))
     }
-    XCTAssertEqual(envelopes, [["ok": true, "event": "one"]])
+    #expect(envelopes == [["ok": true, "event": "one"]])
   }
 
   // A consumer cancelled mid-silence, as a cancelled RPC is, must still reach the guest so that it stops.
-  func testCancellingTheTransportsConsumerClosesTheConnection() async throws {
+  @Test
+  func cancellingTheTransportsConsumerClosesTheConnection() async throws {
     var deadline = timeval(tv_sec: 5, tv_usec: 0)
     setsockopt(guest, SOL_SOCKET, SO_RCVTIMEO, &deadline, socklen_t(MemoryLayout<timeval>.size))
-    let connection = try XCTUnwrap(connection)
+    let connection = try #require(connection)
     let transport = SimulatorFrameworkBridgePersistentTransport(connector: StreamOnlyConnector(stream: connection))
     let stream = try await transport.stream(.quiescence(pid: nil, busyThresholdMs: nil, quietWindowMs: nil))
     _ = try readGuestRequest()
     let consumer = Task { for try await _ in stream {} }
     consumer.cancel()
     _ = await consumer.result
-    XCTAssertNil(try SimulatorFrameworkBridgeConnection.readFrameUnlessClosed(guest, guest: nil))
+    #expect(try SimulatorFrameworkBridgeConnection.readFrameUnlessClosed(guest, guest: nil) == nil)
   }
 
-  func testAQuiescenceRequestCarriesItsTunables() throws {
+  @Test
+  func aQuiescenceRequestCarriesItsTunables() throws {
     let request = AXBridgeRequest.quiescence(pid: 42, busyThresholdMs: 5, quietWindowMs: 7)
-    XCTAssertEqual(
-      request.payload as NSDictionary,
-      ["verb": "quiet", "pid": 42, "busyThresholdMs": 5, "quietWindowMs": 7])
-    XCTAssertFalse(request.mayRetry)
+    #expect(
+      request.payload as NSDictionary == ["verb": "quiet", "pid": 42, "busyThresholdMs": 5, "quietWindowMs": 7])
+    #expect(!request.mayRetry)
   }
 
   // Absent rather than zero: zero is a real tunable, and an absent one takes the guest's default.
-  func testAQuiescenceRequestFollowingTheFrontmostOmitsWhatWasNotGiven() throws {
+  @Test
+  func aQuiescenceRequestFollowingTheFrontmostOmitsWhatWasNotGiven() throws {
     let request = AXBridgeRequest.quiescence(pid: nil, busyThresholdMs: nil, quietWindowMs: nil)
-    XCTAssertEqual(request.payload as NSDictionary, ["verb": "quiet"])
+    #expect(request.payload as NSDictionary == ["verb": "quiet"])
   }
 }
 
