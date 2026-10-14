@@ -35,7 +35,7 @@ struct InstallMethodHandlerStreamTests {
   }
 
   /// `payload` as a client streams it, in frames.
-  private static func request(_ destination: Idb_InstallRequest.Destination, streaming payload: Data, compression: FBCompressionFormat = .GZIP) -> InstallRequest {
+  private static func request(_ destination: Idb_InstallRequest.Destination, streaming payload: Data, compression: CompressionFormat = .GZIP) -> InstallRequest {
     let frames = stride(from: payload.startIndex, to: payload.endIndex, by: 64 * 1024).map { payload[$0..<min($0 + 64 * 1024, payload.endIndex)] }
     let rest = AsyncThrowingStream<Data, any Error> { continuation in
       frames.dropFirst().forEach { continuation.yield(Data($0)) }

@@ -75,7 +75,7 @@ struct InstallHeader: Equatable {
   var overrideModificationTime = false
   var skipSigningBundles = false
   var linkDsymToBundle: Idb_InstallRequest.LinkDsymToBundle?
-  var compression = FBCompressionFormat.GZIP
+  var compression = CompressionFormat.GZIP
   /// The first payload frame. A data payload continues in the frames after it.
   var payload: Idb_Payload
 
@@ -112,7 +112,7 @@ struct InstallHeader: Equatable {
           return header
         }
         option = "compression"
-        header.compression = FBCompressionFormat(format)
+        header.compression = CompressionFormat(format)
       case .destination:
         option = "destination"
       case nil:

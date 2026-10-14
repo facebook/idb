@@ -10,7 +10,7 @@ import FBControlCore
 import Foundation
 import IDBGRPCSwift
 
-extension FBCompressionFormat {
+extension CompressionFormat {
   /// A compression the companion does not recognize is read as gzip, which is also what a stream without a compression frame uses.
   init(_ compression: Idb_Payload.Compression) {
     switch compression {
@@ -23,7 +23,7 @@ extension FBCompressionFormat {
 }
 
 extension Idb_Payload.Compression {
-  init(_ format: FBCompressionFormat) {
+  init(_ format: CompressionFormat) {
     switch format {
     case .GZIP:
       self = .gzip
