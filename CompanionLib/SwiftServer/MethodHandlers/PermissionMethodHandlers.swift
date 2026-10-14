@@ -35,11 +35,11 @@ struct ApproveMethodHandler {
     )
     if services.contains(.url) {
       services.remove(.url)
-      try await commandExecutor.approve_deeplink(request.scheme, for_application: request.bundleID)
+      try await commandExecutor.approveDeeplink(request.scheme, forApplication: request.bundleID)
     }
 
     if !services.isEmpty {
-      try await commandExecutor.approve(services, for_application: request.bundleID)
+      try await commandExecutor.approve(services, forApplication: request.bundleID)
     }
     return .init()
   }
@@ -71,11 +71,11 @@ struct RevokeMethodHandler {
     )
     if services.contains(.url) {
       services.remove(.url)
-      try await commandExecutor.revoke_deeplink(request.scheme, for_application: request.bundleID)
+      try await commandExecutor.revokeDeeplink(request.scheme, forApplication: request.bundleID)
     }
 
     if !services.isEmpty {
-      try await commandExecutor.revoke(services, for_application: request.bundleID)
+      try await commandExecutor.revoke(services, forApplication: request.bundleID)
     }
     return .init()
   }

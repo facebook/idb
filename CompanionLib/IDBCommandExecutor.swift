@@ -310,19 +310,19 @@ public final class IDBCommandExecutor {
     try await simulatorTarget().keychain.clear()
   }
 
-  public func approve(_ services: Set<TargetSettingsService>, for_application bundleID: String) async throws {
+  public func approve(_ services: Set<TargetSettingsService>, forApplication bundleID: String) async throws {
     try await simulatorTarget().privacy.grantAccess(Set([bundleID]), toServices: services)
   }
 
-  public func revoke(_ services: Set<TargetSettingsService>, for_application bundleID: String) async throws {
+  public func revoke(_ services: Set<TargetSettingsService>, forApplication bundleID: String) async throws {
     try await simulatorTarget().privacy.revokeAccess(Set([bundleID]), toServices: services)
   }
 
-  public func approve_deeplink(_ scheme: String, for_application bundleID: String) async throws {
+  public func approveDeeplink(_ scheme: String, forApplication bundleID: String) async throws {
     try await simulatorTarget().privacy.grantAccess(Set([bundleID]), toDeeplink: scheme)
   }
 
-  public func revoke_deeplink(_ scheme: String, for_application bundleID: String) async throws {
+  public func revokeDeeplink(_ scheme: String, forApplication bundleID: String) async throws {
     try await simulatorTarget().privacy.revokeAccess(Set([bundleID]), toDeeplink: scheme)
   }
 
