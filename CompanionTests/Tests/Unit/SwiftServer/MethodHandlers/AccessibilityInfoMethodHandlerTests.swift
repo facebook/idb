@@ -27,7 +27,7 @@ private final class RecordingAccessibilityExecutor: AccessibilityDescribing {
     self.response = response
   }
 
-  func accessibility_describe_response(
+  func accessibilityDescribeResponse(
     query: AccessibilityElementQuery,
     options: AccessibilityRequestOptions,
     backend: UIAutomationBackend
@@ -37,7 +37,7 @@ private final class RecordingAccessibilityExecutor: AccessibilityDescribing {
     return response
   }
 
-  func accessibility_info_at_point(
+  func accessibilityInfoAtPoint(
     _ value: NSValue?,
     options: AccessibilityRequestOptions,
     backend: UIAutomationBackend

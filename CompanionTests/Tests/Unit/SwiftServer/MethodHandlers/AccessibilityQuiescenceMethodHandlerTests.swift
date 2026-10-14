@@ -28,7 +28,7 @@ private final class ScriptedQuiescenceExecutor: AccessibilityQuiescenceStreaming
     self.onTermination = onTermination
   }
 
-  func accessibility_quiescence(
+  func accessibilityQuiescence(
     query: AccessibilityElementQuery,
     parameters: QuiescenceParameters,
     backend: UIAutomationBackend

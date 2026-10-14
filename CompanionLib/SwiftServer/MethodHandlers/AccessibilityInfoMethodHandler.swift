@@ -15,13 +15,13 @@ import IDBGRPCSwift
 /// Seam over the two `IDBCommandExecutor` reads this handler drives, so the request-to-options wiring
 /// can be tested against a double.
 protocol AccessibilityDescribing {
-  func accessibility_describe_response(
+  func accessibilityDescribeResponse(
     query: AccessibilityElementQuery,
     options: AccessibilityRequestOptions,
     backend: UIAutomationBackend
   ) async throws -> AccessibilityElementsResponse
 
-  func accessibility_info_at_point(
+  func accessibilityInfoAtPoint(
     _ value: NSValue?,
     options: AccessibilityRequestOptions,
     backend: UIAutomationBackend
@@ -52,14 +52,14 @@ struct AccessibilityInfoMethodHandler {
     // A marker selects a single element to describe; without one the request
     // describes the element at a point, or the whole frontmost app.
     if let query = AccessibilityInfoRequestTranslation.markerQuery(from: request) {
-      let response = try await commandExecutor.accessibility_describe_response(query: query, options: options, backend: backend)
+      let response = try await commandExecutor.accessibilityDescribeResponse(query: query, options: options, backend: backend)
       AccessibilityReadTelemetry.record(response, into: CallTelemetry.current)
       let data = try response.formattedOutputJSON(format: options.format)
       return .with {
         $0.json = String(data: data, encoding: .utf8) ?? ""
       }
     }
-    let response = try await commandExecutor.accessibility_info_at_point(
+    let response = try await commandExecutor.accessibilityInfoAtPoint(
       AccessibilityInfoRequestTranslation.point(from: request), options: options, backend: backend)
     AccessibilityReadTelemetry.record(response, into: CallTelemetry.current)
     let jsonData = try AccessibilityInfoRequestTranslation.responseJSON(from: response, format: format)

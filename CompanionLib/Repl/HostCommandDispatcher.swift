@@ -137,7 +137,7 @@ struct HostCommandDispatcher: @unchecked Sendable {
       return nil
 
     case .tapMarker(let marker):
-      try await commandExecutor.accessibility_tap(label: marker)
+      try await commandExecutor.accessibilityTap(label: marker)
       return nil
 
     case .swipe(let from, let to, let duration, let delta):
@@ -183,7 +183,7 @@ struct HostCommandDispatcher: @unchecked Sendable {
       return nil
 
     case .describeAll:
-      let response = try await commandExecutor.accessibility_info_at_point(nil, format: .nested)
+      let response = try await commandExecutor.accessibilityInfoAtPoint(nil, format: .nested)
       let tree = Self.replAccessibilityTree(from: response.elements.legacyFoundationObject) ?? [String: Any]()
       return .propertyList(tree)
 

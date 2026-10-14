@@ -15,33 +15,33 @@ import IDBGRPCSwift
 /// Seam over the five `IDBCommandExecutor` actions this handler drives, so the request-to-action
 /// wiring can be tested against a double.
 protocol AccessibilityActing {
-  func accessibility_wait(
+  func accessibilityWait(
     query: AccessibilityElementQuery,
     backend: UIAutomationBackend,
     timeout: TimeInterval,
     pollInterval: TimeInterval
   ) async throws
 
-  func accessibility_tap(
+  func accessibilityTap(
     query: AccessibilityElementQuery,
     backend: UIAutomationBackend,
     expectedValue: String?,
     expectedKey: AXSearchableKey
   ) async throws
 
-  func accessibility_scroll(
+  func accessibilityScroll(
     query: AccessibilityElementQuery,
     backend: UIAutomationBackend,
     direction: AccessibilityScrollDirection
   ) async throws
 
-  func accessibility_set_value(
+  func accessibilitySetValue(
     query: AccessibilityElementQuery,
     backend: UIAutomationBackend,
     value: String
   ) async throws
 
-  func accessibility_drag(
+  func accessibilityDrag(
     from source: AccessibilityElementQuery,
     to destination: AccessibilityElementQuery,
     backend: UIAutomationBackend,
@@ -67,17 +67,17 @@ struct AccessibilityActionMethodHandler {
     switch try AccessibilityActionRequestTranslation.action(from: request) {
     case let .wait(query, backend, timeout, pollInterval):
       return try await AccessibilityActionRequestTranslation.waitResponse {
-        try await commandExecutor.accessibility_wait(query: query, backend: backend, timeout: timeout, pollInterval: pollInterval)
+        try await commandExecutor.accessibilityWait(query: query, backend: backend, timeout: timeout, pollInterval: pollInterval)
       }
     case let .tap(query, backend, expectedValue, expectedKey):
-      try await commandExecutor.accessibility_tap(
+      try await commandExecutor.accessibilityTap(
         query: query, backend: backend, expectedValue: expectedValue, expectedKey: expectedKey)
     case let .scroll(query, backend, direction):
-      try await commandExecutor.accessibility_scroll(query: query, backend: backend, direction: direction)
+      try await commandExecutor.accessibilityScroll(query: query, backend: backend, direction: direction)
     case let .setValue(query, backend, value):
-      try await commandExecutor.accessibility_set_value(query: query, backend: backend, value: value)
+      try await commandExecutor.accessibilitySetValue(query: query, backend: backend, value: value)
     case let .drag(source, destination, backend, options):
-      try await commandExecutor.accessibility_drag(
+      try await commandExecutor.accessibilityDrag(
         from: source, to: destination, backend: backend, options: options)
     }
     return .init()

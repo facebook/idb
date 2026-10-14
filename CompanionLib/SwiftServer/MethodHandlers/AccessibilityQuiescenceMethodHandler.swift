@@ -15,7 +15,7 @@ import IDBGRPCSwift
 /// Seam over the `IDBCommandExecutor` calls this handler drives, so the request-to-stream wiring can be
 /// tested against a double.
 protocol AccessibilityQuiescenceStreaming {
-  func accessibility_quiescence(
+  func accessibilityQuiescence(
     query: AccessibilityElementQuery,
     parameters: QuiescenceParameters,
     backend: UIAutomationBackend
@@ -55,7 +55,7 @@ struct AccessibilityQuiescenceMethodHandler {
       query = .frontmost
     }
     // The companion owns its simulator for its whole run, so it holds its own bridge, as reads do.
-    let events = try await commandExecutor.accessibility_quiescence(
+    let events = try await commandExecutor.accessibilityQuiescence(
       query: query, parameters: parameters(from: request), backend: UIAutomationBackend(resolvedName: .axBridgeExclusive))
     for try await event in Self.events(events, until: cancellation) {
       try await send(response(for: event))

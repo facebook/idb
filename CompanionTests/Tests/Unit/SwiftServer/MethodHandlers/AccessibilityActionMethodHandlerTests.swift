@@ -27,7 +27,7 @@ private final class RecordingAccessibilityActor: AccessibilityActing {
   private(set) var draggedFrom: AccessibilityElementQuery?
   private(set) var draggedTo: AccessibilityElementQuery?
 
-  func accessibility_wait(
+  func accessibilityWait(
     query: AccessibilityElementQuery,
     backend: UIAutomationBackend,
     timeout: TimeInterval,
@@ -36,7 +36,7 @@ private final class RecordingAccessibilityActor: AccessibilityActing {
     self.backend = backend
   }
 
-  func accessibility_tap(
+  func accessibilityTap(
     query: AccessibilityElementQuery,
     backend: UIAutomationBackend,
     expectedValue: String?,
@@ -46,7 +46,7 @@ private final class RecordingAccessibilityActor: AccessibilityActing {
     self.backend = backend
   }
 
-  func accessibility_scroll(
+  func accessibilityScroll(
     query: AccessibilityElementQuery,
     backend: UIAutomationBackend,
     direction: AccessibilityScrollDirection
@@ -56,7 +56,7 @@ private final class RecordingAccessibilityActor: AccessibilityActing {
     self.backend = backend
   }
 
-  func accessibility_set_value(
+  func accessibilitySetValue(
     query: AccessibilityElementQuery,
     backend: UIAutomationBackend,
     value: String
@@ -66,7 +66,7 @@ private final class RecordingAccessibilityActor: AccessibilityActing {
     self.backend = backend
   }
 
-  func accessibility_drag(
+  func accessibilityDrag(
     from source: AccessibilityElementQuery,
     to destination: AccessibilityElementQuery,
     backend: UIAutomationBackend,
