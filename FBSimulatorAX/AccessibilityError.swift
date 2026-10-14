@@ -41,7 +41,9 @@ public enum AccessibilityError: LocalizedError, Sendable {
 
   case dispatcherUnavailable
 
-  case noTranslationObject
+  /// The simulator's accessibility service named no element for the query; nil when an element read
+  /// earlier is no longer there to act on.
+  case noTranslationObject(AccessibilityElementQuery?)
 
   /// SpringBoard restarted `restartedAgo` seconds ago and the simulator's accessibility service still answers
   /// for the SpringBoard that exited, as it does for a few seconds until it refreshes. Temporary: the same read
@@ -76,8 +78,14 @@ public enum AccessibilityError: LocalizedError, Sendable {
       return "-[SimDevice sendAccessibilityRequestAsync:completionQueue:completionHandler:] is not present on this host, you must install and/or use Xcode 12 to use accessibility."
     case .dispatcherUnavailable:
       return "Accessibility translation dispatcher is unavailable"
-    case .noTranslationObject:
-      return "No translation object returned for simulator. This means you have likely specified a point onscreen that is invalid or invisible due to a fullscreen dialog"
+    case .noTranslationObject(.point(let point)):
+      return "No accessibility element at (\(point.x), \(point.y)): the point may be off-screen or covered by a fullscreen dialog"
+    case .noTranslationObject(.frontmost), .noTranslationObject(.marker):
+      return "The simulator's accessibility service named no frontmost application"
+    case .noTranslationObject(.application(let pid)):
+      return "The simulator's accessibility service has no application with pid \(pid)"
+    case .noTranslationObject(nil):
+      return "The simulator's accessibility service no longer has this element"
     case let .springBoardRestarting(exitedProcessIdentifier, restartedAgo):
       return String(
         format: "SpringBoard restarted %.1f seconds ago. The simulator's accessibility service still answers for the SpringBoard that exited (pid %d) until it refreshes, which takes a few seconds; retry the read.",

@@ -193,7 +193,7 @@ final class SimulatorAccessibilityCommands: AccessibilityOperations {
     let root: AXElementHandle
     do {
       root = try await dispatcher.rootHandle(withRequest: request)
-    } catch AccessibilityError.noTranslationObject where diagnosesSpringBoard {
+    } catch let AccessibilityError.noTranslationObject(query) where diagnosesSpringBoard {
       // On the frontmost path a nil translation usually means SpringBoard (the provider of the
       // frontmost application) is down. Re-label the error when we can confirm that; a probe
       // failure or a live reading keeps the original .noTranslationObject (e.g. a genuine
@@ -202,7 +202,7 @@ final class SimulatorAccessibilityCommands: AccessibilityOperations {
       if !springBoardRunning {
         throw AccessibilityError.springBoardNotRunning
       }
-      throw AccessibilityError.noTranslationObject
+      throw AccessibilityError.noTranslationObject(query)
     }
     if diagnosesSpringBoard {
       do {

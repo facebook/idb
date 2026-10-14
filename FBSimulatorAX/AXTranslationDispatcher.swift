@@ -111,7 +111,7 @@ final class AXTranslationDispatcher: NSObject, AXPTranslationTokenDelegateHelper
       return try await performUnserialized { () throws -> AXElementHandle in
         let translationStart = CFAbsoluteTimeGetCurrent()
         guard let translation = try request.resolveRoot() else {
-          throw AccessibilityError.noTranslationObject
+          throw AccessibilityError.noTranslationObject(request.query)
         }
         request.collector.translationDuration = CFAbsoluteTimeGetCurrent() - translationStart
         translation.bridgeDelegateToken = request.token

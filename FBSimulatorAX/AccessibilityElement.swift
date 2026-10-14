@@ -105,7 +105,7 @@ final class AccessibilityElement {
     let request = self.request
     return try await dispatcher.performSerialized {
       guard let element = request.element(for: handle) as? AXWritableElement else {
-        throw AccessibilityError.noTranslationObject
+        throw AccessibilityError.noTranslationObject(nil)
       }
       return try action(element)
     }

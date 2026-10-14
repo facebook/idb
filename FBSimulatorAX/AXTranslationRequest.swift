@@ -63,6 +63,14 @@ final class AXTranslationRequest {
   private static let defaultRequestTimeoutSeconds: TimeInterval = 5.0
 
   let kind: Kind
+  /// What the caller asked for, as they asked for it.
+  var query: AccessibilityElementQuery {
+    switch kind {
+    case .frontmostApplication: .frontmost
+    case let .point(point): .point(point)
+    case let .applicationForPid(pid): .application(pid: pid)
+    }
+  }
   let display: AXTranslationDisplay?
   /// The client every translator request for this read carries, resolved by the caller.
   let clientType: AXClientType

@@ -1884,10 +1884,7 @@ final class SimulatorAccessibilityCommandsTests: XCTestCase {
       guard case .noTranslationObject = error else {
         return XCTFail("Expected noTranslationObject, got \(error)")
       }
-      // BUG: a frontmost read is told it named an invalid point — flipped in the following commit.
-      XCTAssertEqual(
-        error.errorDescription,
-        "No translation object returned for simulator. This means you have likely specified a point onscreen that is invalid or invisible due to a fullscreen dialog")
+      XCTAssertEqual(error.errorDescription, "The simulator's accessibility service named no frontmost application")
     }
   }
 
@@ -1905,10 +1902,9 @@ final class SimulatorAccessibilityCommandsTests: XCTestCase {
       guard case .noTranslationObject = error else {
         return XCTFail("Expected noTranslationObject, got \(error)")
       }
-      // BUG: the message does not name the point that found nothing — flipped in the following commit.
       XCTAssertEqual(
         error.errorDescription,
-        "No translation object returned for simulator. This means you have likely specified a point onscreen that is invalid or invisible due to a fullscreen dialog")
+        "No accessibility element at (10.0, 10.0): the point may be off-screen or covered by a fullscreen dialog")
     }
   }
 
