@@ -680,18 +680,6 @@ public final class IDBCommandExecutor {
     try await removeAllStorageAndClearKeychain()
   }
 
-  public func deliveredNotifications(forBundleID bundleID: String) async throws -> [DeliveredNotification] {
-    try await target.simulator().notification.deliveredNotifications(forBundleID: bundleID)
-  }
-
-  public func clearDeliveredNotifications(forBundleID bundleID: String) async throws {
-    try await target.simulator().notification.clearDeliveredNotifications(forBundleID: bundleID)
-  }
-
-  public func sendPushNotification(forBundleID bundleID: String, jsonPayload: String) async throws {
-    try await target.simulator().notification.sendPush(forBundleID: bundleID, jsonPayload: jsonPayload)
-  }
-
   public func simulateMemoryWarning() async throws {
     try await target.simulator().memory.simulateWarning()
   }

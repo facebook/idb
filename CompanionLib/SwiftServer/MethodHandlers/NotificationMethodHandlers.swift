@@ -11,20 +11,20 @@ import IDBGRPCSwift
 
 struct SendNotificationMethodHandler {
 
-  let commandExecutor: IDBCommandExecutor
+  let target: CompanionTarget
 
   func handle(request: Idb_SendNotificationRequest, context: ServerContext) async throws -> Idb_SendNotificationResponse {
-    try await commandExecutor.sendPushNotification(forBundleID: request.bundleID, jsonPayload: request.jsonPayload)
+    try await target.simulator().notification.sendPush(forBundleID: request.bundleID, jsonPayload: request.jsonPayload)
     return .init()
   }
 }
 
 struct DeliveredNotificationsMethodHandler {
 
-  let commandExecutor: IDBCommandExecutor
+  let target: CompanionTarget
 
   func handle(request: Idb_DeliveredNotificationsRequest, context: ServerContext) async throws -> Idb_DeliveredNotificationsResponse {
-    let notifications = try await commandExecutor.deliveredNotifications(forBundleID: request.bundleID)
+    let notifications = try await target.simulator().notification.deliveredNotifications(forBundleID: request.bundleID)
     return .with {
       $0.notifications = notifications.map { notification in
         Idb_DeliveredNotification.with {
@@ -45,10 +45,10 @@ struct DeliveredNotificationsMethodHandler {
 
 struct ClearDeliveredNotificationsMethodHandler {
 
-  let commandExecutor: IDBCommandExecutor
+  let target: CompanionTarget
 
   func handle(request: Idb_ClearDeliveredNotificationsRequest, context: ServerContext) async throws -> Idb_ClearDeliveredNotificationsResponse {
-    try await commandExecutor.clearDeliveredNotifications(forBundleID: request.bundleID)
+    try await target.simulator().notification.clearDeliveredNotifications(forBundleID: request.bundleID)
     return .init()
   }
 }
