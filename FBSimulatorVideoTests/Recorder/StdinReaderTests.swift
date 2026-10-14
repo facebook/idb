@@ -6,14 +6,18 @@
  */
 
 @testable import FBSimulatorVideo
-import XCTest
+import Foundation
+import Testing
 
-final class StdinReaderTests: XCTestCase {
+@Suite
+struct StdinReaderTests {
 
   /// Lines are split on newlines, and a trailing unterminated line is delivered at EOF.
-  func testYieldsLinesAndFlushesTrailingLineAtEOF() async {
+  @Test
+  func yieldsLinesAndFlushesTrailingLineAtEOF() async {
     var fds = [Int32](repeating: 0, count: 2)
-    XCTAssertEqual(pipe(&fds), 0)
+    let pipeResult = pipe(&fds)
+    #expect(pipeResult == 0)
     let readFD = fds[0]
     let writeFD = fds[1]
 
@@ -27,14 +31,16 @@ final class StdinReaderTests: XCTestCase {
     }
     close(readFD)
 
-    XCTAssertEqual(lines, ["alpha", "beta", "no-eol"])
+    #expect(lines == ["alpha", "beta", "no-eol"])
   }
 
   /// The defining property versus `FileHandle.AsyncBytes`: iteration ends on task cancellation even
   /// while the pipe is still open and idle (no EOF). An uninterruptible read would hang this test.
-  func testEndsOnCancellationWithOpenIdlePipe() async {
+  @Test
+  func endsOnCancellationWithOpenIdlePipe() async {
     var fds = [Int32](repeating: 0, count: 2)
-    XCTAssertEqual(pipe(&fds), 0)
+    let pipeResult = pipe(&fds)
+    #expect(pipeResult == 0)
     let readFD = fds[0]
     let writeFD = fds[1]
 
