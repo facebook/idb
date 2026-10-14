@@ -20,3 +20,23 @@ struct AddMediaMethodHandler {
     return .init()
   }
 }
+
+struct ContactsUpdateMethodHandler {
+
+  let commandExecutor: IDBCommandExecutor
+
+  func handle(request: Idb_ContactsUpdateRequest, context: ServerContext) async throws -> Idb_ContactsUpdateResponse {
+    try await commandExecutor.update_contacts(request.payload.data)
+    return .init()
+  }
+}
+
+struct ClearKeychainMethodHandler {
+
+  let commandExecutor: IDBCommandExecutor
+
+  func handle(request: Idb_ClearKeychainRequest, context: ServerContext) async throws -> Idb_ClearKeychainResponse {
+    try await commandExecutor.clear_keychain()
+    return .init()
+  }
+}
