@@ -9,6 +9,16 @@ import FBControlCore
 import GRPCCore
 import IDBGRPCSwift
 
+struct SendNotificationMethodHandler {
+
+  let commandExecutor: IDBCommandExecutor
+
+  func handle(request: Idb_SendNotificationRequest, context: ServerContext) async throws -> Idb_SendNotificationResponse {
+    try await commandExecutor.sendPushNotification(forBundleID: request.bundleID, jsonPayload: request.jsonPayload)
+    return .init()
+  }
+}
+
 struct DeliveredNotificationsMethodHandler {
 
   let commandExecutor: IDBCommandExecutor
@@ -30,5 +40,15 @@ struct DeliveredNotificationsMethodHandler {
         }
       }
     }
+  }
+}
+
+struct ClearDeliveredNotificationsMethodHandler {
+
+  let commandExecutor: IDBCommandExecutor
+
+  func handle(request: Idb_ClearDeliveredNotificationsRequest, context: ServerContext) async throws -> Idb_ClearDeliveredNotificationsResponse {
+    try await commandExecutor.clearDeliveredNotifications(forBundleID: request.bundleID)
+    return .init()
   }
 }
