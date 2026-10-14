@@ -6,26 +6,23 @@
  */
 
 import FBControlCore
-import XCTest
+import Foundation
+import Testing
 
-final class BundleDescriptorApplicationTests: XCTestCase {
+@Suite
+final class BundleDescriptorApplicationTests {
 
-  private var logger: ControlCoreLoggerDouble!
-  private var tempDirectory: String!
+  private let logger = ControlCoreLoggerDouble()
+  private let tempDirectory = (NSTemporaryDirectory() as NSString).appendingPathComponent(UUID().uuidString)
 
-  override func setUp() {
-    super.setUp()
-    logger = ControlCoreLoggerDouble()
-    tempDirectory = (NSTemporaryDirectory() as NSString)
-      .appendingPathComponent(UUID().uuidString)
+  init() {
     try? FileManager.default.createDirectory(
       atPath: tempDirectory,
       withIntermediateDirectories: true)
   }
 
-  override func tearDown() {
+  deinit {
     try? FileManager.default.removeItem(atPath: tempDirectory)
-    super.tearDown()
   }
 
   // MARK: - Fixtures
@@ -67,13 +64,9 @@ final class BundleDescriptorApplicationTests: XCTestCase {
   /// the directory enumerator reports the resolved form. Canonicalise both sides
   /// rather than assuming which spelling comes back.
   private func assertSamePath(
-    _ actual: String, _ expected: String, file: StaticString = #filePath, line: UInt = #line
+    _ actual: String, _ expected: String, sourceLocation: SourceLocation = #_sourceLocation
   ) {
-    XCTAssertEqual(
-      URL(fileURLWithPath: actual).resolvingSymlinksInPath().path,
-      URL(fileURLWithPath: expected).resolvingSymlinksInPath().path,
-      file: file,
-      line: line)
+    #expect(URL(fileURLWithPath: actual).resolvingSymlinksInPath().path == URL(fileURLWithPath: expected).resolvingSymlinksInPath().path, sourceLocation: sourceLocation)
   }
 
   private func makeDirectory(_ relative: String) throws {
@@ -91,18 +84,20 @@ final class BundleDescriptorApplicationTests: XCTestCase {
 
   // MARK: - findAppPath
 
-  func testFindAppPath_WhenLaidOutLikeAnIPA_FindsTheApp() throws {
+  @Test
+  func findAppPath_WhenLaidOutLikeAnIPA_FindsTheApp() throws {
     let expected = try makeAppBundle("Payload/Sample.app", identifier: "com.example.sample")
 
     let bundle = try BundleDescriptor.findAppPath(fromDirectory: rootURL, logger: logger)
 
     assertSamePath(bundle.path, expected)
-    XCTAssertEqual(bundle.identifier, "com.example.sample")
-    XCTAssertEqual(bundle.name, "Sample")
-    XCTAssertNotNil(bundle.binary)
+    #expect(bundle.identifier == "com.example.sample")
+    #expect(bundle.name == "Sample")
+    #expect(bundle.binary != nil)
   }
 
-  func testFindAppPath_WhenAppIsAtTheRoot_FindsTheApp() throws {
+  @Test
+  func findAppPath_WhenAppIsAtTheRoot_FindsTheApp() throws {
     let expected = try makeAppBundle("Sample.app", identifier: "com.example.sample")
 
     let bundle = try BundleDescriptor.findAppPath(fromDirectory: rootURL, logger: logger)
@@ -110,7 +105,8 @@ final class BundleDescriptorApplicationTests: XCTestCase {
     assertSamePath(bundle.path, expected)
   }
 
-  func testFindAppPath_WhenAppIsDeeplyNested_FindsTheApp() throws {
+  @Test
+  func findAppPath_WhenAppIsDeeplyNested_FindsTheApp() throws {
     let expected = try makeAppBundle(
       "one/two/three/Sample.app", identifier: "com.example.sample")
 
@@ -119,7 +115,8 @@ final class BundleDescriptorApplicationTests: XCTestCase {
     assertSamePath(bundle.path, expected)
   }
 
-  func testFindAppPath_WhenSiblingFilesArePresent_IgnoresThem() throws {
+  @Test
+  func findAppPath_WhenSiblingFilesArePresent_IgnoresThem() throws {
     let expected = try makeAppBundle("Payload/Sample.app", identifier: "com.example.sample")
     try makeFile("Payload/README.txt", contents: "ignore me")
     try makeFile("iTunesMetadata.plist", contents: "ignore me too")
@@ -131,7 +128,8 @@ final class BundleDescriptorApplicationTests: XCTestCase {
   }
 
   /// App extensions and watch apps nest an `.app` inside the `.app`; only the outer one is a candidate.
-  func testFindAppPath_WhenAppContainsANestedApp_FindsOnlyTheOuterApp() throws {
+  @Test
+  func findAppPath_WhenAppContainsANestedApp_FindsOnlyTheOuterApp() throws {
     let expected = try makeAppBundle("Payload/Sample.app", identifier: "com.example.sample")
     try makeAppBundle(
       "Payload/Sample.app/Watch/Companion.app", identifier: "com.example.sample.watch")
@@ -141,63 +139,59 @@ final class BundleDescriptorApplicationTests: XCTestCase {
     assertSamePath(bundle.path, expected)
   }
 
-  func testFindAppPath_WhenThereAreTwoApps_Fails() throws {
+  @Test
+  func findAppPath_WhenThereAreTwoApps_Fails() throws {
     try makeAppBundle("Payload/First.app", identifier: "com.example.first")
     try makeAppBundle("Payload/Second.app", identifier: "com.example.second")
 
-    XCTAssertThrowsError(
-      try BundleDescriptor.findAppPath(fromDirectory: rootURL, logger: logger)
-    ) { error in
+    let error = #expect(throws: (any Error).self) { try BundleDescriptor.findAppPath(fromDirectory: rootURL, logger: logger) }
+    if let error {
       let description = (error as NSError).localizedDescription
-      XCTAssertTrue(
-        description.contains("found 2"), "Should report the count, got: \(description)")
-      XCTAssertTrue(
-        description.contains("First.app"), "Should name the apps, got: \(description)")
-      XCTAssertTrue(
-        description.contains("Second.app"), "Should name the apps, got: \(description)")
+      #expect(description.contains("found 2"), "Should report the count, got: \(description)")
+      #expect(description.contains("First.app"), "Should name the apps, got: \(description)")
+      #expect(description.contains("Second.app"), "Should name the apps, got: \(description)")
     }
   }
 
-  func testFindAppPath_WhenThereIsNoApp_FailsAndListsWhatWasPresent() throws {
+  @Test
+  func findAppPath_WhenThereIsNoApp_FailsAndListsWhatWasPresent() throws {
     try makeFile("Payload/NotAnApp.txt", contents: "nope")
 
-    XCTAssertThrowsError(
-      try BundleDescriptor.findAppPath(fromDirectory: rootURL, logger: logger)
-    ) { error in
+    let error = #expect(throws: (any Error).self) { try BundleDescriptor.findAppPath(fromDirectory: rootURL, logger: logger) }
+    if let error {
       let description = (error as NSError).localizedDescription
-      XCTAssertTrue(
-        description.contains("NotAnApp.txt"),
-        "Should list the files it did find, got: \(description)")
+      #expect(description.contains("NotAnApp.txt"), "Should list the files it did find, got: \(description)")
     }
   }
 
-  func testFindAppPath_WhenDirectoryIsEmpty_Fails() throws {
-    XCTAssertThrowsError(try BundleDescriptor.findAppPath(fromDirectory: rootURL, logger: logger))
+  @Test
+  func findAppPath_WhenDirectoryIsEmpty_Fails() throws {
+    #expect(throws: (any Error).self) { try BundleDescriptor.findAppPath(fromDirectory: rootURL, logger: logger) }
   }
 
-  func testFindAppPath_WhenAppSuffixIsAPlainFile_Fails() throws {
+  @Test
+  func findAppPath_WhenAppSuffixIsAPlainFile_Fails() throws {
     try makeFile("Payload/Sample.app", contents: "not a directory")
 
-    XCTAssertThrowsError(try BundleDescriptor.findAppPath(fromDirectory: rootURL, logger: logger))
+    #expect(throws: (any Error).self) { try BundleDescriptor.findAppPath(fromDirectory: rootURL, logger: logger) }
   }
 
   /// `isApplication` only checks the suffix and that the path is a directory, so a
   /// bundle with no `Info.plist` is selected and then fails to load. The error
   /// comes from reading the bundle, not from the search.
-  func testFindAppPath_WhenAppHasNoInfoPlist_FailsLoadingTheBundle() throws {
+  @Test
+  func findAppPath_WhenAppHasNoInfoPlist_FailsLoadingTheBundle() throws {
     try makeDirectory("Payload/Sample.app")
 
-    XCTAssertThrowsError(
-      try BundleDescriptor.findAppPath(fromDirectory: rootURL, logger: logger)
-    ) { error in
+    let error = #expect(throws: (any Error).self) { try BundleDescriptor.findAppPath(fromDirectory: rootURL, logger: logger) }
+    if let error {
       let description = (error as NSError).localizedDescription
-      XCTAssertFalse(
-        description.contains("Could not find an Application"),
-        "Should fail loading the bundle, not searching for it, got: \(description)")
+      #expect(!(description.contains("Could not find an Application")), "Should fail loading the bundle, not searching for it, got: \(description)")
     }
   }
 
-  func testFindAppPath_WhenAppHasNoBundleIdentifier_Fails() throws {
+  @Test
+  func findAppPath_WhenAppHasNoBundleIdentifier_Fails() throws {
     let bundlePath = path("Payload/Sample.app")
     try FileManager.default.createDirectory(
       atPath: bundlePath, withIntermediateDirectories: true)
@@ -208,22 +202,21 @@ final class BundleDescriptorApplicationTests: XCTestCase {
     try data.write(
       to: URL(fileURLWithPath: (bundlePath as NSString).appendingPathComponent("Info.plist")))
 
-    XCTAssertThrowsError(
-      try BundleDescriptor.findAppPath(fromDirectory: rootURL, logger: logger)
-    ) { error in
-      XCTAssertTrue(
-        (error as NSError).localizedDescription.contains("Bundle ID"),
-        "Got: \((error as NSError).localizedDescription)")
+    let error = #expect(throws: (any Error).self) { try BundleDescriptor.findAppPath(fromDirectory: rootURL, logger: logger) }
+    if let error {
+      #expect((error as NSError).localizedDescription.contains("Bundle ID"), "Got: \((error as NSError).localizedDescription)")
     }
   }
 
-  func testFindAppPath_WhenDirectoryDoesNotExist_Fails() throws {
+  @Test
+  func findAppPath_WhenDirectoryDoesNotExist_Fails() throws {
     let absent = URL(fileURLWithPath: path("absent"))
 
-    XCTAssertThrowsError(try BundleDescriptor.findAppPath(fromDirectory: absent, logger: logger))
+    #expect(throws: (any Error).self) { try BundleDescriptor.findAppPath(fromDirectory: absent, logger: logger) }
   }
 
-  func testFindAppPath_WithoutALogger_StillFindsTheApp() throws {
+  @Test
+  func findAppPath_WithoutALogger_StillFindsTheApp() throws {
     let expected = try makeAppBundle("Payload/Sample.app", identifier: "com.example.sample")
 
     let bundle = try BundleDescriptor.findAppPath(fromDirectory: rootURL, logger: nil)
@@ -233,25 +226,29 @@ final class BundleDescriptorApplicationTests: XCTestCase {
 
   // MARK: - isApplication
 
-  func testIsApplication_ForADirectoryWithTheAppSuffix_IsTrue() throws {
+  @Test
+  func isApplication_ForADirectoryWithTheAppSuffix_IsTrue() throws {
     try makeDirectory("Sample.app")
 
-    XCTAssertTrue(BundleDescriptor.isApplication(atPath: path("Sample.app")))
+    #expect(BundleDescriptor.isApplication(atPath: path("Sample.app")))
   }
 
-  func testIsApplication_ForAPlainFileWithTheAppSuffix_IsFalse() throws {
+  @Test
+  func isApplication_ForAPlainFileWithTheAppSuffix_IsFalse() throws {
     try makeFile("Sample.app", contents: "not a directory")
 
-    XCTAssertFalse(BundleDescriptor.isApplication(atPath: path("Sample.app")))
+    #expect(!(BundleDescriptor.isApplication(atPath: path("Sample.app"))))
   }
 
-  func testIsApplication_ForADirectoryWithoutTheAppSuffix_IsFalse() throws {
+  @Test
+  func isApplication_ForADirectoryWithoutTheAppSuffix_IsFalse() throws {
     try makeDirectory("Sample")
 
-    XCTAssertFalse(BundleDescriptor.isApplication(atPath: path("Sample")))
+    #expect(!(BundleDescriptor.isApplication(atPath: path("Sample"))))
   }
 
-  func testIsApplication_ForAnAbsentPath_IsFalse() {
-    XCTAssertFalse(BundleDescriptor.isApplication(atPath: path("absent.app")))
+  @Test
+  func isApplication_ForAnAbsentPath_IsFalse() {
+    #expect(!(BundleDescriptor.isApplication(atPath: path("absent.app"))))
   }
 }
