@@ -12,9 +12,6 @@ private let ProcessTableRemovalTimeout: TimeInterval = 20.0
 enum ProcessTerminatorError: Error, LocalizedError {
   case processDoesNotExist(processIdentifier: pid_t)
   case killFailed(processIdentifier: pid_t, message: String)
-  /// Never produced: exceeding the process table removal timeout is reported as
-  /// `processDidNotDisappear`, or escalated to SIGKILL. Kept for source compatibility.
-  case processTableRemovalTimedOut(processIdentifier: pid_t)
   case processDidNotDisappear(processIdentifier: pid_t, processInfo: String)
   case sigkillAfterFailedKill(processIdentifier: pid_t, signo: Int32, underlying: Error)
 
@@ -24,8 +21,6 @@ enum ProcessTerminatorError: Error, LocalizedError {
       return "Could not find that process \(processIdentifier) exists"
     case let .killFailed(processIdentifier, message):
       return "Failed to kill \(processIdentifier): '\(message)'"
-    case let .processTableRemovalTimedOut(processIdentifier):
-      return "Process \(processIdentifier) to be removed from the process table"
     case let .processDidNotDisappear(processIdentifier, _):
       return "Timed out waiting for \(processIdentifier) to disappear from the process table"
     case let .sigkillAfterFailedKill(processIdentifier, signo, _):
