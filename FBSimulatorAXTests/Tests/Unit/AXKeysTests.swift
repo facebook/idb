@@ -6,11 +6,14 @@
  */
 
 @testable import FBSimulatorAX
-import XCTest
+import Foundation
+import Testing
 
 /// `AXKeys` raw values are the JSON keys idb emits and the cli's `--key` names, so each spelling is pinned.
-final class AXKeysTests: XCTestCase {
-  func testAXKeyWireValues() {
+@Suite
+struct AXKeysTests {
+  @Test
+  func axKeyWireValues() {
     let expected: [AXKeys: String] = [
       .label: "AXLabel",
       .frame: "AXFrame",
@@ -38,28 +41,28 @@ final class AXKeysTests: XCTestCase {
     ]
     // Pinned over `allCases` rather than against a count, so a case added without a pinned wire value
     // fails here instead of silently going unchecked.
-    XCTAssertEqual(Set(AXKeys.allCases), Set(expected.keys), "every AXKeys case must have its wire value pinned")
+    #expect(Set(AXKeys.allCases) == Set(expected.keys), "every AXKeys case must have its wire value pinned")
     for (key, wireValue) in expected {
-      XCTAssertEqual(key.rawValue, wireValue, "\(key) must serialize under its pinned wire key")
+      #expect(key.rawValue == wireValue, "\(key) must serialize under its pinned wire key")
     }
   }
 
   // The default set is the schema emitted when no keys are requested; it must stay exactly these 16, so
   // that adding a key never changes the bytes of a read that did not ask for it.
-  func testDefaultKeySetMembership() {
-    XCTAssertEqual(
-      AXKeys.defaultSet,
-      [
+  @Test
+  func defaultKeySetMembership() {
+    #expect(
+      AXKeys.defaultSet == [
         .label, .frame, .value, .uniqueID, .type, .title, .frameDict, .help,
         .enabled, .customActions, .role, .roleDescription, .subrole,
         .contentRequired, .pid, .traits,
       ]
     )
-    XCTAssertEqual(AXKeys.defaultSet.count, 16)
+    #expect(AXKeys.defaultSet.count == 16)
     // Every case that is not in the default set is opt-in, derived rather than listed, so a new key is
     // covered by this the moment it exists.
     let optIn = Set(AXKeys.allCases).subtracting(AXKeys.defaultSet)
-    XCTAssertEqual(optIn, [.expanded, .placeholder, .hidden, .focused, .isRemote, .interactable, .occludedBy])
-    XCTAssertTrue(AXKeys.defaultSet.isDisjoint(with: optIn), "the opt-in keys must stay out of the default set")
+    #expect(optIn == [.expanded, .placeholder, .hidden, .focused, .isRemote, .interactable, .occludedBy])
+    #expect(AXKeys.defaultSet.isDisjoint(with: optIn), "the opt-in keys must stay out of the default set")
   }
 }
