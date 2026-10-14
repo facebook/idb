@@ -11,7 +11,7 @@ import FBControlCore
 import Foundation
 
 // SAFETY: writes are serialized by `lock`; tests read `messages` after the work under test finishes.
-final class CapturingLogger: NSObject, ControlCoreLogger, @unchecked Sendable {
+final class CapturingLogger: ControlCoreLogger, @unchecked Sendable {
   let messages = NSMutableArray()
   private let lock = NSLock()
 
@@ -29,7 +29,7 @@ final class CapturingLogger: NSObject, ControlCoreLogger, @unchecked Sendable {
   func withName(_ name: String) -> any ControlCoreLogger { self }
   func withDateFormatEnabled(_ enabled: Bool) -> any ControlCoreLogger { self }
   var name: String? { nil }
-  var level: FBControlCoreLogLevel { .multiple }
+  var level: ControlCoreLogLevel { .multiple }
 }
 
 // MARK: - CMSampleBuffer builders

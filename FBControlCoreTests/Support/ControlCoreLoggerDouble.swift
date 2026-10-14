@@ -9,9 +9,9 @@ import FBControlCore
 import Foundation
 
 // SAFETY: stateless no-op.
-final class ControlCoreLoggerDouble: NSObject, ControlCoreLogger, @unchecked Sendable {
+final class ControlCoreLoggerDouble: ControlCoreLogger, @unchecked Sendable {
   var name: String? { nil }
-  var level: FBControlCoreLogLevel { .multiple }
+  var level: ControlCoreLogLevel { .multiple }
 
   func log(_ message: String) -> any ControlCoreLogger { self }
   func info() -> any ControlCoreLogger { self }

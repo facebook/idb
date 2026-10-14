@@ -356,10 +356,10 @@ final class DataConsumerTests: XCTestCase {
 }
 
 // SAFETY: the tests only log from the test thread.
-private final class RecordingLogger: NSObject, ControlCoreLogger, @unchecked Sendable {
+private final class RecordingLogger: ControlCoreLogger, @unchecked Sendable {
   var messages: [String] = []
   var name: String? { nil }
-  var level: FBControlCoreLogLevel { .multiple }
+  var level: ControlCoreLogLevel { .multiple }
 
   func log(_ message: String) -> any ControlCoreLogger {
     messages.append(message)

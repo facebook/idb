@@ -10,7 +10,7 @@ import Foundation
 
 /// A test double logger that captures all logged messages for assertion.
 // SAFETY: writes are serialized by `lock`; tests read `messages` after the work under test finishes.
-final class CapturingLogger: NSObject, ControlCoreLogger, @unchecked Sendable {
+final class CapturingLogger: ControlCoreLogger, @unchecked Sendable {
   let messages = NSMutableArray()
   private let lock = NSLock()
 
@@ -28,5 +28,5 @@ final class CapturingLogger: NSObject, ControlCoreLogger, @unchecked Sendable {
   func withName(_ prefix: String) -> ControlCoreLogger { self }
   func withDateFormatEnabled(_ enabled: Bool) -> ControlCoreLogger { self }
   var name: String? { nil }
-  var level: FBControlCoreLogLevel { .multiple }
+  var level: ControlCoreLogLevel { .multiple }
 }

@@ -176,7 +176,7 @@ final class XCTestResultToolOperationTests {
 // MARK: - Logger double
 
 /// Records every line handed to it, so a test can assert on what a process forwarded.
-private final class RecordingLogger: NSObject, ControlCoreLogger, @unchecked Sendable {
+private final class RecordingLogger: ControlCoreLogger, @unchecked Sendable {
   private let lock = NSLock()
   private var recorded: [String] = []
 
@@ -187,7 +187,7 @@ private final class RecordingLogger: NSObject, ControlCoreLogger, @unchecked Sen
   }
 
   var name: String? { nil }
-  var level: FBControlCoreLogLevel { .multiple }
+  var level: ControlCoreLogLevel { .multiple }
 
   func log(_ message: String) -> any ControlCoreLogger {
     lock.lock()

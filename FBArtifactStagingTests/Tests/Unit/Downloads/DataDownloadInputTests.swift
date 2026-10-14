@@ -288,9 +288,9 @@ private final class DownloadEventRecorder: @unchecked Sendable {
 }
 
 // SAFETY: stateless no-op.
-private final class DownloadTestLogger: NSObject, ControlCoreLogger, @unchecked Sendable {
+private final class DownloadTestLogger: ControlCoreLogger, @unchecked Sendable {
   var name: String? { nil }
-  var level: FBControlCoreLogLevel { .multiple }
+  var level: ControlCoreLogLevel { .multiple }
 
   func log(_ message: String) -> any ControlCoreLogger { self }
   func info() -> any ControlCoreLogger { self }

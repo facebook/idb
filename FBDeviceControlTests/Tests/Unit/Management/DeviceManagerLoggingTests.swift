@@ -11,7 +11,7 @@ import Foundation
 import Testing
 
 /// Records every logged line so log content can be asserted.
-private final class RecordingLogger: NSObject, ControlCoreLogger, @unchecked Sendable {
+private final class RecordingLogger: ControlCoreLogger, @unchecked Sendable {
   private let lock = NSLock()
   private var recordedLines: [String] = []
 
@@ -22,7 +22,7 @@ private final class RecordingLogger: NSObject, ControlCoreLogger, @unchecked Sen
   }
 
   var name: String? { nil }
-  var level: FBControlCoreLogLevel { .multiple }
+  var level: ControlCoreLogLevel { .multiple }
 
   func log(_ message: String) -> any ControlCoreLogger {
     lock.lock()

@@ -9,16 +9,16 @@ import Foundation
 
 /// The Log Level.
 /// The Multiple Level exists so that composite loggers can decide whether to log individually.
-@objc public enum FBControlCoreLogLevel: UInt {
-  case error = 1
-  case info = 2
-  case debug = 3
-  case multiple = 1000
+public enum ControlCoreLogLevel: Sendable {
+  case error
+  case info
+  case debug
+  case multiple
 }
 
 /// Receives log messages. Conformers must be thread-safe: loggers are shared across queues,
 /// private-framework callback threads and actors.
-@objc public protocol ControlCoreLogger: NSObjectProtocol, Sendable {
+public protocol ControlCoreLogger: AnyObject, Sendable {
   /// Logs a Message with the provided String.
   @discardableResult
   func log(_ message: String) -> ControlCoreLogger
@@ -42,5 +42,5 @@ import Foundation
   var name: String? { get }
 
   /// The Current Log Level.
-  var level: FBControlCoreLogLevel { get }
+  var level: ControlCoreLogLevel { get }
 }

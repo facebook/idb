@@ -8,23 +8,15 @@
 import Foundation
 
 /// A composite logger that logs to many loggers.
-///
-/// The builder methods construct an instance of the receiver's dynamic class, so a subclass is
-/// preserved across `info()`, `withName(_:)` and the rest.
 // SAFETY: holds only an immutable array of child loggers, which are themselves required to be
 // thread-safe by the `ControlCoreLogger` contract.
-open class FBCompositeLogger: NSObject, ControlCoreLogger, @unchecked Sendable {
-
-  private let composedLoggers: [ControlCoreLogger]
+public final class CompositeLogger: ControlCoreLogger, @unchecked Sendable {
 
   /// The loggers to log to.
-  open var loggers: [ControlCoreLogger] {
-    composedLoggers
-  }
+  public let loggers: [ControlCoreLogger]
 
-  public required init(loggers: [ControlCoreLogger]) {
-    self.composedLoggers = loggers
-    super.init()
+  public init(loggers: [ControlCoreLogger]) {
+    self.loggers = loggers
   }
 
   @discardableResult
@@ -62,11 +54,11 @@ open class FBCompositeLogger: NSObject, ControlCoreLogger, @unchecked Sendable {
     nil
   }
 
-  public var level: FBControlCoreLogLevel {
+  public var level: ControlCoreLogLevel {
     .multiple
   }
 
   private func applying(_ transform: (ControlCoreLogger) -> ControlCoreLogger) -> ControlCoreLogger {
-    type(of: self).init(loggers: loggers.map(transform))
+    CompositeLogger(loggers: loggers.map(transform))
   }
 }

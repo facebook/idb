@@ -26,7 +26,7 @@ private final class StubRecording: VideoRecording, @unchecked Sendable {
   }
 }
 
-private final class RecordingLogger: NSObject, ControlCoreLogger, @unchecked Sendable {
+private final class RecordingLogger: ControlCoreLogger, @unchecked Sendable {
   private let lock = NSLock()
   private var logged: [String] = []
 
@@ -50,7 +50,7 @@ private final class RecordingLogger: NSObject, ControlCoreLogger, @unchecked Sen
   func withName(_ name: String) -> any ControlCoreLogger { self }
   func withDateFormatEnabled(_ enabled: Bool) -> any ControlCoreLogger { self }
   var name: String? { nil }
-  var level: FBControlCoreLogLevel { .multiple }
+  var level: ControlCoreLogLevel { .multiple }
 }
 
 private struct StubError: Error, CustomStringConvertible {

@@ -26,8 +26,8 @@ public enum FBControlCoreLoggerFactory {
   }
 
   /// Compose multiple loggers into one.
-  public static func compositeLogger(with loggers: [ControlCoreLogger]) -> FBCompositeLogger {
-    FBCompositeLogger(loggers: loggers)
+  public static func compositeLogger(with loggers: [ControlCoreLogger]) -> CompositeLogger {
+    CompositeLogger(loggers: loggers)
   }
 
   /// Log to a Consumer.
@@ -56,19 +56,18 @@ func loggableStringLine(_ string: String) -> String? {
 // MARK: - OSLogLogger
 
 // SAFETY: all state is immutable, and `OSLog` handles are safe to use from any thread.
-private final class OSLogLogger: NSObject, ControlCoreLogger, @unchecked Sendable {
+private final class OSLogLogger: ControlCoreLogger, @unchecked Sendable {
 
   static let subsystem = "com.facebook.fbcontrolcore"
 
   private let client: OSLog
   let name: String?
-  let level: FBControlCoreLogLevel
+  let level: ControlCoreLogLevel
 
-  init(client: OSLog, name: String?, level: FBControlCoreLogLevel) {
+  init(client: OSLog, name: String?, level: ControlCoreLogLevel) {
     self.client = client
     self.name = name
     self.level = level
-    super.init()
   }
 
   @discardableResult
@@ -115,7 +114,7 @@ private final class OSLogLogger: NSObject, ControlCoreLogger, @unchecked Sendabl
 
 // SAFETY: all state is immutable; writes to the shared consumer are serialized by `writeLock`,
 // which loggers derived from one another share along with the consumer.
-private final class ConsumerLogger: NSObject, ControlCoreLogger, @unchecked Sendable {
+private final class ConsumerLogger: ControlCoreLogger, @unchecked Sendable {
 
   private let consumer: DataConsumer
   private let writeLock: NSLock
@@ -123,7 +122,7 @@ private final class ConsumerLogger: NSObject, ControlCoreLogger, @unchecked Send
   let name: String?
 
   // Nothing filters on a consumer logger's level; it writes every message.
-  var level: FBControlCoreLogLevel {
+  var level: ControlCoreLogLevel {
     .info
   }
 
@@ -132,7 +131,6 @@ private final class ConsumerLogger: NSObject, ControlCoreLogger, @unchecked Send
     self.writeLock = writeLock
     self.name = name
     self.dateFormatter = dateFormatter
-    super.init()
   }
 
   @discardableResult

@@ -351,7 +351,7 @@ private final class GatedDisplayCommands: DisplayCommands, @unchecked Sendable {
 /// Lets a test wait for a number of messages to be logged.
 // SAFETY: The continuation is safe to yield from any thread, and only one test consumes the stream.
 // patternlint-disable-next-line unchecked-sendable
-private final class AnnouncingLogger: NSObject, ControlCoreLogger, @unchecked Sendable {
+private final class AnnouncingLogger: ControlCoreLogger, @unchecked Sendable {
   private let messages = AsyncStream<String>.makeStream()
 
   func wait(forMessages count: Int) async {
@@ -374,5 +374,5 @@ private final class AnnouncingLogger: NSObject, ControlCoreLogger, @unchecked Se
   func withName(_ prefix: String) -> ControlCoreLogger { self }
   func withDateFormatEnabled(_ enabled: Bool) -> ControlCoreLogger { self }
   var name: String? { nil }
-  var level: FBControlCoreLogLevel { .multiple }
+  var level: ControlCoreLogLevel { .multiple }
 }

@@ -62,8 +62,7 @@ private final class GlobalLoggers: @unchecked Sendable {
 
 private let globalLoggers = GlobalLoggers()
 
-// @unchecked Sendable: all stored properties are immutable lets wrapping
-// thread-safe ObjC objects.
+// @unchecked Sendable: all stored properties are immutable lets wrapping thread-safe objects.
 private final class IDBLoggerOperation: LogOperation, @unchecked Sendable {
   let consumer: DataConsumer
   let logger: ControlCoreLogger
@@ -84,9 +83,13 @@ private final class IDBLoggerOperation: LogOperation, @unchecked Sendable {
   }
 }
 
-// Restates the base class's @unchecked Sendable, as required for subclasses; it adds no stored
-// state.
-public final class IDBLogger: FBCompositeLogger, @unchecked Sendable {
+public final class IDBLogger: ControlCoreLogger {
+
+  private let ownLoggers: [ControlCoreLogger]
+
+  init(loggers: [ControlCoreLogger]) {
+    self.ownLoggers = loggers
+  }
 
   /// The logger the companion writes to, which is the stderr logger plus, when
   /// `-log-file-path` is given, a logger appending to that file.
@@ -133,19 +136,55 @@ public final class IDBLogger: FBCompositeLogger, @unchecked Sendable {
     return fileDescriptor
   }
 
-  public override var loggers: [ControlCoreLogger] {
-    super.loggers + globalLoggers.all
+  var loggers: [ControlCoreLogger] {
+    ownLoggers + globalLoggers.all
   }
 
-  /// `FBCompositeLogger`'s builder methods allocate an instance of the receiver's dynamic class, so
-  /// applying one to an `IDBLogger` always yields an `IDBLogger` — the `ControlCoreLogger`
-  /// requirements can only promise `ControlCoreLogger`.
+  @discardableResult
+  public func log(_ message: String) -> ControlCoreLogger {
+    CompositeLogger(loggers: loggers).log(message)
+    return self
+  }
+
+  public func info() -> ControlCoreLogger {
+    applying { $0.info() }
+  }
+
+  public func debug() -> ControlCoreLogger {
+    applying { $0.debug() }
+  }
+
+  public func error() -> ControlCoreLogger {
+    applying { $0.error() }
+  }
+
+  public func withName(_ name: String) -> ControlCoreLogger {
+    named(name)
+  }
+
+  public func withDateFormatEnabled(_ enabled: Bool) -> ControlCoreLogger {
+    applying { $0.withDateFormatEnabled(enabled) }
+  }
+
+  public var name: String? {
+    nil
+  }
+
+  public var level: ControlCoreLogLevel {
+    .multiple
+  }
+
   public func named(_ name: String) -> IDBLogger {
-    unsafeDowncast(withName(name) as AnyObject, to: IDBLogger.self)
+    applying { $0.withName(name) }
   }
 
   func dateFormatted() -> IDBLogger {
-    unsafeDowncast(withDateFormatEnabled(true) as AnyObject, to: IDBLogger.self)
+    applying { $0.withDateFormatEnabled(true) }
+  }
+
+  // A derived logger captures the global loggers present now, and still fans out to the live set as well.
+  private func applying(_ transform: (ControlCoreLogger) -> ControlCoreLogger) -> IDBLogger {
+    IDBLogger(loggers: loggers.map(transform))
   }
 
   func tailToConsumer(_ consumer: DataConsumer) async throws -> any LogOperation {

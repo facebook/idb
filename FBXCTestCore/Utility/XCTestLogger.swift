@@ -12,7 +12,7 @@ private let fbxctestOutputLogDirectoryEnv = "FBXCTEST_LOG_DIRECTORY"
 private let xctoolOutputLogDirectoryEnv = "XCTOOL_TEST_ENV_FB_LOG_DIRECTORY"
 
 // @unchecked Sendable: all stored state is immutable and ControlCoreLogger implementations are required to be thread-safe.
-public final class XCTestLogger: NSObject, ControlCoreLogger, @unchecked Sendable {
+public final class XCTestLogger: ControlCoreLogger, @unchecked Sendable {
 
   private let baseLogger: ControlCoreLogger
   public let logDirectory: String
@@ -20,7 +20,6 @@ public final class XCTestLogger: NSObject, ControlCoreLogger, @unchecked Sendabl
   private init(baseLogger: ControlCoreLogger, logDirectory: String) {
     self.baseLogger = baseLogger
     self.logDirectory = logDirectory
-    super.init()
   }
 
   // MARK: - Factory Methods
@@ -112,7 +111,7 @@ public final class XCTestLogger: NSObject, ControlCoreLogger, @unchecked Sendabl
     baseLogger.name
   }
 
-  public var level: FBControlCoreLogLevel {
+  public var level: ControlCoreLogLevel {
     baseLogger.level
   }
 

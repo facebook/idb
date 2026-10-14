@@ -70,7 +70,7 @@ private struct TelemetryTestError: Error, LocalizedError {
 
 /// Captures log lines so completion-line rendering is assertable without
 /// reading stderr.
-private final class RecordingLogger: NSObject, ControlCoreLogger, @unchecked Sendable {
+private final class RecordingLogger: ControlCoreLogger, @unchecked Sendable {
   private let lock = NSLock()
   private var recorded: [String] = []
 
@@ -81,7 +81,7 @@ private final class RecordingLogger: NSObject, ControlCoreLogger, @unchecked Sen
   }
 
   var name: String? { nil }
-  var level: FBControlCoreLogLevel { .info }
+  var level: ControlCoreLogLevel { .info }
 
   @discardableResult
   func log(_ message: String) -> ControlCoreLogger {

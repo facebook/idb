@@ -16,7 +16,7 @@ import Testing
 /// this is what distinguishes "the command parsed and dispatched" from "the line was rejected".
 ///
 /// `@unchecked Sendable` is sound because every access to `recorded` is behind `lock`.
-private final class RecordingLogger: NSObject, ControlCoreLogger, @unchecked Sendable {
+private final class RecordingLogger: ControlCoreLogger, @unchecked Sendable {
   /// The prefix of the decode-failure diagnostic. `DecodingError`'s own wording is interpolated
   /// after it and is not part of the wire protocol, so assertions elide it.
   static let decodeFailure = "Failed to decode stdin command:"
@@ -25,7 +25,7 @@ private final class RecordingLogger: NSObject, ControlCoreLogger, @unchecked Sen
   private var recorded: [String] = []
 
   var name: String? { nil }
-  var level: FBControlCoreLogLevel { .info }
+  var level: ControlCoreLogLevel { .info }
 
   var messages: [String] {
     lock.lock()
