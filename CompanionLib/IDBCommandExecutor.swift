@@ -352,13 +352,13 @@ public final class IDBCommandExecutor {
     try await simulatorTarget().photos.clear()
   }
 
-  public func list_test_bundles() async throws -> [XCTestDescriptor] {
+  public func listTestBundles() async throws -> [XCTestDescriptor] {
     return try storageManager.xctest.listTestDescriptors()
   }
 
   private static let ListTestBundleTimeout: TimeInterval = 180.0
 
-  public func list_tests_in_bundle(_ bundleID: String, with_app appPath: String?) async throws -> [String] {
+  public func listTestsInBundle(_ bundleID: String, withApp appPath: String?) async throws -> [String] {
     var resolvedAppPath = appPath
     if resolvedAppPath == "" {
       resolvedAppPath = nil
@@ -423,7 +423,7 @@ public final class IDBCommandExecutor {
     return try await target.crashLog.prune(matching: predicate)
   }
 
-  public func xctest_run(_ request: XCTestRunRequest, reporter: XCTestReporter, logger: ControlCoreLogger) async throws -> IDBTestOperation {
+  public func xctestRun(_ request: XCTestRunRequest, reporter: XCTestReporter, logger: ControlCoreLogger) async throws -> IDBTestOperation {
     return try await request.start(withBundleStorageManager: storageManager.xctest, target: target, reporter: reporter, logger: logger, temporaryDirectory: temporaryDirectory)
   }
 

@@ -41,7 +41,7 @@ struct XCTestRunMethodHandler {
     try await Self.run(
       cancellation: context.cancellation,
       start: { [commandExecutor] in
-        let operation = try await commandExecutor.xctest_run(
+        let operation = try await commandExecutor.xctestRun(
           request,
           reporter: reporter,
           logger: ControlCoreLoggerFactory.logger(to: reporter))
