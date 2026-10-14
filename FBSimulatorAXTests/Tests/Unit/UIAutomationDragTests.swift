@@ -10,29 +10,32 @@ import FBControlCore
 @testable import FBSimulatorAX
 @testable import FBSimulatorControl
 import Foundation
-import XCTest
+import Testing
 
-final class UIAutomationDragTests: XCTestCase {
+@Suite
+struct UIAutomationDragTests {
 
   // The press hold is what makes this a drag rather than a flick: iOS opens a drag session only once
   // the press clears its long-press threshold, so a shortened default silently turns every drag into
   // a swipe.
-  func testTheDefaultsAreTheDocumentedDrag() {
+  @Test
+  func theDefaultsAreTheDocumentedDrag() {
     let options = DragOptions()
-    XCTAssertEqual(options.pressDuration, 0.5)
-    XCTAssertEqual(options.duration, 0.5)
-    XCTAssertEqual(options.releaseDuration, 0.1)
-    XCTAssertEqual(options.delta, SimulatorHIDEvent.defaultSwipeDelta)
+    #expect(options.pressDuration == 0.5)
+    #expect(options.duration == 0.5)
+    #expect(options.releaseDuration == 0.1)
+    #expect(options.delta == SimulatorHIDEvent.defaultSwipeDelta)
   }
 
-  func testTheTwoArgumentDragSendsTheDefaults() async throws {
+  @Test
+  func theTwoArgumentDragSendsTheDefaults() async throws {
     let automation = RecordingUIAutomation()
     try await automation.drag(from: .point(CGPoint(x: 1, y: 2)), to: .point(CGPoint(x: 3, y: 4)))
 
-    let recorded = try XCTUnwrap(automation.recorded)
-    XCTAssertEqual(recorded.source, .point(CGPoint(x: 1, y: 2)))
-    XCTAssertEqual(recorded.destination, .point(CGPoint(x: 3, y: 4)))
-    XCTAssertEqual(recorded.options, DragOptions())
+    let recorded = try #require(automation.recorded)
+    #expect(recorded.source == .point(CGPoint(x: 1, y: 2)))
+    #expect(recorded.destination == .point(CGPoint(x: 3, y: 4)))
+    #expect(recorded.options == DragOptions())
   }
 }
 
@@ -115,29 +118,33 @@ private final class RecordingUIAutomation: UIAutomation, @unchecked Sendable {
 /// A scroll bubbles from the element it names up to that element's scrollable container, so what an
 /// untargeted scroll resolves to decides whether it can scroll at all: the application element has no
 /// container above it and can never be scrolled, on either backend.
-final class UIAutomationScrollTargetTests: XCTestCase {
+@Suite
+struct UIAutomationScrollTargetTests {
 
-  func testAnUntargetedScrollAimsAtTheCentreOfTheApplication() async throws {
+  @Test
+  func anUntargetedScrollAimsAtTheCentreOfTheApplication() async throws {
     let automation = RecordingUIAutomation()
     automation.applicationFrame = CGRect(x: 0, y: 0, width: 420, height: 912)
 
     let target = try await automation.scrollTarget(for: .frontmost, backend: .accessibility)
 
-    XCTAssertEqual(target, .point(CGPoint(x: 210, y: 456)))
-    XCTAssertEqual(automation.framedQuery, .frontmost, "the centre has to come from the application's own frame")
+    #expect(target == .point(CGPoint(x: 210, y: 456)))
+    #expect(automation.framedQuery == .frontmost, "the centre has to come from the application's own frame")
   }
 
   /// An application that does not fill the screen is scrolled at its own centre, not the screen's.
-  func testTheCentreIsTheApplicationsRatherThanTheScreens() async throws {
+  @Test
+  func theCentreIsTheApplicationsRatherThanTheScreens() async throws {
     let automation = RecordingUIAutomation()
     automation.applicationFrame = CGRect(x: 100, y: 200, width: 200, height: 400)
 
     let target = try await automation.scrollTarget(for: .frontmost, backend: .accessibility)
 
-    XCTAssertEqual(target, .point(CGPoint(x: 200, y: 400)))
+    #expect(target == .point(CGPoint(x: 200, y: 400)))
   }
 
-  func testATargetedScrollIsLeftAlone() async throws {
+  @Test
+  func aTargetedScrollIsLeftAlone() async throws {
     let automation = RecordingUIAutomation()
     automation.applicationFrame = CGRect(x: 0, y: 0, width: 420, height: 912)
 
@@ -147,23 +154,25 @@ final class UIAutomationScrollTargetTests: XCTestCase {
       .application(pid: 99),
     ] {
       let target = try await automation.scrollTarget(for: query, backend: .accessibility)
-      XCTAssertEqual(target, query, "\(query) names an element already")
+      #expect(target == query, "\(query) names an element already")
     }
-    XCTAssertNil(automation.framedQuery, "a targeted scroll must not pay for a frame read it does not use")
+    #expect(automation.framedQuery == nil, "a targeted scroll must not pay for a frame read it does not use")
   }
 
   // A degenerate frame would resolve to the origin, which is a corner of the screen and not the
   // application the caller asked to scroll.
-  func testAnApplicationWithNoFrameIsRefusedRatherThanScrolledAtTheOrigin() async throws {
+  @Test
+  func anApplicationWithNoFrameIsRefusedRatherThanScrolledAtTheOrigin() async throws {
     let automation = RecordingUIAutomation()
     automation.applicationFrame = .zero
 
     do {
       _ = try await automation.scrollTarget(for: .frontmost, backend: .accessibility)
-      XCTFail("a zero frame must not resolve to a point")
+      Issue.record("a zero frame must not resolve to a point")
     } catch let error as UIAutomationError {
       guard case .frameUnavailable = error else {
-        return XCTFail("expected frameUnavailable, got \(error)")
+        Issue.record("expected frameUnavailable, got \(error)")
+        return
       }
     }
   }
