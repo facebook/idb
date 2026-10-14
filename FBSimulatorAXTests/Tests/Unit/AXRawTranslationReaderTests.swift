@@ -85,10 +85,8 @@ final class AXRawTranslationReaderTests: XCTestCase {
 
     let root = Self.reader(transport).read(Self.reference(1), plan: Self.defaultPlan)
 
-    // BUG: the second listing is dropped as if it were a cycle, so the read reports one scroll bar where the
-    // batched read reports two — flipped in the following commit.
-    XCTAssertEqual(root.children.first?.children.map(\.label), ["Vertical scroll bar"])
-    XCTAssertEqual(transport.requestedObjectIDs, [1, 2, 3])
+    XCTAssertEqual(root.children.first?.children.map(\.label), ["Vertical scroll bar", "Vertical scroll bar"])
+    XCTAssertEqual(transport.requestedObjectIDs, [1, 2, 3, 3])
   }
 
   func testAnUnansweredElementReadsAsOneWithNoValues() {

@@ -33,11 +33,13 @@ struct AXRawTranslationReader {
   /// The element actions on a snapshot go through, built locally from its translation.
   let handle: (AXTranslationReference) -> AXWritableElement?
 
-  /// Reads `root` and, as deep as `plan` asks, its descendants. An element reached a second time — an
-  /// application can list an element among its own descendants — is not read again.
+  /// Reads `root` and, as deep as `plan` asks, its descendants. An element listed among its own
+  /// descendants — an application can answer with a cycle — is not read again below itself. An element
+  /// listed more than once elsewhere, as a scroll view lists its scroll bar, is read at each place, as the
+  /// platform element reads it.
   func read(_ root: AXTranslationReference, plan: AXReadPlan) -> AXElementSnapshot {
-    var visited = Set<Identity>()
-    return read(root, plan: plan, visited: &visited)
+    var ancestors = Set<Identity>()
+    return read(root, plan: plan, ancestors: &ancestors)
   }
 
   private struct Identity: Hashable {
@@ -45,8 +47,10 @@ struct AXRawTranslationReader {
     let objectID: UInt64
   }
 
-  private func read(_ translation: AXTranslationReference, plan: AXReadPlan, visited: inout Set<Identity>) -> AXElementSnapshot {
-    visited.insert(Identity(pid: translation.pid, objectID: translation.objectID))
+  private func read(_ translation: AXTranslationReference, plan: AXReadPlan, ancestors: inout Set<Identity>) -> AXElementSnapshot {
+    let identity = Identity(pid: translation.pid, objectID: translation.objectID)
+    ancestors.insert(identity)
+    defer { ancestors.remove(identity) }
     translation.bridgeDelegateToken = token
     let readsChildren = plan.depth.descendant != nil
     let answer = self.answer(for: translation, asking: Self.attributes(for: plan, readingChildren: readsChildren))
@@ -55,8 +59,8 @@ struct AXRawTranslationReader {
     var children: [AXElementSnapshot] = []
     if let depth = plan.depth.descendant {
       let childPlan = AXReadPlan(attributes: plan.attributes, depth: depth)
-      for child in decoded.children where !visited.contains(Identity(pid: child.pid, objectID: child.objectID)) {
-        children.append(read(child, plan: childPlan, visited: &visited))
+      for child in decoded.children where !ancestors.contains(Identity(pid: child.pid, objectID: child.objectID)) {
+        children.append(read(child, plan: childPlan, ancestors: &ancestors))
       }
     }
     return AXElementSnapshot(
