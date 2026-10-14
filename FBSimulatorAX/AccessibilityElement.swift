@@ -13,12 +13,12 @@ import Foundation
 ///
 /// The element's translation token remains registered as long as the element is
 /// open, allowing serialization (attribute reads go through XPC callbacks routed
-/// by token). Actions (tap, scroll) are direct calls on the element and do not
-/// require the token. Call `close()` when done to deregister the token; after
-/// close, serialization fails.
+/// by token). Actions (tap, scroll) go through the translator's platform element,
+/// built from the handle when acting. Call `close()` when done to deregister the
+/// token; after close, serialization fails.
 final class AccessibilityElement {
 
-  private let element: AXWritableElement
+  private let handle: AXElementHandle
   private let request: AXTranslationRequest
   private let dispatcher: AXTranslationDispatcher
   private weak var simulator: Simulator?
@@ -30,13 +30,13 @@ final class AccessibilityElement {
   let rootBounds: CGRect?
 
   init(
-    element: AXWritableElement,
+    handle: AXElementHandle,
     request: AXTranslationRequest,
     dispatcher: AXTranslationDispatcher,
     simulator: Simulator,
     rootBounds: CGRect? = nil
   ) {
-    self.element = element
+    self.handle = handle
     self.request = request
     self.dispatcher = dispatcher
     self.simulator = simulator
@@ -64,10 +64,10 @@ final class AccessibilityElement {
       throw AccessibilityError.closedElement(operation: "serialize")
     }
     let request = self.request
-    let element = self.element
+    let handle = self.handle
     let isMarkerMatch = self.isMarkerMatch
     return try await dispatcher.performSerialized {
-      try request.run(element, options: options, isMarkerMatch: isMarkerMatch)
+      try request.run(handle, options: options, isMarkerMatch: isMarkerMatch)
     }
   }
 
@@ -91,10 +91,22 @@ final class AccessibilityElement {
 
   /// Reads this element against `plan` on the translator's work queue.
   private func read(_ plan: AXReadPlan) async throws -> AXElementSnapshot {
-    let element = self.element
+    let handle = self.handle
     let request = self.request
     let reads = AccessibilityRequestOptions.defaultTranslatorReads
-    return try await dispatcher.performSerialized { request.snapshot(of: element, plan: plan, reads: reads) }
+    return try await dispatcher.performSerialized { request.snapshot(of: handle, plan: plan, reads: reads) }
+  }
+
+  /// Runs `action` on this element's platform element, built from its handle on the translator's work queue.
+  private func act<T>(_ action: @escaping (AXWritableElement) throws -> T) async throws -> T {
+    let handle = self.handle
+    let request = self.request
+    return try await dispatcher.performSerialized {
+      guard let element = request.element(for: handle) as? AXWritableElement else {
+        throw AccessibilityError.noTranslationObject
+      }
+      return try action(element)
+    }
   }
 
   // MARK: - Actions
@@ -104,8 +116,7 @@ final class AccessibilityElement {
     if closed {
       throw AccessibilityError.closedElement(operation: "tap")
     }
-    let element = self.element
-    try await dispatcher.performSerialized {
+    try await act { element in
       let actionNames = element.axActionNames()
       guard actionNames.contains("AXPress") else {
         throw AccessibilityError.pressUnsupported(supportedActions: CollectionInformation.oneLineDescription(from: actionNames))
@@ -121,8 +132,7 @@ final class AccessibilityElement {
     if closed {
       throw AccessibilityError.closedElement(operation: "perform a custom action on")
     }
-    let element = self.element
-    try await dispatcher.performSerialized {
+    try await act { element in
       let customActions = element.axCustomActionNames()
       let matches = customActions.filter { $0 == name }
       guard !matches.isEmpty else {
@@ -145,8 +155,7 @@ final class AccessibilityElement {
     if closed {
       throw AccessibilityError.closedElement(operation: "scroll")
     }
-    let element = self.element
-    try await dispatcher.performSerialized { element.axScroll(direction) }
+    try await act { $0.axScroll(direction) }
   }
 
   /// Set the accessibility value of the element (e.g., text field content, slider position).
@@ -154,8 +163,7 @@ final class AccessibilityElement {
     if closed {
       throw AccessibilityError.closedElement(operation: "set value on")
     }
-    let element = self.element
-    try await dispatcher.performSerialized { element.axSetValue(value) }
+    try await act { $0.axSetValue(value) }
   }
 
   // MARK: - Geometry
@@ -170,7 +178,7 @@ final class AccessibilityElement {
 
   /// The pid of the backing translation object (0 when absent); reading it performs no serialization.
   var processIdentifier: pid_t {
-    element.axTranslationPid
+    handle.pid
   }
 
   // MARK: - Descendant search (ownership-transferring)
@@ -226,7 +234,7 @@ final class AccessibilityElement {
       throw WeakTargetError.simulator
     }
     let newHandle = AccessibilityElement(
-      element: handle, request: request, dispatcher: dispatcher, simulator: simulator, rootBounds: root.frame
+      handle: handle, request: request, dispatcher: dispatcher, simulator: simulator, rootBounds: root.frame
     )
     closed = true
     return AccessibilitySearchResult(match: newHandle, diagnostics: diagnostics)

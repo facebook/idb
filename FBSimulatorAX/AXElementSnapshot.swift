@@ -134,7 +134,7 @@ final class AXElementSnapshot {
   let frame: NSRect
   let pid: pid_t
   /// The element actions go through, when the backend can act on what it read.
-  let handle: AXWritableElement?
+  let handle: AXElementHandle?
   let role: String?
   let label: String?
   let value: AccessibilityAttributeValue?
@@ -161,7 +161,7 @@ final class AXElementSnapshot {
   init(
     frame: NSRect,
     pid: pid_t,
-    handle: AXWritableElement? = nil,
+    handle: AXElementHandle? = nil,
     role: String? = nil,
     label: String? = nil,
     value: AccessibilityAttributeValue? = nil,
@@ -259,7 +259,7 @@ extension AXElementSnapshot {
     return AXElementSnapshot(
       frame: fields.frame,
       pid: element.axTranslationPid,
-      handle: element as? AXWritableElement,
+      handle: .element(element),
       role: fields.role,
       label: fields.label,
       value: AccessibilityAttributeValue(rawValue),

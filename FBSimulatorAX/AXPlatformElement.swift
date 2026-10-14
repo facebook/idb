@@ -62,6 +62,28 @@ protocol AXTranslationReference: AnyObject {
 
 extension AXPTranslationObject: AXTranslationReference {}
 
+/// What an element is read and acted on through: the translator's platform element where a read already
+/// has one, or the element's translation, from which the platform element is built only when something
+/// acts on the element. A raw read hands out translations, so reading builds no platform elements.
+enum AXElementHandle {
+  case element(AXPlatformElement)
+  case translation(AXTranslationReference)
+
+  var translation: AXTranslationReference? {
+    switch self {
+    case let .element(element): element.axTranslationReference
+    case let .translation(translation): translation
+    }
+  }
+
+  var pid: pid_t {
+    switch self {
+    case let .element(element): element.axTranslationPid
+    case let .translation(translation): translation.pid
+    }
+  }
+}
+
 /// The mutating action surface — press, scroll, set-value — layered on the read surface.
 /// Only the legacy CoreSimulator element (`AXPMacPlatformElement`) and its test double
 /// perform these, so a caller that acts on an element (`AccessibilityElement`) demands

@@ -713,6 +713,23 @@ final class SimulatorAccessibilityCommandsTests: XCTestCase {
     )
   }
 
+  func testAMarkerMatchBuildsItsPlatformElementOnlyWhenActedOn() async throws {
+    let okButton = defaultOkButton
+    try setUp(withRootElement: defaultRoot(withChildren: [defaultTitleLabel, okButton, defaultCancelButton]))
+    func elementsBuilt() -> Int {
+      fixture!.translator.methodCalls.compactMap { $0 as? String }.filter { $0 == "macPlatformElementFromTranslation" }.count
+    }
+
+    let match = try await simulator.accessibility.resolveElement(for: .marker(value: "OK", key: .label, depth: 10, ignoresCase: false))
+    defer { match.close() }
+    XCTAssertEqual(elementsBuilt(), 1, "reading the tree to find the match builds only the root's element")
+
+    try await match.tap()
+
+    XCTAssertEqual(elementsBuilt(), 2, "acting on the match builds its element")
+    XCTAssertEqual(okButton.translation.bridgeDelegateToken, fixture!.translator.frontmostApplicationResult?.bridgeDelegateToken)
+  }
+
   func testAccessibilityPerformTapOnButtonSucceeds() async throws {
     try setUp(withRootElement: defaultElementTree)
 

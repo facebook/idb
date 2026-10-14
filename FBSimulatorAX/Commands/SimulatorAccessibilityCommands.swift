@@ -211,7 +211,7 @@ final class SimulatorAccessibilityCommands: AccessibilityOperations {
         throw error
       }
     }
-    return AccessibilityElement(element: element, request: request, dispatcher: dispatcher, simulator: simulator)
+    return AccessibilityElement(handle: .element(element), request: request, dispatcher: dispatcher, simulator: simulator)
   }
 
   /// Throws when the frontmost root names a process that has exited and SpringBoard is known to be why. After

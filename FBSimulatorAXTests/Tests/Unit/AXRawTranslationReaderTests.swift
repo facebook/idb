@@ -20,7 +20,7 @@ final class AXRawTranslationReaderTests: XCTestCase {
     _ transport: AXRawTranslationTransportDouble, collector: AccessibilityProfilingCollector = AccessibilityProfilingCollector()
   ) -> AXRawTranslationReader {
     AXRawTranslationReader(
-      transport: transport, clientType: .xctest, timeout: 1, collector: collector, token: "token", handle: { _ in nil })
+      transport: transport, clientType: .xctest, timeout: 1, collector: collector, token: "token")
   }
 
   private static func reference(_ objectID: UInt64) -> AXPTranslationObjectDouble {
@@ -179,7 +179,7 @@ final class AXRawTranslationReaderTests: XCTestCase {
 
   // MARK: - Request
 
-  func testARawReadsActionHandleForAnElementTheTranslatorHasAlreadyBuilt() {
+  func testARawReadsActionHandleForAnElementTheTranslatorHasAlreadyBuilt() throws {
     // The translator built this element for an earlier read, which has since closed.
     let cached = AccessibilityTestElementBuilder.button(withLabel: "OK", identifier: nil, frame: .zero)
     cached.translation = Self.reference(2)
@@ -197,7 +197,8 @@ final class AXRawTranslationReaderTests: XCTestCase {
 
     let snapshot = request.snapshot(of: root, plan: AXReadPlan(attributes: [.label], depth: .limited(1)), reads: .raw)
 
-    XCTAssertTrue(snapshot.children.first?.handle as AnyObject === cached, "the handle is the translator's element")
+    let handle = try XCTUnwrap(snapshot.children.first?.handle)
+    XCTAssertTrue(request.element(for: handle) as AnyObject === cached, "acting builds the translator's element")
     XCTAssertEqual(cached.translation.bridgeDelegateToken, request.token, "an action on the handle reaches this read")
   }
 

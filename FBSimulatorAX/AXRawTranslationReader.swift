@@ -30,8 +30,6 @@ struct AXRawTranslationReader {
   let timeout: TimeInterval
   let collector: AccessibilityProfilingCollector
   let token: String
-  /// The element actions on a snapshot go through, built locally from its translation.
-  let handle: (AXTranslationReference) -> AXWritableElement?
 
   /// Reads `root` and, as deep as `plan` asks, its descendants. An element listed among its own
   /// descendants — an application can answer with a cycle — is not read again below itself. An element
@@ -66,7 +64,7 @@ struct AXRawTranslationReader {
     return AXElementSnapshot(
       frame: decoded.frame,
       pid: translation.pid,
-      handle: handle(translation),
+      handle: .translation(translation),
       role: decoded.role,
       label: decoded.label,
       value: AccessibilityAttributeValue(decoded.value),
