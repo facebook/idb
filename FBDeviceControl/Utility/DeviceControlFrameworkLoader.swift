@@ -12,10 +12,10 @@ import MobileDeviceAPI
 /// Reinterprets a `dlsym` result as the function pointer the call table expects.
 ///
 /// The optional variant is used so a name that does not resolve is reported as an error naming it.
-/// `FBGetSymbolFromHandle` asserts instead, which is compiled out of release builds and leaves a
+/// `symbolFromHandle` asserts instead, which is compiled out of release builds and leaves a
 /// null pointer in the table to be crashed through later.
 private func symbol<T>(_ handle: UnsafeMutableRawPointer, _ name: String) throws -> T {
-  guard let address = FBGetSymbolFromHandleOptional(handle, name) else {
+  guard let address = symbolFromHandleIfPresent(handle, name) else {
     throw DeviceControlFrameworkLoaderError.symbolNotFound(name: name)
   }
   return unsafeBitCast(address, to: T.self)

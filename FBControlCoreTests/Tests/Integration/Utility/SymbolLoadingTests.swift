@@ -32,22 +32,22 @@ struct SymbolLoadingTests {
   func opensALoadedBundleAndResolvesItsSymbols() throws {
     let handle = try Self.mobileDeviceHandle()
 
-    #expect(FBGetSymbolFromHandleOptional(handle, Self.resolvableSymbol) != nil)
+    #expect(symbolFromHandleIfPresent(handle, Self.resolvableSymbol) != nil)
   }
 
   @Test("A name that does not resolve is reported as nil rather than as an address")
   func unresolvableNameIsReportedAsNil() throws {
     let handle = try Self.mobileDeviceHandle()
 
-    #expect(FBGetSymbolFromHandleOptional(handle, "IDBNotASymbolInMobileDevice") == nil)
+    #expect(symbolFromHandleIfPresent(handle, "IDBNotASymbolInMobileDevice") == nil)
   }
 
   @Test("Both resolution forms agree on the address of a symbol that exists")
   func bothFormsResolveTheSameAddress() throws {
     let handle = try Self.mobileDeviceHandle()
-    let optional = try #require(FBGetSymbolFromHandleOptional(handle, Self.resolvableSymbol))
+    let optional = try #require(symbolFromHandleIfPresent(handle, Self.resolvableSymbol))
 
-    #expect(FBGetSymbolFromHandle(handle, Self.resolvableSymbol) == optional)
+    #expect(symbolFromHandle(handle, Self.resolvableSymbol) == optional)
   }
 
   @Test("Opening the same bundle twice hands back the same image")
@@ -56,7 +56,7 @@ struct SymbolLoadingTests {
     let second = try Self.mobileDeviceHandle()
 
     #expect(
-      FBGetSymbolFromHandleOptional(first, Self.resolvableSymbol)
-        == FBGetSymbolFromHandleOptional(second, Self.resolvableSymbol))
+      symbolFromHandleIfPresent(first, Self.resolvableSymbol)
+        == symbolFromHandleIfPresent(second, Self.resolvableSymbol))
   }
 }

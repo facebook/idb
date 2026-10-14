@@ -400,5 +400,5 @@ public final class FileConduit {
 
 /// Reinterprets a `dlsym` result as the function pointer the call table expects.
 private func symbol<T>(_ handle: UnsafeMutableRawPointer, _ name: String) -> T {
-  unsafeBitCast(FBGetSymbolFromHandle(handle, name), to: T.self)
+  unsafeBitCast(symbolFromHandle(handle, name), to: T.self)
 }

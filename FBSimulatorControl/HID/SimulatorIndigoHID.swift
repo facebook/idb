@@ -53,15 +53,15 @@ final class SimulatorIndigoHID {
       throw SimulatorHIDError.simulatorKitUnavailable
     }
     self.init(
-      messageForButton: unsafeBitCast(FBGetSymbolFromHandle(handle, "IndigoHIDMessageForButton"), to: MessageForButtonFn.self),
+      messageForButton: unsafeBitCast(symbolFromHandle(handle, "IndigoHIDMessageForButton"), to: MessageForButtonFn.self),
       messageForKeyboardArbitrary: unsafeBitCast(
-        FBGetSymbolFromHandle(handle, "IndigoHIDMessageForKeyboardArbitrary"), to: MessageForKeyboardArbitraryFn.self),
+        symbolFromHandle(handle, "IndigoHIDMessageForKeyboardArbitrary"), to: MessageForKeyboardArbitraryFn.self),
       messageForHIDArbitrary: unsafeBitCast(
-        FBGetSymbolFromHandle(handle, "IndigoHIDMessageForHIDArbitrary"), to: MessageForHIDArbitraryFn.self),
+        symbolFromHandle(handle, "IndigoHIDMessageForHIDArbitrary"), to: MessageForHIDArbitraryFn.self),
       messageForMouseNSEvent: unsafeBitCast(
-        FBGetSymbolFromHandle(handle, "IndigoHIDMessageForMouseNSEvent"), to: MessageForMouseNSEventFn.self),
+        symbolFromHandle(handle, "IndigoHIDMessageForMouseNSEvent"), to: MessageForMouseNSEventFn.self),
       messageForTrackpadMoveEvent: unsafeBitCast(
-        FBGetSymbolFromHandle(handle, "IndigoHIDMessageForTrackpadMoveEvent"), to: MessageForTrackpadMoveEventFn.self))
+        symbolFromHandle(handle, "IndigoHIDMessageForTrackpadMoveEvent"), to: MessageForTrackpadMoveEventFn.self))
   }
 
   private init(

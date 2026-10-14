@@ -11,15 +11,15 @@ import Foundation
 ///
 /// Callers reinterpret the result as a function pointer, so a name that does not resolve would
 /// otherwise put a null pointer in a call table to be crashed through at some later call.
-public func FBGetSymbolFromHandle(_ handle: UnsafeMutableRawPointer, _ name: String) -> UnsafeMutableRawPointer {
-  guard let symbol = FBGetSymbolFromHandleOptional(handle, name) else {
+public func symbolFromHandle(_ handle: UnsafeMutableRawPointer, _ name: String) -> UnsafeMutableRawPointer {
+  guard let symbol = symbolFromHandleIfPresent(handle, name) else {
     preconditionFailure("\(name) could not be located")
   }
   return symbol
 }
 
 /// Resolves a symbol in an opened image, returning nil when it is not there.
-public func FBGetSymbolFromHandleOptional(_ handle: UnsafeMutableRawPointer, _ name: String) -> UnsafeMutableRawPointer? {
+public func symbolFromHandleIfPresent(_ handle: UnsafeMutableRawPointer, _ name: String) -> UnsafeMutableRawPointer? {
   dlsym(handle, name)
 }
 

@@ -291,7 +291,7 @@ public final class DeviceDebugSymbolsCommands {
       throw DeviceDebugSymbolsError.extractorNotLoaded(path: path)
     }
     let name = "dyld_shared_cache_extract_dylibs_progress"
-    guard let address = FBGetSymbolFromHandleOptional(handle, name) else {
+    guard let address = symbolFromHandleIfPresent(handle, name) else {
       throw DeviceDebugSymbolsError.extractorSymbolNotFound(name: name, path: path)
     }
     return unsafeBitCast(address, to: SharedCacheExtractor.self)
