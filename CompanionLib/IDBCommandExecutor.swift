@@ -313,14 +313,6 @@ public final class IDBCommandExecutor {
     }
   }
 
-  public func clearContacts() async throws {
-    try await target.simulator().contacts.clear()
-  }
-
-  public func clearPhotos() async throws {
-    try await target.simulator().photos.clear()
-  }
-
   public func listTestBundles() async throws -> [XCTestDescriptor] {
     return try storageManager.xctest.listTestDescriptors()
   }
