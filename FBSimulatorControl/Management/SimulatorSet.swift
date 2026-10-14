@@ -23,8 +23,8 @@ public final class SimulatorSet: TargetSet {
   public let workQueue: DispatchQueue
   public let asyncQueue: DispatchQueue
 
-  // Held only so that the strategy's notifier stays registered for the lifetime of the set; it is never read.
-  private var notificationUpdateStrategy: SimulatorNotificationUpdateStrategy?
+  // Held only so that the observer's notifier stays registered for the lifetime of the set; it is never read.
+  private var stateChangeObserver: StateChangeObserver?
 
   /// - Parameter logger: nil means `ControlCoreGlobalConfiguration.defaultLogger`, which is
   ///   os_log-only unless the `FBCONTROLCORE_LOGGING`/`FBCONTROLCORE_DEBUG_LOGGING` environment
@@ -42,7 +42,7 @@ public final class SimulatorSet: TargetSet {
     self.logger = logger
     self.workQueue = DispatchQueue.main
     self.asyncQueue = DispatchQueue.global(qos: .default)
-    self.notificationUpdateStrategy = SimulatorNotificationUpdateStrategy.strategy(with: self)
+    self.stateChangeObserver = StateChangeObserver.observing(self)
   }
 
   // MARK: - Querying
@@ -242,5 +242,53 @@ public enum SimulatorDeletionError: Error, LocalizedError {
     case .removalTimedOut:
       return "Timed out waiting for Simulator to be removed from set"
     }
+  }
+}
+
+/// Reports the set's CoreSimulator state changes to its delegate. A class of its own, rather than
+/// the set observing itself, so the notifier's `@Sendable` callback can hold it weakly.
+private final class StateChangeObserver: @unchecked Sendable {
+
+  private weak var set: SimulatorSet?
+  private var notifier: CoreSimulatorNotifier?
+
+  static func observing(_ set: SimulatorSet) -> StateChangeObserver {
+    let observer = StateChangeObserver(set: set)
+    observer.startNotifyingOfStateChanges()
+    return observer
+  }
+
+  private init(set: SimulatorSet) {
+    self.set = set
+  }
+
+  deinit {
+    notifier?.terminate()
+    notifier = nil
+  }
+
+  private func startNotifyingOfStateChanges() {
+    guard let set = self.set else { return }
+    notifier = CoreSimulatorNotifier.notifier(for: set, queue: set.workQueue) { [weak self] (info: [String: Any]) in
+      guard let device = info["device"] as? SimDevice else {
+        return
+      }
+      guard let newStateNumber = info["new_state"] as? NSNumber else {
+        return
+      }
+      self?.device(device, didChangeState: newStateNumber.uintValue)
+    }
+  }
+
+  private func device(_ device: SimDevice, didChangeState state: UInt) {
+    guard let set = self.set else { return }
+    guard let simulator = set.simulator(withUDID: device.udid.uuidString) else {
+      return
+    }
+    // The notification must not wait on the teardown.
+    Task {
+      await simulator.hid.disconnect()
+    }
+    set.delegate?.targetUpdated(simulator, in: set)
   }
 }
