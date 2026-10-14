@@ -7,13 +7,15 @@
 
 import Foundation
 @_implementationOnly import SimulatorFrameworkBridgeSupport
-import XCTest
+import Testing
 
-final class PhotoLibraryServiceTests: XCTestCase {
+@Suite
+struct PhotoLibraryServiceTests {
 
-  func testUnknownActionReturnsFailure() {
-    XCTAssertEqual(FBPhotoLibraryService.handlePhotoLibraryAction(action: "delete"), 1)
-    XCTAssertEqual(FBPhotoLibraryService.handlePhotoLibraryAction(action: ""), 1)
-    XCTAssertEqual(FBPhotoLibraryService.handlePhotoLibraryAction(action: "add"), 1)
+  @Test
+  func unknownActionReturnsFailure() {
+    #expect(FBPhotoLibraryService.handlePhotoLibraryAction(action: "delete") == 1)
+    #expect(FBPhotoLibraryService.handlePhotoLibraryAction(action: "") == 1)
+    #expect(FBPhotoLibraryService.handlePhotoLibraryAction(action: "add") == 1)
   }
 }
