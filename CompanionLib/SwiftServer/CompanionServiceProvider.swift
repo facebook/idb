@@ -432,7 +432,7 @@ final class CompanionServiceProvider: Idb_CompanionService.SimpleServiceProtocol
 
   func crash_show(request: Idb_CrashShowRequest, context: ServerContext) async throws -> Idb_CrashShowResponse {
     return try await trackedUnaryCall(context, request: request) {
-      try await CrashShowMethodHandler(commandExecutor: commandExecutor)
+      try await CrashShowMethodHandler(target: target)
         .handle(request: request, context: context)
     }
   }

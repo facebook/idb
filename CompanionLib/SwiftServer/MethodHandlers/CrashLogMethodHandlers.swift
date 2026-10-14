@@ -24,7 +24,7 @@ struct CrashListMethodHandler {
 
 struct CrashShowMethodHandler {
 
-  let commandExecutor: IDBCommandExecutor
+  let target: CompanionTarget
 
   func handle(request: Idb_CrashShowRequest, context: ServerContext) async throws -> Idb_CrashShowResponse {
     guard !request.name.isEmpty else {
@@ -32,7 +32,14 @@ struct CrashShowMethodHandler {
     }
 
     let predicate = CrashLogPredicate.name(request.name)
-    let crash = try await commandExecutor.crashShow(predicate)
+    let crashArray = try await target.crashLog.crashes(matching: predicate, useCache: true)
+    if crashArray.count > 1 {
+      throw IDBCommandError.multipleCrashLogs(predicateDescription: String(describing: predicate))
+    }
+    guard let first = crashArray.first else {
+      throw IDBCommandError.noCrashLogs(predicateDescription: String(describing: predicate))
+    }
+    let crash = try first.obtainCrashLog()
     return .with {
       $0.info = CrashLogInfoTranslation.responseCrashLogInfo(from: crash.info)
       $0.contents = crash.contents

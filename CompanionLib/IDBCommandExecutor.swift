@@ -349,17 +349,6 @@ public final class IDBCommandExecutor {
     return try await target.application.launch(derived)
   }
 
-  public func crashShow(_ predicate: CrashLogPredicate) async throws -> CrashReport {
-    let crashArray = try await target.crashLog.crashes(matching: predicate, useCache: true)
-    if crashArray.count > 1 {
-      throw IDBCommandError.multipleCrashLogs(predicateDescription: String(describing: predicate))
-    }
-    guard let first = crashArray.first else {
-      throw IDBCommandError.noCrashLogs(predicateDescription: String(describing: predicate))
-    }
-    return try first.obtainCrashLog()
-  }
-
   public func xctestRun(_ request: XCTestRunRequest, reporter: XCTestReporter, logger: ControlCoreLogger) async throws -> IDBTestOperation {
     return try await request.start(withBundleStorageManager: storageManager.xctest, target: target, reporter: reporter, logger: logger, temporaryDirectory: temporaryDirectory)
   }
