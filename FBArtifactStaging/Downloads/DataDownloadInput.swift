@@ -24,7 +24,7 @@ enum DataDownloadEvent: Sendable {
 final class DataDownloadInput: NSObject, @unchecked Sendable {
 
   /// The downloaded bytes, written as they arrive and ended when the transfer ends.
-  let spool = DownloadSpool()
+  let spool: DownloadSpool
 
   /// Waits for the transfer to finish, throwing if the server rejected the request or the connection
   /// dropped. `spool` alone cannot distinguish a failed download from a short one.
@@ -62,22 +62,25 @@ final class DataDownloadInput: NSObject, @unchecked Sendable {
   ///
   /// `onEvent` reports how many bytes have arrived, while the bytes themselves
   /// still go only to `spool`, so a caller can show progress without getting
-  /// between the download and whatever is consuming it.
+  /// between the download and whatever is consuming it. The spool is a file in `spoolDirectory`, unlinked once open.
   static func dataDownload(
     withURL url: URL,
     configuration: URLSessionConfiguration,
     logger: ControlCoreLogger,
-    onEvent: (@Sendable (DataDownloadEvent) -> Void)? = nil
+    onEvent: (@Sendable (DataDownloadEvent) -> Void)? = nil,
+    spoolDirectory: URL = FileManager.default.temporaryDirectory
   ) -> DataDownloadInput {
-    let download = DataDownloadInput(logger: logger, onEvent: onEvent)
+    let download = DataDownloadInput(logger: logger, onEvent: onEvent, spoolDirectory: spoolDirectory)
     download.startDownload(from: url, configuration: configuration)
     return download
   }
 
   private init(
     logger: ControlCoreLogger,
-    onEvent: (@Sendable (DataDownloadEvent) -> Void)?
+    onEvent: (@Sendable (DataDownloadEvent) -> Void)?,
+    spoolDirectory: URL
   ) {
+    spool = DownloadSpool(directory: spoolDirectory)
     self.logger = logger
     self.onEvent = onEvent
     super.init()

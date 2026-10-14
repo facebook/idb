@@ -93,6 +93,27 @@ final class DataDownloadInputTests: XCTestCase {
     }
   }
 
+  // MARK: - Spool
+
+  /// The file the download is written to can't be created, so nothing that arrives is kept.
+  func testDownload_WhenTheSpoolCannotBeCreated_KeepsNothing() async throws {
+    let body = Data(repeating: 0x42, count: 64 << 10)
+    StubURLProtocol.behaviour = .respond(statusCode: 200, body: body)
+    let configuration = URLSessionConfiguration.ephemeral
+    configuration.protocolClasses = [StubURLProtocol.self]
+    // swiftlint:disable:next force_unwrapping
+    let url = URL(string: "https://example.invalid/app.ipa")!
+    let download = DataDownloadInput.dataDownload(
+      withURL: url, configuration: configuration, logger: logger,
+      spoolDirectory: URL(fileURLWithPath: tempDirectory).appendingPathComponent("missing"))
+
+    let report = try await download.completed()
+
+    // BUG: the download runs to the end and completes as though it had kept every byte it threw away — flipped in
+    // the following commit.
+    XCTAssertEqual(report.receivedBytes, Int64(body.count))
+  }
+
   // MARK: - Success
 
   func testDownload_WhenResponseIsOK_ExtractsTheDownloadedArchive() async throws {

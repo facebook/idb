@@ -30,8 +30,8 @@ final class DownloadSpool: @unchecked Sendable {
   private let writer: FileHandle?
   private let readDescriptor: Int32
 
-  init() {
-    let path = FileManager.default.temporaryDirectory.appendingPathComponent("idb-download-\(UUID().uuidString)").path
+  init(directory: URL = FileManager.default.temporaryDirectory) {
+    let path = directory.appendingPathComponent("idb-download-\(UUID().uuidString)").path
     let writeDescriptor = open(path, O_WRONLY | O_CREAT | O_EXCL | O_CLOEXEC, 0o600)
     readDescriptor = writeDescriptor >= 0 ? open(path, O_RDONLY | O_CLOEXEC) : -1
     unlink(path)
