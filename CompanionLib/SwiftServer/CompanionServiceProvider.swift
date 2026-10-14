@@ -446,7 +446,7 @@ final class CompanionServiceProvider: Idb_CompanionService.SimpleServiceProtocol
 
   func xctest_list_tests(request: Idb_XctestListTestsRequest, context: ServerContext) async throws -> Idb_XctestListTestsResponse {
     return try await trackedUnaryCall(context, request: request) {
-      try await XCTestListTestsMethodHandler(commandExecutor: commandExecutor)
+      try await XCTestListTestsMethodHandler(target: target, storageManager: commandExecutor.storageManager)
         .handle(request: request, context: context)
     }
   }

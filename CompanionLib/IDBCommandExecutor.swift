@@ -294,23 +294,6 @@ public final class IDBCommandExecutor {
     try await target.simulator().keychain.clear()
   }
 
-  private static let ListTestBundleTimeout: TimeInterval = 180.0
-
-  public func listTestsInBundle(_ bundleID: String, withApp appPath: String?) async throws -> [String] {
-    var resolvedAppPath = appPath
-    if resolvedAppPath == "" {
-      resolvedAppPath = nil
-    }
-
-    if let app = resolvedAppPath, storageManager.application.persistedBundleIDs.contains(app) {
-      resolvedAppPath = storageManager.application.persistedBundles[app]?.path
-    }
-
-    let finalAppPath = resolvedAppPath
-    let testDescriptor = try storageManager.xctest.testDescriptor(withID: bundleID)
-    return try await target.simulator().xctest.listTests(forBundleAtPath: testDescriptor.url.path, timeout: IDBCommandExecutor.ListTestBundleTimeout, withAppAtPath: finalAppPath)
-  }
-
   public func uninstallApplication(_ bundleID: String) async throws {
     try await target.application.uninstall(bundleID: bundleID)
   }

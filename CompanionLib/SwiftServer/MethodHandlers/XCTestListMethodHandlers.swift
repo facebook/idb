@@ -33,10 +33,23 @@ struct XCTestListBundlesMethodHandler {
 
 struct XCTestListTestsMethodHandler {
 
-  let commandExecutor: IDBCommandExecutor
+  private static let listTestBundleTimeout: TimeInterval = 180.0
+
+  let target: CompanionTarget
+  let storageManager: IDBStorageManager
 
   func handle(request: Idb_XctestListTestsRequest, context: ServerContext) async throws -> Idb_XctestListTestsResponse {
-    let tests = try await commandExecutor.listTestsInBundle(request.bundleName, withApp: request.appPath)
+    var resolvedAppPath: String? = request.appPath
+    if resolvedAppPath == "" {
+      resolvedAppPath = nil
+    }
+
+    if let app = resolvedAppPath, storageManager.application.persistedBundleIDs.contains(app) {
+      resolvedAppPath = storageManager.application.persistedBundles[app]?.path
+    }
+
+    let testDescriptor = try storageManager.xctest.testDescriptor(withID: request.bundleName)
+    let tests = try await target.simulator().xctest.listTests(forBundleAtPath: testDescriptor.url.path, timeout: Self.listTestBundleTimeout, withAppAtPath: resolvedAppPath)
     return .with {
       $0.names = tests
     }
