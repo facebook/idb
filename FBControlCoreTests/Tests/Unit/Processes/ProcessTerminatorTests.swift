@@ -17,7 +17,7 @@ private final class AbsentProcessFetcher: ProcessFetcher {
 }
 
 @Suite(.serialized)
-final class ProcessTerminationStrategyTests {
+final class ProcessTerminatorTests {
 
   /// Beyond the default `kern.maxproc`, so no process can ever hold it and `kill` fails with ESRCH.
   private let unallocatablePID: pid_t = 999_999
@@ -46,20 +46,20 @@ final class ProcessTerminationStrategyTests {
     return process
   }
 
-  private func strategy(
+  private func terminator(
     signo: Int32 = SIGKILL,
-    options: ProcessTerminationStrategyOptions,
+    options: ProcessTerminator.Options,
     processFetcher: ProcessFetcher = ProcessFetcher()
-  ) -> ProcessTerminationStrategy {
-    ProcessTerminationStrategy.strategy(
-      withConfiguration: ProcessTerminationStrategyConfiguration(signo: signo, options: options),
+  ) -> ProcessTerminator {
+    ProcessTerminator(
+      configuration: ProcessTerminator.Configuration(signo: signo, options: options),
       processFetcher: processFetcher,
       workQueue: DispatchQueue(label: "com.facebook.fbcontrolcore.termination_strategy_tests"),
       logger: logger)
   }
 
-  private func terminationError(_ error: Error) -> ProcessTerminationStrategyError? {
-    error as? ProcessTerminationStrategyError
+  private func terminationError(_ error: Error) -> ProcessTerminatorError? {
+    error as? ProcessTerminatorError
   }
 
   // MARK: - Tests
@@ -67,10 +67,10 @@ final class ProcessTerminationStrategyTests {
   @Test
   func failsWithoutSignallingWhenTheProcessIsNotFound() async throws {
     let process = try spawnBlockedProcess()
-    let strategy = strategy(options: [.checkProcessExistsBeforeSignal], processFetcher: AbsentProcessFetcher())
+    let terminator = terminator(options: [.checkProcessExistsBeforeSignal], processFetcher: AbsentProcessFetcher())
 
     do {
-      try await strategy.killProcessIdentifier(process.processIdentifier)
+      try await terminator.killProcessIdentifier(process.processIdentifier)
       Issue.record("Expected the kill to fail for a process the fetcher does not report")
     } catch {
       guard case .processDoesNotExist(let processIdentifier)? = terminationError(error) else {
@@ -85,10 +85,10 @@ final class ProcessTerminationStrategyTests {
 
   @Test
   func failsWhenTheSignalCannotBeDelivered() async throws {
-    let strategy = strategy(options: [])
+    let terminator = terminator(options: [])
 
     do {
-      try await strategy.killProcessIdentifier(unallocatablePID)
+      try await terminator.killProcessIdentifier(unallocatablePID)
       Issue.record("Expected the kill of an unallocatable process identifier to fail")
     } catch {
       guard case .killFailed(let processIdentifier, _)? = terminationError(error) else {
@@ -102,9 +102,9 @@ final class ProcessTerminationStrategyTests {
   @Test
   func signalsWithoutWaitingWhenDeathIsNotChecked() async throws {
     let process = try spawnBlockedProcess()
-    let strategy = strategy(options: [])
+    let terminator = terminator(options: [])
 
-    try await strategy.killProcessIdentifier(process.processIdentifier)
+    try await terminator.killProcessIdentifier(process.processIdentifier)
 
     process.waitUntilExit()
     #expect(process.terminationReason == .uncaughtSignal)
@@ -113,13 +113,13 @@ final class ProcessTerminationStrategyTests {
   @Test
   func resolvesOnceTheProcessLeavesTheProcessTable() async throws {
     let process = try spawnBlockedProcess()
-    let strategy = strategy(options: [.checkProcessExistsBeforeSignal, .checkDeathAfterSignal])
+    let terminator = terminator(options: [.checkProcessExistsBeforeSignal, .checkDeathAfterSignal])
     // The signalled child is a zombie — and so still in the process table — until it is reaped.
     DispatchQueue.global().async {
       process.waitUntilExit()
     }
 
-    try await strategy.killProcessIdentifier(process.processIdentifier)
+    try await terminator.killProcessIdentifier(process.processIdentifier)
 
     #expect(ProcessFetcher().processInfo(for: process.processIdentifier) == nil)
   }

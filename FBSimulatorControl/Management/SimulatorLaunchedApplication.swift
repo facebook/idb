@@ -84,7 +84,7 @@ public final class SimulatorLaunchedApplication: LaunchedApplication, CustomStri
 
   // MARK: - Private Properties
 
-  private let terminationStrategy: ProcessTerminationStrategy
+  private let terminator: ProcessTerminator
   private let state: TerminationState
   private let terminationTask: Task<Void, Never>
 
@@ -108,7 +108,7 @@ public final class SimulatorLaunchedApplication: LaunchedApplication, CustomStri
       return
     }
     do {
-      try await terminationStrategy.killProcessIdentifier(processIdentifier)
+      try await terminator.killProcessIdentifier(processIdentifier)
     } catch {
       state.clearExplicitTermination()
       throw error
@@ -142,8 +142,8 @@ public final class SimulatorLaunchedApplication: LaunchedApplication, CustomStri
     self.configuration = configuration
     self.processIdentifier = processIdentifier
     self.state = state
-    self.terminationStrategy = ProcessTerminationStrategy.strategy(
-      withProcessFetcher: ProcessFetcher(),
+    self.terminator = ProcessTerminator(
+      processFetcher: ProcessFetcher(),
       workQueue: simulator.workQueue,
       logger: simulator.logger)
     // Armed before the task so that a `terminate()` racing construction cannot signal the process

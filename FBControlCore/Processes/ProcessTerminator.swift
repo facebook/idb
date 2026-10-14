@@ -9,38 +9,7 @@ import Foundation
 
 private let ProcessTableRemovalTimeout: TimeInterval = 20.0
 
-/// An Option Set for Process Termination.
-public struct ProcessTerminationStrategyOptions: OptionSet, Sendable {
-  public let rawValue: UInt
-  public init(rawValue: UInt) {
-    self.rawValue = rawValue
-  }
-
-  /// Checks for the process to exist before signalling.
-  public static let checkProcessExistsBeforeSignal = ProcessTerminationStrategyOptions(rawValue: 1 << 2)
-  /// Waits for the process to die before returning.
-  public static let checkDeathAfterSignal = ProcessTerminationStrategyOptions(rawValue: 1 << 3)
-  /// Whether to backoff to SIGKILL if a less severe signal fails.
-  public static let backoffToSIGKILL = ProcessTerminationStrategyOptions(rawValue: 1 << 4)
-}
-
-/// A Configuration for the Strategy.
-public struct ProcessTerminationStrategyConfiguration: Sendable {
-  public var signo: Int32
-  public var options: ProcessTerminationStrategyOptions
-
-  public init(signo: Int32, options: ProcessTerminationStrategyOptions) {
-    self.signo = signo
-    self.options = options
-  }
-}
-
-private let FBProcessTerminationStrategyConfigurationDefault = ProcessTerminationStrategyConfiguration(
-  signo: SIGKILL,
-  options: [.checkProcessExistsBeforeSignal, .checkDeathAfterSignal, .backoffToSIGKILL]
-)
-
-enum ProcessTerminationStrategyError: Error, LocalizedError {
+enum ProcessTerminatorError: Error, LocalizedError {
   case processDoesNotExist(processIdentifier: pid_t)
   case killFailed(processIdentifier: pid_t, message: String)
   /// Never produced: exceeding the process table removal timeout is reported as
@@ -68,41 +37,19 @@ enum ProcessTerminationStrategyError: Error, LocalizedError {
 // SAFETY: every stored property is immutable; the fetcher serialises its own buffers, and the
 // logger is shared across threads throughout the tree.
 // patternlint-disable-next-line unchecked-sendable
-public final class ProcessTerminationStrategy: @unchecked Sendable {
+public final class ProcessTerminator: @unchecked Sendable {
 
   // MARK: - Private Properties
 
-  private let configuration: ProcessTerminationStrategyConfiguration
+  private let configuration: Configuration
   private let processFetcher: ProcessFetcher
   private let workQueue: DispatchQueue
   private let logger: ControlCoreLogger
 
   // MARK: - Initializers
 
-  public static func strategy(
-    withConfiguration configuration: ProcessTerminationStrategyConfiguration,
-    processFetcher: ProcessFetcher,
-    workQueue: DispatchQueue,
-    logger: ControlCoreLogger
-  ) -> Self {
-    self.init(configuration: configuration, processFetcher: processFetcher, workQueue: workQueue, logger: logger)
-  }
-
-  public static func strategy(
-    withProcessFetcher processFetcher: ProcessFetcher,
-    workQueue: DispatchQueue,
-    logger: ControlCoreLogger
-  ) -> Self {
-    self.init(
-      configuration: FBProcessTerminationStrategyConfigurationDefault,
-      processFetcher: processFetcher,
-      workQueue: workQueue,
-      logger: logger
-    )
-  }
-
-  required init(
-    configuration: ProcessTerminationStrategyConfiguration,
+  public init(
+    configuration: Configuration = .default,
     processFetcher: ProcessFetcher,
     workQueue: DispatchQueue,
     logger: ControlCoreLogger
@@ -121,12 +68,12 @@ public final class ProcessTerminationStrategy: @unchecked Sendable {
   public func killProcessIdentifier(_ processIdentifier: pid_t) async throws {
     let checkExists = hasOption(.checkProcessExistsBeforeSignal)
     if checkExists && processFetcher.processInfo(for: processIdentifier) == nil {
-      throw ProcessTerminationStrategyError.processDoesNotExist(processIdentifier: processIdentifier)
+      throw ProcessTerminatorError.processDoesNotExist(processIdentifier: processIdentifier)
     }
 
     logger.debug().log("Killing \(processIdentifier)")
     if kill(processIdentifier, configuration.signo) != 0 {
-      throw ProcessTerminationStrategyError.killFailed(processIdentifier: processIdentifier, message: String(cString: strerror(errno)))
+      throw ProcessTerminatorError.killFailed(processIdentifier: processIdentifier, message: String(cString: strerror(errno)))
     }
 
     let checkDeath = hasOption(.checkDeathAfterSignal)
@@ -144,27 +91,27 @@ public final class ProcessTerminationStrategy: @unchecked Sendable {
     let backoff = hasOption(.backoffToSIGKILL)
     if configuration.signo == SIGKILL || !backoff {
       let processInfo: Any = processFetcher.processInfo(for: processIdentifier) ?? ("No Process Info" as NSString)
-      throw ProcessTerminationStrategyError.processDidNotDisappear(processIdentifier: processIdentifier, processInfo: String(describing: processInfo))
+      throw ProcessTerminatorError.processDidNotDisappear(processIdentifier: processIdentifier, processInfo: String(describing: processInfo))
     }
 
     var newConfiguration = configuration
     newConfiguration.signo = SIGKILL
     logger.debug().log("Backing off kill of \(processIdentifier) to SIGKILL")
     do {
-      try await strategyWith(configuration: newConfiguration).killProcessIdentifier(processIdentifier)
+      try await terminator(with: newConfiguration).killProcessIdentifier(processIdentifier)
     } catch {
-      throw ProcessTerminationStrategyError.sigkillAfterFailedKill(processIdentifier: processIdentifier, signo: configuration.signo, underlying: error)
+      throw ProcessTerminatorError.sigkillAfterFailedKill(processIdentifier: processIdentifier, signo: configuration.signo, underlying: error)
     }
   }
 
   // MARK: - Private
 
-  private func hasOption(_ option: ProcessTerminationStrategyOptions) -> Bool {
+  private func hasOption(_ option: Options) -> Bool {
     configuration.options.contains(option)
   }
 
-  private func strategyWith(configuration: ProcessTerminationStrategyConfiguration) -> ProcessTerminationStrategy {
-    ProcessTerminationStrategy(
+  private func terminator(with configuration: Configuration) -> ProcessTerminator {
+    ProcessTerminator(
       configuration: configuration,
       processFetcher: processFetcher,
       workQueue: workQueue,
@@ -186,5 +133,40 @@ public final class ProcessTerminationStrategy: @unchecked Sendable {
     } catch is PollTimeoutError {
       return false
     }
+  }
+}
+
+extension ProcessTerminator {
+
+  /// An Option Set for Process Termination.
+  public struct Options: OptionSet, Sendable {
+    public let rawValue: UInt
+    public init(rawValue: UInt) {
+      self.rawValue = rawValue
+    }
+
+    /// Checks for the process to exist before signalling.
+    public static let checkProcessExistsBeforeSignal = Options(rawValue: 1 << 2)
+    /// Waits for the process to die before returning.
+    public static let checkDeathAfterSignal = Options(rawValue: 1 << 3)
+    /// Whether to backoff to SIGKILL if a less severe signal fails.
+    public static let backoffToSIGKILL = Options(rawValue: 1 << 4)
+  }
+
+  /// A Configuration for the Terminator.
+  public struct Configuration: Sendable {
+    public var signo: Int32
+    public var options: Options
+
+    public init(signo: Int32, options: Options) {
+      self.signo = signo
+      self.options = options
+    }
+
+    /// SIGKILL, checking the process exists first and waiting for it to die after.
+    public static let `default` = Configuration(
+      signo: SIGKILL,
+      options: [.checkProcessExistsBeforeSignal, .checkDeathAfterSignal, .backoffToSIGKILL]
+    )
   }
 }
