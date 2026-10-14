@@ -362,7 +362,20 @@ extension Simulator {
   // MARK: - Command verbs
 
   public func erase() async throws {
-    try await SimulatorEraseStrategy.erase(self)
+    try await power.shutdown()
+    let logger = self.logger
+    let description = "\(self)"
+    logger.log("Erasing \(description)")
+    try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
+      device.eraseContentsAndSettingsAsync(withCompletionQueue: workQueue) { error in
+        if let error {
+          continuation.resume(throwing: error)
+        } else {
+          logger.log("Erased \(description)")
+          continuation.resume(returning: ())
+        }
+      }
+    }
   }
 
   public func details(_ keys: Set<TargetDetailKey>) async throws -> TargetDetails {
