@@ -123,6 +123,21 @@ public final class ReplControlClient: @unchecked Sendable {
   /// complete message means the shim closed the socket mid-exchange (e.g. the test
   /// process crashed), surfaced as a disconnect.
   public func execute(dylibPath: String, symbol: String, hostCommandHandler: @escaping HostCommandHandler) async throws -> (success: Bool, output: String, nextRunIndex: Int32) {
+    let (outcome, nextRunIndex) = try await run(dylibPath: dylibPath, symbol: symbol, hostCommandHandler: hostCommandHandler)
+    switch outcome {
+    case let .success(result):
+      return (true, result, nextRunIndex)
+    case let .failure(failure):
+      return (false, "Error: \(failure.message)", nextRunIndex)
+    }
+  }
+
+  /// What the shim reported for one execute: the entry point's result, or the error it failed with.
+  struct ExecuteFailure: Error {
+    let message: String
+  }
+
+  func run(dylibPath: String, symbol: String, hostCommandHandler: @escaping HostCommandHandler) async throws -> (outcome: Result<String, ExecuteFailure>, nextRunIndex: Int32) {
     let fd = self.fd
     return try await withCheckedThrowingContinuation { continuation in
       // Not Sendable, so rebound as nonisolated(unsafe) for the ioQueue closure to capture.
@@ -140,13 +155,12 @@ public final class ReplControlClient: @unchecked Sendable {
               try Self.writeMessage(Self.hostResultMessage(hostResult), to: fd)
 
             case "result":
-              let success = message["success"] as? Bool ?? false
-              let output =
-                success
-                ? (message["result"] as? String ?? "")
-                : "Error: \(message["error"] as? String ?? "unknown")"
+              let outcome: Result<String, ExecuteFailure> =
+                message["success"] as? Bool ?? false
+                ? .success(message["result"] as? String ?? "")
+                : .failure(ExecuteFailure(message: message["error"] as? String ?? "unknown"))
               let nextRunIndex = (message["nextRunIndex"] as? NSNumber)?.int32Value ?? 0
-              continuation.resume(returning: (success, output, nextRunIndex))
+              continuation.resume(returning: (outcome, nextRunIndex))
               return
 
             case let other:

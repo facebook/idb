@@ -49,11 +49,13 @@ public struct SimulatorReplCommands {
   // MARK: - Async
 
   public func startTest(bundlePath: String, additionalLibraries: [String] = []) async throws -> LaunchedRepl {
-    let logger = simulator.logger
+    try await startTest(bundlePath: bundlePath, shim: .bundled, additionalLibraries: additionalLibraries)
+  }
 
-    guard let replDylibPath = BundledResources.path(forItem: "libRepl-iOS.dylib") else {
-      throw SimulatorReplError.bundledResourceMissing(item: "libRepl-iOS.dylib")
-    }
+  func startTest(bundlePath: String, shim: CodeInjectionShim, additionalLibraries: [String]) async throws -> LaunchedRepl {
+    let logger = simulator.logger
+    let shimPath = try shim.resolvedPath()
+
     // The shim binds this socket; the gRPC handler connects to it.
     let socketPath = "/tmp/idb_repl_\(UUID().uuidString).sock"
 
@@ -76,7 +78,7 @@ public struct SimulatorReplCommands {
       binaryPath: bundle.binary?.path,
       logDirectoryPath: nil,
       architectures: architectures,
-      injectLibraries: [replDylibPath] + additionalLibraries
+      injectLibraries: [shimPath] + additionalLibraries
     )
 
     let runner = LogicTestRunStrategy(
@@ -88,14 +90,14 @@ public struct SimulatorReplCommands {
   }
 
   public func startSimulator(additionalLibraries: [String] = []) async throws -> LaunchedRepl {
+    try await startSimulator(shim: .bundled, additionalLibraries: additionalLibraries)
+  }
 
+  func startSimulator(shim: CodeInjectionShim, additionalLibraries: [String]) async throws -> LaunchedRepl {
     guard let bridgePath = simulator.frameworkBridgePath else {
       throw SimulatorReplError.bundledResourceMissing(item: "SimulatorFrameworkBridge binary")
     }
-    guard let libReplPath = BundledResources.path(forItem: "libRepl-iOS.dylib") else {
-      throw SimulatorReplError.bundledResourceMissing(item: "libRepl-iOS.dylib")
-    }
-    return try await startSimulator(bridgePath: bridgePath, libReplPath: libReplPath, additionalLibraries: additionalLibraries)
+    return try await startSimulator(bridgePath: bridgePath, libReplPath: shim.resolvedPath(), additionalLibraries: additionalLibraries)
   }
 
   func startSimulator(bridgePath: String, libReplPath: String, additionalLibraries: [String] = []) async throws -> LaunchedRepl {
@@ -112,17 +114,22 @@ public struct SimulatorReplCommands {
   }
 
   public func appLaunchEnvironment(bundleID: String, additionalLibraries: [String] = []) async throws -> [String: String] {
-    guard let replDylibPath = BundledResources.path(forItem: "libRepl-iOS.dylib") else {
-      throw SimulatorReplError.bundledResourceMissing(item: "libRepl-iOS.dylib")
-    }
-    return [
-      "DYLD_INSERT_LIBRARIES": ([replDylibPath] + additionalLibraries).joined(separator: ":"),
+    try appLaunchEnvironment(bundleID: bundleID, shim: .bundled, additionalLibraries: additionalLibraries)
+  }
+
+  func appLaunchEnvironment(bundleID: String, shim: CodeInjectionShim, additionalLibraries: [String]) throws -> [String: String] {
+    try [
+      "DYLD_INSERT_LIBRARIES": ([shim.resolvedPath()] + additionalLibraries).joined(separator: ":"),
       "IDB_REPL_APP_AUTOSTART": "1",
       "IDB_REPL_SOCKET_PATH": replSocketPath(udid: simulator.udid, bundleID: bundleID),
     ]
   }
 
   public func startApp(bundleID: String, reuseSession: Bool, additionalLibraries: [String] = []) async throws -> LaunchedRepl {
+    try await startApp(bundleID: bundleID, reuseSession: reuseSession, shim: .bundled, additionalLibraries: additionalLibraries)
+  }
+
+  func startApp(bundleID: String, reuseSession: Bool, shim: CodeInjectionShim, additionalLibraries: [String]) async throws -> LaunchedRepl {
     let logger = simulator.logger
 
     // Deterministic so a later `idb-repl app` can reattach to a still-running REPL.
@@ -138,7 +145,7 @@ public struct SimulatorReplCommands {
 
     // `.relaunchIfRunning` so an app already running without the REPL dylib picks it up.
     let environment = await simulator.audio.appLaunchEnvironment(
-      try await appLaunchEnvironment(bundleID: bundleID, additionalLibraries: additionalLibraries))
+      try appLaunchEnvironment(bundleID: bundleID, shim: shim, additionalLibraries: additionalLibraries))
     let configuration = ApplicationLaunchConfiguration(
       bundleID: bundleID,
       bundleName: nil,

@@ -4,6 +4,24 @@ Injects Swift into a process on an iOS Simulator. It is the Simulator's REPL cap
 
 `idb-repl` is one client: the companion's `repl` method uses this library for everything it does inside the Simulator, and adds only the gRPC stream in front.
 
+## Using it
+
+`simulator.codeInjection` is available on a `Simulator` once this library is imported. `inject(into:)` starts a host with the shim injected and returns a `CodeInjectionSession`, which runs compiled dylibs inside it:
+
+```swift
+import FBSimulatorCodeInjection
+
+let session = try await simulator.codeInjection.inject(into: .application(bundleID: "com.example.App"))
+let output = try await session.execute(dylibAtPath: "/tmp/payload.dylib", symbol: "payload_entry")
+try await session.close()
+```
+
+- **Targets.** `.application(bundleID:reattach:)` launches an app with the shim injected, or with `reattach` joins one still serving a session; the app outlives the session. `.simulator` runs the shim in the Simulator's guest bridge, and `.logicTestBundle(path:)` in a logic-test bundle; both end with the session.
+- **The entry point.** The host loads the dylib and calls `symbol`, an exported function that takes no arguments and returns a `malloc`'d C string, which the host frees. `execute` returns that string, or throws `CodeInjectionError.executionFailed` when the dylib does not load or the code reports failure.
+- **Host commands.** Injected code can send bytes back to the session while it runs. `execute`'s optional `hostCommands` handler answers them; without one, each is refused.
+- **Additional libraries.** `additionalLibraries` are loaded into the host alongside the shim before any code is injected, so injected code can call into them. `idb-repl` uses this for the idb command API.
+- **The shim.** `.bundled`, the default, is the shim this library carries; `shim: .path(...)` supplies another. `launchEnvironment(forApplication:)` is the environment that arms an ordinary app launch the same way, so a later `inject(into: .application(bundleID:reattach: true))` joins it.
+
 ## What it provides
 
 `simulator.repl` (`SimulatorReplCommands`) starts a REPL host with the `libRepl` shim injected. The shim is this library's resource: a bundle that links the library carries it, and the library finds it there or in the `Resources/` directory beside a standalone binary. The shim binds a control socket, and each method returns a `LaunchedRepl` that names it:
