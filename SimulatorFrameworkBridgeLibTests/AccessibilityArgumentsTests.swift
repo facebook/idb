@@ -7,10 +7,12 @@
 
 import Foundation
 @_implementationOnly import SimulatorFrameworkBridgeSupport
-import XCTest
+import Testing
 
-final class AccessibilityArgumentsTests: XCTestCase {
-  func testRequestPreservesFlagValuesAndFoundationCoercion() {
+@Suite
+struct AccessibilityArgumentsTests {
+  @Test
+  func requestPreservesFlagValuesAndFoundationCoercion() {
     let request = FBAXBridgeArguments.request(
       action: "perform",
       arguments: [
@@ -27,33 +29,35 @@ final class AccessibilityArgumentsTests: XCTestCase {
       "method": "window-server", "action": "press", "value": "", "setting": "voiceover",
       "enabled": false, "assertKey": "label", "assertValue": "Hello",
     ]
-    XCTAssertEqual(request as NSDictionary, expected as NSDictionary)
+    #expect(request as NSDictionary == expected as NSDictionary)
   }
 
-  func testRequestUsesLastDuplicateAndIgnoresUnknownAndDanglingFlags() {
+  @Test
+  func requestUsesLastDuplicateAndIgnoresUnknownAndDanglingFlags() {
     let request = FBAXBridgeArguments.request(
       action: "describe",
       arguments: [
         "--pid", "10", "--unknown", "ignored", "--pid", "20", "--max-depth",
       ])
-    XCTAssertEqual(request as NSDictionary, ["verb": "describe", "pid": 20] as NSDictionary)
-    XCTAssertEqual(
-      FBAXBridgeArguments.request(action: "settings-get", arguments: []) as NSDictionary,
-      ["verb": "settings-get"] as NSDictionary)
+    #expect(request as NSDictionary == ["verb": "describe", "pid": 20] as NSDictionary)
+    #expect(
+      FBAXBridgeArguments.request(action: "settings-get", arguments: []) as NSDictionary == ["verb": "settings-get"] as NSDictionary)
   }
 
-  func testEnabledOnlyCoercesExactBooleanSpellings() {
+  @Test
+  func enabledOnlyCoercesExactBooleanSpellings() {
     for (input, expected): (String, Any) in [("true", true), ("false", false), ("YES", "YES"), ("1", "1"), ("", "")] {
       let request = FBAXBridgeArguments.request(action: "settings-set", arguments: ["--enabled", input])
-      XCTAssertEqual(request as NSDictionary, ["verb": "settings-set", "enabled": expected] as NSDictionary)
+      #expect(request as NSDictionary == ["verb": "settings-set", "enabled": expected] as NSDictionary)
     }
   }
 
-  func testAutomationModeHonorsBothValuesAndPreservesOmission() {
+  @Test
+  func automationModeHonorsBothValuesAndPreservesOmission() {
     for (input, expected) in [("1", true), ("0", false)] {
       let request = FBAXBridgeArguments.request(action: "describe", arguments: ["--automation-mode", input])
-      XCTAssertEqual(request["automationMode"] as? Bool, expected)
+      #expect(request["automationMode"] as? Bool == expected)
     }
-    XCTAssertNil(FBAXBridgeArguments.request(action: "describe", arguments: ["--pid", "42"])["automationMode"])
+    #expect(FBAXBridgeArguments.request(action: "describe", arguments: ["--pid", "42"])["automationMode"] == nil)
   }
 }
