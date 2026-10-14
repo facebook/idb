@@ -86,9 +86,13 @@ private final class IDBLoggerOperation: LogOperation, @unchecked Sendable {
 public final class IDBLogger: ControlCoreLogger {
 
   private let ownLoggers: [ControlCoreLogger]
+  // Applied to the global loggers as each line is logged, because they come and go after this
+  // logger is derived.
+  private let deriveGlobal: @Sendable (ControlCoreLogger) -> ControlCoreLogger
 
-  init(loggers: [ControlCoreLogger]) {
+  init(loggers: [ControlCoreLogger], deriveGlobal: @escaping @Sendable (ControlCoreLogger) -> ControlCoreLogger = { $0 }) {
     self.ownLoggers = loggers
+    self.deriveGlobal = deriveGlobal
   }
 
   /// The logger the companion writes to, which is the stderr logger plus, when
@@ -137,7 +141,7 @@ public final class IDBLogger: ControlCoreLogger {
   }
 
   var loggers: [ControlCoreLogger] {
-    ownLoggers + globalLoggers.all
+    ownLoggers + globalLoggers.all.map(deriveGlobal)
   }
 
   @discardableResult
@@ -182,9 +186,8 @@ public final class IDBLogger: ControlCoreLogger {
     applying { $0.withDateFormatEnabled(true) }
   }
 
-  // A derived logger captures the global loggers present now, and still fans out to the live set as well.
-  private func applying(_ transform: (ControlCoreLogger) -> ControlCoreLogger) -> IDBLogger {
-    IDBLogger(loggers: loggers.map(transform))
+  private func applying(_ transform: @escaping @Sendable (ControlCoreLogger) -> ControlCoreLogger) -> IDBLogger {
+    IDBLogger(loggers: ownLoggers.map(transform), deriveGlobal: { [deriveGlobal] in transform(deriveGlobal($0)) })
   }
 
   func tailToConsumer(_ consumer: DataConsumer) async throws -> any LogOperation {

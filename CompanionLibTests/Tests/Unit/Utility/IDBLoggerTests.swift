@@ -134,8 +134,7 @@ struct IDBLoggerTests {
 
     #expect(await eventually { String(decoding: consumer.data(), as: UTF8.self).contains(line) })
     let deliveries = String(decoding: consumer.data(), as: UTF8.self).components(separatedBy: line).count - 1
-    // BUG: the derived logger keeps a named copy of the tail and also fans out to the live tail, so the line arrives twice — flipped in the following commit
-    #expect(deliveries == 2)
+    #expect(deliveries == 1)
     _ = try? await cancelledWait(operation)
     try await Task.sleep(nanoseconds: 200_000_000)
   }
