@@ -380,7 +380,7 @@ final class CompanionServiceProvider: Idb_CompanionService.SimpleServiceProtocol
   func add_media(request: RPCAsyncSequence<Idb_AddMediaRequest, any Error>, context: ServerContext) async throws -> Idb_AddMediaResponse {
     let reader = RequestStreamReader(request)
     return try await trackedClientStreaming(context) {
-      try await AddMediaMethodHandler(commandExecutor: commandExecutor)
+      try await AddMediaMethodHandler(target: target, temporaryDirectory: commandExecutor.temporaryDirectory)
         .handle(requestStream: reader, context: context)
     }
   }

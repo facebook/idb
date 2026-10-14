@@ -278,10 +278,6 @@ public final class IDBCommandExecutor {
     await waitForProcessExit(pid: pid)
   }
 
-  public func addMedia(_ filePaths: [URL]) async throws {
-    try target.simulator().media.upload(filePaths)
-  }
-
   public func injectAudio(_ audioFile: URL) async throws {
     try await target.simulator().audioInjection.inject(from: audioFile)
   }

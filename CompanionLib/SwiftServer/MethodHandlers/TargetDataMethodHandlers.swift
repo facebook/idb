@@ -11,11 +11,12 @@ import IDBGRPCSwift
 
 struct AddMediaMethodHandler {
 
-  let commandExecutor: IDBCommandExecutor
+  let target: CompanionTarget
+  let temporaryDirectory: TemporaryDirectory
 
   func handle(requestStream: RequestStreamReader<Idb_AddMediaRequest>, context: ServerContext) async throws -> Idb_AddMediaResponse {
-    try await MultisourceFileReader.withFilePathURLs(from: requestStream, temporaryDirectory: commandExecutor.temporaryDirectory, extractFromSubdir: true) { extractedFileURLs in
-      try await commandExecutor.addMedia(extractedFileURLs)
+    try await MultisourceFileReader.withFilePathURLs(from: requestStream, temporaryDirectory: temporaryDirectory, extractFromSubdir: true) { extractedFileURLs in
+      try target.simulator().media.upload(extractedFileURLs)
     }
     return .init()
   }
