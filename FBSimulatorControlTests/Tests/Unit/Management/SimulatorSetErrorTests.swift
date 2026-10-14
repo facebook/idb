@@ -6,18 +6,19 @@
  */
 
 @testable import FBSimulatorControl
-import XCTest
+import Foundation
+import Testing
 
-final class SimulatorSetErrorTests: XCTestCase {
+@Suite
+struct SimulatorSetErrorTests {
 
-  func testShutdownAfterCreateComposesReason() {
-    XCTAssertEqual(
-      SimulatorSetError.shutdownAfterCreateFailed(reason: "timed out").errorDescription,
-      "Could not get newly-created simulator into a shutdown state: timed out"
+  @Test
+  func shutdownAfterCreateComposesReason() {
+    #expect(
+      SimulatorSetError.shutdownAfterCreateFailed(reason: "timed out").errorDescription == "Could not get newly-created simulator into a shutdown state: timed out"
     )
-    XCTAssertEqual(
-      SimulatorSetError.shutdownAfterCreateFailed(reason: nil).errorDescription,
-      "Could not get newly-created simulator into a shutdown state"
+    #expect(
+      SimulatorSetError.shutdownAfterCreateFailed(reason: nil).errorDescription == "Could not get newly-created simulator into a shutdown state"
     )
   }
 }
