@@ -103,7 +103,7 @@ extension Device {
       else {
         throw DeviceActivationError.noActivationState(response: String(describing: response))
       }
-      return FBDeviceActivationStateCoerceFromString(activationState)
+      return DeviceActivationState(coercing: activationState)
     }
   }
 

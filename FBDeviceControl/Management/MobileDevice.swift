@@ -176,7 +176,7 @@ public final class MobileDevice: TargetInfo, DeviceCommands, CustomStringConvert
     guard let activationState = allValues[DeviceKey.activationState.rawValue] as? String else {
       return DeviceActivationState.unknown.rawValue
     }
-    return FBDeviceActivationStateCoerceFromString(activationState).rawValue
+    return DeviceActivationState(coercing: activationState).rawValue
   }
 
   // MARK: - DeviceCommands

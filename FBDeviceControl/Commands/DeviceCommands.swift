@@ -14,11 +14,11 @@ public enum DeviceActivationState: String, Sendable, CaseIterable {
   case unknown = "Unknown"
   case unactivated = "Unactivated"
   case activated = "Activated"
-}
 
-/// The canonical activation state for whatever the device reported.
-func FBDeviceActivationStateCoerceFromString(_ activationState: String) -> DeviceActivationState {
-  DeviceActivationState(rawValue: activationState) ?? .unknown
+  /// The canonical activation state for whatever the device reported.
+  init(coercing activationState: String) {
+    self = DeviceActivationState(rawValue: activationState) ?? .unknown
+  }
 }
 
 /// Keys of the device information dictionaries MobileDevice populates.
