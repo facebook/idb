@@ -27,7 +27,7 @@ struct InjectAudioMethodHandler {
         temporaryDirectory: commandExecutor.temporaryDirectory,
         cancellation: context.cancellation
       ) { audioFileURL in
-        try await commandExecutor.inject_audio(audioFileURL)
+        try await commandExecutor.injectAudio(audioFileURL)
       }
     } catch let error as AudioInjectionError {
       throw Self.rpcError(for: error)

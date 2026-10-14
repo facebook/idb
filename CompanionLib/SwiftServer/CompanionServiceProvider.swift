@@ -315,14 +315,14 @@ final class CompanionServiceProvider: Idb_CompanionService.SimpleServiceProtocol
 
   func contacts_clear(request: Idb_ContactsClearRequest, context: ServerContext) async throws -> Idb_ContactsClearResponse {
     return try await trackedUnaryCall(context, request: request) {
-      try await commandExecutor.clear_contacts()
+      try await commandExecutor.clearContacts()
       return Idb_ContactsClearResponse()
     }
   }
 
   func photos_clear(request: Idb_PhotosClearRequest, context: ServerContext) async throws -> Idb_PhotosClearResponse {
     return try await trackedUnaryCall(context, request: request) {
-      try await commandExecutor.clear_photos()
+      try await commandExecutor.clearPhotos()
       return Idb_PhotosClearResponse()
     }
   }

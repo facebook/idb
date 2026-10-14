@@ -285,11 +285,11 @@ public final class IDBCommandExecutor {
     await waitForProcessExit(pid: pid)
   }
 
-  public func add_media(_ filePaths: [URL]) async throws {
+  public func addMedia(_ filePaths: [URL]) async throws {
     try simulatorTarget().media.upload(filePaths)
   }
 
-  public func inject_audio(_ audioFile: URL) async throws {
+  public func injectAudio(_ audioFile: URL) async throws {
     try await simulatorTarget().audioInjection.inject(from: audioFile)
   }
 
@@ -306,7 +306,7 @@ public final class IDBCommandExecutor {
     try await target.location.set(longitude: longitude, latitude: latitude)
   }
 
-  public func clear_keychain() async throws {
+  public func clearKeychain() async throws {
     try await simulatorTarget().keychain.clear()
   }
 
@@ -337,18 +337,18 @@ public final class IDBCommandExecutor {
     try await simulatorTarget().lifecycle.focus()
   }
 
-  public func update_contacts(_ dbTarData: Data) async throws {
+  public func updateContacts(_ dbTarData: Data) async throws {
     let simulator = try simulatorTarget()
     try await temporaryDirectory.withArchiveExtracted(dbTarData) { tempDir in
       try await simulator.contacts.update(tempDir.path)
     }
   }
 
-  public func clear_contacts() async throws {
+  public func clearContacts() async throws {
     try await simulatorTarget().contacts.clear()
   }
 
-  public func clear_photos() async throws {
+  public func clearPhotos() async throws {
     try await simulatorTarget().photos.clear()
   }
 
@@ -685,7 +685,7 @@ public final class IDBCommandExecutor {
     if target.state != .shutdown {
       try await uninstallAllApplications()
     }
-    try await remove_all_storage_and_clear_keychain()
+    try await removeAllStorageAndClearKeychain()
   }
 
   public func deliveredNotifications(forBundleID bundleID: String) async throws -> [DeliveredNotification] {
@@ -720,9 +720,9 @@ public final class IDBCommandExecutor {
     return interpolatedEnvironment
   }
 
-  private func remove_all_storage_and_clear_keychain() async throws {
+  private func removeAllStorageAndClearKeychain() async throws {
     try storageManager.clean()
-    try await clear_keychain()
+    try await clearKeychain()
   }
 
   private func uninstallAllApplications() async throws {

@@ -15,7 +15,7 @@ struct AddMediaMethodHandler {
 
   func handle(requestStream: RequestStreamReader<Idb_AddMediaRequest>, context: ServerContext) async throws -> Idb_AddMediaResponse {
     try await MultisourceFileReader.withFilePathURLs(from: requestStream, temporaryDirectory: commandExecutor.temporaryDirectory, extractFromSubdir: true) { extractedFileURLs in
-      try await commandExecutor.add_media(extractedFileURLs)
+      try await commandExecutor.addMedia(extractedFileURLs)
     }
     return .init()
   }
@@ -26,7 +26,7 @@ struct ContactsUpdateMethodHandler {
   let commandExecutor: IDBCommandExecutor
 
   func handle(request: Idb_ContactsUpdateRequest, context: ServerContext) async throws -> Idb_ContactsUpdateResponse {
-    try await commandExecutor.update_contacts(request.payload.data)
+    try await commandExecutor.updateContacts(request.payload.data)
     return .init()
   }
 }
@@ -36,7 +36,7 @@ struct ClearKeychainMethodHandler {
   let commandExecutor: IDBCommandExecutor
 
   func handle(request: Idb_ClearKeychainRequest, context: ServerContext) async throws -> Idb_ClearKeychainResponse {
-    try await commandExecutor.clear_keychain()
+    try await commandExecutor.clearKeychain()
     return .init()
   }
 }
