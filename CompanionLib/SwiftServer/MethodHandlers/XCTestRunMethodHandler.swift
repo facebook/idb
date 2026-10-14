@@ -42,7 +42,7 @@ struct XCTestRunMethodHandler {
     let reporter = IDBXCTestReporter(responseStream: responseStream, logger: logger)
     try await Self.run(
       cancellation: context.cancellation,
-      testRun: RequestedXCTestRun(request: transformed, reporter: reporter, commandExecutor: commandExecutor))
+      testRun: RequestedXCTestRun(request: transformed, reporter: reporter, target: target, commandExecutor: commandExecutor))
   }
 
   /// Awaits the run `testRun` starts, then its reporting, unless `cancellation` reports the RPC cancelled, as
@@ -133,19 +133,22 @@ struct XCTestRunMethodHandler {
 }
 
 /// The test run an `xctest_run` request describes, reporting to `reporter`.
-// SAFETY: the request is not mutated once built but is not Sendable; the reporter and executor are
-// thread-safe.
+// SAFETY: the request is not mutated once built but is not Sendable; the reporter, target and executor
+// are thread-safe.
 // patternlint-disable-next-line unchecked-sendable
 private struct RequestedXCTestRun: XCTestRunStarting, @unchecked Sendable {
   let request: XCTestRunRequest
   let reporter: IDBXCTestReporter
+  let target: any Target
   let commandExecutor: IDBCommandExecutor
 
   func start() async throws -> any XCTestRunCompletion {
-    let operation = try await commandExecutor.xctestRun(
-      request,
+    let operation = try await request.start(
+      withBundleStorageManager: commandExecutor.storageManager.xctest,
+      target: target,
       reporter: reporter,
-      logger: ControlCoreLoggerFactory.logger(to: reporter))
+      logger: ControlCoreLoggerFactory.logger(to: reporter),
+      temporaryDirectory: commandExecutor.temporaryDirectory)
     reporter.configuration = .init(legacy: operation.reporterConfiguration)
     return operation
   }

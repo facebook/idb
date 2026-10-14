@@ -326,10 +326,6 @@ public final class IDBCommandExecutor {
     return try await target.application.launch(derived)
   }
 
-  public func xctestRun(_ request: XCTestRunRequest, reporter: XCTestReporter, logger: ControlCoreLogger) async throws -> IDBTestOperation {
-    return try await request.start(withBundleStorageManager: storageManager.xctest, target: target, reporter: reporter, logger: logger, temporaryDirectory: temporaryDirectory)
-  }
-
   /// Injects code into a logic test bundle for the `test` REPL context. The session is hosted by
   /// the test run, which finishes once the session is closed.
   public func replStartTest(bundlePath: String) async throws -> CodeInjectionSession {
