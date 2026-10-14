@@ -748,6 +748,8 @@ function build_shims() {
   build_shim Shimulator-macOS macosx
   build_shim Repl-iOS iphonesimulator Shims/Repl/Repl.xcodeproj
   build_shim Repl-macOS macosx Shims/Repl/Repl.xcodeproj
+  build_shim ReplIDB-iOS iphonesimulator Shims/Repl/Repl.xcodeproj
+  build_shim ReplIDB-macOS macosx Shims/Repl/Repl.xcodeproj
 }
 
 # The test fixtures, built from source: FBXCTestCore's test bundle copies the
@@ -914,6 +916,8 @@ function build_staging_bench() {
 #       libShimulator-macOS.dylib
 #       libRepl-iOS.dylib
 #       libRepl-macOS.dylib
+#       libReplIDB-iOS.dylib
+#       libReplIDB-macOS.dylib
 #       SimulatorFrameworkBridge-iOS
 #       SimulatorFrameworkBridge-tvOS
 #       ReplHost.app
@@ -936,6 +940,8 @@ function build_distribution() {
     "$release/libShimulator-macOS.dylib"
     "$sim/libRepl-iOS.dylib"
     "$release/libRepl-macOS.dylib"
+    "$sim/libReplIDB-iOS.dylib"
+    "$release/libReplIDB-macOS.dylib"
     "$sim/SimulatorFrameworkBridge-iOS"
     "$tvsim/SimulatorFrameworkBridge-tvOS"
     "$sim/ReplHost.app"
@@ -969,6 +975,8 @@ function build_distribution() {
   cp "$release/libShimulator-macOS.dylib" "$dist/Resources/"
   cp "$sim/libRepl-iOS.dylib" "$dist/Resources/"
   cp "$release/libRepl-macOS.dylib" "$dist/Resources/"
+  cp "$sim/libReplIDB-iOS.dylib" "$dist/Resources/"
+  cp "$release/libReplIDB-macOS.dylib" "$dist/Resources/"
   cp "$sim/SimulatorFrameworkBridge-iOS" "$dist/Resources/"
   cp "$tvsim/SimulatorFrameworkBridge-tvOS" "$dist/Resources/"
 
@@ -978,7 +986,7 @@ function build_distribution() {
   ditto "$sim/ReplHost.app" "$dist/Resources/ReplHost.app"
 
   # The checked-in IDBAPI module interface, reported to the REPL driver so
-  # injected code can auto-import the `IDB` namespace.
+  # injected code can auto-import the `IDB` namespace that libReplIDB implements.
   cp "REPL/IDB/IDBAPI.swiftinterface" "$dist/Resources/"
 
   mkdir -p "$dist/Resources/Swift"
@@ -1057,6 +1065,10 @@ function build() {
         build_shim Repl-iOS iphonesimulator Shims/Repl/Repl.xcodeproj;;
       Repl-macOS)
         build_shim Repl-macOS macosx Shims/Repl/Repl.xcodeproj;;
+      ReplIDB-iOS)
+        build_shim ReplIDB-iOS iphonesimulator Shims/Repl/Repl.xcodeproj;;
+      ReplIDB-macOS)
+        build_shim ReplIDB-macOS macosx Shims/Repl/Repl.xcodeproj;;
       SimulatorFrameworkBridge-iOS)
         build_simulator_framework_bridge iOS iphonesimulator;;
       SimulatorFrameworkBridge-tvOS)

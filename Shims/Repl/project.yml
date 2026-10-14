@@ -104,3 +104,92 @@ targets:
         SDKROOT: macosx
         MACOSX_DEPLOYMENT_TARGET: "15.0"
         PRODUCT_MODULE_NAME: ReplRuntimeProbe
+
+  # The idb command API (`IDB`, module `IDBAPI`) as dylibs of their own, which idb-repl injects
+  # alongside libRepl; the shim itself carries no idb API. `ReplCommand` (module `ReplProtocol`)
+  # is linked into each statically.
+  ReplProtocol-iOS:
+    type: library.static
+    platform: iOS
+    deploymentTarget: "15.0"
+    sources:
+      - path: ../../REPL/ReplProtocol
+    settings:
+      base:
+        SDKROOT: iphonesimulator
+        IPHONEOS_DEPLOYMENT_TARGET: "15.0"
+        PRODUCT_NAME: ReplProtocol-iOS
+        PRODUCT_MODULE_NAME: ReplProtocol
+        SWIFT_VERSION: "6.0"
+
+  ReplProtocol-macOS:
+    type: library.static
+    platform: macOS
+    deploymentTarget: "15.0"
+    sources:
+      - path: ../../REPL/ReplProtocol
+    settings:
+      base:
+        SDKROOT: macosx
+        MACOSX_DEPLOYMENT_TARGET: "15.0"
+        PRODUCT_NAME: ReplProtocol-macOS
+        PRODUCT_MODULE_NAME: ReplProtocol
+        SWIFT_VERSION: "6.0"
+
+  ReplIDB-iOS:
+    type: library.dynamic
+    platform: iOS
+    deploymentTarget: "15.0"
+    sources:
+      - path: ../../REPL/IDB
+        excludes:
+          - "*.swiftinterface"
+    settings:
+      base:
+        SDKROOT: iphonesimulator
+        IPHONEOS_DEPLOYMENT_TARGET: "15.0"
+        PRODUCT_NAME: ReplIDB-iOS
+        PRODUCT_MODULE_NAME: IDBAPI
+        EXECUTABLE_PREFIX: lib
+        SWIFT_VERSION: "6.0"
+        CURRENT_PROJECT_VERSION: 1
+        DYLIB_CURRENT_VERSION: 1
+        DYLIB_COMPATIBILITY_VERSION: 1
+        COPY_PHASE_STRIP: NO
+        CODE_SIGN_IDENTITY: "-"
+        OTHER_LDFLAGS: $(inherited) -headerpad_max_install_names
+    dependencies:
+      - target: ReplProtocol-iOS
+        link: true
+      - sdk: Foundation.framework
+      - sdk: CoreGraphics.framework
+      - sdk: ImageIO.framework
+
+  ReplIDB-macOS:
+    type: library.dynamic
+    platform: macOS
+    deploymentTarget: "15.0"
+    sources:
+      - path: ../../REPL/IDB
+        excludes:
+          - "*.swiftinterface"
+    settings:
+      base:
+        SDKROOT: macosx
+        MACOSX_DEPLOYMENT_TARGET: "15.0"
+        PRODUCT_NAME: ReplIDB-macOS
+        PRODUCT_MODULE_NAME: IDBAPI
+        EXECUTABLE_PREFIX: lib
+        SWIFT_VERSION: "6.0"
+        CURRENT_PROJECT_VERSION: 1
+        DYLIB_CURRENT_VERSION: 1
+        DYLIB_COMPATIBILITY_VERSION: 1
+        COPY_PHASE_STRIP: NO
+        CODE_SIGN_IDENTITY: "-"
+        OTHER_LDFLAGS: $(inherited) -headerpad_max_install_names
+    dependencies:
+      - target: ReplProtocol-macOS
+        link: true
+      - sdk: Foundation.framework
+      - sdk: CoreGraphics.framework
+      - sdk: ImageIO.framework
