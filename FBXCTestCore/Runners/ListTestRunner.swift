@@ -44,7 +44,7 @@ public final class ListTestRunner {
     let shimBuffer = DataBuffer.consumableBuffer()
     let shimOutput = try FileBackedOutput.fifo(draining: shimBuffer)
     let stdErrBuffer = DataBuffer.consumableBuffer()
-    let stdErrConsumer: DataConsumer = FBCompositeDataConsumer(consumers: [
+    let stdErrConsumer: DataConsumer = CompositeDataConsumer(consumers: [
       stdErrBuffer,
       LoggingDataConsumer(logger: logger),
     ])

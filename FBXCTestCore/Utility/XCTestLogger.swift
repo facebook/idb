@@ -117,11 +117,11 @@ public final class XCTestLogger: ControlCoreLogger, @unchecked Sendable {
 
   // MARK: - Log Consumption
 
-  public func logConsumption(of consumer: DataConsumer, toFileNamed fileName: String, logger: ControlCoreLogger) async throws -> FBCompositeDataConsumer {
+  public func logConsumption(of consumer: DataConsumer, toFileNamed fileName: String, logger: ControlCoreLogger) async throws -> CompositeDataConsumer {
     let filePath = (logDirectory as NSString).appendingPathComponent(fileName)
     let writer = try await FileWriter.asyncWriter(forFilePath: filePath)
     logger.info().log("Mirroring output to \(filePath)")
-    return FBCompositeDataConsumer(consumers: [
+    return CompositeDataConsumer(consumers: [
       consumer,
       writer,
       LoggingDataConsumer(logger: logger),

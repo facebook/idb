@@ -69,7 +69,7 @@ public struct LoggingDataConsumer: DataConsumer {
 }
 
 /// A consumer that forwards everything it receives to each of `consumers`, in order.
-public struct FBCompositeDataConsumer: DataConsumer, DataConsumerLifecycle, CustomStringConvertible {
+public struct CompositeDataConsumer: DataConsumer, DataConsumerLifecycle, CustomStringConvertible {
   private let consumers: [DataConsumer]
   public let finishedConsuming = AsyncLatch()
 

@@ -216,7 +216,7 @@ extension Subprocess.Output {
     }
     let composed: any DataConsumer
     if let logger {
-      composed = FBCompositeDataConsumer(consumers: [consumer, LoggingDataConsumer(logger: logger)])
+      composed = CompositeDataConsumer(consumers: [consumer, LoggingDataConsumer(logger: logger)])
     } else {
       composed = consumer
     }

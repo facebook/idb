@@ -295,7 +295,7 @@ final class DataConsumerTests: XCTestCase {
   func testCompositeWithCompletion() {
     let accumulating = DataBuffer.consumableBuffer()
     let consumable = DataBuffer.consumableBuffer()
-    let composite = FBCompositeDataConsumer(consumers: [
+    let composite = CompositeDataConsumer(consumers: [
       accumulating,
       consumable,
     ])

@@ -217,9 +217,9 @@ public final class LogicTestRunner {
       stdErrConsumers.append(LoggingDataConsumer(logger: logger))
     }
 
-    let stdOutConsumer = FBCompositeDataConsumer(consumers: stdOutConsumers)
-    let stdErrConsumer = FBCompositeDataConsumer(consumers: stdErrConsumers)
-    let shimConsumer = FBCompositeDataConsumer(consumers: shimConsumers)
+    let stdOutConsumer = CompositeDataConsumer(consumers: stdOutConsumers)
+    let stdErrConsumer = CompositeDataConsumer(consumers: stdErrConsumers)
+    let shimConsumer = CompositeDataConsumer(consumers: shimConsumers)
 
     guard mirrorToFiles else {
       return LogicTestRunConsumers(stdOut: stdOutConsumer, stdErr: stdErrConsumer, stdErrBuffer: stdErrBuffer, shim: shimConsumer)
