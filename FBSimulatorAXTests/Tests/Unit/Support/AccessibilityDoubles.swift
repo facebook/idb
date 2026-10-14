@@ -401,6 +401,9 @@ class AXPTranslatorDouble: NSObject {
   /// The `clientType` of each request to send through the bridge delegate during a frontmost resolution, as
   /// the real translator does when it reads the application's attributes. Empty sends none.
   var bridgeRequestClientTypes: [UInt64] = []
+  /// Requests to send through the bridge delegate with no token during a frontmost resolution, after the
+  /// tokened ones: a lookup that carries no translation, as an application lookup does.
+  var untokenedBridgeRequestCount = 0
 
   @objc
   func frontmostApplication(withDisplayId displayId: Int32, bridgeDelegateToken token: String) -> AXPTranslationObjectDouble? {
@@ -422,6 +425,11 @@ class AXPTranslatorDouble: NSObject {
     for clientType in bridgeRequestClientTypes {
       bridgeResponses.append(
         AccessibilityTranslatorRequests.send(AccessibilityTranslatorRequests.make(clientType: clientType), through: bridgeTokenDelegate, token: token))
+    }
+    for _ in 0..<untokenedBridgeRequestCount {
+      let request = AccessibilityTranslatorRequests.make(clientType: 0)
+      request?.setValue(1, forKey: "requestType")
+      bridgeResponses.append(AccessibilityTranslatorRequests.send(request, through: bridgeTokenDelegate, token: ""))
     }
   }
 

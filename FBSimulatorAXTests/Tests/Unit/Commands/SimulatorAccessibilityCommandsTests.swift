@@ -558,6 +558,20 @@ final class SimulatorAccessibilityCommandsTests: XCTestCase {
       "the metrics never reach the document")
   }
 
+  func testAnUntokenedRequestDuringAFrontmostResolution() async throws {
+    let transport = AXTranslationTransportDouble()
+    try setUp(withRootElement: defaultElementTree, transport: transport)
+    fixture!.translator.untokenedBridgeRequestCount = 1
+
+    let element = try await simulator.accessibility.resolveElement(for: .frontmost)
+    element.close()
+
+    // BUG: a request with no token, and no pid, is forwarded to the simulator's service while a frontmost root
+    // resolves, where the service answers it for its own process. It used to be answered empty without a round
+    // trip — flipped in the following commit.
+    XCTAssertEqual(transport.requests.map(\.requestType), [1])
+  }
+
   func testATransportThatDoesNotAnswerYieldsTheEmptyResponse() async throws {
     try setUp(withRootElement: defaultElementTree, transport: AXTranslationTransportDouble(answers: false))
     fixture!.translator.bridgeRequestClientTypes = [0]
