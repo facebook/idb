@@ -106,7 +106,7 @@ private final class DeviceEraseOperation: TargetSetDelegate, @unchecked Sendable
   func targetUpdated(_ targetInfo: any TargetInfo, in targetSet: any TargetSet) {}
 }
 
-// MARK: - DeviceEraseStrategy
+// MARK: - DeviceEraseError
 
 public enum DeviceEraseError: Error {
   case badEraseCallback(value: Int32, expected: Int32)
@@ -121,12 +121,14 @@ extension DeviceEraseError: LocalizedError {
   }
 }
 
-final class DeviceEraseStrategy {
+// MARK: - Device
 
-  static func erase(_ device: Device) async throws {
-    let logger = device.logger.withName("erase_\(device.udid)")
-    try await device.activate()
-    let operation = DeviceEraseOperation(device: device, logger: logger)
+extension Device {
+
+  public func erase() async throws {
+    let logger = self.logger.withName("erase_\(udid)")
+    try await activate()
+    let operation = DeviceEraseOperation(device: self, logger: logger)
     try await operation.erase()
     logger.log("Device erase finished successfully \(operation)")
   }

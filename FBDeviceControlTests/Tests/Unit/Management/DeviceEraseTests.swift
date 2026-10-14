@@ -18,7 +18,7 @@ private let ECID: UInt = 12345
 @MainActor
 // Serialized: the restorable fake is held statically, and its notifications arrive on the main queue.
 @Suite(.serialized)
-struct DeviceEraseStrategyTests {
+struct DeviceEraseTests {
 
   private let amDevice = FakeAMDevice()
   private let restorable = FakeRestorableDevice(ecid: ECID)

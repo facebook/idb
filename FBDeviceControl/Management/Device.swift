@@ -335,10 +335,6 @@ extension Device {
 
   // MARK: - Command verbs
 
-  public func erase() async throws {
-    try await DeviceEraseStrategy.erase(self)
-  }
-
   public func details(_ keys: Set<TargetDetailKey>) async throws -> TargetDetails {
     var details = TargetDetails(unsupported: keys)
     guard keys.contains(.diagnostics) else {
