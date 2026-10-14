@@ -7,10 +7,13 @@
 
 @testable import FBControlCore
 @testable import FBVideoCore
-import XCTest
+import Foundation
+import Testing
 
-final class VideoStreamConfigurationTests: XCTestCase {
-  func testUnsetFieldsTakeTheirDefaults() {
+@Suite
+struct VideoStreamConfigurationTests {
+  @Test
+  func unsetFieldsTakeTheirDefaults() {
     let config = VideoStreamConfiguration(
       format: VideoStreamFormat.compressedVideo(withCodec: VideoStreamCodec.h264, transport: VideoStreamTransport.annexB),
       framesPerSecond: nil,
@@ -18,12 +21,13 @@ final class VideoStreamConfigurationTests: XCTestCase {
       scaleFactor: nil,
       keyFrameRate: nil
     )
-    XCTAssertEqual(config.rateControl, .automatic)
-    XCTAssertEqual(config.keyFrameRate, 4.0)
-    XCTAssertEqual(config.display, .active)
+    #expect(config.rateControl == .automatic)
+    #expect(config.keyFrameRate == 4.0)
+    #expect(config.display == .active)
   }
 
-  func testTheDisplayIsKeptAndDescribed() {
+  @Test
+  func theDisplayIsKeptAndDescribed() {
     let config = VideoStreamConfiguration(
       format: VideoStreamFormat.compressedVideo(withCodec: VideoStreamCodec.h264, transport: VideoStreamTransport.annexB),
       framesPerSecond: nil,
@@ -32,13 +36,14 @@ final class VideoStreamConfigurationTests: XCTestCase {
       keyFrameRate: nil,
       display: .display(uniqueID: "FA9C9507")
     )
-    XCTAssertEqual(config.display, .display(uniqueID: "FA9C9507"))
-    XCTAssertTrue(config.description.hasSuffix("| Display FA9C9507"), config.description)
+    #expect(config.display == .display(uniqueID: "FA9C9507"))
+    #expect(config.description.hasSuffix("| Display FA9C9507"), "\(config.description)")
   }
 
   /// Only nil takes the default, so a caller mapping an unset wire field has to send nil — zero
   /// survives, and zero is what VideoToolbox reads as an unlimited key frame interval.
-  func testZeroKeyFrameRateIsNotTheDefault() {
+  @Test
+  func zeroKeyFrameRateIsNotTheDefault() {
     let config = VideoStreamConfiguration(
       format: VideoStreamFormat.compressedVideo(withCodec: VideoStreamCodec.h264, transport: VideoStreamTransport.annexB),
       framesPerSecond: nil,
@@ -46,10 +51,11 @@ final class VideoStreamConfigurationTests: XCTestCase {
       scaleFactor: nil,
       keyFrameRate: 0
     )
-    XCTAssertEqual(config.keyFrameRate, 0)
+    #expect(config.keyFrameRate == 0)
   }
 
-  func testExplicitQualityPreserved() {
+  @Test
+  func explicitQualityPreserved() {
     let rc = VideoStreamRateControl.quality(0.7)
     let config = VideoStreamConfiguration(
       format: VideoStreamFormat.compressedVideo(withCodec: VideoStreamCodec.h264, transport: VideoStreamTransport.annexB),
@@ -58,7 +64,7 @@ final class VideoStreamConfigurationTests: XCTestCase {
       scaleFactor: nil,
       keyFrameRate: 5.0
     )
-    XCTAssertEqual(config.rateControl, .quality(0.7))
-    XCTAssertEqual(config.keyFrameRate, 5.0)
+    #expect(config.rateControl == .quality(0.7))
+    #expect(config.keyFrameRate == 5.0)
   }
 }
