@@ -11,14 +11,14 @@ import FBSimulatorXCTest
 @preconcurrency import FBXCTestCore
 import Foundation
 
-public enum SimulatorReplError: Error {
+enum SimulatorReplError: Error {
   case bundledResourceMissing(item: String)
   case socketDirectoryCreationFailed(path: String)
   case targetIsNotALaunchableApp(bundleID: String, processIdentifier: pid_t)
 }
 
 extension SimulatorReplError: LocalizedError {
-  public var errorDescription: String? {
+  var errorDescription: String? {
     switch self {
     case let .bundledResourceMissing(item):
       return "\(item) not found in the bundled resources"
@@ -36,21 +36,17 @@ extension SimulatorReplError: LocalizedError {
 
 /// Each host is started with the shim injected. `additionalLibraries` are loaded into the host
 /// alongside it, before any code is injected, so injected code resolves their symbols at load.
-public struct SimulatorReplCommands {
+struct SimulatorReplCommands {
 
   private let simulator: Simulator
 
   // MARK: - Initializers
 
-  public init(simulator: Simulator) {
+  init(simulator: Simulator) {
     self.simulator = simulator
   }
 
   // MARK: - Async
-
-  public func startTest(bundlePath: String, additionalLibraries: [String] = []) async throws -> LaunchedRepl {
-    try await startTest(bundlePath: bundlePath, shim: .bundled, additionalLibraries: additionalLibraries)
-  }
 
   func startTest(bundlePath: String, shim: CodeInjectionShim, additionalLibraries: [String]) async throws -> LaunchedRepl {
     let logger = simulator.logger
@@ -89,10 +85,6 @@ public struct SimulatorReplCommands {
     return LaunchedRepl(socketPath: socketPath, host: .testRun(Task { try await runner.run() }))
   }
 
-  public func startSimulator(additionalLibraries: [String] = []) async throws -> LaunchedRepl {
-    try await startSimulator(shim: .bundled, additionalLibraries: additionalLibraries)
-  }
-
   func startSimulator(shim: CodeInjectionShim, additionalLibraries: [String]) async throws -> LaunchedRepl {
     guard let bridgePath = simulator.frameworkBridgePath else {
       throw SimulatorReplError.bundledResourceMissing(item: "SimulatorFrameworkBridge binary")
@@ -113,20 +105,12 @@ public struct SimulatorReplCommands {
     return LaunchedRepl(socketPath: socketPath, host: .process(process))
   }
 
-  public func appLaunchEnvironment(bundleID: String, additionalLibraries: [String] = []) async throws -> [String: String] {
-    try appLaunchEnvironment(bundleID: bundleID, shim: .bundled, additionalLibraries: additionalLibraries)
-  }
-
   func appLaunchEnvironment(bundleID: String, shim: CodeInjectionShim, additionalLibraries: [String]) throws -> [String: String] {
     try [
       "DYLD_INSERT_LIBRARIES": ([shim.resolvedPath()] + additionalLibraries).joined(separator: ":"),
       "IDB_REPL_APP_AUTOSTART": "1",
       "IDB_REPL_SOCKET_PATH": replSocketPath(udid: simulator.udid, bundleID: bundleID),
     ]
-  }
-
-  public func startApp(bundleID: String, reuseSession: Bool, additionalLibraries: [String] = []) async throws -> LaunchedRepl {
-    try await startApp(bundleID: bundleID, reuseSession: reuseSession, shim: .bundled, additionalLibraries: additionalLibraries)
   }
 
   func startApp(bundleID: String, reuseSession: Bool, shim: CodeInjectionShim, additionalLibraries: [String]) async throws -> LaunchedRepl {

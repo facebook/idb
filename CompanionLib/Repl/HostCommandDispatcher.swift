@@ -7,7 +7,6 @@
 
 import CoreGraphics
 import FBControlCore
-import FBSimulatorCodeInjection
 import FBSimulatorControl
 import FBVideoCore
 import Foundation
@@ -114,7 +113,7 @@ struct HostCommandDispatcher: @unchecked Sendable {
     case propertyList(Any)
   }
 
-  func run(_ command: ReplCommand) async -> ReplHostCommandResult {
+  func run(_ command: ReplCommand) async -> Result<Data, any Error> {
     do {
       switch try await resultValue(for: command) {
       case nil:

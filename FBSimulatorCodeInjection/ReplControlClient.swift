@@ -20,7 +20,7 @@ import Foundation
 /// All blocking socket I/O runs on a dedicated dispatch queue so the caller's
 /// cooperative thread is never blocked (a user's compiled code may run
 /// for an arbitrary amount of time).
-public final class ReplControlClient: @unchecked Sendable {
+final class ReplControlClient: @unchecked Sendable {
 
   private let fd: Int32
   private let ioQueue = DispatchQueue(label: "com.facebook.idb.repl.socket")
@@ -33,7 +33,7 @@ public final class ReplControlClient: @unchecked Sendable {
 
   /// Connects to the shim's socket, retrying until `timeout` elapses (the socket
   /// only appears once the test process has launched and the shim has bound it).
-  public static func connect(path: String, timeout: TimeInterval) async throws -> ReplControlClient {
+  static func connect(path: String, timeout: TimeInterval) async throws -> ReplControlClient {
     let queue = DispatchQueue(label: "com.facebook.idb.repl.connect")
     let fd: Int32 = try await withCheckedThrowingContinuation { continuation in
       queue.async {
@@ -82,15 +82,15 @@ public final class ReplControlClient: @unchecked Sendable {
   /// the app persisted a higher value across reconnects), and the host's stable
   /// session id (the same across reconnects to a still-running app, regenerated on
   /// relaunch).
-  public struct Greeting: Sendable {
-    public let interfaces: [String]
-    public let nextRunIndex: UInt32
-    public let sessionID: String
+  struct Greeting: Sendable {
+    let interfaces: [String]
+    let nextRunIndex: UInt32
+    let sessionID: String
   }
 
   /// Reads the shim's greeting frame, sent once on connect before any command.
   /// Must be called exactly once, before the first `execute`.
-  public func readGreeting() async throws -> Greeting {
+  func readGreeting() async throws -> Greeting {
     let fd = self.fd
     return try await withCheckedThrowingContinuation { continuation in
       ioQueue.async {
@@ -113,7 +113,7 @@ public final class ReplControlClient: @unchecked Sendable {
   /// Services a `host_command` the served process sends back *while* an `execute`
   /// is in flight. Receives the raw encoded command bytes (a binary property list
   /// of a `ReplCommand`) and returns the command's outcome.
-  public typealias HostCommandHandler = (_ commandData: Data) async -> ReplHostCommandResult
+  typealias HostCommandHandler = (_ commandData: Data) async -> ReplHostCommandResult
 
   /// Sends a `{dylib, symbol}` command to the shim and returns its result. While
   /// the served process runs the injected code it may send nested `host_command`
@@ -122,7 +122,7 @@ public final class ReplControlClient: @unchecked Sendable {
   /// `result` for this execute arrives. A `read` returning EOF/error before a
   /// complete message means the shim closed the socket mid-exchange (e.g. the test
   /// process crashed), surfaced as a disconnect.
-  public func execute(dylibPath: String, symbol: String, hostCommandHandler: @escaping HostCommandHandler) async throws -> (success: Bool, output: String, nextRunIndex: Int32) {
+  func execute(dylibPath: String, symbol: String, hostCommandHandler: @escaping HostCommandHandler) async throws -> (success: Bool, output: String, nextRunIndex: Int32) {
     let (outcome, nextRunIndex) = try await run(dylibPath: dylibPath, symbol: symbol, hostCommandHandler: hostCommandHandler)
     switch outcome {
     case let .success(result):
@@ -265,7 +265,7 @@ public final class ReplControlClient: @unchecked Sendable {
   /// Closes the socket. This is what tears the session down: the shim's `accept`
   /// loop ends, `TestRepl/start` returns, and the test process exits. Closing
   /// the fd directly also interrupts any in-flight blocking read.
-  public func close() {
+  func close() {
     closeLock.lock()
     defer { closeLock.unlock() }
     guard !isClosed else { return }
@@ -277,12 +277,12 @@ public final class ReplControlClient: @unchecked Sendable {
 /// The outcome of a host command the injected code sent back mid-execute: on success, the
 /// serialized result payload (empty when the command has no return value); on failure, the error,
 /// whose description reaches the injected code.
-public enum ReplHostCommandResult {
+enum ReplHostCommandResult {
   case success(Data)
   case failure(any Error)
 }
 
-public enum ReplControlError: Error, Equatable {
+enum ReplControlError: Error, Equatable {
   case socketCreationFailed
   case socketPathTooLong(path: String)
   case connectTimedOut(path: String)
@@ -296,7 +296,7 @@ public enum ReplControlError: Error, Equatable {
 }
 
 extension ReplControlError: CustomStringConvertible, LocalizedError {
-  public var description: String {
+  var description: String {
     switch self {
     case .socketCreationFailed:
       return "repl: failed to create socket"
@@ -321,5 +321,5 @@ extension ReplControlError: CustomStringConvertible, LocalizedError {
     }
   }
 
-  public var errorDescription: String? { description }
+  var errorDescription: String? { description }
 }

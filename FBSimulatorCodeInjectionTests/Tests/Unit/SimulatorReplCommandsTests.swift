@@ -47,7 +47,7 @@ final class SimulatorReplCommandsTests: XCTestCase {
   func testArmsAnAppLaunchWithTheShimThenAdditionalLibraries() async throws {
     let commands = SimulatorReplCommands(simulator: SimulatorTestSupport.testableSimulator(withDevice: HeldSpawnDevice()))
 
-    let environment = try await commands.appLaunchEnvironment(bundleID: "com.example.App", additionalLibraries: ["/first.dylib", "/second.dylib"])
+    let environment = try commands.appLaunchEnvironment(bundleID: "com.example.App", shim: .bundled, additionalLibraries: ["/first.dylib", "/second.dylib"])
 
     let shim = try XCTUnwrap(BundledResources.path(forItem: "libRepl-iOS.dylib"))
     XCTAssertEqual(environment["DYLD_INSERT_LIBRARIES"], "\(shim):/first.dylib:/second.dylib")

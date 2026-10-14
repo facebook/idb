@@ -87,8 +87,13 @@ public final class CodeInjectionSession: Sendable {
 
   /// Ends the session. Closing the connection ends the host's session; a host that exits with it --
   /// the guest bridge, or a logic test -- is waited for, and an app keeps running for the next one.
+  /// A session that is dropped closes its connection without waiting.
   public func close() async throws {
     client.close()
     try await host.waitForHostToFinish()
+  }
+
+  deinit {
+    client.close()
   }
 }

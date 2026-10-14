@@ -9,10 +9,10 @@
 @testable import FBSimulatorControl
 import Testing
 
-@Suite("Simulator REPL command retention")
+@Suite("Simulator code injection command retention")
 struct SimulatorReplCommandRetentionTests {
-  @Test("Resolving the REPL commands does not retain the simulator")
-  func resolvingTheReplCommandsDoesNotRetainTheSimulator() {
-    #expect(simulatorSurvives { _ = $0.repl } == false)
+  @Test("Resolving the code injection commands does not retain the simulator")
+  func resolvingTheCodeInjectionCommandsDoesNotRetainTheSimulator() {
+    #expect(simulatorSurvives { _ = $0.codeInjection } == false)
   }
 }

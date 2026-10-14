@@ -7,7 +7,7 @@
 
 import FBArtifactStaging
 import FBControlCore
-import FBSimulatorCodeInjection
+@_spi(IDBRepl) import FBSimulatorCodeInjection
 import Foundation
 import GRPCCore
 import IDBConcurrency
@@ -28,7 +28,7 @@ struct ReplMethodHandler {
 
     targetLogger.debug().log("REPL session context: \(start.context)")
 
-    let session: LaunchedRepl
+    let session: CodeInjectionSession
     // Only the app context has an app whose exit should end a recording; the
     // test/simulator hosts are disposable and drop any recording at teardown. For
     // the app context an empty bundle id means "use the companion's bundled
@@ -38,17 +38,17 @@ struct ReplMethodHandler {
     let appBundleID: String?
     switch start.context {
     case .test:
-      session = try await commandExecutor.repl_start_test(bundlePath: start.testBundlePath)
+      session = try await reportingCodeInjectionErrors { try await commandExecutor.repl_start_test(bundlePath: start.testBundlePath) }
       appBundleID = nil
     case .app:
       let bundleID =
         start.appBundleID.isEmpty
         ? try await commandExecutor.ensureReplHostAppInstalled()
         : start.appBundleID
-      session = try await commandExecutor.repl_start_app(bundleID: bundleID, reuseSession: start.reuseSession)
+      session = try await reportingCodeInjectionErrors { try await commandExecutor.repl_start_app(bundleID: bundleID, reuseSession: start.reuseSession) }
       appBundleID = bundleID
     case .simulator, .UNRECOGNIZED:
-      session = try await commandExecutor.repl_start_simulator()
+      session = try await reportingCodeInjectionErrors { try await commandExecutor.repl_start_simulator() }
       appBundleID = nil
     }
 
@@ -60,11 +60,11 @@ struct ReplMethodHandler {
     try await serve(session: session, sharedFilesystem: sharedFilesystem, context: start.context, appBundleID: appBundleID, requestStream: requestStream, responseStream: responseStream)
   }
 
-  /// Bridges the gRPC repl stream to a launched session's control socket:
-  /// connects to the socket, reports `ready`, forwards each `Execute` (a dylib
-  /// plus a symbol) to the socket and streams back the result, and on stop/EOF
-  /// closes the socket (which ends the served process) and reports `stopped`.
-  private func serve(session: LaunchedRepl, sharedFilesystem: Bool, context: Idb_ReplRequest.Start.Context, appBundleID: String?, requestStream: RequestStreamReader<Idb_ReplRequest>, responseStream: RPCWriter<Idb_ReplResponse>) async throws {
+  /// Bridges the gRPC repl stream to a code-injection session: reports `ready`,
+  /// forwards each `Execute` (a dylib plus a symbol) to the session and streams
+  /// back the result, and on stop/EOF closes the session (which ends the served
+  /// process) and reports `stopped`.
+  private func serve(session: CodeInjectionSession, sharedFilesystem: Bool, context: Idb_ReplRequest.Start.Context, appBundleID: String?, requestStream: RequestStreamReader<Idb_ReplRequest>, responseStream: RPCWriter<Idb_ReplResponse>) async throws {
     // Per-session scratch directory for the dylibs received over the wire. It
     // lives on the host filesystem, which the simulator process can read.
     let scratchDirectory = (NSTemporaryDirectory() as NSString).appendingPathComponent("idb_repl_\(UUID().uuidString)")
@@ -84,16 +84,12 @@ struct ReplMethodHandler {
     defer { try? FileManager.default.removeItem(at: artifactsDirectory) }
     let hostState = ReplHostCommandState(stagingDirectory: artifactsDirectory, containerRelativeBase: artifactsContainerBase)
 
-    let client = try await reportingReplControlErrors { try await ReplControlClient.connect(path: session.socketPath, timeout: 120) }
-    defer { client.close() }
-
     // The host greets us with the .swiftinterface paths it generated in-process
     // (empty in the simulator context). Combine them with the pre-built interface
     // of the `IDB` module that libReplIDB implements. We read each file's contents here and
     // forward those (not the paths) to the driver, which may not share a
     // filesystem with the companion; the driver materializes them locally.
-    let greeting = try await reportingReplControlErrors { try await client.readGreeting() }
-    let interfacePaths = greeting.interfaces + commandExecutor.replIDBInterfacePaths
+    let interfacePaths = session.generatedInterfacePaths + commandExecutor.replIDBInterfacePaths
     let generatedInterfaces: [Idb_ReplResponse.Ready.GeneratedInterface] = interfacePaths.compactMap { path in
       guard let contents = try? String(contentsOfFile: path, encoding: .utf8) else {
         targetLogger.error().log("Failed to read generated interface at \(path); skipping")
@@ -114,9 +110,9 @@ struct ReplMethodHandler {
             $0.deviceType = commandExecutor.replDeviceType
             $0.osVersion = commandExecutor.replOSVersion
             $0.generatedInterfaces = generatedInterfaces
-            $0.nextRunIndex = greeting.nextRunIndex
+            $0.nextRunIndex = session.nextRunIndex
             $0.sharedFilesystem = sharedFilesystem
-            $0.sessionID = greeting.sessionID
+            $0.sessionID = session.sessionID
           })
       })
 
@@ -139,16 +135,13 @@ struct ReplMethodHandler {
         // the driver assigned (the `idb_repl_<n>` entry-point symbol).
         hostState.beginRun(index: Self.replRunIndex(fromSymbol: execute.symbol) ?? runIndex)
 
-        let result = try await reportingReplControlErrors {
-          try await client.execute(
-            dylibPath: dylibPath,
-            symbol: execute.symbol,
-            hostCommandHandler: { commandData in
-              guard let command = try? PropertyListDecoder().decode(ReplCommand.self, from: commandData) else {
-                return .failure(HostCommandError.message("repl: could not decode host command"))
-              }
-              return await dispatcher.run(command)
-            })
+        let (result, nextRunIndex) = try await reportingCodeInjectionErrors {
+          try await session.run(dylibAtPath: dylibPath, symbol: execute.symbol) { commandData in
+            guard let command = try? PropertyListDecoder().decode(ReplCommand.self, from: commandData) else {
+              return .failure(HostCommandError.message("repl: could not decode host command"))
+            }
+            return await dispatcher.run(command)
+          }
         }
         let artifacts = hostState.runArtifacts.map { artifact in
           Idb_ReplResponse.Result.Artifact.with {
@@ -160,9 +153,15 @@ struct ReplMethodHandler {
           .with {
             $0.event = .result(
               .with {
-                $0.success = result.success
-                $0.output = result.output
-                $0.nextRunIndex = result.nextRunIndex
+                switch result {
+                case let .success(output):
+                  $0.success = true
+                  $0.output = output
+                case let .failure(error):
+                  $0.success = false
+                  $0.output = "Error: \(error)"
+                }
+                $0.nextRunIndex = nextRunIndex
                 $0.artifacts = artifacts
               })
           })
@@ -183,12 +182,11 @@ struct ReplMethodHandler {
       await recordingCoordinator.dropActiveRecording()
     }
 
-    // Closing the socket ends the served process's accept loop, so it exits;
+    // Closing the session ends the served process's accept loop, so it exits;
     // wait for it (bounded), then report the session stopped.
-    client.close()
     let thirtySeconds: UInt64 = 30 * 1_000_000_000
     try? await Task.timeout(nanoseconds: thirtySeconds) {
-      try await session.waitForHostToFinish()
+      try await session.close()
     }
     try await responseStream.send(.with { $0.event = .stopped(.with { $0.desc = "REPL session ended" }) })
   }

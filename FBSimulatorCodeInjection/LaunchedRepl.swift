@@ -10,10 +10,10 @@ import Foundation
 
 /// A running REPL session. The host has injected the REPL shim, which binds the
 /// control socket at `socketPath` and serves `dlopen`/`dlsym`/call requests.
-public struct LaunchedRepl: Sendable {
+struct LaunchedRepl: Sendable {
 
   /// What hosts the REPL, and so what ending the session waits for.
-  public enum Host: Sendable {
+  enum Host: Sendable {
     /// A process of its own, which exits once the control socket is closed.
     case process(RunningSubprocess)
     /// A logic test run executing the shim's `TestRepl/start`, which finishes once
@@ -23,17 +23,12 @@ public struct LaunchedRepl: Sendable {
     case app
   }
 
-  public let socketPath: String
-  public let host: Host
-
-  public init(socketPath: String, host: Host) {
-    self.socketPath = socketPath
-    self.host = host
-  }
+  let socketPath: String
+  let host: Host
 
   /// Waits for the host to finish once the control socket is closed; returns
   /// immediately for an app. Cancelling the wait cancels a test run.
-  public func waitForHostToFinish() async throws {
+  func waitForHostToFinish() async throws {
     switch host {
     case let .process(process):
       _ = try await process.terminationStatus

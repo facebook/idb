@@ -427,17 +427,13 @@ public final class IDBCommandExecutor {
     return try await request.start(withBundleStorageManager: storageManager.xctest, target: target, reporter: reporter, logger: logger, temporaryDirectory: temporaryDirectory)
   }
 
-  /// Launches a logic test bundle in REPL mode. The implementation lives in the
-  /// REPL command (`SimulatorReplCommands`); this forwards to the target, which
-  /// injects the REPL shim (`libRepl`), forces the shim's `TestRepl/start` test,
-  /// and has the shim bind a control socket whose path is passed via
-  /// `IDB_REPL_SOCKET_PATH`. The returned session is hosted by the test run, which
-  /// finishes once the control socket is closed.
-  public func repl_start_test(bundlePath: String) async throws -> LaunchedRepl {
+  /// Injects code into a logic test bundle for the `test` REPL context. The session is hosted by
+  /// the test run, which finishes once the session is closed.
+  public func repl_start_test(bundlePath: String) async throws -> CodeInjectionSession {
     guard let simulator = target as? Simulator else {
       throw IDBCommandError.replTestsUnsupported(targetDescription: String(describing: target))
     }
-    return try await simulator.repl.startTest(bundlePath: bundlePath, additionalLibraries: replIDBLibraries())
+    return try await simulator.codeInjection.inject(into: .logicTestBundle(path: bundlePath), additionalLibraries: replIDBLibraries(), connectTimeout: Self.replConnectTimeout)
   }
 
   /// The product family ("iphone", "ipad", "watch", "tv", "mac", "unknown") of
@@ -454,26 +450,27 @@ public final class IDBCommandExecutor {
     target.osVersion.versionString
   }
 
-  /// Launches `SimulatorFrameworkBridge` on the simulator for the "simulator"
-  /// REPL context. The returned session is hosted by the bridge process, which
-  /// exits once the control socket is closed.
-  public func repl_start_simulator() async throws -> LaunchedRepl {
+  /// Injects code into the simulator's guest bridge for the "simulator" REPL context. The session
+  /// is hosted by the bridge process, which exits once the session is closed.
+  public func repl_start_simulator() async throws -> CodeInjectionSession {
     guard let simulator = target as? Simulator else {
       throw IDBCommandError.replSessionsUnsupported(targetDescription: String(describing: target))
     }
-    return try await simulator.repl.startSimulator(additionalLibraries: replIDBLibraries())
+    return try await simulator.codeInjection.inject(into: .simulator, additionalLibraries: replIDBLibraries(), connectTimeout: Self.replConnectTimeout)
   }
 
-  /// Launches an installed app with the REPL injected, for the `app` REPL
-  /// context -- or, when `reuseSession` is true, reattaches to an already-running
-  /// REPL for the app. The returned session is hosted by the app, which outlives
-  /// it (it resets and waits for the next client on disconnect).
-  public func repl_start_app(bundleID: String, reuseSession: Bool) async throws -> LaunchedRepl {
+  /// Injects code into an installed app for the `app` REPL context -- or, when `reuseSession` is
+  /// true, reattaches to a session the running app still serves. The session is hosted by the app,
+  /// which outlives it (it resets and waits for the next client on disconnect).
+  public func repl_start_app(bundleID: String, reuseSession: Bool) async throws -> CodeInjectionSession {
     guard let simulator = target as? Simulator else {
       throw IDBCommandError.replSessionsUnsupported(targetDescription: String(describing: target))
     }
-    return try await simulator.repl.startApp(bundleID: bundleID, reuseSession: reuseSession, additionalLibraries: replIDBLibraries())
+    return try await simulator.codeInjection.inject(into: .application(bundleID: bundleID, reattach: reuseSession), additionalLibraries: replIDBLibraries(), connectTimeout: Self.replConnectTimeout)
   }
+
+  /// How long a REPL host has to serve its control socket once started.
+  static let replConnectTimeout: TimeInterval = 120
 
   // Keep in sync with the PRODUCT_BUNDLE_IDENTIFIER in defs.bzl
   // `make_repl_host_app` and in REPLHost/project.yml.
@@ -505,7 +502,7 @@ public final class IDBCommandExecutor {
     guard let simulator = target as? Simulator else {
       throw IDBCommandError.replAppLaunchesUnsupported(targetDescription: String(describing: target))
     }
-    return try await simulator.repl.appLaunchEnvironment(bundleID: bundleID, additionalLibraries: replIDBLibraries())
+    return try await simulator.codeInjection.launchEnvironment(forApplication: bundleID, additionalLibraries: replIDBLibraries())
   }
 
   /// The interface of the `IDB` module that libReplIDB implements, reported to the driver so

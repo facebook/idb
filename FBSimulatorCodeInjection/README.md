@@ -22,19 +22,11 @@ try await session.close()
 - **Additional libraries.** `additionalLibraries` are loaded into the host alongside the shim before any code is injected, so injected code can call into them. `idb-repl` uses this for the idb command API.
 - **The shim.** `.bundled`, the default, is the shim this library carries; `shim: .path(...)` supplies another. `launchEnvironment(forApplication:)` is the environment that arms an ordinary app launch the same way, so a later `inject(into: .application(bundleID:reattach: true))` joins it.
 
-## What it provides
+## How it works
 
-`simulator.repl` (`SimulatorReplCommands`) starts a REPL host with the `libRepl` shim injected. The shim is this library's resource: a bundle that links the library carries it, and the library finds it there or in the `Resources/` directory beside a standalone binary. The shim binds a control socket, and each method returns a `LaunchedRepl` that names it:
+The shim, `libRepl`, is this library's resource: a bundle that links the library carries it, and the library finds it there or in the `Resources/` directory beside a standalone binary. It is injected into the host with `DYLD_INSERT_LIBRARIES` for an app, loaded by the guest bridge for the Simulator, and injected by the logic-test runner for a test bundle, which is why this library depends on [`FBSimulatorXCTest`](../FBSimulatorXCTest/README.md).
 
-- **An app.** `startApp(bundleID:reuseSession:)` launches the app with the shim injected. The socket path is derived from the Simulator and the bundle id, so a later session can reattach to an app still running with the shim instead of relaunching it. `appLaunchEnvironment(bundleID:)` is the environment that arms an ordinary launch the same way.
-- **The Simulator itself.** `startSimulator()` runs the shim inside the Simulator's guest bridge process.
-- **A logic-test bundle.** `startTest(bundlePath:)` runs the shim's single test inside the bundle under the logic-test runner, which is why this library depends on [`FBSimulatorXCTest`](../FBSimulatorXCTest/README.md).
-
-Each method takes `additionalLibraries`, which are loaded into the host alongside the shim before any code is injected, so injected code can call into them.
-
-`ReplControlClient` speaks to the shim over that socket. `connect(path:timeout:)` waits for the shim to bind it, `readGreeting()` reads the interfaces the host advertises and where its run numbering stands, and `execute(dylibPath:symbol:hostCommandHandler:)` has the host `dlopen` a compiled dylib and call its entry point, returning the result. While the injected code runs it can send host commands back -- `ReplCommand`s such as a tap or a screenshot -- which the caller's handler answers. Closing the client ends the session.
-
-`LaunchedRepl.waitForHostToFinish()` waits for the host once the control socket is closed: a test run or the guest process exits, and an app outlives the session.
+Inside the host, the shim binds a Unix-domain control socket and serves one connection at a time. On connect it greets the session with the host's session id and the interfaces it generated; each execute loads a dylib and calls its entry point, and a host command the injected code sends while it runs travels back over the same socket and waits for its answer. An app's socket path is derived from the Simulator and the bundle id, so a later session can find an app still serving one.
 
 ## Seeing it work
 
