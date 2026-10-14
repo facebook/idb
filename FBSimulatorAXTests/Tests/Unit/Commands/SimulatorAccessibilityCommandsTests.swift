@@ -1879,8 +1879,15 @@ final class SimulatorAccessibilityCommandsTests: XCTestCase {
       let element = try await simulator.accessibility.resolveElement(for: .frontmost)
       element.close()
       XCTFail("Expected noTranslationObject")
-    } catch AccessibilityError.noTranslationObject {
-      // Expected: re-classification fires only when SpringBoard is confirmed down.
+    } catch let error as AccessibilityError {
+      // Re-classification fires only when SpringBoard is confirmed down.
+      guard case .noTranslationObject = error else {
+        return XCTFail("Expected noTranslationObject, got \(error)")
+      }
+      // BUG: a frontmost read is told it named an invalid point — flipped in the following commit.
+      XCTAssertEqual(
+        error.errorDescription,
+        "No translation object returned for simulator. This means you have likely specified a point onscreen that is invalid or invisible due to a fullscreen dialog")
     }
   }
 
@@ -1893,8 +1900,15 @@ final class SimulatorAccessibilityCommandsTests: XCTestCase {
       let element = try await simulator.accessibility.resolveElement(for: .point(CGPoint(x: 10, y: 10)))
       element.close()
       XCTFail("Expected noTranslationObject")
-    } catch AccessibilityError.noTranslationObject {
-      // Expected: the point path keeps the generic message regardless of SpringBoard state.
+    } catch let error as AccessibilityError {
+      // The point path is never re-classified, whatever SpringBoard's state.
+      guard case .noTranslationObject = error else {
+        return XCTFail("Expected noTranslationObject, got \(error)")
+      }
+      // BUG: the message does not name the point that found nothing — flipped in the following commit.
+      XCTAssertEqual(
+        error.errorDescription,
+        "No translation object returned for simulator. This means you have likely specified a point onscreen that is invalid or invisible due to a fullscreen dialog")
     }
   }
 
