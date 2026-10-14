@@ -191,10 +191,10 @@ struct HostCommandDispatcher: @unchecked Sendable {
       let rect = try await cropRect(for: area)
       switch output {
       case .data:
-        let data = try await commandExecutor.repl_screenshot(cropRect: rect, asPNG: false)
+        let data = try await commandExecutor.replScreenshot(cropRect: rect, asPNG: false)
         return .raw(data)
       case .file:
-        let data = try await commandExecutor.repl_screenshot(cropRect: rect, asPNG: true)
+        let data = try await commandExecutor.replScreenshot(cropRect: rect, asPNG: true)
         let path = state.nextScreenshotPath()
         try data.write(to: URL(fileURLWithPath: path))
         state.recordScreenshot(hostPath: path)
@@ -208,7 +208,7 @@ struct HostCommandDispatcher: @unchecked Sendable {
       }
       let recording: any VideoRecording
       do {
-        recording = try await commandExecutor.repl_start_recording(toFile: path)
+        recording = try await commandExecutor.replStartRecording(toFile: path)
       } catch {
         recordingCoordinator.cancelReservation()
         throw error
@@ -220,7 +220,7 @@ struct HostCommandDispatcher: @unchecked Sendable {
         let coordinator = recordingCoordinator
         let executor = commandExecutor
         Task {
-          try? await executor.repl_wait_for_app_termination(bundleID: appBundleID)
+          try? await executor.replWaitForAppTermination(bundleID: appBundleID)
           await coordinator.dropRecording(id: id)
         }
       }
@@ -242,7 +242,7 @@ struct HostCommandDispatcher: @unchecked Sendable {
     case .rect(let rect):
       return rect
     case .element(let label):
-      return try await commandExecutor.repl_accessibility_frame(label: label)
+      return try await commandExecutor.replAccessibilityFrame(label: label)
     }
   }
 

@@ -38,17 +38,17 @@ struct ReplMethodHandler {
     let appBundleID: String?
     switch start.context {
     case .test:
-      session = try await reportingCodeInjectionErrors { try await commandExecutor.repl_start_test(bundlePath: start.testBundlePath) }
+      session = try await reportingCodeInjectionErrors { try await commandExecutor.replStartTest(bundlePath: start.testBundlePath) }
       appBundleID = nil
     case .app:
       let bundleID =
         start.appBundleID.isEmpty
         ? try await commandExecutor.ensureReplHostAppInstalled()
         : start.appBundleID
-      session = try await reportingCodeInjectionErrors { try await commandExecutor.repl_start_app(bundleID: bundleID, reuseSession: start.reuseSession) }
+      session = try await reportingCodeInjectionErrors { try await commandExecutor.replStartApp(bundleID: bundleID, reuseSession: start.reuseSession) }
       appBundleID = bundleID
     case .simulator, .UNRECOGNIZED:
-      session = try await reportingCodeInjectionErrors { try await commandExecutor.repl_start_simulator() }
+      session = try await reportingCodeInjectionErrors { try await commandExecutor.replStartSimulator() }
       appBundleID = nil
     }
 

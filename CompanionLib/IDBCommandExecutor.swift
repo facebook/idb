@@ -254,7 +254,7 @@ public final class IDBCommandExecutor {
 
   /// The frame (in screen points) of the frontmost-app accessibility element whose
   /// label contains `label` -- the same lookup as `accessibilityTap`.
-  public func repl_accessibility_frame(label: String) async throws -> CGRect {
+  public func replAccessibilityFrame(label: String) async throws -> CGRect {
     guard let simulator = target as? Simulator else {
       throw IDBCommandError.simulatorOnlyOperation(operation: "look up an accessibility frame", targetDescription: String(describing: target))
     }
@@ -264,7 +264,7 @@ public final class IDBCommandExecutor {
 
   /// Captures a screenshot, optionally cropped to `cropRect` (in screen points),
   /// encoded as uncompressed TIFF (`asPNG == false`) or PNG.
-  public func repl_screenshot(cropRect: CGRect?, asPNG: Bool) async throws -> Data {
+  public func replScreenshot(cropRect: CGRect?, asPNG: Bool) async throws -> Data {
     guard let simulator = target as? Simulator else {
       throw IDBCommandError.simulatorOnlyOperation(operation: "take a screenshot", targetDescription: String(describing: target))
     }
@@ -273,14 +273,14 @@ public final class IDBCommandExecutor {
 
   /// Starts recording the target's screen to `filePath`. The returned handle's
   /// `stop()` finalizes the file. Only one recording runs at a time.
-  public func repl_start_recording(toFile filePath: String) async throws -> any VideoRecording {
+  public func replStartRecording(toFile filePath: String) async throws -> any VideoRecording {
     try await target.videoRecording.start(toFile: filePath)
   }
 
   /// Resolves when the app with `bundleID` terminates on the target. Used to drop a
   /// REPL recording that outlived the app that started it. Throws if the app's
   /// process cannot be resolved (e.g. it is not running).
-  public func repl_wait_for_app_termination(bundleID: String) async throws {
+  public func replWaitForAppTermination(bundleID: String) async throws {
     let pid = try await target.application.processID(forBundleID: bundleID)
     await waitForProcessExit(pid: pid)
   }
@@ -429,7 +429,7 @@ public final class IDBCommandExecutor {
 
   /// Injects code into a logic test bundle for the `test` REPL context. The session is hosted by
   /// the test run, which finishes once the session is closed.
-  public func repl_start_test(bundlePath: String) async throws -> CodeInjectionSession {
+  public func replStartTest(bundlePath: String) async throws -> CodeInjectionSession {
     guard let simulator = target as? Simulator else {
       throw IDBCommandError.replTestsUnsupported(targetDescription: String(describing: target))
     }
@@ -452,7 +452,7 @@ public final class IDBCommandExecutor {
 
   /// Injects code into the simulator's guest bridge for the "simulator" REPL context. The session
   /// is hosted by the bridge process, which exits once the session is closed.
-  public func repl_start_simulator() async throws -> CodeInjectionSession {
+  public func replStartSimulator() async throws -> CodeInjectionSession {
     guard let simulator = target as? Simulator else {
       throw IDBCommandError.replSessionsUnsupported(targetDescription: String(describing: target))
     }
@@ -462,7 +462,7 @@ public final class IDBCommandExecutor {
   /// Injects code into an installed app for the `app` REPL context -- or, when `reuseSession` is
   /// true, reattaches to a session the running app still serves. The session is hosted by the app,
   /// which outlives it (it resets and waits for the next client on disconnect).
-  public func repl_start_app(bundleID: String, reuseSession: Bool) async throws -> CodeInjectionSession {
+  public func replStartApp(bundleID: String, reuseSession: Bool) async throws -> CodeInjectionSession {
     guard let simulator = target as? Simulator else {
       throw IDBCommandError.replSessionsUnsupported(targetDescription: String(describing: target))
     }
