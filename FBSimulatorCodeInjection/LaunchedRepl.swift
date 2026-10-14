@@ -25,15 +25,10 @@ public struct LaunchedRepl: Sendable {
 
   public let socketPath: String
   public let host: Host
-  /// Paths to pre-built `.swiftinterface` files (the `IDB` module's) that the
-  /// companion reports to the driver alongside any the host generates, so injected
-  /// code can `import` them. The matching code is loaded into the REPL host.
-  public let extraInterfacePaths: [String]
 
-  public init(socketPath: String, host: Host, extraInterfacePaths: [String] = []) {
+  public init(socketPath: String, host: Host) {
     self.socketPath = socketPath
     self.host = host
-    self.extraInterfacePaths = extraInterfacePaths
   }
 
   /// Waits for the host to finish once the control socket is closed; returns

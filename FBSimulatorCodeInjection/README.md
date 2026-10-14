@@ -6,7 +6,7 @@ Injects Swift into a process on an iOS Simulator. It is the Simulator's REPL cap
 
 ## What it provides
 
-`simulator.repl` (`SimulatorReplCommands`) starts a REPL host with the `libRepl` shim injected. The shim binds a control socket, and each method returns a `LaunchedRepl` that names it:
+`simulator.repl` (`SimulatorReplCommands`) starts a REPL host with the `libRepl` shim injected. The shim is this library's resource: a bundle that links the library carries it, and the library finds it there or in the `Resources/` directory beside a standalone binary. The shim binds a control socket, and each method returns a `LaunchedRepl` that names it:
 
 - **An app.** `startApp(bundleID:reuseSession:)` launches the app with the shim injected. The socket path is derived from the Simulator and the bundle id, so a later session can reattach to an app still running with the shim instead of relaunching it. `appLaunchEnvironment(bundleID:)` is the environment that arms an ordinary launch the same way.
 - **The Simulator itself.** `startSimulator()` runs the shim inside the Simulator's guest bridge process.

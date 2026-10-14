@@ -22,10 +22,9 @@ final class SimulatorReplCommandsTests: XCTestCase {
     let device = HeldSpawnDevice()
     let commands = SimulatorReplCommands(simulator: SimulatorTestSupport.testableSimulator(withDevice: device))
 
-    let repl = try await commands.startSimulator(bridgePath: "/bridge", libReplPath: "/libRepl.dylib", extraInterfacePaths: ["/IDB.swiftinterface"])
+    let repl = try await commands.startSimulator(bridgePath: "/bridge", libReplPath: "/libRepl.dylib")
 
     XCTAssertTrue(repl.socketPath.hasPrefix("/tmp/idb_repl_"))
-    XCTAssertEqual(repl.extraInterfacePaths, ["/IDB.swiftinterface"])
     let options = try XCTUnwrap(device.spawnedOptions)
     XCTAssertEqual(options["arguments"] as? [String], ["/bridge", "repl", "start", repl.socketPath, "/libRepl.dylib"])
     XCTAssertEqual(options["environment"] as? [String: String], ["IDB_AUDIO_INJECTION": "0"])
@@ -38,7 +37,7 @@ final class SimulatorReplCommandsTests: XCTestCase {
     let device = HeldSpawnDevice()
     let commands = SimulatorReplCommands(simulator: SimulatorTestSupport.testableSimulator(withDevice: device))
 
-    let repl = try await commands.startSimulator(bridgePath: "/bridge", libReplPath: "/libRepl.dylib", additionalLibraries: ["/first.dylib", "/second.dylib"], extraInterfacePaths: [])
+    let repl = try await commands.startSimulator(bridgePath: "/bridge", libReplPath: "/libRepl.dylib", additionalLibraries: ["/first.dylib", "/second.dylib"])
 
     let options = try XCTUnwrap(device.spawnedOptions)
     XCTAssertEqual(options["arguments"] as? [String], ["/bridge", "repl", "start", repl.socketPath, "/libRepl.dylib", "/first.dylib", "/second.dylib"])
@@ -58,7 +57,7 @@ final class SimulatorReplCommandsTests: XCTestCase {
     let device = HeldSpawnDevice()
     let commands = SimulatorReplCommands(simulator: SimulatorTestSupport.testableSimulator(withDevice: device))
 
-    let repl = try await commands.startSimulator(bridgePath: "/bridge", libReplPath: "/libRepl.dylib", extraInterfacePaths: [])
+    let repl = try await commands.startSimulator(bridgePath: "/bridge", libReplPath: "/libRepl.dylib")
 
     guard case let .process(process) = repl.host else {
       return XCTFail("Expected the bridge process to host the session, got \(repl.host)")

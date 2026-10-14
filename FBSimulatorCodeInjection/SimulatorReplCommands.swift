@@ -21,7 +21,7 @@ extension SimulatorReplError: LocalizedError {
   public var errorDescription: String? {
     switch self {
     case let .bundledResourceMissing(item):
-      return "\(item) not found in the companion Resources directory"
+      return "\(item) not found in the bundled resources"
     case let .socketDirectoryCreationFailed(path):
       return "Could not create a private REPL socket directory at \(path)"
     case let .targetIsNotALaunchableApp(bundleID, processIdentifier):
@@ -51,14 +51,9 @@ public struct SimulatorReplCommands {
   public func startTest(bundlePath: String, additionalLibraries: [String] = []) async throws -> LaunchedRepl {
     let logger = simulator.logger
 
-    // The driver auto-imports the IDBAPI `.swiftinterface` so injected code can call `IDB`; the API
-    // itself is linked into libRepl.
     guard let replDylibPath = BundledResources.path(forItem: "libRepl-iOS.dylib") else {
       throw SimulatorReplError.bundledResourceMissing(item: "libRepl-iOS.dylib")
     }
-    let idbInterfacePath = BundledResources.path(forItem: "IDBAPI.swiftinterface")
-    let extraInterfacePaths = idbInterfacePath.map { [$0] } ?? []
-
     // The shim binds this socket; the gRPC handler connects to it.
     let socketPath = "/tmp/idb_repl_\(UUID().uuidString).sock"
 
@@ -89,7 +84,7 @@ public struct SimulatorReplCommands {
       configuration: configuration,
       reporter: ReplNullReporter(),
       logger: logger)
-    return LaunchedRepl(socketPath: socketPath, host: .testRun(Task { try await runner.run() }), extraInterfacePaths: extraInterfacePaths)
+    return LaunchedRepl(socketPath: socketPath, host: .testRun(Task { try await runner.run() }))
   }
 
   public func startSimulator(additionalLibraries: [String] = []) async throws -> LaunchedRepl {
@@ -100,11 +95,10 @@ public struct SimulatorReplCommands {
     guard let libReplPath = BundledResources.path(forItem: "libRepl-iOS.dylib") else {
       throw SimulatorReplError.bundledResourceMissing(item: "libRepl-iOS.dylib")
     }
-    let idbInterfacePath = BundledResources.path(forItem: "IDBAPI.swiftinterface")
-    return try await startSimulator(bridgePath: bridgePath, libReplPath: libReplPath, additionalLibraries: additionalLibraries, extraInterfacePaths: [idbInterfacePath].compactMap { $0 })
+    return try await startSimulator(bridgePath: bridgePath, libReplPath: libReplPath, additionalLibraries: additionalLibraries)
   }
 
-  func startSimulator(bridgePath: String, libReplPath: String, additionalLibraries: [String] = [], extraInterfacePaths: [String]) async throws -> LaunchedRepl {
+  func startSimulator(bridgePath: String, libReplPath: String, additionalLibraries: [String] = []) async throws -> LaunchedRepl {
     // `repl start` blocks until the socket is closed, which is what keeps the session alive.
     let socketPath = "/tmp/idb_repl_\(UUID().uuidString).sock"
 
@@ -114,7 +108,7 @@ public struct SimulatorReplCommands {
       environment: .exact(XCTestShimConfiguration.unarmedAudioInjectionEnvironment([:])),
       mode: .posixSpawn
     ).launch(on: SimulatorSubprocessLauncher(simulator: simulator), output: .nullDevice, error: .nullDevice)
-    return LaunchedRepl(socketPath: socketPath, host: .process(process), extraInterfacePaths: extraInterfacePaths)
+    return LaunchedRepl(socketPath: socketPath, host: .process(process))
   }
 
   public func appLaunchEnvironment(bundleID: String, additionalLibraries: [String] = []) async throws -> [String: String] {
@@ -131,10 +125,6 @@ public struct SimulatorReplCommands {
   public func startApp(bundleID: String, reuseSession: Bool, additionalLibraries: [String] = []) async throws -> LaunchedRepl {
     let logger = simulator.logger
 
-    // Read host-side by the companion, so the app sandbox need not contain it.
-    let idbInterfacePath = BundledResources.path(forItem: "IDBAPI.swiftinterface")
-    let extraInterfacePaths = idbInterfacePath.map { [$0] } ?? []
-
     // Deterministic so a later `idb-repl app` can reattach to a still-running REPL.
     guard ensureReplSocketDirectory(replSocketDirectory()) else {
       throw SimulatorReplError.socketDirectoryCreationFailed(path: replSocketDirectory())
@@ -143,7 +133,7 @@ public struct SimulatorReplCommands {
 
     if reuseSession, await replListenerIsAlive(at: socketPath) {
       logger.info().log("Reattaching to the running REPL for \(bundleID) at \(socketPath)")
-      return LaunchedRepl(socketPath: socketPath, host: .app, extraInterfacePaths: extraInterfacePaths)
+      return LaunchedRepl(socketPath: socketPath, host: .app)
     }
 
     // `.relaunchIfRunning` so an app already running without the REPL dylib picks it up.
@@ -176,7 +166,7 @@ public struct SimulatorReplCommands {
         processIdentifier: launched.processIdentifier)
     }
 
-    return LaunchedRepl(socketPath: socketPath, host: .app, extraInterfacePaths: extraInterfacePaths)
+    return LaunchedRepl(socketPath: socketPath, host: .app)
   }
 }
 

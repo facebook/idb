@@ -119,9 +119,7 @@
       "resources": [
         "SimulatorFrameworkBridge-tvOS",
         "SimulatorFrameworkBridge-iOS",
-        "libRepl-iOS.dylib",
         "libShimulator-iOS.dylib",
-        "libRepl-macOS.dylib",
         "libShimulator-macOS.dylib"
       ],
       "search_paths": [
@@ -204,9 +202,7 @@
       "resources": [
         "SimulatorFrameworkBridge-tvOS",
         "SimulatorFrameworkBridge-iOS",
-        "libRepl-iOS.dylib",
         "libShimulator-iOS.dylib",
-        "libRepl-macOS.dylib",
         "libShimulator-macOS.dylib"
       ],
       "search_paths": [
@@ -241,9 +237,7 @@
       "resources": [
         "SimulatorFrameworkBridge-tvOS",
         "SimulatorFrameworkBridge-iOS",
-        "libRepl-iOS.dylib",
         "libShimulator-iOS.dylib",
-        "libRepl-macOS.dylib",
         "libShimulator-macOS.dylib"
       ],
       "search_paths": [
@@ -286,9 +280,7 @@
       "resources": [
         "SimulatorFrameworkBridge-tvOS",
         "SimulatorFrameworkBridge-iOS",
-        "libRepl-iOS.dylib",
         "libShimulator-iOS.dylib",
-        "libRepl-macOS.dylib",
         "libShimulator-macOS.dylib"
       ],
       "search_paths": [
@@ -324,9 +316,7 @@
       "resources": [
         "SimulatorFrameworkBridge-tvOS",
         "SimulatorFrameworkBridge-iOS",
-        "libRepl-iOS.dylib",
         "libShimulator-iOS.dylib",
-        "libRepl-macOS.dylib",
         "libShimulator-macOS.dylib"
       ],
       "search_paths": [

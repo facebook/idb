@@ -508,6 +508,12 @@ public final class IDBCommandExecutor {
     return try await simulator.repl.appLaunchEnvironment(bundleID: bundleID, additionalLibraries: replIDBLibraries())
   }
 
+  /// The interface of the `IDB` module that libReplIDB implements, reported to the driver so
+  /// injected code can import it. Read host-side, so a host's sandbox need not contain it.
+  public var replIDBInterfacePaths: [String] {
+    BundledResources.path(forItem: "IDBAPI.swiftinterface").map { [$0] } ?? []
+  }
+
   /// The `IDB` command API that injected code calls, loaded into every REPL host alongside the
   /// shim. The shim itself carries no idb API.
   private func replIDBLibraries() throws -> [String] {
