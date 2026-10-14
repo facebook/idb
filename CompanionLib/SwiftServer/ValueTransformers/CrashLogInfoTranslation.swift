@@ -9,7 +9,7 @@ import FBControlCore
 import FBSimulatorControl
 import IDBGRPCSwift
 
-enum CrashLogInfoValueTransformer {
+enum CrashLogInfoTranslation {
 
   static func responseCrashLogInfo(from crash: CrashLogInfo) -> Idb_CrashLogInfo {
     return .with {

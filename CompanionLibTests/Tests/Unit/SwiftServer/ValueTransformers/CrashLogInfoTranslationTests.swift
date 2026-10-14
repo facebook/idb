@@ -11,7 +11,7 @@ import Foundation
 import Testing
 
 @Suite
-struct CrashLogInfoValueTransformerTests {
+struct CrashLogInfoTranslationTests {
 
   @Test
   func responseCarriesTheReportsFields() {
@@ -28,7 +28,7 @@ struct CrashLogInfoValueTransformerTests {
       exceptionDescription: nil,
       crashedThreadDescription: nil)
 
-    let response = CrashLogInfoValueTransformer.responseCrashLogInfo(from: crash)
+    let response = CrashLogInfoTranslation.responseCrashLogInfo(from: crash)
 
     #expect(response.name == "ReplHost-2026-09-30-102328.ips")
     #expect(response.processName == "ReplHost")

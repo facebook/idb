@@ -17,7 +17,7 @@ struct CrashListMethodHandler {
     let predicate = CrashLogQueryValueTransformer.predicate(from: request)
     let crashes = try await commandExecutor.crash_list(predicate)
     return Idb_CrashLogResponse.with {
-      $0.list = crashes.map(CrashLogInfoValueTransformer.responseCrashLogInfo(from:))
+      $0.list = crashes.map(CrashLogInfoTranslation.responseCrashLogInfo(from:))
     }
   }
 }
@@ -34,7 +34,7 @@ struct CrashShowMethodHandler {
     let predicate = CrashLogPredicate.name(request.name)
     let crash = try await commandExecutor.crash_show(predicate)
     return .with {
-      $0.info = CrashLogInfoValueTransformer.responseCrashLogInfo(from: crash.info)
+      $0.info = CrashLogInfoTranslation.responseCrashLogInfo(from: crash.info)
       $0.contents = crash.contents
     }
   }
@@ -48,7 +48,7 @@ struct CrashDeleteMethodHandler {
     let predicate = CrashLogQueryValueTransformer.predicate(from: request)
     let crashes = try await commandExecutor.crash_delete(predicate)
     return .with {
-      $0.list = crashes.map(CrashLogInfoValueTransformer.responseCrashLogInfo(from:))
+      $0.list = crashes.map(CrashLogInfoTranslation.responseCrashLogInfo(from:))
     }
   }
 }
