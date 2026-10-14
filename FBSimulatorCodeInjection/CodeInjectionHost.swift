@@ -10,7 +10,7 @@ import Foundation
 
 /// A running REPL session. The host has injected the REPL shim, which binds the
 /// control socket at `socketPath` and serves `dlopen`/`dlsym`/call requests.
-struct LaunchedRepl: Sendable {
+struct CodeInjectionHost: Sendable {
 
   /// What hosts the REPL, and so what ending the session waits for.
   enum Host: Sendable {

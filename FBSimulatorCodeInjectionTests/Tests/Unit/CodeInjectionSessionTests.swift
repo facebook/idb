@@ -136,7 +136,7 @@ struct CodeInjectionSessionTests {
     let path = FakeReplShim.temporarySocketPath()
 
     await #expect(throws: CodeInjectionError.connectTimedOut(path: path)) {
-      try await CodeInjectionSession.connect(to: LaunchedRepl(socketPath: path, host: .app), timeout: 0.2)
+      try await CodeInjectionSession.connect(to: CodeInjectionHost(socketPath: path, host: .app), timeout: 0.2)
     }
   }
 
@@ -158,10 +158,10 @@ struct CodeInjectionSessionTests {
 
   private func connect(
     to shim: FakeReplShim,
-    host: LaunchedRepl.Host = .app,
+    host: CodeInjectionHost.Host = .app,
     greeting: [String: Any] = ["type": "greeting"]
   ) async throws -> (CodeInjectionSession, FakeReplShim.Connection) {
-    async let session = CodeInjectionSession.connect(to: LaunchedRepl(socketPath: shim.path, host: host), timeout: 5)
+    async let session = CodeInjectionSession.connect(to: CodeInjectionHost(socketPath: shim.path, host: host), timeout: 5)
     let connection = try await shim.accept()
     try connection.send(greeting)
     return (try await session, connection)

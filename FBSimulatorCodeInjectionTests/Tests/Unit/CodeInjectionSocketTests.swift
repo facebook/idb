@@ -13,7 +13,7 @@ import Testing
 /// Coverage of the app-context REPL reattach helpers: the deterministic socket
 /// path (and its stable hash), the liveness probe, and stale-socket reaping.
 @Suite
-struct SimulatorReplSocketTests {
+struct CodeInjectionSocketTests {
 
   // MARK: - stableHashHex
 

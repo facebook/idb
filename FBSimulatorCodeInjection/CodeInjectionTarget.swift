@@ -35,7 +35,7 @@ public enum CodeInjectionShim: Sendable, Equatable {
     switch self {
     case .bundled:
       guard let path = BundledResources.path(forItem: "libRepl-iOS.dylib") else {
-        throw SimulatorReplError.bundledResourceMissing(item: "libRepl-iOS.dylib")
+        throw CodeInjectionError.resourceMissing(name: "libRepl-iOS.dylib")
       }
       return path
     case let .path(path):

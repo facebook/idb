@@ -33,10 +33,10 @@ public final class CodeInjectionSession: Sendable {
   /// sessions.
   @_spi(IDBRepl) public let nextRunIndex: UInt32
 
-  private let host: LaunchedRepl
-  private let client: ReplControlClient
+  private let host: CodeInjectionHost
+  private let client: ControlSocketClient
 
-  init(host: LaunchedRepl, client: ReplControlClient, greeting: ReplControlClient.Greeting) {
+  init(host: CodeInjectionHost, client: ControlSocketClient, greeting: ControlSocketClient.Greeting) {
     self.host = host
     self.client = client
     self.sessionID = greeting.sessionID
@@ -45,16 +45,14 @@ public final class CodeInjectionSession: Sendable {
     self.nextRunIndex = greeting.nextRunIndex
   }
 
-  static func connect(to host: LaunchedRepl, timeout: TimeInterval) async throws -> CodeInjectionSession {
-    try await CodeInjectionError.reporting {
-      let client = try await ReplControlClient.connect(path: host.socketPath, timeout: timeout)
-      do {
-        let greeting = try await client.readGreeting()
-        return CodeInjectionSession(host: host, client: client, greeting: greeting)
-      } catch {
-        client.close()
-        throw error
-      }
+  static func connect(to host: CodeInjectionHost, timeout: TimeInterval) async throws -> CodeInjectionSession {
+    let client = try await ControlSocketClient.connect(path: host.socketPath, timeout: timeout)
+    do {
+      let greeting = try await client.readGreeting()
+      return CodeInjectionSession(host: host, client: client, greeting: greeting)
+    } catch {
+      client.close()
+      throw error
     }
   }
 
@@ -68,20 +66,13 @@ public final class CodeInjectionSession: Sendable {
 
   /// As `execute`, with the run index the host numbers the next dylib from.
   @_spi(IDBRepl) public func run(dylibAtPath dylibPath: String, symbol: String, hostCommands: HostCommandHandler? = nil) async throws -> (result: Result<String, CodeInjectionError>, nextRunIndex: Int32) {
-    let handler: ReplControlClient.HostCommandHandler = { command in
+    let handler: ControlSocketClient.HostCommandHandler = { command in
       guard let hostCommands else {
         return .failure(CodeInjectionError.hostCommandsUnsupported)
       }
-      switch await hostCommands(command) {
-      case let .success(data):
-        return .success(data)
-      case let .failure(error):
-        return .failure(error)
-      }
+      return await hostCommands(command)
     }
-    let (outcome, nextRunIndex) = try await CodeInjectionError.reporting {
-      try await client.run(dylibPath: dylibPath, symbol: symbol, hostCommandHandler: handler)
-    }
+    let (outcome, nextRunIndex) = try await client.run(dylibPath: dylibPath, symbol: symbol, hostCommandHandler: handler)
     return (outcome.mapError { CodeInjectionError.executionFailed(message: $0.message) }, nextRunIndex)
   }
 

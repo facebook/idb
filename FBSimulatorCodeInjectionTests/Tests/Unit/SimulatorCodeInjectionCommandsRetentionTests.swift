@@ -10,7 +10,7 @@
 import Testing
 
 @Suite("Simulator code injection command retention")
-struct SimulatorReplCommandRetentionTests {
+struct SimulatorCodeInjectionCommandsRetentionTests {
   @Test("Resolving the code injection commands does not retain the simulator")
   func resolvingTheCodeInjectionCommandsDoesNotRetainTheSimulator() {
     #expect(simulatorSurvives { _ = $0.codeInjection } == false)

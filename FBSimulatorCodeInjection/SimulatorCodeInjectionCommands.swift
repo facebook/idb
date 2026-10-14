@@ -28,16 +28,15 @@ public struct SimulatorCodeInjectionCommands {
     additionalLibraries: [String] = [],
     connectTimeout: TimeInterval = 120
   ) async throws -> CodeInjectionSession {
-    let commands = SimulatorReplCommands(simulator: simulator)
-    let host = try await CodeInjectionError.reporting {
-      switch target {
-      case let .application(bundleID, reattach):
-        return try await commands.startApp(bundleID: bundleID, reuseSession: reattach, shim: shim, additionalLibraries: additionalLibraries)
-      case .simulator:
-        return try await commands.startSimulator(shim: shim, additionalLibraries: additionalLibraries)
-      case let .logicTestBundle(path):
-        return try await commands.startTest(bundlePath: path, shim: shim, additionalLibraries: additionalLibraries)
-      }
+    let launcher = CodeInjectionHostLauncher(simulator: simulator)
+    let host: CodeInjectionHost
+    switch target {
+    case let .application(bundleID, reattach):
+      host = try await launcher.startApp(bundleID: bundleID, reuseSession: reattach, shim: shim, additionalLibraries: additionalLibraries)
+    case .simulator:
+      host = try await launcher.startSimulator(shim: shim, additionalLibraries: additionalLibraries)
+    case let .logicTestBundle(path):
+      host = try await launcher.startTest(bundlePath: path, shim: shim, additionalLibraries: additionalLibraries)
     }
     return try await CodeInjectionSession.connect(to: host, timeout: connectTimeout)
   }
@@ -48,10 +47,8 @@ public struct SimulatorCodeInjectionCommands {
     forApplication bundleID: String,
     shim: CodeInjectionShim = .bundled,
     additionalLibraries: [String] = []
-  ) async throws -> [String: String] {
-    try await CodeInjectionError.reporting {
-      try SimulatorReplCommands(simulator: simulator).appLaunchEnvironment(bundleID: bundleID, shim: shim, additionalLibraries: additionalLibraries)
-    }
+  ) throws -> [String: String] {
+    try CodeInjectionHostLauncher(simulator: simulator).appLaunchEnvironment(bundleID: bundleID, shim: shim, additionalLibraries: additionalLibraries)
   }
 }
 

@@ -502,7 +502,7 @@ public final class IDBCommandExecutor {
     guard let simulator = target as? Simulator else {
       throw IDBCommandError.replAppLaunchesUnsupported(targetDescription: String(describing: target))
     }
-    return try await simulator.codeInjection.launchEnvironment(forApplication: bundleID, additionalLibraries: replIDBLibraries())
+    return try simulator.codeInjection.launchEnvironment(forApplication: bundleID, additionalLibraries: replIDBLibraries())
   }
 
   /// The interface of the `IDB` module that libReplIDB implements, reported to the driver so

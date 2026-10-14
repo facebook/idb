@@ -37,53 +37,6 @@ public enum CodeInjectionError: Error, Equatable {
   /// The host could not run the injected code: the dylib did not load, its entry point is missing,
   /// or the code reported failure.
   case executionFailed(message: String)
-
-  init(_ error: ReplControlError) {
-    switch error {
-    case .socketCreationFailed:
-      self = .socketCreationFailed
-    case let .socketPathTooLong(path):
-      self = .socketPathTooLong(path: path)
-    case let .connectTimedOut(path):
-      self = .connectTimedOut(path: path)
-    case let .missingGreeting(received):
-      self = .missingGreeting(received: received)
-    case let .unexpectedMessage(received):
-      self = .unexpectedMessage(received: received)
-    case .invalidMessage:
-      self = .invalidMessage
-    case .disconnected:
-      self = .disconnected
-    case let .readFailed(errno):
-      self = .readFailed(errno: errno)
-    case .writeFailed:
-      self = .writeFailed
-    case .hostCommandDidNotComplete:
-      self = .hostCommandDidNotComplete
-    }
-  }
-
-  init(_ error: SimulatorReplError) {
-    switch error {
-    case let .bundledResourceMissing(item):
-      self = .resourceMissing(name: item)
-    case let .socketDirectoryCreationFailed(path):
-      self = .socketDirectoryCreationFailed(path: path)
-    case let .targetIsNotALaunchableApp(bundleID, processIdentifier):
-      self = .notALaunchableApplication(bundleID: bundleID, processIdentifier: processIdentifier)
-    }
-  }
-
-  /// Runs `body`, reporting the library's internal failures as a `CodeInjectionError`.
-  static func reporting<T>(_ body: () async throws -> T) async throws -> T {
-    do {
-      return try await body()
-    } catch let error as ReplControlError {
-      throw CodeInjectionError(error)
-    } catch let error as SimulatorReplError {
-      throw CodeInjectionError(error)
-    }
-  }
 }
 
 extension CodeInjectionError: CustomStringConvertible, LocalizedError {

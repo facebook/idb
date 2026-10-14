@@ -11,48 +11,19 @@ import FBSimulatorXCTest
 @preconcurrency import FBXCTestCore
 import Foundation
 
-enum SimulatorReplError: Error {
-  case bundledResourceMissing(item: String)
-  case socketDirectoryCreationFailed(path: String)
-  case targetIsNotALaunchableApp(bundleID: String, processIdentifier: pid_t)
-}
-
-extension SimulatorReplError: LocalizedError {
-  var errorDescription: String? {
-    switch self {
-    case let .bundledResourceMissing(item):
-      return "\(item) not found in the bundled resources"
-    case let .socketDirectoryCreationFailed(path):
-      return "Could not create a private REPL socket directory at \(path)"
-    case let .targetIsNotALaunchableApp(bundleID, processIdentifier):
-      return """
-        \(bundleID) is managed by launchd (pid \(processIdentifier)), not launched as an app, \
-        so launching it returns the process already running and the REPL dylib is never injected. \
-        Target an app bundle instead.
-        """
-    }
-  }
-}
-
 /// Each host is started with the shim injected. `additionalLibraries` are loaded into the host
 /// alongside it, before any code is injected, so injected code resolves their symbols at load.
-struct SimulatorReplCommands {
+struct CodeInjectionHostLauncher {
 
-  private let simulator: Simulator
-
-  // MARK: - Initializers
-
-  init(simulator: Simulator) {
-    self.simulator = simulator
-  }
+  let simulator: Simulator
 
   // MARK: - Async
 
-  func startTest(bundlePath: String, shim: CodeInjectionShim, additionalLibraries: [String]) async throws -> LaunchedRepl {
+  func startTest(bundlePath: String, shim: CodeInjectionShim, additionalLibraries: [String]) async throws -> CodeInjectionHost {
     let logger = simulator.logger
     let shimPath = try shim.resolvedPath()
 
-    // The shim binds this socket; the gRPC handler connects to it.
+    // The shim binds this socket; the session connects to it.
     let socketPath = "/tmp/idb_repl_\(UUID().uuidString).sock"
 
     let bundle = try BundleDescriptor.bundle(fromPath: bundlePath)
@@ -82,17 +53,17 @@ struct SimulatorReplCommands {
       configuration: configuration,
       reporter: ReplNullReporter(),
       logger: logger)
-    return LaunchedRepl(socketPath: socketPath, host: .testRun(Task { try await runner.run() }))
+    return CodeInjectionHost(socketPath: socketPath, host: .testRun(Task { try await runner.run() }))
   }
 
-  func startSimulator(shim: CodeInjectionShim, additionalLibraries: [String]) async throws -> LaunchedRepl {
+  func startSimulator(shim: CodeInjectionShim, additionalLibraries: [String]) async throws -> CodeInjectionHost {
     guard let bridgePath = simulator.frameworkBridgePath else {
-      throw SimulatorReplError.bundledResourceMissing(item: "SimulatorFrameworkBridge binary")
+      throw CodeInjectionError.resourceMissing(name: "SimulatorFrameworkBridge binary")
     }
     return try await startSimulator(bridgePath: bridgePath, libReplPath: shim.resolvedPath(), additionalLibraries: additionalLibraries)
   }
 
-  func startSimulator(bridgePath: String, libReplPath: String, additionalLibraries: [String] = []) async throws -> LaunchedRepl {
+  func startSimulator(bridgePath: String, libReplPath: String, additionalLibraries: [String] = []) async throws -> CodeInjectionHost {
     // `repl start` blocks until the socket is closed, which is what keeps the session alive.
     let socketPath = "/tmp/idb_repl_\(UUID().uuidString).sock"
 
@@ -102,7 +73,7 @@ struct SimulatorReplCommands {
       environment: .exact(XCTestShimConfiguration.unarmedAudioInjectionEnvironment([:])),
       mode: .posixSpawn
     ).launch(on: SimulatorSubprocessLauncher(simulator: simulator), output: .nullDevice, error: .nullDevice)
-    return LaunchedRepl(socketPath: socketPath, host: .process(process))
+    return CodeInjectionHost(socketPath: socketPath, host: .process(process))
   }
 
   func appLaunchEnvironment(bundleID: String, shim: CodeInjectionShim, additionalLibraries: [String]) throws -> [String: String] {
@@ -113,18 +84,18 @@ struct SimulatorReplCommands {
     ]
   }
 
-  func startApp(bundleID: String, reuseSession: Bool, shim: CodeInjectionShim, additionalLibraries: [String]) async throws -> LaunchedRepl {
+  func startApp(bundleID: String, reuseSession: Bool, shim: CodeInjectionShim, additionalLibraries: [String]) async throws -> CodeInjectionHost {
     let logger = simulator.logger
 
-    // Deterministic so a later `idb-repl app` can reattach to a still-running REPL.
+    // Deterministic so a later session can reattach to an app still serving one.
     guard ensureReplSocketDirectory(replSocketDirectory()) else {
-      throw SimulatorReplError.socketDirectoryCreationFailed(path: replSocketDirectory())
+      throw CodeInjectionError.socketDirectoryCreationFailed(path: replSocketDirectory())
     }
     let socketPath = replSocketPath(udid: simulator.udid, bundleID: bundleID)
 
     if reuseSession, await replListenerIsAlive(at: socketPath) {
       logger.info().log("Reattaching to the running REPL for \(bundleID) at \(socketPath)")
-      return LaunchedRepl(socketPath: socketPath, host: .app)
+      return CodeInjectionHost(socketPath: socketPath, host: .app)
     }
 
     // `.relaunchIfRunning` so an app already running without the REPL dylib picks it up.
@@ -152,12 +123,12 @@ struct SimulatorReplCommands {
     // `installType == .system`: Apple's system apps host a REPL perfectly well, and
     // refusing them would be wrong.
     guard (try? await simulator.application.processID(forBundleID: bundleID)) != nil else {
-      throw SimulatorReplError.targetIsNotALaunchableApp(
+      throw CodeInjectionError.notALaunchableApplication(
         bundleID: bundleID,
         processIdentifier: launched.processIdentifier)
     }
 
-    return LaunchedRepl(socketPath: socketPath, host: .app)
+    return CodeInjectionHost(socketPath: socketPath, host: .app)
   }
 }
 
@@ -177,7 +148,7 @@ final class ReplNullReporter: LogicXCTestReporter {
 // MARK: - App-context REPL socket helpers
 
 /// The per-user directory that holds app-context REPL control sockets. Placed
-/// under /tmp -- a namespace shared between the host companion and the simulator
+/// under /tmp -- a namespace shared between the host process and the simulator
 /// app (which runs as the same user) -- but scoped to the owning user by a 0700
 /// directory.
 func replSocketDirectory() -> String {
@@ -201,8 +172,8 @@ func ensureReplSocketDirectory(_ dir: String) -> Bool {
 
 /// The deterministic control socket path for an app-context REPL, derived from
 /// the simulator udid and app bundle id, inside the per-user socket directory.
-/// Reattach relies on this being stable across `idb-repl` invocations and
-/// companion restarts. Hashed to a fixed length: `sockaddr_un.sun_path` is only
+/// Reattach relies on this being stable across sessions and across restarts of
+/// the process that injects. Hashed to a fixed length: `sockaddr_un.sun_path` is only
 /// 104 bytes, so the raw udid + bundle id would not reliably fit.
 func replSocketPath(udid: String, bundleID: String) -> String {
   return "\(replSocketDirectory())/\(stableHashHex("\(udid)\u{0}\(bundleID)")).sock"

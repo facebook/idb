@@ -10,33 +10,33 @@
 import Foundation
 import Testing
 
-/// Coverage of the REPL error descriptions. These strings are the only thing a
+/// Coverage of the code injection error descriptions. These strings are the only thing a
 /// user sees when a session fails to start, so each is pinned to keep it naming
 /// the thing that went wrong rather than an internal detail.
 @Suite
-struct SimulatorReplErrorTests {
+struct CodeInjectionErrorTests {
 
   @Test
   func bundledResourceMissingNamesTheItem() throws {
     let message = try #require(
-      SimulatorReplError.bundledResourceMissing(item: "libRepl-iOS.dylib").errorDescription)
+      CodeInjectionError.resourceMissing(name: "libRepl-iOS.dylib").errorDescription)
     #expect(message.contains("libRepl-iOS.dylib"))
   }
 
   @Test
   func socketDirectoryCreationFailedNamesThePath() throws {
     let message = try #require(
-      SimulatorReplError.socketDirectoryCreationFailed(path: "/tmp/idb_repl_501").errorDescription)
+      CodeInjectionError.socketDirectoryCreationFailed(path: "/tmp/idb_repl_501").errorDescription)
     #expect(message.contains("/tmp/idb_repl_501"))
   }
 
-  // MARK: - targetIsNotALaunchableApp
+  // MARK: - notALaunchableApplication
 
   @Test
   func notALaunchableAppNamesTheBundleIDAndProcess() throws {
     let message = try #require(
-      SimulatorReplError
-        .targetIsNotALaunchableApp(bundleID: "com.apple.springboard", processIdentifier: 53_820)
+      CodeInjectionError
+        .notALaunchableApplication(bundleID: "com.apple.springboard", processIdentifier: 53_820)
         .errorDescription)
     #expect(message.contains("com.apple.springboard"))
     #expect(message.contains("53820"))
@@ -48,8 +48,8 @@ struct SimulatorReplErrorTests {
     // the client's deadline and then reporting a hashed socket path -- told the
     // reader neither what had failed nor what to do instead.
     let message = try #require(
-      SimulatorReplError
-        .targetIsNotALaunchableApp(bundleID: "com.apple.springboard", processIdentifier: 1)
+      CodeInjectionError
+        .notALaunchableApplication(bundleID: "com.apple.springboard", processIdentifier: 1)
         .errorDescription)
     #expect(message.contains("launchd"))
     #expect(message.contains("never injected"))
@@ -60,8 +60,8 @@ struct SimulatorReplErrorTests {
   func notALaunchableAppIsASingleLine() throws {
     // It is rendered into a gRPC status message, where embedded newlines are unreadable.
     let message = try #require(
-      SimulatorReplError
-        .targetIsNotALaunchableApp(bundleID: "com.apple.springboard", processIdentifier: 1)
+      CodeInjectionError
+        .notALaunchableApplication(bundleID: "com.apple.springboard", processIdentifier: 1)
         .errorDescription)
     #expect(!message.contains("\n"))
   }

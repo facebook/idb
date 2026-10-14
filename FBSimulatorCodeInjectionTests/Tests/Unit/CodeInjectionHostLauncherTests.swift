@@ -11,7 +11,7 @@ import FBControlCore
 import XCTest
 
 /// What the REPL injects into each host, what the simulator context spawns, and when its session is over.
-final class SimulatorReplCommandsTests: XCTestCase {
+final class CodeInjectionHostLauncherTests: XCTestCase {
 
   private static func isWritable(_ fileDescriptor: Any?) -> Bool {
     guard let fileDescriptor = fileDescriptor as? NSNumber else { return false }
@@ -20,9 +20,9 @@ final class SimulatorReplCommandsTests: XCTestCase {
 
   func testSpawnsTheBridgeToServeTheReplSocket() async throws {
     let device = HeldSpawnDevice()
-    let commands = SimulatorReplCommands(simulator: SimulatorTestSupport.testableSimulator(withDevice: device))
+    let launcher = CodeInjectionHostLauncher(simulator: SimulatorTestSupport.testableSimulator(withDevice: device))
 
-    let repl = try await commands.startSimulator(bridgePath: "/bridge", libReplPath: "/libRepl.dylib")
+    let repl = try await launcher.startSimulator(bridgePath: "/bridge", libReplPath: "/libRepl.dylib")
 
     XCTAssertTrue(repl.socketPath.hasPrefix("/tmp/idb_repl_"))
     let options = try XCTUnwrap(device.spawnedOptions)
@@ -35,9 +35,9 @@ final class SimulatorReplCommandsTests: XCTestCase {
 
   func testLoadsAdditionalLibrariesIntoTheBridgeAfterTheShim() async throws {
     let device = HeldSpawnDevice()
-    let commands = SimulatorReplCommands(simulator: SimulatorTestSupport.testableSimulator(withDevice: device))
+    let launcher = CodeInjectionHostLauncher(simulator: SimulatorTestSupport.testableSimulator(withDevice: device))
 
-    let repl = try await commands.startSimulator(bridgePath: "/bridge", libReplPath: "/libRepl.dylib", additionalLibraries: ["/first.dylib", "/second.dylib"])
+    let repl = try await launcher.startSimulator(bridgePath: "/bridge", libReplPath: "/libRepl.dylib", additionalLibraries: ["/first.dylib", "/second.dylib"])
 
     let options = try XCTUnwrap(device.spawnedOptions)
     XCTAssertEqual(options["arguments"] as? [String], ["/bridge", "repl", "start", repl.socketPath, "/libRepl.dylib", "/first.dylib", "/second.dylib"])
@@ -45,9 +45,9 @@ final class SimulatorReplCommandsTests: XCTestCase {
   }
 
   func testArmsAnAppLaunchWithTheShimThenAdditionalLibraries() async throws {
-    let commands = SimulatorReplCommands(simulator: SimulatorTestSupport.testableSimulator(withDevice: HeldSpawnDevice()))
+    let launcher = CodeInjectionHostLauncher(simulator: SimulatorTestSupport.testableSimulator(withDevice: HeldSpawnDevice()))
 
-    let environment = try commands.appLaunchEnvironment(bundleID: "com.example.App", shim: .bundled, additionalLibraries: ["/first.dylib", "/second.dylib"])
+    let environment = try launcher.appLaunchEnvironment(bundleID: "com.example.App", shim: .bundled, additionalLibraries: ["/first.dylib", "/second.dylib"])
 
     let shim = try XCTUnwrap(BundledResources.path(forItem: "libRepl-iOS.dylib"))
     XCTAssertEqual(environment["DYLD_INSERT_LIBRARIES"], "\(shim):/first.dylib:/second.dylib")
@@ -55,9 +55,9 @@ final class SimulatorReplCommandsTests: XCTestCase {
 
   func testSessionRunsUntilTheBridgeExits() async throws {
     let device = HeldSpawnDevice()
-    let commands = SimulatorReplCommands(simulator: SimulatorTestSupport.testableSimulator(withDevice: device))
+    let launcher = CodeInjectionHostLauncher(simulator: SimulatorTestSupport.testableSimulator(withDevice: device))
 
-    let repl = try await commands.startSimulator(bridgePath: "/bridge", libReplPath: "/libRepl.dylib")
+    let repl = try await launcher.startSimulator(bridgePath: "/bridge", libReplPath: "/libRepl.dylib")
 
     guard case let .process(process) = repl.host else {
       return XCTFail("Expected the bridge process to host the session, got \(repl.host)")

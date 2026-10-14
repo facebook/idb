@@ -14,10 +14,10 @@ import XCTest
 /// supplies.
 final class SimulatorCodeInjectionCommandsTests: XCTestCase {
 
-  func testArmsALaunchWithTheBundledShimByDefault() async throws {
+  func testArmsALaunchWithTheBundledShimByDefault() throws {
     let simulator = SimulatorTestSupport.testableSimulator()
 
-    let environment = try await simulator.codeInjection.launchEnvironment(forApplication: "com.example.App")
+    let environment = try simulator.codeInjection.launchEnvironment(forApplication: "com.example.App")
 
     let shim = try XCTUnwrap(BundledResources.path(forItem: "libRepl-iOS.dylib"))
     XCTAssertEqual(environment["DYLD_INSERT_LIBRARIES"], shim)
@@ -25,10 +25,10 @@ final class SimulatorCodeInjectionCommandsTests: XCTestCase {
     XCTAssertEqual(environment["IDB_REPL_SOCKET_PATH"], replSocketPath(udid: simulator.udid, bundleID: "com.example.App"))
   }
 
-  func testArmsALaunchWithASuppliedShimThenAdditionalLibraries() async throws {
+  func testArmsALaunchWithASuppliedShimThenAdditionalLibraries() throws {
     let simulator = SimulatorTestSupport.testableSimulator()
 
-    let environment = try await simulator.codeInjection.launchEnvironment(
+    let environment = try simulator.codeInjection.launchEnvironment(
       forApplication: "com.example.App",
       shim: .path("/opt/shims/libRepl-iOS.dylib"),
       additionalLibraries: ["/opt/shims/libExtra.dylib"])
