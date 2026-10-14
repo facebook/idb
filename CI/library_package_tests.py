@@ -224,5 +224,32 @@ class LibraryPackageTest(unittest.TestCase):
         self.assertFalse((self.output / "Stale.xcframework").exists())
 
 
+class PublishedManifestTests(unittest.TestCase):
+    """What the checked-in manifest ships beside each library, for the libraries whose
+    runtime resources a consumer cannot supply itself."""
+
+    def setUp(self) -> None:
+        manifest = Path(__file__).resolve().parents[1] / "LibraryPackage.json"
+        self.libraries = json.loads(manifest.read_text())["libraries"]
+
+    def test_code_injection_ships_what_each_target_injects_through(self) -> None:
+        resources = set(self.libraries["FBSimulatorCodeInjection"]["resources"])
+        # The shim injected into every host, the guest bridge that hosts `.simulator`, and
+        # the XCTest shim the logic-test runner loads for `.logicTestBundle`.
+        for item in (
+            "libRepl-iOS.dylib",
+            "SimulatorFrameworkBridge-iOS",
+            "libShimulator-iOS.dylib",
+        ):
+            self.assertIn(item, resources)
+
+    def test_code_injection_ships_nothing_only_idb_repl_uses(self) -> None:
+        resources = self.libraries["FBSimulatorCodeInjection"]["resources"]
+        # The idb command API is the companion's addition, not part of code injection.
+        self.assertEqual(
+            [item for item in resources if "ReplIDB" in item or "IDBAPI" in item], []
+        )
+
+
 if __name__ == "__main__":
     unittest.main()
