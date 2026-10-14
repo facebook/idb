@@ -6,59 +6,70 @@
  */
 
 @testable import FBSimulatorControl
-import XCTest
+import Foundation
+import Testing
 
 /// Which orientation and hinge backend a simulator's advertised motion capabilities select.
-final class SimulatorMotionBackendTests: XCTestCase {
+@Suite
+struct SimulatorMotionBackendTests {
 
   private func capabilities(deviceMotionState: Bool?, hingeAngle: Bool? = nil) -> MotionCapabilities {
     MotionCapabilities(hingeAngle: hingeAngle, deviceMotionState: deviceMotionState)
   }
 
-  func testAdvertisedDeviceMotionSelectsTheVendorAndGuestBackends() {
+  @Test
+  func advertisedDeviceMotionSelectsTheVendorAndGuestBackends() {
     let advertised = capabilities(deviceMotionState: true)
-    XCTAssertEqual(advertised.orientationWriteBackend, .vendorHID)
-    XCTAssertEqual(advertised.orientationReadBackend, .guestMotionState)
+    #expect(advertised.orientationWriteBackend == .vendorHID)
+    #expect(advertised.orientationReadBackend == .guestMotionState)
   }
 
-  func testAbsentOrFalseDeviceMotionSelectsTheLegacyBackends() {
+  @Test
+  func absentOrFalseDeviceMotionSelectsTheLegacyBackends() {
     for capabilities in [capabilities(deviceMotionState: false), capabilities(deviceMotionState: nil), .none] {
-      XCTAssertEqual(capabilities.orientationWriteBackend, .purple)
-      XCTAssertEqual(capabilities.orientationReadBackend, .legacyService)
+      #expect(capabilities.orientationWriteBackend == .purple)
+      #expect(capabilities.orientationReadBackend == .legacyService)
     }
   }
 
-  func testHingeIsRequiredIndependentlyOfDeviceMotion() throws {
+  @Test
+  func hingeIsRequiredIndependentlyOfDeviceMotion() throws {
     try capabilities(deviceMotionState: false, hingeAngle: true).require(.hingeAngle)
     for capabilities in [capabilities(deviceMotionState: true, hingeAngle: false), capabilities(deviceMotionState: true), .none] {
-      XCTAssertThrowsError(try capabilities.require(.hingeAngle)) { error in
-        guard case let SimulatorCoreDeviceError.unsupported(detail) = error else { return XCTFail("\(error)") }
-        XCTAssertEqual(detail, "Hinge angle, supported only on iPhone Duo simulators")
+      let error = #expect(throws: (any Error).self) { try capabilities.require(.hingeAngle) }
+      guard let error else { continue }
+      guard case let SimulatorCoreDeviceError.unsupported(detail) = error else {
+        Issue.record("\(error)")
+        continue
       }
+      #expect(detail == "Hinge angle, supported only on iPhone Duo simulators")
     }
   }
 
-  func testARuntimeThatCannotAnswerTheQueryAdvertisesNothing() async throws {
+  @Test
+  func aRuntimeThatCannotAnswerTheQueryAdvertisesNothing() async throws {
     let none = try await MotionCapabilities.resolve { throw SimulatorCoreDeviceError.unsupported("com.apple.coredevice.feature.monitormotion") }
-    XCTAssertEqual(none, .none)
-    XCTAssertEqual(none.orientationWriteBackend, .purple)
+    #expect(none == .none)
+    #expect(none.orientationWriteBackend == .purple)
   }
 
-  func testAnOperationalFailureOfTheQueryIsNotAFallback() async {
+  @Test
+  func anOperationalFailureOfTheQueryIsNotAFallback() async {
     for error: SimulatorCoreDeviceError in [.unavailable("closed"), .malformed("CoreDevice.output.hingeAngle"), .timedOut] {
       do {
         _ = try await MotionCapabilities.resolve { throw error }
-        XCTFail("Expected \(error) to surface")
+        Issue.record("Expected \(error) to surface")
       } catch let surfaced as SimulatorCoreDeviceError {
-        XCTAssertEqual(surfaced.localizedDescription, error.localizedDescription)
+        #expect(surfaced.localizedDescription == error.localizedDescription)
       } catch {
-        XCTFail("\(error)")
+        Issue.record("\(error)")
       }
     }
   }
 
-  func testAnAnsweredQueryPassesThrough() async throws {
+  @Test
+  func anAnsweredQueryPassesThrough() async throws {
     let answered = try await MotionCapabilities.resolve { self.capabilities(deviceMotionState: true, hingeAngle: true) }
-    XCTAssertEqual(answered, capabilities(deviceMotionState: true, hingeAngle: true))
+    #expect(answered == capabilities(deviceMotionState: true, hingeAngle: true))
   }
 }
