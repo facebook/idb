@@ -117,8 +117,17 @@ public enum Staging {
     onReport: @escaping @Sendable (StagingReport) -> Void = { _ in },
     _ body: (StagedTree) async throws -> T
   ) async throws -> T {
-    if case .localPath(let path) = source, !unpacks(source, as: kind) {
-      return try await body(.inPlace(URL(fileURLWithPath: path)))
+    if case .localPath(let path) = source {
+      let unpacksPath: Bool
+      do {
+        unpacksPath = try unpacks(source, as: kind)
+      } catch {
+        // A file that can't be read can't be identified, here or by anything after.
+        throw InstallError.unidentifiable(kind: kind, underlying: error)
+      }
+      if !unpacksPath {
+        return try await body(.inPlace(URL(fileURLWithPath: path)))
+      }
     }
     return try await temporaryDirectory.withTemporaryDirectory { stagingDirectory in
       let tree = try await stage(
@@ -207,7 +216,8 @@ public enum Staging {
   /// The same rule for every kind: a directory is the artifact, and so is a file
   /// for a kind whose artifact can be one -- a dylib or a test run -- unless its
   /// first bytes say it is an archive or compressed. Any other file is an archive.
-  static func unpacks(_ source: InstallSource, as kind: ArtifactKind) -> Bool {
+  /// Throws if those first bytes can't be read.
+  static func unpacks(_ source: InstallSource, as kind: ArtifactKind) throws -> Bool {
     guard case .localPath(let path) = source else {
       return true
     }
@@ -218,10 +228,13 @@ public enum Staging {
     guard kind.canBeAFile else {
       return true
     }
-    guard let handle = FileHandle(forReadingAtPath: path) else {
-      return false
+    // Not `FileHandle(forReadingFrom:)`, whose error for an unreadable file says it couldn't be saved.
+    let descriptor = open(path, O_RDONLY | O_CLOEXEC)
+    guard descriptor >= 0 else {
+      let posix = POSIXError.current
+      throw CocoaError(posix.code == .EACCES ? .fileReadNoPermission : .fileReadUnknown, userInfo: [NSFilePathErrorKey: path, NSUnderlyingErrorKey: posix])
     }
-    defer { try? handle.close() }
+    let handle = FileHandle(fileDescriptor: descriptor, closeOnDealloc: true)
     let head = (try? handle.read(upToCount: 512)) ?? Data()
     switch ArchiveFormat.detect(head) {
     case .zip, .zstdZip, .zstd, .gzip:

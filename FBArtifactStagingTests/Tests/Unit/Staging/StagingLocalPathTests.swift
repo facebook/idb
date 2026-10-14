@@ -29,16 +29,20 @@ struct StagingLocalPathTests {
     defer { try? FileManager.default.setAttributes([.posixPermissions: 0o600], ofItemAtPath: dylib.path) }
     try #require(FileHandle(forReadingAtPath: dylib.path) == nil, "the file is still readable, as it is to root")
 
-    let installed = try await Staging.install(
-      .localPath(dylib.path), as: .dylib(name: "libSample.dylib"),
-      temporaryDirectory: TemporaryDirectory(rootDirectory: root.appendingPathComponent("staging"), logger: logger), logger: logger
-    ) { artifact, inPlace in
-      #expect(inPlace)
-      return Staged()
+    let installed = await #expect(throws: InstallError.self) {
+      try await Staging.install(
+        .localPath(dylib.path), as: .dylib(name: "libSample.dylib"),
+        temporaryDirectory: TemporaryDirectory(rootDirectory: root.appendingPathComponent("staging"), logger: logger), logger: logger
+      ) { _, _ in
+        Issue.record("an unreadable file reached the install")
+        return Staged()
+      }
     }
 
-    // BUG: a file staging can't read is handed to the install as the artifact in place, so the install fails later on
-    // whatever reads it next — flipped in the following commit.
-    #expect(installed.installedName == "staged")
+    guard case .unidentifiable(_, let underlying)? = installed else {
+      Issue.record("Expected the file to be unidentifiable, got \(String(describing: installed))")
+      return
+    }
+    #expect((underlying as? CocoaError)?.code == .fileReadNoPermission, "\(underlying)")
   }
 }
