@@ -44,7 +44,11 @@
       "FBSimulatorBridgeProtocolTests"
     ],
     "FBSimulatorCodeInjection": [
+      "FBSimulatorCodeInjectionSmokeTests",
       "FBSimulatorCodeInjectionTests"
+    ],
+    "FBSimulatorCodeInjectionSmokeTests": [
+      "FBSimulatorCodeInjectionSmokeTests"
     ],
     "FBSimulatorCodeInjectionTests": [
       "FBSimulatorCodeInjectionTests"
@@ -171,6 +175,14 @@
       "bootedSimulator": false,
       "prerequisites": [],
       "runner": "standard"
+    },
+    "FBSimulatorCodeInjectionSmokeTests": {
+      "bootedSimulator": true,
+      "prerequisites": [
+        "fbsimulatorcontrol_resources",
+        "fixtures"
+      ],
+      "runner": "large"
     },
     "FBSimulatorCodeInjectionTests": {
       "bootedSimulator": false,

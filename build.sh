@@ -772,6 +772,7 @@ function build_fixtures() {
   build_fixture MacUnitTestFixture macosx
   build_fixture MacCommonApp macosx
   build_fixture iOSUnitTestFixture iphonesimulator
+  build_fixture CodeInjectionPayload-iOS iphonesimulator
 }
 
 function build_fbsimulatorcontrol_resources() {

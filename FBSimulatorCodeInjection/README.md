@@ -18,4 +18,8 @@ Each method takes `additionalLibraries`, which are loaded into the host alongsid
 
 `LaunchedRepl.waitForHostToFinish()` waits for the host once the control socket is closed: a test run or the guest process exits, and an app outlives the session.
 
+## Seeing it work
+
+`FBSimulatorCodeInjectionSmokeTests` drives the library the way a consumer outside idb does, against a booted Simulator and through its public API alone. It injects a small prebuilt Swift payload, [`CodeInjectionPayload.swift`](../Fixtures/Source/CodeInjectionPayload/CodeInjectionPayload.swift), whose entry points read state only code inside the process can know: the Simulator the process runs on and its bundle identifier, how many views Settings' windows hold, and a count that a later session reattaching to the app sees continue. The tests are [`CodeInjectionSmokeTests.swift`](../FBSimulatorCodeInjectionTests/Tests/Smoke/CodeInjectionSmokeTests.swift).
+
 Compiling the code to inject is the caller's: `idb-repl` compiles it on the client side with `ReplCompiler` and sends the dylib to the companion, which writes it where the Simulator can read it and executes it through this library.
