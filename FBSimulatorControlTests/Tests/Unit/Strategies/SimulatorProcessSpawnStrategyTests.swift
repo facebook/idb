@@ -7,12 +7,14 @@
 
 import FBControlCore
 @testable import FBSimulatorControl
-import XCTest
+import Foundation
+import Testing
 
 /// How `Simulator`'s spawn paths build the `SimDevice` launch-option dictionary: argv[0]
 /// handling, `standalone` resolution, stdio keys. Pure-function assertions except the stdin
 /// and teardown cases, which drive the launcher against device doubles.
-final class SimulatorProcessSpawnStrategyTests: XCTestCase {
+@Suite
+struct SimulatorProcessSpawnStrategyTests {
 
   private func simulator(state: TargetState) -> Simulator {
     SimulatorTestSupport.testableSimulator(withDevice: StubStateDevice(state: state))
@@ -20,7 +22,8 @@ final class SimulatorProcessSpawnStrategyTests: XCTestCase {
 
   // MARK: - Raw process spawn options
 
-  func testRawSpawnOptionsPrependLaunchPathAsArgv0() {
+  @Test
+  func rawSpawnOptionsPrependLaunchPathAsArgv0() {
     let options = SimulatorProcessSpawnStrategy.simDeviceLaunchOptions(
       withSimulator: simulator(state: .booted),
       launchPath: "/bin/echo",
@@ -31,12 +34,13 @@ final class SimulatorProcessSpawnStrategyTests: XCTestCase {
       standardError: nil,
       mode: .launchd)
 
-    XCTAssertEqual(
-      options["arguments"] as? [String], ["/bin/echo", "hello", "world"],
+    #expect(
+      options["arguments"] as? [String] == ["/bin/echo", "hello", "world"],
       "SimDevice does not set argv[0], so the launch path must be prepended to the arguments")
   }
 
-  func testRawSpawnOptionsCarryEnvironmentAndOmitWaitForDebuggerWhenFalse() {
+  @Test
+  func rawSpawnOptionsCarryEnvironmentAndOmitWaitForDebuggerWhenFalse() {
     let options = SimulatorProcessSpawnStrategy.simDeviceLaunchOptions(
       withSimulator: simulator(state: .booted),
       launchPath: "/bin/echo",
@@ -47,13 +51,14 @@ final class SimulatorProcessSpawnStrategyTests: XCTestCase {
       standardError: nil,
       mode: .launchd)
 
-    XCTAssertEqual(options["environment"] as? [String: String], ["KEY": "VALUE"])
-    XCTAssertNil(options["wait_for_debugger"], "wait_for_debugger must be absent when not requested")
-    XCTAssertNil(options["stdout"], "No stdout key should be set when no stdout attachment is provided")
-    XCTAssertNil(options["stderr"], "No stderr key should be set when no stderr attachment is provided")
+    #expect(options["environment"] as? [String: String] == ["KEY": "VALUE"])
+    #expect(options["wait_for_debugger"] == nil, "wait_for_debugger must be absent when not requested")
+    #expect(options["stdout"] == nil, "No stdout key should be set when no stdout attachment is provided")
+    #expect(options["stderr"] == nil, "No stderr key should be set when no stderr attachment is provided")
   }
 
-  func testRawSpawnOptionsSetWaitForDebuggerWhenRequested() {
+  @Test
+  func rawSpawnOptionsSetWaitForDebuggerWhenRequested() {
     let options = SimulatorProcessSpawnStrategy.simDeviceLaunchOptions(
       withSimulator: simulator(state: .booted),
       launchPath: "/bin/echo",
@@ -64,73 +69,80 @@ final class SimulatorProcessSpawnStrategyTests: XCTestCase {
       standardError: nil,
       mode: .launchd)
 
-    XCTAssertEqual((options["wait_for_debugger"] as? NSNumber)?.intValue, 1)
+    #expect((options["wait_for_debugger"] as? NSNumber)?.intValue == 1)
   }
 
-  func testRawSpawnOptionsStandaloneReflectsMode() {
+  @Test
+  func rawSpawnOptionsStandaloneReflectsMode() {
     let booted = simulator(state: .booted)
 
     let launchd = SimulatorProcessSpawnStrategy.simDeviceLaunchOptions(
       withSimulator: booted, launchPath: "/bin/echo", arguments: [], environment: [:],
       waitForDebugger: false, standardOutput: nil, standardError: nil, mode: .launchd)
-    XCTAssertEqual((launchd["standalone"] as? NSNumber)?.boolValue, false)
+    #expect((launchd["standalone"] as? NSNumber)?.boolValue == false)
 
     let posix = SimulatorProcessSpawnStrategy.simDeviceLaunchOptions(
       withSimulator: booted, launchPath: "/bin/echo", arguments: [], environment: [:],
       waitForDebugger: false, standardOutput: nil, standardError: nil, mode: .posixSpawn)
-    XCTAssertEqual((posix["standalone"] as? NSNumber)?.boolValue, true)
+    #expect((posix["standalone"] as? NSNumber)?.boolValue == true)
   }
 
   // MARK: - standalone resolution
 
-  func testStandaloneIsTrueForPosixSpawnRegardlessOfState() {
-    XCTAssertTrue(SimulatorProcessSpawnStrategy.shouldLaunchStandalone(onSimulator: simulator(state: .booted), mode: .posixSpawn))
-    XCTAssertTrue(SimulatorProcessSpawnStrategy.shouldLaunchStandalone(onSimulator: simulator(state: .shutdown), mode: .posixSpawn))
+  @Test
+  func standaloneIsTrueForPosixSpawnRegardlessOfState() {
+    #expect(SimulatorProcessSpawnStrategy.shouldLaunchStandalone(onSimulator: simulator(state: .booted), mode: .posixSpawn))
+    #expect(SimulatorProcessSpawnStrategy.shouldLaunchStandalone(onSimulator: simulator(state: .shutdown), mode: .posixSpawn))
   }
 
-  func testStandaloneIsFalseForLaunchdRegardlessOfState() {
-    XCTAssertFalse(SimulatorProcessSpawnStrategy.shouldLaunchStandalone(onSimulator: simulator(state: .booted), mode: .launchd))
-    XCTAssertFalse(SimulatorProcessSpawnStrategy.shouldLaunchStandalone(onSimulator: simulator(state: .shutdown), mode: .launchd))
+  @Test
+  func standaloneIsFalseForLaunchdRegardlessOfState() {
+    #expect(!SimulatorProcessSpawnStrategy.shouldLaunchStandalone(onSimulator: simulator(state: .booted), mode: .launchd))
+    #expect(!SimulatorProcessSpawnStrategy.shouldLaunchStandalone(onSimulator: simulator(state: .shutdown), mode: .launchd))
   }
 
-  func testStandaloneDefaultModeFollowsBootState() {
-    XCTAssertFalse(
-      SimulatorProcessSpawnStrategy.shouldLaunchStandalone(onSimulator: simulator(state: .booted), mode: .default),
+  @Test
+  func standaloneDefaultModeFollowsBootState() {
+    #expect(
+      !(SimulatorProcessSpawnStrategy.shouldLaunchStandalone(onSimulator: simulator(state: .booted), mode: .default)),
       "When booted, default mode launches into launchd (not standalone)")
-    XCTAssertTrue(
+    #expect(
       SimulatorProcessSpawnStrategy.shouldLaunchStandalone(onSimulator: simulator(state: .shutdown), mode: .default),
       "When not booted, default mode launches standalone")
   }
 
   // MARK: - SubprocessLauncher
 
-  func testLauncherSpawnsTheSpecWithExactlyItsExplicitEnvironment() async throws {
+  @Test
+  func launcherSpawnsTheSpecWithExactlyItsExplicitEnvironment() async throws {
     let device = ExitingSpawnDevice(statLoc: 3 << 8)
     let launcher = SimulatorSubprocessLauncher(simulator: SimulatorTestSupport.testableSimulator(withDevice: device))
     let subprocess = Subprocess(executable: "/usr/bin/true", arguments: ["-a"], environment: .additions(["E": "1"]), mode: .posixSpawn)
 
     let completed = try await subprocess.run(on: launcher, output: .closed, error: .closed, exitPolicy: .mustExit([3]))
 
-    XCTAssertEqual(completed.terminationStatus, .exited(3))
-    XCTAssertEqual(completed.processIdentifier, 4242)
-    let options = try XCTUnwrap(device.spawnedOptions)
-    XCTAssertEqual(options["arguments"] as? [String], ["/usr/bin/true", "-a"])
+    #expect(completed.terminationStatus == .exited(3))
+    #expect(completed.processIdentifier == 4242)
+    let options = try #require(device.spawnedOptions)
+    #expect(options["arguments"] as? [String] == ["/usr/bin/true", "-a"])
     // None of the host's DEVELOPER_DIR, HOME or PATH leak into the simulator.
-    XCTAssertEqual(options["environment"] as? [String: String], ["E": "1"])
-    XCTAssertEqual((options["standalone"] as? NSNumber)?.boolValue, true)
-    XCTAssertNil(options["stdout"], "A closed stream is not handed to the device")
+    #expect(options["environment"] as? [String: String] == ["E": "1"])
+    #expect((options["standalone"] as? NSNumber)?.boolValue == true)
+    #expect(options["stdout"] == nil, "A closed stream is not handed to the device")
   }
 
-  func testLauncherGivesAnInheritingEnvironmentNothingFromTheHost() async throws {
+  @Test
+  func launcherGivesAnInheritingEnvironmentNothingFromTheHost() async throws {
     let device = ExitingSpawnDevice()
     let launcher = SimulatorSubprocessLauncher(simulator: SimulatorTestSupport.testableSimulator(withDevice: device))
 
     _ = try await Subprocess(executable: "/usr/bin/true", environment: .inherit).run(on: launcher, output: .closed, error: .closed)
 
-    XCTAssertEqual(device.spawnedOptions?["environment"] as? [String: String], [:])
+    #expect(device.spawnedOptions?["environment"] as? [String: String] == [:])
   }
 
-  func testLauncherDrainsStdOutBeforeTheExitResolves() async throws {
+  @Test
+  func launcherDrainsStdOutBeforeTheExitResolves() async throws {
     let payload = Data(repeating: UInt8(ascii: "x"), count: 12_000) + Data("end\n".utf8)
     let device = ExitingSpawnDevice(stdOutPayload: payload)
     let launcher = SimulatorSubprocessLauncher(simulator: SimulatorTestSupport.testableSimulator(withDevice: device))
@@ -142,27 +154,29 @@ final class SimulatorProcessSpawnStrategyTests: XCTestCase {
 
     let completed = try await Subprocess(executable: "/bin/echo").run(on: launcher, output: .consumer(consumer), error: .closed)
 
-    XCTAssertEqual(completed.terminationStatus, .exited(0))
-    XCTAssertEqual(received.data, payload)
+    #expect(completed.terminationStatus == .exited(0))
+    #expect(received.data == payload)
   }
 
-  func testLauncherRejectsAStandardInputWithoutReachingTheDevice() async throws {
+  @Test
+  func launcherRejectsAStandardInputWithoutReachingTheDevice() async throws {
     let device = RecordingSpawnDevice()
     let launcher = SimulatorSubprocessLauncher(simulator: SimulatorTestSupport.testableSimulator(withDevice: device))
 
     do {
       _ = try await Subprocess(executable: "/bin/cat").run(on: launcher, output: .closed, error: .closed, input: .data(Data("in".utf8)))
-      XCTFail("Expected the launch to be rejected, but it ran")
+      Issue.record("Expected the launch to be rejected, but it ran")
     } catch SubprocessError.inputUnsupported(let executable) {
-      XCTAssertEqual(executable, "/bin/cat")
+      #expect(executable == "/bin/cat")
     }
 
-    XCTAssertNil(device.spawnedOptions)
+    #expect(device.spawnedOptions == nil)
   }
 
   // MARK: - Application launch options
 
-  func testAppLaunchOptionsDoNotPrependLaunchPathAndCarryStdioPaths() {
+  @Test
+  func appLaunchOptionsDoNotPrependLaunchPathAndCarryStdioPaths() {
     let configuration = ApplicationLaunchConfiguration(
       bundleID: "com.example.app",
       bundleName: "App",
@@ -174,13 +188,13 @@ final class SimulatorProcessSpawnStrategyTests: XCTestCase {
     let options = SimulatorApplicationCommands.simDeviceLaunchOptions(
       for: configuration, stdOutPath: "relative/out", stdErrPath: "relative/err")
 
-    XCTAssertEqual(
-      options["arguments"] as? [String], ["--flag"],
+    #expect(
+      options["arguments"] as? [String] == ["--flag"],
       "App launch passes arguments through unchanged — unlike raw spawn, no argv[0] is prepended")
-    XCTAssertEqual(options["environment"] as? [String: String], ["E": "1"])
-    XCTAssertEqual((options["wait_for_debugger"] as? NSNumber)?.intValue, 1)
-    XCTAssertEqual(options["stdout"] as? String, "relative/out")
-    XCTAssertEqual(options["stderr"] as? String, "relative/err")
+    #expect(options["environment"] as? [String: String] == ["E": "1"])
+    #expect((options["wait_for_debugger"] as? NSNumber)?.intValue == 1)
+    #expect(options["stdout"] as? String == "relative/out")
+    #expect(options["stderr"] as? String == "relative/err")
   }
 }
 
