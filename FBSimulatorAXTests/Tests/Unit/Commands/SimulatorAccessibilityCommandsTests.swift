@@ -58,7 +58,10 @@ final class SimulatorAccessibilityCommandsTests: XCTestCase {
   /// The attributes a default-keys read requests for a single element (no children recursion). Role and
   /// role description bring what their conversion reads.
   private var singleElementSerializationAttributes: Set<BridgeAXTranslatorAttribute> {
-    [.frame, .role, .isRemoteElement, .label, .value, .identifier, .help, .isEnabled, .roleDescription, .subrole, .traits]
+    [
+      .frame, .role, .isRemoteElement, .label, .value, .identifier, .help, .isEnabled, .customActions, .roleDescription, .subrole,
+      .traits,
+    ]
   }
 
   /// The attributes requested for AXLabel and frame key filtering over a tree.

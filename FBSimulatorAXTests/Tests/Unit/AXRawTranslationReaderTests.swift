@@ -58,7 +58,7 @@ final class AXRawTranslationReaderTests: XCTestCase {
   func testAttributesWithoutATranslatorNumberAreNotAskedFor() {
     let attributes = AXRawTranslationReader.attributes(
       for: AXReadPlan(attributes: [.title, .required, .hidden, .customActions], depth: .limited(0)), readingChildren: true)
-    XCTAssertEqual(attributes, [.frame, .children])
+    XCTAssertEqual(attributes, [.frame, .customActions, .children])
   }
 
   func testAnElementListedAmongItsOwnDescendantsIsReadOnce() {
@@ -188,8 +188,7 @@ final class AXRawTranslationReaderTests: XCTestCase {
       ]
     ])
     let snapshot = Self.reader(transport).read(Self.reference(1), plan: AXReadPlan(attributes: [.customActions], depth: .limited(0)))
-    // BUG: the translator's custom actions are dropped and every element reads as having none — flipped in the following commit.
-    XCTAssertEqual(snapshot.customActionNames, [])
+    XCTAssertEqual(snapshot.customActionNames, ["Edit mode", "Today"])
   }
 
   // MARK: - Request

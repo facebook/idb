@@ -22,8 +22,8 @@ import Foundation
 /// - the role description is the application's own when it gives a non-empty one; otherwise empty for a
 ///   generic element, and AppKit's description of the role and subrole for anything else.
 ///
-/// Attributes the translator has no number for — title, required, hidden, custom actions — are not fetched:
-/// the platform element answers its batched request without them too.
+/// Attributes the translator has no number for — title, required, hidden — are not fetched: the platform
+/// element answers its batched request without them too.
 struct AXRawTranslationReader {
   let transport: any AXTranslationTransport
   let clientType: AXClientType
@@ -73,7 +73,7 @@ struct AXRawTranslationReader {
       title: nil,
       help: decoded.help,
       isEnabled: decoded.isEnabled,
-      customActionNames: plan.attributes.contains(.customActions) ? [] : nil,
+      customActionNames: decoded.customActionNames,
       roleDescription: decoded.roleDescription,
       subrole: decoded.subrole,
       isRequired: plan.attributes.contains(.required) ? false : nil,
@@ -165,7 +165,8 @@ struct AXRawTranslationReader {
       case .expanded: add(.expanded)
       case .placeholder: add(.placeholderValue)
       case .focused: add(.isFocused)
-      case .title, .required, .hidden, .customActions, .hittability, .explainedBy: break
+      case .customActions: add(.customActions)
+      case .title, .required, .hidden, .hittability, .explainedBy: break
       }
     }
     if readingChildren {
@@ -190,6 +191,7 @@ struct AXRawTranslationReader {
     var isExpanded: Bool?
     var placeholder: String?
     var isFocused: Bool?
+    var customActionNames: [String]?
 
     init(_ answer: BridgeAXTranslatorAnswer?, plan: AXReadPlan) {
       func planned(_ attribute: AXReadPlan.Attribute) -> Bool {
@@ -223,6 +225,11 @@ struct AXRawTranslationReader {
       isExpanded = flag(.expanded, .expanded)
       if planned(.placeholder) { placeholder = answer?[.placeholderValue] as? String }
       isFocused = flag(.focused, .isFocused)
+      if planned(.customActions) {
+        customActionNames = ((answer?[.customActions] as? [Any]) ?? []).compactMap {
+          ($0 as? NSDictionary)?["AXPCustomActionName"] as? String
+        }
+      }
     }
 
     /// The role as AppKit names it. A remote element is a group: the platform element reports what it
