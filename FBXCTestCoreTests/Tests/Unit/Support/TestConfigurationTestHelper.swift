@@ -8,11 +8,11 @@
 import FBXCTestCore
 import Foundation
 
-/// Helper for FBTestConfigurationTests that wraps XCTestConfiguration interactions.
+/// Helper for TestConfigurationTests that wraps XCTestConfiguration interactions.
 /// This is needed because XCTestPrivate cannot be imported from Swift due to module
 /// conflicts with the system XCTest framework. Property access uses KVC since the
 /// private class cannot declare conformance to any Swift-defined protocol.
-final class FBTestConfigurationTestHelper {
+final class TestConfigurationTestHelper {
 
   static func createTestConfigurationByWritingToFile(
     withSessionIdentifier sessionIdentifier: UUID,
@@ -26,8 +26,8 @@ final class FBTestConfigurationTestHelper {
     testApplicationDependencies: [String: String]?,
     automationFrameworkPath: String?,
     reportActivities: Bool
-  ) throws -> FBTestConfiguration {
-    return try FBTestConfiguration(
+  ) throws -> TestConfiguration {
+    return try TestConfiguration(
       byWritingToFileWithSessionIdentifier: sessionIdentifier,
       moduleName: moduleName,
       testBundlePath: testBundlePath,
@@ -42,10 +42,10 @@ final class FBTestConfigurationTestHelper {
     )
   }
 
-  /// `FBTestConfiguration.xcTestConfiguration` is typed `XCTestConfiguration *`, and that class is
+  /// `TestConfiguration.xcTestConfiguration` is typed `XCTestConfiguration *`, and that class is
   /// only forward declared in the header, so Swift cannot import the property at all. Read it
   /// through KVC, like every other accessor here.
-  static func xcTestConfiguration(_ testConfiguration: FBTestConfiguration) -> Any? {
+  static func xcTestConfiguration(_ testConfiguration: TestConfiguration) -> Any? {
     return (testConfiguration as NSObject).value(forKey: "xcTestConfiguration")
   }
 

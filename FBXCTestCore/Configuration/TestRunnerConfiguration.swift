@@ -39,7 +39,7 @@ struct TestRunnerConfiguration {
   public let testRunner: BundleDescriptor
   public let launchEnvironment: [String: String]
   public let testedApplicationAdditionalEnvironment: [String: String]
-  public let testConfiguration: FBTestConfiguration
+  public let testConfiguration: TestConfiguration
 
   public var launchArguments: [String] {
     [
@@ -48,7 +48,7 @@ struct TestRunnerConfiguration {
     ]
   }
 
-  public init(sessionIdentifier: UUID, testRunner: BundleDescriptor, launchEnvironment: [String: String], testedApplicationAdditionalEnvironment: [String: String], testConfiguration: FBTestConfiguration) {
+  public init(sessionIdentifier: UUID, testRunner: BundleDescriptor, launchEnvironment: [String: String], testedApplicationAdditionalEnvironment: [String: String], testConfiguration: TestConfiguration) {
     self.sessionIdentifier = sessionIdentifier
     self.testRunner = testRunner
     self.launchEnvironment = launchEnvironment
@@ -145,9 +145,9 @@ struct TestRunnerConfiguration {
       throw TestRunnerConfigurationError.testBundlePreparationFailed(underlying: error)
     }
 
-    let testConfiguration: FBTestConfiguration
+    let testConfiguration: TestConfiguration
     do {
-      testConfiguration = try FBTestConfiguration(
+      testConfiguration = try TestConfiguration(
         byWritingToFileWithSessionIdentifier: sessionIdentifier,
         moduleName: testBundle.name,
         testBundlePath: testBundle.path,

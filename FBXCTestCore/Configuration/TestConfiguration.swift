@@ -25,7 +25,7 @@ import Foundation
   @objc(initWithStringRepresentation:preserveModulePrefix:) func initialize(stringRepresentation: NSString, preserveModulePrefix: Bool) -> AnyObject?
 }
 
-public enum FBTestConfigurationError: Error, LocalizedError {
+public enum TestConfigurationError: Error, LocalizedError {
   case classUnavailable(className: String)
   case archivingFailed(underlying: Error)
 
@@ -40,7 +40,7 @@ public enum FBTestConfigurationError: Error, LocalizedError {
 }
 
 /// Represents the `XCTestConfiguration` Apple uses to configure a test run (an `.xctestconfiguration`).
-@objc public final class FBTestConfiguration: NSObject {
+@objc public final class TestConfiguration: NSObject {
 
   @objc public let sessionIdentifier: UUID
   /// The name of the test module.
@@ -70,7 +70,7 @@ public enum FBTestConfigurationError: Error, LocalizedError {
     reportActivities: Bool
   ) throws {
     guard let configuration = RuntimeClassAllocation.new("XCTestConfiguration") as? NSObject else {
-      throw FBTestConfigurationError.classUnavailable(className: "XCTestConfiguration")
+      throw TestConfigurationError.classUnavailable(className: "XCTestConfiguration")
     }
     configuration.setValue(sessionIdentifier, forKey: "sessionIdentifier")
     configuration.setValue(URL(fileURLWithPath: testBundlePath), forKey: "testBundleURL")
@@ -89,7 +89,7 @@ public enum FBTestConfigurationError: Error, LocalizedError {
     configuration.setValue(testApplicationDependencies, forKey: "testApplicationDependencies")
 
     guard let capabilitiesBuilderInstance = RuntimeClassAllocation.new("XCTCapabilitiesBuilder") else {
-      throw FBTestConfigurationError.classUnavailable(className: "XCTCapabilitiesBuilder")
+      throw TestConfigurationError.classUnavailable(className: "XCTCapabilitiesBuilder")
     }
     let capabilitiesBuilder = unsafeBitCast(capabilitiesBuilderInstance, to: XCTCapabilitiesBuilderMessaging.self)
     capabilitiesBuilder.registerCapability("XCTIssue capability")
@@ -100,7 +100,7 @@ public enum FBTestConfigurationError: Error, LocalizedError {
     do {
       data = try NSKeyedArchiver.archivedData(withRootObject: configuration, requiringSecureCoding: false)
     } catch {
-      throw FBTestConfigurationError.archivingFailed(underlying: error)
+      throw TestConfigurationError.archivingFailed(underlying: error)
     }
     let path = ((testBundlePath as NSString).deletingLastPathComponent as NSString)
       .appendingPathComponent("\(moduleName)-\(sessionIdentifier.uuidString).xctestconfiguration")
@@ -132,7 +132,7 @@ public enum FBTestConfigurationError: Error, LocalizedError {
       let allocatedBuilder = RuntimeClassAllocation.alloc("XCTTestIdentifierSetBuilder"),
       let builderInstance = unsafeBitCast(allocatedBuilder, to: XCTTestIdentifierSetBuilderMessaging.self).initialize()
     else {
-      throw FBTestConfigurationError.classUnavailable(className: "XCTTestIdentifierSetBuilder")
+      throw TestConfigurationError.classUnavailable(className: "XCTTestIdentifierSetBuilder")
     }
     let builder = unsafeBitCast(builderInstance, to: XCTTestIdentifierSetBuilderMessaging.self)
     for test in tests {
@@ -141,7 +141,7 @@ public enum FBTestConfigurationError: Error, LocalizedError {
         let identifier = unsafeBitCast(allocatedIdentifier, to: XCTTestIdentifierMessaging.self)
           .initialize(stringRepresentation: test as NSString, preserveModulePrefix: true)
       else {
-        throw FBTestConfigurationError.classUnavailable(className: "XCTTestIdentifier")
+        throw TestConfigurationError.classUnavailable(className: "XCTTestIdentifier")
       }
       builder.add(identifier)
     }

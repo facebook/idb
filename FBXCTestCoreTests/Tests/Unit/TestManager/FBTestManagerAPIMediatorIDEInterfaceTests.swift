@@ -122,7 +122,7 @@ struct FBTestManagerAPIMediatorIDEInterfaceTests {
 
   private func makeInterface() throws -> NSObject {
     let sessionIdentifier = UUID()
-    let testConfiguration = try FBTestConfiguration(
+    let testConfiguration = try TestConfiguration(
       byWritingToFileWithSessionIdentifier: sessionIdentifier,
       moduleName: "ModuleName",
       testBundlePath: NSTemporaryDirectory(),

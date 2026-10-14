@@ -14,14 +14,14 @@ import Foundation
   public let timeout: TimeInterval
   public let testHostLaunchConfiguration: ApplicationLaunchConfiguration
   public let testedApplicationAdditionalEnvironment: [String: String]
-  @objc public let testConfiguration: FBTestConfiguration
+  @objc public let testConfiguration: TestConfiguration
 
   public init(
     sessionIdentifier: UUID,
     timeout: TimeInterval,
     testHostLaunchConfiguration: ApplicationLaunchConfiguration,
     testedApplicationAdditionalEnvironment: [String: String],
-    testConfiguration: FBTestConfiguration
+    testConfiguration: TestConfiguration
   ) {
     self.sessionIdentifier = sessionIdentifier
     self.timeout = timeout

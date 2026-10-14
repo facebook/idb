@@ -42,7 +42,7 @@ final class FBTestBundleDTXConnectionTests: XCTestCase {
 
   private func makeConnection(socket: Int32 = -1) throws -> FBTestBundleDTXConnection {
     let sessionIdentifier = UUID()
-    let testConfiguration = try FBTestConfiguration(
+    let testConfiguration = try TestConfiguration(
       byWritingToFileWithSessionIdentifier: sessionIdentifier,
       moduleName: "ModuleName",
       testBundlePath: NSTemporaryDirectory(),
