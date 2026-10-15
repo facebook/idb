@@ -10,7 +10,7 @@ import XCTest
 
 final class DataConsumerTests: XCTestCase {
   func testLineBufferAccumulation() {
-    let consumer = DataBuffer.accumulatingBuffer()
+    let consumer = AccumulatingBuffer()
     consumer.consumeData("FOO".data(using: .utf8)!)
     consumer.consumeData("BAR".data(using: .utf8)!)
 
@@ -23,7 +23,7 @@ final class DataConsumerTests: XCTestCase {
   }
 
   func testLineBufferAccumulationWithCapacity() {
-    let consumer = DataBuffer.accumulatingBuffer(withCapacity: 3)
+    let consumer = AccumulatingBuffer(capacity: 3)
     consumer.consumeData("F".data(using: .utf8)!)
     XCTAssertEqual(consumer.lines(), ["F"])
     consumer.consumeData("O".data(using: .utf8)!)
@@ -245,7 +245,7 @@ final class DataConsumerTests: XCTestCase {
   }
 
   func testLineBufferConsumption() {
-    let consumer = DataBuffer.consumableBuffer()
+    let consumer = ConsumableBuffer()
     consumer.consumeData("FOO".data(using: .utf8)!)
 
     XCTAssertNil(consumer.consumeLineData())
@@ -293,8 +293,8 @@ final class DataConsumerTests: XCTestCase {
   }
 
   func testCompositeWithCompletion() {
-    let accumulating = DataBuffer.consumableBuffer()
-    let consumable = DataBuffer.consumableBuffer()
+    let accumulating = ConsumableBuffer()
+    let consumable = ConsumableBuffer()
     let composite = CompositeDataConsumer(consumers: [
       accumulating,
       consumable,
@@ -320,7 +320,7 @@ final class DataConsumerTests: XCTestCase {
   }
 
   func testLengthBasedConsumption() {
-    let consumer = DataBuffer.consumableBuffer()
+    let consumer = ConsumableBuffer()
 
     consumer.consumeData("FOOBARRBAZZZ".data(using: .utf8)!)
     consumer.consumeEndOfFile()

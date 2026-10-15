@@ -21,7 +21,7 @@ struct FMP4FrameWriterTests {
   func fmp4InitSegmentEmittedOnFirstKeyframe() {
     let sampleBuffer = makeH264SampleBuffer(isKeyFrame: true)
     let writer = FMP4FrameWriter(codec: .h264)
-    let consumer = DataBuffer.accumulatingBuffer()
+    let consumer = AccumulatingBuffer()
     let logger = ControlCoreLoggerDouble()
 
     #expect(throws: Never.self) { try writer.write(sampleBuffer, to: consumer, logger: logger) }
@@ -55,7 +55,7 @@ struct FMP4FrameWriterTests {
   func fmp4NonKeyframeBeforeFirstKeyframeDropped() {
     let nonKeyframe = makeH264SampleBuffer(isKeyFrame: false)
     let writer = FMP4FrameWriter(codec: .h264)
-    let consumer = DataBuffer.accumulatingBuffer()
+    let consumer = AccumulatingBuffer()
     let logger = ControlCoreLoggerDouble()
 
     #expect(throws: Never.self) { try writer.write(nonKeyframe, to: consumer, logger: logger) }
@@ -66,7 +66,7 @@ struct FMP4FrameWriterTests {
   @Test
   func fmp4FragmentContainsMoofAndMdat() {
     let writer = FMP4FrameWriter(codec: .h264)
-    let consumer = DataBuffer.accumulatingBuffer()
+    let consumer = AccumulatingBuffer()
     let logger = ControlCoreLoggerDouble()
 
     let keyframe = makeH264SampleBuffer(isKeyFrame: true)
@@ -89,7 +89,7 @@ struct FMP4FrameWriterTests {
   @Test
   func fmp4FragmentTrunBoxSize() {
     let writer = FMP4FrameWriter(codec: .h264)
-    let consumer = DataBuffer.accumulatingBuffer()
+    let consumer = AccumulatingBuffer()
     let logger = ControlCoreLoggerDouble()
 
     #expect(throws: Never.self) { try writer.write(makeH264SampleBuffer(isKeyFrame: true), to: consumer, logger: logger) }
@@ -116,7 +116,7 @@ struct FMP4FrameWriterTests {
   @Test
   func fmp4EveryBoxHasPinnedBoundary() throws {
     let writer = FMP4FrameWriter(codec: .h264)
-    let consumer = DataBuffer.accumulatingBuffer()
+    let consumer = AccumulatingBuffer()
     let logger = ControlCoreLoggerDouble()
 
     try writer.write(makeH264SampleBuffer(isKeyFrame: true), to: consumer, logger: logger)
@@ -176,7 +176,7 @@ struct FMP4FrameWriterTests {
       ])
 
     let hevcWriter = FMP4FrameWriter(codec: .hevc)
-    let hevcConsumer = DataBuffer.accumulatingBuffer()
+    let hevcConsumer = AccumulatingBuffer()
     let hevcSampleBuffer = try #require(makeHEVCSampleBuffer(isKeyFrame: true))
     try hevcWriter.write(hevcSampleBuffer, to: hevcConsumer, logger: logger)
     let hevcGolden = try #require(
@@ -200,7 +200,7 @@ struct FMP4FrameWriterTests {
     )
     #expect(hevcConsumer.data() == hevcGolden)
 
-    let metadataConsumer = DataBuffer.accumulatingBuffer()
+    let metadataConsumer = AccumulatingBuffer()
     writer.writeTimedMetadata("Chapter 1", to: metadataConsumer)
     let metadata = metadataConsumer.data()
     let metadataGolden = try #require(
@@ -215,7 +215,7 @@ struct FMP4FrameWriterTests {
   @Test
   func fmp4FragmentBaseDecodeTimeFollowsPresentationTime() {
     let writer = FMP4FrameWriter(codec: .h264)
-    let consumer = DataBuffer.accumulatingBuffer()
+    let consumer = AccumulatingBuffer()
     let logger = ControlCoreLoggerDouble()
 
     // A source that missed cadence: each sample declares 1/30 s but the frames are 100 ms apart.
@@ -244,7 +244,7 @@ struct FMP4FrameWriterTests {
   func fmp4EmsgBoxStructure() {
     let writer = FMP4FrameWriter(codec: .h264)
     writer.lastPts90k = 90000
-    let consumer = DataBuffer.accumulatingBuffer()
+    let consumer = AccumulatingBuffer()
 
     writer.writeTimedMetadata("Chapter 1", to: consumer)
 
@@ -274,7 +274,7 @@ struct FMP4FrameWriterTests {
   func fmp4NotReadyBufferReturnsError() throws {
     let sampleBuffer = makeNotReadySampleBuffer()
     let writer = FMP4FrameWriter(codec: .h264)
-    let consumer = DataBuffer.accumulatingBuffer()
+    let consumer = AccumulatingBuffer()
     let logger = ControlCoreLoggerDouble()
 
     let error = #expect(throws: (any Error).self) { try writer.write(sampleBuffer, to: consumer, logger: logger) }
@@ -286,7 +286,7 @@ struct FMP4FrameWriterTests {
   func hevcFMP4InitSegmentUsesHVC1AndHVCC() throws {
     let sampleBuffer = try #require(makeHEVCSampleBuffer(isKeyFrame: true))
     let writer = FMP4FrameWriter(codec: .hevc)
-    let consumer = DataBuffer.accumulatingBuffer()
+    let consumer = AccumulatingBuffer()
     let logger = ControlCoreLoggerDouble()
 
     #expect(throws: Never.self) { try writer.write(sampleBuffer, to: consumer, logger: logger) }

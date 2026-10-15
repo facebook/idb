@@ -17,7 +17,7 @@ struct ConsumerBackpressureTests {
 
   @Test
   func hasCapacityWhenNotOverflown() {
-    let consumer = DataBuffer.accumulatingBuffer()
+    let consumer = AccumulatingBuffer()
     let logger = ControlCoreLoggerDouble()
 
     // AccumulatingBuffer does not queue, so it always has capacity.

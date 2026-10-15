@@ -19,7 +19,7 @@ struct JPEGFrameWriterTests {
 
   @Test
   func writeMinicapHeader() {
-    let consumer = DataBuffer.accumulatingBuffer()
+    let consumer = AccumulatingBuffer()
     let logger = ControlCoreLoggerDouble()
     let writer = MinicapFrameWriter()
 
@@ -58,7 +58,7 @@ struct JPEGFrameWriterTests {
   func mjpegFrameWriterWritesRawBytes() {
     let jpeg: [UInt8] = [0xFF, 0xD8, 0xFF, 0xE0, 0x00, 0x10, 0x4A, 0x46, 0x49, 0x46, 0xFF, 0xD9]
     let blockBuffer = makeBlockBuffer(jpeg)
-    let consumer = DataBuffer.accumulatingBuffer()
+    let consumer = AccumulatingBuffer()
     let logger = ControlCoreLoggerDouble()
     let writer = MJPEGFrameWriter()
 
@@ -71,7 +71,7 @@ struct JPEGFrameWriterTests {
   func minicapFrameWriterPrependsLittleEndianLength() {
     let jpeg: [UInt8] = [0xFF, 0xD8, 0xFF, 0xD9]
     let blockBuffer = makeBlockBuffer(jpeg)
-    let consumer = DataBuffer.accumulatingBuffer()
+    let consumer = AccumulatingBuffer()
     let logger = ControlCoreLoggerDouble()
     let writer = MinicapFrameWriter()
 
@@ -91,7 +91,7 @@ struct JPEGFrameWriterTests {
   @Test
   func minicapWritesTheHeaderOnceFromTheFirstSample() throws {
     let jpeg: [UInt8] = [0xFF, 0xD8, 0xFF, 0xD9]
-    let consumer = DataBuffer.accumulatingBuffer()
+    let consumer = AccumulatingBuffer()
     let logger = ControlCoreLoggerDouble()
     let writer = MinicapFrameWriter()
 
@@ -105,14 +105,14 @@ struct JPEGFrameWriterTests {
   @Test
   func mjpegWritesTheSampleBytesThrough() throws {
     let jpeg: [UInt8] = [0xFF, 0xD8, 0x01, 0x02, 0xFF, 0xD9]
-    let consumer = DataBuffer.accumulatingBuffer()
+    let consumer = AccumulatingBuffer()
     try MJPEGFrameWriter().write(makeJPEGSampleBuffer(bytes: jpeg, width: 8, height: 8), to: consumer, logger: ControlCoreLoggerDouble())
     #expect(consumer.data() == Data(jpeg))
   }
 
   @Test
   func bgraWritesThePixelBytesThrough() throws {
-    let consumer = DataBuffer.accumulatingBuffer()
+    let consumer = AccumulatingBuffer()
     let sampleBuffer = makeBGRASampleBuffer(width: 16, height: 8, fill: 0xAB)
     try BGRAFrameWriter().write(sampleBuffer, to: consumer, logger: ControlCoreLoggerDouble())
     let pixelBuffer = try #require(CMSampleBufferGetImageBuffer(sampleBuffer))

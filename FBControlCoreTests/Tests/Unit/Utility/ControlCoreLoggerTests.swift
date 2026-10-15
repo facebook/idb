@@ -29,7 +29,7 @@ struct ControlCoreLoggerTests {
 
   @Test
   func loggingToConsumer() {
-    let consumer = DataBuffer.consumableBuffer()
+    let consumer = ConsumableBuffer()
     var logger: ControlCoreLogger = ConsumerLogger(consumer: consumer)
 
     logger.log("HELLO")
@@ -49,7 +49,7 @@ struct ControlCoreLoggerTests {
 
   @Test
   func threadSafetyOfConsumableLogger() {
-    let consumer = DataBuffer.consumableBuffer()
+    let consumer = ConsumableBuffer()
     let logger = ConsumerLogger(consumer: consumer)
 
     let group = DispatchGroup()

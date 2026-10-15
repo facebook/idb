@@ -16,7 +16,7 @@ final class FramePusherPoolTests: XCTestCase {
 
   func testAKeptPusherIsTakenOnce() {
     var pool = FramePusherPool()
-    let pusher = BitmapFramePusher(consumer: DataBuffer.accumulatingBuffer(), scaleFactor: nil)
+    let pusher = BitmapFramePusher(consumer: AccumulatingBuffer(), scaleFactor: nil)
     XCTAssertNil(pool.keep(pusher, for: size))
     XCTAssertTrue(pool.contains(size))
     XCTAssertTrue(pool.take(size) === pusher)
@@ -25,8 +25,8 @@ final class FramePusherPoolTests: XCTestCase {
 
   func testKeepingASecondPusherForASourceReturnsTheFirst() {
     var pool = FramePusherPool()
-    let first = BitmapFramePusher(consumer: DataBuffer.accumulatingBuffer(), scaleFactor: nil)
-    let second = BitmapFramePusher(consumer: DataBuffer.accumulatingBuffer(), scaleFactor: nil)
+    let first = BitmapFramePusher(consumer: AccumulatingBuffer(), scaleFactor: nil)
+    let second = BitmapFramePusher(consumer: AccumulatingBuffer(), scaleFactor: nil)
     _ = pool.keep(first, for: size)
     XCTAssertTrue(pool.keep(second, for: size) === first)
     XCTAssertTrue(pool.take(size) === second)
@@ -34,8 +34,8 @@ final class FramePusherPoolTests: XCTestCase {
 
   func testRemovingAllEmptiesThePool() {
     var pool = FramePusherPool()
-    _ = pool.keep(BitmapFramePusher(consumer: DataBuffer.accumulatingBuffer(), scaleFactor: nil), for: size)
-    _ = pool.keep(BitmapFramePusher(consumer: DataBuffer.accumulatingBuffer(), scaleFactor: nil), for: VideoFrameSource(width: 2007, height: 2853, pixelFormat: kCVPixelFormatType_32BGRA))
+    _ = pool.keep(BitmapFramePusher(consumer: AccumulatingBuffer(), scaleFactor: nil), for: size)
+    _ = pool.keep(BitmapFramePusher(consumer: AccumulatingBuffer(), scaleFactor: nil), for: VideoFrameSource(width: 2007, height: 2853, pixelFormat: kCVPixelFormatType_32BGRA))
     XCTAssertEqual(pool.removeAll().count, 2)
     XCTAssertFalse(pool.contains(size))
   }
@@ -49,7 +49,7 @@ final class FramePusherPoolTests: XCTestCase {
 
   func testAPusherIsTakenOnlyForItsPixelFormat() {
     var pool = FramePusherPool()
-    _ = pool.keep(BitmapFramePusher(consumer: DataBuffer.accumulatingBuffer(), scaleFactor: nil), for: size)
+    _ = pool.keep(BitmapFramePusher(consumer: AccumulatingBuffer(), scaleFactor: nil), for: size)
     XCTAssertNil(pool.take(VideoFrameSource(width: size.width, height: size.height, pixelFormat: kCVPixelFormatType_32RGBA)))
     XCTAssertNotNil(pool.take(size))
   }

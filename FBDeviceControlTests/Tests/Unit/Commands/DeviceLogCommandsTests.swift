@@ -64,7 +64,7 @@ final class DeviceLogCommandsTests {
   @Test
   func tailLog_ReadsTheSyslogRelayIntoTheConsumer() async throws {
     syslog.readBuffer = Data("a line of syslog\n".utf8)
-    let consumer = DataBuffer.accumulatingBuffer()
+    let consumer = AccumulatingBuffer()
 
     let operation = try await device.log.tail(arguments: [], consumer: consumer)
     try await consumer.awaitFinishedConsuming()
@@ -80,7 +80,7 @@ final class DeviceLogCommandsTests {
   /// already closed by then.
   @Test
   func tailLog_LeavesTheConnectionOpenWhenTheDeviceStopsWriting() async throws {
-    let consumer = DataBuffer.accumulatingBuffer()
+    let consumer = AccumulatingBuffer()
 
     let operation = try await device.log.tail(arguments: [], consumer: consumer)
     try await consumer.awaitFinishedConsuming()
@@ -101,7 +101,7 @@ final class DeviceLogCommandsTests {
   /// The companion's log handler cancels the wait exactly this way when the client goes away.
   @Test
   func tailLog_InvalidatesTheConnectionWhenTheWaitIsCancelled() async throws {
-    let consumer = DataBuffer.accumulatingBuffer()
+    let consumer = AccumulatingBuffer()
     let operation = try await device.log.tail(arguments: [], consumer: consumer)
     await waitFor("the AMDevice session to close") { self.amDevice.events == syslogSessionEvents }
     #expect(!syslog.isInvalidated)

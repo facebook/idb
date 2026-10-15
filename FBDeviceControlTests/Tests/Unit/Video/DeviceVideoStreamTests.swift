@@ -60,7 +60,7 @@ struct DeviceVideoStreamTests {
 
   @Test
   func bGRAWritesRawPixelBytes() throws {
-    let consumer = DataBuffer.accumulatingBuffer()
+    let consumer = AccumulatingBuffer()
     let stream = try makeStream(for: .bgra, consumer: consumer)
     let sampleBuffer = makeBGRASampleBuffer(width: 16, height: 8, fill: 0xAB)
     let pixelBuffer = CMSampleBufferGetImageBuffer(sampleBuffer)!
@@ -75,7 +75,7 @@ struct DeviceVideoStreamTests {
 
   @Test
   func h264ProducesAnnexBStartCode() throws {
-    let consumer = DataBuffer.accumulatingBuffer()
+    let consumer = AccumulatingBuffer()
     let stream = try makeStream(for: .compressedVideo(withCodec: .h264, transport: .annexB), consumer: consumer)
 
     stream.consumeSampleBuffer(makeH264SampleBuffer())
@@ -88,7 +88,7 @@ struct DeviceVideoStreamTests {
 
   @Test
   func h264MPEGTSProducesTransportStreamPackets() throws {
-    let consumer = DataBuffer.accumulatingBuffer()
+    let consumer = AccumulatingBuffer()
     let stream = try makeStream(for: .compressedVideo(withCodec: .h264, transport: .mpegts), consumer: consumer)
 
     stream.consumeSampleBuffer(makeH264SampleBuffer())
@@ -101,7 +101,7 @@ struct DeviceVideoStreamTests {
 
   @Test
   func mJPEGPassesThroughJPEGBytes() throws {
-    let consumer = DataBuffer.accumulatingBuffer()
+    let consumer = AccumulatingBuffer()
     let stream = try makeStream(for: .mjpeg(encoder: .requireHardware), consumer: consumer)
     let jpeg: [UInt8] = [0xFF, 0xD8, 0xFF, 0xE0, 0x01, 0x02, 0x03, 0xFF, 0xD9]
 
@@ -112,7 +112,7 @@ struct DeviceVideoStreamTests {
 
   @Test
   func minicapWritesHeaderThenFrame() throws {
-    let consumer = DataBuffer.accumulatingBuffer()
+    let consumer = AccumulatingBuffer()
     let stream = try makeStream(for: .minicap, consumer: consumer)
     let jpeg: [UInt8] = [0xFF, 0xD8, 0xFF, 0xD9]
 

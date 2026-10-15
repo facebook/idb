@@ -20,7 +20,7 @@ struct AnnexBFrameWriterTests {
   @Test
   func h264AnnexBKeyframeDetectionWithModernAttachments() {
     let sampleBuffer = makeH264SampleBuffer(isKeyFrame: true)
-    let consumer = DataBuffer.accumulatingBuffer()
+    let consumer = AccumulatingBuffer()
     let logger = ControlCoreLoggerDouble()
     let writer = AnnexBFrameWriter(codec: .h264)
 
@@ -50,7 +50,7 @@ struct AnnexBFrameWriterTests {
   @Test
   func h264AnnexBAVCCToAnnexBConversion() {
     let sampleBuffer = makeH264SampleBuffer(isKeyFrame: false)
-    let consumer = DataBuffer.accumulatingBuffer()
+    let consumer = AccumulatingBuffer()
     let logger = ControlCoreLoggerDouble()
     let writer = AnnexBFrameWriter(codec: .h264)
 
@@ -77,7 +77,7 @@ struct AnnexBFrameWriterTests {
       0x00, 0x00, 0x00, 0x03,
       0x65, 0x88, 0x80, 0x40, 0x00, 0x11, 0x22, 0x33,
     ]
-    let consumer = DataBuffer.accumulatingBuffer()
+    let consumer = AccumulatingBuffer()
     let error = #expect(throws: (any Error).self) {
       try AnnexBFrameWriter(codec: .h264).write(makeH264SampleBuffer(isKeyFrame: false, avccBytes: avcc), to: consumer, logger: ControlCoreLoggerDouble())
     }
@@ -93,7 +93,7 @@ struct AnnexBFrameWriterTests {
       0x00, 0x00, 0x00, 0xC8,
       0x65, 0x88, 0x80, 0x40, 0x00,
     ]
-    let consumer = DataBuffer.accumulatingBuffer()
+    let consumer = AccumulatingBuffer()
     let error = #expect(throws: (any Error).self) {
       try AnnexBFrameWriter(codec: .h264).write(makeH264SampleBuffer(isKeyFrame: false, avccBytes: avcc), to: consumer, logger: ControlCoreLoggerDouble())
     }
@@ -108,7 +108,7 @@ struct AnnexBFrameWriterTests {
       0x00, 0x00, 0x00, 0x02, 0x65, 0x88,
       0x00, 0x00, // two bytes where a prefix should be
     ]
-    let consumer = DataBuffer.accumulatingBuffer()
+    let consumer = AccumulatingBuffer()
     #expect(throws: (any Error).self) { try AnnexBFrameWriter(codec: .h264).write(makeH264SampleBuffer(isKeyFrame: false, avccBytes: avcc), to: consumer, logger: ControlCoreLoggerDouble()) }
     #expect(consumer.data().count == 0)
   }
@@ -119,7 +119,7 @@ struct AnnexBFrameWriterTests {
       0x00, 0x00, 0x00, 0x02, 0x65, 0x88,
       0x00, 0x00, 0x00, 0x03, 0x41, 0x9a, 0x00,
     ]
-    let consumer = DataBuffer.accumulatingBuffer()
+    let consumer = AccumulatingBuffer()
     try AnnexBFrameWriter(codec: .h264).write(makeH264SampleBuffer(isKeyFrame: false, avccBytes: avcc), to: consumer, logger: ControlCoreLoggerDouble())
     #expect([UInt8](consumer.data()) == [0x00, 0x00, 0x00, 0x01, 0x65, 0x88, 0x00, 0x00, 0x00, 0x01, 0x41, 0x9a, 0x00])
   }
@@ -127,7 +127,7 @@ struct AnnexBFrameWriterTests {
   @Test
   func h264AnnexBNotReadyBufferReturnsError() throws {
     let sampleBuffer = makeNotReadySampleBuffer()
-    let consumer = DataBuffer.accumulatingBuffer()
+    let consumer = AccumulatingBuffer()
     let logger = ControlCoreLoggerDouble()
     let writer = AnnexBFrameWriter(codec: .h264)
 
@@ -141,7 +141,7 @@ struct AnnexBFrameWriterTests {
   @Test
   func hevcAnnexBKeyframeEmitsParameterSets() throws {
     let sampleBuffer = try #require(makeHEVCSampleBuffer(isKeyFrame: true))
-    let consumer = DataBuffer.accumulatingBuffer()
+    let consumer = AccumulatingBuffer()
     let logger = ControlCoreLoggerDouble()
     let writer = AnnexBFrameWriter(codec: .hevc)
 

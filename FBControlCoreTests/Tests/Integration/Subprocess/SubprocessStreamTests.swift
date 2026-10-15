@@ -80,7 +80,7 @@ struct SubprocessStreamTests {
 
   @Test("A rejected exit quotes the tail of the error-message capture")
   func rejectionQuotesTheErrorMessage() async throws {
-    let logger = ConsumerLogger(consumer: DataBuffer.consumableBuffer())
+    let logger = ConsumerLogger(consumer: ConsumableBuffer())
 
     let error = await #expect(throws: SubprocessError.self) {
       _ = try await Self.shell("printf 'out'; printf 'boom' 1>&2; exit 3").stream(error: .loggerCapturingErrorMessage(logger)) { _ in }

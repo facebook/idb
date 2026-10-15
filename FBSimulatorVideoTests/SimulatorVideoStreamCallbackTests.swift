@@ -272,7 +272,7 @@ final class SimulatorVideoStreamBitmapPusherTests: XCTestCase {
 
   func testBitmapPusherWritesRawPixelBytes() throws {
     let buffer = makeBGRAPixelBuffer(width: 16, height: 8, fill: 0xAB)
-    let consumer = DataBuffer.accumulatingBuffer()
+    let consumer = AccumulatingBuffer()
     let pusher = BitmapFramePusher(consumer: consumer, scaleFactor: nil)
 
     let zeroInsets = VideoStreamEdgeInsets(top: 0, bottom: 0, left: 0, right: 0)
@@ -351,7 +351,7 @@ final class SimulatorVideoStreamDeliveryTests: XCTestCase {
   func testFrameRenderedSignalPushesFrame() async throws {
     let surface = FakeFramebufferSurface()
     surface.immediateSurface = makeTestIOSurface()
-    let consumer = DataBuffer.accumulatingBuffer()
+    let consumer = AccumulatingBuffer()
     let stream = makeStream(surface: surface)
 
     try await stream.startStreaming(consumer)
@@ -368,7 +368,7 @@ final class SimulatorVideoStreamDeliveryTests: XCTestCase {
   func testPushesTrackFrameSignalsAndQuietFramebufferPushesNothing() async throws {
     let surface = FakeFramebufferSurface()
     surface.immediateSurface = makeTestIOSurface()
-    let consumer = DataBuffer.accumulatingBuffer()
+    let consumer = AccumulatingBuffer()
     let stream = makeStream(surface: surface)
 
     try await stream.startStreaming(consumer)
@@ -391,7 +391,7 @@ final class SimulatorVideoStreamDeliveryTests: XCTestCase {
 
   func testSurfaceArrivingAfterAttachMountsAndStartsStream() async throws {
     let surface = FakeFramebufferSurface()
-    let consumer = DataBuffer.accumulatingBuffer()
+    let consumer = AccumulatingBuffer()
     let stream = makeStream(surface: surface)
 
     // With no immediately-available surface, startStreaming suspends until the first
@@ -412,7 +412,7 @@ final class SimulatorVideoStreamDeliveryTests: XCTestCase {
   func testSurfaceSwapRemountsAndPushes() async throws {
     let surface = FakeFramebufferSurface()
     surface.immediateSurface = makeTestIOSurface()
-    let consumer = DataBuffer.accumulatingBuffer()
+    let consumer = AccumulatingBuffer()
     let stream = makeStream(surface: surface)
 
     try await stream.startStreaming(consumer)
@@ -429,7 +429,7 @@ final class SimulatorVideoStreamDeliveryTests: XCTestCase {
   func testSurfaceSwapTearsDownPreviousFramePusher() async throws {
     let surface = FakeFramebufferSurface()
     surface.immediateSurface = makeTestIOSurface()
-    let consumer = DataBuffer.accumulatingBuffer()
+    let consumer = AccumulatingBuffer()
     let stream = makeStream(surface: surface, configuration: Self.scaledLazyConfiguration)
 
     try await stream.startStreaming(consumer)
@@ -451,7 +451,7 @@ final class SimulatorVideoStreamDeliveryTests: XCTestCase {
     let surface = FakeFramebufferSurface()
     let ioSurface = makeTestIOSurface()
     surface.immediateSurface = ioSurface
-    let consumer = DataBuffer.accumulatingBuffer()
+    let consumer = AccumulatingBuffer()
     let stream = makeStream(surface: surface)
 
     try await stream.startStreaming(consumer)
@@ -526,7 +526,7 @@ final class SimulatorVideoStreamDeliveryTests: XCTestCase {
 
   func testStartStreamingWhenStoppedBeforeFirstSurfaceMount() async throws {
     let surface = FakeFramebufferSurface()
-    let consumer = DataBuffer.accumulatingBuffer()
+    let consumer = AccumulatingBuffer()
     let stream = makeStream(surface: surface)
 
     // No immediately-available surface: startStreaming attaches, then suspends awaiting the first
@@ -553,7 +553,7 @@ final class SimulatorVideoStreamDeliveryTests: XCTestCase {
   func testStartStreamingWhenInitialSurfaceIsUnmountable() async throws {
     let surface = FakeFramebufferSurface()
     surface.immediateSurface = makeUnmountableIOSurface()
-    let consumer = DataBuffer.accumulatingBuffer()
+    let consumer = AccumulatingBuffer()
     let stream = makeStream(surface: surface)
 
     // The attach-time surface cannot be wrapped by CVPixelBufferCreateWithIOSurface, so the initial
@@ -573,7 +573,7 @@ final class SimulatorVideoStreamDeliveryTests: XCTestCase {
 
   func testStartStreamingWhenLateSurfaceCannotBeMounted() async throws {
     let surface = FakeFramebufferSurface()
-    let consumer = DataBuffer.accumulatingBuffer()
+    let consumer = AccumulatingBuffer()
     let stream = makeStream(surface: surface)
 
     // No attach-time surface: startStreaming suspends awaiting the first mount, which arrives via
@@ -658,7 +658,7 @@ final class SimulatorVideoStreamDeliveryTests: XCTestCase {
     try VideoEncodingHostSupport.skipUnlessHardwareH264Encoding()
     let surface = FakeFramebufferSurface()
     surface.immediateSurface = makeTestIOSurface(width: 128, height: 128)
-    let consumer = DataBuffer.accumulatingBuffer()
+    let consumer = AccumulatingBuffer()
     let stream = makeStream(surface: surface, configuration: Self.h264Configuration)
 
     try await stream.startStreaming(consumer)
@@ -699,7 +699,7 @@ final class SimulatorVideoStreamDeliveryTests: XCTestCase {
   func testDroppedStreamIsReleasedOnceSurfaceReleasesCallbacks() async throws {
     let surface = FakeFramebufferSurface()
     surface.immediateSurface = makeTestIOSurface()
-    let consumer = DataBuffer.accumulatingBuffer()
+    let consumer = AccumulatingBuffer()
     let eager = VideoStreamConfiguration(
       format: .bgra, framesPerSecond: 20, rateControl: nil, scaleFactor: nil, keyFrameRate: nil)
     var stream: SimulatorVideoStream? = makeStream(surface: surface, configuration: eager)

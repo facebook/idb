@@ -101,7 +101,7 @@ struct SubprocessInputTests {
     let chunks = ["first\n", "second\n", "third\n"]
 
     let source = InputSource()
-    let output = DataBuffer.accumulatingBuffer()
+    let output = AccumulatingBuffer()
     let running = try await Self.new("cat").launch(
       output: .consumer(output),
       error: .closed,

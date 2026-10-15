@@ -19,7 +19,7 @@ struct ProcessLogOperationTests {
   private static func operation(_ script: String) async throws -> (ProcessLogOperation, pid_t) {
     let process = try await Subprocess(executable: "/bin/sh", arguments: ["-c", script])
       .launch(output: .nullDevice, error: .nullDevice)
-    let operation = ProcessLogOperation(process: process, executable: "/bin/sh", consumer: DataBuffer.accumulatingBuffer())
+    let operation = ProcessLogOperation(process: process, executable: "/bin/sh", consumer: AccumulatingBuffer())
     return (operation, process.processIdentifier)
   }
 

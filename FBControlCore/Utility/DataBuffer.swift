@@ -8,22 +8,6 @@
 import Foundation
 
 public enum DataBuffer {
-  /// A data buffer that is only mutated through consuming data.
-  public static func accumulatingBuffer() -> AccumulatingBuffer {
-    AccumulatingBuffer(capacity: 0)
-  }
-
-  /// A data buffer that drops bytes from its beginning once `capacity` bytes are exceeded.
-  public static func accumulatingBuffer(withCapacity capacity: Int) -> AccumulatingBuffer {
-    precondition(capacity > 0)
-    return AccumulatingBuffer(capacity: capacity)
-  }
-
-  /// A data buffer that is appended to by consuming data and can be drained.
-  public static func consumableBuffer() -> ConsumableBuffer {
-    ConsumableBuffer()
-  }
-
   /// Data for a newline.
   public static func newlineTerminal() -> Data {
     newline
@@ -40,8 +24,20 @@ public class AccumulatingBuffer: DataConsumer, DataConsumerLifecycle, CustomStri
   private let capacity: Int
   public let finishedConsuming = AsyncLatch()
 
-  init(capacity: Int) {
-    self.capacity = capacity
+  /// A buffer that keeps everything it consumes.
+  public convenience init() {
+    self.init(bound: 0)
+  }
+
+  /// A buffer that drops bytes from its beginning once `capacity` bytes are exceeded.
+  public convenience init(capacity: Int) {
+    precondition(capacity > 0)
+    self.init(bound: capacity)
+  }
+
+  /// `bound` is the capacity, or 0 for none.
+  fileprivate init(bound: Int) {
+    self.capacity = bound
   }
 
   public var description: String {
@@ -83,8 +79,8 @@ public class AccumulatingBuffer: DataConsumer, DataConsumerLifecycle, CustomStri
 
 /// A buffer that is appended to by consuming data and can be drained. All methods are fully synchronized.
 public final class ConsumableBuffer: AccumulatingBuffer, @unchecked Sendable {
-  init() {
-    super.init(capacity: 0)
+  public init() {
+    super.init(bound: 0)
   }
 
   public override var description: String {

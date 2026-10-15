@@ -112,7 +112,7 @@ struct IDBLoggerTests {
 
   @Test
   func tailingDeliversLinesLoggedThroughAnyLogger() async throws {
-    let consumer = DataBuffer.accumulatingBuffer()
+    let consumer = AccumulatingBuffer()
     let operation = try await IDBLogger.systemLogger(withUserDefaults: userDefaults()).tailToConsumer(consumer)
     let line = "tailed-\(UUID().uuidString)"
 
@@ -125,7 +125,7 @@ struct IDBLoggerTests {
 
   @Test
   func aLoggerDerivedWhileTailingDeliversEachLineToTheTail() async throws {
-    let consumer = DataBuffer.accumulatingBuffer()
+    let consumer = AccumulatingBuffer()
     let logger = IDBLogger.systemLogger(withUserDefaults: userDefaults())
     let operation = try await logger.tailToConsumer(consumer)
     let line = "derived-\(UUID().uuidString)"
@@ -141,7 +141,7 @@ struct IDBLoggerTests {
 
   @Test
   func cancellingTheWaitThrowsCancellationAndStopsDelivery() async throws {
-    let consumer = DataBuffer.accumulatingBuffer()
+    let consumer = AccumulatingBuffer()
     let operation = try await IDBLogger.systemLogger(withUserDefaults: userDefaults()).tailToConsumer(consumer)
 
     await #expect(throws: CancellationError.self) { try await cancelledWait(operation) }
