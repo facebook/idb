@@ -52,9 +52,9 @@ struct SimulatorDefaults {
     try await setDefault(inDomain: effectiveDomain, key: name, value: value, type: type)
   }
 
-  func getCurrentPreference(_ name: String, domain: String?) async throws -> String {
+  func currentPreference(_ name: String, domain: String?) async throws -> String {
     let effectiveDomain = domain ?? SimulatorDefaults.appleGlobalDomain
-    return try await getDefault(inDomain: effectiveDomain, key: name)
+    return try await defaultValue(inDomain: effectiveDomain, key: name)
   }
 
   // MARK: - Location Services
@@ -131,7 +131,7 @@ struct SimulatorDefaults {
     _ = try await run(.write(domain: domain, key: key, type: type ?? "string", value: value))
   }
 
-  private func getDefault(inDomain domain: String, key: String) async throws -> String {
+  private func defaultValue(inDomain domain: String, key: String) async throws -> String {
     return try await run(.read(domain: domain, key: key))
   }
 

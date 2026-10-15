@@ -114,23 +114,23 @@ public struct SimulatorPreferencesCommands {
 
   // MARK: - Reading
 
-  public func getCurrentPreference(_ name: String, domain: String?) async throws -> String {
+  public func currentPreference(_ name: String, domain: String?) async throws -> String {
     try await SimulatorDefaults(simulator: simulator)
-      .getCurrentPreference(name, domain: domain)
+      .currentPreference(name, domain: domain)
   }
 
   /// Reads the current value of a curated setting by name, falling back to a raw preference read for
   /// any other name.
   public func currentSettingValue(name: String, domain: String?) async throws -> String {
     guard let key = SimulatorSettingKey(rawValue: name) else {
-      return try await getCurrentPreference(name, domain: domain)
+      return try await currentPreference(name, domain: domain)
     }
     switch key {
     case .autoFillPasswords, .locale:
       guard let backing = key.preferenceBacking else {
-        return try await getCurrentPreference(name, domain: domain)
+        return try await currentPreference(name, domain: domain)
       }
-      return try await getCurrentPreference(backing.key, domain: backing.domain)
+      return try await currentPreference(backing.key, domain: backing.domain)
     case .appearance:
       return (try await currentAppearance()).argumentName ?? "light"
     case .contentSize:
@@ -141,7 +141,7 @@ public struct SimulatorPreferencesCommands {
       return try await currentAccessibilitySettingEnabled(key) ? "enabled" : "disabled"
     case .hardwareKeyboard, .slowAnimations:
       // Set-only (SimDevice API / Darwin notification with no getter); no readable current value.
-      return try await getCurrentPreference(name, domain: domain)
+      return try await currentPreference(name, domain: domain)
     }
   }
 

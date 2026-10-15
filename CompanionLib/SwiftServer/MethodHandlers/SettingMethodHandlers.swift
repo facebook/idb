@@ -48,7 +48,7 @@ struct GetSettingMethodHandler {
   func handle(request: Idb_GetSettingRequest, context: ServerContext) async throws -> Idb_GetSettingResponse {
     switch request.setting {
     case .locale:
-      let localeIdentifier = try await target.simulator().preferences.getCurrentPreference("AppleLocale", domain: nil)
+      let localeIdentifier = try await target.simulator().preferences.currentPreference("AppleLocale", domain: nil)
       return .with {
         $0.value = localeIdentifier
       }

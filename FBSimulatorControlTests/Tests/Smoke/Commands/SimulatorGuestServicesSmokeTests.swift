@@ -31,16 +31,16 @@ final class SimulatorGuestServicesSmokeTests: ProvidedSimulatorTestCase {
     _ = try await simulator.network.dns.list()
 
     // A settings write, read back through the backing the getter actually consults.
-    let original = try await simulator.preferences.getCurrentPreference("AutoFillPasswords", domain: nil)
+    let original = try await simulator.preferences.currentPreference("AutoFillPasswords", domain: nil)
     addTeardownBlock {
       // Leased-resource discipline: restore the toggle this test mutates.
       try await simulator.preferences.apply(.autoFillPasswords(original != "0"))
     }
     try await simulator.preferences.apply(.autoFillPasswords(false))
     // nil domain == Apple Global Domain, where apply(.autoFillPasswords) writes the toggle.
-    let disabled = try await simulator.preferences.getCurrentPreference("AutoFillPasswords", domain: nil)
+    let disabled = try await simulator.preferences.currentPreference("AutoFillPasswords", domain: nil)
     try await simulator.preferences.apply(.autoFillPasswords(true))
-    let enabled = try await simulator.preferences.getCurrentPreference("AutoFillPasswords", domain: nil)
+    let enabled = try await simulator.preferences.currentPreference("AutoFillPasswords", domain: nil)
     XCTAssertNotEqual(disabled, enabled, "AutoFillPasswords should read back differently after disable vs enable")
     let viaSettingValue = try await simulator.preferences.currentSettingValue(name: "autofill-passwords", domain: nil)
     XCTAssertEqual(viaSettingValue, enabled, "currentSettingValue should read autofill-passwords from its real backing")
