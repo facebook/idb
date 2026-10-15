@@ -88,8 +88,8 @@ struct XctraceRecordMethodHandler {
       try responseWriter.send(Idb_XctraceRecordResponse.with { $0.log = data })
     }
 
-    let logger = ControlCoreLoggerFactory.compositeLogger(
-      with: [
+    let logger = CompositeLogger(
+      loggers: [
         ControlCoreLoggerFactory.logger(to: consumer),
         targetLogger,
       ].compactMap({ $0 }))

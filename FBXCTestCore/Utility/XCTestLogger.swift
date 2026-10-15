@@ -71,7 +71,7 @@ public final class XCTestLogger: ControlCoreLogger, @unchecked Sendable {
       return XCTestLogger(baseLogger: stderrLogger, logDirectory: directory)
     }
 
-    let baseLogger = ControlCoreLoggerFactory.compositeLogger(with: [
+    let baseLogger = CompositeLogger(loggers: [
       stderrLogger,
       ControlCoreLoggerFactory.logger(toFileDescriptor: fileHandle.fileDescriptor, closeOnEndOfFile: false).withDateFormatEnabled(true),
     ])

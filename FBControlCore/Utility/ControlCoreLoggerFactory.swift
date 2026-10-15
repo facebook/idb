@@ -19,15 +19,10 @@ public enum ControlCoreLoggerFactory {
     guard writeToStdErr, !systemLoggerWillLogToStdErr else {
       return systemLogger
     }
-    return compositeLogger(with: [
+    return CompositeLogger(loggers: [
       systemLogger,
       logger(toFileDescriptor: STDERR_FILENO, closeOnEndOfFile: false),
     ])
-  }
-
-  /// Compose multiple loggers into one.
-  public static func compositeLogger(with loggers: [ControlCoreLogger]) -> CompositeLogger {
-    CompositeLogger(loggers: loggers)
   }
 
   /// Log to a Consumer.

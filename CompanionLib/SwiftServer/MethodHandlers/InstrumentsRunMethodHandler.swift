@@ -38,8 +38,8 @@ struct InstrumentsRunMethodHandler {
     let consumer = ResponseForwardingConsumer { data in
       try responseWriter.send(Idb_InstrumentsRunResponse.with { $0.logOutput = data })
     }
-    let logger = ControlCoreLoggerFactory.compositeLogger(
-      with: [
+    let logger = CompositeLogger(
+      loggers: [
         ControlCoreLoggerFactory.logger(to: consumer),
         targetLogger,
       ].compactMap { $0 })

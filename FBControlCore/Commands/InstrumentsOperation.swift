@@ -162,7 +162,7 @@ public final class InstrumentsOperation {
 
     let instrumentsConsumer = InstrumentsConsumer()
     let instrumentsLogger = ControlCoreLoggerFactory.logger(to: instrumentsConsumer)
-    let compositeLogger = ControlCoreLoggerFactory.compositeLogger(with: [logger, instrumentsLogger])
+    let compositeLogger = CompositeLogger(loggers: [logger, instrumentsLogger])
 
     let running = try await Subprocess(executable: "/usr/bin/instruments", arguments: arguments)
       .launch(output: .logger(compositeLogger), error: .logger(compositeLogger), logger: logger)
