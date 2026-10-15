@@ -237,7 +237,7 @@ public actor SimulatorVideoStream: VideoStreamOperation {
   }
   var framePusher: (any FramePusher)?
   /// What lays the overlay out for the canvas, set from outside the actor and read at every mount.
-  private nonisolated let overlayLayout = OSAllocatedUnfairLock<(any VideoOverlayLayout)?>(initialState: nil)
+  private nonisolated let overlayLayout = OSAllocatedUnfairLock<OverlayRenderer?>(initialState: nil)
   /// The size of the overlay laid out for the current canvas; a buffer of any other size is from an earlier one.
   private var overlaySize: (width: Int, height: Int)?
   /// Set up for the other displays a stream switches between, once a configuration has several surface sizes.
@@ -707,7 +707,7 @@ public actor SimulatorVideoStream: VideoStreamOperation {
 
   /// Lays overlays out on the current canvas from now on, as it changes with rotations and switches between
   /// displays of different sizes.
-  public nonisolated func setOverlayLayout(_ layout: any VideoOverlayLayout) {
+  public nonisolated func setOverlayLayout(_ layout: OverlayRenderer) {
     overlayLayout.withLock { $0 = layout }
     Task { await self.layOutOverlay() }
   }

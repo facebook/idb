@@ -44,7 +44,7 @@ public enum BarMode: String {
 /// after rendering. The timer re-renders at ~30fps until all effects complete.
 // SAFETY: every mutable field, the buffer and its layout included, is guarded by `stateLock`.
 // patternlint-disable-next-line unchecked-sendable
-public final class OverlayRenderer: VideoOverlayLayout, @unchecked Sendable {
+public final class OverlayRenderer: @unchecked Sendable {
   public var buffer: CVPixelBuffer {
     stateLock.lock()
     defer { stateLock.unlock() }
@@ -187,6 +187,8 @@ public final class OverlayRenderer: VideoOverlayLayout, @unchecked Sendable {
     return storage
   }
 
+  /// A one-off buffer with the overlay drawn as it is now, laid out for a canvas that is exactly a screen of this many
+  /// pixels. The buffer `layOut` returned is left as it is.
   public func snapshot(screenPixelWidth: Int, screenPixelHeight: Int) -> CVPixelBuffer {
     stateLock.lock()
     defer { stateLock.unlock() }
