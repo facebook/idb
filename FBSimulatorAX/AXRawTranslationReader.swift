@@ -32,6 +32,8 @@ struct AXRawTranslationReader {
   let token: String
   /// The longest the whole read may take, measured from when its collector began.
   var queryTimeout: TimeInterval = .infinity
+  /// Stops the read when its task is cancelled.
+  var cancellation: AXReadCancellation?
 
   /// Reads `root` and, as deep as `plan` asks, its descendants. An element listed among its own
   /// descendants — an application can answer with a cycle — is not read again below itself. An element
@@ -147,7 +149,10 @@ struct AXRawTranslationReader {
     }
     let wait = min(timeout, remaining)
     let start = CFAbsoluteTimeGetCurrent()
-    let response = transport.send(request, timeout: wait)
+    let transport = self.transport
+    let response =
+      try cancellation.map { try $0.wait { transport.send(request, timeout: wait) } }
+      ?? transport.send(request, timeout: wait)
     collector.recordRequest(type: request.requestType, duration: CFAbsoluteTimeGetCurrent() - start, answered: response != nil)
     guard let response else {
       // Blamed on the query whenever it has run out, including when both ran out together.

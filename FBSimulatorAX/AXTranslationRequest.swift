@@ -75,6 +75,8 @@ final class AXTranslationRequest {
   /// Owned from construction: the dispatcher records acquisition timings before the caller reaches
   /// `serialize`.
   let collector: AccessibilityProfilingCollector
+  /// Cancelled when the task awaiting this read is, which stops its requests.
+  let cancellation = AXReadCancellation()
   var translator: AXPTranslator?
 
   /// The longest one translator request may go unanswered: the timing's `elementTimeout`. `0` (or negative)
@@ -187,7 +189,7 @@ final class AXTranslationRequest {
   private var rawReader: AXRawTranslationReader {
     AXRawTranslationReader(
       transport: transport, clientType: clientType, timeout: requestTimeoutSeconds, collector: collector, token: token,
-      queryTimeout: timing.queryTimeout)
+      queryTimeout: timing.queryTimeout, cancellation: cancellation)
   }
 
   // MARK: - A single named element

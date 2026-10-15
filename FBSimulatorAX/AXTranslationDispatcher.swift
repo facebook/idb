@@ -72,13 +72,15 @@ final class AXTranslationDispatcher: NSObject, AXPTranslationTokenDelegateHelper
   /// attribute reads, and actions — must go through here; the queue is what upholds
   /// the translator singleton's single-threaded contract.
   func performSerialized<T>(_ operation: @escaping () throws -> T) async throws -> T {
-    try await perform(operation, on: Self.axpWorkQueue)
+    try await perform(operation, on: Self.axpWorkQueue, cancellation: nil)
   }
 
   /// Runs `operation`, which never touches the translator, on a queue it may block — its transport waits
   /// synchronously — off the main actor and the cooperative executor, and not behind translator work.
-  func performUnserialized<T>(_ operation: @escaping () throws -> T) async throws -> T {
-    try await perform(operation, on: .global(qos: .userInitiated))
+  func performUnserialized<T>(
+    cancelling cancellation: AXReadCancellation? = nil, _ operation: @escaping () throws -> T
+  ) async throws -> T {
+    try await perform(operation, on: .global(qos: .userInitiated), cancellation: cancellation)
   }
 
   /// Runs a read of `handle` on the translator's work queue when it goes through the translator, and off it
@@ -87,10 +89,13 @@ final class AXTranslationDispatcher: NSObject, AXPTranslationTokenDelegateHelper
     of handle: AXElementHandle, for request: AXTranslationRequest, reads: AXTranslatorReads,
     _ operation: @escaping () throws -> T
   ) async throws -> T {
-    request.readsRaw(handle, reads: reads) ? try await performUnserialized(operation) : try await performSerialized(operation)
+    request.readsRaw(handle, reads: reads)
+      ? try await performUnserialized(cancelling: request.cancellation, operation) : try await performSerialized(operation)
   }
 
-  private func perform<T>(_ operation: @escaping () throws -> T, on queue: DispatchQueue) async throws -> T {
+  private func perform<T>(
+    _ operation: @escaping () throws -> T, on queue: DispatchQueue, cancellation: AXReadCancellation?
+  ) async throws -> T {
     let job = AXPSerializedJob(operation)
     await withCheckedContinuation { (continuation: CheckedContinuation<Void, Never>) in
       queue.async {
@@ -108,7 +113,7 @@ final class AXTranslationDispatcher: NSObject, AXPTranslationTokenDelegateHelper
     // callbacks find the request by its token.
     self.pushRequest(request)
     do {
-      return try await performUnserialized { () throws -> AXElementHandle in
+      return try await performUnserialized(cancelling: request.cancellation) { () throws -> AXElementHandle in
         let translationStart = CFAbsoluteTimeGetCurrent()
         guard let translation = try request.resolveRoot() else {
           throw AccessibilityError.noTranslationObject(request.query)
