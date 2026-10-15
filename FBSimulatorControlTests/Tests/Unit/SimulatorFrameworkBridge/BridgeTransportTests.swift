@@ -6,6 +6,7 @@
  */
 
 import Darwin
+import FBControlCore
 import FBSimulatorBridgeProtocol
 @testable import FBSimulatorControl
 import Foundation
@@ -286,6 +287,37 @@ final class BridgeTransportTests: XCTestCase {
     }
   }
 
+  func testTheDefaultReceiveTimeoutReturnsWithoutWaitingForASendThatIgnoresCancellation() async throws {
+    let transport = UnheedingTransport()
+    let start = Date()
+    do {
+      _ = try await transport.send(.displays, receiveTimeout: 0.2)
+      XCTFail("a guest that does not answer must fail the round trip")
+    } catch AXBridgeError.guestNotAnswering(after: 0.2) {}
+    XCTAssertLessThan(Date().timeIntervalSince(start), 2, "returns at the timeout, not when the send finally gives up")
+    transport.release()
+  }
+
+  func testTheDefaultReceiveTimeoutPassesAnAnswerThrough() async throws {
+    let transport = UnheedingTransport(answer: Data("answer".utf8))
+    let data = try await transport.send(.displays, receiveTimeout: 5)
+    XCTAssertEqual(data, Data("answer".utf8))
+  }
+
+  func testCancellingTheCallerEndsTheDefaultReceiveTimeoutAtOnce() async throws {
+    let transport = UnheedingTransport()
+    let call = Task { try await transport.send(.displays, receiveTimeout: 30) }
+    try await Task.sleep(nanoseconds: 50_000_000)
+    let start = Date()
+    call.cancel()
+    do {
+      _ = try await call.value
+      XCTFail("a cancelled caller must not get an answer")
+    } catch is CancellationError {}
+    XCTAssertLessThan(Date().timeIntervalSince(start), 2)
+    transport.release()
+  }
+
   func testAnOldFailureCannotDiscardANewerConnection() async throws {
     let firstStarted = expectation(description: "first request started")
     let secondStarted = expectation(description: "second request started")
@@ -314,6 +346,30 @@ final class BridgeTransportTests: XCTestCase {
 }
 
 private enum BridgeTestFailure: Error, Equatable { case dropped }
+
+/// Implements only the unbounded `send`, so the default receive timeout races it. Without an `answer` the send
+/// waits, deaf to cancellation, until `release()`.
+private struct UnheedingTransport: AXBridgeTransport, Sendable {
+  var answer: Data?
+  private let released = AsyncLatch()
+
+  init(answer: Data? = nil) {
+    self.answer = answer
+  }
+
+  func send(_ request: AXBridgeRequest) async throws -> Data {
+    if let answer {
+      return answer
+    }
+    // An unstructured task does not inherit the caller's cancellation.
+    await Task { try? await released.wait() }.value
+    throw BridgeTestFailure.dropped
+  }
+
+  func release() {
+    released.open()
+  }
+}
 
 private actor RecordingBridgeConnection: BridgeConnection {
   nonisolated let mayBeHeldBetweenRoundTrips = true

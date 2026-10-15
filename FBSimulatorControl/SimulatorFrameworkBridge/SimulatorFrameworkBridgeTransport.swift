@@ -17,10 +17,27 @@ package protocol AXBridgeTransport {
   func send(_ request: AXBridgeRequest, receiveTimeout: TimeInterval) async throws -> Data
 }
 
-extension AXBridgeTransport {
-  /// Waits as long as `send` does.
+extension AXBridgeTransport where Self: Sendable {
+  /// Races the round trip against the timeout. A transport that can bound its own wait — and so drop a
+  /// connection a late reply would otherwise arrive on — overrides this.
+  ///
+  /// The round trip runs unstructured, so a `send` that ignores cancellation cannot hold the caller past the
+  /// timeout; it is cancelled and left to finish alone.
   package func send(_ request: AXBridgeRequest, receiveTimeout: TimeInterval) async throws -> Data {
-    try await send(request)
+    let answer = AsyncEvent<Data>()
+    let roundTrip = Task {
+      do {
+        answer.happen(try await send(request))
+      } catch {
+        answer.fail(error)
+      }
+    }
+    defer { roundTrip.cancel() }
+    do {
+      return try await answer.wait(timeout: receiveTimeout, waitingFor: "the axbridge guest to answer")
+    } catch is PollTimeoutError {
+      throw AXBridgeError.guestNotAnswering(after: receiveTimeout)
+    }
   }
 }
 

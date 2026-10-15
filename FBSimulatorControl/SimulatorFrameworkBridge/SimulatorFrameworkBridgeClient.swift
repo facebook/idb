@@ -129,11 +129,11 @@ enum SimulatorFrameworkBridgeStaging {
 }
 
 /// Runs the guest once to completion, for a oneshot transport.
-protocol BridgeGuestLauncher {
+protocol BridgeGuestLauncher: Sendable {
   func launch(_ arguments: [String]) async throws -> InSimulatorToolOutput
 }
 
-package struct SimulatorFrameworkBridgeOneshotTransport {
+package struct SimulatorFrameworkBridgeOneshotTransport: Sendable {
   private let launcher: any BridgeGuestLauncher
 
   init(simulator: Simulator, bundleIdentity: String? = nil) {

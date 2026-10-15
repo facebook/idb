@@ -9,7 +9,7 @@
 import FBSimulatorBridgeProtocol
 import Foundation
 
-package struct AXBridgeOneshotTransport: AXBridgeTransport {
+package struct AXBridgeOneshotTransport: AXBridgeTransport, Sendable {
   private let transport: SimulatorFrameworkBridgeOneshotTransport
 
   package init(simulator: Simulator) {
