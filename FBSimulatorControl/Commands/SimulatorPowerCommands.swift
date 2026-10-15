@@ -79,14 +79,8 @@ public struct SimulatorPowerCommands: PowerCommands {
 
   private func eraseCreatingSimulator() async throws {
     simulator.logger.debug().log("Erasing Simulator \(simulator.udid)")
-    try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
-      simulator.device.eraseContentsAndSettingsAsync(withCompletionQueue: simulator.asyncQueue) { error in
-        if let error {
-          continuation.resume(throwing: error)
-        } else {
-          continuation.resume(returning: ())
-        }
-      }
+    try await awaitCoreSimulatorCompletion {
+      simulator.device.eraseContentsAndSettingsAsync(withCompletionQueue: simulator.asyncQueue, completionHandler: $0)
     }
     try await TargetResolveState(
       simulator,

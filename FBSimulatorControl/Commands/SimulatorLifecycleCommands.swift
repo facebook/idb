@@ -67,14 +67,8 @@ public struct SimulatorLifecycleCommands: LifecycleCommands, Sendable {
       "env": configuration.environment,
     ]
 
-    try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
-      simulator.device.bootAsync(options: options, completionQueue: simulator.workQueue) { error in
-        if let error {
-          continuation.resume(throwing: error)
-        } else {
-          continuation.resume(returning: ())
-        }
-      }
+    try await awaitCoreSimulatorCompletion {
+      simulator.device.bootAsync(options: options, completionQueue: simulator.workQueue, completionHandler: $0)
     }
   }
 

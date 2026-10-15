@@ -376,16 +376,10 @@ extension Simulator {
     let logger = self.logger
     let description = "\(self)"
     logger.log("Erasing \(description)")
-    try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
-      device.eraseContentsAndSettingsAsync(withCompletionQueue: workQueue) { error in
-        if let error {
-          continuation.resume(throwing: error)
-        } else {
-          logger.log("Erased \(description)")
-          continuation.resume(returning: ())
-        }
-      }
+    try await awaitCoreSimulatorCompletion {
+      device.eraseContentsAndSettingsAsync(withCompletionQueue: workQueue, completionHandler: $0)
     }
+    logger.log("Erased \(description)")
   }
 
   public func details(_ keys: Set<TargetDetailKey>) async throws -> TargetDetails {

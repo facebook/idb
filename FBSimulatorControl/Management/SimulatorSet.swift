@@ -202,14 +202,8 @@ public final class SimulatorSet: TargetSet {
   }
 
   private static func deleteDevice(_ device: SimDevice, on deviceSet: SimDeviceSet, queue: DispatchQueue) async throws {
-    try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
-      deviceSet.deleteDeviceAsync(device, completionQueue: queue) { error in
-        if let error {
-          continuation.resume(throwing: error)
-        } else {
-          continuation.resume(returning: ())
-        }
-      }
+    try await awaitCoreSimulatorCompletion {
+      deviceSet.deleteDeviceAsync(device, completionQueue: queue, completionHandler: $0)
     }
   }
 
