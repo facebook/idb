@@ -14,7 +14,7 @@ import tarfile
 import tempfile
 
 from grpclib.const import Status
-from grpclib.exceptions import GRPCError
+from grpclib.exceptions import GRPCError, ProtocolError
 from idb.common.types import (
     IdbException,
     LeaksProfile,
@@ -35,7 +35,7 @@ from idb.grpc.idb_pb2 import (
     ProfileResponse,
     ProfileTraceReport,
 )
-from idb.grpc.profile import message_to_json, ProfileException, start_request
+from idb.grpc.profile import message_to_json, start_request
 from idb.grpc.tests.stream_test_support import make_client
 from idb.utils.testing import TestCase
 
@@ -154,8 +154,13 @@ class _ProfileStream:
     async def __aexit__(
         self, _exc_type: object, exception: BaseException | None, _traceback: object
     ) -> None:
-        # grpclib only reads the trailing status when the block exits without an exception.
-        if exception is None and self._trailing_error is not None:
+        # grpclib only reads the trailing status when the block exits without an exception, and refuses to read it
+        # for a call whose requests were never ended.
+        if exception is not None:
+            return
+        if not self.ended:
+            raise ProtocolError("Outgoing stream was not ended")
+        if self._trailing_error is not None:
             raise self._trailing_error
 
     def __aiter__(self) -> _ProfileStream:
@@ -233,7 +238,8 @@ class ProfileClientTests(TestCase):
         stream = _ProfileStream(_sample(0), None)
         client, _ = make_client("profile", stream)
 
-        with self.assertRaises(ProfileException):
+        # BUG: the client never ends its requests, so the call fails on exit — flipped in the following commit
+        with self.assertRaisesRegex(IdbException, "Outgoing stream was not ended"):
             await client.profile(
                 ResourcesProfile(), ProfilePid(pid=42), asyncio.Event()
             )
@@ -248,6 +254,19 @@ class ProfileClientTests(TestCase):
 
         with self.assertRaisesRegex(IdbException, "^leaks exited with code 255$"):
             await client.profile(LeaksProfile(), ProfilePid(pid=42), stop)
+
+    async def test_a_failed_stoppable_profile_reports_the_companions_error(
+        self,
+    ) -> None:
+        stream = _ProfileStream(
+            None,
+            trailing_error=GRPCError(Status.INTERNAL, "xctrace exited with code 1"),
+        )
+        client, _ = make_client("profile", stream)
+
+        # BUG: the client never ends its requests, hiding the companion's error — flipped in the following commit
+        with self.assertRaisesRegex(IdbException, "Outgoing stream was not ended"):
+            await client.profile(TraceProfile(), ProfilePid(pid=42), asyncio.Event())
 
     async def test_a_single_file_artifact_is_written_to_the_path(self) -> None:
         stream = _ProfileStream(
@@ -275,9 +294,12 @@ class ProfileClientTests(TestCase):
 
         with tempfile.TemporaryDirectory() as directory:
             path = os.path.join(directory, "app.trace")
-            await client.profile(
-                TraceProfile(), ProfilePid(pid=42), asyncio.Event(), path
-            )
+            # BUG: the client never ends its requests, so the call fails once the trace is written — flipped in the
+            # following commit
+            with self.assertRaisesRegex(IdbException, "Outgoing stream was not ended"):
+                await client.profile(
+                    TraceProfile(), ProfilePid(pid=42), asyncio.Event(), path
+                )
 
             self.assertEqual(
                 sorted(os.listdir(path)), ["form.template", "instrument_data"]
