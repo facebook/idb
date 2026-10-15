@@ -46,7 +46,7 @@ final class AccessibilityUIAutomation: UIAutomation, @unchecked Sendable {
       case .point:
         return response.replacingScreen(nil)
       case .marker:
-        return response.replacingScreen(element.rootBounds.flatMap(AXReadScreen.screenInfo(fromBounds:)))
+        return response.replacingScreen(element.rootBounds.flatMap(AccessibilityScreenInfo.init(bounds:)))
       case .frontmost, .application:
         return response
       }

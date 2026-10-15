@@ -20,14 +20,18 @@ struct AXReadScreen: Equatable {
   init(display: AXTranslationDisplay?, rootFrame: CGRect) {
     let bounds = display?.bounds ?? rootFrame
     self.bounds = bounds
-    self.info = display?.screen ?? Self.screenInfo(fromBounds: bounds)
+    self.info = display?.screen ?? AccessibilityScreenInfo(bounds: bounds)
   }
+}
 
-  static func screenInfo(fromBounds bounds: CGRect) -> AccessibilityScreenInfo? {
+extension AccessibilityScreenInfo {
+
+  /// The screen `bounds` describes, or nil when it has no area.
+  init?(bounds: CGRect) {
     guard bounds.width > 0, bounds.height > 0 else {
       return nil
     }
-    return AccessibilityScreenInfo(width: Double(bounds.width), height: Double(bounds.height))
+    self.init(width: Double(bounds.width), height: Double(bounds.height))
   }
 }
 
