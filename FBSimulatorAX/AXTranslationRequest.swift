@@ -86,14 +86,20 @@ final class AXTranslationRequest {
   /// accessibility XPC round-trip. `0` (or negative) is "wait nothing". There is
   /// no "wait forever" mode — a stalled XPC service never hangs the caller.
   var requestTimeoutSeconds: TimeInterval
+  /// How long this read may take, per element and for the whole query.
+  let timing: SimulatorAccessibilityTiming
 
-  init(kind: Kind, display: AXTranslationDisplay? = nil, clientType: AXClientType, transport: any AXTranslationTransport) {
+  init(
+    kind: Kind, display: AXTranslationDisplay? = nil, clientType: AXClientType, transport: any AXTranslationTransport,
+    timing: SimulatorAccessibilityTiming = .default
+  ) {
     self.kind = kind
     self.display = display
     self.clientType = clientType
     self.transport = transport
     self.token = UUID().uuidString
     self.requestTimeoutSeconds = Self.defaultRequestTimeoutSeconds
+    self.timing = timing
     self.collector = AccessibilityProfilingCollector()
   }
 

@@ -35,7 +35,8 @@ extension AXBridgeTreeReader {
         attributes: nil,
         explainUnreachable: false,
         traversal: .viewHierarchy,
-        clientType: AccessibilityRequestOptions.unconfiguredClientType
+        clientType: AccessibilityRequestOptions.unconfiguredClientType,
+        queryTimeout: nil
       )
       await warnIfTruncated(read.truncated)
       let elements = AXTreeWalk.describeAllElements(

@@ -141,16 +141,20 @@ final class SimulatorAccessibilityCommands {
 
   /// Resolves a query to a concrete accessibility element via the point / matching / frontmost
   /// mechanism. `clientType` is carried by every translator request made for the element, from
-  /// resolution through serialization. Callers own the returned element and must `close()` it.
-  func resolveElement(for query: AccessibilityElementQuery, clientType: AXClientType) async throws -> AccessibilityElement {
+  /// resolution through serialization, and `timing` bounds them; nil is the simulator's. Callers own the
+  /// returned element and must `close()` it.
+  func resolveElement(
+    for query: AccessibilityElementQuery, clientType: AXClientType, timing: SimulatorAccessibilityTiming? = nil
+  ) async throws -> AccessibilityElement {
     try validateAccessibility()
     guard let simulator else {
       throw WeakTargetError.simulator
     }
     let display = try await readDisplay()
     let transport = resolvedTransport(simulator)
+    let timing = timing ?? simulator.accessibilityTiming
     func request(_ kind: AXTranslationRequest.Kind) -> AXTranslationRequest {
-      AXTranslationRequest(kind: kind, display: display, clientType: clientType, transport: transport)
+      AXTranslationRequest(kind: kind, display: display, clientType: clientType, transport: transport, timing: timing)
     }
     switch query {
     case let .point(point):

@@ -211,12 +211,14 @@ final class AXBridgeUIAutomation: AXBridgeTreeReader, @unchecked Sendable {
     attributes: [String]?,
     explainUnreachable: Bool,
     traversal: AXTraversal,
-    clientType: AXClientType
+    clientType: AXClientType,
+    queryTimeout: TimeInterval?
   ) async throws -> AXTreeRead {
     if needsDisplay {
       return try await withDisplay {
         try await $0.readRawTree(
-          for: query, attributes: attributes, explainUnreachable: explainUnreachable, traversal: traversal, clientType: clientType)
+          for: query, attributes: attributes, explainUnreachable: explainUnreachable, traversal: traversal, clientType: clientType,
+          queryTimeout: queryTimeout)
       }
     }
     return try await translatingBackendErrors {
@@ -306,7 +308,7 @@ final class AXBridgeUIAutomation: AXBridgeTreeReader, @unchecked Sendable {
         let read = try await Self.$namesFailedApplication.withValue(false) {
           try await self.readRawTree(
             for: .frontmost, attributes: nil, explainUnreachable: false, traversal: .viewHierarchy,
-            clientType: AccessibilityRequestOptions.unconfiguredClientType)
+            clientType: AccessibilityRequestOptions.unconfiguredClientType, queryTimeout: nil)
         }
         let elements = AXTreeWalk.describeAllElements(
           fromTree: read.tree, keys: AXKeys.defaultSet.union([key.serializationKey]), nestedFormat: false, pid: read.pid

@@ -19,13 +19,15 @@ protocol AXBridgeTreeReader: UIAutomation {
   /// Reads the whole bounded tree the query targets. `.marker` reads the frontmost tree; the match is
   /// found in the serialized result. `attributes` is what the guest fetches per element (nil = its
   /// default list); `traversal` and `clientType` are already resolved. `AXTreeRead` also carries the
-  /// modal descriptor and whether the guest's walk was truncated.
+  /// modal descriptor and whether the guest's walk was truncated. `queryTimeout` bounds the guest's round
+  /// trip; nil is the simulator's.
   func readRawTree(
     for query: AccessibilityElementQuery,
     attributes: [String]?,
     explainUnreachable: Bool,
     traversal: AXTraversal,
-    clientType: AXClientType
+    clientType: AXClientType,
+    queryTimeout: TimeInterval?
   ) async throws -> AXTreeRead
 
   /// The traversal axbridge performs when the request does not select one.
@@ -126,7 +128,8 @@ extension AXBridgeTreeReader {
       try refuseClientWithoutTranslatorVocabulary(options, traversal: plan.traversal)
       let read = try await readRawTree(
         for: query, attributes: plan.attributes,
-        explainUnreachable: plan.explainUnreachable, traversal: plan.traversal, clientType: options.resolvedClientType
+        explainUnreachable: plan.explainUnreachable, traversal: plan.traversal, clientType: options.resolvedClientType,
+        queryTimeout: options.timing?.queryTimeout
       )
       await warnIfTruncated(read.truncated)
       await warnIfUnsatisfiable(plan.unsatisfiableKeys, traversal: plan.traversal)
@@ -175,7 +178,8 @@ extension AXBridgeTreeReader {
         attributes: plan.attributes,
         explainUnreachable: plan.explainUnreachable,
         traversal: plan.traversal,
-        clientType: options.resolvedClientType
+        clientType: options.resolvedClientType,
+        queryTimeout: options.timing?.queryTimeout
       )
       await warnIfTruncated(read.truncated)
       await warnIfUnsatisfiable(plan.unsatisfiableKeys, traversal: plan.traversal)

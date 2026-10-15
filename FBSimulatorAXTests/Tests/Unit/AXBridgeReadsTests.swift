@@ -3063,7 +3063,8 @@ private final class StubAXBridgeTreeReader: AXBridgeTreeReader, @unchecked Senda
     attributes: [String]?,
     explainUnreachable: Bool,
     traversal: AXTraversal,
-    clientType: AXClientType
+    clientType: AXClientType,
+    queryTimeout: TimeInterval?
   ) async throws -> AXTreeRead {
     readCount += 1
     clientTypes.append(clientType)

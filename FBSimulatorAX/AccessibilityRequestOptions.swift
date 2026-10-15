@@ -8,6 +8,7 @@
 import CoreGraphics
 import FBControlCore
 import FBSimulatorBridgeProtocol
+import FBSimulatorControl
 import Foundation
 
 /// Options for fetching remote process elements (e.g., WebView content).
@@ -259,6 +260,10 @@ public struct AccessibilityRequestOptions: Sendable {
   /// marker search, frames, value checks — always make, since they take no options.
   package static let defaultTranslatorReads: AXTranslatorReads = .raw
 
+  /// How long this read may take, per element and for the whole query, or nil for the simulator's
+  /// `accessibilityTiming`. Applies to every backend.
+  public var timing: SimulatorAccessibilityTiming?
+
   /// The assistive client the read's translator requests claim to come from, or nil for the default.
   /// Only `resolvedClientType` should be read below this layer.
   public var clientType: AXClientType?
@@ -283,7 +288,8 @@ public struct AccessibilityRequestOptions: Sendable {
     filter: AccessibilityElementFilter = .all,
     match: AccessibilityMatch? = nil,
     traversalStrategy: AXTraversalStrategy = .auto,
-    clientType: AXClientType? = nil
+    clientType: AXClientType? = nil,
+    timing: SimulatorAccessibilityTiming? = nil
   ) {
     self.format = format
     self.keys = keys
@@ -294,6 +300,7 @@ public struct AccessibilityRequestOptions: Sendable {
     self.match = match
     self.traversalStrategy = traversalStrategy
     self.clientType = clientType
+    self.timing = timing
   }
 }
 

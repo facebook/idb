@@ -32,7 +32,7 @@ final class AccessibilityUIAutomation: UIAutomation, @unchecked Sendable {
     options: AccessibilityRequestOptions
   ) async throws -> AccessibilityElementsResponse {
     try await Self.translatingBackendErrors(query) {
-      let element = try await operations.resolveElement(for: query, clientType: options.resolvedClientType)
+      let element = try await operations.resolveElement(for: query, clientType: options.resolvedClientType, timing: options.timing)
       defer { element.close() }
       let response = try await element.serialize(with: options)
         .withProvenance(backend: UIAutomationBackend.accessibility.name, target: query.targetDescriptor)
@@ -74,7 +74,7 @@ final class AccessibilityUIAutomation: UIAutomation, @unchecked Sendable {
     options: AccessibilityRequestOptions
   ) async throws -> AccessibilityElementsResponse? {
     do {
-      let element = try await operations.resolveElement(for: .point(point), clientType: options.resolvedClientType)
+      let element = try await operations.resolveElement(for: .point(point), clientType: options.resolvedClientType, timing: options.timing)
       defer { element.close() }
       return try await element.serialize(with: options)
         .withProvenance(backend: UIAutomationBackend.accessibility.name, target: .point(point))
