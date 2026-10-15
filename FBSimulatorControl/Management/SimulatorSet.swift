@@ -227,14 +227,14 @@ public final class SimulatorSet: TargetSet {
         return
       }
       if Date() >= deadline {
-        throw SimulatorDeletionError.removalTimedOut
+        throw SimulatorSetError.removalTimedOut
       }
       try await Task.sleep(nanoseconds: pollIntervalNs)
     }
   }
 }
 
-/// Errors thrown while creating or cloning simulators in a `SimulatorSet`.
+/// Errors thrown while creating, cloning or deleting simulators in a `SimulatorSet`.
 public enum SimulatorSetError: LocalizedError, Sendable {
   case deviceTypeOrRuntimeUnavailable(configuration: String, reason: String?)
   case shutdownAfterCreateFailed(reason: String?)
@@ -242,6 +242,7 @@ public enum SimulatorSetError: LocalizedError, Sendable {
   case simulatorHasNoSet(udid: String)
   case deviceCreationFailed
   case deviceCloneFailed
+  case removalTimedOut
 
   public var errorDescription: String? {
     switch self {
@@ -257,6 +258,8 @@ public enum SimulatorSetError: LocalizedError, Sendable {
       return "Failed to create device with no error"
     case .deviceCloneFailed:
       return "Failed to clone device with no error"
+    case .removalTimedOut:
+      return "Timed out waiting for Simulator to be removed from set"
     }
   }
 
@@ -270,17 +273,6 @@ extension SimulatorSetError: CustomStringConvertible {
   /// Mirrors `errorDescription` so string interpolation (`"\(error)"`) and logs surface the
   /// human-readable message rather than the synthesized case name.
   public var description: String { errorDescription ?? "SimulatorSetError" }
-}
-
-public enum SimulatorDeletionError: Error, LocalizedError {
-  case removalTimedOut
-
-  public var errorDescription: String? {
-    switch self {
-    case .removalTimedOut:
-      return "Timed out waiting for Simulator to be removed from set"
-    }
-  }
 }
 
 /// Reports the set's CoreSimulator state changes to its delegate. A class of its own, rather than
