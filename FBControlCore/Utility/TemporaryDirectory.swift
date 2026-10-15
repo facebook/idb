@@ -29,16 +29,6 @@ public struct TemporaryDirectory: Sendable {
 
   // MARK: - Initializers
 
-  public static func temporaryDirectory(logger: any ControlCoreLogger) -> TemporaryDirectory {
-    let temporaryDirectory = uniqueTemporaryDirectoryURL()
-    do {
-      try FileManager.default.createDirectory(at: temporaryDirectory, withIntermediateDirectories: true, attributes: nil)
-    } catch {
-      logger.error().log("Failed to create temporary directory \(temporaryDirectory): \(error)")
-    }
-    return TemporaryDirectory(rootDirectory: temporaryDirectory, logger: logger)
-  }
-
   public init(logger: any ControlCoreLogger) {
     let temporaryDirectory = TemporaryDirectory.uniqueTemporaryDirectoryURL()
     do {

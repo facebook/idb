@@ -135,7 +135,7 @@ public final class Simulator: Target, Hashable, CustomStringConvertible, @unchec
       if let _temporaryDirectory {
         return _temporaryDirectory
       }
-      let directory = TemporaryDirectory.temporaryDirectory(logger: logger)
+      let directory = TemporaryDirectory(logger: logger)
       _temporaryDirectory = directory
       return directory
     }
