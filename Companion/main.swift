@@ -487,9 +487,9 @@ private func runNotifier(_ notify: String, userDefaults: UserDefaults, xcodeAvai
   let targetSets = try await defaultTargetSets(userDefaults, xcodeAvailable: xcodeAvailable, logger: logger)
   let notifier: TargetStateChangeNotifier
   if notify == "stdout" {
-    notifier = try TargetStateChangeNotifier.notifierToStdOut(withTargetSets: targetSets, logger: logger)
+    notifier = try TargetStateChangeNotifier(targetSets: targetSets, logger: logger)
   } else {
-    notifier = try TargetStateChangeNotifier.notifierToFilePath(notify, withTargetSets: targetSets, logger: logger)
+    notifier = try TargetStateChangeNotifier(filePath: notify, targetSets: targetSets, logger: logger)
   }
   logger.log("Starting Notifier \(notifier)")
   try notifier.startNotifier()

@@ -42,7 +42,8 @@ public final class TargetStateChangeNotifier: TargetSetDelegate {
   private var current: [String: TargetDescription]
   private let donePromise = AsyncPromise<Void>()
 
-  public static func notifierToFilePath(_ filePath: String, withTargetSets targetSets: [TargetSet], logger: ControlCoreLogger) throws -> TargetStateChangeNotifier {
+  /// Writes each update to `filePath`, which is created holding an empty list.
+  public convenience init(filePath: String, targetSets: [TargetSet], logger: ControlCoreLogger) throws {
     if targetSets.isEmpty {
       throw TargetStateChangeNotifierError.noTargetSets
     }
@@ -57,30 +58,26 @@ public final class TargetStateChangeNotifier: TargetSetDelegate {
       throw TargetStateChangeNotifierError.targetsFileCreationFailed(path: filePath, message: String(cString: strerror(errno)))
     }
 
-    let notifier = TargetStateChangeNotifier(filePath: filePath, targetSets: targetSets, logger: logger)
-    for targetSet in targetSets {
-      targetSet.delegate = notifier
-    }
-    return notifier
+    self.init(destination: filePath, targetSets: targetSets, logger: logger)
   }
 
-  public static func notifierToStdOut(withTargetSets targetSets: [TargetSet], logger: ControlCoreLogger) throws -> TargetStateChangeNotifier {
+  /// Writes each update to stdout.
+  public convenience init(targetSets: [TargetSet], logger: ControlCoreLogger) throws {
     if targetSets.isEmpty {
       throw TargetStateChangeNotifierError.noTargetSets
     }
 
-    let notifier = TargetStateChangeNotifier(filePath: nil, targetSets: targetSets, logger: logger)
-    for targetSet in targetSets {
-      targetSet.delegate = notifier
-    }
-    return notifier
+    self.init(destination: nil, targetSets: targetSets, logger: logger)
   }
 
-  private init(filePath: String?, targetSets: [TargetSet], logger: ControlCoreLogger) {
+  private init(destination filePath: String?, targetSets: [TargetSet], logger: ControlCoreLogger) {
     self.filePath = filePath
     self.targetSets = targetSets
     self.logger = logger
     self.current = [:]
+    for targetSet in targetSets {
+      targetSet.delegate = self
+    }
   }
 
   public func startNotifier() throws {
