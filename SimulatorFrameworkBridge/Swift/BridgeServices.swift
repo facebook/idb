@@ -118,25 +118,25 @@ public enum BridgeServices {
       return Int32(FBHealthSettingsService.handleHealthSettingsAction(action: action, bundleID: bundleID, typeIdentifiers: types, output: output))
       #endif
     case let .accessibility(request):
-      let response = FBAccessibilityService.handleRequest(request)
-      return accessibility(FBAccessibilityService.serializeResponse(response), output: output)
+      let response = AccessibilityService.handleRequest(request)
+      return accessibility(AccessibilityService.serializeResponse(response), output: output)
     }
   }
 
   /// The answer to an accessibility frame whose parameters are not a request, in the response a malformed request has
   /// always had.
   public static func undecodedAccessibility(_ parameters: [String: BridgeJSONValue]) -> BridgeResult {
-    accessibilityResult(FBAccessibilityService.serializeResponse(FBAccessibilityService.handleRequest(parameters: parameters)))
+    accessibilityResult(AccessibilityService.serializeResponse(AccessibilityService.handleRequest(parameters: parameters)))
   }
 
   /// Commands that answer with a stream of results rather than one; nil for every other command.
   public static func stream(_ command: BridgeCommand) -> BridgeStreamStart? {
-    guard case let .accessibility(request) = command, let start = FBAccessibilityService.quiescence(request) else { return nil }
+    guard case let .accessibility(request) = command, let start = AccessibilityService.quiescence(request) else { return nil }
     switch start {
     case let .stream(events):
       return .stream(AccessibilityResultStream(events: events))
     case let .failure(response):
-      return .result(accessibilityResult(FBAccessibilityService.serializeResponse(response)))
+      return .result(accessibilityResult(AccessibilityService.serializeResponse(response)))
     }
   }
 

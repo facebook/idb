@@ -88,7 +88,7 @@ public struct FBBridgeServices: FBBridgeServiceHandling {
   }
 
   public func accessibility(_ action: String, arguments: [String]) -> Int32 {
-    FBAccessibilityService.handleAction(action, arguments: arguments) { data in
+    AccessibilityService.handleAction(action, arguments: arguments) { data in
       let written = data.withUnsafeBytes { fwrite($0.baseAddress, 1, $0.count, stdout) } == data.count
       // A `quiet` stream writes a line per event and runs until it is killed.
       return written && fputc(10, stdout) != EOF && fflush(stdout) == 0

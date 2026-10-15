@@ -265,19 +265,19 @@ extension BridgeServerSocketTests {
   func testTheOneShotCommandStreamsUntilTheStreamEnds() throws {
     useRuntime(runtimeWithApplications([]))
     var lines: [NSDictionary] = []
-    let status = FBAccessibilityService.handleAction("quiet", arguments: ["--pid", String(Self.exitedPid)]) { data in
+    let status = AccessibilityService.handleAction("quiet", arguments: ["--pid", String(Self.exitedPid)]) { data in
       lines.append((try? JSONSerialization.jsonObject(with: data)) as? NSDictionary ?? [:])
       return true
     }
     XCTAssertEqual(status, 0)
     XCTAssertEqual(lines, [["ok": true, "event": "target_exited", "pid": Self.exitedPid]])
 
-    let lostOutputStatus = FBAccessibilityService.handleAction("quiet", arguments: ["--pid", String(Self.exitedPid)]) { _ in false }
+    let lostOutputStatus = AccessibilityService.handleAction("quiet", arguments: ["--pid", String(Self.exitedPid)]) { _ in false }
     XCTAssertEqual(lostOutputStatus, 1, "output that could not be written fails the command")
   }
 
   func testQuietIsRefusedOutsideAStream() {
-    XCTAssertEqual(FBAccessibilityService.handleRequest(["verb": "quiet"])["error_kind"] as? String, "bad_request")
+    XCTAssertEqual(AccessibilityService.handleRequest(["verb": "quiet"])["error_kind"] as? String, "bad_request")
   }
 
   func testTheTunablesParseFromArgv() {

@@ -47,11 +47,11 @@ final class AccessibilityExceptionTests: XCTestCase {
       FBAXClientProvider.setRuntimeForTesting(runtime)
       runtime.raiseOnOperation = operation
 
-      XCTAssertEqual(FBAccessibilityService.handleRequest(request) as NSDictionary, exceptionResponse("injected \(operation)"), operation)
+      XCTAssertEqual(AccessibilityService.handleRequest(request) as NSDictionary, exceptionResponse("injected \(operation)"), operation)
       XCTAssertEqual(runtime.operations.lastObject as? String, operation)
 
       runtime.raiseOnOperation = nil
-      XCTAssertEqual(FBAccessibilityService.handleRequest(request)["ok"] as? NSNumber, true, operation)
+      XCTAssertEqual(AccessibilityService.handleRequest(request)["ok"] as? NSNumber, true, operation)
     }
   }
 
@@ -63,11 +63,11 @@ final class AccessibilityExceptionTests: XCTestCase {
     FBAXClientProvider.setRuntimeForTesting(runtime)
     let request: [String: Any] = ["verb": "describe", "pid": 4321]
 
-    XCTAssertEqual(FBAccessibilityService.handleRequest(request) as NSDictionary, exceptionResponse("child disappeared"))
+    XCTAssertEqual(AccessibilityService.handleRequest(request) as NSDictionary, exceptionResponse("child disappeared"))
     XCTAssertEqual(runtime.operations.lastObject as? String, "readAttributes")
 
     child?.readRaiseReason = nil
-    let response = FBAccessibilityService.handleRequest(request)
+    let response = AccessibilityService.handleRequest(request)
     XCTAssertEqual(response["ok"] as? NSNumber, true)
     let tree = response["tree"] as? [String: Any]
     let children = tree?["XC_kAXXCAttributeChildren"] as? [[String: Any]]
@@ -84,7 +84,7 @@ final class AccessibilityExceptionTests: XCTestCase {
         "assertKey": "XC_kAXXCAttributeLabel", "assertValue": "root",
       ]
 
-      XCTAssertEqual(FBAccessibilityService.handleRequest(request) as NSDictionary, exceptionResponse("injected readAttributes"))
+      XCTAssertEqual(AccessibilityService.handleRequest(request) as NSDictionary, exceptionResponse("injected readAttributes"))
       XCTAssertEqual(runtime.hitTestCount, 1)
       XCTAssertEqual(runtime.performCount, 0)
       XCTAssertEqual(runtime.setValueCount, 0)

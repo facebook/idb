@@ -387,7 +387,7 @@ final class QuiescenceStream: BridgeResponseStream {
 
   private func write(_ envelope: [String: Any]) {
     guard !isCancelled, let emit else { return }
-    if !emit(FBAccessibilityService.serializeResponse(envelope)) {
+    if !emit(AccessibilityService.serializeResponse(envelope)) {
       finish()
     }
   }

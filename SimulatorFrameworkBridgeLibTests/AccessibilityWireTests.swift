@@ -22,7 +22,7 @@ struct AccessibilityWireTests {
       "string": "infinity",
       "null": NSNull(),
     ]
-    let encoded = FBAccessibilityService.serializeResponse(response)
+    let encoded = AccessibilityService.serializeResponse(response)
     let object = try JSONSerialization.jsonObject(with: encoded)
     let decoded = try #require(object as? [String: Any])
     #expect(
@@ -43,6 +43,6 @@ struct AccessibilityWireTests {
   @Test
   func unsupportedNestedValuesKeepTheSerializationFallback() {
     let response: [String: Any] = ["ok": true, "values": [["date": Date()]]]
-    #expect(FBAccessibilityService.serializeResponse(response) == Data(#"{"ok":false,"error":"response serialization failed"}"#.utf8))
+    #expect(AccessibilityService.serializeResponse(response) == Data(#"{"ok":false,"error":"response serialization failed"}"#.utf8))
   }
 }

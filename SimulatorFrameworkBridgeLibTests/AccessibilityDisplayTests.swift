@@ -25,7 +25,7 @@ final class AccessibilityDisplayTests: XCTestCase {
     FBAXClientProvider.setRuntimeForTesting(runtime)
     let request = FBAXBridgeArguments.request(action: "displays", arguments: [])
     XCTAssertEqual(request as NSDictionary, ["verb": "displays"])
-    let response = FBAccessibilityService.handleRequest(request)
+    let response = AccessibilityService.handleRequest(request)
     XCTAssertEqual(
       response as NSDictionary,
       [
@@ -43,18 +43,18 @@ final class AccessibilityDisplayTests: XCTestCase {
     FBAXClientProvider.setRuntimeForTesting(runtime)
     runtime.displayInventoryOutcome = .unavailable("No display manager")
     XCTAssertEqual(
-      FBAccessibilityService.handleRequest(["verb": "displays"]) as NSDictionary,
+      AccessibilityService.handleRequest(["verb": "displays"]) as NSDictionary,
       [
         "ok": false, "error": "No display manager", "error_kind": "capability_unavailable",
       ])
     runtime.displayInventoryOutcome = .failed("Duplicate identity")
     XCTAssertEqual(
-      FBAccessibilityService.handleRequest(["verb": "displays"]) as NSDictionary,
+      AccessibilityService.handleRequest(["verb": "displays"]) as NSDictionary,
       [
         "ok": false, "error": "Duplicate identity", "error_kind": "reader_unavailable",
       ])
     runtime.displayInventoryOutcome = .available([])
-    XCTAssertEqual(FBAccessibilityService.handleRequest(["verb": "displays"]) as NSDictionary, ["ok": true, "displayScopedInteractions": true, "displayScopedTrees": true, "displayScopedQuiescence": true, "displays": []])
+    XCTAssertEqual(AccessibilityService.handleRequest(["verb": "displays"]) as NSDictionary, ["ok": true, "displayScopedInteractions": true, "displayScopedTrees": true, "displayScopedQuiescence": true, "displays": []])
   }
 
   private func window(_ label: String, displayID: Any?) -> FBAXFakeElement {
@@ -76,7 +76,7 @@ final class AccessibilityDisplayTests: XCTestCase {
       root.children = [window("cover", displayID: 42), window("inner", displayID: 71)]
       runtime.applicationElements[123] = root
       FBAXClientProvider.setRuntimeForTesting(runtime)
-      let response = FBAccessibilityService.handleRequest([
+      let response = AccessibilityService.handleRequest([
         "verb": "describe", "pid": 123, "displayID": 71, "traversal": snapshot ? "single-fetch" : "view-hierarchy",
       ])
       XCTAssertEqual(response["ok"] as? Bool, true, "\(response)")
@@ -99,7 +99,7 @@ final class AccessibilityDisplayTests: XCTestCase {
       [33: "cover"], [:], [33: "inner"], [:],
     ]
     FBAXClientProvider.setRuntimeForTesting(runtime)
-    let response = FBAccessibilityService.handleRequest([
+    let response = AccessibilityService.handleRequest([
       "verb": "describe", "pid": 123, "displayID": 71, "traversal": "semantic",
     ])
     XCTAssertEqual(response["ok"] as? Bool, true, "\(response)")
@@ -118,7 +118,7 @@ final class AccessibilityDisplayTests: XCTestCase {
       root.children = [window("unknown", displayID: identity)]
       runtime.applicationElements[123] = root
       FBAXClientProvider.setRuntimeForTesting(runtime)
-      let response = FBAccessibilityService.handleRequest(["verb": "describe", "pid": 123, "displayID": 71])
+      let response = AccessibilityService.handleRequest(["verb": "describe", "pid": 123, "displayID": 71])
       XCTAssertEqual(response["ok"] as? Bool, false, "\(response)")
       XCTAssertTrue((response["error"] as? String)?.contains("display identity") == true)
       XCTAssertEqual(response["error_kind"] as? String, "capability_unavailable")
@@ -133,7 +133,7 @@ final class AccessibilityDisplayTests: XCTestCase {
     root.children = [selected]
     runtime.applicationElements[123] = root
     FBAXClientProvider.setRuntimeForTesting(runtime)
-    let response = FBAccessibilityService.handleRequest(["verb": "describe", "pid": 123, "displayID": 71])
+    let response = AccessibilityService.handleRequest(["verb": "describe", "pid": 123, "displayID": 71])
     let tree = try XCTUnwrap(response["tree"] as? [String: Any])
     let children = try XCTUnwrap(tree["XC_kAXXCAttributeChildren"] as? [[String: Any]])
     XCTAssertEqual((children.first?["XC_kAXXCAttributeChildren"] as? [Any])?.count, 0)
@@ -145,7 +145,7 @@ final class AccessibilityDisplayTests: XCTestCase {
     root.children = [window("other-display", displayID: 42)]
     runtime.applicationElements[123] = root
     FBAXClientProvider.setRuntimeForTesting(runtime)
-    let response = FBAccessibilityService.handleRequest(["verb": "describe", "pid": 123, "displayID": 71])
+    let response = AccessibilityService.handleRequest(["verb": "describe", "pid": 123, "displayID": 71])
     XCTAssertEqual(response["ok"] as? Bool, false)
     XCTAssertEqual(response["error_kind"] as? String, "application_unavailable")
     XCTAssertNil(response["tree"])
@@ -157,7 +157,7 @@ final class AccessibilityDisplayTests: XCTestCase {
     root.children = [window("cover", displayID: 42), window("inner", displayID: 71)]
     runtime.applicationElements[123] = root
     FBAXClientProvider.setRuntimeForTesting(runtime)
-    let response = FBAccessibilityService.handleRequest(["verb": "describe", "pid": 123])
+    let response = AccessibilityService.handleRequest(["verb": "describe", "pid": 123])
     let tree = try XCTUnwrap(response["tree"] as? [String: Any])
     XCTAssertEqual((tree["XC_kAXXCAttributeChildren"] as? [Any])?.count, 2)
   }
@@ -167,12 +167,12 @@ final class AccessibilityDisplayTests: XCTestCase {
     FBAXClientProvider.setRuntimeForTesting(runtime)
     runtime.raiseOnOperation = "displayInventory"
     XCTAssertEqual(
-      FBAccessibilityService.handleRequest(["verb": "displays"]) as NSDictionary,
+      AccessibilityService.handleRequest(["verb": "displays"]) as NSDictionary,
       [
         "ok": false, "error": "the reader raised while answering: injected displayInventory", "error_kind": "reader_unavailable",
       ])
     runtime.raiseOnOperation = nil
-    XCTAssertEqual(FBAccessibilityService.handleRequest(["verb": "displays"])["ok"] as? Bool, true)
+    XCTAssertEqual(AccessibilityService.handleRequest(["verb": "displays"])["ok"] as? Bool, true)
     XCTAssertEqual(runtime.operations as NSArray, ["displayInventory", "displayInventory"])
   }
 

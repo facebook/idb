@@ -1756,7 +1756,7 @@ enum QuiescenceStart {
 
 // Objective-C runtime clients convert private-framework exceptions to NSError before returning here.
 // Answer those errors on the shared dispatcher path so the serve connection can handle later requests.
-public enum FBAccessibilityService {
+public enum AccessibilityService {
 
   public static func handleRequest(_ payload: [String: Any]) -> [String: Any] {
     handleRequest(parameters: parameters(payload))
