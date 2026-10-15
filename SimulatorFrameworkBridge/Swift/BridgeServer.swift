@@ -11,12 +11,18 @@ import Foundation
 
 /// Frames a response goes on writing after its request, until it ends or the peer goes away.
 public protocol BridgeResponseStream: AnyObject {
+  /// Whether the stream ended because its source failed rather than because it was cancelled.
+  var failed: Bool { get }
   /// Runs on the serving thread until the stream ends, writing each frame through `emit`, which answers
   /// false once a frame could not be written. The connection closes when this returns.
   func run(emit: @escaping (Data) -> Bool)
   /// Asks a running stream to end. Called from another thread, once, when the peer sends anything or
   /// disconnects; `run` must return promptly afterwards.
   func cancel()
+}
+
+public extension BridgeResponseStream {
+  var failed: Bool { false }
 }
 
 public enum BridgeSocketResponse {

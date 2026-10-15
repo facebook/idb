@@ -10,6 +10,7 @@ import FBSimulatorBridgeProtocol
 import Foundation
 @_implementationOnly import SimulatorFrameworkBridgeRuntime
 @_implementationOnly import SimulatorFrameworkBridgeSupport
+import UIKit
 import XCTest
 
 // Drives `quiet` through a real serve socket against the fake runtime. Thresholds are either generous or
@@ -278,6 +279,99 @@ extension BridgeServerSocketTests {
 
   func testQuietIsRefusedOutsideAStream() {
     XCTAssertEqual(AccessibilityService.handleRequest(["verb": "quiet"])["error_kind"] as? String, "bad_request")
+  }
+
+  private func openSettingsStream(_ runtime: FBAXFakeRuntime, setting: String = "reduce-motion") throws -> Int32 {
+    useRuntime(runtime)
+    startServerExclusive(exclusive: true)
+    let client = connectClient()
+    sendData(
+      data: try frame(command: .accessibility(.deviceSettingChanges(setting))),
+      to: client)
+    return client
+  }
+
+  func testASettingsObserverIsRegisteredBeforeTheInitialReadAndRereadsAuthoritatively() throws {
+    let runtime = FBAXFakeRuntime()
+    let setting = NSNumber(value: FBAXDeviceSetting.reduceMotion.rawValue)
+    runtime.deviceSettings[setting] = false
+    runtime.deviceSettingReadHandler = {
+      runtime.deviceSettingReadHandler = nil
+      runtime.deviceSettings[setting] = true
+      NotificationCenter.default.post(name: UIAccessibility.reduceMotionStatusDidChangeNotification, object: nil)
+    }
+    let client = try openSettingsStream(runtime)
+    defer { closeQuietStream(client) }
+
+    XCTAssertEqual(readEvent(fd: client), ["ok": true, "event": "snapshot", "setting": "reduce-motion", "enabled": false])
+    XCTAssertEqual(readEvent(fd: client), ["ok": true, "event": "snapshot", "setting": "reduce-motion", "enabled": true])
+    XCTAssertEqual(runtime.operations.compactMap { $0 as? String }.filter { $0 == "settingRead" }.count, 2)
+  }
+
+  func testSettingsNotificationBurstsCoalesceIntoOneAuthoritativeReread() throws {
+    let runtime = FBAXFakeRuntime()
+    let setting = NSNumber(value: FBAXDeviceSetting.reduceMotion.rawValue)
+    runtime.deviceSettings[setting] = false
+    let client = try openSettingsStream(runtime)
+    defer { closeQuietStream(client) }
+    XCTAssertEqual(readEvent(fd: client)?["enabled"] as? Bool, false)
+
+    runtime.deviceSettings[setting] = true
+    for _ in 0..<3 {
+      NotificationCenter.default.post(name: UIAccessibility.reduceMotionStatusDidChangeNotification, object: nil)
+    }
+    XCTAssertEqual(readEvent(fd: client)?["enabled"] as? Bool, true)
+    XCTAssertEqual(runtime.operations.compactMap { $0 as? String }.filter { $0 == "settingRead" }.count, 2)
+  }
+
+  func testAnUnavailableSettingIsTypedAndEndsTheStream() throws {
+    let client = try openSettingsStream(FBAXFakeRuntime())
+    defer { closeQuietStream(client) }
+    XCTAssertEqual(
+      readEvent(fd: client),
+      ["ok": false, "error": "setting unavailable", "error_kind": "capability_unavailable"])
+    assertEOF(fd: client)
+  }
+
+  func testOnlyReduceMotionPublishesChanges() throws {
+    let client = try openSettingsStream(FBAXFakeRuntime(), setting: "reduce-transparency")
+    defer { closeQuietStream(client) }
+    XCTAssertEqual(readEvent(fd: client)?["error_kind"] as? String, "capability_unavailable")
+    sendData(data: try frame(command: .ping), to: client)
+    XCTAssertEqual(exitCode(of: readResponse(fd: client)), 0, "a refused stream leaves the connection serving")
+  }
+
+  func testSettingsObserveIsRefusedOutsideAStream() {
+    XCTAssertEqual(
+      AccessibilityService.handleRequest(["verb": "settings-observe", "setting": "reduce-motion"])["error_kind"] as? String,
+      "bad_request")
+  }
+
+  func testSettingsCLIReportsSourceFailureEvenWhenOutputSucceeds() throws {
+    for (outcome, kind) in [
+      (FBAXDeviceSettingOutcome.unavailable("setting unavailable"), "capability_unavailable"),
+      (FBAXDeviceSettingOutcome.failed("read failed"), "reader_unavailable"),
+    ] {
+      let runtime = FBAXFakeRuntime()
+      runtime.deviceSettingReadOutcome = outcome
+      useRuntime(runtime)
+      var lines: [NSDictionary] = []
+      let status = AccessibilityService.handleAction("settings-observe", arguments: ["--setting", "reduce-motion"]) { data in
+        if let line = try? JSONSerialization.jsonObject(with: data) as? NSDictionary { lines.append(line) }
+        return true
+      }
+      XCTAssertEqual(status, 1, "the stream's failed state must reach the CLI exit status")
+      XCTAssertEqual(lines.count, 1)
+      XCTAssertEqual(lines.first?["error_kind"] as? String, kind)
+    }
+  }
+
+  func testSettingsCLIOutputFailureStopsTheStream() {
+    let runtime = FBAXFakeRuntime()
+    runtime.deviceSettings[NSNumber(value: FBAXDeviceSetting.reduceMotion.rawValue)] = false
+    useRuntime(runtime)
+    let status = AccessibilityService.handleAction("settings-observe", arguments: ["--setting", "reduce-motion"]) { _ in false }
+    XCTAssertEqual(status, 1)
   }
 
   func testTheTunablesParseFromArgv() {

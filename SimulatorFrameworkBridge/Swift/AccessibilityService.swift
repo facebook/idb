@@ -180,7 +180,7 @@ private extension BridgeAXWire.Action {
   }
 }
 
-private enum AccessibilityDeviceSetting: String {
+enum AccessibilityDeviceSetting: String {
   case reduceMotion = "reduce-motion"
   case reduceTransparency = "reduce-transparency"
   case buttonShapes = "button-shapes"
@@ -1366,7 +1366,7 @@ private final class AccessibilityRequest {
     case FBAXDeviceSettingStatus.unavailable:
       return FBAXBridgeTaggedErrorResponse(
         message: outcome.failureReason ?? "device setting \(requestedName) is unavailable",
-        kind: errorKindReaderUnavailable,
+        kind: BridgeAXWire.ErrorKind.capabilityUnavailable.rawValue,
         pid: nil
       )
     case FBAXDeviceSettingStatus.failed:
@@ -1432,9 +1432,9 @@ private final class AccessibilityRequest {
   }
 
   fileprivate func FBAXBridgeDispatchRequest(request: BridgeAXRequest) throws -> [String: Any] {
-    if case .quiescence = request {
+    if request.verb == .quiet || request.verb == .settingsObserve {
       return FBAXBridgeTaggedErrorResponse(
-        message: "quiet streams its answer, so it is only served over a serve connection or the one-shot CLI",
+        message: "\(request.verb.rawValue) streams its answer, so it is only served over a serve connection or the one-shot CLI",
         kind: errorKindBadRequest,
         pid: nil
       )
@@ -1452,8 +1452,8 @@ private final class AccessibilityRequest {
     }
 
     switch request {
-    case .quiescence:
-      throw FBAXBridgeInvariantError(description: "quiet was answered before the reader was bound")
+    case .quiescence, .deviceSettingChanges:
+      throw FBAXBridgeInvariantError(description: "\(request.verb.rawValue) was answered before the reader was bound")
     case .displays:
       let outcome = client.displayInventory()
       switch outcome.status {
@@ -1738,20 +1738,16 @@ private final class AccessibilityRequest {
 
   fileprivate func FBAXBridgeWireConstantsForTesting() -> [String: String] {
     [
-      "node.elementType": axElementType, "node.elementBaseType": axElementBaseType, "node.label": axLabel, "node.value": axValue, "node.identifier": axIdentifier, "node.frame": axFrame, "node.automationType": axAutomationType, "node.children": axChildren, "node.windowDisplayID": axWindowDisplayID, "request.verb": requestVerb, "request.pid": requestPid, "request.maxDepth": requestMaxDepth, "request.maxNodes": requestMaxNodes, "request.automationMode": requestAutomationMode, "request.attributes": requestAttributes, "request.traversal": requestTraversal, "request.clientType": requestClientType, "request.explainUnreachable": requestExplainUnreachable, "node.explainedBy": nodeExplainedBy, "node.isEnabled": nodeIsEnabled, "node.translatorRole": nodeTranslatorRole, "node.translatorSubrole": nodeTranslatorSubrole, "node.traits": nodeTraits, "node.elementIdentity": nodeElementIdentity, "request.displayID": requestDisplayID, "request.x": requestX, "request.y": requestY, "request.method": requestMethod, "request.action": requestAction, "request.value": requestValue, "request.setting": requestSetting, "request.enabled": requestEnabled, "request.assertKey": requestAssertKey, "request.assertValue": requestAssertValue, "envelope.ok": responseOk, "envelope.enabled": responseEnabled, "envelope.tree": responseTree, "envelope.error": responseError, "envelope.empty": responseEmpty, "envelope.errorKind": responseErrorKind, "envelope.errorKindApplicationUnavailable": errorKindApplicationUnavailable, "envelope.errorKindApplicationNotResponding": errorKindApplicationNotResponding, "envelope.errorKindFrontmostUnresolved": errorKindFrontmostUnresolved, "envelope.errorKindReaderUnavailable": errorKindReaderUnavailable, "envelope.errorKindBadRequest": errorKindBadRequest, "envelope.errorKindAssertionFailed": errorKindAssertionFailed, "envelope.truncated": responseTruncated, "envelope.pid": responsePid, "envelope.method": responseMethod, "envelope.modal": responseModal,
+      "node.elementType": axElementType, "node.elementBaseType": axElementBaseType, "node.label": axLabel, "node.value": axValue, "node.identifier": axIdentifier, "node.frame": axFrame, "node.automationType": axAutomationType, "node.children": axChildren, "node.windowDisplayID": axWindowDisplayID, "request.verb": requestVerb, "request.pid": requestPid, "request.maxDepth": requestMaxDepth, "request.maxNodes": requestMaxNodes, "request.automationMode": requestAutomationMode, "request.attributes": requestAttributes, "request.traversal": requestTraversal, "request.clientType": requestClientType, "request.explainUnreachable": requestExplainUnreachable, "node.explainedBy": nodeExplainedBy, "node.isEnabled": nodeIsEnabled, "node.translatorRole": nodeTranslatorRole, "node.translatorSubrole": nodeTranslatorSubrole, "node.traits": nodeTraits, "node.elementIdentity": nodeElementIdentity, "request.displayID": requestDisplayID, "request.x": requestX, "request.y": requestY, "request.method": requestMethod, "request.action": requestAction, "request.value": requestValue, "request.setting": requestSetting, "request.enabled": requestEnabled, "request.assertKey": requestAssertKey, "request.assertValue": requestAssertValue, "envelope.ok": responseOk, "envelope.enabled": responseEnabled, "envelope.tree": responseTree, "envelope.error": responseError, "envelope.empty": responseEmpty, "envelope.errorKind": responseErrorKind, "envelope.errorKindApplicationUnavailable": errorKindApplicationUnavailable, "envelope.errorKindApplicationNotResponding": errorKindApplicationNotResponding, "envelope.errorKindFrontmostUnresolved": errorKindFrontmostUnresolved, "envelope.errorKindCapabilityUnavailable": BridgeAXWire.ErrorKind.capabilityUnavailable.rawValue, "envelope.errorKindReaderUnavailable": errorKindReaderUnavailable, "envelope.errorKindBadRequest": errorKindBadRequest, "envelope.errorKindAssertionFailed": errorKindAssertionFailed, "envelope.truncated": responseTruncated,
+      "envelope.pid": responsePid,
+      "envelope.method": responseMethod, "envelope.modal": responseModal,
       "envelope.automation": responseAutomation,
       "envelope.phases": responsePhases,
       "phases.traverse": phaseTraverse,
-      "phases.machRoundTrips": phaseMachRoundTrips, "automation.enabled": kAutomationEnabled, "automation.asserted": kAutomationAsserted, "modal.kind": modalKind, "modal.kindSystem": modalKindSystem, "modal.kindApp": modalKindApp, "modal.elementType": modalElementType, "modal.label": modalLabel, "modal.systemAlertWindowClass": systemAlertWindowClass, "modal.alertControllerClassPrefix": alertControllerClassPrefix, "verb.displays": AccessibilityVerb.displays.rawValue, "verb.describe": AccessibilityVerb.describe.rawValue, "verb.hittest": AccessibilityVerb.hitTest.rawValue, "verb.perform": AccessibilityVerb.perform.rawValue, "verb.setvalue": AccessibilityVerb.setValue.rawValue, "verb.settingsGet": AccessibilityVerb.settingsGet.rawValue, "verb.settingsSet": AccessibilityVerb.settingsSet.rawValue, "verb.quiet": AccessibilityVerb.quiet.rawValue, "request.busyThresholdMs": requestBusyThresholdMs, "request.quietWindowMs": requestQuietWindowMs, "action.press": AccessibilityAction.press.rawValue, "action.scrollUp": AccessibilityAction.scrollUp.rawValue, "action.scrollDown": AccessibilityAction.scrollDown.rawValue, "action.scrollLeft": AccessibilityAction.scrollLeft.rawValue, "action.scrollRight": AccessibilityAction.scrollRight.rawValue, "action.scrollToVisible": AccessibilityAction.scrollToVisible.rawValue, "method.centerPoint": FrontmostMethod.centerPoint.rawValue, "method.windowServer": FrontmostMethod.windowServer.rawValue, "method.runningBoard": FrontmostMethod.runningBoard.rawValue,
+      "phases.machRoundTrips": phaseMachRoundTrips, "automation.enabled": kAutomationEnabled, "automation.asserted": kAutomationAsserted, "modal.kind": modalKind, "modal.kindSystem": modalKindSystem, "modal.kindApp": modalKindApp, "modal.elementType": modalElementType, "modal.label": modalLabel, "modal.systemAlertWindowClass": systemAlertWindowClass, "modal.alertControllerClassPrefix": alertControllerClassPrefix, "verb.displays": AccessibilityVerb.displays.rawValue, "verb.describe": AccessibilityVerb.describe.rawValue, "verb.hittest": AccessibilityVerb.hitTest.rawValue, "verb.perform": AccessibilityVerb.perform.rawValue, "verb.setvalue": AccessibilityVerb.setValue.rawValue, "verb.settingsGet": AccessibilityVerb.settingsGet.rawValue, "verb.settingsSet": AccessibilityVerb.settingsSet.rawValue, "verb.settingsObserve": AccessibilityVerb.settingsObserve.rawValue, "verb.quiet": AccessibilityVerb.quiet.rawValue, "request.busyThresholdMs": requestBusyThresholdMs, "request.quietWindowMs": requestQuietWindowMs, "action.press": AccessibilityAction.press.rawValue, "action.scrollUp": AccessibilityAction.scrollUp.rawValue, "action.scrollDown": AccessibilityAction.scrollDown.rawValue, "action.scrollLeft": AccessibilityAction.scrollLeft.rawValue, "action.scrollRight": AccessibilityAction.scrollRight.rawValue, "action.scrollToVisible": AccessibilityAction.scrollToVisible.rawValue, "method.centerPoint": FrontmostMethod.centerPoint.rawValue, "method.windowServer": FrontmostMethod.windowServer.rawValue, "method.runningBoard": FrontmostMethod.runningBoard.rawValue,
     ]
   }
 
-}
-
-/// Either the stream, or the one-frame error that stands in for it when the request cannot start one.
-enum QuiescenceStart {
-  case stream(QuiescenceStream)
-  case failure([String: Any])
 }
 
 // Objective-C runtime clients convert private-framework exceptions to NSError before returning here.
@@ -1781,17 +1777,21 @@ public enum AccessibilityService {
     }
   }
 
-  /// The stream `quiet` answers with, or nil for every other verb.
-  static func quiescence(_ parameters: [String: BridgeJSONValue]) -> QuiescenceStart? {
-    guard parameters[requestVerb] == .string(AccessibilityVerb.quiet.rawValue) else { return nil }
+  /// The accessibility stream named by `request`, or nil for a unary verb.
+  static func stream(_ request: BridgeAXRequest) -> AccessibilityStreamStart? {
+    quiescence(request) ?? settings(request)
+  }
+
+  static func stream(_ parameters: [String: BridgeJSONValue]) -> AccessibilityStreamStart? {
+    guard parameters[requestVerb] == .string(AccessibilityVerb.quiet.rawValue) || parameters[requestVerb] == .string(AccessibilityVerb.settingsObserve.rawValue) else { return nil }
     do {
-      return quiescence(try BridgeAXRequest(payload: parameters))
+      return stream(try BridgeAXRequest(payload: parameters))
     } catch {
       return .failure(AccessibilityRequest().FBAXBridgeDecodeFailureResponse(error))
     }
   }
 
-  static func quiescence(_ request: BridgeAXRequest) -> QuiescenceStart? {
+  private static func quiescence(_ request: BridgeAXRequest) -> AccessibilityStreamStart? {
     guard case let .quiescence(pid, busyThresholdMs, quietWindowMs, displayID, method, x, y) = request else { return nil }
     return .stream(
       AccessibilityRequest().FBAXBridgeQuiescenceStream(
@@ -1834,8 +1834,8 @@ public enum AccessibilityService {
 
   public static func handleAction(_ action: String, arguments: [String], writeResponse: (Data) -> Bool) -> Int32 {
     let request = parameters(AXBridgeArguments.request(action: action, arguments: arguments))
-    // One event per line, until the named application exits or the process is killed.
-    if let start = quiescence(request) {
+    // A streaming action writes one event per line until its source ends or the process is killed.
+    if let start = stream(request) {
       switch start {
       case let .stream(stream):
         var lostOutput = false

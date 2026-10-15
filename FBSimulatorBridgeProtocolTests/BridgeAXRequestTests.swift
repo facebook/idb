@@ -31,6 +31,7 @@ struct BridgeAXRequestTests {
           attributes: ["XC_kAXXCAttributeVisiblePoint"])),
       .deviceSettingRead("voiceover"),
       .deviceSettingWrite("reduce-motion", enabled: true),
+      .deviceSettingChanges("reduce-motion"),
       .quiescence(pid: nil, busyThresholdMs: nil, quietWindowMs: nil),
       .quiescence(pid: 8, busyThresholdMs: 5, quietWindowMs: 0, displayID: 2, method: .centerPoint, x: 6, y: 7),
       .displays,
@@ -41,6 +42,11 @@ struct BridgeAXRequestTests {
       let parameters = try #require(BridgeRequest.accessibilityParameters(of: frame))
       #expect(try BridgeAXRequest(payload: parameters) == request)
     }
+  }
+
+  @Test
+  func settingsObserveDoesNotReplayAfterAConnectionFailure() {
+    #expect(!BridgeAXRequest.deviceSettingChanges("reduce-motion").mayRetry)
   }
 
   @Test
@@ -149,6 +155,8 @@ struct BridgeAXRequestTests {
       (point.merging(["verb": .string("setvalue"), "value": .string("v"), "assertKey": .string("XC_kAXXCAttributeLabel")]) { $1 }, .unpairedAssertion),
       (point.merging(["verb": .string("perform"), "action": .string("press"), "assertKey": .string("Nope"), "assertValue": .string("v")]) { $1 }, .unassertableKey("Nope")),
       (["verb": .string("settings-get")], .missingSetting),
+      (["verb": .string("settings-observe")], .missingSetting),
+      (["verb": .string("settings-observe"), "setting": .bool(true)], .missingSetting),
       (["verb": .string("settings-set"), "setting": .string("voiceover"), "enabled": .string("yes")], .missingEnabled),
       (["verb": .string("quiet"), "busyThresholdMs": .integer(-1)], .negativeTunable(.busyThresholdMs, -1)),
       (["verb": .string("describe"), "pid": .integer(5), "traversal": .null], .unsupportedTraversal(.null)),

@@ -659,6 +659,9 @@ static NSDictionary *FBAXFakeSnapshotNode(FBAXFakeElement *element,
     return self.deviceSettingReadOutcome;
   }
   NSNumber *enabled = self.deviceSettings[@(setting)];
+  if (self.deviceSettingReadHandler) {
+    self.deviceSettingReadHandler();
+  }
   return enabled
   ? [FBAXDeviceSettingOutcome resolved:enabled.boolValue]
   : [FBAXDeviceSettingOutcome unavailable:@"setting unavailable"];

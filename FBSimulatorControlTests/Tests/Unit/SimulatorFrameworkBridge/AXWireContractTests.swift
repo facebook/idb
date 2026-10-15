@@ -116,6 +116,7 @@ struct AXWireContractTests {
       .setValue: "setvalue",
       .settingsGet: "settings-get",
       .settingsSet: "settings-set",
+      .settingsObserve: "settings-observe",
       .quiet: "quiet",
     ]
     #expect(Set(AXWire.Verb.allCases) == Set(expected.keys), "every verb must have its wire value pinned")
@@ -140,6 +141,12 @@ struct AXWireContractTests {
     for (action, wireValue) in expected {
       #expect(action.rawValue == wireValue)
     }
+  }
+
+  @Test
+  func settingsStreamWireValues() {
+    #expect(AXWire.Settings.Key.allCases.map(\.rawValue) == ["event"])
+    #expect(AXWire.Settings.Event.allCases.map(\.rawValue) == ["snapshot"])
   }
 
   // What a `quiet` stream writes. The host decodes each event as it arrives, so an event, state or signal

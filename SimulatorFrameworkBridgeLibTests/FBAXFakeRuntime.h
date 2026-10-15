@@ -158,6 +158,8 @@ NSDictionary<NSString *, id> *FBAXGeometryDictionaryProbe(BOOL rectangle, BOOL r
 @property (nonatomic, strong) NSMutableDictionary<NSNumber *, NSNumber *> *deviceSettings;
 /** Every device-setting write as `{setting, enabled}`, in order. */
 @property (nonatomic, strong) NSMutableArray<NSDictionary<NSString *, NSNumber *> *> *deviceSettingWrites;
+/** Called after a device-setting value is captured but before it is returned. */
+@property (nullable, nonatomic, copy) void (^deviceSettingReadHandler)(void);
 
 /** What `-translatorAttributes:ofElement:clientType:` answers with. Nil means the read could not be performed. */
 @property (nullable, nonatomic, copy) NSDictionary<NSNumber *, id> *translatorAttributeValues;

@@ -49,6 +49,7 @@ targetTemplates:
       - sdk: CoreGraphics.framework
       - sdk: Photos.framework
       - sdk: CoreData.framework
+      - sdk: UIKit.framework
 
 targets:
   FBSimulatorBridgeProtocol-iOS:

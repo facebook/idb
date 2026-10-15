@@ -68,6 +68,8 @@ extension BridgeAXRequest {
       self = .displays
     case .settingsGet:
       self = .deviceSettingRead(try fields.setting())
+    case .settingsObserve:
+      self = .deviceSettingChanges(try fields.setting())
     case .settingsSet:
       let setting = try fields.setting()
       guard let enabled = fields.number(.enabled)?.boolValue else { throw .missingEnabled }

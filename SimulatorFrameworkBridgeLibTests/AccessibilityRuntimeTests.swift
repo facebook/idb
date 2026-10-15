@@ -1230,7 +1230,7 @@ final class AccessibilityRuntimeTests: XCTestCase {
     )
 
     assertEqualObjects(axValue(response, "ok"), NSNumber(value: false))
-    assertEqualObjects(axValue(response, "error_kind"), "reader_unavailable")
+    assertEqualObjects(axValue(response, "error_kind"), "capability_unavailable")
     XCTAssertTrue(((axValue(response, "error") as? String)?.contains("unavailable") == true))
   }
 
@@ -1244,7 +1244,7 @@ final class AccessibilityRuntimeTests: XCTestCase {
     )
 
     assertEqualObjects(axValue(response, "ok"), NSNumber(value: false))
-    assertEqualObjects(axValue(response, "error_kind"), "reader_unavailable")
+    assertEqualObjects(axValue(response, "error_kind"), "capability_unavailable")
     assertEqualObjects(runtime.deviceSettingWrites, [])
   }
 

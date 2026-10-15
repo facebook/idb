@@ -131,7 +131,7 @@ public enum BridgeServices {
 
   /// Commands that answer with a stream of results rather than one; nil for every other command.
   public static func stream(_ command: BridgeCommand) -> BridgeStreamStart? {
-    guard case let .accessibility(request) = command, let start = AccessibilityService.quiescence(request) else { return nil }
+    guard case let .accessibility(request) = command, let start = AccessibilityService.stream(request) else { return nil }
     switch start {
     case let .stream(events):
       return .stream(AccessibilityResultStream(events: events))

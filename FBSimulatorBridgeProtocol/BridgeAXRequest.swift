@@ -160,6 +160,7 @@ public struct BridgeAXReadOptions: Sendable, Equatable {
   case write(BridgeAXWriteRequest)
   case deviceSettingRead(String)
   case deviceSettingWrite(String, enabled: Bool)
+  case deviceSettingChanges(String)
   /// Streamed: follows the frontmost application on `displayID`, resolved by `method` at (`x`, `y`), when `pid` is
   /// nil. A nil tunable takes the guest's default.
   case quiescence(
@@ -176,6 +177,7 @@ public struct BridgeAXReadOptions: Sendable, Equatable {
     case let .write(request): request.verb
     case .deviceSettingRead: .settingsGet
     case .deviceSettingWrite: .settingsSet
+    case .deviceSettingChanges: .settingsObserve
     case .quiescence: .quiet
     case .displays: .displays
     }
@@ -186,7 +188,7 @@ public struct BridgeAXReadOptions: Sendable, Equatable {
   public var mayRetry: Bool {
     switch self {
     case .read, .readFrontmost, .hitTest, .deviceSettingRead, .displays: true
-    case .write, .deviceSettingWrite, .quiescence: false
+    case .write, .deviceSettingWrite, .deviceSettingChanges, .quiescence: false
     }
   }
 
@@ -243,6 +245,11 @@ public struct BridgeAXReadOptions: Sendable, Equatable {
         BridgeAXWire.Request.verb.key: BridgeAXWire.Verb.settingsSet.rawValue,
         BridgeAXWire.Request.setting.key: setting,
         BridgeAXWire.Request.enabled.key: enabled,
+      ]
+    case let .deviceSettingChanges(setting):
+      return [
+        BridgeAXWire.Request.verb.key: BridgeAXWire.Verb.settingsObserve.rawValue,
+        BridgeAXWire.Request.setting.key: setting,
       ]
     case let .quiescence(pid, busyThresholdMs, quietWindowMs, displayID, method, x, y):
       var payload: [String: Any] = [BridgeAXWire.Request.verb.key: BridgeAXWire.Verb.quiet.rawValue]

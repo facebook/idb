@@ -161,6 +161,8 @@ public enum BridgeAXWire {
     case setValue = "setvalue"
     case settingsGet = "settings-get"
     case settingsSet = "settings-set"
+    /// Publishes the authoritative current value, then changed values after device notifications.
+    case settingsObserve = "settings-observe"
     /// Streams an application's quiescence as `Quiescence` events until the peer disconnects or an
     /// explicitly named application exits. Addressed like `describe`: a pid, or the frontmost application,
     /// which the stream follows as it changes.
@@ -264,6 +266,17 @@ public enum BridgeAXWire {
     case scrollRight = "scroll-right"
     /// Bring the element into its scroll container's viewport.
     case scrollToVisible = "scroll-to-visible"
+  }
+
+  /// The events emitted by a device-settings stream.
+  public enum Settings {
+    public enum Key: String, Codable, Sendable, CaseIterable {
+      case event
+    }
+
+    public enum Event: String, Codable, Sendable, CaseIterable {
+      case snapshot
+    }
   }
 
   /// The events a `quiet` stream writes, one per frame, each an `{ok: true, event, pid, ...}` envelope. A
