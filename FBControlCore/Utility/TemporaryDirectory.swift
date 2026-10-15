@@ -34,7 +34,7 @@ public struct TemporaryDirectory: Sendable {
     do {
       try FileManager.default.createDirectory(at: temporaryDirectory, withIntermediateDirectories: true, attributes: nil)
     } catch {
-      assertionFailure("Failed to create temporary directory: \(error)")
+      logger.error().log("Failed to create temporary directory \(temporaryDirectory): \(error)")
     }
     return TemporaryDirectory(rootDirectory: temporaryDirectory, logger: logger)
   }
@@ -44,7 +44,7 @@ public struct TemporaryDirectory: Sendable {
     do {
       try FileManager.default.createDirectory(at: temporaryDirectory, withIntermediateDirectories: true, attributes: nil)
     } catch {
-      fatalError("Failed to create temporary directory: \(error)")
+      logger.error().log("Failed to create temporary directory \(temporaryDirectory): \(error)")
     }
     self.init(rootDirectory: temporaryDirectory, logger: logger)
   }
