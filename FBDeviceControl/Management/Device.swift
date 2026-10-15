@@ -276,7 +276,7 @@ extension Device {
   }
 
   public var file: DeviceFileCommands {
-    commandCache.resolve { DeviceFileCommands(device: self) }
+    DeviceFileCommands(device: self)
   }
 
   public var lifecycle: DeviceLifecycleCommands {

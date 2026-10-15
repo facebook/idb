@@ -23,7 +23,6 @@ private final class AFCConnectionBox: @unchecked Sendable {
 // MARK: - DeviceFileContainerError
 
 public enum DeviceFileContainerError: Error {
-  case deviceDeallocated
   case tailNotImplemented
   case tailUnsupported(container: String)
   case operationUnsupported(operation: String, container: String)
@@ -37,8 +36,6 @@ public enum DeviceFileContainerError: Error {
 extension DeviceFileContainerError: LocalizedError {
   public var errorDescription: String? {
     switch self {
-    case .deviceDeallocated:
-      return "The device that these file commands were created for has been deallocated"
     case .tailNotImplemented:
       return "tail is not implemented for DeviceFileContainer"
     case let .tailUnsupported(container):
@@ -265,7 +262,7 @@ public final class DeviceFileContainer: AsyncFileContainer {
 // MARK: - DeviceFileCommands
 
 public final class DeviceFileCommands: FileCommands {
-  private weak var device: Device?
+  private let device: Device
   private let afcCalls: AFCCalls
 
   // MARK: - Initializers
@@ -277,18 +274,10 @@ public final class DeviceFileCommands: FileCommands {
 
   // MARK: - FileCommands
 
-  private func requireDevice() throws -> Device {
-    guard let device else {
-      throw DeviceFileContainerError.deviceDeallocated
-    }
-    return device
-  }
-
   public func withContainerApplication<R>(
     _ bundleID: String,
     body: (any AsyncFileContainer) async throws -> R
   ) async throws -> R {
-    let device = try requireDevice()
     let queue = device.asyncQueue
     return try await device.withHouseArrestAFCConnection(forBundleID: bundleID, afcCalls: afcCalls) { connection in
       try await body(DeviceFileContainer(afcConnection: connection, queue: queue))
@@ -298,7 +287,6 @@ public final class DeviceFileCommands: FileCommands {
   public func withAuxiliary<R>(
     body: (any AsyncFileContainer) async throws -> R
   ) async throws -> R {
-    let device = try requireDevice()
     return try await body(FileContainer.ContainedRoot(basePath: device.auxillaryDirectory))
   }
 
@@ -323,7 +311,6 @@ public final class DeviceFileCommands: FileCommands {
   public func withMediaDirectory<R>(
     body: (any AsyncFileContainer) async throws -> R
   ) async throws -> R {
-    let device = try requireDevice()
     let queue = device.asyncQueue
     return try await device.withAFCConnection("com.apple.afc") { afc in
       try await body(DeviceFileContainer(afcConnection: afc, queue: queue))
@@ -333,14 +320,12 @@ public final class DeviceFileCommands: FileCommands {
   public func withProvisioningProfiles<R>(
     body: (any AsyncFileContainer) async throws -> R
   ) async throws -> R {
-    let device = try requireDevice()
     return try await body(FileContainer.ProvisioningProfile(commands: DeviceProvisioningProfileCommands(device: device)))
   }
 
   public func withMDMProfiles<R>(
     body: (any AsyncFileContainer) async throws -> R
   ) async throws -> R {
-    let device = try requireDevice()
     return try await device.withServiceConnection(ManagedConfigClient.serviceName) { connection in
       let managedConfig = ManagedConfigClient(connection: connection, logger: device.logger)
       return try await body(DeviceFileContainer.MDMProfiles(managedConfig: managedConfig, queue: device.workQueue))
@@ -350,7 +335,6 @@ public final class DeviceFileCommands: FileCommands {
   public func withSpringboardIconLayout<R>(
     body: (any AsyncFileContainer) async throws -> R
   ) async throws -> R {
-    let device = try requireDevice()
     return try await device.withServiceConnection(SpringboardServicesClient.serviceName) { connection in
       let client = SpringboardServicesClient(connection: connection, logger: device.logger)
       return try await body(client.iconContainer())
@@ -360,7 +344,6 @@ public final class DeviceFileCommands: FileCommands {
   public func withWallpaper<R>(
     body: (any AsyncFileContainer) async throws -> R
   ) async throws -> R {
-    let device = try requireDevice()
     return try await device.withServiceConnection(SpringboardServicesClient.serviceName) { springboardConnection in
       try await device.withServiceConnection(ManagedConfigClient.serviceName) { managedConfigConnection in
         let springboard = SpringboardServicesClient(connection: springboardConnection, logger: device.logger)
@@ -374,14 +357,12 @@ public final class DeviceFileCommands: FileCommands {
   public func withDiskImages<R>(
     body: (any AsyncFileContainer) async throws -> R
   ) async throws -> R {
-    let device = try requireDevice()
     return try await body(DiskImages(commands: device.developerDiskImage, queue: device.asyncQueue))
   }
 
   public func withSymbols<R>(
     body: (any AsyncFileContainer) async throws -> R
   ) async throws -> R {
-    let device = try requireDevice()
     return try await body(Symbols(commands: device.debugSymbols, queue: device.asyncQueue))
   }
 
