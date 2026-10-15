@@ -110,7 +110,7 @@ private class DeviceLaunchedApplication: LaunchedApplication {
   }
 
   func terminate() async throws {
-    try await commands.killApplication(withProcessIdentifier: processIdentifier)
+    try await commands.killApplication(processIdentifier: processIdentifier)
   }
 
   var bundleID: String {
@@ -235,7 +235,7 @@ public final class DeviceApplicationCommands: ApplicationCommands {
 
   public func kill(bundleID: String) async throws {
     let pid = try await processID(forBundleID: bundleID)
-    try await killApplication(withProcessIdentifier: pid)
+    try await killApplication(processIdentifier: pid)
   }
 
   public func launch(_ configuration: ApplicationLaunchConfiguration) async throws -> any LaunchedApplication {
@@ -258,7 +258,7 @@ public final class DeviceApplicationCommands: ApplicationCommands {
 
   // MARK: - Private
 
-  fileprivate func killApplication(withProcessIdentifier processIdentifier: pid_t) async throws {
+  fileprivate func killApplication(processIdentifier: pid_t) async throws {
     try await withRemoteInstrumentsClient { client in
       try client.killProcess(processIdentifier)
     }
