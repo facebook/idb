@@ -39,6 +39,32 @@ private final class RootOnlyTransportDouble: AXTranslationTransport, @unchecked 
   }
 }
 
+/// Records the timeout each request was given, and answers root lookups with `root` and element reads with
+/// nothing to read.
+private final class TimeoutRecordingTransportDouble: AXTranslationTransport, @unchecked Sendable {
+  let kind = AXTranslationTransportKind.bridge
+  private let root: AXPTranslationObjectDouble
+  private let lock = NSLock()
+  private var _timeouts: [TimeInterval] = []
+
+  init(root: AXPTranslationObjectDouble) {
+    self.root = root
+  }
+
+  var timeouts: [TimeInterval] { lock.withLock { _timeouts } }
+
+  func send(_ request: AXPTranslatorRequest, timeout: TimeInterval) -> AXPTranslatorResponse? {
+    lock.withLock { _timeouts.append(timeout) }
+    let response = AXPTranslatorResponse.empty() as? AXPTranslatorResponse
+    if BridgeAXTranslatorRequestType(rawValue: Int(request.requestType)) != .multipleAttribute {
+      response?.setValue(root, forKey: "resultData")
+    } else {
+      response?.resultData = [NSNumber(value: BridgeAXTranslatorAttribute.frame.rawValue): NSValue(rect: NSRect(x: 0, y: 0, width: 1, height: 1))] as NSDictionary
+    }
+    return response
+  }
+}
+
 @Suite("How an accessibility read spends its time", .serialized)
 final class AXReadTimeTests {
 
@@ -117,6 +143,23 @@ final class AXReadTimeTests {
     #expect(
       transport.requestTypes.filter { $0 == UInt64(BridgeAXTranslatorRequestType.multipleAttribute.rawValue) }.count == 1,
       "the staleness check's request, and nothing after it")
+  }
+
+  // MARK: - Timing
+
+  @Test func aReadUsesTheSimulatorsTimingUnlessItAsksForItsOwn() async throws {
+    let transport = TimeoutRecordingTransportDouble(root: Self.reference(0))
+    let commands = try commands(
+      transport: transport, launchCtl: LaunchCtlDouble.with(running: ["com.apple.SpringBoard": Self.pid]))
+
+    let byDefault = try await commands.resolveElement(for: .application(pid: Self.pid), clientType: .noClient)
+    byDefault.close()
+    #expect(transport.timeouts.first == SimulatorAccessibilityTiming.default.elementTimeout)
+
+    let asked = SimulatorAccessibilityTiming(elementTimeout: 1.5, queryTimeout: 30)
+    let own = try await commands.resolveElement(for: .application(pid: Self.pid), clientType: .noClient, timing: asked)
+    own.close()
+    #expect(transport.timeouts.last == 1.5)
   }
 
   // MARK: - Cancellation

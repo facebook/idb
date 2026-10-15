@@ -57,11 +57,6 @@ final class AXTranslationRequest {
     case applicationForPid(pid_t)
   }
 
-  // Default timeout (in seconds) for synchronous accessibility XPC round-trips.
-  // Healthy responses return well under 1s; 5s bounds a stalled accessibility XPC
-  // service so the caller never hangs on `DispatchGroup.wait`.
-  private static let defaultRequestTimeoutSeconds: TimeInterval = 5.0
-
   let kind: Kind
   /// What the caller asked for, as they asked for it.
   var query: AccessibilityElementQuery {
@@ -82,9 +77,8 @@ final class AXTranslationRequest {
   let collector: AccessibilityProfilingCollector
   var translator: AXPTranslator?
 
-  /// Per-request timeout (seconds) applied to each synchronous CoreSimulator
-  /// accessibility XPC round-trip. `0` (or negative) is "wait nothing". There is
-  /// no "wait forever" mode — a stalled XPC service never hangs the caller.
+  /// The longest one translator request may go unanswered: the timing's `elementTimeout`. `0` (or negative)
+  /// is "wait nothing"; there is no "wait forever".
   var requestTimeoutSeconds: TimeInterval
   /// How long this read may take, per element and for the whole query.
   let timing: SimulatorAccessibilityTiming
@@ -98,7 +92,7 @@ final class AXTranslationRequest {
     self.clientType = clientType
     self.transport = transport
     self.token = UUID().uuidString
-    self.requestTimeoutSeconds = Self.defaultRequestTimeoutSeconds
+    self.requestTimeoutSeconds = timing.elementTimeout
     self.timing = timing
     self.collector = AccessibilityProfilingCollector()
   }
