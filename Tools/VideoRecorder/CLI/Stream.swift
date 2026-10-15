@@ -38,7 +38,7 @@ struct Stream: AsyncParsableCommand {
     let (insets, renderer, bars) = try video.composition(simulator: simulator, logger: logger)
     let framebuffer = try await simulator.framebuffer.connect(display: .active)
     let configuration = video.configuration(format: encoding.format(transport: transport.flatMap(VideoStreamTransport.init(rawValue:)) ?? .annexB))
-    let stream = SimulatorVideoStream.make(framebuffer: framebuffer, configuration: configuration, edgeInsets: insets, logger: logger)
+    let stream = SimulatorVideoStream(framebuffer: framebuffer, configuration: configuration, edgeInsets: insets, logger: logger)
     let consumer: any DataConsumer
     if output == "-" {
       consumer = FileWriter.syncWriter(withFileDescriptor: FileHandle.standardOutput.fileDescriptor, closeOnEndOfFile: false)

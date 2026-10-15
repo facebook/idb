@@ -98,7 +98,7 @@ public actor SimulatorVideo {
       fileWriter = SimulatorVideoWebMWriter(filePath: filePath, chaptersEnabled: chaptersEnabled, logger: logger)
     }
     self.fileWriter = fileWriter
-    self.stream = SimulatorVideoStream.makeRecorder(framebuffer: framebuffer, configuration: configuration, edgeInsets: edgeInsets, fileWriter: fileWriter, logger: logger)
+    self.stream = SimulatorVideoStream(framebuffer: framebuffer, configuration: configuration, edgeInsets: edgeInsets, fileWriter: fileWriter, logger: logger)
   }
 
   // MARK: - Recording

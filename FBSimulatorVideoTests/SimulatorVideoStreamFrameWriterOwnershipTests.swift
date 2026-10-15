@@ -48,7 +48,7 @@ final class SimulatorVideoStreamFrameWriterOwnershipTests: XCTestCase {
     let surface = FakeFramebufferSurface()
     surface.immediateSurface = makeTestIOSurface(width: 128, height: 128)
     let framebuffer = Framebuffer(surface: surface, logger: CapturingLogger())
-    let stream = SimulatorVideoStream.make(framebuffer: framebuffer, configuration: configuration, logger: CapturingLogger())
+    let stream = SimulatorVideoStream(framebuffer: framebuffer, configuration: configuration, logger: CapturingLogger())
     try await stream.startStreaming(DataBuffer.accumulatingBuffer())
     let firstWriter = await stream.frameWriters?.timedMetadataWriter as AnyObject?
     let first = try XCTUnwrap(firstWriter)

@@ -261,37 +261,33 @@ public actor SimulatorVideoStream: VideoStreamOperation {
 
   // MARK: - Initializers
 
-  /// Makes a stream with no edge insets. Cadence is derived from `configuration.framesPerSecond`.
-  public static func make(framebuffer: Framebuffer, configuration: VideoStreamConfiguration, logger: any ControlCoreLogger) -> SimulatorVideoStream {
-    make(framebuffer: framebuffer, configuration: configuration, edgeInsets: VideoStreamEdgeInsets(top: 0, bottom: 0, left: 0, right: 0), logger: logger)
-  }
-
-  /// Makes a stream whose output frame is extended by `edgeInsets` (reserved for overlay content).
-  public static func make(framebuffer: Framebuffer, configuration: VideoStreamConfiguration, edgeInsets: VideoStreamEdgeInsets, logger: any ControlCoreLogger) -> SimulatorVideoStream {
-    SimulatorVideoStream(
+  /// Makes a stream whose output frame is extended by `edgeInsets` (reserved for overlay content), none by default.
+  /// Cadence is derived from `configuration.framesPerSecond`.
+  public init(framebuffer: Framebuffer, configuration: VideoStreamConfiguration, edgeInsets: VideoStreamEdgeInsets = VideoStreamEdgeInsets(top: 0, bottom: 0, left: 0, right: 0), logger: any ControlCoreLogger) {
+    self.init(
       framebuffer: framebuffer,
       configuration: configuration,
       edgeInsets: edgeInsets,
-      cadence: cadence(for: configuration),
+      cadence: Self.cadence(for: configuration),
       logger: logger)
   }
 
-  /// Constructs a recording stream: encoded `.compressed` frames are muxed into a file via `fileWriter`
+  /// Makes a recording stream: encoded `.compressed` frames are muxed into a file via `fileWriter`
   /// rather than byte-framed to a `DataConsumer`. `edgeInsets` (default zero) reserves overlay bar
   /// regions exactly as on the streaming path. Cadence is derived from `configuration.framesPerSecond`.
-  static func makeRecorder(framebuffer: Framebuffer, configuration: VideoStreamConfiguration, edgeInsets: VideoStreamEdgeInsets = VideoStreamEdgeInsets(top: 0, bottom: 0, left: 0, right: 0), fileWriter: any RecordingFileWriter, logger: any ControlCoreLogger) -> SimulatorVideoStream {
-    return SimulatorVideoStream(
+  init(framebuffer: Framebuffer, configuration: VideoStreamConfiguration, edgeInsets: VideoStreamEdgeInsets = VideoStreamEdgeInsets(top: 0, bottom: 0, left: 0, right: 0), fileWriter: any RecordingFileWriter, logger: any ControlCoreLogger) {
+    self.init(
       framebuffer: framebuffer,
       configuration: configuration,
       edgeInsets: edgeInsets,
-      cadence: cadence(for: configuration),
+      cadence: Self.cadence(for: configuration),
       logger: logger,
       encodedSampleConsumerOverride: fileWriter)
   }
 
   /// Makes and starts a stream to `consumer`.
   public static func start(framebuffer: Framebuffer, configuration: VideoStreamConfiguration, edgeInsets: VideoStreamEdgeInsets = VideoStreamEdgeInsets(top: 0, bottom: 0, left: 0, right: 0), to consumer: any DataConsumer, logger: any ControlCoreLogger) async throws -> SimulatorVideoStream {
-    let stream = make(framebuffer: framebuffer, configuration: configuration, edgeInsets: edgeInsets, logger: logger)
+    let stream = SimulatorVideoStream(framebuffer: framebuffer, configuration: configuration, edgeInsets: edgeInsets, logger: logger)
     try await stream.startStreaming(consumer)
     return stream
   }

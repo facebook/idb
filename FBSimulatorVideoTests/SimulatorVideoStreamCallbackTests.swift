@@ -315,7 +315,7 @@ final class SimulatorVideoStreamDeliveryTests: XCTestCase {
     configuration: VideoStreamConfiguration = lazyConfiguration
   ) -> SimulatorVideoStream {
     let framebuffer = Framebuffer(surface: surface, logger: CapturingLogger())
-    return SimulatorVideoStream.make(
+    return SimulatorVideoStream(
       framebuffer: framebuffer, configuration: configuration, logger: CapturingLogger())
   }
 
