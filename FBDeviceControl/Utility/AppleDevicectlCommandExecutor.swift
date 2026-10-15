@@ -85,3 +85,10 @@ extension AppleDevicectlCommandExecutor {
     var result: Result
   }
 }
+
+extension FileManager {
+  func temporaryFile(extension fileExtension: String) throws -> URL {
+    let tmpPath = try url(for: .itemReplacementDirectory, in: .userDomainMask, appropriateFor: URL(fileURLWithPath: "/tmp"), create: true)
+    return tmpPath.appending(component: "\(ProcessInfo().globallyUniqueString).\(fileExtension)")
+  }
+}
