@@ -12,17 +12,20 @@ import GRPCCore
 ///
 /// gRPC signals a client going away through `cancellation` rather than by cancelling the handler's task.
 /// Both children are joined, so `operation` has finished its cleanup by the time this returns.
-func withRPCCancellation(_ cancellation: ServerContext.RPCCancellationHandle, operation: @escaping @Sendable () async throws -> Void) async throws {
-  try await withThrowingTaskGroup(of: Void.self) { group in
+func withRPCCancellation<T: Sendable>(
+  _ cancellation: ServerContext.RPCCancellationHandle, operation: @escaping @Sendable () async throws -> T
+) async throws -> T {
+  try await withThrowingTaskGroup(of: T.self) { group in
     group.addTask {
       guard !cancellation.isCancelled else { throw CancellationError() }
-      try await operation()
+      return try await operation()
     }
     group.addTask {
       try await cancellation.cancelled
       throw CancellationError()
     }
     defer { group.cancelAll() }
-    try await group.next()
+    guard let result = try await group.next() else { throw CancellationError() }
+    return result
   }
 }

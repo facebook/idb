@@ -35,13 +35,14 @@ struct AccessibilityInfoMethodHandler {
   let commandExecutor: IDBCommandExecutor
 
   func handle(request: Idb_AccessibilityInfoRequest, context: ServerContext) async throws -> Idb_AccessibilityInfoResponse {
-    try await Self.respond(to: request, using: commandExecutor)
+    try await Self.respond(to: request, using: commandExecutor, cancellation: context.cancellation)
   }
 
-  /// Lifted out of `handle` so it can be tested without a `ServerContext`.
+  /// Lifted out of `handle` so it can be tested without a `ServerContext`. `cancellation` is the RPC's.
   static func respond(
     to request: Idb_AccessibilityInfoRequest,
-    using commandExecutor: any AccessibilityDescribing
+    using commandExecutor: any AccessibilityDescribing,
+    cancellation: ServerContext.RPCCancellationHandle? = nil
   ) async throws -> Idb_AccessibilityInfoResponse {
     do {
       return try await read(request, using: commandExecutor)
