@@ -12,7 +12,7 @@ import Foundation
 /// Queries, creates and deletes the simulators in a `SimDeviceSet`, and reports their changes to its `delegate`.
 ///
 /// A set does not own the `Simulator`s it returns: they come from the same process-wide registry as
-/// `Simulator.fromSimDevice(_:logger:hidEventLogging:)`, so a device has one live `Simulator`
+/// `Simulator.fromSimDevice(_:logger:hidEventLogging:accessibilityTiming:)`, so a device has one live `Simulator`
 /// however it is reached, and the set keeps none alive.
 public final class SimulatorSet: TargetSet {
 
@@ -169,7 +169,9 @@ public final class SimulatorSet: TargetSet {
   }
 
   private func vend(_ device: SimDevice) -> Simulator {
-    Simulator.fromSimDevice(device, logger: logger, hidEventLogging: configuration.hidEventLogging)
+    Simulator.fromSimDevice(
+      device, logger: logger, hidEventLogging: configuration.hidEventLogging,
+      accessibilityTiming: configuration.accessibilityTiming)
   }
 
   private func fetchNewlyMadeSimulatorOrThrow(_ device: SimDevice) throws -> Simulator {

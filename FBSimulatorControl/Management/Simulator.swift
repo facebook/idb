@@ -33,6 +33,9 @@ public final class Simulator: Target, Hashable, CustomStringConvertible, @unchec
   /// How much of each HID event this simulator's HID connection logs.
   public let hidEventLogging: SimulatorHIDEventLogging
 
+  /// How long this simulator's accessibility reads may take, unless a read asks for its own.
+  public let accessibilityTiming: SimulatorAccessibilityTiming
+
   private let temporaryDirectoryLock = NSLock()
   private var _temporaryDirectory: TemporaryDirectory?
 
@@ -42,25 +45,30 @@ public final class Simulator: Target, Hashable, CustomStringConvertible, @unchec
   ///
   /// There is at most one live `Simulator` per device in the process, whether it is obtained here
   /// or from a `SimulatorSet`: if one is already held anywhere, it is returned and `logger` and
-  /// `hidEventLogging` are ignored. Once nothing holds it, the next request builds a fresh instance,
+  /// `hidEventLogging` and `accessibilityTiming` are ignored. Once nothing holds it, the next request builds a fresh instance,
   /// without the memoized commands or connections of the previous one.
   public static func fromSimDevice(
     _ device: SimDevice,
     logger: (any ControlCoreLogger)? = nil,
-    hidEventLogging: SimulatorHIDEventLogging = .redacted
+    hidEventLogging: SimulatorHIDEventLogging = .redacted,
+    accessibilityTiming: SimulatorAccessibilityTiming = .default
   ) -> Simulator {
     SimulatorRegistry.shared.simulator(for: device) { device in
-      Simulator(device: device, logger: logger, hidEventLogging: hidEventLogging)
+      Simulator(device: device, logger: logger, hidEventLogging: hidEventLogging, accessibilityTiming: accessibilityTiming)
     }
   }
 
-  private convenience init(device: SimDevice, logger: (any ControlCoreLogger)?, hidEventLogging: SimulatorHIDEventLogging) {
+  private convenience init(
+    device: SimDevice, logger: (any ControlCoreLogger)?, hidEventLogging: SimulatorHIDEventLogging,
+    accessibilityTiming: SimulatorAccessibilityTiming
+  ) {
     self.init(
       device: device,
       configuration: SimulatorConfiguration(simDevice: device),
       auxillaryDirectory: Self.auxillaryDirectory(fromSimDevice: device),
       logger: logger,
-      hidEventLogging: hidEventLogging)
+      hidEventLogging: hidEventLogging,
+      accessibilityTiming: accessibilityTiming)
   }
 
   /// Bypasses `SimulatorRegistry`, so nothing guarantees this is the only live instance for
@@ -70,12 +78,14 @@ public final class Simulator: Target, Hashable, CustomStringConvertible, @unchec
     configuration: SimulatorConfiguration,
     auxillaryDirectory: String,
     logger: (any ControlCoreLogger)?,
-    hidEventLogging: SimulatorHIDEventLogging = .redacted
+    hidEventLogging: SimulatorHIDEventLogging = .redacted,
+    accessibilityTiming: SimulatorAccessibilityTiming = .default
   ) {
     self.device = device
     self.configuration = configuration
     self.auxillaryDirectory = auxillaryDirectory
     self.hidEventLogging = hidEventLogging
+    self.accessibilityTiming = accessibilityTiming
     self.logger = (logger ?? ControlCoreGlobalConfiguration.defaultLogger).withName(device.udid.uuidString)
     self.commandCache = TargetCommandCache()
   }

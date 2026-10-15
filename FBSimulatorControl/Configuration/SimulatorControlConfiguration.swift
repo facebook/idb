@@ -27,16 +27,21 @@ public struct SimulatorControlConfiguration: Equatable, Hashable, CustomStringCo
   public let deviceSetPath: String?
   public let logger: ControlCoreLogger
   public let hidEventLogging: SimulatorHIDEventLogging
+  public let accessibilityTiming: SimulatorAccessibilityTiming
 
   /// - Parameter logger: nil means `ControlCoreGlobalConfiguration.defaultLogger` (os_log-only
   ///   by default — see its documentation).
   /// - Parameter hidEventLogging: how much of each HID event the set's simulators log.
+  /// - Parameter accessibilityTiming: how long the set's simulators' accessibility reads may take, unless a
+  ///   read asks for its own.
   public init(
-    deviceSetPath: String?, logger: (any ControlCoreLogger)?, hidEventLogging: SimulatorHIDEventLogging = .redacted
+    deviceSetPath: String?, logger: (any ControlCoreLogger)?, hidEventLogging: SimulatorHIDEventLogging = .redacted,
+    accessibilityTiming: SimulatorAccessibilityTiming = .default
   ) {
     self.deviceSetPath = deviceSetPath
     self.logger = logger ?? ControlCoreGlobalConfiguration.defaultLogger
     self.hidEventLogging = hidEventLogging
+    self.accessibilityTiming = accessibilityTiming
   }
 
   // MARK: - Equatable, Hashable
