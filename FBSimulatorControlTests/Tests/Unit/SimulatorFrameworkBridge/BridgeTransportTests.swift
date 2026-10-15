@@ -318,6 +318,24 @@ final class BridgeTransportTests: XCTestCase {
     transport.release()
   }
 
+  func testCancellingARoundTripStillWaitsForTheGuest() async throws {
+    let (connection, peer) = try validationSocketPair()
+    defer { close(peer) }
+    let request = try BridgeRequest(command: .dns(.list)).encoded()
+    let start = Date()
+    let roundTrip = Task { try await connection.roundTrip(request, receiveTimeout: 0.5) }
+    try await Task.sleep(nanoseconds: 50_000_000)
+    roundTrip.cancel()
+    do {
+      _ = try await roundTrip.value
+      XCTFail("a guest that never answers cannot complete the round trip")
+    } catch AXBridgeError.guestNotAnswering(after: 0.5) {
+      // BUG: the round trip was cancelled after 50 ms, and it still waited out its whole receive timeout —
+      // flipped later in the stack.
+      XCTAssertGreaterThanOrEqual(Date().timeIntervalSince(start), 0.45)
+    }
+  }
+
   func testAnOldFailureCannotDiscardANewerConnection() async throws {
     let firstStarted = expectation(description: "first request started")
     let secondStarted = expectation(description: "second request started")
