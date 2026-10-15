@@ -43,6 +43,18 @@ struct AccessibilityInfoMethodHandler {
     to request: Idb_AccessibilityInfoRequest,
     using commandExecutor: any AccessibilityDescribing
   ) async throws -> Idb_AccessibilityInfoResponse {
+    do {
+      return try await read(request, using: commandExecutor)
+    } catch {
+      AccessibilityReadTelemetry.record(failure: error, into: CallTelemetry.current)
+      throw error
+    }
+  }
+
+  private static func read(
+    _ request: Idb_AccessibilityInfoRequest,
+    using commandExecutor: any AccessibilityDescribing
+  ) async throws -> Idb_AccessibilityInfoResponse {
     try AccessibilityInfoRequestTranslation.validate(request)
     let format = AccessibilityInfoRequestTranslation.outputFormat(from: request.format)
     let backend = AccessibilityInfoRequestTranslation.backend(from: request.backend)
@@ -75,6 +87,12 @@ struct AccessibilityInfoMethodHandler {
 /// The element count, durations and backend use the column names the CLI already logs from complete
 /// documents, so one query reads both. Translator-backed reads are the only ones that report metrics.
 enum AccessibilityReadTelemetry {
+  /// A read that failed records how it ended, when the failure says.
+  static func record(failure error: Error, into call: CallTelemetry?) {
+    guard let call, let outcome = AccessibilityReadOutcome(failure: error) else { return }
+    call.setNormal(outcome.rawValue, forKey: "ax_read_outcome")
+  }
+
   static func record(_ response: AccessibilityElementsResponse, into call: CallTelemetry?) {
     guard let call else { return }
     if let backend = response.backend {

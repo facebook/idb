@@ -232,6 +232,31 @@ final class AXReadTimeTests {
     #expect(await transport.receiveTimeouts == [0.5, SimulatorAccessibilityTiming.default.queryTimeout])
   }
 
+  @Test func aReadWithUnansweredRequestsSaysSoInItsDocument() throws {
+    let metrics = AccessibilityTranslatorReadMetrics(
+      elementCount: 3, roundTrips: 5, readDuration: 0, totalDuration: 0, translatorReads: .batched, transport: .bridge,
+      unansweredRequests: 2)
+    let degraded = AccessibilityElementsResponse(elements: .tree([]), translatorMetrics: metrics)
+    let document = try #require(
+      try JSONSerialization.jsonObject(with: degraded.formattedOutputJSON(format: .complete)) as? [String: Any])
+    #expect(metrics.outcome == .degraded)
+    #expect((document["degraded"] as? [String: Any])?["unanswered_requests"] as? Int == 2)
+
+    let healthy = AccessibilityElementsResponse(
+      elements: .tree([]),
+      translatorMetrics: AccessibilityTranslatorReadMetrics(
+        elementCount: 3, roundTrips: 3, readDuration: 0, totalDuration: 0, translatorReads: .raw, transport: .bridge))
+    let healthyDocument = try #require(
+      try JSONSerialization.jsonObject(with: healthy.formattedOutputJSON(format: .complete)) as? [String: Any])
+    #expect(healthyDocument["degraded"] == nil)
+  }
+
+  @Test func aFailedReadSaysHowItEnded() {
+    #expect(AccessibilityReadOutcome(failure: AccessibilityError.serviceNotAnswering(.request(kind: "frontmost", timeout: 5), elapsed: 5)) == .abortedUnanswered)
+    #expect(AccessibilityReadOutcome(failure: AccessibilityError.serviceNotAnswering(.query(timeout: 10), elapsed: 10)) == .abortedDeadline)
+    #expect(AccessibilityReadOutcome(failure: AccessibilityError.springBoardNotRunning) == nil)
+  }
+
   // MARK: - Cancellation
 
   @Test func cancellingAReadDoesNotStopItsWalk() async throws {

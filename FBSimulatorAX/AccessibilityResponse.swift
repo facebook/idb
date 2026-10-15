@@ -413,6 +413,22 @@ public enum AccessibilityReadOutcome: String, Sendable {
   case complete
   /// The read returned, but some requests went unanswered and their values are missing.
   case degraded
+  /// The read stopped at a request the service did not answer within the element timeout.
+  case abortedUnanswered = "aborted_unanswered"
+  /// The read stopped when the query ran out of its timeout.
+  case abortedDeadline = "aborted_deadline"
+
+  /// How a read that failed with `error` ended, when the failure is one of the read's own timing.
+  public init?(failure error: Error) {
+    switch error {
+    case AccessibilityError.serviceNotAnswering(.request, _):
+      self = .abortedUnanswered
+    case AccessibilityError.serviceNotAnswering(.query, _):
+      self = .abortedDeadline
+    default:
+      return nil
+    }
+  }
 }
 
 /// A read that returned with requests unanswered, so some values are missing. Absent from a `complete`

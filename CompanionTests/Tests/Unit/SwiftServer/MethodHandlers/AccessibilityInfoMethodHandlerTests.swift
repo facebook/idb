@@ -127,6 +127,23 @@ struct AccessibilityInfoMethodHandlerTests {
   }
 
   @Test
+  func aReadThatRanOutOfTimeRecordsHowItEnded() {
+    let unanswered = CallTelemetry()
+    AccessibilityReadTelemetry.record(
+      failure: AccessibilityError.serviceNotAnswering(.request(kind: "frontmost", timeout: 5), elapsed: 5), into: unanswered)
+    #expect(unanswered.normals == ["ax_read_outcome": "aborted_unanswered"])
+
+    let deadline = CallTelemetry()
+    AccessibilityReadTelemetry.record(
+      failure: AccessibilityError.serviceNotAnswering(.query(timeout: 10), elapsed: 10), into: deadline)
+    #expect(deadline.normals == ["ax_read_outcome": "aborted_deadline"])
+
+    let other = CallTelemetry()
+    AccessibilityReadTelemetry.record(failure: AccessibilityError.springBoardNotRunning, into: other)
+    #expect(other.normals.isEmpty, "a failure that is not about time says nothing about the outcome")
+  }
+
+  @Test
   func aReadWithoutTranslatorMetricsRecordsOnlyItsBackend() {
     let call = CallTelemetry()
     AccessibilityReadTelemetry.record(
