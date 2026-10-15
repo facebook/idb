@@ -35,6 +35,9 @@ Interact by element identity, not coordinates
 - When an element exposes no AXUniqueId but you can name what is on screen, tap it by its visible label: `idb ui tap "<label>"` - the label is the default match key, and it works on surfaces that never set identifiers.
 - Coordinate taps (`idb ui tap <x> <y>`) are a last resort for targets with neither identifier nor label. When one is genuinely required, record why with `--reason`.
 
+Profile through `idb profile`
+- `idb profile <kind> --bundle-id <id> --json` reports leaks, heap, call stacks, memory and Instruments traces as structured JSON parsed on the companion, so it reads the same from any client host. `idb help agent profiling` covers choosing a kind.
+
 Record intent
 - `--reason "<why>"` is accepted by every command and records the intent of the invocation for the operators of the host being driven. Supply it whenever the purpose of a command is not obvious from the command itself, and always for coordinate taps and screenshots.
 
@@ -43,10 +46,37 @@ Identify yourself
 - If your harness sets none of these, export one so tooling can distinguish agent traffic from human sessions.
 """
 
+_AGENT_PROFILING_GUIDE = """\
+idb agent guide: profiling
+
+`idb profile` runs a profiler against one process on the target and reports what it found. Pass `--json` for the structured report: keys are camelCase, zero values are kept, and byte counts are plain integers. Without `--json` you get the profiler's own text output.
+
+Choose a kind
+- Leaked memory: `idb profile leaks`. Add the memory graph for Xcode's debugger with `idb profile memgraph --output app.memgraph`.
+- What is on the heap: `idb profile heap` reports allocation counts and bytes per class.
+- Where time goes right now: `idb profile sample --duration 5` reports the heaviest call stacks per thread.
+- Memory by region or category: `idb profile vmmap` and `idb profile footprint`.
+- CPU, memory, disk and energy over time: `idb profile resources --duration 30 --json` prints one JSON object per sample, as it is taken.
+- An Instruments recording: `idb profile trace --template "Time Profiler" --duration 10 --json` records, then reports the template's tables (Time Profiler reports time-profile; Hangs reports potential-hangs). `--schema` picks other tables and `--row-limit` bounds them. `--output app.trace` keeps the bundle for Instruments.
+
+Target the process
+- `--bundle-id` profiles the running instance of an installed application; `--pid` profiles a process directly.
+- To cover an app's startup, `idb profile trace --launch <bundle-id>` launches it under the recording. `--all-processes` traces the whole target.
+
+Stopping and failures
+- `resources` and `trace` run until `--duration` elapses or you interrupt them. Interrupting ends them cleanly: `trace` still exports what it recorded. The other kinds run to completion on their own.
+- If the profiled process exits or the profiler fails, the command fails promptly with the profiler's error rather than waiting.
+- Tracing a simulator in a custom device set needs idb's test shim on the companion host.
+"""
+
 # Topic key -> (one-line summary, body). Subtopic words join with "-", so
 # `idb help agent performance` resolves the key "agent-performance".
 _TOPICS: dict[str, tuple[str, str]] = {
     "agent": ("guidance for coding agents and automation driving idb", _AGENT_GUIDE),
+    "agent-profiling": (
+        "choosing and reading `idb profile` reports",
+        _AGENT_PROFILING_GUIDE,
+    ),
 }
 
 

@@ -54,8 +54,18 @@ class HelpCommandTest(TestCase):
         self.assertIn("last resort", output)
 
     async def test_subtopic_words_join_to_a_key(self) -> None:
-        # No subtopics exist yet, so the joined key must miss cleanly and
-        # name itself in the error.
+        (exit_code, output) = await _run(["help", "agent", "profiling"])
+        self.assertEqual(exit_code, 0)
+        self.assertTrue(output.startswith("idb agent guide: profiling"))
+
+    async def test_agent_guide_points_at_the_profiling_topic(self) -> None:
+        (_, guide) = await _run(["help", "agent"])
+        (_, profiling) = await _run(["help", "agent", "profiling"])
+        self.assertIn("idb help agent profiling", guide)
+        self.assertIn("--json", profiling)
+        self.assertIn("idb profile trace --launch <bundle-id>", profiling)
+
+    async def test_an_unknown_subtopic_names_its_joined_key(self) -> None:
         err = io.StringIO()
         with contextlib.redirect_stderr(err):
             (exit_code, _) = await _run(["help", "agent", "performance"])
