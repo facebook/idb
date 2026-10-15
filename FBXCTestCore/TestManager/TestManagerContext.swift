@@ -8,13 +8,13 @@
 import FBControlCore
 import Foundation
 
-@objc public final class TestManagerContext: NSObject {
+public final class TestManagerContext: CustomStringConvertible {
 
-  @objc public let sessionIdentifier: UUID
+  public let sessionIdentifier: UUID
   public let timeout: TimeInterval
   public let testHostLaunchConfiguration: ApplicationLaunchConfiguration
   public let testedApplicationAdditionalEnvironment: [String: String]
-  @objc public let testConfiguration: TestConfiguration
+  public let testConfiguration: TestConfiguration
 
   public init(
     sessionIdentifier: UUID,
@@ -28,10 +28,9 @@ import Foundation
     self.testHostLaunchConfiguration = testHostLaunchConfiguration
     self.testedApplicationAdditionalEnvironment = testedApplicationAdditionalEnvironment
     self.testConfiguration = testConfiguration
-    super.init()
   }
 
-  public override var description: String {
+  public var description: String {
     "Test Host \(testHostLaunchConfiguration) | Session ID \(sessionIdentifier.uuidString) | Timeout \(timeout)"
   }
 }
