@@ -47,6 +47,36 @@ private final class RecordingAccessibilityExecutor: AccessibilityDescribing {
   }
 }
 
+/// Takes `delay` to answer every read, and counts the reads it finished.
+private actor SlowAccessibilityExecutor: AccessibilityDescribing {
+  private let delay: UInt64
+  private(set) var finishedReads = 0
+
+  init(delayNanoseconds: UInt64) {
+    self.delay = delayNanoseconds
+  }
+
+  func accessibilityDescribeResponse(
+    query: AccessibilityElementQuery, options: AccessibilityRequestOptions, backend: UIAutomationBackend
+  ) async throws -> AccessibilityElementsResponse {
+    try await read()
+  }
+
+  func accessibilityInfoAtPoint(
+    _ value: NSValue?, options: AccessibilityRequestOptions, backend: UIAutomationBackend
+  ) async throws -> AccessibilityElementsResponse {
+    try await read()
+  }
+
+  private func read() async throws -> AccessibilityElementsResponse {
+    // Stands in for a read that keeps going: an unstructured task does not inherit the caller's cancellation.
+    let delay = self.delay
+    await Task { try? await Task.sleep(nanoseconds: delay) }.value
+    finishedReads += 1
+    return AccessibilityElementsResponse(elements: .single(AccessibilityDocumentElement()))
+  }
+}
+
 /// Asserts what the *handler* hands the executor, which is where a describe-by-marker can silently
 /// lose the request's `--key`/`--profile`/`--collect-frame-coverage` by reaching the executor with a
 /// format-only options set. `AccessibilityInfoRequestTranslation.options(from:)` carries them for
@@ -124,6 +154,23 @@ struct AccessibilityInfoMethodHandlerTests {
         "ax_slowest_request_type": "frontmost",
       ])
     #expect(!response.json.contains("profile"), "the caller did not ask for a profile, so none is reported")
+  }
+
+  @Test
+  func cancellingTheRPCDoesNotStopTheRead() async throws {
+    let executor = SlowAccessibilityExecutor(delayNanoseconds: 300_000_000)
+    let cancellation = ServerContext.RPCCancellationHandle()
+    let read = Task {
+      try await AccessibilityInfoMethodHandler.respond(to: Idb_AccessibilityInfoRequest(), using: executor, cancellation: cancellation)
+    }
+    try await Task.sleep(nanoseconds: 50_000_000)
+    cancellation.cancel()
+    let response = try await read.value
+
+    // BUG: the client went away, and the companion read to the end and answered anyway — flipped later in the
+    // stack.
+    #expect(!response.json.isEmpty)
+    #expect(await executor.finishedReads == 1)
   }
 
   @Test
