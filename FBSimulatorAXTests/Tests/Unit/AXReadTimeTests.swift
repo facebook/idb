@@ -147,8 +147,10 @@ final class AXReadTimeTests {
     }
     let elapsed = ContinuousClock.now - start
 
+    // The request count, not the elapsed time, shows only one request was waited out: a loaded host can take longer
+    // than a second timeout to wait out one.
     #expect(transport.requests.count == 2, "the root, then the first child, which went unanswered")
-    #expect(elapsed >= .milliseconds(50) && elapsed < .milliseconds(100), "one unanswered request waited out, not two")
+    #expect(elapsed >= .milliseconds(50), "the unanswered request was waited out")
   }
 
   @Test func anUnansweredFrontmostLookupIsReportedAsNoElement() async throws {
