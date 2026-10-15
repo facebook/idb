@@ -11,7 +11,7 @@ import Foundation
 @_implementationOnly import SimulatorFrameworkBridgeRuntime
 #endif
 
-public enum FBDynamicStoreService {
+public enum DynamicStoreService {
   private enum Action: String {
     case snapshot
     case restore

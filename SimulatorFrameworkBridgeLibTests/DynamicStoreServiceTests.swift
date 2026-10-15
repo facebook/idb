@@ -32,10 +32,10 @@ final class DynamicStoreServiceTests: XCTestCase {
   // MARK: - Keys
 
   func testTheAliasesNameTheTwoGlobalKeysAndAKeyIsTakenAsGiven() {
-    XCTAssertEqual(FBDynamicStoreService.key(forName: "dns"), dnsKey)
-    XCTAssertEqual(FBDynamicStoreService.key(forName: "proxy"), proxyKey)
-    XCTAssertEqual(FBDynamicStoreService.key(forName: "Setup:/Network/Service/A"), "Setup:/Network/Service/A")
-    XCTAssertNil(FBDynamicStoreService.key(forName: "something"))
+    XCTAssertEqual(DynamicStoreService.key(forName: "dns"), dnsKey)
+    XCTAssertEqual(DynamicStoreService.key(forName: "proxy"), proxyKey)
+    XCTAssertEqual(DynamicStoreService.key(forName: "Setup:/Network/Service/A"), "Setup:/Network/Service/A")
+    XCTAssertNil(DynamicStoreService.key(forName: "something"))
   }
 
   // MARK: - Snapshot

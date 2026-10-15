@@ -29,7 +29,7 @@ extension FBPhotosTestRuntime {
 
 extension FBDynamicStoreTestRuntime {
   func run(action: String, arguments: [String], input: Data?) -> Int {
-    run(input: input) { FBDynamicStoreService.handleDynamicStoreAction(action: action, arguments: arguments) }
+    run(input: input) { DynamicStoreService.handleDynamicStoreAction(action: action, arguments: arguments) }
   }
 }
 

@@ -44,9 +44,9 @@ public enum BridgeServices {
     case let .dynamicStore(command):
       switch command {
       case let .snapshot(key):
-        return Int32(FBDynamicStoreService.handleDynamicStoreAction(action: "snapshot", arguments: [key], input: { Data() }, output: output))
+        return Int32(DynamicStoreService.handleDynamicStoreAction(action: "snapshot", arguments: [key], input: { Data() }, output: output))
       case let .restore(key, snapshot):
-        return Int32(FBDynamicStoreService.handleDynamicStoreAction(action: "restore", arguments: [key], input: { snapshot }, output: output))
+        return Int32(DynamicStoreService.handleDynamicStoreAction(action: "restore", arguments: [key], input: { snapshot }, output: output))
       }
     case let .proxy(command):
       let action: String

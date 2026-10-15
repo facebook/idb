@@ -68,7 +68,7 @@ public struct FBBridgeServices: FBBridgeServiceHandling {
   }
 
   public func dynamicStore(_ action: String, arguments: [String]) -> Int32 {
-    Int32(FBDynamicStoreService.handleDynamicStoreAction(action: action, arguments: arguments))
+    Int32(DynamicStoreService.handleDynamicStoreAction(action: action, arguments: arguments))
   }
 
   public func photos(_ action: String) -> Int32 {
