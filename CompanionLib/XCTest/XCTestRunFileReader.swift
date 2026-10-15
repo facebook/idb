@@ -28,7 +28,7 @@ extension XCTestRunFileError: LocalizedError {
   }
 }
 
-final class XCTestRunFileReader {
+enum XCTestRunFileReader {
 
   public static func readContents(of xctestrunURL: URL, expandPlaceholderWithPath path: String) throws -> [String: Any] {
     let fileManager = FileManager.default
