@@ -55,7 +55,7 @@ public struct FBBridgeServices: FBBridgeServiceHandling {
   }
 
   public func health(_ action: String, bundleID: String?, typeIDs: [String]) -> Int32 {
-    Int32(FBHealthSettingsService.handleHealthSettingsAction(action: action, bundleID: bundleID, typeIdentifiers: typeIDs))
+    Int32(HealthSettingsService.handleHealthSettingsAction(action: action, bundleID: bundleID, typeIdentifiers: typeIDs))
   }
 
   public func deliveredNotifications(_ action: String, bundleID: String?) -> Int32 {

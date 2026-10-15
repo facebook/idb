@@ -115,7 +115,7 @@ public enum BridgeServices {
         bundleID = identifier
         types = identifiers
       }
-      return Int32(FBHealthSettingsService.handleHealthSettingsAction(action: action, bundleID: bundleID, typeIdentifiers: types, output: output))
+      return Int32(HealthSettingsService.handleHealthSettingsAction(action: action, bundleID: bundleID, typeIdentifiers: types, output: output))
       #endif
     case let .accessibility(request):
       let response = AccessibilityService.handleRequest(request)

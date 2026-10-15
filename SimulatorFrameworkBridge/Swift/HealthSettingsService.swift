@@ -201,7 +201,7 @@ private func handleHealthSettingsActionImpl(
   return sink?.failure("Unknown Health action: \(action)") ?? 1
 }
 
-public enum FBHealthSettingsService {
+public enum HealthSettingsService {
 
   public static func handleHealthSettingsAction(
     action: String,

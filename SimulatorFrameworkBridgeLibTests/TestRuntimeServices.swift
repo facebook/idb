@@ -45,6 +45,6 @@ extension FBNetworkConfigurationTestRuntime {
 
 extension FBHealthTestRuntime {
   func runAction(_ action: String, bundleID: String?, types: [String]) -> [String: Any] {
-    run { FBHealthSettingsService.handleHealthSettingsAction(action: action, bundleID: bundleID, typeIdentifiers: types) }
+    run { HealthSettingsService.handleHealthSettingsAction(action: action, bundleID: bundleID, typeIdentifiers: types) }
   }
 }

@@ -18,11 +18,11 @@ final class HealthSettingsServiceTests: XCTestCase {
   // and healthd. `com.example.test` is not an installed app, which is why the read verbs report
   // failure rather than returning records.
   func testListReportsFailureForAnUnknownBundleIdentifier() {
-    XCTAssertEqual(FBHealthSettingsService.handleHealthSettingsAction(action: "list", bundleID: "com.example.test", typeIdentifiers: []), 1)
+    XCTAssertEqual(HealthSettingsService.handleHealthSettingsAction(action: "list", bundleID: "com.example.test", typeIdentifiers: []), 1)
   }
 
   func testClearReportsFailureForAnUnknownBundleIdentifier() {
-    XCTAssertEqual(FBHealthSettingsService.handleHealthSettingsAction(action: "clear", bundleID: "com.example.test", typeIdentifiers: []), 1)
+    XCTAssertEqual(HealthSettingsService.handleHealthSettingsAction(action: "clear", bundleID: "com.example.test", typeIdentifiers: []), 1)
   }
 
   // MARK: - The drifted authorization selector
@@ -32,14 +32,14 @@ final class HealthSettingsServiceTests: XCTestCase {
   func testApproveAnswersWithAStatusOnAnyRuntime() {
     XCTAssertNil(
       FBExceptionRaisedBy {
-        _ = FBHealthSettingsService.handleHealthSettingsAction(action: "approve", bundleID: "com.example.test", typeIdentifiers: ["HKQuantityTypeIdentifierStepCount"])
+        _ = HealthSettingsService.handleHealthSettingsAction(action: "approve", bundleID: "com.example.test", typeIdentifiers: ["HKQuantityTypeIdentifierStepCount"])
       })
   }
 
   func testApproveWithDefaultTypesAnswersWithAStatusOnAnyRuntime() {
     XCTAssertNil(
       FBExceptionRaisedBy {
-        _ = FBHealthSettingsService.handleHealthSettingsAction(action: "approve", bundleID: "com.example.test", typeIdentifiers: [])
+        _ = HealthSettingsService.handleHealthSettingsAction(action: "approve", bundleID: "com.example.test", typeIdentifiers: [])
       })
   }
 
@@ -67,6 +67,6 @@ final class HealthSettingsServiceTests: XCTestCase {
   }
 
   func testUnknownActionReturnsFailure() {
-    XCTAssertEqual(FBHealthSettingsService.handleHealthSettingsAction(action: "unknown", bundleID: "com.example.test", typeIdentifiers: []), 1)
+    XCTAssertEqual(HealthSettingsService.handleHealthSettingsAction(action: "unknown", bundleID: "com.example.test", typeIdentifiers: []), 1)
   }
 }
