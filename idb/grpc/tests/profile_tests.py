@@ -35,7 +35,7 @@ from idb.grpc.idb_pb2 import (
     ProfileResponse,
     ProfileTraceReport,
 )
-from idb.grpc.profile import message_to_json, start_request
+from idb.grpc.profile import message_to_json, ProfileException, start_request
 from idb.grpc.tests.stream_test_support import make_client
 from idb.utils.testing import TestCase
 
@@ -238,8 +238,7 @@ class ProfileClientTests(TestCase):
         stream = _ProfileStream(_sample(0), None)
         client, _ = make_client("profile", stream)
 
-        # BUG: the client never ends its requests, so the call fails on exit — flipped in the following commit
-        with self.assertRaisesRegex(IdbException, "Outgoing stream was not ended"):
+        with self.assertRaises(ProfileException):
             await client.profile(
                 ResourcesProfile(), ProfilePid(pid=42), asyncio.Event()
             )
@@ -264,8 +263,7 @@ class ProfileClientTests(TestCase):
         )
         client, _ = make_client("profile", stream)
 
-        # BUG: the client never ends its requests, hiding the companion's error — flipped in the following commit
-        with self.assertRaisesRegex(IdbException, "Outgoing stream was not ended"):
+        with self.assertRaisesRegex(IdbException, "^xctrace exited with code 1$"):
             await client.profile(TraceProfile(), ProfilePid(pid=42), asyncio.Event())
 
     async def test_a_single_file_artifact_is_written_to_the_path(self) -> None:
@@ -294,12 +292,9 @@ class ProfileClientTests(TestCase):
 
         with tempfile.TemporaryDirectory() as directory:
             path = os.path.join(directory, "app.trace")
-            # BUG: the client never ends its requests, so the call fails once the trace is written — flipped in the
-            # following commit
-            with self.assertRaisesRegex(IdbException, "Outgoing stream was not ended"):
-                await client.profile(
-                    TraceProfile(), ProfilePid(pid=42), asyncio.Event(), path
-                )
+            await client.profile(
+                TraceProfile(), ProfilePid(pid=42), asyncio.Event(), path
+            )
 
             self.assertEqual(
                 sorted(os.listdir(path)), ["form.template", "instrument_data"]

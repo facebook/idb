@@ -130,6 +130,7 @@ async def drain_profile(
     not accept Stop; it should have ended the request stream instead. Returns None if the stream ends without a
     result, which a failed profile does: its error is the call's status, raised as the stream closes."""
     stop_waiter = None if stop is None else asyncio.ensure_future(stop.wait())
+    ended = stop is None
     try:
         while True:
             read = asyncio.ensure_future(stream.recv_message())
@@ -142,12 +143,15 @@ async def drain_profile(
                         ProfileRequest(stop=ProfileRequest.Stop())
                     )
                     await stream.end()
+                    ended = True
             response = await read
-            if response is None:
-                return None
-            output = response.WhichOneof("output")
-            if output == "result":
-                return response.result
+            output = None if response is None else response.WhichOneof("output")
+            if output in (None, "result"):
+                # grpclib only reads the call's status once the requests are ended, so end them if the companion
+                # finished before Stop was sent.
+                if not ended:
+                    await stream.end()
+                return None if response is None else response.result
             if output == "sample" and on_sample is not None:
                 on_sample(message_to_json(response.sample))
     finally:
