@@ -157,8 +157,8 @@ public final class SimulatorXCTestCommands: XCTestExtendedCommands {
 
     let bundleDescriptor = try BundleDescriptor.bundleWithFallbackIdentifier(fromPath: bundlePath)
     let architectures = Set((bundleDescriptor.binary?.architectures ?? []).map(\.rawValue))
-    let configuration = ListTestConfiguration.configuration(
-      withEnvironment: [:],
+    let configuration = ListTestConfiguration(
+      environment: [:],
       workingDirectory: simulator.auxillaryDirectory,
       testBundlePath: bundlePath,
       runnerAppPath: appPath,

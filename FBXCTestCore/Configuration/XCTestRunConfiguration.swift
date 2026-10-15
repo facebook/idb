@@ -135,10 +135,6 @@ public struct ListTestConfiguration: XCTestRunConfiguration, Hashable, CustomStr
   public let architectures: Set<String>
   public let runnerAppPath: String?
 
-  public static func configuration(withEnvironment environment: [String: String], workingDirectory: String, testBundlePath: String, runnerAppPath: String?, waitForDebugger: Bool, timeout: TimeInterval, architectures: Set<String>) -> ListTestConfiguration {
-    ListTestConfiguration(environment: environment, workingDirectory: workingDirectory, testBundlePath: testBundlePath, runnerAppPath: runnerAppPath, waitForDebugger: waitForDebugger, timeout: timeout, architectures: architectures)
-  }
-
   public init(environment: [String: String], workingDirectory: String, testBundlePath: String, runnerAppPath: String?, waitForDebugger: Bool, timeout: TimeInterval, architectures: Set<String>) {
     self.processUnderTestEnvironment = environment
     self.workingDirectory = workingDirectory
@@ -180,10 +176,6 @@ struct TestManagerTestConfiguration: XCTestRunConfiguration, CustomStringConvert
   let osLogPath: String?
   let videoRecordingPath: String?
   let testArtifactsFilenameGlobs: [String]?
-
-  static func configuration(withEnvironment environment: [String: String], workingDirectory: String, testBundlePath: String, waitForDebugger: Bool, timeout: TimeInterval, runnerAppPath: String, testTargetAppPath: String?, testFilter: String?, videoRecordingPath: String?, testArtifactsFilenameGlobs: [String]?, osLogPath: String?) -> TestManagerTestConfiguration {
-    TestManagerTestConfiguration(environment: environment, workingDirectory: workingDirectory, testBundlePath: testBundlePath, waitForDebugger: waitForDebugger, timeout: timeout, runnerAppPath: runnerAppPath, testTargetAppPath: testTargetAppPath, testFilter: testFilter, videoRecordingPath: videoRecordingPath, testArtifactsFilenameGlobs: testArtifactsFilenameGlobs, osLogPath: osLogPath)
-  }
 
   init(environment: [String: String], workingDirectory: String, testBundlePath: String, waitForDebugger: Bool, timeout: TimeInterval, runnerAppPath: String, testTargetAppPath: String?, testFilter: String?, videoRecordingPath: String?, testArtifactsFilenameGlobs: [String]?, osLogPath: String?) {
     self.processUnderTestEnvironment = environment
@@ -235,10 +227,6 @@ public struct LogicTestConfiguration: XCTestRunConfiguration, CustomStringConver
   public let logDirectoryPath: String?
   public let architectures: Set<String>
   public let injectLibraries: [String]
-
-  public static func configuration(withEnvironment environment: [String: String], workingDirectory: String, testBundlePath: String, waitForDebugger: Bool, timeout: TimeInterval, testFilter: String?, mirroring: LogicTestMirrorLogs, coverageConfiguration: CodeCoverageConfiguration?, binaryPath: String?, logDirectoryPath: String?, architectures: Set<String>) -> LogicTestConfiguration {
-    LogicTestConfiguration(environment: environment, workingDirectory: workingDirectory, testBundlePath: testBundlePath, waitForDebugger: waitForDebugger, timeout: timeout, testFilter: testFilter, mirroring: mirroring, coverageConfiguration: coverageConfiguration, binaryPath: binaryPath, logDirectoryPath: logDirectoryPath, architectures: architectures)
-  }
 
   public init(environment: [String: String], workingDirectory: String, testBundlePath: String, waitForDebugger: Bool, timeout: TimeInterval, testFilter: String?, mirroring: LogicTestMirrorLogs, coverageConfiguration: CodeCoverageConfiguration?, binaryPath: String?, logDirectoryPath: String?, architectures: Set<String>, injectLibraries: [String] = []) {
     self.processUnderTestEnvironment = environment
