@@ -11,7 +11,7 @@ import Foundation
 @_implementationOnly import SimulatorFrameworkBridgeRuntime
 #endif
 
-public enum FBPrivacyService {
+public enum PrivacyService {
   private static let services = [
     "camera": "kTCCServiceCamera",
     "microphone": "kTCCServiceMicrophone",

@@ -17,7 +17,7 @@ struct PrivacyServiceTests {
       ("approve", ["app", "camera", "unknown"]), ("revoke", ["app", ""]),
     ] {
       var called = false
-      let code = FBPrivacyService.execute(action: action, arguments: arguments) { _, _, _ in
+      let code = PrivacyService.execute(action: action, arguments: arguments) { _, _, _ in
         called = true
         return nil
       }
@@ -28,7 +28,7 @@ struct PrivacyServiceTests {
 
   @Test func approvalMapsAllServicesAndDeduplicatesWithoutChangingBundleID() {
     var calls = 0
-    let code = FBPrivacyService.execute(action: "approve", arguments: ["com.example.app", "camera", "microphone", "photos", "contacts", "camera"]) { bundleID, services, approved in
+    let code = PrivacyService.execute(action: "approve", arguments: ["com.example.app", "camera", "microphone", "photos", "contacts", "camera"]) { bundleID, services, approved in
       calls += 1
       #expect(bundleID == "com.example.app")
       #expect(services == ["kTCCServiceCamera", "kTCCServiceMicrophone", "kTCCServicePhotos", "kTCCServiceAddressBook"])
@@ -41,7 +41,7 @@ struct PrivacyServiceTests {
 
   @Test func selectiveResetAndRuntimeFailurePropagate() {
     var calls = 0
-    let code = FBPrivacyService.execute(action: "revoke", arguments: ["app", "photos"]) { bundleID, services, approved in
+    let code = PrivacyService.execute(action: "revoke", arguments: ["app", "photos"]) { bundleID, services, approved in
       calls += 1
       #expect(bundleID == "app")
       #expect(services == ["kTCCServicePhotos"])

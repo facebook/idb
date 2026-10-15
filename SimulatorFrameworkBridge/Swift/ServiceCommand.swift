@@ -80,7 +80,7 @@ public struct FBBridgeServices: FBBridgeServiceHandling {
   }
 
   public func privacy(_ action: String, arguments: [String]) -> Int32 {
-    FBPrivacyService.handleAction(action, arguments: arguments)
+    PrivacyService.handleAction(action, arguments: arguments)
   }
 
   public func proxy(_ action: String, arguments: [String]) -> Int32 {
