@@ -175,7 +175,7 @@ public class BundleStorage: IDBStorage {
     if !relocateLibraries || !target.requiresBundlesToBeSigned() || skipSigningBundles {
       return artifact
     }
-    let updatedBundle = try BundleDescriptor.bundle(fromPath: destinationBundlePath.path)
+    let updatedBundle = try BundleDescriptor(path: destinationBundlePath.path)
     let provider = CodesignProvider(identityName: "-", logger: logger)
     try await updatedBundle.updatePathsForRelocation(withCodesign: provider, logger: logger)
     return artifact
@@ -197,7 +197,7 @@ public class BundleStorage: IDBStorage {
         continue
       }
       do {
-        let bundle = try BundleDescriptor.bundle(fromPath: bundlePath.path)
+        let bundle = try BundleDescriptor(path: bundlePath.path)
         mapping[key] = bundle
       } catch {
         logger.log("Failed to get bundle info for bundle at path \(bundlePath)")
@@ -241,7 +241,7 @@ public final class XCTestBundleStorage: BundleStorage {
 
     for testURL in testURLs {
       do {
-        let bundle = try BundleDescriptor.bundleWithFallbackIdentifier(fromPath: testURL.path)
+        let bundle = try BundleDescriptor(path: testURL.path, fallbackIdentifier: true)
         let testDescriptor = XCTestBootstrapDescriptor(url: testURL, name: bundle.name, testBundle: bundle)
         testDescriptors.append(testDescriptor)
       } catch {
@@ -354,17 +354,17 @@ public final class XCTestBundleStorage: BundleStorage {
     else {
       return nil
     }
-    guard let testHostBundle = try? BundleDescriptor.bundle(fromPath: testHostPath) else {
+    guard let testHostBundle = try? BundleDescriptor(path: testHostPath) else {
       return nil
     }
-    guard let testBundle = try? BundleDescriptor.bundle(fromPath: testBundlePath) else {
+    guard let testBundle = try? BundleDescriptor(path: testBundlePath) else {
       return nil
     }
     return XCodebuildTestRunDescriptor(url: xctestrunURL, name: testTarget, testBundle: testBundle, testHostBundle: testHostBundle)
   }
 
   func saveTestBundle(_ testBundleURL: URL, usingSymlink useSymlink: Bool, skipSigningBundles: Bool) async throws -> InstalledArtifact {
-    let bundle = try BundleDescriptor.bundleWithFallbackIdentifier(fromPath: testBundleURL.path)
+    let bundle = try BundleDescriptor(path: testBundleURL.path, fallbackIdentifier: true)
     return try await saveBundle(bundle, usingSymlink: useSymlink, skipSigningBundles: skipSigningBundles)
   }
 

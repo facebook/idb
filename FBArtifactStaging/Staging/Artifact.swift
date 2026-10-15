@@ -60,7 +60,7 @@ extension Artifact {
     let directory: URL
     switch tree {
     case .inPlace(let bundle):
-      return try BundleDescriptor.bundle(fromPath: bundle.path)
+      return try BundleDescriptor(path: bundle.path)
     case .extracted(let extracted):
       directory = extracted
     case .file(let file):
@@ -123,7 +123,7 @@ public enum ArtifactKind: Sendable, CustomStringConvertible {
       return try Self.testArtifact(inDirectory: Self.directory(of: tree))
     case .framework:
       if case .inPlace(let item) = tree {
-        return .framework(try BundleDescriptor.bundle(fromPath: item.path))
+        return .framework(try BundleDescriptor(path: item.path))
       }
       return .framework(try StorageUtils.bundle(inDirectory: Self.directory(of: tree)))
     case .dylib:

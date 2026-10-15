@@ -61,6 +61,20 @@ public struct BundleDescriptor: Hashable, Sendable, CustomStringConvertible {
     storage = Storage(name: name, identifier: identifier, path: path, binary: binary)
   }
 
+  /// Reads the bundle at `path`. With `fallbackIdentifier`, a bundle without a bundle identifier is
+  /// identified by its name rather than rejected.
+  public init(path: String, fallbackIdentifier: Bool = false) throws {
+    guard let bundle = Bundle(path: path) else {
+      throw BundleDescriptorError.bundleLoadFailed(path: path)
+    }
+    let bundleName = BundleDescriptor.bundleNameForBundle(bundle)
+    guard let identifier = bundle.bundleIdentifier ?? (fallbackIdentifier ? bundleName : nil) else {
+      throw BundleDescriptorError.bundleIdentifierUnavailable(name: (path as NSString).lastPathComponent, path: path)
+    }
+    let binary = try BundleDescriptor.binaryForBundle(bundle)
+    self.init(name: bundleName, identifier: identifier, path: path, binary: binary)
+  }
+
   public static func == (lhs: BundleDescriptor, rhs: BundleDescriptor) -> Bool {
     lhs.storage === rhs.storage
       || (lhs.name == rhs.name && lhs.identifier == rhs.identifier && lhs.path == rhs.path && lhs.binary == rhs.binary)
@@ -71,14 +85,6 @@ public struct BundleDescriptor: Hashable, Sendable, CustomStringConvertible {
     hasher.combine(identifier)
     hasher.combine(path)
     hasher.combine(binary)
-  }
-
-  public static func bundle(fromPath path: String) throws -> BundleDescriptor {
-    return try bundleFromPath(path, fallbackIdentifier: false)
-  }
-
-  public static func bundleWithFallbackIdentifier(fromPath path: String) throws -> BundleDescriptor {
-    return try bundleFromPath(path, fallbackIdentifier: true)
   }
 
   public var description: String {
@@ -141,17 +147,6 @@ public struct BundleDescriptor: Hashable, Sendable, CustomStringConvertible {
     return replacements
   }
 
-  private static func bundleFromPath(_ path: String, fallbackIdentifier: Bool) throws -> BundleDescriptor {
-    guard let bundle = Bundle(path: path) else {
-      throw BundleDescriptorError.bundleLoadFailed(path: path)
-    }
-    let bundleName = bundleNameForBundle(bundle)
-    guard let identifier = bundle.bundleIdentifier ?? (fallbackIdentifier ? bundleName : nil) else {
-      throw BundleDescriptorError.bundleIdentifierUnavailable(name: (path as NSString).lastPathComponent, path: path)
-    }
-    let binary = try binaryForBundle(bundle)
-    return BundleDescriptor(name: bundleName, identifier: identifier, path: path, binary: binary)
-  }
 }
 
 extension BundleDescriptor {
@@ -189,7 +184,7 @@ extension BundleDescriptor {
     }
     let applicationPath = applicationPaths[0]
     logger?.log("Using Application at path \(applicationPath)")
-    let bundle = try BundleDescriptor.bundle(fromPath: applicationPath)
+    let bundle = try BundleDescriptor(path: applicationPath)
     logger?.log("Bundle in IPA is \(bundle)")
     return bundle
   }

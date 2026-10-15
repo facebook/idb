@@ -142,7 +142,7 @@ struct TestRunnerConfiguration {
     let sessionIdentifier = UUID()
     let testBundle: BundleDescriptor
     do {
-      testBundle = try BundleDescriptor.bundle(fromPath: testLaunchConfiguration.testBundle.path)
+      testBundle = try BundleDescriptor(path: testLaunchConfiguration.testBundle.path)
     } catch {
       throw TestRunnerConfigurationError.testBundlePreparationFailed(underlying: error)
     }

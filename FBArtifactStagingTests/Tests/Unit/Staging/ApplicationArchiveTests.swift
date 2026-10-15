@@ -593,7 +593,7 @@ private final class ApplicationCommandsDouble: ApplicationCommands, @unchecked S
     if let failure {
       throw failure
     }
-    return InstalledApplication(bundle: try BundleDescriptor.bundle(fromPath: path), installType: .userDevelopment, dataContainer: nil)
+    return InstalledApplication(bundle: try BundleDescriptor(path: path), installType: .userDevelopment, dataContainer: nil)
   }
 
   func launch(_ configuration: ApplicationLaunchConfiguration) async throws -> LaunchedApplication { throw Unimplemented() }

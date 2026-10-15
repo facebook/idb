@@ -73,7 +73,7 @@ public struct DeviceDebugServerCommands: DebugServerCommands {
   }
 
   private func lldbBootstrapCommands(forApplicationAtPath path: String, port: in_port_t) async throws -> [String] {
-    let bundle = try BundleDescriptor.bundle(fromPath: path)
+    let bundle = try BundleDescriptor(path: path)
     let platformSelect = try platformSelectCommand()
     let localTarget = "target create '\(path)'"
     let remote = try await remoteTarget(forBundleID: bundle.identifier)

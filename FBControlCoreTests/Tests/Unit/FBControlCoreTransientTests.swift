@@ -64,7 +64,7 @@ struct FBControlCoreTransientTests {
 
   @Test
   func bundleFromInvalidPathThrows() {
-    #expect(throws: (any Error).self) { try BundleDescriptor.bundle(fromPath: "/nonexistent/path") }
+    #expect(throws: (any Error).self) { try BundleDescriptor(path: "/nonexistent/path") }
   }
 
   // MARK: - InstalledApplication

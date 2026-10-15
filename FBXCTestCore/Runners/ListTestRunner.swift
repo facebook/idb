@@ -91,7 +91,7 @@ public final class ListTestRunner {
     var environment = environment
     environment["DYLD_FALLBACK_FRAMEWORK_PATH"] = testFrameworkPaths
     environment["DYLD_FALLBACK_LIBRARY_PATH"] = testFrameworkPaths
-    let appBundle = try BundleDescriptor.bundle(fromPath: runnerAppPath)
+    let appBundle = try BundleDescriptor(path: runnerAppPath)
     return Subprocess(
       executable: appBundle.binary?.path ?? target.xctest.path,
       environment: .exact(XCTestShimConfiguration.unarmedAudioInjectionEnvironment(environment)))

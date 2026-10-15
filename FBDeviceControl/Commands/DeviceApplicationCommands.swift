@@ -141,7 +141,7 @@ public final class DeviceApplicationCommands: ApplicationCommands {
     guard let device else {
       throw DeviceNilError.deviceNil
     }
-    let bundle = try BundleDescriptor.bundle(fromPath: path)
+    let bundle = try BundleDescriptor(path: path)
     let appURL = URL(fileURLWithPath: path, isDirectory: true)
     let options: [String: Any] = [
       "CFBundleIdentifier": bundle.identifier,

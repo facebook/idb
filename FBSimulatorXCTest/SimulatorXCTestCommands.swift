@@ -155,7 +155,7 @@ public final class SimulatorXCTestCommands: XCTestExtendedCommands {
       throw WeakTargetError.simulator
     }
 
-    let bundleDescriptor = try BundleDescriptor.bundleWithFallbackIdentifier(fromPath: bundlePath)
+    let bundleDescriptor = try BundleDescriptor(path: bundlePath, fallbackIdentifier: true)
     let architectures = Set((bundleDescriptor.binary?.architectures ?? []).map(\.rawValue))
     let configuration = ListTestConfiguration(
       environment: [:],

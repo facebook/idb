@@ -18,6 +18,6 @@ extension XCTestCase {
 
   class func macCommonApplication() throws -> BundleDescriptor {
     let path = Bundle(for: self).path(forResource: "MacCommonApp", ofType: "app")!
-    return try BundleDescriptor.bundle(fromPath: path)
+    return try BundleDescriptor(path: path)
   }
 }

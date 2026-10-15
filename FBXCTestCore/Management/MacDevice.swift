@@ -102,7 +102,7 @@ public final class MacDevice: Target {
         continue
       }
       let path = (applicationInstallDirectory as NSString).appendingPathComponent(fileOrDirectory)
-      if let bundle = try? BundleDescriptor.bundle(fromPath: path) {
+      if let bundle = try? BundleDescriptor(path: path) {
         mapping[bundle.identifier] = bundle
       }
     }
@@ -283,7 +283,7 @@ public final class MacDevice: Target {
   }
 
   public func installApplication(withPath path: String) throws -> InstalledApplication {
-    let bundle = try BundleDescriptor.bundle(fromPath: path)
+    let bundle = try BundleDescriptor(path: path)
     bundleIDToProductMap[bundle.identifier] = bundle
     return InstalledApplication(bundle: bundle, installType: .mac, dataContainer: nil)
   }
@@ -299,7 +299,7 @@ public final class MacDevice: Target {
     guard let existingBundle = bundleIDToProductMap[bundleID] else {
       throw MacDeviceError.bundleNotRegistered(bundleID: bundleID)
     }
-    let bundle = try BundleDescriptor.bundle(fromPath: existingBundle.path)
+    let bundle = try BundleDescriptor(path: existingBundle.path)
     return InstalledApplication(bundle: bundle, installType: .mac, dataContainer: nil)
   }
 
@@ -344,7 +344,7 @@ public final class MacDevice: Target {
   // MARK: - XCTestExtendedCommands
 
   public func listTests(forBundleAtPath bundlePath: String, timeout: TimeInterval, withAppAtPath appPath: String?) async throws -> [String] {
-    let bundleDescriptor = try BundleDescriptor.bundleWithFallbackIdentifier(fromPath: bundlePath)
+    let bundleDescriptor = try BundleDescriptor(path: bundlePath, fallbackIdentifier: true)
     guard let binary = bundleDescriptor.binary else {
       throw MacDeviceError.testBundleHasNoBinary(path: bundlePath)
     }
@@ -436,7 +436,7 @@ extension MacDevice: ApplicationCommands {
 
   public func installed() async throws -> [InstalledApplication] {
     try bundleIDToProductMap.values.map { existingBundle in
-      let bundle = try BundleDescriptor.bundle(fromPath: existingBundle.path)
+      let bundle = try BundleDescriptor(path: existingBundle.path)
       return InstalledApplication(bundle: bundle, installType: .mac, dataContainer: nil)
     }
   }

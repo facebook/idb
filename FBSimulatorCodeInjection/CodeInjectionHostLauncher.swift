@@ -26,7 +26,7 @@ struct CodeInjectionHostLauncher {
     // The shim binds this socket; the session connects to it.
     let socketPath = "/tmp/idb_repl_\(UUID().uuidString).sock"
 
-    let bundle = try BundleDescriptor.bundle(fromPath: bundlePath)
+    let bundle = try BundleDescriptor(path: bundlePath)
     let architectures = Set((bundle.binary?.architectures ?? []).map(\.rawValue))
 
     let configuration = LogicTestConfiguration(

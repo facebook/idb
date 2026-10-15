@@ -474,7 +474,7 @@ public struct SimulatorApplicationCommands: ApplicationCommands {
       throw SimulatorApplicationLookupError.dataContainerNotAURL(value: String(describing: dataContainer), key: keyDataContainer, info: String(describing: appInfo))
     }
 
-    let bundle = try BundleDescriptor.bundle(fromPath: appPath)
+    let bundle = try BundleDescriptor(path: appPath)
 
     _ = appName // used for validation only
     return InstalledApplication(
@@ -485,7 +485,7 @@ public struct SimulatorApplicationCommands: ApplicationCommands {
   }
 
   private func confirmCompatibilityOfApplication(atPath path: String) async throws -> BundleDescriptor {
-    guard let application = try? BundleDescriptor.bundle(fromPath: path) else {
+    guard let application = try? BundleDescriptor(path: path) else {
       throw SimulatorApplicationLookupError.applicationInfoUnavailable(path: path)
     }
 
