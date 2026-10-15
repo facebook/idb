@@ -98,8 +98,8 @@ struct SimulatorLaunchCtlCommandsTests {
   @Test
   func processIsRunningReflectsLivePid() async throws {
     let launchCtl = LaunchCtlDouble.with(running: ["com.apple.SpringBoard": 4321])
-    let livePidRunning = try await launchCtl.processIsRunning(withProcessIdentifier: 4321)
-    let absentPidRunning = try await launchCtl.processIsRunning(withProcessIdentifier: 9999)
+    let livePidRunning = try await launchCtl.processIsRunning(processIdentifier: 4321)
+    let absentPidRunning = try await launchCtl.processIsRunning(processIdentifier: 9999)
     #expect(livePidRunning)
     #expect(!absentPidRunning, "an unregistered pid is not running")
   }

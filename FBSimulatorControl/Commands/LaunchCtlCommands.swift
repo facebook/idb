@@ -29,7 +29,7 @@ public protocol LaunchCtlCommands: AnyObject {
 
   func serviceIsRunning(named serviceName: String) async throws -> Bool
 
-  func processIsRunning(withProcessIdentifier pid: pid_t) async throws -> Bool
+  func processIsRunning(processIdentifier pid: pid_t) async throws -> Bool
 }
 
 public extension LaunchCtlCommands {
@@ -45,7 +45,7 @@ public extension LaunchCtlCommands {
 
   /// True when `pid` owns a live launchctl service. Unlike `serviceName(forProcessIdentifier:)`,
   /// returns `false` instead of throwing when the pid is not a registered service.
-  func processIsRunning(withProcessIdentifier pid: pid_t) async throws -> Bool {
+  func processIsRunning(processIdentifier pid: pid_t) async throws -> Bool {
     try await listServices().values.contains { $0 == pid }
   }
 }

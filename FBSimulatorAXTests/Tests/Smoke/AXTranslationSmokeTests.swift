@@ -230,7 +230,7 @@ final class AXTranslationSmokeTests: ProvidedSimulatorTestCase {
       let root = await observe()
       var live = false
       if let root {
-        live = try await launchCtl.processIsRunning(withProcessIdentifier: root.pid)
+        live = try await launchCtl.processIsRunning(processIdentifier: root.pid)
       }
       record("\(elapsed()) root " + (root.map { "pid=\($0.pid) live=\(live) frame=\($0.frame) children=\($0.children.count)" } ?? "none"))
       if let root, live, root.pid != deadSpringBoard, root.frame != .zero {

@@ -10,7 +10,7 @@ import FBControlCore
 import Foundation
 
 /// Test double for the launchctl command surface. Only `listServices()` is modelled —
-/// the protocol's `serviceIsRunning(named:)` / `processIsRunning(withProcessIdentifier:)`
+/// the protocol's `serviceIsRunning(named:)` / `processIsRunning(processIdentifier:)`
 /// default implementations compute their verdict from it, so configuring `servicesResult`
 /// exercises the real decision logic. Methods the suites do not use trap.
 final class LaunchCtlDouble: LaunchCtlCommands {
