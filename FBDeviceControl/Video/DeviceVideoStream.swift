@@ -74,7 +74,7 @@ public final class DeviceVideoStream: VideoStreamOperation, @unchecked Sendable 
   // MARK: - Factory
 
   public static func stream(withSession session: AVCaptureSession, configuration: VideoStreamConfiguration, logger: any ControlCoreLogger) throws -> DeviceVideoStream {
-    guard let captureFormat = captureFormat(for: configuration.format) else {
+    guard let captureFormat = DeviceCaptureFormat(configuration.format) else {
       throw DeviceVideoStreamError.invalidStreamFormat("\(configuration.format)")
     }
 
@@ -96,21 +96,6 @@ public final class DeviceVideoStream: VideoStreamOperation, @unchecked Sendable 
     return DeviceVideoStream(
       session: session, output: output, frameWriter: configuration.format.frameWriters().frameWriter,
       writeQueue: DispatchQueue(label: "com.facebook.fbdevicecontrol.streamencoder"), logger: logger)
-  }
-
-  /// What the capture output is asked for, or nil for a format the device cannot produce: it
-  /// encodes H.264 only.
-  static func captureFormat(for format: VideoStreamFormat) -> DeviceCaptureFormat? {
-    switch format {
-    case .compressedVideo(withCodec: .h264, transport: _):
-      return .h264
-    case .compressedVideo(withCodec: .hevc, transport: _):
-      return nil
-    case .mjpeg, .minicap:
-      return .jpeg
-    case .bgra:
-      return .bgra
-    }
   }
 
   init(session: AVCaptureSession, output: AVCaptureVideoDataOutput, frameWriter: any EncodedFrameWriter, writeQueue: DispatchQueue, logger: any ControlCoreLogger) {
@@ -259,6 +244,21 @@ enum DeviceCaptureFormat {
   case jpeg
   /// The device's H.264 encoder output, as delivered.
   case h264
+
+  /// What the capture output is asked for to stream `format`, or nil for a format the device cannot
+  /// produce: it encodes H.264 only.
+  init?(_ format: VideoStreamFormat) {
+    switch format {
+    case .compressedVideo(withCodec: .h264, transport: _):
+      self = .h264
+    case .compressedVideo(withCodec: .hevc, transport: _):
+      return nil
+    case .mjpeg, .minicap:
+      self = .jpeg
+    case .bgra:
+      self = .bgra
+    }
+  }
 
   enum ConfigurationError: Error, LocalizedError {
     case unsupportedBGRAOutput

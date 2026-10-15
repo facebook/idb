@@ -23,7 +23,7 @@ struct DeviceVideoStreamTests {
   }
 
   private func makeStream(for format: VideoStreamFormat, consumer: (any DataConsumer)?) throws -> DeviceVideoStream {
-    _ = try #require(DeviceVideoStream.captureFormat(for: format), "Expected a capture format for \(format)")
+    _ = try #require(DeviceCaptureFormat(format), "Expected a capture format for \(format)")
     let stream = DeviceVideoStream(
       session: AVCaptureSession(),
       output: AVCaptureVideoDataOutput(),
@@ -41,19 +41,19 @@ struct DeviceVideoStreamTests {
 
   @Test
   func captureFormatResolvesSupportedFormats() {
-    #expect(DeviceVideoStream.captureFormat(for: .bgra) == .bgra)
-    #expect(DeviceVideoStream.captureFormat(for: .mjpeg(encoder: .requireHardware)) == .jpeg)
-    #expect(DeviceVideoStream.captureFormat(for: .minicap) == .jpeg)
-    #expect(DeviceVideoStream.captureFormat(for: .compressedVideo(withCodec: .h264, transport: .annexB)) == .h264)
-    #expect(DeviceVideoStream.captureFormat(for: .compressedVideo(withCodec: .h264, transport: .mpegts)) == .h264)
-    #expect(DeviceVideoStream.captureFormat(for: .compressedVideo(withCodec: .h264, transport: .fmp4)) == .h264)
+    #expect(DeviceCaptureFormat(.bgra) == .bgra)
+    #expect(DeviceCaptureFormat(.mjpeg(encoder: .requireHardware)) == .jpeg)
+    #expect(DeviceCaptureFormat(.minicap) == .jpeg)
+    #expect(DeviceCaptureFormat(.compressedVideo(withCodec: .h264, transport: .annexB)) == .h264)
+    #expect(DeviceCaptureFormat(.compressedVideo(withCodec: .h264, transport: .mpegts)) == .h264)
+    #expect(DeviceCaptureFormat(.compressedVideo(withCodec: .h264, transport: .fmp4)) == .h264)
   }
 
   @Test
   func captureFormatRejectsHEVC() {
     // The device encodes H.264 only.
-    #expect(DeviceVideoStream.captureFormat(for: .compressedVideo(withCodec: .hevc, transport: .annexB)) == nil)
-    #expect(DeviceVideoStream.captureFormat(for: .compressedVideo(withCodec: .hevc, transport: .mpegts)) == nil)
+    #expect(DeviceCaptureFormat(.compressedVideo(withCodec: .hevc, transport: .annexB)) == nil)
+    #expect(DeviceCaptureFormat(.compressedVideo(withCodec: .hevc, transport: .mpegts)) == nil)
   }
 
   // MARK: - consumeSampleBuffer byte contracts
