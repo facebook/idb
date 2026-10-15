@@ -86,16 +86,13 @@ public final class IDBCommandExecutor {
 
   // MARK: - Initializers
 
-  public static func commandExecutor(forTarget target: CompanionTarget, storageManager: IDBStorageManager, temporaryDirectory: TemporaryDirectory, debugserverPort: in_port_t, logger: IDBLogger) -> IDBCommandExecutor {
-    IDBCommandExecutor(target: target, storageManager: storageManager, temporaryDirectory: temporaryDirectory, debugserverPort: debugserverPort, logger: logger.named("grpc_handler"))
-  }
-
-  private init(target: CompanionTarget, storageManager: IDBStorageManager, temporaryDirectory: TemporaryDirectory, debugserverPort: in_port_t, logger: IDBLogger) {
+  /// Logs to `logger`, named `grpc_handler`.
+  public init(target: CompanionTarget, storageManager: IDBStorageManager, temporaryDirectory: TemporaryDirectory, debugserverPort: in_port_t, logger: IDBLogger) {
     self.target = target
     self.storageManager = storageManager
     self.temporaryDirectory = temporaryDirectory
     self.debugserverPort = debugserverPort
-    self.logger = logger
+    self.logger = logger.named("grpc_handler")
   }
 
   // MARK: - Installation

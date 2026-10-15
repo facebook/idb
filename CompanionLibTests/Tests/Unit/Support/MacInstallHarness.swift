@@ -25,8 +25,8 @@ final class MacInstallHarness {
     target = MacDevice(logger: logger)
     scratch = URL(fileURLWithPath: NSTemporaryDirectory()).appendingPathComponent("MacInstallHarness-\(UUID().uuidString)")
     try FileManager.default.createDirectory(at: scratch, withIntermediateDirectories: true)
-    executor = IDBCommandExecutor.commandExecutor(
-      forTarget: target,
+    executor = IDBCommandExecutor(
+      target: target,
       storageManager: try IDBStorageManager.manager(forTarget: target, logger: logger),
       temporaryDirectory: TemporaryDirectory(logger: logger),
       debugserverPort: 0,
