@@ -72,7 +72,7 @@ public struct FBBridgeServices: FBBridgeServiceHandling {
   }
 
   public func photos(_ action: String) -> Int32 {
-    Int32(FBPhotoLibraryService.handlePhotoLibraryAction(action: action))
+    Int32(PhotoLibraryService.handlePhotoLibraryAction(action: action))
   }
 
   public func notifications(_ action: String, bundleID: String?) -> Int32 {

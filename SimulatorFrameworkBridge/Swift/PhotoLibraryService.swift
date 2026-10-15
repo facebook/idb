@@ -24,7 +24,7 @@ private func clearPhotoLibrary(client: FBPhotoLibraryClient, output: BridgeOutpu
   }
 }
 
-public enum FBPhotoLibraryService {
+public enum PhotoLibraryService {
 
   public static func handlePhotoLibraryAction(action: String) -> Int {
     handlePhotoLibraryAction(action: action, output: nil)

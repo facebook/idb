@@ -25,7 +25,7 @@ public enum BridgeServices {
       return Int32(ContactsService.handleContactsAction(action: "clear", output: output))
       #endif
     case .clearPhotos:
-      return Int32(FBPhotoLibraryService.handlePhotoLibraryAction(action: "clear", output: output))
+      return Int32(PhotoLibraryService.handlePhotoLibraryAction(action: "clear", output: output))
     case let .dns(command):
       let action: String
       let arguments: [String]

@@ -14,8 +14,8 @@ struct PhotoLibraryServiceTests {
 
   @Test
   func unknownActionReturnsFailure() {
-    #expect(FBPhotoLibraryService.handlePhotoLibraryAction(action: "delete") == 1)
-    #expect(FBPhotoLibraryService.handlePhotoLibraryAction(action: "") == 1)
-    #expect(FBPhotoLibraryService.handlePhotoLibraryAction(action: "add") == 1)
+    #expect(PhotoLibraryService.handlePhotoLibraryAction(action: "delete") == 1)
+    #expect(PhotoLibraryService.handlePhotoLibraryAction(action: "") == 1)
+    #expect(PhotoLibraryService.handlePhotoLibraryAction(action: "add") == 1)
   }
 }

@@ -19,11 +19,11 @@ extension FBContactsTestRuntime {
 
 extension FBPhotosTestRuntime {
   func run() -> Int {
-    run { FBPhotoLibraryService.clear(client: $0) }
+    run { PhotoLibraryService.clear(client: $0) }
   }
 
   func runCatchingException() -> [String: Any] {
-    runCatchingException { FBPhotoLibraryService.clear(client: $0) }
+    runCatchingException { PhotoLibraryService.clear(client: $0) }
   }
 }
 
