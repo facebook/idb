@@ -178,7 +178,7 @@ final class CrashLogStoreTests: XCTestCase {
   }
 
   private func makeStore() -> CrashLogStore {
-    CrashLogStore.store(forDirectories: [directory], logger: ControlCoreLoggerDouble())
+    CrashLogStore(directories: [directory], logger: ControlCoreLoggerDouble())
   }
 
   private func assetsdCrashData() throws -> Data {

@@ -52,7 +52,7 @@ public final class DeviceCrashLogCommands: CrashLogCommands {
 
   public convenience init(device: Device) {
     let storeDirectory = (device.auxillaryDirectory as NSString).appendingPathComponent("crash_store")
-    self.init(device: device, store: CrashLogStore.store(forDirectories: [storeDirectory], logger: device.logger))
+    self.init(device: device, store: CrashLogStore(directories: [storeDirectory], logger: device.logger))
   }
 
   init(device: Device, store: CrashLogStore, afcCalls: AFCCalls? = nil) {

@@ -16,7 +16,7 @@ public final class CrashLogNotifier {
   internal var sinceDate: Date
 
   internal init(logger: any ControlCoreLogger) {
-    self.store = CrashLogStore.store(forDirectories: CrashLogInfo.diagnosticReportsPaths, logger: logger)
+    self.store = CrashLogStore(directories: CrashLogInfo.diagnosticReportsPaths, logger: logger)
     self.sinceDate = Date()
   }
 

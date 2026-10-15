@@ -47,7 +47,7 @@ struct DeviceCrashLogFileTests {
 
     // A store rooted somewhere disposable, and the scripted AFC table in place of MobileDevice's.
     let storeDirectory = (NSTemporaryDirectory() as NSString).appendingPathComponent(UUID().uuidString)
-    let store = CrashLogStore.store(forDirectories: [storeDirectory], logger: device.logger)
+    let store = CrashLogStore(directories: [storeDirectory], logger: device.logger)
     device.commandCache.register(
       DeviceCrashLogCommands(device: device, store: store, afcCalls: afc.calls),
       as: DeviceCrashLogCommands.self)

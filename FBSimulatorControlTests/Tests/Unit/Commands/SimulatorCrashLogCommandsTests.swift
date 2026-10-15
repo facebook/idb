@@ -23,7 +23,7 @@ final class SimulatorCrashLogCommandsTests: XCTestCase {
     commands = SimulatorCrashLogCommands(
       simulator: simulator,
       notifier: CrashLogNotifier.sharedInstance,
-      store: CrashLogStore.store(forDirectories: [directory], logger: ConsumerLogger(consumer: NullDataConsumer())))
+      store: CrashLogStore(directories: [directory], logger: ConsumerLogger(consumer: NullDataConsumer())))
   }
 
   override func tearDownWithError() throws {
