@@ -98,6 +98,9 @@ enum AccessibilityReadTelemetry {
   static func record(failure error: Error, into call: CallTelemetry?) {
     guard let call, let outcome = AccessibilityReadOutcome(failure: error) else { return }
     call.setNormal(outcome.rawValue, forKey: "ax_read_outcome")
+    if case let AccessibilityError.serviceNotAnswering(_, _, behindAbandoned) = error {
+      call.setInt(Int(behindAbandoned), forKey: "ax_requests_behind_abandoned")
+    }
   }
 
   static func record(_ response: AccessibilityElementsResponse, into call: CallTelemetry?) {
@@ -117,6 +120,7 @@ enum AccessibilityReadTelemetry {
     call.setInt(Int(metrics.springBoardCheckDuration * 1000), forKey: "ax_springboard_check_ms")
     call.setInt(Int(metrics.acquireRoundTrips), forKey: "ax_acquire_round_trips")
     call.setInt(Int(metrics.unansweredRequests), forKey: "ax_request_timeouts")
+    call.setInt(Int(metrics.requestsBehindAbandoned), forKey: "ax_requests_behind_abandoned")
     if let slowest = metrics.slowestRequest {
       call.setInt(Int(slowest.duration * 1000), forKey: "ax_slowest_request_ms")
       call.setNormal(slowest.kindName, forKey: "ax_slowest_request_type")

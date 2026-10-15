@@ -182,7 +182,7 @@ final class AXBridgeUIAutomation: AXBridgeTreeReader, @unchecked Sendable {
     do {
       return try await transport.send(request, receiveTimeout: queryTimeout)
     } catch let AXBridgeError.guestNotAnswering(after) {
-      throw AccessibilityError.serviceNotAnswering(.query(timeout: queryTimeout), elapsed: after)
+      throw AccessibilityError.serviceNotAnswering(.query(timeout: queryTimeout), elapsed: after, behindAbandoned: 0)
     }
   }
 

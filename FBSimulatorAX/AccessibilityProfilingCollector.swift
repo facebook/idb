@@ -34,6 +34,7 @@ public final class AccessibilityProfilingCollector {
   private var _xpcDurationBeforeWalk: CFAbsoluteTime = 0
   private var _xpcCallsBeforeWalk: Int64 = 0
   private var _unansweredRequests: Int64 = 0
+  private var _requestsBehindAbandoned: Int64 = 0
   private var _slowestRequest: AccessibilityTranslatorRequestTiming?
   private var _fetchedKeys = Set<String>()
 
@@ -67,15 +68,18 @@ public final class AccessibilityProfilingCollector {
     lock.unlock()
   }
 
-  /// One translator request: its kind, the translator's `requestType`, how long it took, and whether the
-  /// service answered it.
-  func recordRequest(type: UInt64, duration: CFAbsoluteTime, answered: Bool) {
+  /// One translator request: its kind, the translator's `requestType`, how long it took, whether the
+  /// service answered it, and whether it was sent while a request abandoned earlier was still unanswered.
+  func recordRequest(type: UInt64, duration: CFAbsoluteTime, answered: Bool, behindAbandoned: Bool = false) {
     lock.lock()
     defer { lock.unlock() }
     _xpcCallCount += 1
     _totalXPCDuration += duration
     if !answered {
       _unansweredRequests += 1
+    }
+    if behindAbandoned {
+      _requestsBehindAbandoned += 1
     }
     if duration > (_slowestRequest?.duration ?? -1) {
       _slowestRequest = AccessibilityTranslatorRequestTiming(requestType: type, duration: duration)
@@ -99,6 +103,14 @@ public final class AccessibilityProfilingCollector {
     lock.lock()
     defer { lock.unlock() }
     return _unansweredRequests
+  }
+
+  /// Requests sent while one abandoned earlier, by this read or another, was still unanswered: the service
+  /// answers that one first, so these wait behind it.
+  public var requestsBehindAbandoned: Int64 {
+    lock.lock()
+    defer { lock.unlock() }
+    return _requestsBehindAbandoned
   }
 
   /// The longest request the read made.

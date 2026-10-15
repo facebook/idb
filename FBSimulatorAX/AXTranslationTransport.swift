@@ -28,6 +28,15 @@ protocol AXTranslationTransport: Sendable {
 
   /// The service's answer, or nil when none arrived within `timeout`. Must not be called on the main queue.
   func send(_ request: AXPTranslatorRequest, timeout: TimeInterval) -> AXPTranslatorResponse?
+
+  /// Requests this transport stopped waiting for whose answer has not yet arrived. The service still answers
+  /// them, one at a time, ahead of anything sent now.
+  var abandonedRequests: Int { get }
+}
+
+extension AXTranslationTransport {
+  /// Built for one read, so it holds no request across reads to count.
+  var abandonedRequests: Int { 0 }
 }
 
 /// Sends translator requests through CoreSimulator's own client,
@@ -78,11 +87,12 @@ final class CoreSimulatorBridgeAXTranslationTransport: AXTranslationTransport, @
 
   let kind = AXTranslationTransportKind.bridge
 
-  // SAFETY: `channel` is only read or replaced under `lock`; the rest is immutable.
+  // SAFETY: `channel` and `abandoned` are only read or written under `lock`; the rest is immutable.
   private let connector: SimulatorXPCConnector
   private let queue = DispatchQueue(label: "com.facebook.fbsimulatorcontrol.accessibility_translator.bridge")
   private let lock = NSLock()
   private var channel: SimulatorXPCChannel?
+  private var abandoned = 0
 
   init(connector: SimulatorXPCConnector) {
     self.connector = connector
@@ -100,11 +110,12 @@ final class CoreSimulatorBridgeAXTranslationTransport: AXTranslationTransport, @
     }
     let answered = DispatchSemaphore(value: 0)
     let box = ReplyBox()
-    channel.request(message) { result in
-      box.result = result
+    channel.request(message) { [weak self] result in
+      self?.settle(box, with: result)
       answered.signal()
     }
     guard answered.wait(timeout: .now() + timeout) == .success, let result = box.result else {
+      abandon(box)
       return nil
     }
     switch result {
@@ -115,6 +126,29 @@ final class CoreSimulatorBridgeAXTranslationTransport: AXTranslationTransport, @
       // send must not wait for it to look the service up again.
       discard(channel)
       return nil
+    }
+  }
+
+  /// Held for the simulator, so a request abandoned by one read is still counted when the next read sends: XPC
+  /// cannot withdraw a message, and the bridge answers it before anything sent after it.
+  var abandonedRequests: Int {
+    lock.withLock { abandoned }
+  }
+
+  private func abandon(_ box: ReplyBox) {
+    lock.withLock {
+      guard box.result == nil else { return }
+      box.abandoned = true
+      abandoned += 1
+    }
+  }
+
+  private func settle(_ box: ReplyBox, with result: Result<xpc_object_t, SimulatorXPCError>) {
+    lock.withLock {
+      box.result = result
+      if box.abandoned {
+        abandoned -= 1
+      }
     }
   }
 
@@ -197,7 +231,9 @@ private final class ResponseBox: @unchecked Sendable {
   var response: AXPTranslatorResponse?
 }
 
-/// As `ResponseBox`, for the channel's reply.
+/// As `ResponseBox`, for the channel's reply, and whether the send stopped waiting for it. Both are written
+/// under the transport's lock, which is what orders a late reply against the send giving up.
 private final class ReplyBox: @unchecked Sendable {
   var result: Result<xpc_object_t, SimulatorXPCError>?
+  var abandoned = false
 }

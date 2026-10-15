@@ -46,9 +46,11 @@ private final class TimeoutRecordingTransportDouble: AXTranslationTransport, @un
   private let root: AXPTranslationObjectDouble
   private let lock = NSLock()
   private var _timeouts: [TimeInterval] = []
+  let abandonedRequests: Int
 
-  init(root: AXPTranslationObjectDouble) {
+  init(root: AXPTranslationObjectDouble, abandonedRequests: Int = 0) {
     self.root = root
+    self.abandonedRequests = abandonedRequests
   }
 
   var timeouts: [TimeInterval] { lock.withLock { _timeouts } }
@@ -62,6 +64,16 @@ private final class TimeoutRecordingTransportDouble: AXTranslationTransport, @un
       response?.resultData = [NSNumber(value: BridgeAXTranslatorAttribute.frame.rawValue): NSValue(rect: NSRect(x: 0, y: 0, width: 1, height: 1))] as NSDictionary
     }
     return response
+  }
+}
+
+/// Answers nothing, while an earlier request it gave up on is still outstanding.
+private final class AbandonedBehindTransportDouble: AXTranslationTransport {
+  let kind = AXTranslationTransportKind.bridge
+  let abandonedRequests = 1
+
+  func send(_ request: AXPTranslatorRequest, timeout: TimeInterval) -> AXPTranslatorResponse? {
+    nil
   }
 }
 
@@ -128,7 +140,7 @@ final class AXReadTimeTests {
     #expect {
       _ = try reader.read(Self.reference(1), plan: AXReadPlan(keys: AXKeys.defaultSet, depth: .unlimited))
     } throws: { error in
-      guard case AccessibilityError.serviceNotAnswering(.request(kind: "multiple_attribute", timeout: 0.05), _) = error else {
+      guard case AccessibilityError.serviceNotAnswering(.request(kind: "multiple_attribute", timeout: 0.05), _, _) = error else {
         return false
       }
       return true
@@ -147,7 +159,7 @@ final class AXReadTimeTests {
     do {
       _ = try await commands.resolveElement(for: .frontmost, clientType: .noClient)
       Issue.record("an unanswered frontmost lookup must fail the read")
-    } catch AccessibilityError.serviceNotAnswering(.request(kind: "frontmost", _), _) {}
+    } catch AccessibilityError.serviceNotAnswering(.request(kind: "frontmost", _), _, _) {}
   }
 
   @Test func aFrontmostReadWhoseStalenessCheckGoesUnansweredFails() async throws {
@@ -158,7 +170,7 @@ final class AXReadTimeTests {
     do {
       _ = try await commands.resolveElement(for: .frontmost, clientType: .noClient)
       Issue.record("an unanswered staleness check must fail the read")
-    } catch AccessibilityError.serviceNotAnswering(.request(kind: "multiple_attribute", _), _) {}
+    } catch AccessibilityError.serviceNotAnswering(.request(kind: "multiple_attribute", _), _, _) {}
     #expect(
       transport.requestTypes.filter { $0 == UInt64(BridgeAXTranslatorRequestType.multipleAttribute.rawValue) }.count == 1,
       "the staleness check's request, and nothing after it")
@@ -180,7 +192,7 @@ final class AXReadTimeTests {
     #expect {
       _ = try reader.read(Self.reference(1), plan: AXReadPlan(attributes: [.role], depth: .unlimited))
     } throws: { error in
-      guard case AccessibilityError.serviceNotAnswering(.query(timeout: 0.12), _) = error else { return false }
+      guard case AccessibilityError.serviceNotAnswering(.query(timeout: 0.12), _, _) = error else { return false }
       return true
     }
     #expect(transport.requests.count < 6, "the query stopped before reading every element")
@@ -195,7 +207,7 @@ final class AXReadTimeTests {
     #expect {
       _ = try reader.read(Self.reference(1), plan: AXReadPlan(attributes: [], depth: .limited(0)))
     } throws: { error in
-      guard case AccessibilityError.serviceNotAnswering(.query(timeout: 0.1), _) = error else { return false }
+      guard case AccessibilityError.serviceNotAnswering(.query(timeout: 0.1), _, _) = error else { return false }
       return true
     }
   }
@@ -225,7 +237,7 @@ final class AXReadTimeTests {
     await #expect {
       _ = try await reader.describe(.application(pid: Self.pid), options: options)
     } throws: { error in
-      guard case AccessibilityError.serviceNotAnswering(.query(timeout: 0.5), _) = error else { return false }
+      guard case AccessibilityError.serviceNotAnswering(.query(timeout: 0.5), _, _) = error else { return false }
       return true
     }
     _ = try? await reader.describe(.application(pid: Self.pid), options: AccessibilityRequestOptions())
@@ -252,9 +264,38 @@ final class AXReadTimeTests {
   }
 
   @Test func aFailedReadSaysHowItEnded() {
-    #expect(AccessibilityReadOutcome(failure: AccessibilityError.serviceNotAnswering(.request(kind: "frontmost", timeout: 5), elapsed: 5)) == .abortedUnanswered)
-    #expect(AccessibilityReadOutcome(failure: AccessibilityError.serviceNotAnswering(.query(timeout: 10), elapsed: 10)) == .abortedDeadline)
+    #expect(AccessibilityReadOutcome(failure: AccessibilityError.serviceNotAnswering(.request(kind: "frontmost", timeout: 5), elapsed: 5, behindAbandoned: 0)) == .abortedUnanswered)
+    #expect(AccessibilityReadOutcome(failure: AccessibilityError.serviceNotAnswering(.query(timeout: 10), elapsed: 10, behindAbandoned: 0)) == .abortedDeadline)
     #expect(AccessibilityReadOutcome(failure: AccessibilityError.springBoardNotRunning) == nil)
+  }
+
+  // MARK: - Abandoned requests
+
+  @Test func aReadCountsTheRequestsItSentBehindAnAbandonedOne() async throws {
+    let commands = try commands(
+      transport: TimeoutRecordingTransportDouble(root: Self.reference(0), abandonedRequests: 1),
+      launchCtl: LaunchCtlDouble.with(running: ["com.apple.SpringBoard": Self.pid]))
+
+    let element = try await commands.resolveElement(for: .application(pid: Self.pid), clientType: .noClient)
+    defer { element.close() }
+    let response = try await element.serialize(with: AccessibilityRequestOptions())
+
+    let metrics = try #require(response.translatorMetrics)
+    #expect(metrics.requestsBehindAbandoned == metrics.roundTrips, "every request went out behind the abandoned one")
+    #expect(metrics.requestsBehindAbandoned > 0)
+  }
+
+  @Test func aReadThatFailsBehindAnAbandonedRequestSaysSo() {
+    let transport = AbandonedBehindTransportDouble()
+    let reader = AXRawTranslationReader(
+      transport: transport, clientType: .noClient, timeout: 0.01, collector: AccessibilityProfilingCollector(), token: "token")
+
+    #expect {
+      _ = try reader.read(Self.reference(1), plan: AXReadPlan(attributes: [], depth: .limited(0)))
+    } throws: { error in
+      guard case AccessibilityError.serviceNotAnswering(.request, _, behindAbandoned: 1) = error else { return false }
+      return true
+    }
   }
 
   // MARK: - Cancellation

@@ -176,9 +176,12 @@ final class AXTranslationDispatcher: NSObject, AXPTranslationTokenDelegateHelper
         return Self.emptyResponse()
       }
       axRequest.clientType = clientType.rawValue
+      let behindAbandoned = transport.abandonedRequests > 0
       let xpcStart = CFAbsoluteTimeGetCurrent()
       let response = transport.send(axRequest, timeout: timeoutSeconds)
-      collector.recordRequest(type: axRequest.requestType, duration: CFAbsoluteTimeGetCurrent() - xpcStart, answered: response != nil)
+      collector.recordRequest(
+        type: axRequest.requestType, duration: CFAbsoluteTimeGetCurrent() - xpcStart, answered: response != nil,
+        behindAbandoned: behindAbandoned)
       // Unanswered within the timeout: the translator reads the empty response as "no value".
       return response ?? Self.emptyResponse()
     }

@@ -93,7 +93,7 @@ final class AXRawTranslationReaderTests: XCTestCase {
     let transport = AXRawTranslationTransportDouble(elements: [:])
 
     XCTAssertThrowsError(try Self.reader(transport).read(Self.reference(9), plan: Self.defaultPlan)) { error in
-      guard case AccessibilityError.serviceNotAnswering(.request(kind: "multiple_attribute", timeout: 1), _) = error else {
+      guard case AccessibilityError.serviceNotAnswering(.request(kind: "multiple_attribute", timeout: 1), _, _) = error else {
         return XCTFail("expected an unanswered multiple-attribute request, got \(error)")
       }
     }

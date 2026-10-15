@@ -374,6 +374,8 @@ public struct AccessibilityTranslatorReadMetrics: Sendable, Equatable {
   public let unansweredRequests: Int64
   /// The longest request the read made.
   public let slowestRequest: AccessibilityTranslatorRequestTiming?
+  /// Requests sent while one abandoned earlier, by this read or another, was still unanswered.
+  public let requestsBehindAbandoned: Int64
 
   public init(
     elementCount: Int64,
@@ -386,7 +388,8 @@ public struct AccessibilityTranslatorReadMetrics: Sendable, Equatable {
     springBoardCheckDuration: CFAbsoluteTime = 0,
     acquireRoundTrips: Int64 = 0,
     unansweredRequests: Int64 = 0,
-    slowestRequest: AccessibilityTranslatorRequestTiming? = nil
+    slowestRequest: AccessibilityTranslatorRequestTiming? = nil,
+    requestsBehindAbandoned: Int64 = 0
   ) {
     self.elementCount = elementCount
     self.roundTrips = roundTrips
@@ -399,6 +402,7 @@ public struct AccessibilityTranslatorReadMetrics: Sendable, Equatable {
     self.acquireRoundTrips = acquireRoundTrips
     self.unansweredRequests = unansweredRequests
     self.slowestRequest = slowestRequest
+    self.requestsBehindAbandoned = requestsBehindAbandoned
   }
 
   /// How the read ended, given that it returned.
@@ -423,9 +427,9 @@ public enum AccessibilityReadOutcome: String, Sendable {
   /// How a read that failed with `error` ended, when the failure is one of the read's own timing.
   public init?(failure error: Error) {
     switch error {
-    case AccessibilityError.serviceNotAnswering(.request, _):
+    case AccessibilityError.serviceNotAnswering(.request, _, _):
       self = .abortedUnanswered
-    case AccessibilityError.serviceNotAnswering(.query, _):
+    case AccessibilityError.serviceNotAnswering(.query, _, _):
       self = .abortedDeadline
     case is CancellationError:
       self = .cancelled

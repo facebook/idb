@@ -138,28 +138,36 @@ struct AXRawTranslationReader {
   ) throws -> AXPTranslatorResponse {
     let timing = AccessibilityTranslatorRequestTiming(requestType: UInt64(type.rawValue), duration: 0)
     guard let request = AXPTranslatorRequest.request(withTranslation: translation) as? AXPTranslatorRequest else {
-      throw AccessibilityError.serviceNotAnswering(.request(kind: timing.kindName, timeout: timeout), elapsed: collector.elapsed)
+      throw AccessibilityError.serviceNotAnswering(
+        .request(kind: timing.kindName, timeout: timeout), elapsed: collector.elapsed,
+        behindAbandoned: collector.requestsBehindAbandoned)
     }
     request.requestType = UInt64(type.rawValue)
     request.clientType = clientType.rawValue
     request.parameters = parameters
     let remaining = queryTimeout - collector.elapsed
     guard remaining > 0 else {
-      throw AccessibilityError.serviceNotAnswering(.query(timeout: queryTimeout), elapsed: collector.elapsed)
+      throw AccessibilityError.serviceNotAnswering(
+        .query(timeout: queryTimeout), elapsed: collector.elapsed,
+        behindAbandoned: collector.requestsBehindAbandoned)
     }
     let wait = min(timeout, remaining)
-    let start = CFAbsoluteTimeGetCurrent()
     let transport = self.transport
+    let behindAbandoned = transport.abandonedRequests > 0
+    let start = CFAbsoluteTimeGetCurrent()
     let response =
       try cancellation.map { try $0.wait { transport.send(request, timeout: wait) } }
       ?? transport.send(request, timeout: wait)
-    collector.recordRequest(type: request.requestType, duration: CFAbsoluteTimeGetCurrent() - start, answered: response != nil)
+    collector.recordRequest(
+      type: request.requestType, duration: CFAbsoluteTimeGetCurrent() - start, answered: response != nil,
+      behindAbandoned: behindAbandoned)
     guard let response else {
       // Blamed on the query whenever it has run out, including when both ran out together.
       let elapsed = collector.elapsed
       let silence: AccessibilityServiceSilence =
         elapsed >= queryTimeout ? .query(timeout: queryTimeout) : .request(kind: timing.kindName, timeout: timeout)
-      throw AccessibilityError.serviceNotAnswering(silence, elapsed: elapsed)
+      throw AccessibilityError.serviceNotAnswering(
+        silence, elapsed: elapsed, behindAbandoned: collector.requestsBehindAbandoned)
     }
     return response
   }

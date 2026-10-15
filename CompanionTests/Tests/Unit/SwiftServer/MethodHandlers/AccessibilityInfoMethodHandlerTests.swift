@@ -129,7 +129,7 @@ struct AccessibilityInfoMethodHandlerTests {
       elementCount: 114, roundTrips: 225, readDuration: 0.072, totalDuration: 0.081,
       translatorReads: .batched, transport: .bridge, acquireDuration: 0.004, springBoardCheckDuration: 0.002,
       acquireRoundTrips: 2, unansweredRequests: 1,
-      slowestRequest: AccessibilityTranslatorRequestTiming(requestType: 4, duration: 0.031)))
+      slowestRequest: AccessibilityTranslatorRequestTiming(requestType: 4, duration: 0.031), requestsBehindAbandoned: 3))
 
   @Test(arguments: [false, true])
   func everyReadRecordsHowItWentWithoutAskingForAProfile(byMarker: Bool) async throws {
@@ -148,7 +148,7 @@ struct AccessibilityInfoMethodHandlerTests {
       call.ints == [
         "ax_element_count": 114, "ax_round_trips": 225, "ax_profile_read_ms": 72, "ax_profile_total_ms": 81,
         "ax_profile_acquire_ms": 4, "ax_springboard_check_ms": 2, "ax_acquire_round_trips": 2, "ax_request_timeouts": 1,
-        "ax_slowest_request_ms": 31,
+        "ax_slowest_request_ms": 31, "ax_requests_behind_abandoned": 3,
       ])
     #expect(
       call.normals == [
@@ -174,12 +174,13 @@ struct AccessibilityInfoMethodHandlerTests {
   func aReadThatRanOutOfTimeRecordsHowItEnded() {
     let unanswered = CallTelemetry()
     AccessibilityReadTelemetry.record(
-      failure: AccessibilityError.serviceNotAnswering(.request(kind: "frontmost", timeout: 5), elapsed: 5), into: unanswered)
+      failure: AccessibilityError.serviceNotAnswering(.request(kind: "frontmost", timeout: 5), elapsed: 5, behindAbandoned: 2), into: unanswered)
     #expect(unanswered.normals == ["ax_read_outcome": "aborted_unanswered"])
+    #expect(unanswered.ints == ["ax_requests_behind_abandoned": 2], "how many of its requests queued behind an abandoned one")
 
     let deadline = CallTelemetry()
     AccessibilityReadTelemetry.record(
-      failure: AccessibilityError.serviceNotAnswering(.query(timeout: 10), elapsed: 10), into: deadline)
+      failure: AccessibilityError.serviceNotAnswering(.query(timeout: 10), elapsed: 10, behindAbandoned: 0), into: deadline)
     #expect(deadline.normals == ["ax_read_outcome": "aborted_deadline"])
 
     let other = CallTelemetry()

@@ -6,6 +6,7 @@
  */
 
 @preconcurrency import AccessibilityPlatformTranslation
+import FBControlCore
 @testable import FBSimulatorAX
 @testable import FBSimulatorControl
 import XCTest
@@ -89,6 +90,26 @@ final class AXTranslationTransportTests: XCTestCase {
   func testAnUnansweredRequestYieldsNothingWhenItsTimeoutPasses() throws {
     services.register(CoreSimulatorBridgeAXTranslationTransport.serviceName, respond: SyntheticXPCPeer.silent)
     XCTAssertNil(transport.send(try Self.request(), timeout: 0.2))
+  }
+
+  func testARequestWhoseReplyComesLateIsCountedUntilItArrives() async throws {
+    let reply = try Self.reply(with: Self.emptyResponse)
+    let late = DispatchSemaphore(value: 0)
+    services.register(CoreSimulatorBridgeAXTranslationTransport.serviceName) { request in
+      DispatchQueue.global().async {
+        late.wait()
+        request.reply(reply)
+      }
+    }
+    let transport = self.transport
+
+    XCTAssertNil(transport.send(try Self.request(), timeout: 0.1))
+    XCTAssertEqual(transport.abandonedRequests, 1, "the service still owes the abandoned request its answer")
+
+    late.signal()
+    try await pollUntilTrue(
+      on: .global(), interval: 0.01, deadline: PollDeadline(timeout: 5, waitingFor: "the late answer to arrive")
+    ) { transport.abandonedRequests == 0 }
   }
 
   func testAServiceTheSimulatorDoesNotVendFailsToConnect() throws {
