@@ -200,7 +200,7 @@ extension SimulatorContentSizeCategory {
     self = entry.value
   }
 
-  var argumentName: String? {
+  public var argumentName: String? {
     SimulatorContentSizeCategory.argumentNames.first(where: { $0.value == self })?.name
   }
 

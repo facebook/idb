@@ -167,6 +167,16 @@ public struct SimulatorPreferencesCommands {
     }
   }
 
+  /// Publishes the current Dynamic Type category and subsequent native changes.
+  public func contentSizeChanges() async throws -> AsyncThrowingStream<SimulatorContentSizeCategory, Error> {
+    let simulator = self.simulator
+    let subscription = try await SimulatorDarwinNotificationObserver.subscribe(
+      on: simulator, name: "ApplePreferredContentSizeCategoryChangedNotification")
+    return SimulatorDarwinNotificationObserver.values(subscription: subscription) { _ in
+      try await SimulatorPreferencesCommands(simulator: simulator).currentContentSizeCategory()
+    }
+  }
+
   // MARK: - Private
 
   static func appearance(rawValue: Int) throws -> SimulatorAppearance {
