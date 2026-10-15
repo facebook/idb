@@ -372,7 +372,7 @@ final class FBSimulatorVideoTests: XCTestCase {
       rateControl: nil,
       scaleFactor: nil,
       keyFrameRate: nil)
-    let video = SimulatorVideo.video(withFramebuffer: framebuffer, configuration: configuration, filePath: path, container: container, chaptersEnabled: chaptersEnabled, logger: CapturingLogger())
+    let video = SimulatorVideo(framebuffer: framebuffer, configuration: configuration, filePath: path, container: container, chaptersEnabled: chaptersEnabled, logger: CapturingLogger())
     return (video, path)
   }
 

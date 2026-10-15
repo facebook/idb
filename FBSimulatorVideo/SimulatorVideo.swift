@@ -80,11 +80,7 @@ public actor SimulatorVideo {
   /// its own, so the gap is bounded by this interval whatever the screen is doing.
   private static let keyFrameInterval = Duration.seconds(SimulatorVideoFileWriter.movieFragmentInterval.seconds / 2)
 
-  public static func video(withFramebuffer framebuffer: Framebuffer, configuration: VideoStreamConfiguration, filePath: String, container: SimulatorVideoContainer = .mp4, edgeInsets: VideoStreamEdgeInsets = VideoStreamEdgeInsets(top: 0, bottom: 0, left: 0, right: 0), chaptersEnabled: Bool = false, logger: any ControlCoreLogger) -> SimulatorVideo {
-    SimulatorVideo(framebuffer: framebuffer, configuration: configuration, filePath: filePath, container: container, edgeInsets: edgeInsets, chaptersEnabled: chaptersEnabled, logger: logger)
-  }
-
-  private init(framebuffer: Framebuffer, configuration: VideoStreamConfiguration, filePath: String, container: SimulatorVideoContainer, edgeInsets: VideoStreamEdgeInsets, chaptersEnabled: Bool, logger: any ControlCoreLogger) {
+  public init(framebuffer: Framebuffer, configuration: VideoStreamConfiguration, filePath: String, container: SimulatorVideoContainer = .mp4, edgeInsets: VideoStreamEdgeInsets = VideoStreamEdgeInsets(top: 0, bottom: 0, left: 0, right: 0), chaptersEnabled: Bool = false, logger: any ControlCoreLogger) {
     self.outputURL = URL(fileURLWithPath: filePath)
     self.container = container
     self.format = configuration.format
