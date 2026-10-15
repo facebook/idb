@@ -8,7 +8,6 @@
 import CoreFoundation
 import FBSimulatorBridgeProtocol
 import Foundation
-import UIKit
 
 #if canImport(SimulatorFrameworkBridgeRuntime)
 @_implementationOnly import SimulatorFrameworkBridgeRuntime
@@ -28,8 +27,7 @@ enum DeviceSettingRead {
 // patternlint-disable-next-line unchecked-sendable
 final class DeviceSettingStream: BridgeResponseStream, @unchecked Sendable {
   private let settingName: String
-  private let notificationCenter: NotificationCenter
-  private let notificationName: Notification.Name
+  private let observe: (@escaping () -> Void) -> FBAXDeviceSettingMonitorOutcome
   private let coalescingDelay: TimeInterval
   private let maximumCoalescingDelay: TimeInterval
   private let read: () throws -> DeviceSettingRead
@@ -38,7 +36,7 @@ final class DeviceSettingStream: BridgeResponseStream, @unchecked Sendable {
   private var cancelled = false
   private var runLoop: CFRunLoop?
 
-  private var observer: NSObjectProtocol?
+  private var observer: (any FBAXDeviceSettingMonitor)?
   private var emit: ((Data) -> Bool)?
   private var lastEnabled: Bool?
   private var trailingTimer: CFRunLoopTimer?
@@ -47,15 +45,13 @@ final class DeviceSettingStream: BridgeResponseStream, @unchecked Sendable {
 
   init(
     settingName: String,
-    notificationCenter: NotificationCenter,
-    notificationName: Notification.Name,
+    observe: @escaping (@escaping () -> Void) -> FBAXDeviceSettingMonitorOutcome,
     coalescingDelay: TimeInterval = 0.05,
     maximumCoalescingDelay: TimeInterval = 0.25,
     read: @escaping () throws -> DeviceSettingRead
   ) {
     self.settingName = settingName
-    self.notificationCenter = notificationCenter
-    self.notificationName = notificationName
+    self.observe = observe
     self.coalescingDelay = coalescingDelay
     self.maximumCoalescingDelay = maximumCoalescingDelay
     self.read = read
@@ -72,8 +68,16 @@ final class DeviceSettingStream: BridgeResponseStream, @unchecked Sendable {
     lock.unlock()
 
     self.emit = emit
-    observer = notificationCenter.addObserver(forName: notificationName, object: nil, queue: nil) { [weak self] _ in
-      self?.settingChanged()
+    let registration = observe { [weak self] in self?.settingChanged() }
+    observer = registration.monitor
+    switch registration.status {
+    case .resolved: break
+    case .unavailable:
+      fail(registration.failureReason ?? "Setting observation unavailable", kind: .capabilityUnavailable)
+    case .failed:
+      fail(registration.failureReason ?? "Setting observation failed", kind: .readerUnavailable)
+    @unknown default:
+      fail("Unknown setting observation status", kind: .readerUnavailable)
     }
     if !isCancelled {
       readAndEmit()
@@ -82,9 +86,7 @@ final class DeviceSettingStream: BridgeResponseStream, @unchecked Sendable {
       CFRunLoopRunInMode(.defaultMode, 1, false)
     }
     invalidateTimers()
-    if let observer {
-      notificationCenter.removeObserver(observer)
-    }
+    observer?.invalidate()
     observer = nil
     self.emit = nil
     lock.lock()
@@ -234,8 +236,7 @@ extension AccessibilityService {
     return .stream(
       DeviceSettingStream(
         settingName: requestedName,
-        notificationCenter: .default,
-        notificationName: UIAccessibility.reduceMotionStatusDidChangeNotification,
+        observe: { client.monitorDeviceSetting(setting.runtimeValue, handler: $0) },
         read: {
           let outcome = try client.enabledState(for: setting.runtimeValue)
           switch outcome.status {

@@ -337,6 +337,22 @@ typedef NS_ENUM(NSUInteger, FBAXDeviceSettingStatus) {
 
 @end
 
+/** A registration confined to the creating thread and its run loop. */
+@protocol FBAXDeviceSettingMonitor <NSObject>
+- (void)invalidate;
+@end
+
+@interface FBAXDeviceSettingMonitorOutcome : NSObject
+@property (nonatomic, readonly) FBAXDeviceSettingStatus status;
+@property (nullable, nonatomic, readonly) id<FBAXDeviceSettingMonitor> monitor;
+@property (nullable, nonatomic, readonly, copy) NSString *failureReason;
++ (instancetype)resolved:(id<FBAXDeviceSettingMonitor>)monitor;
++ (instancetype)unavailable:(NSString *)failureReason;
++ (instancetype)failed:(NSString *)failureReason;
+- (instancetype)init NS_UNAVAILABLE;
++ (instancetype)new NS_UNAVAILABLE;
+@end
+
 #pragma mark - Display inventory
 
 @interface FBAXDisplayIdentity : NSObject
@@ -577,6 +593,9 @@ typedef void (^FBAXQuiescenceHandler)(FBAXQuiescenceReport report, pid_t pid);
  * earlier is still in force.
  */
 - (BOOL)setAutomationModeEnabled:(BOOL)enabled;
+
+/** Registers before the first read; notifications carry no authoritative value. */
+- (FBAXDeviceSettingMonitorOutcome *)monitorDeviceSetting:(FBAXDeviceSetting)setting handler:(void (^)(void))handler;
 
 /** Reads a device-wide setting. */
 - (FBAXDeviceSettingOutcome *)enabledStateForDeviceSetting:(FBAXDeviceSetting)setting;

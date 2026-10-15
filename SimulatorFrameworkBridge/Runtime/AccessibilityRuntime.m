@@ -13,6 +13,7 @@
 #import "Private/AXPAttributes.h"
 #import "Private/AXPTranslationPrivate.h"
 #import "Private/AXRuntimePrivate.h"
+#import "Private/AccessibilityPrivate.h"
 #import "Private/AccessibilityRuntime_Private.h"
 #import "Private/AccessibilityUtilitiesPrivate.h"
 #import "Private/RunningBoardServicesPrivate.h"
@@ -68,6 +69,87 @@ static NSString *FBAXErrorDescription(int32_t axError)
 
 @interface FBAXWriteOutcome ()
 @property (nullable, nonatomic, readwrite) NSNumber *axError;
+@end
+
+@implementation FBAXDeviceSettingMonitorOutcome
+- (instancetype)initWithStatus:(FBAXDeviceSettingStatus)status
+                       monitor:(id<FBAXDeviceSettingMonitor>)monitor
+                 failureReason:(NSString *)failureReason
+{
+  self = [super init];
+  if (self) {
+    _status = status;
+    _monitor = monitor;
+    _failureReason = [failureReason copy];
+  }
+  return self;
+}
+
++ (instancetype)resolved:(id<FBAXDeviceSettingMonitor>)monitor
+{
+  return [[self alloc] initWithStatus:FBAXDeviceSettingStatusResolved monitor:monitor failureReason:nil];
+}
+
++ (instancetype)unavailable:(NSString *)failureReason
+{
+  return [[self alloc] initWithStatus:FBAXDeviceSettingStatusUnavailable monitor:nil failureReason:failureReason];
+}
+
++ (instancetype)failed:(NSString *)failureReason
+{
+  return [[self alloc] initWithStatus:FBAXDeviceSettingStatusFailed monitor:nil failureReason:failureReason];
+}
+
+@end
+
+@interface FBAXDarwinSettingMonitor : NSObject <FBAXDeviceSettingMonitor>
+@property (nonatomic, copy) void (^handler)(void);
+@property (nonatomic, copy) NSString *name;
+- (instancetype)initWithName:(CFStringRef)name handler:(void (^)(void))handler;
+@end
+
+static void FBAXSettingChanged(CFNotificationCenterRef center,
+                               void *observer,
+                               CFStringRef name,
+                               const void *object,
+                               CFDictionaryRef userInfo)
+{
+  FBAXDarwinSettingMonitor *monitor = (__bridge FBAXDarwinSettingMonitor *)observer;
+  if (monitor.handler) {
+    monitor.handler();
+  }
+}
+
+@implementation FBAXDarwinSettingMonitor
+- (instancetype)initWithName:(CFStringRef)name handler:(void (^)(void))handler
+{
+  self = [super init];
+  if (self) {
+    _name = [(__bridge NSString *)name copy];
+    _handler = [handler copy];
+    CFNotificationCenterAddObserver(
+      CFNotificationCenterGetDarwinNotifyCenter(),
+      (__bridge void *)self,
+      FBAXSettingChanged,
+      (__bridge CFStringRef)_name,
+      NULL,
+      CFNotificationSuspensionBehaviorDeliverImmediately
+    );
+  }
+  return self;
+}
+
+- (void)invalidate
+{
+  CFNotificationCenterRemoveEveryObserver(CFNotificationCenterGetDarwinNotifyCenter(), (__bridge void *)self);
+  self.handler = nil;
+}
+
+- (void)dealloc
+{
+  [self invalidate];
+}
+
 @end
 
 @implementation FBAXReadOutcome
@@ -1260,6 +1342,23 @@ static NSString *const kFrontboardVisibilityEndowment = @"com.apple.frontboard.v
     return nil;
   }
   return [settingsClass sharedInstance];
+}
+
+- (FBAXDeviceSettingMonitorOutcome *)monitorDeviceSetting:(FBAXDeviceSetting)setting handler:(void (^)(void))handler
+{
+  if (setting != FBAXDeviceSettingReduceMotion) {
+    return [FBAXDeviceSettingMonitorOutcome unavailable:@"This device setting has no observation binding"];
+  }
+  static void *library;
+  static dispatch_once_t onceToken;
+  dispatch_once(&onceToken, ^{
+    library = dlopen(FBAXPathAccessibility, RTLD_LAZY | RTLD_LOCAL);
+  });
+  FBAXAccessibilityNotificationSymbol symbol = library ? dlsym(library, FBAXReduceMotionChangedSymbol) : NULL;
+  if (!symbol || !*symbol) {
+    return [FBAXDeviceSettingMonitorOutcome unavailable:@"Reduce Motion notifications are unavailable on this runtime"];
+  }
+  return [FBAXDeviceSettingMonitorOutcome resolved:[[FBAXDarwinSettingMonitor alloc] initWithName:*symbol handler:handler]];
 }
 
 - (FBAXDeviceSettingOutcome *)enabledStateForDeviceSetting:(FBAXDeviceSetting)setting

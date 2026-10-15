@@ -298,7 +298,7 @@ extension BridgeServerSocketTests {
     runtime.deviceSettingReadHandler = {
       runtime.deviceSettingReadHandler = nil
       runtime.deviceSettings[setting] = true
-      NotificationCenter.default.post(name: UIAccessibility.reduceMotionStatusDidChangeNotification, object: nil)
+      runtime.deviceSettingMonitor?.deliver()
     }
     let client = try openSettingsStream(runtime)
     defer { closeQuietStream(client) }
@@ -318,7 +318,7 @@ extension BridgeServerSocketTests {
 
     runtime.deviceSettings[setting] = true
     for _ in 0..<3 {
-      NotificationCenter.default.post(name: UIAccessibility.reduceMotionStatusDidChangeNotification, object: nil)
+      runtime.deviceSettingMonitor?.deliver()
     }
     XCTAssertEqual(readEvent(fd: client)?["enabled"] as? Bool, true)
     XCTAssertEqual(runtime.operations.compactMap { $0 as? String }.filter { $0 == "settingRead" }.count, 2)
@@ -339,6 +339,25 @@ extension BridgeServerSocketTests {
     XCTAssertEqual(readEvent(fd: client)?["error_kind"] as? String, "capability_unavailable")
     sendData(data: try frame(command: .ping), to: client)
     XCTAssertEqual(exitCode(of: readResponse(fd: client)), 0, "a refused stream leaves the connection serving")
+  }
+
+  func testUnavailableNativeSettingObservationIsTyped() throws {
+    let runtime = FBAXFakeRuntime()
+    runtime.deviceSettingMonitorOutcome = .unavailable("notification unavailable")
+    let client = try openSettingsStream(runtime)
+    defer { closeQuietStream(client) }
+    XCTAssertEqual(readEvent(fd: client), ["ok": false, "error": "notification unavailable", "error_kind": "capability_unavailable"])
+    assertEOF(fd: client)
+    XCTAssertFalse(runtime.operations.contains { ($0 as? String) == "settingRead" })
+  }
+
+  func testSettingObservationIsInvalidatedAfterOutputFailure() {
+    let runtime = FBAXFakeRuntime()
+    runtime.deviceSettings[NSNumber(value: FBAXDeviceSetting.reduceMotion.rawValue)] = false
+    useRuntime(runtime)
+    let status = AccessibilityService.handleAction("settings-observe", arguments: ["--setting", "reduce-motion"]) { _ in false }
+    XCTAssertEqual(status, 1)
+    XCTAssertEqual(runtime.deviceSettingMonitor?.isInvalidated, true)
   }
 
   func testSettingsObserveIsRefusedOutsideAStream() {

@@ -115,6 +115,12 @@ NSDictionary<NSString *, id> *FBAXGeometryDictionaryProbe(BOOL rectangle, BOOL r
 
 @end
 
+@interface FBAXFakeDeviceSettingMonitor : NSObject <FBAXDeviceSettingMonitor>
+@property (nullable, nonatomic, copy) void (^handler)(void);
+@property (nonatomic, readonly, getter = isInvalidated) BOOL invalidated;
+- (void)deliver;
+@end
+
 /**
  * A fake `FBAXRuntime`, wired into the service by `+[FBAXClientProvider setRuntimeForTesting:]`.
  *
@@ -124,6 +130,8 @@ NSDictionary<NSString *, id> *FBAXGeometryDictionaryProbe(BOOL rectangle, BOOL r
  * rather than only what came back.
  */
 @interface FBAXFakeRuntime : NSObject <FBAXRuntime>
+@property (nullable, nonatomic, strong) FBAXFakeDeviceSettingMonitor *deviceSettingMonitor;
+@property (nullable, nonatomic, strong) FBAXDeviceSettingMonitorOutcome *deviceSettingMonitorOutcome;
 
 @property (nullable, nonatomic, strong) FBAXGeometryDictionaryProbeValue *attributeRead;
 

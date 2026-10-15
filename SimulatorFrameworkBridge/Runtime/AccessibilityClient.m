@@ -355,6 +355,15 @@ static id FBAXCopyAttributeContainers(id value)
   }
 }
 
+- (FBAXDeviceSettingMonitorOutcome *)monitorDeviceSetting:(FBAXDeviceSetting)setting handler:(void (^)(void))handler
+{
+  @try {
+    return [_runtime monitorDeviceSetting:setting handler:handler];
+  } @catch (NSException *exception) {
+    return [FBAXDeviceSettingMonitorOutcome failed:exception.reason ?: exception.name];
+  }
+}
+
 - (FBAXDeviceSettingOutcome *)enabledStateForDeviceSetting:(FBAXDeviceSetting)setting error:(NSError **)error
 {
   @try {

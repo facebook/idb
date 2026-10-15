@@ -286,6 +286,22 @@ NSDictionary<NSString *, id> *FBAXGeometryDictionaryProbe(BOOL rectangle, BOOL r
 
 @end
 
+@implementation FBAXFakeDeviceSettingMonitor
+- (void)deliver
+{
+  if (self.handler) {
+    self.handler();
+  }
+}
+
+- (void)invalidate
+{
+  _invalidated = YES;
+  self.handler = nil;
+}
+
+@end
+
 @implementation FBAXFakeRuntime
 {
   NSUInteger _translatorReadCount;
@@ -650,6 +666,17 @@ static NSDictionary *FBAXFakeSnapshotNode(FBAXFakeElement *element,
   FBAXFakeQuiescenceMonitor *monitor = [[FBAXFakeQuiescenceMonitor alloc] initWithHandler:handler];
   [self.quiescenceMonitors addObject:monitor];
   return monitor;
+}
+
+- (FBAXDeviceSettingMonitorOutcome *)monitorDeviceSetting:(FBAXDeviceSetting)setting handler:(void (^)(void))handler
+{
+  [self recordOperation:@"settingMonitor"];
+  if (self.deviceSettingMonitorOutcome) {
+    return self.deviceSettingMonitorOutcome;
+  }
+  self.deviceSettingMonitor = [FBAXFakeDeviceSettingMonitor new];
+  self.deviceSettingMonitor.handler = handler;
+  return [FBAXDeviceSettingMonitorOutcome resolved:self.deviceSettingMonitor];
 }
 
 - (FBAXDeviceSettingOutcome *)enabledStateForDeviceSetting:(FBAXDeviceSetting)setting
