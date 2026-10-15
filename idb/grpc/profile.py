@@ -17,6 +17,7 @@ from idb.common.tar import drain_untar
 from idb.common.types import (
     FootprintProfile,
     HeapProfile,
+    IdbException,
     LeaksProfile,
     MemgraphProfile,
     ProfileAllProcesses,
@@ -35,7 +36,7 @@ from idb.grpc.idb_pb2 import ProfileRequest, ProfileResponse
 from idb.grpc.stream import Stream
 
 
-class ProfileException(Exception):
+class ProfileException(IdbException):
     pass
 
 
@@ -124,9 +125,10 @@ async def drain_profile(
     stream: Stream[ProfileRequest, ProfileResponse],
     stop: asyncio.Event | None,
     on_sample: Callable[[dict[str, object]], None] | None,
-) -> ProfileResponse.Result:
+) -> ProfileResponse.Result | None:
     """Reads samples until the result, sending Stop if `stop` is set first. Pass no `stop` for a profile that does
-    not accept Stop; it should have ended the request stream instead."""
+    not accept Stop; it should have ended the request stream instead. Returns None if the stream ends without a
+    result, which a failed profile does: its error is the call's status, raised as the stream closes."""
     stop_waiter = None if stop is None else asyncio.ensure_future(stop.wait())
     try:
         while True:
@@ -142,9 +144,7 @@ async def drain_profile(
                     await stream.end()
             response = await read
             if response is None:
-                raise ProfileException(
-                    "The companion ended the profile without a result"
-                )
+                return None
             output = response.WhichOneof("output")
             if output == "result":
                 return response.result

@@ -200,6 +200,7 @@ from idb.grpc.profile import (
     drain_artifact,
     drain_profile,
     message_to_json,
+    ProfileException,
     start_request,
 )
 from idb.grpc.screenshot import screenshot_from_grpc, screenshot_to_grpc
@@ -1896,17 +1897,17 @@ class Client(ClientBase):
             result = await drain_profile(
                 stream, stop=stop if stoppable else None, on_sample=on_sample
             )
-            if artifact_path is not None:
+            if result is not None and artifact_path is not None:
                 await drain_artifact(stream, artifact_path)
-            return ProfileResult(
-                report=(
-                    message_to_json(result.report)
-                    if result.HasField("report")
-                    else None
-                ),
-                tool_output=result.tool_output,
-                artifact=artifact_path,
-            )
+        if result is None:
+            raise ProfileException("The companion ended the profile without a result")
+        return ProfileResult(
+            report=(
+                message_to_json(result.report) if result.HasField("report") else None
+            ),
+            tool_output=result.tool_output,
+            artifact=artifact_path,
+        )
 
     @log_and_handle_exceptions("xctrace_record")
     async def xctrace_record(

@@ -16,6 +16,7 @@ import tempfile
 from grpclib.const import Status
 from grpclib.exceptions import GRPCError
 from idb.common.types import (
+    IdbException,
     LeaksProfile,
     MemgraphProfile,
     ProfileBundleID,
@@ -245,8 +246,7 @@ class ProfileClientTests(TestCase):
         stop = asyncio.Event()
         stop.set()
 
-        # BUG: the companion's error is replaced by a generic one — flipped in the following commit
-        with self.assertRaisesRegex(ProfileException, "without a result"):
+        with self.assertRaisesRegex(IdbException, "^leaks exited with code 255$"):
             await client.profile(LeaksProfile(), ProfilePid(pid=42), stop)
 
     async def test_a_single_file_artifact_is_written_to_the_path(self) -> None:
