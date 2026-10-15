@@ -13,7 +13,7 @@ import Testing
 struct AccessibilityArgumentsTests {
   @Test
   func requestPreservesFlagValuesAndFoundationCoercion() {
-    let request = FBAXBridgeArguments.request(
+    let request = AXBridgeArguments.request(
       action: "perform",
       arguments: [
         "--pid", "12suffix", "--max-depth", "nonsense", "--max-nodes", "-3",
@@ -34,20 +34,20 @@ struct AccessibilityArgumentsTests {
 
   @Test
   func requestUsesLastDuplicateAndIgnoresUnknownAndDanglingFlags() {
-    let request = FBAXBridgeArguments.request(
+    let request = AXBridgeArguments.request(
       action: "describe",
       arguments: [
         "--pid", "10", "--unknown", "ignored", "--pid", "20", "--max-depth",
       ])
     #expect(request as NSDictionary == ["verb": "describe", "pid": 20] as NSDictionary)
     #expect(
-      FBAXBridgeArguments.request(action: "settings-get", arguments: []) as NSDictionary == ["verb": "settings-get"] as NSDictionary)
+      AXBridgeArguments.request(action: "settings-get", arguments: []) as NSDictionary == ["verb": "settings-get"] as NSDictionary)
   }
 
   @Test
   func enabledOnlyCoercesExactBooleanSpellings() {
     for (input, expected): (String, Any) in [("true", true), ("false", false), ("YES", "YES"), ("1", "1"), ("", "")] {
-      let request = FBAXBridgeArguments.request(action: "settings-set", arguments: ["--enabled", input])
+      let request = AXBridgeArguments.request(action: "settings-set", arguments: ["--enabled", input])
       #expect(request as NSDictionary == ["verb": "settings-set", "enabled": expected] as NSDictionary)
     }
   }
@@ -55,9 +55,9 @@ struct AccessibilityArgumentsTests {
   @Test
   func automationModeHonorsBothValuesAndPreservesOmission() {
     for (input, expected) in [("1", true), ("0", false)] {
-      let request = FBAXBridgeArguments.request(action: "describe", arguments: ["--automation-mode", input])
+      let request = AXBridgeArguments.request(action: "describe", arguments: ["--automation-mode", input])
       #expect(request["automationMode"] as? Bool == expected)
     }
-    #expect(FBAXBridgeArguments.request(action: "describe", arguments: ["--pid", "42"])["automationMode"] == nil)
+    #expect(AXBridgeArguments.request(action: "describe", arguments: ["--pid", "42"])["automationMode"] == nil)
   }
 }

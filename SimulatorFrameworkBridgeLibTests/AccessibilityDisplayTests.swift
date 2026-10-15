@@ -23,7 +23,7 @@ final class AccessibilityDisplayTests: XCTestCase {
       FBAXDisplayIdentity(uniqueID: "continuous-inner", displayID: 71),
     ])
     FBAXClientProvider.setRuntimeForTesting(runtime)
-    let request = FBAXBridgeArguments.request(action: "displays", arguments: [])
+    let request = AXBridgeArguments.request(action: "displays", arguments: [])
     XCTAssertEqual(request as NSDictionary, ["verb": "displays"])
     let response = AccessibilityService.handleRequest(request)
     XCTAssertEqual(

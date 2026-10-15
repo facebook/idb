@@ -1729,7 +1729,7 @@ private final class AccessibilityRequest {
   // MARK: - Argv front-end
 
   fileprivate func FBAXBridgeRequestFromArguments(action: String, arguments: [String]) -> [String: Any] {
-    let request = FBAXBridgeArguments.request(action: action, arguments: arguments)
+    let request = AXBridgeArguments.request(action: action, arguments: arguments)
 
     return request
   }
@@ -1833,7 +1833,7 @@ public enum AccessibilityService {
   }
 
   public static func handleAction(_ action: String, arguments: [String], writeResponse: (Data) -> Bool) -> Int32 {
-    let request = parameters(FBAXBridgeArguments.request(action: action, arguments: arguments))
+    let request = parameters(AXBridgeArguments.request(action: action, arguments: arguments))
     // One event per line, until the named application exits or the process is killed.
     if let start = quiescence(request) {
       switch start {

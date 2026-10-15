@@ -281,7 +281,7 @@ extension BridgeServerSocketTests {
   }
 
   func testTheTunablesParseFromArgv() {
-    let request = FBAXBridgeArguments.request(action: "quiet", arguments: ["--busy-threshold-ms", "5", "--quiet-window-ms", "7", "--pid", "9"])
+    let request = AXBridgeArguments.request(action: "quiet", arguments: ["--busy-threshold-ms", "5", "--quiet-window-ms", "7", "--pid", "9"])
     XCTAssertEqual(request as NSDictionary, ["verb": "quiet", "busyThresholdMs": 5, "quietWindowMs": 7, "pid": 9])
   }
 }

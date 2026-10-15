@@ -7,7 +7,7 @@
 
 import Foundation
 
-public enum FBAXBridgeArguments {
+public enum AXBridgeArguments {
   public static func request(action: String, arguments: [String]) -> [String: Any] {
     var request: [String: Any] = ["verb": action]
     // The CLI consumes pairs, ignores unknown/dangling flags, and lets the last duplicate win.
