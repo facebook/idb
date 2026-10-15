@@ -15,11 +15,9 @@ import Foundation
  it as an integer percentage on the `com.apple.springboard.volumestate` Darwin notification;
  `CoreSimulatorBridge` observes that and writes the value into the settings file. A guest app's
  `AVAudioSession.outputVolume` reads the same number back, and the host CoreAudio process-volume
- scalar is set from it — so this file, and no preferences domain, is where the device's volume is
- observable from.
+ scalar is set from it.
 
- That makes it the only way to see the volume from the host, and so the only way to check that a
- hardware volume-button press did anything.
+ The host can read the settings-file mirror; native streams read Darwin notification state.
 
  Two consequences of the guest's bookkeeping are worth knowing, because they are surprising:
 
@@ -27,7 +25,7 @@ import Foundation
    back. Writing to it does not move SpringBoard's own level, and the next button press overwrites it
    from that untouched level.
  - **It resets to 60 when SpringBoard restarts**, because `SBVolumeControl` initialises its level to
-   `0.6` and only publishes on a change.
+   `0.6` and publishes that initial notification state.
  */
 public struct SimulatorAudioSettings: Equatable, Sendable {
 
@@ -189,6 +187,16 @@ public struct SimulatorAudioCommands {
     let subscription = try await SimulatorDarwinNotificationObserver.subscribe(on: simulator, name: name)
     return SimulatorDarwinNotificationObserver.values(subscription: subscription) { _ in
       try SimulatorDarwinNotificationObserver.state(on: simulator, name: name) != 0
+    }
+  }
+
+  /// Publishes the current volume and subsequent native changes as a fraction from zero to one.
+  public func volumeChanges() async throws -> AsyncThrowingStream<Double, Error> {
+    let simulator = self.simulator
+    let name = SimulatorAudioSettings.volumeNotificationName
+    let subscription = try await SimulatorDarwinNotificationObserver.subscribe(on: simulator, name: name)
+    return SimulatorDarwinNotificationObserver.values(subscription: subscription) { _ in
+      min(Double(try SimulatorDarwinNotificationObserver.state(on: simulator, name: name)) / 100, 1)
     }
   }
 
