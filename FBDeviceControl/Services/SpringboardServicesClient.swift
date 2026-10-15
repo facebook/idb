@@ -83,11 +83,6 @@ class SpringboardServicesClient {
 
   // MARK: - Initializers
 
-  static func springboardServicesClient(connection: LockdownServiceConnection, logger: any ControlCoreLogger) -> SpringboardServicesClient {
-    let queue = DispatchQueue(label: "com.facebook.FBDeviceControl.springboard_services")
-    return SpringboardServicesClient(connection: connection, queue: queue, logger: logger)
-  }
-
   convenience init(connection: LockdownServiceConnection, logger: any ControlCoreLogger) {
     let queue = DispatchQueue(label: "com.facebook.FBDeviceControl.springboard_services")
     self.init(connection: connection, queue: queue, logger: logger)
