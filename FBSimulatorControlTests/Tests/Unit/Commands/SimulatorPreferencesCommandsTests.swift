@@ -36,6 +36,35 @@ struct SimulatorSettingsPublisherTests {
     #expect(!request.mayRetry)
   }
 
+  @Test("A combined snapshot preserves values and per-setting unavailability")
+  func combinedSettings() throws {
+    let frame = try JSONSerialization.data(withJSONObject: [
+      "ok": true, "event": "snapshot", "setting": "state-settings", "enabled": false,
+      "settings": [
+        "button-shapes": ["ok": true, "enabled": true],
+        "reduce-transparency": ["ok": false, "error": "missing getter", "error_kind": "capability_unavailable"],
+        "increase-contrast": ["ok": true, "enabled": false],
+      ],
+    ])
+    let event = try SimulatorSettingsPublisher.event(from: frame)
+    #expect(
+      event
+        == .snapshot(
+          SimulatorSettingsSnapshot(
+            reduceMotionEnabled: false,
+            reduceTransparency: .unavailable(.unsupported(reason: "missing getter")),
+            buttonShapes: .available(true), increaseContrast: .available(false))))
+  }
+
+  @Test("A combined snapshot cannot silently omit an observed field")
+  func incompleteCombinedSnapshot() throws {
+    let frame = try JSONSerialization.data(withJSONObject: [
+      "ok": true, "event": "snapshot", "setting": "state-settings", "enabled": false,
+      "settings": [:],
+    ])
+    #expect(throws: (any Error).self) { try SimulatorSettingsPublisher.event(from: frame) }
+  }
+
   @Test("Duplicate guest values are suppressed and clean source completion is explicit")
   func deduplicates() async throws {
     let (frames, continuation) = AsyncThrowingStream<Data, Error>.makeStream()

@@ -272,6 +272,7 @@ public enum BridgeAXWire {
   public enum Settings {
     public enum Key: String, Codable, Sendable, CaseIterable {
       case event
+      case settings
     }
 
     public enum Event: String, Codable, Sendable, CaseIterable {

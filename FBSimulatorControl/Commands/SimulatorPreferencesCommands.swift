@@ -153,7 +153,7 @@ public struct SimulatorPreferencesCommands {
   public func settings() -> AsyncStream<SimulatorSettingsEvent> {
     let transport = simulator.frameworkBridgeTransport(scope: .exclusive)
     return SimulatorSettingsPublisher {
-      try await transport.stream(.deviceSettingChanges("reduce-motion"))
+      try await transport.stream(.deviceSettingChanges("state-settings"))
     }.events()
   }
 

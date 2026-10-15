@@ -185,6 +185,7 @@ enum AccessibilityDeviceSetting: String {
   case reduceTransparency = "reduce-transparency"
   case buttonShapes = "button-shapes"
   case voiceOver = "voiceover"
+  case increaseContrast = "increase-contrast"
 
   var runtimeValue: FBAXDeviceSetting {
     switch self {
@@ -192,6 +193,7 @@ enum AccessibilityDeviceSetting: String {
     case .reduceTransparency: return .reduceTransparency
     case .buttonShapes: return .buttonShapes
     case .voiceOver: return .voiceOver
+    case .increaseContrast: return .increaseContrast
     }
   }
 }

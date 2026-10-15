@@ -360,6 +360,132 @@ extension BridgeServerSocketTests {
     XCTAssertEqual(runtime.deviceSettingMonitor?.isInvalidated, true)
   }
 
+  func testCombinedSettingsPublishCompleteValuesAndObserveOtherDomains() throws {
+    let runtime = FBAXFakeRuntime()
+    for setting in [FBAXDeviceSetting.reduceMotion, .reduceTransparency, .buttonShapes, .increaseContrast] {
+      runtime.deviceSettings[NSNumber(value: setting.rawValue)] = false
+    }
+    let client = try openSettingsStream(runtime, setting: "state-settings")
+    defer { closeQuietStream(client) }
+    let initial = try XCTUnwrap(readEvent(fd: client))
+    XCTAssertEqual(
+      Set(runtime.deviceSettingMonitoredSettings ?? []),
+      Set(
+        [
+          FBAXDeviceSetting.reduceMotion, .reduceTransparency, .buttonShapes, .increaseContrast,
+        ].map { NSNumber(value: $0.rawValue) }))
+    XCTAssertEqual(initial["enabled"] as? Bool, false)
+    let initialSettings = try XCTUnwrap(initial["settings"] as? [String: NSDictionary])
+    XCTAssertEqual(Set(initialSettings.keys), ["button-shapes", "reduce-transparency", "increase-contrast"])
+    XCTAssertTrue(initialSettings.values.allSatisfy { ($0["enabled"] as? Bool) == false })
+    runtime.deviceSettings[NSNumber(value: FBAXDeviceSetting.buttonShapes.rawValue)] = true
+    (runtime.deviceSettingMonitors[NSNumber(value: FBAXDeviceSetting.buttonShapes.rawValue)] as? FBAXFakeDeviceSettingMonitor)?.deliver()
+    let changed = try XCTUnwrap(readEvent(fd: client)?["settings"] as? [String: NSDictionary])
+    XCTAssertEqual(changed["button-shapes"]?["enabled"] as? Bool, true)
+    XCTAssertEqual(changed["reduce-transparency"]?["enabled"] as? Bool, false)
+  }
+
+  func testCombinedSettingsPreservePerSettingReadFailure() throws {
+    let runtime = FBAXFakeRuntime()
+    runtime.deviceSettings[NSNumber(value: FBAXDeviceSetting.reduceMotion.rawValue)] = false
+    let client = try openSettingsStream(runtime, setting: "state-settings")
+    defer { closeQuietStream(client) }
+    let settings = try XCTUnwrap(readEvent(fd: client)?["settings"] as? [String: NSDictionary])
+    XCTAssertEqual(settings["button-shapes"]?["error_kind"] as? String, "capability_unavailable")
+    runtime.deviceSettings[NSNumber(value: FBAXDeviceSetting.buttonShapes.rawValue)] = true
+    runtime.deviceSettingMonitor?.deliver()
+    let recovered = try XCTUnwrap(readEvent(fd: client)?["settings"] as? [String: NSDictionary])
+    XCTAssertEqual(recovered["button-shapes"]?["enabled"] as? Bool, true)
+  }
+
+  func testCombinedSettingsPreservePartialObservationFailures() throws {
+    for (outcome, kind) in [
+      (FBAXDeviceSettingMonitorOutcome.unavailable("notification missing"), "capability_unavailable"),
+      (FBAXDeviceSettingMonitorOutcome.failed("registration failed"), "reader_unavailable"),
+    ] {
+      let runtime = FBAXFakeRuntime()
+      let motion = NSNumber(value: FBAXDeviceSetting.reduceMotion.rawValue)
+      let shapes = NSNumber(value: FBAXDeviceSetting.buttonShapes.rawValue)
+      let contrast = NSNumber(value: FBAXDeviceSetting.increaseContrast.rawValue)
+      for setting in [FBAXDeviceSetting.reduceMotion, .reduceTransparency, .buttonShapes, .increaseContrast] {
+        runtime.deviceSettings[NSNumber(value: setting.rawValue)] = false
+      }
+      runtime.deviceSettingMonitorOutcomes[contrast] = outcome
+      var initialReads = 0
+      runtime.deviceSettingReadHandler = {
+        initialReads += 1
+        guard initialReads == 3 else { return }
+        runtime.deviceSettingReadHandler = nil
+        // Deliver the burst on the stream's thread after all initial values were captured.
+        runtime.deviceSettings[motion] = true
+        runtime.deviceSettings[shapes] = true
+        (runtime.deviceSettingMonitors[motion] as? FBAXFakeDeviceSettingMonitor)?.deliver()
+        (runtime.deviceSettingMonitors[shapes] as? FBAXFakeDeviceSettingMonitor)?.deliver()
+        (runtime.deviceSettingMonitors[shapes] as? FBAXFakeDeviceSettingMonitor)?.deliver()
+      }
+      let client = try openSettingsStream(runtime, setting: "state-settings")
+      defer {
+        closeQuietStream(client)
+        XCTAssertTrue(runtime.deviceSettingMonitors.allValues.compactMap { $0 as? FBAXFakeDeviceSettingMonitor }.allSatisfy { $0.isInvalidated })
+      }
+      let initial = try XCTUnwrap(readEvent(fd: client))
+      XCTAssertEqual(initial["enabled"] as? Bool, false)
+      let settings = try XCTUnwrap(initial["settings"] as? [String: NSDictionary])
+      XCTAssertEqual(Set(settings.keys), ["reduce-transparency", "button-shapes", "increase-contrast"])
+      XCTAssertEqual(settings["increase-contrast"]?["error_kind"] as? String, kind)
+      XCTAssertEqual(settings["increase-contrast"]?["error"] as? String, outcome.failureReason)
+      XCTAssertNil(settings["increase-contrast"]?["enabled"])
+      XCTAssertEqual(settings["button-shapes"]?["enabled"] as? Bool, false)
+      XCTAssertEqual(settings["reduce-transparency"]?["enabled"] as? Bool, false)
+      XCTAssertEqual(runtime.deviceSettingMonitors.count, 3)
+
+      let changed = try XCTUnwrap(readEvent(fd: client))
+      XCTAssertEqual(changed["enabled"] as? Bool, true)
+      let changedSettings = try XCTUnwrap(changed["settings"] as? [String: NSDictionary])
+      XCTAssertEqual(changedSettings["button-shapes"]?["enabled"] as? Bool, true)
+      XCTAssertEqual(changedSettings["increase-contrast"]?["error_kind"] as? String, kind)
+      XCTAssertNil(changedSettings["increase-contrast"]?["enabled"])
+      let operations = runtime.operations.compactMap { $0 as? String }.filter { $0 == "settingMonitor" || $0 == "settingRead" }
+      XCTAssertEqual(Array(operations.prefix(4)), Array(repeating: "settingMonitor", count: 4))
+      XCTAssertEqual(operations.filter { $0 == "settingRead" }.count, 6)
+    }
+  }
+
+  func testCombinedSettingsRequireReduceMotionObservation() throws {
+    for (outcome, kind) in [
+      (FBAXDeviceSettingMonitorOutcome.unavailable("notification missing"), "capability_unavailable"),
+      (FBAXDeviceSettingMonitorOutcome.failed("registration failed"), "reader_unavailable"),
+    ] {
+      let runtime = FBAXFakeRuntime()
+      let motion = NSNumber(value: FBAXDeviceSetting.reduceMotion.rawValue)
+      runtime.deviceSettingMonitorOutcomes[motion] = outcome
+      let client = try openSettingsStream(runtime, setting: "state-settings")
+      defer { closeQuietStream(client) }
+      let failure = try XCTUnwrap(readEvent(fd: client))
+      XCTAssertEqual(failure["ok"] as? Bool, false)
+      XCTAssertEqual(failure["error_kind"] as? String, kind)
+      assertEOF(fd: client)
+      XCTAssertEqual(runtime.deviceSettingMonitoredSettings, [motion])
+      XCTAssertEqual(runtime.deviceSettingMonitors.count, 0)
+      XCTAssertFalse(runtime.operations.contains { ($0 as? String) == "settingRead" })
+    }
+  }
+
+  func testCombinedSettingsInvalidateAllMonitorsOnSourceOrOutputFailure() {
+    for sourceFailure in [false, true] {
+      let runtime = FBAXFakeRuntime()
+      for setting in [FBAXDeviceSetting.reduceMotion, .reduceTransparency, .buttonShapes, .increaseContrast] {
+        runtime.deviceSettings[NSNumber(value: setting.rawValue)] = false
+      }
+      if sourceFailure { runtime.deviceSettingReadOutcome = .failed("read failed") }
+      useRuntime(runtime)
+      let status = AccessibilityService.handleAction("settings-observe", arguments: ["--setting", "state-settings"]) { _ in sourceFailure }
+      XCTAssertEqual(status, 1)
+      XCTAssertEqual(runtime.deviceSettingMonitors.count, 4)
+      XCTAssertTrue(runtime.deviceSettingMonitors.allValues.compactMap { $0 as? FBAXFakeDeviceSettingMonitor }.allSatisfy { $0.isInvalidated })
+    }
+  }
+
   func testSettingsObserveIsRefusedOutsideAStream() {
     XCTAssertEqual(
       AccessibilityService.handleRequest(["verb": "settings-observe", "setting": "reduce-motion"])["error_kind"] as? String,

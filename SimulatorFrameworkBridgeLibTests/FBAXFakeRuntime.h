@@ -131,7 +131,10 @@ NSDictionary<NSString *, id> *FBAXGeometryDictionaryProbe(BOOL rectangle, BOOL r
  */
 @interface FBAXFakeRuntime : NSObject <FBAXRuntime>
 @property (nullable, nonatomic, strong) FBAXFakeDeviceSettingMonitor *deviceSettingMonitor;
+@property (nullable, nonatomic, copy) NSArray<NSNumber *> *deviceSettingMonitoredSettings;
 @property (nullable, nonatomic, strong) FBAXDeviceSettingMonitorOutcome *deviceSettingMonitorOutcome;
+@property (nonatomic, readonly, strong) NSMutableDictionary<NSNumber *, FBAXDeviceSettingMonitorOutcome *> *deviceSettingMonitorOutcomes;
+@property (nonatomic, readonly, strong) NSMutableDictionary<NSNumber *, FBAXFakeDeviceSettingMonitor *> *deviceSettingMonitors;
 
 @property (nullable, nonatomic, strong) FBAXGeometryDictionaryProbeValue *attributeRead;
 

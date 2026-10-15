@@ -311,6 +311,7 @@ typedef NS_ENUM(NSUInteger, FBAXDeviceSetting) {
   FBAXDeviceSettingReduceTransparency,
   FBAXDeviceSettingButtonShapes,
   FBAXDeviceSettingVoiceOver,
+  FBAXDeviceSettingIncreaseContrast,
 };
 
 /** How a device-setting read or write-readback turned out. */
@@ -595,7 +596,7 @@ typedef void (^FBAXQuiescenceHandler)(FBAXQuiescenceReport report, pid_t pid);
 - (BOOL)setAutomationModeEnabled:(BOOL)enabled;
 
 /** Registers before the first read; notifications carry no authoritative value. */
-- (FBAXDeviceSettingMonitorOutcome *)monitorDeviceSetting:(FBAXDeviceSetting)setting handler:(void (^)(void))handler;
+- (FBAXDeviceSettingMonitorOutcome *)monitorDeviceSettings:(NSArray<NSNumber *> *)settings handler:(void (^)(void))handler;
 
 /** Reads a device-wide setting. */
 - (FBAXDeviceSettingOutcome *)enabledStateForDeviceSetting:(FBAXDeviceSetting)setting;

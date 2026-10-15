@@ -326,6 +326,8 @@ NSDictionary<NSString *, id> *FBAXGeometryDictionaryProbe(BOOL rectangle, BOOL r
   _automationModeWrites = [NSMutableArray array];
   _quiescenceMonitors = [NSMutableArray array];
   _deviceSettings = [NSMutableDictionary dictionary];
+  _deviceSettingMonitorOutcomes = [NSMutableDictionary dictionary];
+  _deviceSettingMonitors = [NSMutableDictionary dictionary];
   _deviceSettingWrites = [NSMutableArray array];
   _displayInventoryOutcome = [FBAXDisplayInventoryOutcome available:@[]];
   _hitTestOutcome = [FBAXHitTestOutcome empty];
@@ -668,15 +670,28 @@ static NSDictionary *FBAXFakeSnapshotNode(FBAXFakeElement *element,
   return monitor;
 }
 
-- (FBAXDeviceSettingMonitorOutcome *)monitorDeviceSetting:(FBAXDeviceSetting)setting handler:(void (^)(void))handler
+- (FBAXDeviceSettingMonitorOutcome *)monitorDeviceSettings:(NSArray<NSNumber *> *)settings handler:(void (^)(void))handler
 {
   [self recordOperation:@"settingMonitor"];
+  self.deviceSettingMonitoredSettings = [(self.deviceSettingMonitoredSettings ?: @[]) arrayByAddingObjectsFromArray:settings];
   if (self.deviceSettingMonitorOutcome) {
     return self.deviceSettingMonitorOutcome;
   }
-  self.deviceSettingMonitor = [FBAXFakeDeviceSettingMonitor new];
-  self.deviceSettingMonitor.handler = handler;
-  return [FBAXDeviceSettingMonitorOutcome resolved:self.deviceSettingMonitor];
+  for (NSNumber *setting in settings) {
+    FBAXDeviceSettingMonitorOutcome *outcome = self.deviceSettingMonitorOutcomes[setting];
+    if (outcome) {
+      return outcome;
+    }
+  }
+  FBAXFakeDeviceSettingMonitor *monitor = [FBAXFakeDeviceSettingMonitor new];
+  monitor.handler = handler;
+  for (NSNumber *setting in settings) {
+    self.deviceSettingMonitors[setting] = monitor;
+  }
+  if ([settings containsObject:@(FBAXDeviceSettingReduceMotion)]) {
+    self.deviceSettingMonitor = monitor;
+  }
+  return [FBAXDeviceSettingMonitorOutcome resolved:monitor];
 }
 
 - (FBAXDeviceSettingOutcome *)enabledStateForDeviceSetting:(FBAXDeviceSetting)setting

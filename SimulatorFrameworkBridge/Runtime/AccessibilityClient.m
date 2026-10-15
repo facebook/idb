@@ -355,10 +355,10 @@ static id FBAXCopyAttributeContainers(id value)
   }
 }
 
-- (FBAXDeviceSettingMonitorOutcome *)monitorDeviceSetting:(FBAXDeviceSetting)setting handler:(void (^)(void))handler
+- (FBAXDeviceSettingMonitorOutcome *)monitorDeviceSettings:(NSArray<NSNumber *> *)settings handler:(void (^)(void))handler
 {
   @try {
-    return [_runtime monitorDeviceSetting:setting handler:handler];
+    return [_runtime monitorDeviceSettings:settings handler:handler];
   } @catch (NSException *exception) {
     return [FBAXDeviceSettingMonitorOutcome failed:exception.reason ?: exception.name];
   }

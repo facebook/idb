@@ -8,12 +8,28 @@
 import FBSimulatorBridgeProtocol
 import Foundation
 
+public enum SimulatorSettingsReading: Equatable, Sendable {
+  case available(Bool)
+  case unavailable(SimulatorSettingsAvailability)
+}
+
 /// The settings whose current values are published by a simulator settings source.
 public struct SimulatorSettingsSnapshot: Equatable, Sendable {
   public let reduceMotionEnabled: Bool
+  public let reduceTransparency: SimulatorSettingsReading
+  public let buttonShapes: SimulatorSettingsReading
+  public let increaseContrast: SimulatorSettingsReading
 
-  public init(reduceMotionEnabled: Bool) {
+  public init(
+    reduceMotionEnabled: Bool,
+    reduceTransparency: SimulatorSettingsReading = .unavailable(.unsupported(reason: "Source does not publish Reduce Transparency")),
+    buttonShapes: SimulatorSettingsReading = .unavailable(.unsupported(reason: "Source does not publish Button Shapes")),
+    increaseContrast: SimulatorSettingsReading = .unavailable(.unsupported(reason: "Source does not publish Increase Contrast"))
+  ) {
     self.reduceMotionEnabled = reduceMotionEnabled
+    self.reduceTransparency = reduceTransparency
+    self.buttonShapes = buttonShapes
+    self.increaseContrast = increaseContrast
   }
 }
 
@@ -99,11 +115,36 @@ struct SimulatorSettingsPublisher: Sendable {
     else {
       throw AXBridgeError.guestFailure("simulator settings response was not a settings snapshot")
     }
-    guard setting == "reduce-motion" else { return nil }
+    guard setting == "reduce-motion" || setting == "state-settings" else { return nil }
     guard let enabled = response[BridgeAXWire.Envelope.enabled.rawValue] as? Bool else {
       throw AXBridgeError.guestFailure("simulator settings response was not a Reduce Motion snapshot")
     }
-    return .snapshot(SimulatorSettingsSnapshot(reduceMotionEnabled: enabled))
+    guard setting == "state-settings" else {
+      return .snapshot(SimulatorSettingsSnapshot(reduceMotionEnabled: enabled))
+    }
+    let settings = response[BridgeAXWire.Settings.Key.settings.rawValue] as? [String: Any] ?? [:]
+    return .snapshot(
+      SimulatorSettingsSnapshot(
+        reduceMotionEnabled: enabled,
+        reduceTransparency: try reading(settings["reduce-transparency"]),
+        buttonShapes: try reading(settings["button-shapes"]),
+        increaseContrast: try reading(settings["increase-contrast"])))
+  }
+
+  private static func reading(_ value: Any?) throws -> SimulatorSettingsReading {
+    guard let envelope = value as? [String: Any], let ok = envelope[BridgeAXWire.Envelope.ok.rawValue] as? Bool else {
+      throw AXBridgeError.guestFailure("simulator settings response omitted an observed setting")
+    }
+    if ok {
+      guard let enabled = envelope[BridgeAXWire.Envelope.enabled.rawValue] as? Bool else {
+        throw AXBridgeError.guestFailure("simulator settings response omitted an enabled value")
+      }
+      return .available(enabled)
+    }
+    return .unavailable(
+      availability(
+        errorKind: envelope[BridgeAXWire.Envelope.errorKind.rawValue] as? String,
+        message: envelope[BridgeAXWire.Envelope.error.rawValue] as? String ?? "Setting read failed"))
   }
 
   static func availability(errorKind: String?, message: String) -> SimulatorSettingsAvailability {

@@ -104,8 +104,8 @@ static NSString *FBAXErrorDescription(int32_t axError)
 
 @interface FBAXDarwinSettingMonitor : NSObject <FBAXDeviceSettingMonitor>
 @property (nonatomic, copy) void (^handler)(void);
-@property (nonatomic, copy) NSString *name;
-- (instancetype)initWithName:(CFStringRef)name handler:(void (^)(void))handler;
+@property (nonatomic, copy) NSArray<NSString *> *names;
+- (instancetype)initWithNames:(NSArray<NSString *> *)names handler:(void (^)(void))handler;
 @end
 
 static void FBAXSettingChanged(CFNotificationCenterRef center,
@@ -121,20 +121,22 @@ static void FBAXSettingChanged(CFNotificationCenterRef center,
 }
 
 @implementation FBAXDarwinSettingMonitor
-- (instancetype)initWithName:(CFStringRef)name handler:(void (^)(void))handler
+- (instancetype)initWithNames:(NSArray<NSString *> *)names handler:(void (^)(void))handler
 {
   self = [super init];
   if (self) {
-    _name = [(__bridge NSString *)name copy];
+    _names = [names copy];
     _handler = [handler copy];
-    CFNotificationCenterAddObserver(
-      CFNotificationCenterGetDarwinNotifyCenter(),
-      (__bridge void *)self,
-      FBAXSettingChanged,
-      (__bridge CFStringRef)_name,
-      NULL,
-      CFNotificationSuspensionBehaviorDeliverImmediately
-    );
+    for (NSString *name in _names) {
+      CFNotificationCenterAddObserver(
+        CFNotificationCenterGetDarwinNotifyCenter(),
+        (__bridge void *)self,
+        FBAXSettingChanged,
+        (__bridge CFStringRef)name,
+        NULL,
+        CFNotificationSuspensionBehaviorDeliverImmediately
+      );
+    }
   }
   return self;
 }
@@ -1344,27 +1346,51 @@ static NSString *const kFrontboardVisibilityEndowment = @"com.apple.frontboard.v
   return [settingsClass sharedInstance];
 }
 
-- (FBAXDeviceSettingMonitorOutcome *)monitorDeviceSetting:(FBAXDeviceSetting)setting handler:(void (^)(void))handler
+- (FBAXDeviceSettingMonitorOutcome *)monitorDeviceSettings:(NSArray<NSNumber *> *)settings handler:(void (^)(void))handler
 {
-  if (setting != FBAXDeviceSettingReduceMotion) {
-    return [FBAXDeviceSettingMonitorOutcome unavailable:@"This device setting has no observation binding"];
-  }
   static void *library;
   static dispatch_once_t onceToken;
   dispatch_once(&onceToken, ^{
     library = dlopen(FBAXPathAccessibility, RTLD_LAZY | RTLD_LOCAL);
   });
-  FBAXAccessibilityNotificationSymbol symbol = library ? dlsym(library, FBAXReduceMotionChangedSymbol) : NULL;
-  if (!symbol || !*symbol) {
-    return [FBAXDeviceSettingMonitorOutcome unavailable:@"Reduce Motion notifications are unavailable on this runtime"];
+  NSMutableArray<NSString *> *names = [NSMutableArray array];
+  for (NSNumber *setting in settings) {
+    const char *symbolName = NULL;
+    switch (setting.unsignedIntegerValue) {
+      case FBAXDeviceSettingReduceMotion: symbolName = FBAXReduceMotionChangedSymbol; break;
+      case FBAXDeviceSettingReduceTransparency: symbolName = FBAXReduceTransparencyChangedSymbol; break;
+      case FBAXDeviceSettingButtonShapes: symbolName = FBAXButtonShapesChangedSymbol; break;
+      case FBAXDeviceSettingIncreaseContrast: symbolName = FBAXIncreaseContrastChangedSymbol; break;
+      case FBAXDeviceSettingVoiceOver:
+      default:
+        return [FBAXDeviceSettingMonitorOutcome unavailable:@"This device setting has no observation binding"];
+    }
+    FBAXAccessibilityNotificationSymbol symbol = library ? dlsym(library, symbolName) : NULL;
+    if (!symbol || !*symbol) {
+      return [FBAXDeviceSettingMonitorOutcome unavailable:@"Device setting notifications are unavailable on this runtime"];
+    }
+    [names addObject:(__bridge NSString *)*symbol];
   }
-  return [FBAXDeviceSettingMonitorOutcome resolved:[[FBAXDarwinSettingMonitor alloc] initWithName:*symbol handler:handler]];
+  return [FBAXDeviceSettingMonitorOutcome resolved:[[FBAXDarwinSettingMonitor alloc] initWithNames:names handler:handler]];
 }
 
 - (FBAXDeviceSettingOutcome *)enabledStateForDeviceSetting:(FBAXDeviceSetting)setting
 {
   @try {
     switch (setting) {
+      case FBAXDeviceSettingIncreaseContrast: {
+        static void *library;
+        static FBAXIncreaseContrastGetFn read;
+        static dispatch_once_t onceToken;
+        dispatch_once(&onceToken, ^{
+          library = dlopen(FBAXPathAccessibility, RTLD_LAZY | RTLD_LOCAL);
+          read = library ? dlsym(library, FBAXIncreaseContrastGetSymbol) : NULL;
+        });
+        if (!read) {
+          return [FBAXDeviceSettingOutcome unavailable:@"Increase Contrast is unavailable on this runtime"];
+        }
+        return [FBAXDeviceSettingOutcome resolved:read()];
+      }
       case FBAXDeviceSettingReduceMotion: {
         AXSettings *settings = [self deviceAccessibilitySettings];
         if (!settings || ![settings respondsToSelector:@selector(reduceMotionEnabled)]) {

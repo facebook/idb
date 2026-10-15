@@ -145,7 +145,7 @@ struct AXWireContractTests {
 
   @Test
   func settingsStreamWireValues() {
-    #expect(AXWire.Settings.Key.allCases.map(\.rawValue) == ["event"])
+    #expect(AXWire.Settings.Key.allCases.map(\.rawValue) == ["event", "settings"])
     #expect(AXWire.Settings.Event.allCases.map(\.rawValue) == ["snapshot"])
   }
 

@@ -79,7 +79,7 @@ NS_ASSUME_NONNULL_BEGIN
 - (nullable FBAXFrontmostOutcome *)runningBoardFrontmostWithError:(NSError **)error;
 - (nullable NSNumber *)automationModeEnabledWithError:(NSError **)error;
 - (nullable NSNumber *)setAutomationModeEnabled:(BOOL)enabled error:(NSError **)error;
-- (FBAXDeviceSettingMonitorOutcome *)monitorDeviceSetting:(FBAXDeviceSetting)setting handler:(void (^)(void))handler;
+- (FBAXDeviceSettingMonitorOutcome *)monitorDeviceSettings:(NSArray<NSNumber *> *)settings handler:(void (^)(void))handler;
 - (nullable FBAXDeviceSettingOutcome *)enabledStateForDeviceSetting:(FBAXDeviceSetting)setting error:(NSError **)error;
 - (nullable FBAXDeviceSettingOutcome *)setEnabled:(BOOL)enabled forDeviceSetting:(FBAXDeviceSetting)setting error:(NSError **)error;
 /** The translator's answer for `attributes`, numbers in its own vocabulary (`BridgeAXTranslatorAttribute`), keyed by the same
