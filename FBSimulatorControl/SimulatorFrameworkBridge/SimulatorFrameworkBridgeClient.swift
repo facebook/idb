@@ -164,11 +164,11 @@ private struct SimulatorBridgeGuestLauncher: BridgeGuestLauncher {
   func launch(_ arguments: [String]) async throws -> InSimulatorToolOutput {
     guard let path = simulator.frameworkBridgePath else { throw SimulatorFrameworkBridgeError.binaryMissing }
     guard let bundleIdentity else {
-      return try await simulator.runtimeTools.launchConsumingOutput(launchPath: path, arguments: arguments)
+      return try await simulator.runtimeTools.run(hostExecutable: path, arguments: arguments)
     }
     return try await simulator.temporaryDirectory.withTemporaryDirectory { stagingDirectory in
-      try await simulator.runtimeTools.launchConsumingOutput(
-        launchPath: SimulatorFrameworkBridgeStaging.stagedExecutablePath(
+      try await simulator.runtimeTools.run(
+        hostExecutable: SimulatorFrameworkBridgeStaging.stagedExecutablePath(
           bundledGuestPath: path,
           bundleIdentity: bundleIdentity,
           stagingDirectory: stagingDirectory),

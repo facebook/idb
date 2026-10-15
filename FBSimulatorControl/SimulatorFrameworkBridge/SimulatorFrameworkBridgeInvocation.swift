@@ -55,8 +55,8 @@ extension Simulator {
     guard let bundledGuestPath = frameworkBridgePath else {
       throw SimulatorFrameworkBridgeError.binaryMissing
     }
-    let output = try await runtimeTools.launchConsumingOutput(
-      launchPath: bundledGuestPath,
+    let output = try await runtimeTools.run(
+      hostExecutable: bundledGuestPath,
       arguments: [service, action] + arguments)
     guard output.exitCode == 0 else {
       let details = SimulatorFrameworkBridgeError.failureDetails(

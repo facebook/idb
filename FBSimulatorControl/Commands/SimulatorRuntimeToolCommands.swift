@@ -67,20 +67,20 @@ public struct SimulatorRuntimeToolCommands: Sendable {
     environment: [String: String] = [:]
   ) async throws -> InSimulatorToolOutput {
     let launchPath = try runtimeExecutablePath(relativePath)
-    return try await launchConsumingOutput(launchPath: launchPath, arguments: arguments, environment: environment)
+    return try await run(hostExecutable: launchPath, arguments: arguments, environment: environment)
   }
 
   /// Spawns an executable inside the simulator (the CoreSimulator domain, via
   /// `launchProcess`) and captures its stdout, stderr and exit code.
   ///
   /// `launchPath` is used verbatim: `SimDevice` resolves it against the host
-  /// filesystem, not the RuntimeRoot. Use `run` for runtime-vendored
-  /// tools; use this directly only for host executables (e.g. `/bin/sh`, which
+  /// filesystem, not the RuntimeRoot. Use `run(_:arguments:environment:)` for runtime-vendored
+  /// tools; use this only for host executables (e.g. `/bin/sh`, which
   /// the runtime does not ship). Exit codes are not interpreted — callers decide
   /// which are acceptable. A tool killed by a signal throws
   /// `InSimulatorToolError.signalled`, with its stderr.
-  package func launchConsumingOutput(
-    launchPath: String,
+  package func run(
+    hostExecutable launchPath: String,
     arguments: [String] = [],
     environment: [String: String] = [:]
   ) async throws -> InSimulatorToolOutput {

@@ -10,7 +10,7 @@ import FBControlCore
 import Foundation
 import Testing
 
-/// What `launchConsumingOutput` hands back from a process spawned inside the simulator,
+/// What `run(hostExecutable:)` hands back from a process spawned inside the simulator,
 /// driven against a device double that writes both streams and exits at once.
 @Suite
 struct SimulatorRuntimeToolCommandsTests {
@@ -20,7 +20,7 @@ struct SimulatorRuntimeToolCommandsTests {
     let device = ToolSpawnDevice(stdOut: Data("out\n".utf8), stdErr: Data("err\n".utf8), statLoc: 3 << 8)
     let commands = SimulatorRuntimeToolCommands(simulator: SimulatorTestSupport.testableSimulator(withDevice: device))
 
-    let output = try await commands.launchConsumingOutput(launchPath: "/bin/sh", arguments: ["-c", "true"], environment: ["E": "1"])
+    let output = try await commands.run(hostExecutable: "/bin/sh", arguments: ["-c", "true"], environment: ["E": "1"])
 
     #expect(output.stdout == Data("out\n".utf8))
     #expect(output.stderr == Data("err\n".utf8))
@@ -35,7 +35,7 @@ struct SimulatorRuntimeToolCommandsTests {
     let device = ToolSpawnDevice()
     let commands = SimulatorRuntimeToolCommands(simulator: SimulatorTestSupport.testableSimulator(withDevice: device))
 
-    _ = try await commands.launchConsumingOutput(launchPath: "/bin/sh")
+    _ = try await commands.run(hostExecutable: "/bin/sh")
 
     #expect(device.spawnedOptions?["environment"] as? [String: String] == [:])
   }
@@ -46,7 +46,7 @@ struct SimulatorRuntimeToolCommandsTests {
     let commands = SimulatorRuntimeToolCommands(simulator: SimulatorTestSupport.testableSimulator(withDevice: device))
 
     do {
-      let output = try await commands.launchConsumingOutput(launchPath: "/bin/sh")
+      let output = try await commands.run(hostExecutable: "/bin/sh")
       Issue.record("Expected a signalled process to throw, but it returned exit code \(output.exitCode)")
     } catch {
       // Expected: there is no exit code to report.

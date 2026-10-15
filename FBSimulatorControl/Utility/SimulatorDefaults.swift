@@ -174,7 +174,7 @@ struct SimulatorDefaults {
 
   private func run(_ command: Command) async throws -> String {
     let launchPath = defaultsBinary
-    let output = try await simulator.runtimeTools.launchConsumingOutput(launchPath: launchPath, arguments: command.arguments)
+    let output = try await simulator.runtimeTools.run(hostExecutable: launchPath, arguments: command.arguments)
     return try SimulatorDefaults.stdout(orThrowFrom: output, command: command, logger: simulator.logger)
   }
 

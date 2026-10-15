@@ -182,8 +182,8 @@ public struct SimulatorAudioInjectionCommands {
 
   /// Runs the runtime's own `launchctl`; `launchctl getenv` exits zero and prints nothing when unset.
   private func launchctl(_ arguments: String...) async throws -> String {
-    let output = try await simulator.runtimeTools.launchConsumingOutput(
-      launchPath: try SimulatorLaunchCtlCommands.launchCtlLaunchPath(for: simulator), arguments: arguments)
+    let output = try await simulator.runtimeTools.run(
+      hostExecutable: try SimulatorLaunchCtlCommands.launchCtlLaunchPath(for: simulator), arguments: arguments)
     guard output.exitCode == 0, let stdout = String(data: output.stdout, encoding: .utf8) else {
       throw AudioInjectionError.armingFailed(
         udid: simulator.udid,

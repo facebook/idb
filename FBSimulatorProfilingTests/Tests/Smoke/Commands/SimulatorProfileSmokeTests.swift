@@ -62,7 +62,7 @@ final class SimulatorProfileSmokeTests: ProvidedSimulatorTestCase {
   func testToolKilledBySignalCarriesItsStderr() async throws {
     do {
       let output = try await skippingIfGuestServiceSpawnUnavailable {
-        try await simulator.runtimeTools.launchConsumingOutput(launchPath: "/bin/sh", arguments: ["-c", "echo aborting >&2; kill -ABRT $$"])
+        try await simulator.runtimeTools.run(hostExecutable: "/bin/sh", arguments: ["-c", "echo aborting >&2; kill -ABRT $$"])
       }
       XCTFail("sh killed itself with SIGABRT, but exited with code \(output.exitCode)")
     } catch let InSimulatorToolError.signalled(launchPath, signal, stderr) {
