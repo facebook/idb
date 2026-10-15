@@ -69,7 +69,7 @@ public final class CodesignProvider {
     logger?.log("Successfully signed bundle \(result.standardError)")
   }
 
-  public func cdHashForBundle(atPath bundlePath: String) async throws -> String {
+  public func cdHash(ofBundleAtPath bundlePath: String) async throws -> String {
     logger?.log("Obtaining CDHash for bundle at path \(bundlePath)")
 
     let result = try await Subprocess(

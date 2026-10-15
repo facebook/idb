@@ -61,7 +61,7 @@ struct TestRunnerConfiguration {
   public init(target: any XCTestExtendedTarget, testLaunchConfiguration: TestLaunchConfiguration, workingDirectory: String, codesign: CodesignProvider?) async throws {
     if let codesign {
       do {
-        _ = try await codesign.cdHashForBundle(atPath: testLaunchConfiguration.testBundle.path)
+        _ = try await codesign.cdHash(ofBundleAtPath: testLaunchConfiguration.testBundle.path)
       } catch {
         throw TestRunnerConfigurationError.codesignCheckFailed(bundlePath: testLaunchConfiguration.testBundle.path, underlying: error)
       }

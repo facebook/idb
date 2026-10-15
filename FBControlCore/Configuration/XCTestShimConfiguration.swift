@@ -86,7 +86,7 @@ public struct XCTestShimConfiguration: Sendable {
     }
     let codesign = CodesignProvider(identityName: "-", logger: nil)
     do {
-      _ = try await codesign.cdHashForBundle(atPath: shimPath)
+      _ = try await codesign.cdHash(ofBundleAtPath: shimPath)
     } catch {
       throw XCTestShimError.shimUnsigned(path: shimPath, underlying: error)
     }

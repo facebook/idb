@@ -71,9 +71,9 @@ struct CodesignProviderTests {
     let bundle = try Self.makeFlatBundle(in: directory, name: "RoundTrip")
     let provider = Self.adHocProvider()
 
-    let before = try await provider.cdHashForBundle(atPath: bundle.path)
+    let before = try await provider.cdHash(ofBundleAtPath: bundle.path)
     try await provider.signBundle(atPath: bundle.path)
-    let after = try await provider.cdHashForBundle(atPath: bundle.path)
+    let after = try await provider.cdHash(ofBundleAtPath: bundle.path)
 
     #expect(after != before, "Re-signing replaces the signature inherited from the copied binary")
     #expect(after.count == 40)
@@ -97,7 +97,7 @@ struct CodesignProviderTests {
     let standardError = process.standardError
     #expect(standardError.contains("CDHash="))
 
-    let cdHash = try await provider.cdHashForBundle(atPath: bundle.path)
+    let cdHash = try await provider.cdHash(ofBundleAtPath: bundle.path)
     #expect(standardError.contains("CDHash=\(cdHash)"))
   }
 
@@ -133,7 +133,7 @@ struct CodesignProviderTests {
     try FileManager.default.createDirectory(at: bundle, withIntermediateDirectories: true)
 
     do {
-      _ = try await Self.adHocProvider().cdHashForBundle(atPath: bundle.path)
+      _ = try await Self.adHocProvider().cdHash(ofBundleAtPath: bundle.path)
       Issue.record("Expected the CDHash lookup to fail")
     } catch {
       let message = error.localizedDescription
