@@ -259,7 +259,7 @@ final class AXReadTimeTests {
 
   // MARK: - Cancellation
 
-  @Test func cancellingAReadDoesNotStopItsWalk() async throws {
+  @Test func cancellingAReadStopsItsWalk() async throws {
     let children = (2...6).map { Self.reference(UInt64($0)) }
     var elements: [UInt64: [BridgeAXTranslatorAttribute: Any]] = [1: [.role: 1, .children: children]]
     for child in children {
@@ -277,11 +277,7 @@ final class AXReadTimeTests {
     }
     try await Task.sleep(nanoseconds: 60 * NSEC_PER_MSEC)
     read.cancel()
-    let snapshot = try await read.value
-
-    // BUG: the read's task was cancelled after its first request, and the walk still read every element —
-    // flipped later in the stack.
-    #expect(snapshot.children.count == 5)
-    #expect(transport.requests.count == 6)
+    await #expect(throws: CancellationError.self) { _ = try await read.value }
+    #expect(transport.requests.count < 6, "the walk stopped rather than reading every element")
   }
 }

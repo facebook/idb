@@ -93,15 +93,21 @@ final class AXTranslationDispatcher: NSObject, AXPTranslationTokenDelegateHelper
       ? try await performUnserialized(cancelling: request.cancellation, operation) : try await performSerialized(operation)
   }
 
+  /// `cancellation` carries the awaiting task's cancellation into `operation`, which runs where a task cannot
+  /// reach it.
   private func perform<T>(
     _ operation: @escaping () throws -> T, on queue: DispatchQueue, cancellation: AXReadCancellation?
   ) async throws -> T {
     let job = AXPSerializedJob(operation)
-    await withCheckedContinuation { (continuation: CheckedContinuation<Void, Never>) in
-      queue.async {
-        job.run()
-        continuation.resume()
+    await withTaskCancellationHandler {
+      await withCheckedContinuation { (continuation: CheckedContinuation<Void, Never>) in
+        queue.async {
+          job.run()
+          continuation.resume()
+        }
       }
+    } onCancel: {
+      cancellation?.cancel()
     }
     return try job.takeResult()
   }
