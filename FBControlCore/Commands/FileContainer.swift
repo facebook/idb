@@ -138,98 +138,108 @@ public struct FileContainerKind: RawRepresentable, Sendable {
 // MARK: - Host Filesystem Contained Files
 
 /// A file on the host filesystem, addressed by absolute path.
-private struct HostFile: ContainedFile, CustomStringConvertible {
+public struct HostFile: ContainedFile, CustomStringConvertible {
 
   let path: String
 
-  func removeItem() throws {
+  /// The file or directory at `path` on the host.
+  public init(path: String) {
+    self.path = path
+  }
+
+  public func removeItem() throws {
     try FileManager.default.removeItem(atPath: path)
   }
 
-  func contentsOfDirectory() throws -> [String] {
+  public func contentsOfDirectory() throws -> [String] {
     try FileManager.default.contentsOfDirectory(atPath: path)
   }
 
-  func contentsOfFile() throws -> Data {
+  public func contentsOfFile() throws -> Data {
     try Data(contentsOf: URL(fileURLWithPath: path))
   }
 
-  func createDirectory() throws {
+  public func createDirectory() throws {
     try FileManager.default.createDirectory(atPath: path, withIntermediateDirectories: true)
   }
 
-  func fileExists() -> (exists: Bool, isDirectory: Bool) {
+  public func fileExists() -> (exists: Bool, isDirectory: Bool) {
     var isDirectory: ObjCBool = false
     let exists = FileManager.default.fileExists(atPath: path, isDirectory: &isDirectory)
     return (exists, isDirectory.boolValue)
   }
 
-  func move(to destination: ContainedFile) throws {
+  public func move(to destination: ContainedFile) throws {
     guard let hostDestination = destination as? HostFile else {
       throw FileContainerError.destinationNotOnHostFilesystem(destination: String(describing: destination))
     }
     try FileManager.default.moveItem(atPath: path, toPath: hostDestination.path)
   }
 
-  func populate(withContentsOfHostPath path: String) throws {
+  public func populate(withContentsOfHostPath path: String) throws {
     try FileManager.default.copyItem(atPath: path, toPath: self.path)
   }
 
-  func populateHostPath(withContents path: String) throws {
+  public func populateHostPath(withContents path: String) throws {
     try FileManager.default.copyItem(atPath: self.path, toPath: path)
   }
 
-  func file(byAppendingPathComponent component: String) throws -> ContainedFile {
+  public func file(byAppendingPathComponent component: String) throws -> ContainedFile {
     HostFile(path: (path as NSString).appendingPathComponent(component))
   }
 
-  var pathOnHostFileSystem: String? { path }
+  public var pathOnHostFileSystem: String? { path }
 
-  var pathMapping: [String: String]? { nil }
+  public var pathMapping: [String: String]? { nil }
 
-  var description: String {
+  public var description: String {
     "Host File \(path)"
   }
 }
 
 /// A virtual root that maps first path components onto host paths.
-private struct MappedHostFile: ContainedFile, CustomStringConvertible {
+public struct MappedHostFile: ContainedFile, CustomStringConvertible {
 
   let mappingPaths: [String: String]
 
-  func removeItem() throws {
+  /// A virtual root whose entries are the names in `mappingPaths`, each standing for the host path it maps to.
+  public init(mappingPaths: [String: String]) {
+    self.mappingPaths = mappingPaths
+  }
+
+  public func removeItem() throws {
     throw FileContainerError.unsupportedOnVirtualRoot(operation: #function)
   }
 
-  func contentsOfDirectory() throws -> [String] {
+  public func contentsOfDirectory() throws -> [String] {
     Array(mappingPaths.keys)
   }
 
-  func contentsOfFile() throws -> Data {
+  public func contentsOfFile() throws -> Data {
     throw FileContainerError.unsupportedOnVirtualRoot(operation: #function)
   }
 
-  func createDirectory() throws {
+  public func createDirectory() throws {
     throw FileContainerError.unsupportedOnVirtualRoot(operation: #function)
   }
 
-  func fileExists() -> (exists: Bool, isDirectory: Bool) {
+  public func fileExists() -> (exists: Bool, isDirectory: Bool) {
     (false, false)
   }
 
-  func move(to destination: ContainedFile) throws {
+  public func move(to destination: ContainedFile) throws {
     throw FileContainerError.movingUnsupportedOnVirtualRoot
   }
 
-  func populate(withContentsOfHostPath path: String) throws {
+  public func populate(withContentsOfHostPath path: String) throws {
     throw FileContainerError.unsupportedOnVirtualRoot(operation: #function)
   }
 
-  func populateHostPath(withContents path: String) throws {
+  public func populateHostPath(withContents path: String) throws {
     throw FileContainerError.unsupportedOnVirtualRoot(operation: #function)
   }
 
-  func file(byAppendingPathComponent component: String) throws -> ContainedFile {
+  public func file(byAppendingPathComponent component: String) throws -> ContainedFile {
     // The root of the mapping itself has nothing further to resolve.
     let pathComponents = (component as NSString).pathComponents
     if Self.isRootPathOfContainer(pathComponents) {
@@ -242,11 +252,11 @@ private struct MappedHostFile: ContainedFile, CustomStringConvertible {
     return try mapped.file(byAppendingPathComponent: Self.popFirstPathComponent(pathComponents))
   }
 
-  var pathOnHostFileSystem: String? { nil }
+  public var pathOnHostFileSystem: String? { nil }
 
-  var pathMapping: [String: String]? { mappingPaths }
+  public var pathMapping: [String: String]? { mappingPaths }
 
-  var description: String {
+  public var description: String {
     "Root mapping: \(CollectionInformation.oneLineDescription(from: Array(mappingPaths.keys)))"
   }
 
@@ -270,20 +280,12 @@ private struct MappedHostFile: ContainedFile, CustomStringConvertible {
 /// Factories for the file containers a target exposes.
 public enum FileContainer {
 
-  public static func containedFile(forBasePath basePath: String) -> ContainedFile {
-    HostFile(path: basePath)
-  }
-
-  public static func containedFile(forPathMapping pathMapping: [String: String]) -> ContainedFile {
-    MappedHostFile(mappingPaths: pathMapping)
-  }
-
   public static func fileContainer(forBasePath basePath: String) -> ContainedRoot {
-    fileContainer(for: containedFile(forBasePath: basePath))
+    fileContainer(for: HostFile(path: basePath))
   }
 
   public static func fileContainer(forPathMapping pathMapping: [String: String]) -> ContainedRoot {
-    fileContainer(for: containedFile(forPathMapping: pathMapping))
+    fileContainer(for: MappedHostFile(mappingPaths: pathMapping))
   }
 
   public static func fileContainer(for containedFile: ContainedFile) -> ContainedRoot {

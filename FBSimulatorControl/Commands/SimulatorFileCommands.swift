@@ -121,7 +121,7 @@ public final class SimulatorFileCommands: FileCommands {
     guard let container = installedApplication.dataContainer else {
       throw SimulatorFileError.noDataContainer(applicationDescription: String(describing: installedApplication))
     }
-    return FileContainer.containedFile(forBasePath: container)
+    return HostFile(path: container)
   }
 
   private func containedFileForApplicationContainers() throws -> any ContainedFile {
@@ -135,7 +135,7 @@ public final class SimulatorFileCommands: FileCommands {
       }
       mapping[bundleID] = dataContainer.path
     }
-    return FileContainer.containedFile(forPathMapping: mapping)
+    return MappedHostFile(mappingPaths: mapping)
   }
 
   private func containedFileForGroupContainers() throws -> any ContainedFile {
@@ -154,7 +154,7 @@ public final class SimulatorFileCommands: FileCommands {
     for (identifier, url) in bundleIDToURL {
       pathMapping[identifier] = url.path
     }
-    return FileContainer.containedFile(forPathMapping: pathMapping)
+    return MappedHostFile(mappingPaths: pathMapping)
   }
 
   private func requireDataDirectory() throws -> String {
