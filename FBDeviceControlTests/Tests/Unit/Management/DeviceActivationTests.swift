@@ -13,7 +13,6 @@ struct DeviceActivationTests {
 
   @Test
   func activationRequestsIdentifyIdbInTheirUserAgent() {
-    // BUG: names a source file that no longer exists rather than the activating type — flipped in the following commit.
-    #expect(deviceActivationUserAgent == "idb (https://github.com/facebook/idb/blob/main/FBDeviceControl/Strategies/DeviceActivationStrategy.swift)")
+    #expect(deviceActivationUserAgent == "idb (FBDeviceControl.Device)")
   }
 }

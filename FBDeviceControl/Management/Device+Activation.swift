@@ -12,7 +12,7 @@ private let DefaultDRMHandshakeURL = "https://albert.apple.com/deviceservices/dr
 private let DefaultDeviceActivationURL = "https://albert.apple.com/deviceservices/deviceActivation"
 
 /// The User-Agent both activation requests send.
-let deviceActivationUserAgent = "idb (https://github.com/facebook/idb/blob/main/FBDeviceControl/Strategies/DeviceActivationStrategy.swift)"
+let deviceActivationUserAgent = "idb (FBDeviceControl.Device)"
 
 public enum DeviceActivationError: Error {
   case invalidActivationState(state: String)
