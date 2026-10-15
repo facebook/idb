@@ -242,6 +242,50 @@ final class BridgeTransportTests: XCTestCase {
     XCTAssertEqual(commands, [.dns(.list)])
   }
 
+  func testAReceiveTimeoutReachesTheConnectionAndATimedOutReadIsNotRetried() async throws {
+    let connection = RecordingBridgeConnection(failures: 0, notAnswering: true)
+    let factory = RecordingBridgeFactory([connection])
+    let transport = SimulatorFrameworkBridgePersistentTransport(connector: factory)
+    do {
+      _ = try await transport.send(BridgeRequest(command: .dns(.list)), receiveTimeout: 2)
+      XCTFail("a guest that does not answer must fail the round trip")
+    } catch AXBridgeError.guestNotAnswering(after: 2) {}
+    let timeouts = await connection.receiveTimeouts
+    let connections = await factory.count
+    XCTAssertEqual(timeouts, [2], "one round trip, given the caller's timeout, and not retried")
+    XCTAssertEqual(connections, 1)
+
+    _ = try? await transport.send(BridgeRequest(command: .dns(.list)))
+    let afterwards = await factory.count
+    XCTAssertEqual(afterwards, 2, "the timed-out connection is not reused")
+  }
+
+  func testAConnectionGivenAReceiveTimeoutReportsAGuestThatDoesNotAnswer() async throws {
+    let (connection, peer) = try validationSocketPair()
+    defer { close(peer) }
+    let request = try BridgeRequest(command: .dns(.list)).encoded()
+    let start = Date()
+    do {
+      _ = try await connection.roundTrip(request, receiveTimeout: 0.2)
+      XCTFail("a guest that never answers cannot complete the round trip")
+    } catch AXBridgeError.guestNotAnswering(after: 0.2) {}
+    XCTAssertLessThan(Date().timeIntervalSince(start), 2, "the caller's timeout, not the connection's usual 30 s")
+  }
+
+  func testAReceiveTimeoutThatCannotBeSetFailsBeforeWriting() async throws {
+    var descriptors: [Int32] = [0, 0]
+    XCTAssertEqual(pipe(&descriptors), 0)
+    defer { close(descriptors[1]) }
+    // Not a socket, so the receive timeout cannot be set on it.
+    let connection = SimulatorFrameworkBridgeConnection(fileDescriptor: descriptors[0], ownership: .shared(nil))
+    do {
+      _ = try await connection.roundTrip(try BridgeRequest(command: .dns(.list)).encoded(), receiveTimeout: 0.2)
+      XCTFail("a round trip that cannot bound its wait must not wait on the usual deadline instead")
+    } catch let AXBridgeError.guestFailure(message) {
+      XCTAssertTrue(message.contains("receive timeout"), message)
+    }
+  }
+
   func testAnOldFailureCannotDiscardANewerConnection() async throws {
     let firstStarted = expectation(description: "first request started")
     let secondStarted = expectation(description: "second request started")
@@ -275,18 +319,25 @@ private actor RecordingBridgeConnection: BridgeConnection {
   nonisolated let mayBeHeldBetweenRoundTrips = true
   private var failures: Int
   private let wrongID: Bool
+  private let notAnswering: Bool
   private let result: BridgeResult
   private(set) var commands: [BridgeCommand] = []
+  private(set) var receiveTimeouts: [TimeInterval?] = []
 
-  init(failures: Int, wrongID: Bool = false, result: BridgeResult = BridgeResult(exitCode: 0)) {
+  init(failures: Int, wrongID: Bool = false, notAnswering: Bool = false, result: BridgeResult = BridgeResult(exitCode: 0)) {
     self.failures = failures
     self.wrongID = wrongID
+    self.notAnswering = notAnswering
     self.result = result
   }
 
   func roundTrip(_ requestData: Data, receiveTimeout: TimeInterval?) async throws -> Data {
     let request = try BridgeRequest.decode(requestData)
     commands.append(request.command)
+    receiveTimeouts.append(receiveTimeout)
+    if notAnswering, let receiveTimeout {
+      throw AXBridgeError.guestNotAnswering(after: receiveTimeout)
+    }
     if failures > 0 {
       failures -= 1
       throw BridgeTestFailure.dropped

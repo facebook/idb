@@ -62,9 +62,21 @@ final class SimulatorFrameworkBridgeConnection: BridgeConnection, @unchecked Sen
         do {
           if let terminalError { throw terminalError }
           let request = try BridgeRequest.decode(requestData)
+          if let receiveTimeout {
+            try setReceiveWindow(receiveTimeout)
+          }
           try SimulatorFrameworkBridgeConnection.writeFrame(fileDescriptor, requestData)
-          let responseData = try SimulatorFrameworkBridgeConnection.readFrame(fileDescriptor, guest: ownership.process)
+          let responseData = try SimulatorFrameworkBridgeConnection.readFrame(
+            fileDescriptor, guest: ownership.process, receiveTimeout: receiveTimeout)
           _ = try BridgeResponse.decode(responseData, for: request)
+          if receiveTimeout != nil {
+            do {
+              try setReceiveWindow(TimeInterval(Self.receiveTimeoutSeconds))
+            } catch {
+              // The answer stands, but the next round trip would inherit this one's narrower window.
+              terminalError = error
+            }
+          }
           continuation.resume(returning: responseData)
         } catch {
           terminalError = error
@@ -159,15 +171,26 @@ final class SimulatorFrameworkBridgeConnection: BridgeConnection, @unchecked Sen
     }
   }
 
+  private func setReceiveWindow(_ timeout: TimeInterval) throws {
+    var window = SimulatorFrameworkBridgePersistentTransport.receiveWindow(timeout)
+    guard setsockopt(fileDescriptor, SOL_SOCKET, SO_RCVTIMEO, &window, socklen_t(MemoryLayout<timeval>.size)) == 0 else {
+      throw AXBridgeError.guestFailure("could not set the socket's receive timeout: \(String(cString: strerror(errno)))")
+    }
+  }
+
   static func readFrame(
     _ fileDescriptor: Int32,
-    guest: RunningSubprocess?
+    guest: RunningSubprocess?,
+    receiveTimeout: TimeInterval? = nil
   ) throws -> Data {
     do {
       return try IPCSocket.readFrame(fileDescriptor)
     } catch IPCError.closed {
       throw AXBridgeError.guestFailure(SimulatorFrameworkBridgeConnection.socketClosedMessage(process: guest))
     } catch IPCError.timedOut {
+      if let receiveTimeout {
+        throw AXBridgeError.guestNotAnswering(after: receiveTimeout)
+      }
       throw AXBridgeError.guestFailure("serve read timed out after \(receiveTimeoutSeconds)s with no data")
     } catch let IPCError.failed(_, code) {
       throw AXBridgeError.guestFailure("socket read failed: \(String(cString: strerror(code)))")

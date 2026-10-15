@@ -92,7 +92,7 @@ public extension AXBridgeError {
   /// case here sent nothing.
   var retry: UIAutomationRetry {
     switch self {
-    case .frontmostUnresolved, .guestFailure, .applicationUnavailable, .applicationNotResponding:
+    case .frontmostUnresolved, .guestFailure, .applicationUnavailable, .applicationNotResponding, .guestNotAnswering:
       return .nothingWritten
     case .assertionFailed:
       return .rereadFirst

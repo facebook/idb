@@ -12,7 +12,8 @@ import Foundation
 
 package protocol AXBridgeTransport {
   func send(_ request: AXBridgeRequest) async throws -> Data
-  /// As `send`, allowing the guest `receiveTimeout` to answer.
+  /// As `send`, failing with `AXBridgeError.guestNotAnswering` when the guest has sent nothing back within
+  /// `receiveTimeout`.
   func send(_ request: AXBridgeRequest, receiveTimeout: TimeInterval) async throws -> Data
 }
 
@@ -77,6 +78,8 @@ package actor SimulatorFrameworkBridgePersistentTransport: AXBridgeStreamingTran
     try await send(BridgeRequest(command: request.command)).accessibilityData()
   }
 
+  /// Bounds the guest's silence on the socket itself, so a timed-out round trip drops its connection rather
+  /// than leaving a late reply for the next request.
   package func send(_ request: AXBridgeRequest, receiveTimeout: TimeInterval) async throws -> Data {
     try await send(BridgeRequest(command: request.command), receiveTimeout: receiveTimeout).accessibilityData()
   }
@@ -84,6 +87,9 @@ package actor SimulatorFrameworkBridgePersistentTransport: AXBridgeStreamingTran
   func send(_ request: BridgeRequest, receiveTimeout: TimeInterval? = nil) async throws -> BridgeResult {
     do {
       return try await roundTrip(request, receiveTimeout: receiveTimeout)
+    } catch AXBridgeError.guestNotAnswering(let after) {
+      // The caller's time is spent; a retry would take as long again.
+      throw AXBridgeError.guestNotAnswering(after: after)
     } catch {
       guard request.command.mayRetry else { throw error }
       return try await roundTrip(request, receiveTimeout: receiveTimeout)

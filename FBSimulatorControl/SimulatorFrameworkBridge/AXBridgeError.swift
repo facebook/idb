@@ -44,6 +44,8 @@ public enum AXBridgeError: LocalizedError, Sendable {
   /// The guest binary exited non-zero, produced unparseable output, or reported a failure with nothing
   /// further to say about it. Also where a failure kind this host does not recognize lands.
   case guestFailure(String)
+  /// The guest sent nothing back within the `after` seconds the caller allowed one round trip.
+  case guestNotAnswering(after: TimeInterval)
 
   public var errorDescription: String? {
     switch self {
@@ -65,6 +67,8 @@ public enum AXBridgeError: LocalizedError, Sendable {
       return "The axbridge guest (pid \(pid)) \(Self.exitPhrase(signal: signal, exitCode: exitCode)) before binding its serve socket at \(path)"
     case let .guestFailure(message):
       return "The axbridge guest failed: \(message)"
+    case let .guestNotAnswering(after):
+      return String(format: "The axbridge guest did not answer within %.1fs", after)
     }
   }
 
