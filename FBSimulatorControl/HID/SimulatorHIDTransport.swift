@@ -77,7 +77,7 @@ enum SimulatorHIDTransport: Sendable {
   ) async throws -> SimulatorHIDTransport {
     switch type {
     case .indigo:
-      return .indigo(try SimulatorIndigoHIDTransport.indigo(for: simulator))
+      return .indigo(try SimulatorIndigoHIDTransport(simulator: simulator))
     case .dtuhid:
       let dtuhid = try await SimulatorDigitizerHIDTransport.connect(to: simulator)
       guard let indigo = indigoAlongsideDTUHID(for: simulator) else {
@@ -99,7 +99,7 @@ enum SimulatorHIDTransport: Sendable {
     guard simulator.productFamily == .appleTV else {
       return nil
     }
-    return try? SimulatorIndigoHIDTransport.indigo(for: simulator)
+    return try? SimulatorIndigoHIDTransport(simulator: simulator)
   }
 
   // MARK: - Capabilities

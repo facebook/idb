@@ -42,8 +42,8 @@ actor SimulatorIndigoHIDTransport {
   /// Creates a transport for the provided Simulator, registering a HID client.
   /// Will fail if a HID Port could not be registered for the provided Simulator.
   /// Registration may need to occur prior to booting.
-  static func indigo(for simulator: Simulator) throws -> SimulatorIndigoHIDTransport {
-    SimulatorIndigoHIDTransport(
+  init(simulator: Simulator) throws {
+    self.init(
       indigoClient: try SimulatorIndigoHIDClient(for: simulator.device),
       indigo: try SimulatorIndigoHID(),
       mainScreenSize: simulator.device.deviceType.mainScreenSize,
