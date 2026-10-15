@@ -89,7 +89,7 @@ public enum BridgeServices {
         return DeliveredNotificationsService.handleAction("clear-delivered", bundleID: identifier, directory: nil, timeout: 0, output: output)
         #endif
       }
-      return Int32(FBNotificationSettingsService.handleNotificationSettingsAction(action: action, bundleID: bundleID, output: output))
+      return Int32(NotificationSettingsService.handleNotificationSettingsAction(action: action, bundleID: bundleID, output: output))
     case let .health(command):
       #if os(tvOS)
       return unavailable("The health service", output: output)

@@ -76,7 +76,7 @@ public struct FBBridgeServices: FBBridgeServiceHandling {
   }
 
   public func notifications(_ action: String, bundleID: String?) -> Int32 {
-    Int32(FBNotificationSettingsService.handleNotificationSettingsAction(action: action, bundleID: bundleID))
+    Int32(NotificationSettingsService.handleNotificationSettingsAction(action: action, bundleID: bundleID))
   }
 
   public func privacy(_ action: String, arguments: [String]) -> Int32 {

@@ -25,7 +25,7 @@ final class NotificationSettingsServiceTests: XCTestCase {
   private func runCommand(_ action: String?, _ bundleID: String?) -> [String: Any] {
     var status = -1
     let output = FBStdoutWhileRunning {
-      status = FBNotificationSettingsService.handleNotificationSettingsActionWithGateway(action: action, bundleID: bundleID, gateway: gateway)
+      status = NotificationSettingsService.handleNotificationSettingsActionWithGateway(action: action, bundleID: bundleID, gateway: gateway)
     }
     return ["status": status, "output": output]
   }
@@ -33,7 +33,7 @@ final class NotificationSettingsServiceTests: XCTestCase {
   func testApproveSetsAuthorizedState() {
     let bundleID = "com.example.test.approve"
 
-    XCTAssertEqual(FBNotificationSettingsService.handleNotificationSettingsActionWithGateway(action: "approve", bundleID: bundleID, gateway: gateway), 0)
+    XCTAssertEqual(NotificationSettingsService.handleNotificationSettingsActionWithGateway(action: "approve", bundleID: bundleID, gateway: gateway), 0)
 
     let sectionInfo = gateway.sectionInfo(forSectionID: bundleID)
     XCTAssertNotNil(sectionInfo)
@@ -47,7 +47,7 @@ final class NotificationSettingsServiceTests: XCTestCase {
     // approving without them leaves an app that shows a banner and retains nothing.
     let bundleID = "com.example.test.retention"
 
-    XCTAssertEqual(FBNotificationSettingsService.handleNotificationSettingsActionWithGateway(action: "approve", bundleID: bundleID, gateway: gateway), 0)
+    XCTAssertEqual(NotificationSettingsService.handleNotificationSettingsActionWithGateway(action: "approve", bundleID: bundleID, gateway: gateway), 0)
 
     let sectionInfo = gateway.sectionInfo(forSectionID: bundleID)
     XCTAssertTrue(FBNotificationShowsInNotificationCenter(sectionInfo))
@@ -61,9 +61,9 @@ final class NotificationSettingsServiceTests: XCTestCase {
     // prevent. Revoke resets the authorization; what a re-granted app retains is the grant's
     // to decide.
     let bundleID = "com.example.test.retention.revoke"
-    XCTAssertEqual(FBNotificationSettingsService.handleNotificationSettingsActionWithGateway(action: "approve", bundleID: bundleID, gateway: gateway), 0)
+    XCTAssertEqual(NotificationSettingsService.handleNotificationSettingsActionWithGateway(action: "approve", bundleID: bundleID, gateway: gateway), 0)
 
-    XCTAssertEqual(FBNotificationSettingsService.handleNotificationSettingsActionWithGateway(action: "revoke", bundleID: bundleID, gateway: gateway), 0)
+    XCTAssertEqual(NotificationSettingsService.handleNotificationSettingsActionWithGateway(action: "revoke", bundleID: bundleID, gateway: gateway), 0)
 
     let sectionInfo = gateway.sectionInfo(forSectionID: bundleID)
     XCTAssertFalse(FBNotificationAllowsNotifications(sectionInfo))
@@ -81,7 +81,7 @@ final class NotificationSettingsServiceTests: XCTestCase {
     let section = FBSectionInfoWithoutEffectiveFlags()
     gateway.setSectionInfo(section, forSectionID: bundleID)
 
-    XCTAssertEqual(FBNotificationSettingsService.handleNotificationSettingsActionWithGateway(action: "approve", bundleID: bundleID, gateway: gateway), 0)
+    XCTAssertEqual(NotificationSettingsService.handleNotificationSettingsActionWithGateway(action: "approve", bundleID: bundleID, gateway: gateway), 0)
 
     XCTAssertTrue(section.allowsNotifications)
     XCTAssertEqual(section.authorizationStatus, 2)
@@ -98,7 +98,7 @@ final class NotificationSettingsServiceTests: XCTestCase {
     let section = FBSectionInfoWithOnlyNotificationCenterFlag()
     gateway.setSectionInfo(section, forSectionID: bundleID)
 
-    XCTAssertEqual(FBNotificationSettingsService.handleNotificationSettingsActionWithGateway(action: "approve", bundleID: bundleID, gateway: gateway), 0)
+    XCTAssertEqual(NotificationSettingsService.handleNotificationSettingsActionWithGateway(action: "approve", bundleID: bundleID, gateway: gateway), 0)
 
     XCTAssertTrue(section.showsInNotificationCenter)
     XCTAssertTrue(section.allowsNotifications)
@@ -111,11 +111,11 @@ final class NotificationSettingsServiceTests: XCTestCase {
     // as a `false` that would say the app is configured to retain nothing.
     let bundleID = "com.example.test.retention.partial.check"
     gateway.setSectionInfo(FBSectionInfoWithOnlyNotificationCenterFlag(), forSectionID: bundleID)
-    XCTAssertEqual(FBNotificationSettingsService.handleNotificationSettingsActionWithGateway(action: "approve", bundleID: bundleID, gateway: gateway), 0)
+    XCTAssertEqual(NotificationSettingsService.handleNotificationSettingsActionWithGateway(action: "approve", bundleID: bundleID, gateway: gateway), 0)
     var result = -1
 
     let output = FBStdoutWhileRunning {
-      result = FBNotificationSettingsService.handleNotificationSettingsActionWithGateway(action: "check", bundleID: bundleID, gateway: self.gateway)
+      result = NotificationSettingsService.handleNotificationSettingsActionWithGateway(action: "check", bundleID: bundleID, gateway: self.gateway)
     }
 
     XCTAssertEqual(result, 0)
@@ -149,7 +149,7 @@ final class NotificationSettingsServiceTests: XCTestCase {
     section.authorizationStatus = 2
     gateway.setSectionInfo(section, forSectionID: bundleID)
 
-    XCTAssertEqual(FBNotificationSettingsService.handleNotificationSettingsActionWithGateway(action: "revoke", bundleID: bundleID, gateway: gateway), 0)
+    XCTAssertEqual(NotificationSettingsService.handleNotificationSettingsActionWithGateway(action: "revoke", bundleID: bundleID, gateway: gateway), 0)
 
     XCTAssertFalse(section.allowsNotifications)
     XCTAssertEqual(section.authorizationStatus, 0)
@@ -159,11 +159,11 @@ final class NotificationSettingsServiceTests: XCTestCase {
     // Approve writes the two together, so a check that reported one of them could not say
     // whether the app will retain what it is shown.
     let bundleID = "com.example.test.retention.check"
-    XCTAssertEqual(FBNotificationSettingsService.handleNotificationSettingsActionWithGateway(action: "approve", bundleID: bundleID, gateway: gateway), 0)
+    XCTAssertEqual(NotificationSettingsService.handleNotificationSettingsActionWithGateway(action: "approve", bundleID: bundleID, gateway: gateway), 0)
     var result = -1
 
     let output = FBStdoutWhileRunning {
-      result = FBNotificationSettingsService.handleNotificationSettingsActionWithGateway(action: "check", bundleID: bundleID, gateway: self.gateway)
+      result = NotificationSettingsService.handleNotificationSettingsActionWithGateway(action: "check", bundleID: bundleID, gateway: self.gateway)
     }
 
     XCTAssertEqual(result, 0)
@@ -181,7 +181,7 @@ final class NotificationSettingsServiceTests: XCTestCase {
     var result = -1
 
     let output = FBStdoutWhileRunning {
-      result = FBNotificationSettingsService.handleNotificationSettingsActionWithGateway(action: "check", bundleID: bundleID, gateway: self.gateway)
+      result = NotificationSettingsService.handleNotificationSettingsActionWithGateway(action: "check", bundleID: bundleID, gateway: self.gateway)
     }
 
     XCTAssertEqual(result, 0)
@@ -192,9 +192,9 @@ final class NotificationSettingsServiceTests: XCTestCase {
 
   func testRevokeResetsExistingSection() {
     let bundleID = "com.example.test.revoke"
-    XCTAssertEqual(FBNotificationSettingsService.handleNotificationSettingsActionWithGateway(action: "approve", bundleID: bundleID, gateway: gateway), 0)
+    XCTAssertEqual(NotificationSettingsService.handleNotificationSettingsActionWithGateway(action: "approve", bundleID: bundleID, gateway: gateway), 0)
 
-    XCTAssertEqual(FBNotificationSettingsService.handleNotificationSettingsActionWithGateway(action: "revoke", bundleID: bundleID, gateway: gateway), 0)
+    XCTAssertEqual(NotificationSettingsService.handleNotificationSettingsActionWithGateway(action: "revoke", bundleID: bundleID, gateway: gateway), 0)
 
     let sectionInfo = gateway.sectionInfo(forSectionID: bundleID)
     XCTAssertNotNil(sectionInfo)
@@ -205,32 +205,32 @@ final class NotificationSettingsServiceTests: XCTestCase {
   func testRevokeWithoutAnExistingSectionSucceeds() {
     let bundleID = "com.example.test." + UUID().uuidString
 
-    XCTAssertEqual(FBNotificationSettingsService.handleNotificationSettingsActionWithGateway(action: "revoke", bundleID: bundleID, gateway: gateway), 0)
+    XCTAssertEqual(NotificationSettingsService.handleNotificationSettingsActionWithGateway(action: "revoke", bundleID: bundleID, gateway: gateway), 0)
     XCTAssertNil(gateway.sectionInfo(forSectionID: bundleID))
   }
 
   func testRevokeWithoutABundleIDReturnsFailure() {
-    XCTAssertEqual(FBNotificationSettingsService.handleNotificationSettingsActionWithGateway(action: "revoke", bundleID: nil, gateway: gateway), 1)
+    XCTAssertEqual(NotificationSettingsService.handleNotificationSettingsActionWithGateway(action: "revoke", bundleID: nil, gateway: gateway), 1)
   }
 
   func testCheckSucceeds() {
-    XCTAssertEqual(FBNotificationSettingsService.handleNotificationSettingsActionWithGateway(action: "check", bundleID: "com.example.test", gateway: gateway), 0)
+    XCTAssertEqual(NotificationSettingsService.handleNotificationSettingsActionWithGateway(action: "check", bundleID: "com.example.test", gateway: gateway), 0)
   }
 
   func testListWithoutABundleIDSucceeds() {
-    XCTAssertEqual(FBNotificationSettingsService.handleNotificationSettingsActionWithGateway(action: "list", bundleID: nil, gateway: gateway), 0)
+    XCTAssertEqual(NotificationSettingsService.handleNotificationSettingsActionWithGateway(action: "list", bundleID: nil, gateway: gateway), 0)
   }
 
   func testUnknownActionReturnsFailure() {
     XCTAssertEqual(
-      FBNotificationSettingsService.handleNotificationSettingsActionWithGateway(action: "unknown", bundleID: "com.example.test", gateway: gateway),
+      NotificationSettingsService.handleNotificationSettingsActionWithGateway(action: "unknown", bundleID: "com.example.test", gateway: gateway),
       1
     )
   }
 
   func testApproveCreatedSectionSetsAllFieldsAndWritesOnce() throws {
     let bundleID = "com.example.created"
-    XCTAssertEqual(FBNotificationSettingsService.handleNotificationSettingsActionWithGateway(action: "approve", bundleID: bundleID, gateway: gateway), 0)
+    XCTAssertEqual(NotificationSettingsService.handleNotificationSettingsActionWithGateway(action: "approve", bundleID: bundleID, gateway: gateway), 0)
     let section = try XCTUnwrap(gateway.sectionInfo(forSectionID: bundleID))
     XCTAssertEqual(
       FBNotificationSectionSnapshot(section) as NSDictionary,
@@ -243,11 +243,11 @@ final class NotificationSettingsServiceTests: XCTestCase {
 
   func testApproveExistingSectionUpdatesTheSameObject() throws {
     let bundleID = "com.example.existing"
-    XCTAssertEqual(FBNotificationSettingsService.handleNotificationSettingsActionWithGateway(action: "approve", bundleID: bundleID, gateway: gateway), 0)
+    XCTAssertEqual(NotificationSettingsService.handleNotificationSettingsActionWithGateway(action: "approve", bundleID: bundleID, gateway: gateway), 0)
     let section = try XCTUnwrap(gateway.sectionInfo(forSectionID: bundleID) as AnyObject?)
     FBNotificationSetPresentation(section, 2, 0, 0)
     gateway.writtenSectionIDs.removeAllObjects()
-    XCTAssertEqual(FBNotificationSettingsService.handleNotificationSettingsActionWithGateway(action: "approve", bundleID: bundleID, gateway: gateway), 0)
+    XCTAssertEqual(NotificationSettingsService.handleNotificationSettingsActionWithGateway(action: "approve", bundleID: bundleID, gateway: gateway), 0)
     XCTAssertTrue(gateway.sectionInfo(forSectionID: bundleID) as AnyObject? === section)
     XCTAssertEqual(
       FBNotificationSectionSnapshot(section) as NSDictionary,
@@ -260,11 +260,11 @@ final class NotificationSettingsServiceTests: XCTestCase {
 
   func testRevokePreservesPresentationFields() throws {
     let bundleID = "com.example.presentation"
-    XCTAssertEqual(FBNotificationSettingsService.handleNotificationSettingsActionWithGateway(action: "approve", bundleID: bundleID, gateway: gateway), 0)
+    XCTAssertEqual(NotificationSettingsService.handleNotificationSettingsActionWithGateway(action: "approve", bundleID: bundleID, gateway: gateway), 0)
     let section = try XCTUnwrap(gateway.sectionInfo(forSectionID: bundleID))
     FBNotificationSetPresentation(section, 2, 0, 1)
     gateway.writtenSectionIDs.removeAllObjects()
-    XCTAssertEqual(FBNotificationSettingsService.handleNotificationSettingsActionWithGateway(action: "revoke", bundleID: bundleID, gateway: gateway), 0)
+    XCTAssertEqual(NotificationSettingsService.handleNotificationSettingsActionWithGateway(action: "revoke", bundleID: bundleID, gateway: gateway), 0)
     XCTAssertEqual(
       FBNotificationSectionSnapshot(section) as NSDictionary,
       [
@@ -281,7 +281,7 @@ final class NotificationSettingsServiceTests: XCTestCase {
       [
         "status": 0, "output": "{\"bundleID\":\"com.example.output\",\"found\":false}\n",
       ] as NSDictionary)
-    XCTAssertEqual(FBNotificationSettingsService.handleNotificationSettingsActionWithGateway(action: "approve", bundleID: bundleID, gateway: gateway), 0)
+    XCTAssertEqual(NotificationSettingsService.handleNotificationSettingsActionWithGateway(action: "approve", bundleID: bundleID, gateway: gateway), 0)
     gateway.writtenSectionIDs.removeAllObjects()
     let expected: NSDictionary = [
       "status": 0,
@@ -294,9 +294,9 @@ final class NotificationSettingsServiceTests: XCTestCase {
 
   func testListAndCheckWithoutBundlePrintEverySection() throws {
     for bundleID in ["com.example.a", "com.example.b"] {
-      XCTAssertEqual(FBNotificationSettingsService.handleNotificationSettingsActionWithGateway(action: "approve", bundleID: bundleID, gateway: gateway), 0)
+      XCTAssertEqual(NotificationSettingsService.handleNotificationSettingsActionWithGateway(action: "approve", bundleID: bundleID, gateway: gateway), 0)
     }
-    XCTAssertEqual(FBNotificationSettingsService.handleNotificationSettingsActionWithGateway(action: "revoke", bundleID: "com.example.b", gateway: gateway), 0)
+    XCTAssertEqual(NotificationSettingsService.handleNotificationSettingsActionWithGateway(action: "revoke", bundleID: "com.example.b", gateway: gateway), 0)
     gateway.writtenSectionIDs.removeAllObjects()
     for action in ["list", "check"] {
       let result = runCommand(action, nil)
@@ -314,10 +314,10 @@ final class NotificationSettingsServiceTests: XCTestCase {
   }
 
   func testRejectedAndMissingSectionMutationsDoNotWrite() {
-    XCTAssertEqual(FBNotificationSettingsService.handleNotificationSettingsActionWithGateway(action: "approve", bundleID: nil, gateway: gateway), 1)
-    XCTAssertEqual(FBNotificationSettingsService.handleNotificationSettingsActionWithGateway(action: "revoke", bundleID: nil, gateway: gateway), 1)
-    XCTAssertEqual(FBNotificationSettingsService.handleNotificationSettingsActionWithGateway(action: "unknown", bundleID: "com.example.missing", gateway: gateway), 1)
-    XCTAssertEqual(FBNotificationSettingsService.handleNotificationSettingsActionWithGateway(action: "revoke", bundleID: "com.example.missing", gateway: gateway), 0)
+    XCTAssertEqual(NotificationSettingsService.handleNotificationSettingsActionWithGateway(action: "approve", bundleID: nil, gateway: gateway), 1)
+    XCTAssertEqual(NotificationSettingsService.handleNotificationSettingsActionWithGateway(action: "revoke", bundleID: nil, gateway: gateway), 1)
+    XCTAssertEqual(NotificationSettingsService.handleNotificationSettingsActionWithGateway(action: "unknown", bundleID: "com.example.missing", gateway: gateway), 1)
+    XCTAssertEqual(NotificationSettingsService.handleNotificationSettingsActionWithGateway(action: "revoke", bundleID: "com.example.missing", gateway: gateway), 0)
     XCTAssertEqual(gateway.writtenSectionIDs.count, 0)
     XCTAssertEqual(gateway.allSectionIDs(), [])
   }

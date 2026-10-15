@@ -48,7 +48,7 @@ private func printSectionJSON(bundleID: String, section: FBNotificationSection, 
   return true
 }
 
-public enum FBNotificationSettingsService {
+public enum NotificationSettingsService {
   public static func handleNotificationSettingsAction(action: String?, bundleID: String?) -> Int {
     handleNotificationSettingsAction(action: action, bundleID: bundleID, output: nil)
   }

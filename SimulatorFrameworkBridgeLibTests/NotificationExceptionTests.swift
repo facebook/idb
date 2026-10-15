@@ -18,7 +18,7 @@ struct NotificationExceptionTests {
       "setAllowsNotifications", "setAuthorizationStatus", "setAlertType", "setLockScreenSetting", "setNotificationCenterSetting",
     ] {
       let result = FBNotificationCommandExceptionResult(operation) {
-        Int32(FBNotificationSettingsService.handleNotificationSettingsActionWithGateway(action: $0, bundleID: $1, gateway: $2))
+        Int32(NotificationSettingsService.handleNotificationSettingsActionWithGateway(action: $0, bundleID: $1, gateway: $2))
       }
       #expect(result as NSDictionary == ["status": 1] as NSDictionary)
     }
