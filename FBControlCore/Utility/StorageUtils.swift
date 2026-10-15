@@ -26,7 +26,7 @@ extension StorageUtilsError: LocalizedError {
   }
 }
 
-public final class StorageUtils {
+public enum StorageUtils {
 
   // MARK: - Finding Files
 
