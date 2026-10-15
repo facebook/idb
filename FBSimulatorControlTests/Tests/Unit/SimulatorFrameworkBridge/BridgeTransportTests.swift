@@ -284,7 +284,7 @@ private actor RecordingBridgeConnection: BridgeConnection {
     self.result = result
   }
 
-  func roundTrip(_ requestData: Data) async throws -> Data {
+  func roundTrip(_ requestData: Data, receiveTimeout: TimeInterval?) async throws -> Data {
     let request = try BridgeRequest.decode(requestData)
     commands.append(request.command)
     if failures > 0 {
@@ -330,7 +330,7 @@ private actor GatedBridgeConnection: BridgeConnection {
     self.secondStarted = secondStarted
   }
 
-  func roundTrip(_ requestData: Data) async throws -> Data {
+  func roundTrip(_ requestData: Data, receiveTimeout: TimeInterval?) async throws -> Data {
     let request = try BridgeRequest.decode(requestData)
     return try await withCheckedThrowingContinuation { continuation in
       if request.id == "first" {

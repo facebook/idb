@@ -56,7 +56,7 @@ final class SimulatorFrameworkBridgeConnection: BridgeConnection, @unchecked Sen
     close(fileDescriptor)
   }
 
-  func roundTrip(_ requestData: Data) async throws -> Data {
+  func roundTrip(_ requestData: Data, receiveTimeout: TimeInterval?) async throws -> Data {
     try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Data, Error>) in
       queue.async { [self] in
         do {

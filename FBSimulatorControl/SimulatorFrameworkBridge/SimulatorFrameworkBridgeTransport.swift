@@ -12,6 +12,15 @@ import Foundation
 
 package protocol AXBridgeTransport {
   func send(_ request: AXBridgeRequest) async throws -> Data
+  /// As `send`, allowing the guest `receiveTimeout` to answer.
+  func send(_ request: AXBridgeRequest, receiveTimeout: TimeInterval) async throws -> Data
+}
+
+extension AXBridgeTransport {
+  /// Waits as long as `send` does.
+  package func send(_ request: AXBridgeRequest, receiveTimeout: TimeInterval) async throws -> Data {
+    try await send(request)
+  }
 }
 
 /// A transport that can hold a connection open for a response streamed in many frames.
@@ -26,7 +35,15 @@ package enum BridgeServiceScope: Sendable, Hashable {
 
 protocol BridgeConnection: Sendable {
   var mayBeHeldBetweenRoundTrips: Bool { get }
-  func roundTrip(_ requestData: Data) async throws -> Data
+  /// One request and its response. `receiveTimeout` replaces the connection's usual silence deadline for this
+  /// round trip; nil keeps it.
+  func roundTrip(_ requestData: Data, receiveTimeout: TimeInterval?) async throws -> Data
+}
+
+extension BridgeConnection {
+  func roundTrip(_ requestData: Data) async throws -> Data {
+    try await roundTrip(requestData, receiveTimeout: nil)
+  }
 }
 
 /// Where a persistent transport's connections to a guest come from.
@@ -60,12 +77,16 @@ package actor SimulatorFrameworkBridgePersistentTransport: AXBridgeStreamingTran
     try await send(BridgeRequest(command: request.command)).accessibilityData()
   }
 
-  func send(_ request: BridgeRequest) async throws -> BridgeResult {
+  package func send(_ request: AXBridgeRequest, receiveTimeout: TimeInterval) async throws -> Data {
+    try await send(BridgeRequest(command: request.command), receiveTimeout: receiveTimeout).accessibilityData()
+  }
+
+  func send(_ request: BridgeRequest, receiveTimeout: TimeInterval? = nil) async throws -> BridgeResult {
     do {
-      return try await roundTrip(request)
+      return try await roundTrip(request, receiveTimeout: receiveTimeout)
     } catch {
       guard request.command.mayRetry else { throw error }
-      return try await roundTrip(request)
+      return try await roundTrip(request, receiveTimeout: receiveTimeout)
     }
   }
 
@@ -86,10 +107,11 @@ package actor SimulatorFrameworkBridgePersistentTransport: AXBridgeStreamingTran
     }
   }
 
-  private func roundTrip(_ request: BridgeRequest) async throws -> BridgeResult {
+  private func roundTrip(_ request: BridgeRequest, receiveTimeout: TimeInterval?) async throws -> BridgeResult {
     let lease = try await connection()
     do {
-      let response = try BridgeResponse.decode(await lease.connection.roundTrip(request.encoded()), for: request)
+      let response = try BridgeResponse.decode(
+        await lease.connection.roundTrip(request.encoded(), receiveTimeout: receiveTimeout), for: request)
       if request.command == .shutdown || !lease.connection.mayBeHeldBetweenRoundTrips { invalidate(lease.generation) }
       return response.result
     } catch {
