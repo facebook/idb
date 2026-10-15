@@ -28,8 +28,8 @@ public enum ManagedTestRunner {
       throw ManagedTestRunError.frameworkLoadingFailed(underlying: error)
     }
 
-    let runnerConfiguration = try await TestRunnerConfiguration.prepareConfiguration(
-      withTarget: target,
+    let runnerConfiguration = try await TestRunnerConfiguration(
+      target: target,
       testLaunchConfiguration: configuration,
       workingDirectory: workingDirectory,
       codesign: codesign

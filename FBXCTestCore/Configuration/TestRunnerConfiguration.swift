@@ -56,9 +56,9 @@ struct TestRunnerConfiguration {
     self.testConfiguration = testConfiguration
   }
 
-  // MARK: - Public
-
-  public static func prepareConfiguration(withTarget target: any XCTestExtendedTarget, testLaunchConfiguration: TestLaunchConfiguration, workingDirectory: String, codesign: CodesignProvider?) async throws -> TestRunnerConfiguration {
+  /// Checks the test bundle's signature when `codesign` is given, then writes the test configuration
+  /// and assembles the runner's environment for `target`.
+  public init(target: any XCTestExtendedTarget, testLaunchConfiguration: TestLaunchConfiguration, workingDirectory: String, codesign: CodesignProvider?) async throws {
     if let codesign {
       do {
         _ = try await codesign.cdHashForBundle(atPath: testLaunchConfiguration.testBundle.path)
@@ -66,8 +66,10 @@ struct TestRunnerConfiguration {
         throw TestRunnerConfigurationError.codesignCheckFailed(bundlePath: testLaunchConfiguration.testBundle.path, underlying: error)
       }
     }
-    return try await prepareConfigurationAfterCodesignatureCheck(withTarget: target, testLaunchConfiguration: testLaunchConfiguration, workingDirectory: workingDirectory)
+    self = try await Self.prepareConfigurationAfterCodesignatureCheck(withTarget: target, testLaunchConfiguration: testLaunchConfiguration, workingDirectory: workingDirectory)
   }
+
+  // MARK: - Public
 
   public static func launchEnvironment(withHostApplication hostApplication: BundleDescriptor, hostApplicationAdditionalEnvironment: [String: String], testBundle: BundleDescriptor, testConfigurationPath: String, frameworkSearchPaths: [String]) -> [String: String] {
     var environmentVariables = hostApplicationAdditionalEnvironment
