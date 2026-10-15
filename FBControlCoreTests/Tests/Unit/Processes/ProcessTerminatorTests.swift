@@ -70,7 +70,7 @@ final class ProcessTerminatorTests {
     let terminator = terminator(options: [.checkProcessExistsBeforeSignal], processFetcher: AbsentProcessFetcher())
 
     do {
-      try await terminator.killProcessIdentifier(process.processIdentifier)
+      try await terminator.terminate(process.processIdentifier)
       Issue.record("Expected the kill to fail for a process the fetcher does not report")
     } catch {
       guard case .processDoesNotExist(let processIdentifier)? = terminationError(error) else {
@@ -88,7 +88,7 @@ final class ProcessTerminatorTests {
     let terminator = terminator(options: [])
 
     do {
-      try await terminator.killProcessIdentifier(unallocatablePID)
+      try await terminator.terminate(unallocatablePID)
       Issue.record("Expected the kill of an unallocatable process identifier to fail")
     } catch {
       guard case .killFailed(let processIdentifier, _)? = terminationError(error) else {
@@ -104,7 +104,7 @@ final class ProcessTerminatorTests {
     let process = try spawnBlockedProcess()
     let terminator = terminator(options: [])
 
-    try await terminator.killProcessIdentifier(process.processIdentifier)
+    try await terminator.terminate(process.processIdentifier)
 
     process.waitUntilExit()
     #expect(process.terminationReason == .uncaughtSignal)
@@ -119,7 +119,7 @@ final class ProcessTerminatorTests {
       process.waitUntilExit()
     }
 
-    try await terminator.killProcessIdentifier(process.processIdentifier)
+    try await terminator.terminate(process.processIdentifier)
 
     #expect(ProcessFetcher().processInfo(for: process.processIdentifier) == nil)
   }

@@ -60,7 +60,7 @@ public final class ProcessTerminator: @unchecked Sendable {
 
   // MARK: - Public Methods
 
-  public func killProcessIdentifier(_ processIdentifier: pid_t) async throws {
+  public func terminate(_ processIdentifier: pid_t) async throws {
     let checkExists = hasOption(.checkProcessExistsBeforeSignal)
     if checkExists && processFetcher.processInfo(for: processIdentifier) == nil {
       throw ProcessTerminatorError.processDoesNotExist(processIdentifier: processIdentifier)
@@ -93,7 +93,7 @@ public final class ProcessTerminator: @unchecked Sendable {
     newConfiguration.signo = SIGKILL
     logger.debug().log("Backing off kill of \(processIdentifier) to SIGKILL")
     do {
-      try await terminator(with: newConfiguration).killProcessIdentifier(processIdentifier)
+      try await terminator(with: newConfiguration).terminate(processIdentifier)
     } catch {
       throw ProcessTerminatorError.sigkillAfterFailedKill(processIdentifier: processIdentifier, signo: configuration.signo, underlying: error)
     }

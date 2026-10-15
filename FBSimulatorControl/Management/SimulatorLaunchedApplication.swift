@@ -108,7 +108,7 @@ public final class SimulatorLaunchedApplication: LaunchedApplication, CustomStri
       return
     }
     do {
-      try await terminator.killProcessIdentifier(processIdentifier)
+      try await terminator.terminate(processIdentifier)
     } catch {
       state.clearExplicitTermination()
       throw error

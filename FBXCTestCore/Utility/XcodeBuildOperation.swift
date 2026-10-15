@@ -136,7 +136,7 @@ public final class XcodeBuildOperation {
     try await withThrowingTaskGroup(of: Void.self) { group in
       for processIdentifier in processes.map(\.processIdentifier) {
         group.addTask {
-          try await terminator.killProcessIdentifier(processIdentifier)
+          try await terminator.terminate(processIdentifier)
         }
       }
       try await group.waitForAll()
