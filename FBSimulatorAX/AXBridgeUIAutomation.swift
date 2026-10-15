@@ -176,6 +176,16 @@ final class AXBridgeUIAutomation: AXBridgeTreeReader, @unchecked Sendable {
     return nil
   }
 
+  /// One round trip to the guest, which is the whole query on this backend, so it may take no longer than the
+  /// query's timeout. Running out is the same failure a host read reports.
+  private func send(_ request: AXBridgeRequest, queryTimeout: TimeInterval) async throws -> Data {
+    do {
+      return try await transport.send(request, receiveTimeout: queryTimeout)
+    } catch let AXBridgeError.guestNotAnswering(after) {
+      throw AccessibilityError.serviceNotAnswering(.query(timeout: queryTimeout), elapsed: after)
+    }
+  }
+
   /// Assembles what both sides measured; the phases come off the envelope `AXTreeRead` already parsed.
   private static func timings(
     response: Data, sent: CFAbsoluteTime, returned: CFAbsoluteTime, read: AXTreeRead
@@ -221,6 +231,7 @@ final class AXBridgeUIAutomation: AXBridgeTreeReader, @unchecked Sendable {
           queryTimeout: queryTimeout)
       }
     }
+    let queryTimeout = queryTimeout ?? simulator.accessibilityTiming.queryTimeout
     return try await translatingBackendErrors {
       if case let .application(pid) = query {
         let options = AXBridgeReadRequest(
@@ -233,7 +244,8 @@ final class AXBridgeUIAutomation: AXBridgeTreeReader, @unchecked Sendable {
           clientType: clientType
         )
         let sent = CFAbsoluteTimeGetCurrent()
-        let response = try await transport.send(.read(pid: pid, options: options, displayID: display?.accessibilityID))
+        let response = try await send(
+          .read(pid: pid, options: options, displayID: display?.accessibilityID), queryTimeout: queryTimeout)
         let returned = CFAbsoluteTimeGetCurrent()
         var read = try AXTreeRead(wholeTreeResponse: response, pid: pid)
         read.screen = display?.screen
@@ -251,9 +263,9 @@ final class AXBridgeUIAutomation: AXBridgeTreeReader, @unchecked Sendable {
         clientType: clientType
       )
       let sent = CFAbsoluteTimeGetCurrent()
-      let response = try await transport.send(
-        .readFrontmost(x: anchor.x, y: anchor.y, method: frontmostMethod, options: options, displayID: display?.accessibilityID)
-      )
+      let response = try await send(
+        .readFrontmost(x: anchor.x, y: anchor.y, method: frontmostMethod, options: options, displayID: display?.accessibilityID),
+        queryTimeout: queryTimeout)
       let returned = CFAbsoluteTimeGetCurrent()
       var read = try AXTreeRead(frontmostResponse: response, method: frontmostMethod)
       read.screen = display?.screen
@@ -271,13 +283,13 @@ final class AXBridgeUIAutomation: AXBridgeTreeReader, @unchecked Sendable {
     }
     let lookupPoint = try display?.geometry.unrotatedPoint(from: point) ?? point
     return try await translatingBackendErrors {
-      let response = try await transport.send(
+      let response = try await send(
         .hitTest(
           x: Double(lookupPoint.x), y: Double(lookupPoint.y),
           attributes: AXWire.Node.fetchList(for: options.serializationKeys),
           clientType: options.resolvedClientType,
-          displayID: display?.accessibilityID)
-      )
+          displayID: display?.accessibilityID),
+        queryTimeout: options.timing?.queryTimeout ?? simulator.accessibilityTiming.queryTimeout)
       guard let hit = try AXTreeRead(hitTestResponse: response) else {
         return nil
       }
@@ -642,7 +654,7 @@ final class AXBridgeUIAutomation: AXBridgeTreeReader, @unchecked Sendable {
     )
     let response: Data
     do {
-      response = try await transport.send(.write(request))
+      response = try await send(.write(request), queryTimeout: simulator.accessibilityTiming.queryTimeout)
     } catch let error as AXBridgeError where error.retry == .willNotChange {
       // No guest could be reached, so the write never left the host.
       throw error

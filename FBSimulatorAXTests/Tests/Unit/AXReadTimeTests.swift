@@ -65,6 +65,25 @@ private final class TimeoutRecordingTransportDouble: AXTranslationTransport, @un
   }
 }
 
+/// A guest that never answers within the time it is given.
+private actor SilentGuestTransportDouble: AXBridgeTransport {
+  private(set) var receiveTimeouts: [TimeInterval] = []
+
+  func send(_ request: AXBridgeRequest) async throws -> Data {
+    throw AXBridgeError.guestFailure("the double only answers bounded round trips")
+  }
+
+  func send(_ request: AXBridgeRequest, receiveTimeout: TimeInterval) async throws -> Data {
+    receiveTimeouts.append(receiveTimeout)
+    throw AXBridgeError.guestNotAnswering(after: receiveTimeout)
+  }
+}
+
+@objc private final class GuestDevice: NSObject {
+  @objc let UDID = NSUUID()
+  @objc var deviceType: NSObject? { nil }
+}
+
 @Suite("How an accessibility read spends its time", .serialized)
 final class AXReadTimeTests {
 
@@ -194,6 +213,23 @@ final class AXReadTimeTests {
     let own = try await commands.resolveElement(for: .application(pid: Self.pid), clientType: .noClient, timing: asked)
     own.close()
     #expect(transport.timeouts.last == 1.5)
+  }
+
+  @Test func theGuestsRoundTripIsBoundedByTheQueryTimeoutAndFailsAsTheHostDoes() async throws {
+    let transport = SilentGuestTransportDouble()
+    let reader = AXBridgeUIAutomation(
+      simulator: SimulatorTestSupport.testableSimulator(withDevice: GuestDevice()), transport: transport, persistence: .exclusive)
+
+    var options = AccessibilityRequestOptions()
+    options.timing = SimulatorAccessibilityTiming(elementTimeout: 1, queryTimeout: 0.5)
+    await #expect {
+      _ = try await reader.describe(.application(pid: Self.pid), options: options)
+    } throws: { error in
+      guard case AccessibilityError.serviceNotAnswering(.query(timeout: 0.5), _) = error else { return false }
+      return true
+    }
+    _ = try? await reader.describe(.application(pid: Self.pid), options: AccessibilityRequestOptions())
+    #expect(await transport.receiveTimeouts == [0.5, SimulatorAccessibilityTiming.default.queryTimeout])
   }
 
   // MARK: - Cancellation
