@@ -43,7 +43,7 @@ extension TargetProviderError: LocalizedError {
 /// Creates a target set when a lookup needs it.
 public typealias TargetSetMaker = () async throws -> any TargetSet
 
-public final class TargetProvider {
+public enum TargetProvider {
 
   /// Resolves `udid` against the target sets `makers` create, in order, creating a set only when
   /// the sets before it cannot resolve the UDID. Resolving the sole or sole booted target needs
