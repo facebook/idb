@@ -164,7 +164,7 @@ final class DeviceCatalog {
       let framebuffer = try? Framebuffer.mainScreenSurface(
         for: simulator, logger: ControlCoreGlobalConfiguration.defaultLogger)
     else { return nil }
-    let image = SimulatorImage.image(with: framebuffer, logger: nil)
+    let image = SimulatorImage(framebuffer: framebuffer, logger: nil)
     return try? await image.image()
   }
 
