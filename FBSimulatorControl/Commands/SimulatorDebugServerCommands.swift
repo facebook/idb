@@ -29,7 +29,7 @@ private final class SimulatorDebugServer: DebugServer {
 
 public final class SimulatorDebugServerCommands: DebugServerCommands {
 
-  internal weak var simulator: Simulator?
+  internal let simulator: Simulator
   internal let debugServerPath: String
 
   /// How the host application is launched; defaults to the simulator itself.
@@ -55,9 +55,6 @@ public final class SimulatorDebugServerCommands: DebugServerCommands {
   }
 
   public func launch(forHostApplication application: BundleDescriptor, port: in_port_t) async throws -> any DebugServer {
-    guard let simulator = self.simulator else {
-      throw WeakTargetError.simulator
-    }
     let configuration = ApplicationLaunchConfiguration(
       bundleID: application.identifier,
       bundleName: application.name,

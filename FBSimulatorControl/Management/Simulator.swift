@@ -235,7 +235,7 @@ extension Simulator {
   }
 
   public var debugServer: SimulatorDebugServerCommands {
-    commandCache.resolve { SimulatorDebugServerCommands(simulator: self) }
+    SimulatorDebugServerCommands(simulator: self)
   }
 
   public var file: SimulatorFileCommands {

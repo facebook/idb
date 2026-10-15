@@ -64,14 +64,7 @@ private final class LaunchedApplicationLauncher: ApplicationLaunching, @unchecke
 
 final class SimulatorDebugServerCommandsTests: XCTestCase {
 
-  /// Holds strong references to the real `Simulator` and the capturing wrapper
-  /// for the duration of a test. `SimulatorDebugServerCommands.simulator` and
-  /// `SimulatorApplicationCommands.simulator` are both `weak`, so without an
-  /// external strong ref the simulator deallocates the moment `makeCommands`
-  /// returns and the production code throws "Simulator deallocated" before the
-  /// override has a chance to capture.
   private struct Harness {
-    let simulator: Simulator
     let commands: SimulatorDebugServerCommands
     let wrapper: CapturingApplicationLauncher
   }
@@ -85,7 +78,7 @@ final class SimulatorDebugServerCommandsTests: XCTestCase {
       simulator: simulator,
       debugServerPath: "/fake/debugserver",
       applicationLauncher: wrapper)
-    return Harness(simulator: simulator, commands: commands, wrapper: wrapper)
+    return Harness(commands: commands, wrapper: wrapper)
   }
 
   private func awaitCapturedConfig(_ wrapper: CapturingApplicationLauncher, timeout: TimeInterval = 1.0) -> ApplicationLaunchConfiguration? {
