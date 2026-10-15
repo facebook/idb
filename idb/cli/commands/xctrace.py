@@ -6,24 +6,33 @@
 
 
 import os
+import sys
 from argparse import ArgumentParser, Namespace
 
 from idb.cli import ClientCommand
 from idb.common.args import find_next_file_prefix, KeyValueDictAppendAction
-from idb.common.misc import get_env_with_idb_prefix
 from idb.common.signal import signal_handler_event
-from idb.common.types import Client
+from idb.common.types import (
+    Client,
+    IdbException,
+    ProfileAllProcesses,
+    ProfileBundleID,
+    ProfileLaunch,
+    ProfilePid,
+    ProfileTarget,
+    TraceProfile,
+)
 from idb.grpc.xctrace import formatted_time_to_seconds
 
 
-class XctraceRecordException(Exception):
+class XctraceRecordException(IdbException):
     pass
 
 
 class XctraceRecordCommand(ClientCommand):
     @property
     def description(self) -> str:
-        return "Record a trace"
+        return "Record a trace (deprecated: use 'idb profile trace')"
 
     @property
     def name(self) -> str:
@@ -40,15 +49,15 @@ class XctraceRecordCommand(ClientCommand):
         )
         group.add_argument(
             "--attach",
-            help="Attach and record process with the given name or pid",
-            metavar="<pid|name>",
+            help="Attach and record the process with the given pid, or the running application with the given bundle id",
+            metavar="<pid|bundle id>",
             type=str,
         )
         group.add_argument(
             "--launch",
             type=str,
-            metavar="command",
-            help="Launch process with the given name or path",
+            metavar="<bundle id>",
+            help="Launch the installed application with the given bundle id",
         )
         parser.add_argument(
             "--output",
@@ -129,6 +138,10 @@ class XctraceRecordCommand(ClientCommand):
         super().add_parser_arguments(parser)
 
     async def run_with_client(self, args: Namespace, client: Client) -> None:
+        print(
+            "'idb xctrace record' is deprecated, use 'idb profile trace' instead",
+            file=sys.stderr,
+        )
         if args.append_run:
             self.logger.info(
                 "The '--append-run' option will be ignored. It's not implemented."
@@ -138,47 +151,61 @@ class XctraceRecordCommand(ClientCommand):
                 "The '--device' option will be ignored. The target associated with "
                 + "the companion will be used by default."
             )
-        if args.target_stdin and args.target_stdin != "-":
+        if args.stop_timeout:
+            self.logger.info("The '--stop-timeout' option will be ignored.")
+        unsupported = [
+            option
+            for option, value in [
+                ("--package", args.package),
+                ("launch arguments", args.launch_args),
+                ("--env", args.env),
+                ("--target-stdin", args.target_stdin),
+                ("--target-stdout", args.target_stdout),
+                ("--post-args", args.post_args),
+            ]
+            if value
+        ]
+        if unsupported:
             raise XctraceRecordException(
-                'Only "-" is supported as a valid value for --target-stdin'
-            )
-        if args.target_stdout and args.target_stdout != "-":
-            raise XctraceRecordException(
-                'Only "-" is supported as a valid value for --target-stdout'
+                f"{', '.join(unsupported)} no longer supported. 'idb profile trace' "
+                + "records and exports the trace's tables itself."
             )
 
-        env = args.env
-        # merge in special environment variables prefixed with 'IDB_'
-        env.update(get_env_with_idb_prefix())
-
-        trace_extensions = ["trace"]
         trace_basename = args.output
         if trace_basename:
             if os.path.isdir(trace_basename):
                 trace_basename = find_next_file_prefix(
-                    os.path.join(trace_basename, "trace"), trace_extensions
+                    os.path.join(trace_basename, "trace"), ["trace"]
                 )
             else:
                 # remove any user-specified file extension (e.g. 'foo.trace')
                 trace_basename = os.path.splitext(trace_basename)[0]
         else:
-            trace_basename = find_next_file_prefix("trace", trace_extensions)
+            trace_basename = find_next_file_prefix("trace", ["trace"])
 
-        result = await client.xctrace_record(
+        result = await client.profile(
+            kind=TraceProfile(
+                template=args.template,
+                duration=formatted_time_to_seconds(args.time_limit),
+            ),
+            target=_target_from_args(args),
             stop=signal_handler_event("xctrace"),
-            output=trace_basename,
-            template_name=args.template,
-            all_processes=args.all_processes,
-            time_limit=formatted_time_to_seconds(args.time_limit),
-            package=args.package,
-            process_to_attach=args.attach,
-            process_to_launch=args.launch,
-            process_env=env,
-            launch_args=args.launch_args,
-            target_stdin=args.target_stdin,
-            target_stdout=args.target_stdout,
-            post_args=args.post_args,
-            stop_timeout=formatted_time_to_seconds(args.stop_timeout),
+            artifact_path=f"{trace_basename}.trace",
         )
+        print(result.artifact)
 
-        print(result)
+
+def _target_from_args(args: Namespace) -> ProfileTarget:
+    if args.launch is not None:
+        return ProfileLaunch(bundle_id=args.launch)
+    if args.attach is None:
+        return ProfileAllProcesses()
+    if args.attach.isdigit():
+        return ProfilePid(pid=int(args.attach))
+    # A bundle id is reverse-DNS, so a value without a dot is a process name from before profile trace.
+    if "." not in args.attach:
+        raise XctraceRecordException(
+            f"--attach no longer accepts a process name, got '{args.attach}'. "
+            + "Pass a pid or the running application's bundle id."
+        )
+    return ProfileBundleID(bundle_id=args.attach)
