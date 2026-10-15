@@ -1819,7 +1819,7 @@ public enum AccessibilityService {
     // Sanitize first (non-finite numbers would otherwise raise), then still guard the call: an
     // unforeseen unserializable value must degrade to an error frame the client can read, never abort
     // the process and sever the connection.
-    let sanitized = FBAXBridgeWire.sanitized(response)
+    let sanitized = AXBridgeWire.sanitized(response)
     var data: Data?
     if JSONSerialization.isValidJSONObject(sanitized) {
       data = FBAXResponseEncoder.data(for: sanitized)
