@@ -318,7 +318,7 @@ final class BridgeTransportTests: XCTestCase {
     transport.release()
   }
 
-  func testCancellingARoundTripStillWaitsForTheGuest() async throws {
+  func testCancellingARoundTripStopsWaitingForTheGuest() async throws {
     let (connection, peer) = try validationSocketPair()
     defer { close(peer) }
     let request = try BridgeRequest(command: .dns(.list)).encoded()
@@ -329,10 +329,8 @@ final class BridgeTransportTests: XCTestCase {
     do {
       _ = try await roundTrip.value
       XCTFail("a guest that never answers cannot complete the round trip")
-    } catch AXBridgeError.guestNotAnswering(after: 0.5) {
-      // BUG: the round trip was cancelled after 50 ms, and it still waited out its whole receive timeout —
-      // flipped later in the stack.
-      XCTAssertGreaterThanOrEqual(Date().timeIntervalSince(start), 0.45)
+    } catch is CancellationError {
+      XCTAssertLessThan(Date().timeIntervalSince(start), 0.3, "it returned when cancelled, not at its timeout")
     }
   }
 

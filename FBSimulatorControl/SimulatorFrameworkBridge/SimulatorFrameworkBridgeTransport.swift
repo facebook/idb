@@ -107,6 +107,8 @@ package actor SimulatorFrameworkBridgePersistentTransport: AXBridgeStreamingTran
     } catch AXBridgeError.guestNotAnswering(let after) {
       // The caller's time is spent; a retry would take as long again.
       throw AXBridgeError.guestNotAnswering(after: after)
+    } catch is CancellationError {
+      throw CancellationError()
     } catch {
       guard request.command.mayRetry else { throw error }
       return try await roundTrip(request, receiveTimeout: receiveTimeout)

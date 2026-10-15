@@ -56,7 +56,22 @@ final class SimulatorFrameworkBridgeConnection: BridgeConnection, @unchecked Sen
     close(fileDescriptor)
   }
 
+  /// Cancelling the awaiting task shuts the socket down, which ends a read waiting on the guest at once; the
+  /// connection cannot be used again.
   func roundTrip(_ requestData: Data, receiveTimeout: TimeInterval?) async throws -> Data {
+    do {
+      return try await withTaskCancellationHandler {
+        try await exchange(requestData, receiveTimeout: receiveTimeout)
+      } onCancel: { [fileDescriptor] in
+        shutdown(fileDescriptor, SHUT_RDWR)
+      }
+    } catch {
+      if Task.isCancelled { throw CancellationError() }
+      throw error
+    }
+  }
+
+  private func exchange(_ requestData: Data, receiveTimeout: TimeInterval?) async throws -> Data {
     try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Data, Error>) in
       queue.async { [self] in
         do {
