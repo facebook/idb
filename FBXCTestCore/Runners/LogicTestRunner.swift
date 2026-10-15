@@ -226,9 +226,9 @@ public final class LogicTestRunner {
     }
     let mirrorLogger: XCTestLogger
     if let logDirectoryPath = configuration.logDirectoryPath {
-      mirrorLogger = XCTestLogger.defaultLogger(inDirectory: logDirectoryPath)
+      mirrorLogger = XCTestLogger(directory: logDirectoryPath)
     } else {
-      mirrorLogger = XCTestLogger.defaultLoggerInDefaultDirectory()
+      mirrorLogger = XCTestLogger()
     }
     let mirroredStdOut = try await mirrorLogger.logConsumption(of: stdOutConsumer, toFileNamed: "test_process_stdout.out", logger: logger)
     let mirroredStdErr = try await mirrorLogger.logConsumption(of: stdErrConsumer, toFileNamed: "test_process_stderr.err", logger: logger)

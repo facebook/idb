@@ -22,7 +22,17 @@ public final class XCTestLogger: ControlCoreLogger, @unchecked Sendable {
     self.logDirectory = logDirectory
   }
 
-  // MARK: - Factory Methods
+  // MARK: - Initializers
+
+  /// Logs to stderr and to a new, uniquely named file in `directory`.
+  public convenience init(directory: String) {
+    self.init(baseLogger: XCTestLogger.baseLogger(writingToNewFileIn: directory), logDirectory: directory)
+  }
+
+  /// Logs in the directory the environment names, else `./tmp` if it exists, else the temporary directory.
+  public convenience init() {
+    self.init(directory: XCTestLogger.defaultLogDirectory())
+  }
 
   private static func defaultLogDirectory() -> String {
     let env = ProcessInfo.processInfo.environment
@@ -39,23 +49,8 @@ public final class XCTestLogger: ControlCoreLogger, @unchecked Sendable {
     return NSTemporaryDirectory()
   }
 
-  private static func defaultLogName() -> String {
-    "\(ProcessInfo.processInfo.globallyUniqueString)_test.log"
-  }
-
-  public static func defaultLoggerInDefaultDirectory() -> XCTestLogger {
-    loggerInDefaultDirectory(defaultLogName())
-  }
-
-  public static func loggerInDefaultDirectory(_ name: String) -> XCTestLogger {
-    logger(inDirectory: defaultLogDirectory(), name: name)
-  }
-
-  public static func defaultLogger(inDirectory directory: String) -> XCTestLogger {
-    logger(inDirectory: directory, name: defaultLogName())
-  }
-
-  public static func logger(inDirectory directory: String, name: String) -> XCTestLogger {
+  private static func baseLogger(writingToNewFileIn directory: String) -> ControlCoreLogger {
+    let name = "\(ProcessInfo.processInfo.globallyUniqueString)_test.log"
     let success = (try? FileManager.default.createDirectory(atPath: directory, withIntermediateDirectories: true, attributes: nil)) != nil
     assert(success, "Expected to create directory at path \(directory)")
 
@@ -68,15 +63,13 @@ public final class XCTestLogger: ControlCoreLogger, @unchecked Sendable {
     let stderrLogger = ControlCoreGlobalConfiguration.systemLogger(writingToStderr: true, debugLogging: true).withDateFormatEnabled(true)
     guard let fileHandle = FileHandle(forWritingAtPath: path) else {
       NSLog("Failed to open the log file at path %@ for writing, logging to stderr only", path)
-      return XCTestLogger(baseLogger: stderrLogger, logDirectory: directory)
+      return stderrLogger
     }
 
-    let baseLogger = CompositeLogger(loggers: [
+    return CompositeLogger(loggers: [
       stderrLogger,
       ConsumerLogger(fileDescriptor: fileHandle.fileDescriptor, closeOnEndOfFile: false).withDateFormatEnabled(true),
     ])
-
-    return XCTestLogger(baseLogger: baseLogger, logDirectory: directory)
   }
 
   // MARK: - ControlCoreLogger

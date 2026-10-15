@@ -17,7 +17,7 @@ final class XCTestLoggerTests: XCTestCase {
     defer { try? FileManager.default.removeItem(atPath: directory) }
     let buffer = ConsumableBuffer()
 
-    let consumer = try await XCTestLogger.defaultLogger(inDirectory: directory).logConsumption(of: buffer, toFileNamed: "mirror.out", logger: ControlCoreGlobalConfiguration.defaultLogger)
+    let consumer = try await XCTestLogger(directory: directory).logConsumption(of: buffer, toFileNamed: "mirror.out", logger: ControlCoreGlobalConfiguration.defaultLogger)
     consumer.consumeData(Data("mirrored output".utf8))
     consumer.consumeEndOfFile()
 

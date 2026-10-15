@@ -243,7 +243,7 @@ private func buildAppLaunchConfig(bundleID: String, environment: [String: String
   }
 
   // Both mirrors are started before either is awaited, so the two file writers are opened concurrently.
-  let mirrorLogger = XCTestLogger.defaultLogger(inDirectory: processLogDirectory)
+  let mirrorLogger = XCTestLogger(directory: processLogDirectory)
   async let stdOut = mirrorLogger.logConsumption(of: stdOutConsumer, toFileNamed: "test_process_stdout.out", logger: logger)
   async let stdErr = mirrorLogger.logConsumption(of: stdErrConsumer, toFileNamed: "test_process_stderr.err", logger: logger)
   return applicationLaunchConfiguration(bundleID: bundleID, environment: environment, arguments: arguments, waitForDebugger: waitForDebugger, stdOut: try await stdOut, stdErr: try await stdErr)
