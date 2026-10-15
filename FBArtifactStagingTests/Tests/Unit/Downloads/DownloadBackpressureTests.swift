@@ -79,7 +79,7 @@ struct DownloadBackpressureTests {
     // A host this busy can leave the server unscheduled for longer than the default minute without data.
     let configuration = URLSessionConfiguration.ephemeral
     configuration.timeoutIntervalForRequest = 600
-    let download = DataDownloadInput.dataDownload(withURL: server.url, configuration: configuration, logger: logger)
+    let download = DataDownloadInput(url: server.url, configuration: configuration, logger: logger)
     try await download.spool.reading { source in
       let source = HandedOver(source)
       try await offCooperativePool { try reader.read(source.value, pause: 0.0005) }.get()

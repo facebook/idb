@@ -385,7 +385,7 @@ public enum Staging {
     // after delivering its last chunk.
     // patternlint-disable-next-line swift-nonisolated-unsafe
     nonisolated(unsafe) var progress = DownloadProgressState(startedAt: downloadStart)
-    let download = DataDownloadInput.dataDownload(withURL: url, configuration: configuration, logger: logger) { event in
+    let download = DataDownloadInput(url: url, configuration: configuration, logger: logger) { event in
       switch event {
       case .response(let expectedContentLength):
         progress.observe(expectedContentLength: expectedContentLength)

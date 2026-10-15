@@ -68,8 +68,8 @@ final class DataDownloadInputTests: XCTestCase {
     configuration.protocolClasses = [StubURLProtocol.self]
     // swiftlint:disable:next force_unwrapping
     let url = URL(string: "https://example.invalid/app.ipa")!
-    let download = DataDownloadInput.dataDownload(
-      withURL: url,
+    let download = DataDownloadInput(
+      url: url,
       configuration: configuration,
       logger: logger,
       onEvent: onEvent)
@@ -103,8 +103,8 @@ final class DataDownloadInputTests: XCTestCase {
     configuration.protocolClasses = [StubURLProtocol.self]
     // swiftlint:disable:next force_unwrapping
     let url = URL(string: "https://example.invalid/app.ipa")!
-    let download = DataDownloadInput.dataDownload(
-      withURL: url, configuration: configuration, logger: logger,
+    let download = DataDownloadInput(
+      url: url, configuration: configuration, logger: logger,
       spoolDirectory: URL(fileURLWithPath: tempDirectory).appendingPathComponent("missing"))
 
     do {
@@ -189,7 +189,7 @@ final class DataDownloadInputTests: XCTestCase {
     let url = URL(string: "https://example.invalid/app.ipa")!
     weak var released: DataDownloadInput?
     do {
-      let download = DataDownloadInput.dataDownload(withURL: url, configuration: configuration, logger: logger)
+      let download = DataDownloadInput(url: url, configuration: configuration, logger: logger)
       released = download
       try await download.completed()
     }

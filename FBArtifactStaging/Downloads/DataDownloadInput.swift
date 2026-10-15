@@ -63,37 +63,24 @@ final class DataDownloadInput: NSObject, @unchecked Sendable {
     failedBeforeCancel
   }
 
-  static func dataDownload(withURL url: URL, logger: ControlCoreLogger) -> DataDownloadInput {
-    return dataDownload(withURL: url, configuration: .default, logger: logger)
-  }
-
   /// Downloads over a caller-supplied session configuration, so that timeouts,
   /// caching policy and protocol handling are the caller's to decide.
   ///
   /// `onEvent` reports how many bytes have arrived, while the bytes themselves
   /// still go only to `spool`, so a caller can show progress without getting
   /// between the download and whatever is consuming it. The spool is a file in `spoolDirectory`, unlinked once open.
-  static func dataDownload(
-    withURL url: URL,
-    configuration: URLSessionConfiguration,
+  init(
+    url: URL,
+    configuration: URLSessionConfiguration = .default,
     logger: ControlCoreLogger,
     onEvent: (@Sendable (DataDownloadEvent) -> Void)? = nil,
     spoolDirectory: URL = FileManager.default.temporaryDirectory
-  ) -> DataDownloadInput {
-    let download = DataDownloadInput(logger: logger, onEvent: onEvent, spoolDirectory: spoolDirectory)
-    download.startDownload(from: url, configuration: configuration)
-    return download
-  }
-
-  private init(
-    logger: ControlCoreLogger,
-    onEvent: (@Sendable (DataDownloadEvent) -> Void)?,
-    spoolDirectory: URL
   ) {
     spool = DownloadSpool(directory: spoolDirectory)
     self.logger = logger
     self.onEvent = onEvent
     super.init()
+    startDownload(from: url, configuration: configuration)
   }
 
   // The session holds both the delegate and the resumed task for the lifetime of the download, so neither needs storing here.
