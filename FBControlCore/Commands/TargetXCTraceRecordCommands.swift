@@ -19,6 +19,6 @@ public final class TargetXCTraceRecordCommands: XCTraceRecordCommands {
 
   public func start(configuration: XCTraceRecordConfiguration, logger: any ControlCoreLogger) async throws -> XCTraceRecordOperation {
     let shim = try await XCTestShimConfiguration.sharedShimConfiguration()
-    return try await XCTraceRecordOperation.operation(with: target, configuration: configuration.withShim(shim), logger: logger)
+    return try await XCTraceRecordOperation(target: target, configuration: configuration.withShim(shim), logger: logger)
   }
 }

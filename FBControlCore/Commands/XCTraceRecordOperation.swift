@@ -43,7 +43,8 @@ public final class XCTraceRecordOperation: @unchecked Sendable {
     self.logger = logger
   }
 
-  public static func operation(with target: any Target, configuration: XCTraceRecordConfiguration, logger: ControlCoreLogger) async throws -> XCTraceRecordOperation {
+  /// Starts `xctrace record` against `target` in a new trace directory under its auxillary directory.
+  public convenience init(target: any Target, configuration: XCTraceRecordConfiguration, logger: ControlCoreLogger) async throws {
     let traceDir = (target.auxillaryDirectory as NSString).appendingPathComponent("xctrace-" + UUID().uuidString)
     do {
       try FileManager.default.createDirectory(atPath: traceDir, withIntermediateDirectories: false, attributes: nil)
@@ -95,7 +96,7 @@ public final class XCTraceRecordOperation: @unchecked Sendable {
     let running = try await Subprocess(executable: xctracePath, arguments: arguments, environment: .additions(environment))
       .launch(output: .logger(logger), error: .logger(logger), logger: logger)
     logger.log("Started xctrace with pid \(running.processIdentifier)")
-    return XCTraceRecordOperation(running: running, traceDir: URL(fileURLWithPath: traceFile), configuration: configuration, logger: logger)
+    self.init(running: running, traceDir: URL(fileURLWithPath: traceFile), configuration: configuration, logger: logger)
   }
 
   /// Stops the xctrace recording and returns the trace directory URL on success.
