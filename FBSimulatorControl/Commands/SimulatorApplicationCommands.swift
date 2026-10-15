@@ -147,7 +147,7 @@ public struct SimulatorApplicationCommands: ApplicationCommands {
       outputs.append(try Self.fileBackedOutput(configuration.stdOut))
       outputs.append(try Self.fileBackedOutput(configuration.stdErr))
       let processIdentifier = try await launch(configuration, stdOutPath: outputs[0].path, stdErrPath: outputs[1].path)
-      return SimulatorLaunchedApplication.application(withSimulator: simulator, configuration: configuration, outputs: outputs, processIdentifier: processIdentifier)
+      return SimulatorLaunchedApplication(simulator: simulator, configuration: configuration, outputs: outputs, processIdentifier: processIdentifier)
     } catch {
       for output in outputs {
         await output.finish()

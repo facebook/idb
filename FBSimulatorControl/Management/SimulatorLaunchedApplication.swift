@@ -116,23 +116,9 @@ public final class SimulatorLaunchedApplication: LaunchedApplication, CustomStri
     await terminationTask.value
   }
 
-  // MARK: - Factory
+  // MARK: - Initializers
 
-  public static func application(
-    withSimulator simulator: Simulator,
-    configuration: ApplicationLaunchConfiguration,
-    outputs: [FileBackedOutput],
-    processIdentifier: pid_t
-  ) -> SimulatorLaunchedApplication {
-    SimulatorLaunchedApplication(
-      simulator: simulator,
-      configuration: configuration,
-      outputs: outputs,
-      processIdentifier: processIdentifier
-    )
-  }
-
-  private init(
+  public init(
     simulator: Simulator,
     configuration: ApplicationLaunchConfiguration,
     outputs: [FileBackedOutput],

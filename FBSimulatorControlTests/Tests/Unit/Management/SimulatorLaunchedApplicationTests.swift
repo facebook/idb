@@ -52,8 +52,8 @@ final class SimulatorLaunchedApplicationTests: XCTestCase {
       environment: [:],
       waitForDebugger: false,
       launchMode: .failIfRunning)
-    return SimulatorLaunchedApplication.application(
-      withSimulator: simulator,
+    return SimulatorLaunchedApplication(
+      simulator: simulator,
       configuration: configuration,
       outputs: [try FileBackedOutput.fifo(draining: output)],
       processIdentifier: process.processIdentifier)
