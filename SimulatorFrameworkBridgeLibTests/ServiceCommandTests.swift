@@ -21,7 +21,7 @@ struct ServiceCommandTests {
   func incompleteCommandDoesNotCallAService() {
     let services = RecordingServices()
     for arguments in [[], ["bridge"], ["bridge", "dns"]] {
-      #expect(FBBridgeCommand.run(arguments: arguments, services: services) == 1)
+      #expect(BridgeCommandLine.run(arguments: arguments, services: services) == 1)
     }
     #expect(services.calls.isEmpty)
   }
@@ -29,7 +29,7 @@ struct ServiceCommandTests {
   @Test
   func commandForwardsArgumentsAndExitStatus() {
     let services = RecordingServices()
-    #expect(FBBridgeCommand.run(arguments: ["bridge", "dns", "set", "", "8.8.8.8"], services: services) == 23)
+    #expect(BridgeCommandLine.run(arguments: ["bridge", "dns", "set", "", "8.8.8.8"], services: services) == 23)
     #expect(services.calls == [Call(service: "dns", action: "set", arguments: ["", "8.8.8.8"])])
   }
 
@@ -37,7 +37,7 @@ struct ServiceCommandTests {
   func eachRouteReceivesItsOriginalArgumentShape() {
     let services = RecordingServices()
     for service in ["contacts", "dns", "dynamic-store", "photos", "notifications", "health", "privacy", "proxy", "accessibility", "orientation"] {
-      #expect(FBBridgeCommand.dispatch(service: service, action: "action", arguments: ["bundle", "type1", "type2"], services: services) == 23)
+      #expect(BridgeCommandLine.dispatch(service: service, action: "action", arguments: ["bundle", "type1", "type2"], services: services) == 23)
     }
     #expect(
       services.calls == [
@@ -58,7 +58,7 @@ struct ServiceCommandTests {
   func missingBundleIDsRemainNil() {
     let services = RecordingServices()
     for service in ["notifications", "health"] {
-      #expect(FBBridgeCommand.dispatch(service: service, action: "list", arguments: [], services: services) == 23)
+      #expect(BridgeCommandLine.dispatch(service: service, action: "list", arguments: [], services: services) == 23)
     }
     #expect(
       services.calls == [
@@ -70,9 +70,9 @@ struct ServiceCommandTests {
   @Test
   func deliveredNotificationsUsesItsOwnRouteAndOnlyTheBundleID() {
     let services = RecordingServices()
-    #expect(FBBridgeCommand.dispatch(service: "notifications", action: "delivered", arguments: ["com.example.app", "ignored"], services: services) == 23)
-    #expect(FBBridgeCommand.dispatch(service: "notifications", action: "delivered", arguments: [], services: services) == 23)
-    #expect(FBBridgeCommand.dispatch(service: "notifications", action: "clear-delivered", arguments: ["com.example.app"], services: services) == 23)
+    #expect(BridgeCommandLine.dispatch(service: "notifications", action: "delivered", arguments: ["com.example.app", "ignored"], services: services) == 23)
+    #expect(BridgeCommandLine.dispatch(service: "notifications", action: "delivered", arguments: [], services: services) == 23)
+    #expect(BridgeCommandLine.dispatch(service: "notifications", action: "clear-delivered", arguments: ["com.example.app"], services: services) == 23)
     #expect(
       services.calls == [
         Call(service: "deliveredNotifications", action: "delivered", arguments: ["com.example.app"]),
@@ -84,9 +84,9 @@ struct ServiceCommandTests {
   @Test
   func invalidServiceAndReplCommandsDoNotCallTheLoader() {
     let services = RecordingServices()
-    #expect(FBBridgeCommand.dispatch(service: "unknown", action: "start", arguments: [], services: services) == 1)
+    #expect(BridgeCommandLine.dispatch(service: "unknown", action: "start", arguments: [], services: services) == 1)
     for (action, arguments) in [("stop", ["socket", "library"]), ("start", []), ("start", ["socket"]), ("start", ["socket", ""])] {
-      #expect(FBBridgeCommand.dispatch(service: "repl", action: action, arguments: arguments, services: services) == 1)
+      #expect(BridgeCommandLine.dispatch(service: "repl", action: action, arguments: arguments, services: services) == 1)
     }
     #expect(services.calls.isEmpty)
   }
@@ -94,8 +94,8 @@ struct ServiceCommandTests {
   @Test
   func replForwardsSocketLibraryAndAdditionalLibraryPaths() {
     let services = RecordingServices()
-    #expect(FBBridgeCommand.dispatch(service: "repl", action: "start", arguments: ["socket", "library"], services: services) == 23)
-    #expect(FBBridgeCommand.dispatch(service: "repl", action: "start", arguments: ["socket", "library", "first", "second"], services: services) == 23)
+    #expect(BridgeCommandLine.dispatch(service: "repl", action: "start", arguments: ["socket", "library"], services: services) == 23)
+    #expect(BridgeCommandLine.dispatch(service: "repl", action: "start", arguments: ["socket", "library", "first", "second"], services: services) == 23)
     #expect(
       services.calls == [
         Call(service: "repl", action: "start", arguments: ["socket", "library"]),

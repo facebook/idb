@@ -25,7 +25,7 @@ final class ServiceDispatchTests: XCTestCase {
   }
 
   private func dispatchService(_ service: String, _ action: String, _ arguments: [String]) -> Int32 {
-    FBBridgeCommand.dispatch(service: service, action: action, arguments: arguments, services: services)
+    BridgeCommandLine.dispatch(service: service, action: action, arguments: arguments, services: services)
   }
 
   // MARK: - Unknown service

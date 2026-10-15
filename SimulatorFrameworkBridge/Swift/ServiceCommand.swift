@@ -126,7 +126,7 @@ public struct CommandLineServices: CommandLineServiceHandling {
   }
 }
 
-public enum FBBridgeCommand {
+public enum BridgeCommandLine {
   private static let serviceNames = "contacts, dns, dynamic-store, photos, notifications, health, privacy, proxy, accessibility, orientation, repl"
 
   public static func run(arguments: [String], services: CommandLineServiceHandling = CommandLineServices()) -> Int32 {

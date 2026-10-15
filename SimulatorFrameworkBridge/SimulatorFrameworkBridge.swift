@@ -15,6 +15,6 @@ import SimulatorFrameworkBridgeSupport
 @main
 struct SimulatorFrameworkBridgeMain {
   static func main() {
-    exit(autoreleasepool { FBBridgeCommand.run(arguments: CommandLine.arguments) })
+    exit(autoreleasepool { BridgeCommandLine.run(arguments: CommandLine.arguments) })
   }
 }
