@@ -17,7 +17,9 @@ import Testing
 /// Records the options the handler hands the command executor, so a test can read them without a
 /// simulator. `IDBCommandExecutor` is a `public final class`; `AccessibilityDescribing` is the seam
 /// the handler is written against, and this double stands in for it.
-private final class RecordingAccessibilityExecutor: AccessibilityDescribing {
+// SAFETY: each test makes one call at a time and reads the recording after it returns.
+// patternlint-disable-next-line unchecked-sendable
+private final class RecordingAccessibilityExecutor: AccessibilityDescribing, @unchecked Sendable {
   private(set) var describeOptions: AccessibilityRequestOptions?
   private(set) var describeQuery: AccessibilityElementQuery?
   private(set) var pointReadCount = 0
@@ -157,7 +159,7 @@ struct AccessibilityInfoMethodHandlerTests {
   }
 
   @Test
-  func cancellingTheRPCDoesNotStopTheRead() async throws {
+  func cancellingTheRPCStopsTheRead() async throws {
     let executor = SlowAccessibilityExecutor(delayNanoseconds: 300_000_000)
     let cancellation = ServerContext.RPCCancellationHandle()
     let read = Task {
@@ -165,12 +167,7 @@ struct AccessibilityInfoMethodHandlerTests {
     }
     try await Task.sleep(nanoseconds: 50_000_000)
     cancellation.cancel()
-    let response = try await read.value
-
-    // BUG: the client went away, and the companion read to the end and answered anyway — flipped later in the
-    // stack.
-    #expect(!response.json.isEmpty)
-    #expect(await executor.finishedReads == 1)
+    await #expect(throws: CancellationError.self) { _ = try await read.value }
   }
 
   @Test

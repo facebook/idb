@@ -14,7 +14,7 @@ import IDBGRPCSwift
 
 /// Seam over the two `IDBCommandExecutor` reads this handler drives, so the request-to-options wiring
 /// can be tested against a double.
-protocol AccessibilityDescribing {
+protocol AccessibilityDescribing: Sendable {
   func accessibilityDescribeResponse(
     query: AccessibilityElementQuery,
     options: AccessibilityRequestOptions,
@@ -45,7 +45,13 @@ struct AccessibilityInfoMethodHandler {
     cancellation: ServerContext.RPCCancellationHandle? = nil
   ) async throws -> Idb_AccessibilityInfoResponse {
     do {
-      return try await read(request, using: commandExecutor)
+      guard let cancellation else {
+        return try await read(request, using: commandExecutor)
+      }
+      // The read stops when the client goes away, rather than reading to the end for no one.
+      return try await withRPCCancellation(cancellation) {
+        try await read(request, using: commandExecutor)
+      }
     } catch {
       AccessibilityReadTelemetry.record(failure: error, into: CallTelemetry.current)
       throw error

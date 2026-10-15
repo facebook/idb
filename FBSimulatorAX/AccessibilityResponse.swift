@@ -417,6 +417,8 @@ public enum AccessibilityReadOutcome: String, Sendable {
   case abortedUnanswered = "aborted_unanswered"
   /// The read stopped when the query ran out of its timeout.
   case abortedDeadline = "aborted_deadline"
+  /// The read stopped because whoever awaited it went away.
+  case cancelled
 
   /// How a read that failed with `error` ended, when the failure is one of the read's own timing.
   public init?(failure error: Error) {
@@ -425,6 +427,8 @@ public enum AccessibilityReadOutcome: String, Sendable {
       self = .abortedUnanswered
     case AccessibilityError.serviceNotAnswering(.query, _):
       self = .abortedDeadline
+    case is CancellationError:
+      self = .cancelled
     default:
       return nil
     }
