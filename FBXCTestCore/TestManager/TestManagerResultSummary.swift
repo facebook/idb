@@ -24,7 +24,8 @@ import Foundation
   public let testDuration: TimeInterval
   public let totalDuration: TimeInterval
 
-  @objc public static func from(
+  /// Parses the values `testmanagerd` reports when a suite finishes.
+  public convenience init(
     testSuite: String,
     finishingAt finishTime: String,
     runCount: NSNumber,
@@ -32,8 +33,8 @@ import Foundation
     unexpected unexpectedFailureCount: NSNumber,
     testDuration: NSNumber,
     totalDuration: NSNumber
-  ) -> TestManagerResultSummary {
-    TestManagerResultSummary(
+  ) {
+    self.init(
       testSuite: testSuite,
       finishTime: TestManagerResultSummary.dateFormatter.date(from: finishTime) ?? Date(timeIntervalSince1970: 0),
       runCount: runCount.intValue,

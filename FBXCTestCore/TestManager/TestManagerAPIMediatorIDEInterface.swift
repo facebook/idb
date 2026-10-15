@@ -222,7 +222,7 @@ extension TestManagerAPIMediatorIDEInterface {
   @objc(_XCT_testSuite:didFinishAt:runCount:withFailures:unexpected:testDuration:totalDuration:)
   func testSuite(_ testSuite: String, didFinishAt time: String, runCount: NSNumber, failures: NSNumber, unexpected: NSNumber, testDuration: NSNumber, totalDuration: NSNumber) -> Any? {
     logger?.log("Test Suite Did Finish \(testSuite)")
-    reporter.finished(with: TestManagerResultSummary.from(testSuite: testSuite, finishingAt: time, runCount: runCount, failures: failures, unexpected: unexpected, testDuration: testDuration, totalDuration: totalDuration))
+    reporter.finished(with: TestManagerResultSummary(testSuite: testSuite, finishingAt: time, runCount: runCount, failures: failures, unexpected: unexpected, testDuration: testDuration, totalDuration: totalDuration))
     return nil
   }
 
