@@ -23,7 +23,7 @@ public struct DeviceSpringboardCommands {
 
   public func iconLayout() async throws -> SpringboardIconLayout {
     try await withClient { client in
-      try await client.getIconLayout()
+      try await client.iconLayout()
     }
   }
 
@@ -35,13 +35,13 @@ public struct DeviceSpringboardCommands {
 
   public func rawIconState(formatVersion: UInt) async throws -> AnyObject {
     try await withClient { client in
-      try await client.getRawIconState(formatVersion: formatVersion)
+      try await client.rawIconState(formatVersion: formatVersion)
     }
   }
 
   public func iconMetrics() async throws -> [String: Any] {
     try await withClient { client in
-      try await client.getHomeScreenIconMetrics()
+      try await client.homeScreenIconMetrics()
     }
   }
 

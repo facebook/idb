@@ -67,7 +67,7 @@ public final class DeviceDiagnosticInformationCommands {
     let logger = device.logger
     return try await device.withServiceConnection(SpringboardServicesClient.serviceName) { connection in
       let client = SpringboardServicesClient(connection: connection, logger: logger)
-      return try await client.getIconLayout().pages
+      return try await client.iconLayout().pages
     }
   }
 

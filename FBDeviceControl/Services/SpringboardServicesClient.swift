@@ -104,12 +104,12 @@ class SpringboardServicesClient {
 
   // MARK: - Async
 
-  func getIconLayout() async throws -> SpringboardIconLayout {
-    let raw = try await getRawIconState(formatVersion: 2)
+  func iconLayout() async throws -> SpringboardIconLayout {
+    let raw = try await rawIconState(formatVersion: 2)
     return try SpringboardIconLayout(rawValue: raw)
   }
 
-  func getRawIconState(formatVersion: UInt) async throws -> AnyObject {
+  func rawIconState(formatVersion: UInt) async throws -> AnyObject {
     let connectionBox = SpringboardConnectionBox(connection)
     let formatVersionString = "\(formatVersion)"
     return try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<AnyObject, Error>) in
@@ -152,7 +152,7 @@ class SpringboardServicesClient {
     }
   }
 
-  func getHomeScreenIconMetrics() async throws -> [String: Any] {
+  func homeScreenIconMetrics() async throws -> [String: Any] {
     let connectionBox = SpringboardConnectionBox(connection)
     return try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<[String: Any], Error>) in
       queue.async {
@@ -245,7 +245,7 @@ class SpringboardServicesIconContainer: AsyncFileContainer {
     guard validFilenames.contains(filename) else {
       throw SpringboardServicesError.invalidIconLayoutFile(filename: filename, validFilenames: validFilenames)
     }
-    let layout = try await client.getIconLayout()
+    let layout = try await client.iconLayout()
     if filename == IconJSONFile {
       let data = try JSONSerialization.data(withJSONObject: layout.flattenedBundleIdentifierPages(), options: .prettyPrinted)
       try data.write(to: URL(fileURLWithPath: destinationPath), options: .atomic)
@@ -285,7 +285,7 @@ class SpringboardServicesIconContainer: AsyncFileContainer {
   }
 
   private func convertJSONFormatToWireFormat(_ jsonFormat: IconLayoutJSONType) async throws -> SpringboardIconLayout {
-    let currentLayout = try await client.getIconLayout()
+    let currentLayout = try await client.iconLayout()
     let iconsByBundleID = currentLayout.iconsByBundleID
     var format: [[[String: Any]]] = []
     for jsonPage in jsonFormat {
