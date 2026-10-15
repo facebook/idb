@@ -14,6 +14,10 @@
 @class NSArray, NSDate, NSDictionary, NSMachPort, NSMutableArray, NSMutableDictionary, NSString, NSUUID, SimDeviceBootInfo, SimDeviceNotificationManager, SimDevicePasteboard, SimDeviceSet, SimDeviceType, SimRuntime, SimDeviceBootInfo, AXPTranslatorRequest, AXPTranslatorResponse;
 @protocol OS_dispatch_queue, OS_dispatch_source, SimDeviceIOProtocol;
 
+@interface SimDeviceDarwinNotificationToken : NSObject
+- (void)invalidate;
+@end
+
 @interface SimDevice : NSObject <SimDeviceNotifier>
 {
   unsigned long long _state;
@@ -69,6 +73,11 @@
 - (void)triggerCloudSyncWithCompletionQueue:(dispatch_queue_t)arg1 completionHandler:(CDUnknownBlockType)arg2;
 - (BOOL)darwinNotificationSetState:(unsigned long long)arg1 name:(NSString *)arg2 error:(NSError **)arg3;
 - (BOOL)darwinNotificationGetState:(unsigned long long *)arg1 name:(NSString *)arg2 error:(NSError **)arg3;
+// Retain the completion's token until observation ends, then invalidate it.
+- (void)observeDarwinNotification:(NSString *)name
+                         onQueue:(dispatch_queue_t)queue
+                         handler:(void (^)(NSString *name))handler
+               completionHandler:(void (^)(SimDeviceDarwinNotificationToken *token, NSError *error))completion;
 - (BOOL)postDarwinNotification:(NSString *)arg1 error:(NSError **)arg2;
 - (BOOL)terminateApplicationWithID:(NSString *)arg1 error:(NSError **)arg2;
 - (int)launchApplicationWithID:(NSString *)arg1 options:(NSDictionary *)arg2 error:(NSError **)arg3;
