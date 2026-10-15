@@ -24,7 +24,7 @@ extension OToolDynamicLibsError: LocalizedError {
   }
 }
 
-final class OToolDynamicLibs {
+enum OToolDynamicLibs {
 
   public static func findFullPath(forSanitiserDyldInBundle bundlePath: String) async throws -> [String] {
     let libsList = try await OToolOperation.listSanitiserDylibsRequired(byBundle: bundlePath)
