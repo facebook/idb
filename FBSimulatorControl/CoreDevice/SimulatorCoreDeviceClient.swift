@@ -104,10 +104,11 @@ final class SimulatorCoreDeviceClient: @unchecked Sendable {
   /// Throws before streaming when the simulator does not vend `service`.
   func subscribe<Input: Encodable, Response: Sendable>(
     action: String, service: String, input: Input,
+    bufferingPolicy: AsyncThrowingStream<Response, Error>.Continuation.BufferingPolicy = .unbounded,
     element: @escaping @Sendable (xpc_object_t) throws -> Response?
   ) throws -> AsyncThrowingStream<Response, Error> {
     let request = try request(action: action, input: input)
-    return try session(for: service).subscribe(request, element: element)
+    return try session(for: service).subscribe(request, bufferingPolicy: bufferingPolicy, element: element)
   }
 
   // MARK: - Plain messages

@@ -39,6 +39,21 @@ public struct SimulatorHingeCommands {
       try SimulatorHingeProtocol.sample(event, channel: channel, notBefore: notBefore, now: ProcessInfo.processInfo.systemUptime)
     }
   }
+
+  /// Publishes fresh measured angles until cancelled, retaining only the newest unread sample.
+  public func angles() async throws -> AsyncThrowingStream<SimulatorHingeAngle, Error> {
+    try await MotionCapabilities.resolve(on: simulator).require(.hingeAngle)
+    try Task.checkCancellation()
+    let channel = UUID()
+    let notBefore = ProcessInfo.processInfo.systemUptime
+    return try simulator.coreDevice.subscribe(
+      action: SimulatorHingeProtocol.action, service: SimulatorHingeProtocol.service,
+      input: SimulatorHingeProtocol.StreamInput(channel: channel),
+      bufferingPolicy: .bufferingNewest(1)
+    ) { event in
+      try SimulatorHingeProtocol.sample(event, channel: channel, notBefore: notBefore, now: ProcessInfo.processInfo.systemUptime)
+    }
+  }
 }
 
 extension SimulatorHingeCommands: PoseCommands {

@@ -65,7 +65,7 @@ private final class HingeProvider: Sendable {
   let peer: SyntheticXPCPeer
   private let acknowledged = OSAllocatedUnfairLock(initialState: [Bool]())
 
-  init(events: [xpc_object_t], onStop stop: HingeStop = .complete) {
+  init(events: [xpc_object_t], onStop stop: HingeStop = .complete, onAcknowledgement: @escaping @Sendable () -> Void = {}) {
     let acknowledged = acknowledged
     peer = services.register(SimulatorHingeProtocol.service) { request in
       @Sendable func push(_ index: Int) {
@@ -74,6 +74,7 @@ private final class HingeProvider: Sendable {
           guard xpc_get_type(acknowledgement) == XPC_TYPE_DICTIONARY else { return }
           let cancelling = xpc_dictionary_get_bool(acknowledgement, SimulatorCoreDevice.cancellationKey)
           acknowledged.withLock { $0.append(cancelling) }
+          onAcknowledgement()
           guard cancelling else { return push(index + 1) }
           switch stop {
           case .complete: request.reply(hingeCompletion)
@@ -147,6 +148,42 @@ final class SimulatorHingeReadTests: XCTestCase {
   }
 
   // MARK: - Streaming through the session
+
+  func testSubscriptionKeepsObservingMeasuredAnglesAndClosesOnCancellation() async throws {
+    let channel = UUID()
+    let acknowledged = expectation(description: "All streamed events acknowledged by the provider")
+    acknowledged.expectedFulfillmentCount = 4
+    let provider = HingeProvider(
+      events: [
+        hingeEvent(channel: channel, degrees: 180, timestamp: 199),
+        hingeEvent(channel: channel, degrees: 180),
+        hingeEvent(channel: channel, degrees: 121.64),
+        hingeEvent(channel: channel, degrees: 90),
+      ],
+      onAcknowledgement: { acknowledged.fulfill() })
+    let request = try hingeRequest(channel: channel)
+    let xpc = try provider.services.channel(to: SimulatorHingeProtocol.service)
+    let stream = CoreDeviceSession<SimulatorHingeAngle>(channel: xpc).subscribe(request) { event in
+      try SimulatorHingeProtocol.sample(event, channel: channel, notBefore: 200, now: 200)
+    }
+    let consumer = Task {
+      var iterator = stream.makeAsyncIterator()
+      var values: [Double] = []
+      for _ in 0..<3 {
+        if let angle = try await iterator.next() { values.append(angle.degrees) }
+      }
+      let acknowledgementResult = await XCTWaiter.fulfillment(of: [acknowledged], timeout: 5)
+      XCTAssertEqual(acknowledgementResult, .completed)
+      withUnsafeCurrentTask { $0?.cancel() }
+      _ = try await iterator.next()
+      return values
+    }
+    let values = try await consumer.value
+    XCTAssertEqual(values, [180, 121.64, 90])
+    XCTAssertEqual(provider.acknowledgements, [false, false, false, false])
+    let closed = await provider.peer.closed(atLeast: 1)
+    XCTAssertEqual(closed, 1)
+  }
 
   /// A hinge read as `SimulatorHingeCommands` performs it: a stream that samples until a fresh
   /// angle arrives, with the clock pinned so timestamps are deterministic.

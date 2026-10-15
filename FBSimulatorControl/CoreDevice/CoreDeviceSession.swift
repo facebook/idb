@@ -64,8 +64,12 @@ final class CoreDeviceSession<Response: Sendable>: @unchecked Sendable {
   /// skipping events it reads as nil. Every event is acknowledged without asking the provider to stop,
   /// so the stream lasts until the provider's final reply finishes it or the consumer stops iterating,
   /// which cancels the channel. The deadline bounds only the wait for the first event.
-  func subscribe(_ request: xpc_object_t, element: @escaping @Sendable (xpc_object_t) throws -> Response?) -> AsyncThrowingStream<Response, Error> {
-    let (stream, continuation) = AsyncThrowingStream<Response, Error>.makeStream()
+  func subscribe(
+    _ request: xpc_object_t,
+    bufferingPolicy: AsyncThrowingStream<Response, Error>.Continuation.BufferingPolicy = .unbounded,
+    element: @escaping @Sendable (xpc_object_t) throws -> Response?
+  ) -> AsyncThrowingStream<Response, Error> {
+    let (stream, continuation) = AsyncThrowingStream<Response, Error>.makeStream(bufferingPolicy: bufferingPolicy)
     // Holding the session here keeps it alive for as long as the stream is.
     continuation.onTermination = { _ in self.channel.cancel() }
     queue.async { [self] in
