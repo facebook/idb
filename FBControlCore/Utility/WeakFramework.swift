@@ -43,7 +43,7 @@ public final class WeakFramework: Sendable {
   private let requiredClassNames: [String]
   private let rootPermitted: Bool
 
-  // MARK: - Factory Methods
+  // MARK: - Xcode Frameworks
 
   public static func xcodeFramework(withRelativePath relativePath: String, requiredClassNames: [String]) -> WeakFramework {
     WeakFramework(
@@ -54,16 +54,17 @@ public final class WeakFramework: Sendable {
     )
   }
 
-  public static func framework(withPath absolutePath: String, requiredClassNames: [String], rootPermitted: Bool) -> WeakFramework {
-    WeakFramework(
+  // MARK: - Initializers
+
+  /// The framework at `absolutePath`.
+  public convenience init(path absolutePath: String, requiredClassNames: [String], rootPermitted: Bool) {
+    self.init(
       basePath: absolutePath,
       relativePath: "",
       requiredClassNames: requiredClassNames,
       rootPermitted: rootPermitted
     )
   }
-
-  // MARK: - Private Init
 
   private init(basePath: String, relativePath: String, requiredClassNames: [String], rootPermitted: Bool) {
     let fullPath = (basePath as NSString).appendingPathComponent(relativePath)
@@ -141,7 +142,7 @@ public final class WeakFramework: Sendable {
 extension WeakFramework {
 
   public static var coreSimulator: WeakFramework {
-    WeakFramework.framework(withPath: "/Library/Developer/PrivateFrameworks/CoreSimulator.framework", requiredClassNames: ["SimDevice"], rootPermitted: false)
+    WeakFramework(path: "/Library/Developer/PrivateFrameworks/CoreSimulator.framework", requiredClassNames: ["SimDevice"], rootPermitted: false)
   }
 
   public static var simulatorKit: WeakFramework {
@@ -163,10 +164,10 @@ extension WeakFramework {
   }
 
   public static var mobileDevice: WeakFramework {
-    WeakFramework.framework(withPath: "/System/Library/PrivateFrameworks/MobileDevice.framework", requiredClassNames: [], rootPermitted: true)
+    WeakFramework(path: "/System/Library/PrivateFrameworks/MobileDevice.framework", requiredClassNames: [], rootPermitted: true)
   }
 
   public static var accessibilityPlatformTranslation: WeakFramework {
-    WeakFramework.framework(withPath: "/System/Library/PrivateFrameworks/AccessibilityPlatformTranslation.framework", requiredClassNames: ["AXPTranslationObject"], rootPermitted: false)
+    WeakFramework(path: "/System/Library/PrivateFrameworks/AccessibilityPlatformTranslation.framework", requiredClassNames: ["AXPTranslationObject"], rootPermitted: false)
   }
 }

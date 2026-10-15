@@ -15,8 +15,8 @@ struct FrameworkLoaderErrorTests {
   @Test("A throwing load surfaces a descriptive error for an unloadable framework")
   func throwingLoadSurfacesADescriptiveError() throws {
     let missingPath = "/var/empty/Nonexistent.framework"
-    let framework = WeakFramework.framework(
-      withPath: missingPath,
+    let framework = WeakFramework(
+      path: missingPath,
       requiredClassNames: ["IDBNonexistentClass"],
       rootPermitted: false
     )
