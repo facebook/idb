@@ -275,22 +275,10 @@ public struct MappedHostFile: ContainedFile, CustomStringConvertible {
   }
 }
 
-// MARK: - Factories
+// MARK: - Containers
 
-/// Factories for the file containers a target exposes.
+/// Namespaces the file container a target exposes over a `ContainedFile`.
 public enum FileContainer {
-
-  public static func fileContainer(forBasePath basePath: String) -> ContainedRoot {
-    fileContainer(for: HostFile(path: basePath))
-  }
-
-  public static func fileContainer(forPathMapping pathMapping: [String: String]) -> ContainedRoot {
-    fileContainer(for: MappedHostFile(mappingPaths: pathMapping))
-  }
-
-  public static func fileContainer(for containedFile: ContainedFile) -> ContainedRoot {
-    ContainedRoot(rootFile: containedFile, queue: DispatchQueue(label: "com.facebook.fbcontrolcore.file_container"))
-  }
 
   /// File container backed by a synchronous `ContainedFile`. Each operation
   /// resolves the target path and runs the synchronous file work on a serial
@@ -300,7 +288,17 @@ public enum FileContainer {
     private let rootFile: any ContainedFile
     private let queue: DispatchQueue
 
-    public init(rootFile: any ContainedFile, queue: DispatchQueue) {
+    /// A container rooted at the host path `basePath`.
+    public convenience init(basePath: String) {
+      self.init(rootFile: HostFile(path: basePath))
+    }
+
+    /// A container whose root is a virtual directory of the names in `pathMapping`.
+    public convenience init(pathMapping: [String: String]) {
+      self.init(rootFile: MappedHostFile(mappingPaths: pathMapping))
+    }
+
+    public init(rootFile: any ContainedFile, queue: DispatchQueue = DispatchQueue(label: "com.facebook.fbcontrolcore.file_container")) {
       self.rootFile = rootFile
       self.queue = queue
     }

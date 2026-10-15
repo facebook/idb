@@ -56,7 +56,7 @@ final class FileContainerTests: XCTestCase {
     try fm.createDirectory(atPath: directoryInBasePath, withIntermediateDirectories: true, attributes: nil)
     try (fileInBasePathText as NSString).write(toFile: fileInBasePath, atomically: true, encoding: String.Encoding.utf8.rawValue)
     try (fileInDirectoryInBasePathText as NSString).write(toFile: fileInDirectoryInBasePath, atomically: true, encoding: String.Encoding.utf8.rawValue)
-    return FileContainer.fileContainer(forBasePath: basePath)
+    return FileContainer.ContainedRoot(basePath: basePath)
   }
 
   // MARK: - Mapped Path Helpers
@@ -79,7 +79,7 @@ final class FileContainerTests: XCTestCase {
     try (fileInFooText as NSString).write(toFile: fileInFoo, atomically: true, encoding: String.Encoding.utf8.rawValue)
     try (fileInDirectoryInBarText as NSString).write(toFile: fileInDirectoryInBar, atomically: true, encoding: String.Encoding.utf8.rawValue)
     let pathMapping: [String: String] = ["foo": fooPath, "bar": barPath]
-    return FileContainer.fileContainer(forPathMapping: pathMapping)
+    return FileContainer.ContainedRoot(pathMapping: pathMapping)
   }
 
   // MARK: - Base Path Tests

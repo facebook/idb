@@ -44,38 +44,38 @@ public final class SimulatorFileCommands: FileCommands {
     _ bundleID: String,
     body: (any AsyncFileContainer) async throws -> R
   ) async throws -> R {
-    try await body(FileContainer.fileContainer(for: try await containedFile(forApplication: bundleID)))
+    try await body(FileContainer.ContainedRoot(rootFile: try await containedFile(forApplication: bundleID)))
   }
 
   public func withAuxiliary<R>(
     body: (any AsyncFileContainer) async throws -> R
   ) async throws -> R {
-    try await body(FileContainer.fileContainer(forBasePath: simulator.auxillaryDirectory))
+    try await body(FileContainer.ContainedRoot(basePath: simulator.auxillaryDirectory))
   }
 
   public func withApplicationContainers<R>(
     body: (any AsyncFileContainer) async throws -> R
   ) async throws -> R {
-    try await body(FileContainer.fileContainer(for: try containedFileForApplicationContainers()))
+    try await body(FileContainer.ContainedRoot(rootFile: try containedFileForApplicationContainers()))
   }
 
   public func withGroupContainers<R>(
     body: (any AsyncFileContainer) async throws -> R
   ) async throws -> R {
-    try await body(FileContainer.fileContainer(for: try containedFileForGroupContainers()))
+    try await body(FileContainer.ContainedRoot(rootFile: try containedFileForGroupContainers()))
   }
 
   public func withRootFilesystem<R>(
     body: (any AsyncFileContainer) async throws -> R
   ) async throws -> R {
-    try await body(FileContainer.fileContainer(forBasePath: try requireDataDirectory()))
+    try await body(FileContainer.ContainedRoot(basePath: try requireDataDirectory()))
   }
 
   public func withMediaDirectory<R>(
     body: (any AsyncFileContainer) async throws -> R
   ) async throws -> R {
     let mediaDirectory = (try requireDataDirectory() as NSString).appendingPathComponent("Media")
-    return try await body(FileContainer.fileContainer(forBasePath: mediaDirectory))
+    return try await body(FileContainer.ContainedRoot(basePath: mediaDirectory))
   }
 
   public func withProvisioningProfiles<R>(
