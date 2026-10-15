@@ -9,7 +9,7 @@ import Foundation
 
 public protocol XCTestReporter: AnyObject {
 
-  func processWaitingForDebugger(withProcessIdentifier pid: pid_t)
+  func processWaitingForDebugger(processIdentifier pid: pid_t)
 
   func didBeginExecutingTestPlan()
 

@@ -81,7 +81,7 @@ final class XCTestReporterDouble: XCTestReporter {
 
   func testHadOutput(_ output: String) {}
 
-  func processWaitingForDebugger(withProcessIdentifier pid: pid_t) {}
+  func processWaitingForDebugger(processIdentifier pid: pid_t) {}
 
   func processUnderTestDidExit() {}
 

@@ -84,7 +84,7 @@ public final class TestManagerAPIMediator: NSObject, @unchecked Sendable {
       let launchedApplication = try await target.application.launch(context.testHostLaunchConfiguration)
       do {
         if context.testHostLaunchConfiguration.waitForDebugger {
-          reporter.processWaitingForDebugger(withProcessIdentifier: launchedApplication.processIdentifier)
+          reporter.processWaitingForDebugger(processIdentifier: launchedApplication.processIdentifier)
           try await ProcessFetcher.waitForDebuggerToAttachAndContinue(for: launchedApplication.processIdentifier)
         }
         try await runUntilCompletion(launchedApplication: launchedApplication, timeout: timeout)

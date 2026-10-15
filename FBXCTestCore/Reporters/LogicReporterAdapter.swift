@@ -29,8 +29,8 @@ public final class LogicReporterAdapter: LogicXCTestReporter {
     reporter.processUnderTestDidExit()
   }
 
-  public func processWaitingForDebugger(withProcessIdentifier pid: pid_t) {
-    reporter.processWaitingForDebugger(withProcessIdentifier: pid)
+  public func processWaitingForDebugger(processIdentifier pid: pid_t) {
+    reporter.processWaitingForDebugger(processIdentifier: pid)
   }
 
   public func testHadOutput(_ output: String) {

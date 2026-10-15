@@ -137,7 +137,7 @@ struct CodeInjectionHostLauncher {
 /// A no-op logic-test reporter. REPL mode runs the shim's single test purely to
 /// host the control socket, so the normal test-reporting events are discarded.
 final class ReplNullReporter: LogicXCTestReporter {
-  func processWaitingForDebugger(withProcessIdentifier pid: pid_t) {}
+  func processWaitingForDebugger(processIdentifier pid: pid_t) {}
   func didBeginExecutingTestPlan() {}
   func didFinishExecutingTestPlan() {}
   func testHadOutput(_ output: String) {}

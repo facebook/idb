@@ -102,7 +102,7 @@ final class IDBXCTestReporter: XCTestReporter, DataConsumer, @unchecked Sendable
 
   // MARK: - XCTestReporter implementation
 
-  func processWaitingForDebugger(withProcessIdentifier pid: pid_t) {
+  func processWaitingForDebugger(processIdentifier pid: pid_t) {
     logger.info().log("Tests waiting for debugger. To debug run: lldb -p \(pid)")
     let response = Idb_XctestRunResponse.with {
       $0.status = .running

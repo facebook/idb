@@ -181,7 +181,7 @@ private final class RecordingLogicReporter: LogicXCTestReporter, @unchecked Send
     lock.withLock { recorded.append(call) }
   }
 
-  func processWaitingForDebugger(withProcessIdentifier pid: pid_t) {
+  func processWaitingForDebugger(processIdentifier pid: pid_t) {
     record("waitingForDebugger")
   }
 

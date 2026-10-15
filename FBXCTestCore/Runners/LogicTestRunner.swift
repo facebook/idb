@@ -127,7 +127,7 @@ public final class LogicTestRunner {
       } catch {
         throw LogicTestRunError.sigstopWaitFailed(processIdentifier: processIdentifier, underlying: error)
       }
-      reporter.processWaitingForDebugger(withProcessIdentifier: processIdentifier)
+      reporter.processWaitingForDebugger(processIdentifier: processIdentifier)
     }
     return try await XCTestProcess.awaitExitCode(of: process, processName: processName, completesWithin: configuration.testTimeout, crashLogCommands: target.crashLog, logger: logger)
   }

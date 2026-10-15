@@ -38,7 +38,7 @@ private final class RecordingReporter: XCTestReporter, @unchecked Sendable {
     events.append(.testPlanFailed(message: message))
   }
 
-  func processWaitingForDebugger(withProcessIdentifier pid: pid_t) {}
+  func processWaitingForDebugger(processIdentifier pid: pid_t) {}
   func didBeginExecutingTestPlan() {}
   func didFinishExecutingTestPlan() {}
   func processUnderTestDidExit() {}
