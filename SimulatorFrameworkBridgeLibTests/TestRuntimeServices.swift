@@ -13,7 +13,7 @@ import Foundation
 
 extension FBContactsTestRuntime {
   func run() -> Int {
-    run { FBContactsService.clear(with: $0, makeSaveRequest: $1) }
+    run { ContactsService.clear(with: $0, makeSaveRequest: $1) }
   }
 }
 

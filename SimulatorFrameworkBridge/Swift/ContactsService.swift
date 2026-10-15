@@ -50,7 +50,7 @@ private func FBContactsClearWithStore(contactStore: CNContactStore, makeSaveRequ
   return 0
 }
 
-public enum FBContactsService {
+public enum ContactsService {
   public static func clear(with store: CNContactStore, makeSaveRequest: () -> CNSaveRequest) -> Int {
     FBContactsClearWithStore(contactStore: store, makeSaveRequest: makeSaveRequest)
   }

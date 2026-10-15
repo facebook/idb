@@ -51,7 +51,7 @@ public struct FBBridgeServices: FBBridgeServiceHandling {
 
   #if !os(tvOS)
   public func contacts(_ action: String) -> Int32 {
-    Int32(FBContactsService.handleContactsAction(action: action))
+    Int32(ContactsService.handleContactsAction(action: action))
   }
 
   public func health(_ action: String, bundleID: String?, typeIDs: [String]) -> Int32 {

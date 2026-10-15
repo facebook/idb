@@ -22,7 +22,7 @@ public enum BridgeServices {
       #if os(tvOS)
       return unavailable("The contacts service", output: output)
       #else
-      return Int32(FBContactsService.handleContactsAction(action: "clear", output: output))
+      return Int32(ContactsService.handleContactsAction(action: "clear", output: output))
       #endif
     case .clearPhotos:
       return Int32(FBPhotoLibraryService.handlePhotoLibraryAction(action: "clear", output: output))

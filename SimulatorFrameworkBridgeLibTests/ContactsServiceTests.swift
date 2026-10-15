@@ -14,8 +14,8 @@ struct ContactsServiceTests {
 
   @Test
   func unknownActionReturnsFailure() {
-    #expect(FBContactsService.handleContactsAction(action: "delete") == 1)
-    #expect(FBContactsService.handleContactsAction(action: "") == 1)
-    #expect(FBContactsService.handleContactsAction(action: "add") == 1)
+    #expect(ContactsService.handleContactsAction(action: "delete") == 1)
+    #expect(ContactsService.handleContactsAction(action: "") == 1)
+    #expect(ContactsService.handleContactsAction(action: "add") == 1)
   }
 }
