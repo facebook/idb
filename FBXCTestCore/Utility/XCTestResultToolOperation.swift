@@ -27,7 +27,7 @@ enum XCTestResultToolError: Error, LocalizedError {
   }
 }
 
-final class XCTestResultToolOperation {
+enum XCTestResultToolOperation {
 
   public static func json(from path: String, forId bundleObjectId: String?, logger: ControlCoreLogger?, timeout: TimeInterval? = nil) async throws -> [String: Any] {
     logger?.log("Getting json for id \(bundleObjectId ?? "nil")")
