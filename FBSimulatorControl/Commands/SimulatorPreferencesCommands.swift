@@ -145,6 +145,18 @@ public struct SimulatorPreferencesCommands {
     }
   }
 
+  /// Publishes the current supported settings, followed by changes from a dedicated guest observer.
+  ///
+  /// The guest registers its observer before its initial authoritative read and rereads after coalesced
+  /// notifications. This host stream keeps only the newest event for a slow consumer, including a
+  /// terminal availability event that can replace an unconsumed value.
+  public func settings() -> AsyncStream<SimulatorSettingsEvent> {
+    let transport = simulator.frameworkBridgeTransport(scope: .exclusive)
+    return SimulatorSettingsPublisher {
+      try await transport.stream(.deviceSettingChanges("reduce-motion"))
+    }.events()
+  }
+
   // MARK: - Private
 
   static func appearance(rawValue: Int) throws -> SimulatorAppearance {
