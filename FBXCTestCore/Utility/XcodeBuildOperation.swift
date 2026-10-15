@@ -32,7 +32,7 @@ extension XcodeBuildError: LocalizedError {
   }
 }
 
-public final class XcodeBuildOperation {
+public enum XcodeBuildOperation {
 
   // MARK: - Initializers
 
