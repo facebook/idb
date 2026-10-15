@@ -7,24 +7,23 @@
 
 import Foundation
 
-@objc public final class TestExceptionInfo: NSObject {
+public final class TestExceptionInfo: CustomStringConvertible {
 
   public let message: String
   public let file: String?
   public let line: UInt
 
-  @objc public init(message: String, file: String?, line: UInt) {
+  public init(message: String, file: String?, line: UInt) {
     self.message = message
     self.file = file
     self.line = line
-    super.init()
   }
 
   public convenience init(message: String) {
     self.init(message: message, file: nil, line: 0)
   }
 
-  public override var description: String {
+  public var description: String {
     "Message \(message) | File \(file ?? "(null)") | Line \(line)"
   }
 }
