@@ -57,7 +57,7 @@ public final class Simulator: Target, Hashable, CustomStringConvertible, @unchec
   private convenience init(device: SimDevice, logger: (any ControlCoreLogger)?, hidEventLogging: SimulatorHIDEventLogging) {
     self.init(
       device: device,
-      configuration: SimulatorConfiguration.inferSimulatorConfiguration(fromDevice: device),
+      configuration: SimulatorConfiguration(simDevice: device),
       auxillaryDirectory: Self.auxillaryDirectory(fromSimDevice: device),
       logger: logger,
       hidEventLogging: hidEventLogging)

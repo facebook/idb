@@ -61,11 +61,11 @@ public struct SimulatorConfiguration: Equatable, Hashable, CustomStringConvertib
 
 extension SimulatorConfiguration {
 
-  public static func inferSimulatorConfiguration(fromDevice simDevice: SimDevice) -> SimulatorConfiguration {
-    configuration(deviceType: simDevice.deviceType, runtime: simDevice.runtime)
+  public init(simDevice: SimDevice) {
+    self.init(deviceType: simDevice.deviceType, runtime: simDevice.runtime)
   }
 
-  static func configuration(deviceType: SimDeviceType?, runtime: SimRuntime?) -> SimulatorConfiguration {
+  init(deviceType: SimDeviceType?, runtime: SimRuntime?) {
     let family: ProductFamily
     switch deviceType?.productFamilyID {
     case 1: family = .iPhone
@@ -75,7 +75,7 @@ extension SimulatorConfiguration {
     case 5: family = .mac
     default: family = .unknown
     }
-    return SimulatorConfiguration(
+    self.init(
       device: DeviceType(model: DeviceModel(rawValue: deviceType?.name ?? "unknown"), family: family),
       os: OSVersion(name: OSVersionName(rawValue: runtime?.name ?? "unknown"), versionString: runtime?.versionString ?? ""),
       deviceTypeIdentifier: deviceType?.identifier,
@@ -86,7 +86,7 @@ extension SimulatorConfiguration {
   public static func availableConfigurations() throws -> [SimulatorConfiguration] {
     let snapshot = try CoreSimulatorRuntimeIndex.load()
     return snapshot.index.availablePairs.map {
-      configuration(deviceType: snapshot.deviceTypes[$0.device], runtime: snapshot.runtimes[$0.runtime])
+      SimulatorConfiguration(deviceType: snapshot.deviceTypes[$0.device], runtime: snapshot.runtimes[$0.runtime])
     }
   }
 }

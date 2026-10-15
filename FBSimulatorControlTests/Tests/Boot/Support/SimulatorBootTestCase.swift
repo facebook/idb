@@ -65,7 +65,7 @@ final class SimulatorBootTestCase: XCTestCase {
     creationRequest = SimulatorCreationRequest(device: .identifier(try XCTUnwrap(availableDevice.identifier)))
     let snapshot = CoreSimulatorRuntimeIndex(deviceTypes: deviceTypes, runtimes: runtimes)
     let (deviceType, runtime) = try snapshot.resolve(creationRequest)
-    expectedConfiguration = SimulatorConfiguration.configuration(deviceType: deviceType, runtime: runtime)
+    expectedConfiguration = SimulatorConfiguration(deviceType: deviceType, runtime: runtime)
     let noLogger: (any ControlCoreLogger)? = nil
     ownedDeviceSetPath = Self.deviceSetPath
     control = try SimulatorControlBootstrap.withConfiguration(

@@ -32,7 +32,7 @@ import Testing
 struct SimulatorMetadataTests {
   @Test
   func missingMetadataRemainsDescribable() {
-    let configuration = SimulatorConfiguration.configuration(deviceType: nil, runtime: nil)
+    let configuration = SimulatorConfiguration(deviceType: nil, runtime: nil)
     #expect(configuration.device.model.rawValue == "unknown")
     #expect(configuration.os.versionString == "")
     #expect(configuration.runtimeIdentifier == nil)
@@ -66,8 +66,8 @@ struct SimulatorMetadataTests {
 
   @Test
   func uncataloguedSimulatorUsesReportedMetadata() {
-    let configuration = SimulatorConfiguration.inferSimulatorConfiguration(
-      fromDevice: SimulatorTestSupport.asDevice(MetadataSimDevice()))
+    let configuration = SimulatorConfiguration(
+      simDevice: SimulatorTestSupport.asDevice(MetadataSimDevice()))
     #expect(configuration.device.model.rawValue == "Future Device")
     #expect(configuration.os.name.rawValue == "Future Platform")
     #expect(configuration.os.version.majorVersion == 99)

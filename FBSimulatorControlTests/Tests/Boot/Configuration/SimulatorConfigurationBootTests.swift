@@ -37,7 +37,7 @@ final class SimulatorConfigurationBootTests: XCTestCase {
     XCTAssertEqual(runtime.identifier, availableRuntime.identifier)
     XCTAssertTrue(runtime.available)
     XCTAssertTrue(runtime.supportsDeviceType(device))
-    let configuration = SimulatorConfiguration.configuration(deviceType: device, runtime: runtime)
+    let configuration = SimulatorConfiguration(deviceType: device, runtime: runtime)
     XCTAssertEqual(configuration.os.versionString, runtime.versionString)
     XCTAssertEqual(configuration.runtimeBuildVersion, runtime.buildVersionString)
     XCTAssertEqual(configuration.device.model.rawValue, device.name)
