@@ -20,7 +20,7 @@ public struct DeviceVideoStreamCommands: VideoStreamCommands {
 
   public func create(configuration: VideoStreamConfiguration, to consumer: any DataConsumer) async throws -> any VideoStreamOperation {
     let session = try await DeviceVideo.captureSession(for: device)
-    let stream = try DeviceVideoStream.stream(withSession: session, configuration: configuration, logger: device.logger)
+    let stream = try DeviceVideoStream(session: session, configuration: configuration, logger: device.logger)
     try await stream.startStreaming(consumer)
     return stream
   }

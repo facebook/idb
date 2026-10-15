@@ -71,9 +71,10 @@ public final class DeviceVideoStream: VideoStreamOperation, @unchecked Sendable 
 
   private let lifecycle = OSAllocatedUnfairLock(initialState: Lifecycle())
 
-  // MARK: - Factory
+  // MARK: - Initializers
 
-  public static func stream(withSession session: AVCaptureSession, configuration: VideoStreamConfiguration, logger: any ControlCoreLogger) throws -> DeviceVideoStream {
+  /// Adds a data output to `session` that captures in the configured format and frame rate.
+  public convenience init(session: AVCaptureSession, configuration: VideoStreamConfiguration, logger: any ControlCoreLogger) throws {
     guard let captureFormat = DeviceCaptureFormat(configuration.format) else {
       throw DeviceVideoStreamError.invalidStreamFormat("\(configuration.format)")
     }
@@ -93,7 +94,7 @@ public final class DeviceVideoStream: VideoStreamOperation, @unchecked Sendable 
       connection.videoMinFrameDuration = CMTimeMakeWithSeconds(1.0 / Float64(fps), preferredTimescale: Int32(NSEC_PER_SEC))
     }
 
-    return DeviceVideoStream(
+    self.init(
       session: session, output: output, frameWriter: configuration.format.frameWriters().frameWriter,
       writeQueue: DispatchQueue(label: "com.facebook.fbdevicecontrol.streamencoder"), logger: logger)
   }
