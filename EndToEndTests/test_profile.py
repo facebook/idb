@@ -10,13 +10,16 @@ from __future__ import annotations
 import getpass
 import json
 import subprocess
+from dataclasses import dataclass
 from typing import Any
 
 from .harness import IdbEndToEndTestCase
 
-# Hosts that deny `task_for_pid`, so the inspecting tools cannot read the
-# process. Nothing the companion does can work around these.
-INSPECTION_HOST_LIMITATIONS = ("_dyld_process_info_create() failed",)
+# What the inspecting tools report when the host denies them `task_for_pid`.
+# Developer tools access is not enough to prevent it: hosts that grant it still
+# deny `heap`, `leaks` and `memgraph` while `vmmap`, `sample` and `footprint`
+# succeed against the same app.
+INSPECTION_DENIED_SYMPTOMS = ("_dyld_process_info_create() failed",)
 
 # xctrace on hosts that cannot record: without the privilege to raise its own
 # scheduling priority, or against a custom device set it cannot see.
@@ -29,24 +32,33 @@ TRACE_HOST_LIMITATIONS = (
 PROCESS_NAME = "ReplHost"
 
 
-def developer_tools_access() -> str:
+@dataclass(frozen=True)
+class DeveloperToolsAccess:
+    granted: bool
+    evidence: str
+
+
+def _run_for_evidence(command: list[str]) -> str:
+    try:
+        completed = subprocess.run(command, capture_output=True, text=True, timeout=10)
+    except (OSError, subprocess.TimeoutExpired) as error:
+        return str(error)
+    return (completed.stdout + completed.stderr).strip()
+
+
+def developer_tools_access() -> DeveloperToolsAccess:
     """The host state that decides whether the simulator runtime's tools, which
     carry no task-port entitlement, may inspect another process."""
-    commands = (
-        ["DevToolsSecurity", "-status"],
-        ["dseditgroup", "-o", "checkmember", "-m", getpass.getuser(), "_developer"],
+    user = getpass.getuser()
+    status = _run_for_evidence(["DevToolsSecurity", "-status"])
+    membership = _run_for_evidence(
+        ["dseditgroup", "-o", "checkmember", "-m", user, "_developer"]
     )
-    lines = []
-    for command in commands:
-        try:
-            completed = subprocess.run(
-                command, capture_output=True, text=True, timeout=10
-            )
-            output = (completed.stdout + completed.stderr).strip()
-        except (OSError, subprocess.TimeoutExpired) as error:
-            output = str(error)
-        lines.append(f"{' '.join(command)}: {output}")
-    return "; ".join(lines)
+    return DeveloperToolsAccess(
+        granted="currently enabled" in status
+        and membership.startswith(f"yes {user} is a member"),
+        evidence=f"DevToolsSecurity -status: {status}; _developer membership: {membership}",
+    )
 
 
 class ProfileTests(IdbEndToEndTestCase):
@@ -67,10 +79,24 @@ class ProfileTests(IdbEndToEndTestCase):
             check=False,
         )
         if completed.returncode != 0:
-            self.skip_on_host_limitation(
-                f"profile {kind}", completed.error_text, INSPECTION_HOST_LIMITATIONS
-            )
+            self.skip_if_inspection_is_denied(f"profile {kind}", completed.error_text)
         return json.loads(completed.text)
+
+    def skip_if_inspection_is_denied(self, command: str, error_text: str) -> None:
+        symptom = next((m for m in INSPECTION_DENIED_SYMPTOMS if m in error_text), None)
+        if symptom is None:
+            self.fail(f"{command} failed: {error_text}")
+        access = developer_tools_access()
+        if access.granted:
+            self.skipTest(
+                f"{command} cannot inspect the app ({symptom!r}) although this host"
+                f" grants developer tools access ({access.evidence})."
+            )
+        self.skipTest(
+            f"{command} cannot inspect the app: this host denies developer tools"
+            f" access ({access.evidence}). Grant it with `DevToolsSecurity -enable`"
+            " and membership of `_developer`."
+        )
 
     def skip_on_host_limitation(
         self, command: str, error_text: str, limitations: tuple[str, ...]
@@ -79,7 +105,8 @@ class ProfileTests(IdbEndToEndTestCase):
         if limitation is None:
             self.fail(f"{command} failed: {error_text}")
         self.skipTest(
-            f"{command} cannot run on this host: {limitation} ({developer_tools_access()})"
+            f"{command} cannot run on this host: {limitation}"
+            f" ({developer_tools_access().evidence})"
         )
 
     def assert_profiled_the_fixture(self, process: dict[str, Any]) -> None:
