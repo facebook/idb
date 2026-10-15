@@ -8,11 +8,7 @@
 import Foundation
 import IDBGRPCSwift
 
-protocol DataExtractable {
-  func extractDataFrame() -> Data?
-}
-
-protocol PayloadExtractable: DataExtractable {
+protocol PayloadExtractable {
   func extractPayload() -> Idb_Payload?
 }
 
@@ -62,7 +58,7 @@ extension PayloadExtractable {
   }
 }
 
-extension Idb_Payload: DataExtractable {
+extension Idb_Payload {
   func extractDataFrame() -> Data? {
     switch source {
     case let .data(data):
