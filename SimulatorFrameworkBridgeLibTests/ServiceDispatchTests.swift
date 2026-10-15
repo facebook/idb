@@ -10,7 +10,7 @@ import Foundation
 import XCTest
 
 final class ServiceDispatchTests: XCTestCase {
-  private var services = FBBridgeServices()
+  private var services = CommandLineServices()
 
   override func setUp() {
     super.setUp()
@@ -19,7 +19,7 @@ final class ServiceDispatchTests: XCTestCase {
     // The delivered verb reaches a real notification center on a simulator that has one, and
     // these assertions are about routing rather than about what it answers. Without a short
     // timeout, a center that does not come back spends the default 30s in a routing test.
-    services = FBBridgeServices(
+    services = CommandLineServices(
       deliveredNotificationsDirectory: (NSTemporaryDirectory() as NSString).appendingPathComponent(UUID().uuidString),
       deliveredNotificationsTimeout: 0.05)
   }
