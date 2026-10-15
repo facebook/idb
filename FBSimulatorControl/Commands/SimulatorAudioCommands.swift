@@ -182,6 +182,16 @@ public struct SimulatorAudioCommands {
     return try SimulatorAudioSettings.settings(atPath: path)
   }
 
+  /// Publishes the current ringer state and subsequent native changes.
+  public func ringerChanges() async throws -> AsyncThrowingStream<Bool, Error> {
+    let simulator = self.simulator
+    let name = SimulatorAudioSettings.ringerNotificationName
+    let subscription = try await SimulatorDarwinNotificationObserver.subscribe(on: simulator, name: name)
+    return SimulatorDarwinNotificationObserver.values(subscription: subscription) { _ in
+      try SimulatorDarwinNotificationObserver.state(on: simulator, name: name) != 0
+    }
+  }
+
   /// Applies `update` to the simulated device, leaving any field it does not carry alone.
   ///
   /// The volume is the absolute counterpart to the `volumeUp` and `volumeDown` hardware buttons, which
