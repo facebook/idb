@@ -8,7 +8,7 @@
 import Foundation
 
 /// An XCTest activity, copied out of XCTest's own `XCActivityRecord`.
-@objc public final class ActivityRecord: NSObject {
+public final class ActivityRecord: CustomStringConvertible {
 
   public let title: String
   public let activityType: String
@@ -34,10 +34,9 @@ import Foundation
     self.attachments = attachments.map(Attachment.init)
     self.duration = record.value(forKey: "duration") as? Double ?? 0
     self.name = record.value(forKey: "name") as? String ?? ""
-    super.init()
   }
 
-  public override var description: String {
+  public var description: String {
     String(format: "Title %@ | Duration %f | Start %@ | Finish %@ | Uuid %@", title, duration, start as NSDate, finish as NSDate, uuid as NSUUID)
   }
 }
