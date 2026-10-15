@@ -105,7 +105,7 @@ public final class IDBLogger: ControlCoreLogger {
     var loggers: [ControlCoreLogger] = [systemLoggerSink(withUserDefaults: userDefaults)]
     if let logFilePath = userDefaults.string(forKey: "-log-file-path") {
       let fileDescriptor = try openLogFile(atPath: logFilePath)
-      loggers.append(ControlCoreLoggerFactory.logger(toFileDescriptor: fileDescriptor, closeOnEndOfFile: true))
+      loggers.append(ConsumerLogger(fileDescriptor: fileDescriptor, closeOnEndOfFile: true))
     }
     return IDBLogger(loggers: loggers).dateFormatted()
   }
@@ -191,7 +191,7 @@ public final class IDBLogger: ControlCoreLogger {
   }
 
   func tailToConsumer(_ consumer: DataConsumer) async throws -> any LogOperation {
-    let logger = ControlCoreLoggerFactory.logger(to: consumer)
+    let logger = ConsumerLogger(consumer: consumer)
     globalLoggers.add(logger)
     return IDBLoggerOperation(consumer: consumer, logger: logger)
   }

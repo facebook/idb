@@ -161,7 +161,7 @@ public final class InstrumentsOperation {
     logger.log("Starting instruments with arguments: \(CollectionInformation.oneLineDescription(from: arguments))")
 
     let instrumentsConsumer = InstrumentsConsumer()
-    let instrumentsLogger = ControlCoreLoggerFactory.logger(to: instrumentsConsumer)
+    let instrumentsLogger = ConsumerLogger(consumer: instrumentsConsumer)
     let compositeLogger = CompositeLogger(loggers: [logger, instrumentsLogger])
 
     let running = try await Subprocess(executable: "/usr/bin/instruments", arguments: arguments)

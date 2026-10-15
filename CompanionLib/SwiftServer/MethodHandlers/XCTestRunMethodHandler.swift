@@ -147,7 +147,7 @@ private struct RequestedXCTestRun: XCTestRunStarting, @unchecked Sendable {
       withBundleStorageManager: commandExecutor.storageManager.xctest,
       target: target,
       reporter: reporter,
-      logger: ControlCoreLoggerFactory.logger(to: reporter),
+      logger: ConsumerLogger(consumer: reporter),
       temporaryDirectory: commandExecutor.temporaryDirectory)
     reporter.configuration = .init(legacy: operation.reporterConfiguration)
     return operation

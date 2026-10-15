@@ -40,7 +40,7 @@ struct InstrumentsRunMethodHandler {
     }
     let logger = CompositeLogger(
       loggers: [
-        ControlCoreLoggerFactory.logger(to: consumer),
+        ConsumerLogger(consumer: consumer),
         targetLogger,
       ].compactMap { $0 })
 

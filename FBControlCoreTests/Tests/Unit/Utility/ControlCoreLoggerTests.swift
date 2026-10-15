@@ -18,7 +18,7 @@ struct ControlCoreLoggerTests {
     FileManager.default.createFile(atPath: temporaryFilePath, contents: nil, attributes: nil)
     let fileHandle = FileHandle(forWritingAtPath: temporaryFilePath)!
 
-    let logger = ControlCoreLoggerFactory.logger(toFileDescriptor: fileHandle.fileDescriptor, closeOnEndOfFile: false)
+    let logger = ConsumerLogger(fileDescriptor: fileHandle.fileDescriptor, closeOnEndOfFile: false)
     logger.log("Some content")
     fileHandle.synchronizeFile()
     fileHandle.closeFile()
@@ -30,7 +30,7 @@ struct ControlCoreLoggerTests {
   @Test
   func loggingToConsumer() {
     let consumer = DataBuffer.consumableBuffer()
-    var logger = ControlCoreLoggerFactory.logger(to: consumer)
+    var logger: ControlCoreLogger = ConsumerLogger(consumer: consumer)
 
     logger.log("HELLO")
     logger.log("WORLD")
@@ -50,7 +50,7 @@ struct ControlCoreLoggerTests {
   @Test
   func threadSafetyOfConsumableLogger() {
     let consumer = DataBuffer.consumableBuffer()
-    let logger = ControlCoreLoggerFactory.logger(to: consumer)
+    let logger = ConsumerLogger(consumer: consumer)
 
     let group = DispatchGroup()
     let queue = DispatchQueue.global(qos: .userInitiated)

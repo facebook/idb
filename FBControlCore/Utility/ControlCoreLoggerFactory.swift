@@ -21,18 +21,8 @@ public enum ControlCoreLoggerFactory {
     }
     return CompositeLogger(loggers: [
       systemLogger,
-      logger(toFileDescriptor: STDERR_FILENO, closeOnEndOfFile: false),
+      ConsumerLogger(fileDescriptor: STDERR_FILENO, closeOnEndOfFile: false),
     ])
-  }
-
-  /// Log to a Consumer.
-  public static func logger(to consumer: DataConsumer) -> ControlCoreLogger {
-    ConsumerLogger(consumer: consumer, name: nil, dateFormatter: nil)
-  }
-
-  /// Log to a File Descriptor, closing it on end of file if `closeOnEndOfFile` is set.
-  public static func logger(toFileDescriptor fileDescriptor: Int32, closeOnEndOfFile: Bool) -> ControlCoreLogger {
-    logger(to: FileWriter.syncWriter(withFileDescriptor: fileDescriptor, closeOnEndOfFile: closeOnEndOfFile))
   }
 
   // rdar://36919139: os_log writes to stderr itself when any of these are set.
@@ -109,16 +99,27 @@ private final class OSLogLogger: ControlCoreLogger, @unchecked Sendable {
 
 // SAFETY: all state is immutable; writes to the shared consumer are serialized by `writeLock`,
 // which loggers derived from one another share along with the consumer.
-private final class ConsumerLogger: ControlCoreLogger, @unchecked Sendable {
+/// Logs each message as a line of text to a data consumer.
+public final class ConsumerLogger: ControlCoreLogger, @unchecked Sendable {
 
   private let consumer: DataConsumer
   private let writeLock: NSLock
   private let dateFormatter: DateFormatter?
-  let name: String?
+  public let name: String?
 
   // Nothing filters on a consumer logger's level; it writes every message.
-  var level: ControlCoreLogLevel {
+  public var level: ControlCoreLogLevel {
     .info
+  }
+
+  /// Logs to `consumer`.
+  public convenience init(consumer: DataConsumer) {
+    self.init(consumer: consumer, name: nil, dateFormatter: nil)
+  }
+
+  /// Logs to `fileDescriptor`, closing it on end of file if `closeOnEndOfFile` is set.
+  public convenience init(fileDescriptor: Int32, closeOnEndOfFile: Bool) {
+    self.init(consumer: FileWriter.syncWriter(withFileDescriptor: fileDescriptor, closeOnEndOfFile: closeOnEndOfFile))
   }
 
   init(consumer: DataConsumer, name: String?, dateFormatter: DateFormatter?, writeLock: NSLock = NSLock()) {
@@ -129,7 +130,7 @@ private final class ConsumerLogger: ControlCoreLogger, @unchecked Sendable {
   }
 
   @discardableResult
-  func log(_ message: String) -> ControlCoreLogger {
+  public func log(_ message: String) -> ControlCoreLogger {
     guard let message = loggableStringLine(message) else {
       return self
     }
@@ -147,23 +148,23 @@ private final class ConsumerLogger: ControlCoreLogger, @unchecked Sendable {
     return self
   }
 
-  func info() -> ControlCoreLogger {
+  public func info() -> ControlCoreLogger {
     self
   }
 
-  func debug() -> ControlCoreLogger {
+  public func debug() -> ControlCoreLogger {
     self
   }
 
-  func error() -> ControlCoreLogger {
+  public func error() -> ControlCoreLogger {
     self
   }
 
-  func withName(_ name: String) -> ControlCoreLogger {
+  public func withName(_ name: String) -> ControlCoreLogger {
     ConsumerLogger(consumer: consumer, name: name, dateFormatter: dateFormatter, writeLock: writeLock)
   }
 
-  func withDateFormatEnabled(_ enabled: Bool) -> ControlCoreLogger {
+  public func withDateFormatEnabled(_ enabled: Bool) -> ControlCoreLogger {
     guard enabled else {
       return ConsumerLogger(consumer: consumer, name: name, dateFormatter: nil, writeLock: writeLock)
     }
