@@ -177,7 +177,7 @@ public class BundleStorage: IDBStorage {
     }
     let updatedBundle = try BundleDescriptor(path: destinationBundlePath.path)
     let provider = CodesignProvider(identityName: "-", logger: logger)
-    try await updatedBundle.updatePathsForRelocation(withCodesign: provider, logger: logger)
+    try await updatedBundle.updatePathsForRelocation(codesign: provider, logger: logger)
     return artifact
   }
 

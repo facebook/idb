@@ -91,7 +91,7 @@ public struct BundleDescriptor: Hashable, Sendable, CustomStringConvertible {
     "Name: \(name) | ID: \(identifier)"
   }
 
-  public func updatePathsForRelocation(withCodesign codesign: CodesignProvider, logger: ControlCoreLogger) async throws {
+  public func updatePathsForRelocation(codesign: CodesignProvider, logger: ControlCoreLogger) async throws {
     let replacements = try replacementsForBinary()
     if !replacements.isEmpty {
       var arguments: [String] = []
