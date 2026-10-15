@@ -92,6 +92,9 @@ from idb.common.types import (
     LoggingMetadata,
     OnlyFilter,
     Permission,
+    ProfileKind,
+    ProfileResult,
+    ProfileTarget,
     QuiescenceEvent,
     QuiescenceState,
     QuiescenceStateChanged,
@@ -192,6 +195,13 @@ from idb.grpc.instruments import (
 )
 from idb.grpc.launch import drain_launch_stream, wait_for_launch_stream
 from idb.grpc.port_forward import forward_port
+from idb.grpc.profile import (
+    accepts_stop,
+    drain_artifact,
+    drain_profile,
+    message_to_json,
+    start_request,
+)
 from idb.grpc.screenshot import screenshot_from_grpc, screenshot_to_grpc
 from idb.grpc.status_details import RetryVerdictCodec
 from idb.grpc.stream import (
@@ -1867,6 +1877,36 @@ class Client(ClientBase):
             )
         )
         return list(response.values)
+
+    @log_and_handle_exceptions("profile")
+    async def profile(
+        self,
+        kind: ProfileKind,
+        target: ProfileTarget,
+        stop: asyncio.Event,
+        artifact_path: str | None = None,
+        on_sample: Callable[[dict[str, object]], None] | None = None,
+    ) -> ProfileResult:
+        stoppable = accepts_stop(kind)
+        async with self.stub.profile.open() as stream:
+            await stream.send_message(
+                start_request(kind, target, include_artifact=artifact_path is not None),
+                end=not stoppable,
+            )
+            result = await drain_profile(
+                stream, stop=stop if stoppable else None, on_sample=on_sample
+            )
+            if artifact_path is not None:
+                await drain_artifact(stream, artifact_path)
+            return ProfileResult(
+                report=(
+                    message_to_json(result.report)
+                    if result.HasField("report")
+                    else None
+                ),
+                tool_output=result.tool_output,
+                artifact=artifact_path,
+            )
 
     @log_and_handle_exceptions("xctrace_record")
     async def xctrace_record(

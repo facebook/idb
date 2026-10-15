@@ -105,6 +105,16 @@ from idb.cli.commands.notification import (
     SendNotificationCommand,
 )
 from idb.cli.commands.photos import PhotosClearCommand
+from idb.cli.commands.profile import (
+    ProfileFootprintCommand,
+    ProfileHeapCommand,
+    ProfileLeaksCommand,
+    ProfileMemgraphCommand,
+    ProfileResourcesCommand,
+    ProfileSampleCommand,
+    ProfileTraceCommand,
+    ProfileVmmapCommand,
+)
 from idb.cli.commands.revoke import RevokeCommand
 from idb.cli.commands.rotation import RotationCommand
 from idb.cli.commands.screenshot import ScreenshotCommand
@@ -381,6 +391,20 @@ def build_builtin_commands(shell_command: ShellCommand) -> list[Command]:
             name="companion",
             description="commands related to the companion",
             commands=[CompanionLogCommand()],
+        ),
+        CommandGroup(
+            name="profile",
+            description="Profile processes, reporting structured results with --json",
+            commands=[
+                ProfileLeaksCommand(),
+                ProfileMemgraphCommand(),
+                ProfileHeapCommand(),
+                ProfileSampleCommand(),
+                ProfileVmmapCommand(),
+                ProfileFootprintCommand(),
+                ProfileResourcesCommand(),
+                ProfileTraceCommand(),
+            ],
         ),
         CommandGroup(
             name="xctrace",

@@ -76,6 +76,7 @@ BUILT_IN_ROOT_ENTRIES: tuple[str, ...] = (
     "notification",
     "open",
     "photos",
+    "profile",
     "record",
     "revoke",
     "rotation",
@@ -118,6 +119,16 @@ BUILT_IN_GROUP_CHILDREN: dict[str, tuple[str, ...]] = {
     "list": ("locale",),
     "notification": ("list", "send", "clear"),
     "photos": ("clear",),
+    "profile": (
+        "leaks",
+        "memgraph",
+        "heap",
+        "sample",
+        "vmmap",
+        "footprint",
+        "resources",
+        "trace",
+    ),
     "record": ("video",),
     "ui": (
         "describe-all",
@@ -144,8 +155,8 @@ BUILT_IN_GROUP_CHILDREN: dict[str, tuple[str, ...]] = {
     "xctrace": ("record",),
 }
 
-BUILT_IN_TERMINAL_COUNT = 93
-BUILT_IN_NODE_COUNT = 110
+BUILT_IN_TERMINAL_COUNT = 101
+BUILT_IN_NODE_COUNT = 119
 
 BUILT_IN_ALIAS_PATHS: tuple[tuple[str, ...], ...] = (
     ("file", "mv"),

@@ -798,6 +798,108 @@ class CodeCoverageFormat(Enum):
     RAW = 1
 
 
+@dataclass(frozen=True)
+class ProfilePid:
+    pid: int
+
+
+@dataclass(frozen=True)
+class ProfileBundleID:
+    """The running process of an installed application."""
+
+    bundle_id: str
+
+
+@dataclass(frozen=True)
+class ProfileLaunch:
+    """Launches the application, so the profile covers its startup. Only `TraceProfile` supports it."""
+
+    bundle_id: str
+
+
+@dataclass(frozen=True)
+class ProfileAllProcesses:
+    """Every process on the target. Only `TraceProfile` supports it."""
+
+
+ProfileTarget = Union[ProfilePid, ProfileBundleID, ProfileLaunch, ProfileAllProcesses]
+
+
+@dataclass(frozen=True)
+class LeaksProfile:
+    pass
+
+
+@dataclass(frozen=True)
+class MemgraphProfile:
+    pass
+
+
+@dataclass(frozen=True)
+class HeapProfile:
+    pass
+
+
+@dataclass(frozen=True)
+class SampleProfile:
+    seconds: int | None = None
+
+
+@dataclass(frozen=True)
+class VmmapProfile:
+    pass
+
+
+@dataclass(frozen=True)
+class FootprintProfile:
+    pass
+
+
+class ResourceSampleScope(Enum):
+    APP = 0
+    APP_AND_HELPERS = 1
+
+
+@dataclass(frozen=True)
+class ResourcesProfile:
+    """Samples until stopped."""
+
+    interval_ms: int | None = None
+    scope: ResourceSampleScope = ResourceSampleScope.APP
+
+
+@dataclass(frozen=True)
+class TraceProfile:
+    """Records until the duration elapses or it is stopped. Empty `schemas` exports the tables the template is known for."""
+
+    template: str | None = None
+    schemas: tuple[str, ...] = ()
+    duration: float | None = None
+    row_limit: int | None = None
+
+
+ProfileKind = Union[
+    LeaksProfile,
+    MemgraphProfile,
+    HeapProfile,
+    SampleProfile,
+    VmmapProfile,
+    FootprintProfile,
+    ResourcesProfile,
+    TraceProfile,
+]
+
+
+@dataclass(frozen=True)
+class ProfileResult:
+    # The parsed report, keyed as its JSON, or None for `ResourcesProfile`, which reports through samples.
+    report: dict[str, object] | None
+    # What the tool wrote, unparsed.
+    tool_output: bytes
+    # Where the file the profiler wrote was written, when an artifact path was given.
+    artifact: str | None
+
+
 class Companion(ABC):
     @abstractmethod
     async def create(
@@ -1283,6 +1385,22 @@ class Client(ABC):
         timings: InstrumentsTimings | None = None,
         post_process_arguments: list[str] | None = None,
     ) -> list[str]:
+        pass
+
+    @abstractmethod
+    async def profile(
+        self,
+        kind: ProfileKind,
+        target: ProfileTarget,
+        stop: asyncio.Event,
+        artifact_path: str | None = None,
+        on_sample: Callable[[dict[str, object]], None] | None = None,
+    ) -> ProfileResult:
+        """Profiles `target` until the profiler finishes, or until `stop` is set for the kinds that accept it.
+
+        The file the profiler writes, such as the memory graph or the trace bundle, is written to `artifact_path`
+        when given. Each sample is passed to `on_sample`, keyed as its JSON, as it is taken.
+        """
         pass
 
     @abstractmethod
