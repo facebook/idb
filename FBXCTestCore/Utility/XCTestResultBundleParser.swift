@@ -174,7 +174,7 @@ struct XCResultTool: XCResultReading {
   }
 }
 
-final class XCTestResultBundleParser {
+enum XCTestResultBundleParser {
 
   // MARK: - Public
 
