@@ -27,7 +27,7 @@ final class MacInstallHarness {
     try FileManager.default.createDirectory(at: scratch, withIntermediateDirectories: true)
     executor = IDBCommandExecutor(
       target: target,
-      storageManager: try IDBStorageManager.manager(forTarget: target, logger: logger),
+      storageManager: try IDBStorageManager(target: target, logger: logger),
       temporaryDirectory: TemporaryDirectory(logger: logger),
       debugserverPort: 0,
       logger: IDBLogger(loggers: [logger])

@@ -384,7 +384,7 @@ private func runActivate(_ ecid: String, logger: ControlCoreLogger) async throws
 
 private func runClean(_ udid: String, userDefaults: UserDefaults, xcodeAvailable: Bool, logger: IDBLogger) async throws {
   let target = try await targetForUDID(udid, userDefaults: userDefaults, xcodeAvailable: xcodeAvailable, warmUp: true, logger: logger)
-  let storageManager = try IDBStorageManager.manager(forTarget: target, logger: logger)
+  let storageManager = try IDBStorageManager(target: target, logger: logger)
   let commandExecutor = IDBCommandExecutor(
     target: target,
     storageManager: storageManager,
@@ -408,7 +408,7 @@ private func runCompanionServer(_ udid: String, userDefaults: UserDefaults, xcod
   reporter.report(EventReporterSubject(forEvent: "launched"))
 
   let temporaryDirectory = TemporaryDirectory(logger: logger)
-  let storageManager = try IDBStorageManager.manager(forTarget: target, logger: logger)
+  let storageManager = try IDBStorageManager(target: target, logger: logger)
 
   let ports = IDBPortsConfiguration(arguments: userDefaults)
 

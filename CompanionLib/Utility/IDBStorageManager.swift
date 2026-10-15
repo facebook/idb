@@ -419,25 +419,26 @@ public final class IDBStorageManager {
     self.logger = logger
   }
 
-  public static func manager(forTarget target: any Target, logger: ControlCoreLogger) throws -> IDBStorageManager {
+  /// Prepares the storage directories for `target`, creating them if needed.
+  public convenience init(target: any Target, logger: ControlCoreLogger) throws {
     let queue = DispatchQueue(label: "com.facebook.idb.bundle_storage")
 
-    let xctestBasePath = try prepareStoragePath(withName: IdbTestBundlesFolder, target: target)
+    let xctestBasePath = try IDBStorageManager.prepareStoragePath(withName: IdbTestBundlesFolder, target: target)
     let xctest = XCTestBundleStorage(target: target, basePath: xctestBasePath, queue: queue, logger: logger, relocateLibraries: true)
 
-    let appBasePath = try prepareStoragePath(withName: IdbApplicationsFolder, target: target)
+    let appBasePath = try IDBStorageManager.prepareStoragePath(withName: IdbApplicationsFolder, target: target)
     let application = BundleStorage(target: target, basePath: appBasePath, queue: queue, logger: logger, relocateLibraries: false)
 
-    let dylibBasePath = try prepareStoragePath(withName: IdbDylibsFolder, target: target)
+    let dylibBasePath = try IDBStorageManager.prepareStoragePath(withName: IdbDylibsFolder, target: target)
     let dylib = FileStorage(target: target, basePath: dylibBasePath, queue: queue, logger: logger)
 
-    let dsymBasePath = try prepareStoragePath(withName: IdbDsymsFolder, target: target)
+    let dsymBasePath = try IDBStorageManager.prepareStoragePath(withName: IdbDsymsFolder, target: target)
     let dsym = FileStorage(target: target, basePath: dsymBasePath, queue: queue, logger: logger)
 
-    let frameworkBasePath = try prepareStoragePath(withName: IdbFrameworksFolder, target: target)
+    let frameworkBasePath = try IDBStorageManager.prepareStoragePath(withName: IdbFrameworksFolder, target: target)
     let framework = BundleStorage(target: target, basePath: frameworkBasePath, queue: queue, logger: logger, relocateLibraries: true)
 
-    return IDBStorageManager(xctest: xctest, application: application, dylib: dylib, dsym: dsym, framework: framework, logger: logger)
+    self.init(xctest: xctest, application: application, dylib: dylib, dsym: dsym, framework: framework, logger: logger)
   }
 
   public func clean() throws {
