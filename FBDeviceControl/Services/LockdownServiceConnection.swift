@@ -287,12 +287,6 @@ public final class LockdownServiceConnection: CustomStringConvertible {
     return reader
   }
 
-  func writeWithConsumerWriting(on queue: DispatchQueue) -> any DataConsumer & DataConsumerLifecycle {
-    AsynchronousDataConsumer(queue: queue) { [weak self] data in
-      try? self?.send(data)
-    }
-  }
-
   // MARK: - Private
 
   fileprivate func send(_ buffer: UnsafeRawPointer, size: Int) -> Int32 {
