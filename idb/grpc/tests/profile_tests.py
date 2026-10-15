@@ -13,6 +13,8 @@ import os
 import tarfile
 import tempfile
 
+from grpclib.const import Status
+from grpclib.exceptions import GRPCError
 from idb.common.types import (
     LeaksProfile,
     MemgraphProfile,
@@ -135,9 +137,11 @@ class _ProfileStream:
         self,
         *initial: ProfileResponse | None,
         after_end: tuple[ProfileResponse, ...] = (),
+        trailing_error: GRPCError | None = None,
     ) -> None:
         self.sent: list[ProfileRequest] = []
         self.ended = False
+        self._trailing_error = trailing_error
         self._after_end = after_end
         self._responses: asyncio.Queue[ProfileResponse | None] = asyncio.Queue()
         for response in initial:
@@ -146,8 +150,12 @@ class _ProfileStream:
     async def __aenter__(self) -> _ProfileStream:
         return self
 
-    async def __aexit__(self, *_args: object) -> None:
-        pass
+    async def __aexit__(
+        self, _exc_type: object, exception: BaseException | None, _traceback: object
+    ) -> None:
+        # grpclib only reads the trailing status when the block exits without an exception.
+        if exception is None and self._trailing_error is not None:
+            raise self._trailing_error
 
     def __aiter__(self) -> _ProfileStream:
         return self
@@ -228,6 +236,18 @@ class ProfileClientTests(TestCase):
             await client.profile(
                 ResourcesProfile(), ProfilePid(pid=42), asyncio.Event()
             )
+
+    async def test_a_failed_profile_reports_the_companions_error(self) -> None:
+        stream = _ProfileStream(
+            trailing_error=GRPCError(Status.INTERNAL, "leaks exited with code 255")
+        )
+        client, _ = make_client("profile", stream)
+        stop = asyncio.Event()
+        stop.set()
+
+        # BUG: the companion's error is replaced by a generic one — flipped in the following commit
+        with self.assertRaisesRegex(ProfileException, "without a result"):
+            await client.profile(LeaksProfile(), ProfilePid(pid=42), stop)
 
     async def test_a_single_file_artifact_is_written_to_the_path(self) -> None:
         stream = _ProfileStream(
