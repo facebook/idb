@@ -75,18 +75,6 @@ extension AXTreeRead {
     return (traverse, roundTrips)
   }
 
-  /// The envelope's automation object, or nil when the guest did not send one.
-  static func automation(fromResponse response: [String: Any]) -> AccessibilityAutomationState? {
-    guard let object = response[AXWire.Envelope.automation.rawValue] as? [String: Any],
-      let enabled = object[AXWire.Automation.enabled.rawValue] as? Bool
-    else {
-      return nil
-    }
-    // `asserted` absent reads as false: a guest that only reports the mode has asserted nothing.
-    let asserted = (object[AXWire.Automation.asserted.rawValue] as? Bool) ?? false
-    return AccessibilityAutomationState(enabled: enabled, asserted: asserted)
-  }
-
   /// An empty response is a protocol violation — an app always has a root element. `truncated`
   /// defaults to `false` when the guest omits it.
   init(wholeTreeResponse data: Data, pid: pid_t) throws {
@@ -97,7 +85,7 @@ extension AXTreeRead {
     let truncated = (response[AXWire.Envelope.truncated.rawValue] as? Bool) ?? false
     self.init(
       tree: tree, pid: pid, truncated: truncated, modal: Self.modal(fromResponse: response),
-      automation: Self.automation(fromResponse: response)
+      automation: AccessibilityAutomationState(bridgeResponse: response)
     )
     self.phases = Self.guestPhases(fromResponse: response)
   }
@@ -123,7 +111,7 @@ extension AXTreeRead {
     let truncated = (response[AXWire.Envelope.truncated.rawValue] as? Bool) ?? false
     self.init(
       tree: tree, pid: pid, truncated: truncated, modal: Self.modal(fromResponse: response),
-      automation: Self.automation(fromResponse: response)
+      automation: AccessibilityAutomationState(bridgeResponse: response)
     )
     self.phases = Self.guestPhases(fromResponse: response)
   }
@@ -184,5 +172,20 @@ extension AXTreeRead {
       throw AXBridgeError.guestFailure("pid \(pid): ok response without a tree or empty flag")
     }
     return tree
+  }
+}
+
+extension AccessibilityAutomationState {
+
+  /// The automation object of an axbridge response envelope, or nil when the guest did not send one.
+  init?(bridgeResponse response: [String: Any]) {
+    guard let object = response[AXWire.Envelope.automation.rawValue] as? [String: Any],
+      let enabled = object[AXWire.Automation.enabled.rawValue] as? Bool
+    else {
+      return nil
+    }
+    // `asserted` absent reads as false: a guest that only reports the mode has asserted nothing.
+    let asserted = (object[AXWire.Automation.asserted.rawValue] as? Bool) ?? false
+    self.init(enabled: enabled, asserted: asserted)
   }
 }
