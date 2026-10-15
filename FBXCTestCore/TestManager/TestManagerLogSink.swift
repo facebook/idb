@@ -13,7 +13,7 @@ protocol TestManagerLogSink: AnyObject {
   func log(_ message: String)
 }
 
-final class ControlCoreLoggerSink: NSObject, TestManagerLogSink {
+final class ControlCoreLoggerSink: TestManagerLogSink {
   private let logger: ControlCoreLogger
 
   init(_ logger: ControlCoreLogger) {
