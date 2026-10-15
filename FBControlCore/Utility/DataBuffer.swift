@@ -7,14 +7,7 @@
 
 import Foundation
 
-public enum DataBuffer {
-  /// Data for a newline.
-  public static func newlineTerminal() -> Data {
-    newline
-  }
-
-  private static let newline = Data("\n".utf8)
-}
+private let newline = Data("\n".utf8)
 
 /// A buffer that accumulates the data it consumes. All methods are fully synchronized.
 /// @unchecked Sendable: `buffer` is only touched under `lock`.
@@ -124,7 +117,7 @@ public final class ConsumableBuffer: AccumulatingBuffer, @unchecked Sendable {
 
   /// Consume a line if one is available, returning it as Data.
   public func consumeLineData() -> Data? {
-    consume(until: DataBuffer.newlineTerminal())
+    consume(until: newline)
   }
 
   /// Consume a line if one is available, returning it as a String.
