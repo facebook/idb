@@ -90,7 +90,7 @@ extension OToolError: LocalizedError {
   }
 }
 
-final class OToolOperation {
+enum OToolOperation {
 
   public static func listSanitiserDylibsRequired(byBundle testBundlePath: String) async throws -> [String] {
     guard let bundle = Bundle(path: testBundlePath) else {
