@@ -186,7 +186,8 @@ final class AXTranslationRequest {
   /// Sends this request's translator requests itself, over its transport.
   private var rawReader: AXRawTranslationReader {
     AXRawTranslationReader(
-      transport: transport, clientType: clientType, timeout: requestTimeoutSeconds, collector: collector, token: token)
+      transport: transport, clientType: clientType, timeout: requestTimeoutSeconds, collector: collector, token: token,
+      queryTimeout: timing.queryTimeout)
   }
 
   // MARK: - A single named element

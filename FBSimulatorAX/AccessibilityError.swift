@@ -98,6 +98,10 @@ public enum AccessibilityError: LocalizedError, Sendable {
       return String(
         format: "The simulator's accessibility service did not answer a %@ request within %.1fs, %.1fs into the read; retry the read.",
         kind, timeout, elapsed)
+    case let .serviceNotAnswering(.query(timeout), elapsed):
+      return String(
+        format: "The simulator's accessibility service did not answer within the query's %.1fs timeout, %.1fs into the read; retry the read.",
+        timeout, elapsed)
     case .springBoardNotRunning:
       return "SpringBoard is not running on the simulator, so there is no frontmost application to describe. Boot/relaunch the simulator (or restart SpringBoard) and retry."
     }
@@ -115,4 +119,6 @@ public enum AccessibilityServiceSilence: Sendable, Equatable {
   /// One request, named by its kind as telemetry spells it (`frontmost`, `multiple_attribute`, …), went
   /// unanswered for `timeout`.
   case request(kind: String, timeout: TimeInterval)
+  /// The whole query ran out of its `timeout` before the service had answered everything it needed.
+  case query(timeout: TimeInterval)
 }

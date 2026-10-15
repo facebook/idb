@@ -30,6 +30,8 @@ struct AXRawTranslationReader {
   let timeout: TimeInterval
   let collector: AccessibilityProfilingCollector
   let token: String
+  /// The longest the whole read may take, measured from when its collector began.
+  var queryTimeout: TimeInterval = .infinity
 
   /// Reads `root` and, as deep as `plan` asks, its descendants. An element listed among its own
   /// descendants — an application can answer with a cycle — is not read again below itself. An element
@@ -139,11 +141,20 @@ struct AXRawTranslationReader {
     request.requestType = UInt64(type.rawValue)
     request.clientType = clientType.rawValue
     request.parameters = parameters
+    let remaining = queryTimeout - collector.elapsed
+    guard remaining > 0 else {
+      throw AccessibilityError.serviceNotAnswering(.query(timeout: queryTimeout), elapsed: collector.elapsed)
+    }
+    let wait = min(timeout, remaining)
     let start = CFAbsoluteTimeGetCurrent()
-    let response = transport.send(request, timeout: timeout)
+    let response = transport.send(request, timeout: wait)
     collector.recordRequest(type: request.requestType, duration: CFAbsoluteTimeGetCurrent() - start, answered: response != nil)
     guard let response else {
-      throw AccessibilityError.serviceNotAnswering(.request(kind: timing.kindName, timeout: timeout), elapsed: collector.elapsed)
+      // Blamed on the query whenever it has run out, including when both ran out together.
+      let elapsed = collector.elapsed
+      let silence: AccessibilityServiceSilence =
+        elapsed >= queryTimeout ? .query(timeout: queryTimeout) : .request(kind: timing.kindName, timeout: timeout)
+      throw AccessibilityError.serviceNotAnswering(silence, elapsed: elapsed)
     }
     return response
   }

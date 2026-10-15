@@ -147,6 +147,40 @@ final class AXReadTimeTests {
 
   // MARK: - Timing
 
+  @Test func aQueryThatRunsOutOfTimeStopsAtItsTimeout() {
+    let children = (2...6).map { Self.reference(UInt64($0)) }
+    var elements: [UInt64: [BridgeAXTranslatorAttribute: Any]] = [1: [.role: 1, .children: children]]
+    for child in children {
+      elements[child.objectID] = [.role: 2]
+    }
+    let transport = AXRawTranslationTransportDouble(elements: elements, delay: 0.05)
+    let reader = AXRawTranslationReader(
+      transport: transport, clientType: .noClient, timeout: 1, collector: AccessibilityProfilingCollector(), token: "token",
+      queryTimeout: 0.12)
+
+    #expect {
+      _ = try reader.read(Self.reference(1), plan: AXReadPlan(attributes: [.role], depth: .unlimited))
+    } throws: { error in
+      guard case AccessibilityError.serviceNotAnswering(.query(timeout: 0.12), _) = error else { return false }
+      return true
+    }
+    #expect(transport.requests.count < 6, "the query stopped before reading every element")
+  }
+
+  @Test func anUnansweredRequestThatSpendsTheLastOfTheQueryIsTheQuerysFailure() {
+    let transport = AXRawTranslationTransportDouble(elements: [:], waitsOutUnanswered: true)
+    let reader = AXRawTranslationReader(
+      transport: transport, clientType: .noClient, timeout: 0.1, collector: AccessibilityProfilingCollector(), token: "token",
+      queryTimeout: 0.1)
+
+    #expect {
+      _ = try reader.read(Self.reference(1), plan: AXReadPlan(attributes: [], depth: .limited(0)))
+    } throws: { error in
+      guard case AccessibilityError.serviceNotAnswering(.query(timeout: 0.1), _) = error else { return false }
+      return true
+    }
+  }
+
   @Test func aReadUsesTheSimulatorsTimingUnlessItAsksForItsOwn() async throws {
     let transport = TimeoutRecordingTransportDouble(root: Self.reference(0))
     let commands = try commands(
