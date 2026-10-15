@@ -224,7 +224,7 @@ struct SimulatorDefaults {
       .appendingPathComponent("bin") as NSString
     let fullPath = path.appendingPathComponent("defaults")
     do {
-      let binary = try BinaryDescriptor.binary(withPath: fullPath)
+      let binary = try BinaryDescriptor(path: fullPath)
       return binary.path
     } catch {
       fatalError("Could not locate defaults at expected location '\(fullPath)', error \(error)")

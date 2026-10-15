@@ -79,12 +79,13 @@ public struct BinaryDescriptor: Hashable, Sendable, CustomStringConvertible {
   }
 
   /// The descriptor for the binary at `path`, by parsing its Mach-O headers.
-  public static func binary(withPath path: String) throws -> BinaryDescriptor {
+  /// Reads the Mach-O binary at `path`.
+  public init(path: String) throws {
     guard FileManager.default.fileExists(atPath: path) else {
       throw BinaryDescriptorError.binaryMissing(path: path)
     }
     let file = try MachOFile(path: path)
-    return BinaryDescriptor(
+    self.init(
       name: (path as NSString).lastPathComponent,
       architectures: Set(file.architectures()),
       uuid: file.uuid(),

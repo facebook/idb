@@ -109,7 +109,7 @@ public struct BundleDescriptor: Hashable, Sendable, CustomStringConvertible {
     guard let binaryPath = bundle.executablePath else {
       throw BundleDescriptorError.binaryPathUnavailable(bundlePath: bundle.bundlePath)
     }
-    return try BinaryDescriptor.binary(withPath: binaryPath)
+    return try BinaryDescriptor(path: binaryPath)
   }
 
   private static func bundleNameForBundle(_ bundle: Bundle) -> String {

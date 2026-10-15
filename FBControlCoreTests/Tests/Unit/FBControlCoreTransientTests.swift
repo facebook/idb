@@ -21,8 +21,8 @@ struct FBControlCoreTransientTests {
   /// Two descriptors carrying separately parsed but equal binaries are equal.
   @Test
   func bundleDescriptorWithBinaryEquality() throws {
-    let firstBinary = try BinaryDescriptor.binary(withPath: "/usr/bin/codesign")
-    let secondBinary = try BinaryDescriptor.binary(withPath: "/usr/bin/codesign")
+    let firstBinary = try BinaryDescriptor(path: "/usr/bin/codesign")
+    let secondBinary = try BinaryDescriptor(path: "/usr/bin/codesign")
 
     let a = BundleDescriptor(name: "App", identifier: "com.test", path: "/a", binary: firstBinary)
     let b = BundleDescriptor(name: "App", identifier: "com.test", path: "/a", binary: secondBinary)
@@ -32,8 +32,8 @@ struct FBControlCoreTransientTests {
 
   @Test
   func bundleDescriptorEqualityComparesEveryField() throws {
-    let binary = try BinaryDescriptor.binary(withPath: "/usr/bin/codesign")
-    let otherBinary = try BinaryDescriptor.binary(withPath: "/usr/bin/true")
+    let binary = try BinaryDescriptor(path: "/usr/bin/codesign")
+    let otherBinary = try BinaryDescriptor(path: "/usr/bin/true")
     let base = BundleDescriptor(name: "App", identifier: "com.test", path: "/a", binary: binary)
 
     #expect(base == BundleDescriptor(name: "App", identifier: "com.test", path: "/a", binary: binary))
@@ -46,8 +46,8 @@ struct FBControlCoreTransientTests {
 
   @Test
   func bundleDescriptorEqualDescriptorsHashEqually() throws {
-    let a = BundleDescriptor(name: "App", identifier: "com.test", path: "/a", binary: try BinaryDescriptor.binary(withPath: "/usr/bin/codesign"))
-    let b = BundleDescriptor(name: "App", identifier: "com.test", path: "/a", binary: try BinaryDescriptor.binary(withPath: "/usr/bin/codesign"))
+    let a = BundleDescriptor(name: "App", identifier: "com.test", path: "/a", binary: try BinaryDescriptor(path: "/usr/bin/codesign"))
+    let b = BundleDescriptor(name: "App", identifier: "com.test", path: "/a", binary: try BinaryDescriptor(path: "/usr/bin/codesign"))
     let c = BundleDescriptor(name: "App", identifier: "com.test", path: "/c", binary: nil)
 
     #expect(a.hashValue == b.hashValue)
@@ -111,7 +111,7 @@ struct FBControlCoreTransientTests {
 
   @Test
   func installedApplicationEquality() throws {
-    let binary = try BinaryDescriptor.binary(withPath: "/usr/bin/codesign")
+    let binary = try BinaryDescriptor(path: "/usr/bin/codesign")
     let bundle = BundleDescriptor(name: "App", identifier: "com.test", path: "/tmp", binary: binary)
     let a = InstalledApplication(bundle: bundle, installType: .user, dataContainer: "/data")
     let b = InstalledApplication(bundle: bundle, installType: .user, dataContainer: "/data")
@@ -125,7 +125,7 @@ struct FBControlCoreTransientTests {
   /// applications differing only by their container are unequal yet share a hash bucket.
   @Test
   func installedApplicationHashIgnoresDataContainer() throws {
-    let binary = try BinaryDescriptor.binary(withPath: "/usr/bin/codesign")
+    let binary = try BinaryDescriptor(path: "/usr/bin/codesign")
     let bundle = BundleDescriptor(name: "App", identifier: "com.test", path: "/tmp", binary: binary)
     let a = InstalledApplication(bundle: bundle, installType: .user, dataContainer: "/data/one")
     let b = InstalledApplication(bundle: bundle, installType: .user, dataContainer: "/data/two")

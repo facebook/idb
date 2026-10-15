@@ -101,7 +101,7 @@ public struct SimulatorRuntimeToolCommands: Sendable {
       throw SimulatorLogError.runtimeRootUnavailable
     }
     let path = (root as NSString).appendingPathComponent(relativePath)
-    let binary = try BinaryDescriptor.binary(withPath: path)
+    let binary = try BinaryDescriptor(path: path)
     return binary.path
   }
 }

@@ -47,7 +47,7 @@ final class BinaryDescriptorTests: XCTestCase {
 
   func testFatBinary() throws {
     // xctest is a fat binary.
-    let descriptor = try BinaryDescriptor.binary(withPath: ProcessInfo.processInfo.arguments.first!)
+    let descriptor = try BinaryDescriptor(path: ProcessInfo.processInfo.arguments.first!)
     XCTAssertNotNil(descriptor)
     XCTAssertNotNil(descriptor.uuid)
 
@@ -57,7 +57,7 @@ final class BinaryDescriptorTests: XCTestCase {
 
   func test64BitMacosCommand() throws {
     // codesign is not a fat binary.
-    let descriptor = try BinaryDescriptor.binary(withPath: "/usr/bin/codesign")
+    let descriptor = try BinaryDescriptor(path: "/usr/bin/codesign")
     XCTAssertNotNil(descriptor)
     XCTAssertNotNil(descriptor.uuid)
   }
@@ -66,7 +66,7 @@ final class BinaryDescriptorTests: XCTestCase {
 
   func testFatBinaryYieldsEverySliceArchitecture() throws {
     try XCTSkipUnless(FileManager.default.fileExists(atPath: Self.fatBinary))
-    let descriptor = try BinaryDescriptor.binary(withPath: Self.fatBinary)
+    let descriptor = try BinaryDescriptor(path: Self.fatBinary)
     XCTAssertEqual(Set(descriptor.architectures.map(\.rawValue)), ["x86_64", "arm64"])
     XCTAssertEqual(descriptor.name, "echo")
     XCTAssertEqual(descriptor.path, Self.fatBinary)
@@ -75,20 +75,20 @@ final class BinaryDescriptorTests: XCTestCase {
 
   func testThinBinaryYieldsOneArchitecture() throws {
     let path = try temporaryFile(named: "thin", contents: Self.thinBinary)
-    let descriptor = try BinaryDescriptor.binary(withPath: path)
+    let descriptor = try BinaryDescriptor(path: path)
     XCTAssertEqual(descriptor.architectures, [.arm64])
     XCTAssertEqual(descriptor.uuid, UUID(uuidString: "00010203-0405-0607-0809-0A0B0C0D0E0F"))
   }
 
   func testRpathsAreReadFromTheLoadCommands() throws {
     try XCTSkipUnless(FileManager.default.fileExists(atPath: Self.binaryWithRpaths))
-    let descriptor = try BinaryDescriptor.binary(withPath: Self.binaryWithRpaths)
+    let descriptor = try BinaryDescriptor(path: Self.binaryWithRpaths)
     XCTAssertEqual(try descriptor.rpaths(), ["@executable_path/../Frameworks", "@loader_path/../Frameworks"])
   }
 
   func testABinaryWithoutRpathsYieldsNone() throws {
     try XCTSkipUnless(FileManager.default.fileExists(atPath: "/usr/bin/codesign"))
-    let descriptor = try BinaryDescriptor.binary(withPath: "/usr/bin/codesign")
+    let descriptor = try BinaryDescriptor(path: "/usr/bin/codesign")
     XCTAssertEqual(try descriptor.rpaths(), [])
   }
 
@@ -96,7 +96,7 @@ final class BinaryDescriptorTests: XCTestCase {
 
   func testAMissingFileIsReported() {
     let path = "/var/empty/no-such-binary"
-    XCTAssertThrowsError(try BinaryDescriptor.binary(withPath: path)) { error in
+    XCTAssertThrowsError(try BinaryDescriptor(path: path)) { error in
       XCTAssertEqual(error.localizedDescription, "Binary does not exist at path \(path)")
     }
   }
@@ -106,14 +106,14 @@ final class BinaryDescriptorTests: XCTestCase {
     try XCTSkipIf(geteuid() == 0)
     let path = try temporaryFile(named: "unreadable", contents: Data([0xcf, 0xfa, 0xed, 0xfe]))
     try FileManager.default.setAttributes([.posixPermissions: 0], ofItemAtPath: path)
-    XCTAssertThrowsError(try BinaryDescriptor.binary(withPath: path)) { error in
+    XCTAssertThrowsError(try BinaryDescriptor(path: path)) { error in
       XCTAssertEqual(error.localizedDescription, "Could not fopen file at path \(path)")
     }
   }
 
   func testAFileWithoutMachOMagicIsReported() throws {
     let path = try temporaryFile(named: "text", contents: Data("not a mach-o binary".utf8))
-    XCTAssertThrowsError(try BinaryDescriptor.binary(withPath: path)) { error in
+    XCTAssertThrowsError(try BinaryDescriptor(path: path)) { error in
       XCTAssertTrue(error.localizedDescription.hasPrefix("Could not interpret magic "), error.localizedDescription)
       XCTAssertTrue(error.localizedDescription.hasSuffix(" in file \(path)"), error.localizedDescription)
     }
