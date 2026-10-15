@@ -1,0 +1,152 @@
+/*
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ */
+
+@preconcurrency import AccessibilityPlatformTranslation
+@testable import FBSimulatorAX
+import FBSimulatorBridgeProtocol
+@testable import FBSimulatorControl
+import Foundation
+import Testing
+
+/// Answers root lookups with `root` and leaves every other request unanswered, as a service that resolves
+/// the application but then stops answering does.
+private final class RootOnlyTransportDouble: AXTranslationTransport, @unchecked Sendable {
+  let kind = AXTranslationTransportKind.bridge
+  private let root: AXPTranslationObjectDouble
+  private let lock = NSLock()
+  private var _requestTypes: [UInt64] = []
+
+  init(root: AXPTranslationObjectDouble) {
+    self.root = root
+  }
+
+  var requestTypes: [UInt64] { lock.withLock { _requestTypes } }
+
+  func send(_ request: AXPTranslatorRequest, timeout: TimeInterval) -> AXPTranslatorResponse? {
+    lock.withLock { _requestTypes.append(request.requestType) }
+    switch BridgeAXTranslatorRequestType(rawValue: Int(request.requestType)) {
+    case .application, .frontmostApplication, .hitTest:
+      let response = AXPTranslatorResponse.empty() as? AXPTranslatorResponse
+      response?.setValue(root, forKey: "resultData")
+      return response
+    case .attribute, .multipleAttribute, nil:
+      return nil
+    }
+  }
+}
+
+@Suite("How an accessibility read spends its time", .serialized)
+final class AXReadTimeTests {
+
+  private static let pid: pid_t = 12345
+
+  private static func reference(_ objectID: UInt64) -> AXPTranslationObjectDouble {
+    AXPTranslationObjectDouble(pid: pid, objectID: objectID)
+  }
+
+  private let fixture = AccessibilityTestFixture.bootedSimulator()
+  /// Held here: the commands hold their simulator weakly.
+  private var simulator: Simulator?
+
+  deinit {
+    fixture.tearDown()
+  }
+
+  private func commands(
+    transport: any AXTranslationTransport, launchCtl: any LaunchCtlCommands
+  ) throws -> SimulatorAccessibilityCommands {
+    fixture.rootElement = AccessibilityTestElementBuilder.application(withLabel: "App", frame: .zero, children: [])
+    try fixture.setUp()
+    let simulator = SimulatorTestSupport.testableSimulator(withDevice: fixture.device)
+    self.simulator = simulator
+    return SimulatorAccessibilityCommands(
+      simulator: simulator,
+      translationDispatcher: Simulator.createAccessibilityTranslationDispatcher(withTranslator: fixture.translator),
+      transport: transport, launchCtl: launchCtl,
+      displays: DisplayCommandsDouble([.success(.failed(.unsupported("displayinfo")))]))
+  }
+
+  // MARK: - Unanswered requests
+
+  @Test func anUnansweredElementWaitsOutItsTimeoutAndTheReadCarriesOn() {
+    let transport = AXRawTranslationTransportDouble(
+      elements: [1: [.role: 1, .label: "App", .children: [Self.reference(2), Self.reference(3)]]],
+      waitsOutUnanswered: true)
+    let reader = AXRawTranslationReader(
+      transport: transport, clientType: .noClient, timeout: 0.05, collector: AccessibilityProfilingCollector(), token: "token")
+
+    let start = ContinuousClock.now
+    let root = reader.read(Self.reference(1), plan: AXReadPlan(keys: AXKeys.defaultSet, depth: .unlimited))
+    let elapsed = ContinuousClock.now - start
+
+    // BUG: each unanswered element waits out the whole timeout, and the read reports it as an element with no
+    // values rather than failing — flipped later in the stack.
+    #expect(root.label == "App")
+    #expect(root.children.count == 2)
+    #expect(root.children.allSatisfy { $0.role == nil && $0.label == nil })
+    #expect(elapsed >= .milliseconds(100), "two unanswered requests, each waited out")
+  }
+
+  @Test func anUnansweredFrontmostLookupIsReportedAsNoElement() async throws {
+    let commands = try commands(
+      transport: AXRawTranslationTransportDouble(elements: [:]),
+      launchCtl: LaunchCtlDouble.with(running: ["com.apple.SpringBoard": Self.pid]))
+
+    do {
+      _ = try await commands.resolveElement(for: .frontmost, clientType: .noClient)
+      Issue.record("an unanswered frontmost lookup must fail the read")
+    } catch AccessibilityError.noTranslationObject {
+      // BUG: the service did not answer, yet the read reports that it named no element — flipped later in the
+      // stack.
+    }
+  }
+
+  @Test func aFrontmostReadWhoseElementRequestsGoUnansweredStillSucceeds() async throws {
+    let transport = RootOnlyTransportDouble(root: Self.reference(0))
+    let commands = try commands(
+      transport: transport, launchCtl: LaunchCtlDouble.with(running: ["com.apple.SpringBoard": Self.pid]))
+
+    let element = try await commands.resolveElement(for: .frontmost, clientType: .noClient)
+    defer { element.close() }
+    let response = try await element.serialize(with: AccessibilityRequestOptions())
+
+    // BUG: the SpringBoard staleness check and the root's own read both went unanswered, and the read still
+    // reports success with an element that has no values — flipped later in the stack.
+    #expect(response.translatorMetrics?.elementCount == 1)
+    #expect(
+      transport.requestTypes.filter { $0 == UInt64(BridgeAXTranslatorRequestType.multipleAttribute.rawValue) }.count == 2,
+      "the staleness check's request and the root's read")
+  }
+
+  // MARK: - Cancellation
+
+  @Test func cancellingAReadDoesNotStopItsWalk() async throws {
+    let children = (2...6).map { Self.reference(UInt64($0)) }
+    var elements: [UInt64: [BridgeAXTranslatorAttribute: Any]] = [1: [.role: 1, .children: children]]
+    for child in children {
+      elements[child.objectID] = [.role: 2]
+    }
+    let transport = AXRawTranslationTransportDouble(elements: elements, delay: 0.05)
+    let dispatcher = Simulator.createAccessibilityTranslationDispatcher(withTranslator: AXPTranslatorDouble())
+    let request = AXTranslationRequest(kind: .frontmostApplication, transport: transport)
+    let root = AXElementHandle.translation(Self.reference(1))
+
+    let read = Task {
+      try await dispatcher.performRead(of: root, for: request, reads: .raw) {
+        request.snapshot(of: root, plan: AXReadPlan(attributes: [.role], depth: .unlimited), reads: .raw)
+      }
+    }
+    try await Task.sleep(nanoseconds: 60 * NSEC_PER_MSEC)
+    read.cancel()
+    let snapshot = try await read.value
+
+    // BUG: the read's task was cancelled after its first request, and the walk still read every element —
+    // flipped later in the stack.
+    #expect(snapshot.children.count == 5)
+    #expect(transport.requests.count == 6)
+  }
+}

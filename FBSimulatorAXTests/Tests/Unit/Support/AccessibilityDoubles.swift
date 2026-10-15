@@ -374,10 +374,16 @@ final class AXRawTranslationTransportDouble: AXTranslationTransport, @unchecked 
   private let lock = NSLock()
   private var _requests: [AXPTranslatorRequest] = []
   private let elements: [UInt64: [BridgeAXTranslatorAttribute: Any]]
+  private let waitsOutUnanswered: Bool
+  private let delay: TimeInterval
 
-  /// An object ID the fixture has no entry for is not answered, as a timed-out send is not.
-  init(elements: [UInt64: [BridgeAXTranslatorAttribute: Any]]) {
+  /// An object ID the fixture has no entry for is not answered, as a timed-out send is not; with
+  /// `waitsOutUnanswered` it is reported only once the request's timeout has passed, as a real transport
+  /// reports it. `delay` is how long every answer takes.
+  init(elements: [UInt64: [BridgeAXTranslatorAttribute: Any]], waitsOutUnanswered: Bool = false, delay: TimeInterval = 0) {
     self.elements = elements
+    self.waitsOutUnanswered = waitsOutUnanswered
+    self.delay = delay
   }
 
   var requests: [AXPTranslatorRequest] {
@@ -400,7 +406,13 @@ final class AXRawTranslationTransportDouble: AXTranslationTransport, @unchecked 
       let values = elements[translation.objectID],
       let response = AXPTranslatorResponse.empty() as? AXPTranslatorResponse
     else {
+      if waitsOutUnanswered {
+        Thread.sleep(forTimeInterval: timeout)
+      }
       return nil
+    }
+    if delay > 0 {
+      Thread.sleep(forTimeInterval: delay)
     }
     let asked = Set(((request.parameters?["attributes"] as? [NSNumber]) ?? []).map(\.intValue))
     let answer = NSMutableDictionary()
