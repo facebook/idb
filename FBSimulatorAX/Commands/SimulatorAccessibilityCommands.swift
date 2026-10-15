@@ -44,7 +44,7 @@ extension Simulator {
 /// Simulator implementation of the accessibility command surface. Resolves the
 /// frontmost / at-point / matching accessibility element via the translation
 /// dispatcher, diagnosing a restarting SpringBoard for frontmost lookups.
-final class SimulatorAccessibilityCommands: AccessibilityOperations {
+final class SimulatorAccessibilityCommands {
 
   private static let springBoardServiceName = "com.apple.SpringBoard"
 
@@ -137,8 +137,11 @@ final class SimulatorAccessibilityCommands: AccessibilityOperations {
     }
   }
 
-  // MARK: - AccessibilityOperations
+  // MARK: - Resolution
 
+  /// Resolves a query to a concrete accessibility element via the point / matching / frontmost
+  /// mechanism. `clientType` is carried by every translator request made for the element, from
+  /// resolution through serialization. Callers own the returned element and must `close()` it.
   func resolveElement(for query: AccessibilityElementQuery, clientType: AXClientType) async throws -> AccessibilityElement {
     try validateAccessibility()
     guard let simulator else {

@@ -21,7 +21,7 @@ final class AccessibilityUIAutomation: UIAutomation, @unchecked Sendable {
 
   private let simulator: Simulator
 
-  private var operations: any AccessibilityOperations { simulator.accessibility }
+  private var operations: SimulatorAccessibilityCommands { simulator.accessibility }
 
   init(simulator: Simulator) {
     self.simulator = simulator

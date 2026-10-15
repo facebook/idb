@@ -552,7 +552,7 @@ typealias AccessibilityResponseHandler = (Any, @escaping (Any?) -> Void) -> Void
 
 // MARK: - Resolution without a client
 
-extension AccessibilityOperations {
+extension SimulatorAccessibilityCommands {
   /// Resolution as a default read would make it.
   func resolveElement(for query: AccessibilityElementQuery) async throws -> AccessibilityElement {
     try await resolveElement(for: query, clientType: AccessibilityRequestOptions().resolvedClientType)
