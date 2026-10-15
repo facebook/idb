@@ -31,10 +31,6 @@ public struct InstrumentsConfiguration: Sendable, CustomStringConvertible {
   public let toolArguments: [String]
   public let timings: InstrumentsTimings
 
-  public static func configuration(withTemplateName templateName: String, targetApplication: String, appEnvironment: [String: String], appArguments: [String], toolArguments: [String], timings: InstrumentsTimings) -> InstrumentsConfiguration {
-    InstrumentsConfiguration(templateName: templateName, targetApplication: targetApplication, appEnvironment: appEnvironment, appArguments: appArguments, toolArguments: toolArguments, timings: timings)
-  }
-
   public init(templateName: String, targetApplication: String, appEnvironment: [String: String], appArguments: [String], toolArguments: [String], timings: InstrumentsTimings) {
     self.templateName = templateName
     self.targetApplication = targetApplication

@@ -174,8 +174,8 @@ final class InstrumentsOperationTests: XCTestCase {
   // MARK: - Launch Arguments
 
   private func configuration(operationDuration: TimeInterval) -> InstrumentsConfiguration {
-    InstrumentsConfiguration.configuration(
-      withTemplateName: "Time Profiler",
+    InstrumentsConfiguration(
+      templateName: "Time Profiler",
       targetApplication: "",
       appEnvironment: [:],
       appArguments: [],
