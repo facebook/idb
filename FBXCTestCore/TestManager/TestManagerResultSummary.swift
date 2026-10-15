@@ -8,13 +8,13 @@
 import Foundation
 
 /// The outcome of a test case.
-@objc public enum TestReportStatus: UInt {
+public enum TestReportStatus: UInt {
   case unknown = 0
   case passed = 1
   case failed = 2
 }
 
-@objc public final class TestManagerResultSummary: NSObject {
+public final class TestManagerResultSummary: Equatable, CustomStringConvertible {
 
   public let testSuite: String
   public let finishTime: Date
@@ -61,26 +61,24 @@ import Foundation
     self.unexpected = unexpected
     self.testDuration = testDuration
     self.totalDuration = totalDuration
-    super.init()
   }
 
-  public override var description: String {
+  public var description: String {
     "Suite \(testSuite) | Finish Time \(finishTime) | Run Count \(runCount) | Failures \(failureCount) | Unexpected \(unexpected) | Test Duration \(testDuration) | Total Duration \(totalDuration)"
   }
 
-  public override func isEqual(_ object: Any?) -> Bool {
-    guard let other = object as? TestManagerResultSummary else { return false }
-    if other === self { return true }
-    return runCount == other.runCount
-      && failureCount == other.failureCount
-      && unexpected == other.unexpected
-      && testDuration == other.testDuration
-      && totalDuration == other.totalDuration
-      && testSuite == other.testSuite
-      && finishTime == other.finishTime
+  public static func == (lhs: TestManagerResultSummary, rhs: TestManagerResultSummary) -> Bool {
+    if lhs === rhs { return true }
+    return lhs.runCount == rhs.runCount
+      && lhs.failureCount == rhs.failureCount
+      && lhs.unexpected == rhs.unexpected
+      && lhs.testDuration == rhs.testDuration
+      && lhs.totalDuration == rhs.totalDuration
+      && lhs.testSuite == rhs.testSuite
+      && lhs.finishTime == rhs.finishTime
   }
 
-  @objc public static func status(forStatusString statusString: String) -> TestReportStatus {
+  public static func status(forStatusString statusString: String) -> TestReportStatus {
     if statusString == "passed" {
       return .passed
     } else if statusString == "failed" {
@@ -96,8 +94,6 @@ import Foundation
     case .failed:
       return "Failed"
     case .unknown:
-      return "Unknown"
-    @unknown default:
       return "Unknown"
     }
   }
