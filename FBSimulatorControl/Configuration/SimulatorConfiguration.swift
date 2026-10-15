@@ -84,7 +84,7 @@ extension SimulatorConfiguration {
   }
 
   public static func availableConfigurations() throws -> [SimulatorConfiguration] {
-    let snapshot = try CoreSimulatorRuntimeIndex.load()
+    let snapshot = try CoreSimulatorRuntimeIndex()
     return snapshot.index.availablePairs.map {
       SimulatorConfiguration(deviceType: snapshot.deviceTypes[$0.device], runtime: snapshot.runtimes[$0.runtime])
     }

@@ -32,9 +32,10 @@ final class CoreSimulatorRuntimeIndex {
       })
   }
 
-  static func load() throws -> CoreSimulatorRuntimeIndex {
+  /// The device types and runtimes the shared CoreSimulator service supports.
+  convenience init() throws {
     let service = try SimulatorServiceContext.sharedServiceContext()
-    return CoreSimulatorRuntimeIndex(deviceTypes: service.supportedDeviceTypes(), runtimes: service.supportedRuntimes())
+    self.init(deviceTypes: service.supportedDeviceTypes(), runtimes: service.supportedRuntimes())
   }
 
   func resolve(_ request: SimulatorCreationRequest) throws -> (SimDeviceType, SimRuntime) {

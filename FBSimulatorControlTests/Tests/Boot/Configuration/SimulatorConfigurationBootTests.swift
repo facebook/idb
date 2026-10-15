@@ -26,7 +26,7 @@ final class SimulatorConfigurationBootTests: XCTestCase {
     let request = SimulatorCreationRequest(
       device: .identifier(try XCTUnwrap(availableDevice.identifier)),
       runtime: .identifier(try XCTUnwrap(availableRuntime.identifier)))
-    let snapshot = try CoreSimulatorRuntimeIndex.load()
+    let snapshot = try CoreSimulatorRuntimeIndex()
     let match = try snapshot.index.resolve(request)
     let expectedDevice = snapshot.deviceTypes[match.device]
     let expectedRuntime = snapshot.runtimes[match.runtime]

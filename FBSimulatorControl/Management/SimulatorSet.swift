@@ -68,7 +68,7 @@ public final class SimulatorSet: TargetSet {
     let deviceType: SimDeviceType
     let runtime: SimRuntime
     do {
-      let snapshot = try CoreSimulatorRuntimeIndex.load()
+      let snapshot = try CoreSimulatorRuntimeIndex()
       (deviceType, runtime) = try snapshot.resolve(request)
     } catch {
       throw SimulatorSetError.deviceTypeOrRuntimeUnavailable(configuration: "\(request)", reason: error.localizedDescription)
