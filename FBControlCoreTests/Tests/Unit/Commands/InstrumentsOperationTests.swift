@@ -180,8 +180,8 @@ final class InstrumentsOperationTests: XCTestCase {
       appEnvironment: [:],
       appArguments: [],
       toolArguments: [],
-      timings: InstrumentsTimings.timings(
-        withTerminateTimeout: DefaultInstrumentsTerminateTimeout,
+      timings: InstrumentsTimings(
+        terminateTimeout: DefaultInstrumentsTerminateTimeout,
         launchRetryTimeout: DefaultInstrumentsLaunchRetryTimeout,
         launchErrorTimeout: DefaultInstrumentsLaunchErrorTimeout,
         operationDuration: operationDuration))

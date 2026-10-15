@@ -14,10 +14,6 @@ public struct InstrumentsTimings: Sendable {
   public let launchErrorTimeout: TimeInterval
   public let operationDuration: TimeInterval
 
-  public static func timings(withTerminateTimeout terminateTimeout: TimeInterval, launchRetryTimeout: TimeInterval, launchErrorTimeout: TimeInterval, operationDuration: TimeInterval) -> InstrumentsTimings {
-    InstrumentsTimings(terminateTimeout: terminateTimeout, launchRetryTimeout: launchRetryTimeout, launchErrorTimeout: launchErrorTimeout, operationDuration: operationDuration)
-  }
-
   public init(terminateTimeout: TimeInterval, launchRetryTimeout: TimeInterval, launchErrorTimeout: TimeInterval, operationDuration: TimeInterval) {
     self.terminateTimeout = terminateTimeout
     self.launchRetryTimeout = launchRetryTimeout
