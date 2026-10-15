@@ -40,20 +40,20 @@ final class XCTestResultToolOperationTests {
 
   @Test
   func aJSONObjectDecodesToItsFields() throws {
-    let actions = try XCTestResultToolOperation.json(from: #"{"actions": {"_values": []}}"#)["actions"] as? [String: Any]
+    let actions = try XCTestResultToolOperation.jsonObject(parsing: #"{"actions": {"_values": []}}"#)["actions"] as? [String: Any]
     #expect((actions?["_values"] as? [Any])?.count == 0)
   }
 
   @Test
   func outputThatIsNotJSONIsRejected() {
-    let error = #expect(throws: (any Error).self) { try XCTestResultToolOperation.json(from: "xcresulttool: error: something went wrong") }
+    let error = #expect(throws: (any Error).self) { try XCTestResultToolOperation.jsonObject(parsing: "xcresulttool: error: something went wrong") }
     let description = error?.localizedDescription ?? ""
     #expect(description.contains("something went wrong"), "\(description)")
   }
 
   @Test
   func aJSONArrayIsRejected() {
-    #expect(throws: (any Error).self) { try XCTestResultToolOperation.json(from: "[1, 2]") }
+    #expect(throws: (any Error).self) { try XCTestResultToolOperation.jsonObject(parsing: "[1, 2]") }
   }
 
   // MARK: - Exit code policy
@@ -61,7 +61,7 @@ final class XCTestResultToolOperationTests {
   @Test
   func gettingJSONFailsWhenTheToolExitsNonZero() async throws {
     do {
-      _ = try await XCTestResultToolOperation.getJSON(from: absentResultBundlePath, forId: nil, logger: nil)
+      _ = try await XCTestResultToolOperation.json(from: absentResultBundlePath, forId: nil, logger: nil)
       Issue.record("Expected reading an absent result bundle to fail")
     } catch {
       // Every entry point launches with `[0]` as the only acceptable exit code, so a
@@ -123,7 +123,7 @@ final class XCTestResultToolOperationTests {
     let logger = RecordingLogger()
 
     do {
-      _ = try await XCTestResultToolOperation.getJSON(from: absentResultBundlePath, forId: nil, logger: logger)
+      _ = try await XCTestResultToolOperation.json(from: absentResultBundlePath, forId: nil, logger: logger)
     } catch {
       // The failure itself is covered above; this case is about what was logged.
     }

@@ -29,13 +29,13 @@ enum XCTestResultToolError: Error, LocalizedError {
 
 final class XCTestResultToolOperation {
 
-  public static func getJSON(from path: String, forId bundleObjectId: String?, logger: ControlCoreLogger?, timeout: TimeInterval? = nil) async throws -> [String: Any] {
+  public static func json(from path: String, forId bundleObjectId: String?, logger: ControlCoreLogger?, timeout: TimeInterval? = nil) async throws -> [String: Any] {
     logger?.log("Getting json for id \(bundleObjectId ?? "nil")")
     var arguments = ["get", "--path", path, "--format", "json"]
     if let bundleObjectId, !bundleObjectId.isEmpty {
       arguments.append(contentsOf: ["--id", bundleObjectId])
     }
-    return try json(from: try await xcresulttool(arguments: arguments, logger: logger, timeout: timeout))
+    return try jsonObject(parsing: try await xcresulttool(arguments: arguments, logger: logger, timeout: timeout))
   }
 
   public static func exportFile(from path: String, to destination: String, forId bundleObjectId: String, logger: ControlCoreLogger?, timeout: TimeInterval? = nil) async throws {
@@ -76,7 +76,7 @@ final class XCTestResultToolOperation {
     return try await subprocess.run(output: .string, error: .logger(logger), timeout: timeout, logger: logger).standardOutput
   }
 
-  static func json(from output: String) throws -> [String: Any] {
+  static func jsonObject(parsing output: String) throws -> [String: Any] {
     guard let json = (try? JSONSerialization.jsonObject(with: Data(output.utf8))) as? [String: Any] else {
       throw XCTestResultToolError.outputIsNotAJSONObject(output: output)
     }
