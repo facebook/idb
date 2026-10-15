@@ -816,9 +816,10 @@ class AccessibilityTestFixture: NSObject {
       if let requestType, requestType != .attribute, requestType != .multipleAttribute {
         bookkeeping.withLock { translator.rawLookups.append(requestType) }
         let response = AXPTranslatorResponse.empty() as? AXPTranslatorResponse
-        // By key: the double is not the secure-coding object the property is typed as.
+        // By key: the double is not the secure-coding object the property is typed as. Nothing there is an
+        // answer with no result, as the service gives it.
         response?.setValue(lookup, forKey: "resultData")
-        respond(lookup == nil ? nil : response)
+        respond(response)
         return
       }
       guard requestType == .multipleAttribute,

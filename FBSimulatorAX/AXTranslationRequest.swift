@@ -106,11 +106,11 @@ final class AXTranslationRequest {
   func resolveRoot() throws -> AXTranslationReference? {
     switch kind {
     case .frontmostApplication:
-      return rawReader.resolve(.frontmostApplication(displayID: displayID))
+      return try rawReader.resolve(.frontmostApplication(displayID: displayID))
     case .point(let point):
       return try translation(at: point)
     case .applicationForPid(let pid):
-      return rawReader.resolve(.application(pid: pid))
+      return try rawReader.resolve(.application(pid: pid))
     }
   }
 
@@ -146,11 +146,11 @@ final class AXTranslationRequest {
     isMarkerMatch: Bool = false
   ) throws -> AccessibilityElementsResponse {
     guard !isMarkerMatch else {
-      return runNamedElement(handle, options: options)
+      return try runNamedElement(handle, options: options)
     }
     switch kind {
     case .point:
-      return runNamedElement(handle, options: options)
+      return try runNamedElement(handle, options: options)
     case .frontmostApplication, .applicationForPid:
       return try runFrontmostApplication(handle, options: options)
     }
@@ -169,9 +169,9 @@ final class AXTranslationRequest {
   /// Reads `handle` against `plan`, raw over this request's transport when `reads` asks for it and the
   /// handle has a translation to name, and through its platform element otherwise. An element with neither
   /// reads as one with no values.
-  func snapshot(of handle: AXElementHandle, plan: AXReadPlan, reads: AXTranslatorReads) -> AXElementSnapshot {
+  func snapshot(of handle: AXElementHandle, plan: AXReadPlan, reads: AXTranslatorReads) throws -> AXElementSnapshot {
     if reads == .raw, let reference = handle.translation {
-      return rawReader.read(reference, plan: plan)
+      return try rawReader.read(reference, plan: plan)
     }
     guard let element = element(for: handle) else {
       return AXElementSnapshot(frame: .zero, pid: handle.pid, children: [])
@@ -179,8 +179,8 @@ final class AXTranslationRequest {
     return AXElementSnapshot.read(element, plan: plan, token: token, mode: reads)
   }
 
-  func snapshot(of element: AXPlatformElement, plan: AXReadPlan, reads: AXTranslatorReads) -> AXElementSnapshot {
-    snapshot(of: .element(element), plan: plan, reads: reads)
+  func snapshot(of element: AXPlatformElement, plan: AXReadPlan, reads: AXTranslatorReads) throws -> AXElementSnapshot {
+    try snapshot(of: .element(element), plan: plan, reads: reads)
   }
 
   /// Sends this request's translator requests itself, over its transport.
@@ -193,11 +193,11 @@ final class AXTranslationRequest {
 
   /// Serializes the one element a caller named — by point, or by a marker match. The element itself is
   /// always reported; only its descendants are subject to the filter.
-  private func runNamedElement(_ element: AXElementHandle, options: AccessibilityRequestOptions) -> AccessibilityElementsResponse {
+  private func runNamedElement(_ element: AXElementHandle, options: AccessibilityRequestOptions) throws -> AccessibilityElementsResponse {
     let walkStart = CFAbsoluteTimeGetCurrent()
     collector.markWalkStart()
     let serialization = AXSerialization(options)
-    let snapshot = snapshot(
+    let snapshot = try snapshot(
       of: element, plan: serialization.readPlan(depth: serialization.nested ? .unlimited : .limited(0)),
       reads: options.translatorReads)
     var elements = AXNodeSerializer.formattedDescription(ofSnapshot: snapshot, serialization: serialization, collector: collector)
@@ -215,7 +215,7 @@ final class AXTranslationRequest {
     collector.markWalkStart()
 
     let serialization = AXSerialization(options)
-    let snapshot = snapshot(of: element, plan: serialization.readPlan(depth: .unlimited), reads: options.translatorReads)
+    let snapshot = try snapshot(of: element, plan: serialization.readPlan(depth: .unlimited), reads: options.translatorReads)
     let screen = AXReadScreen(display: display, rootFrame: snapshot.frame)
     let seenPids = SeenPIDs()
 
@@ -313,7 +313,7 @@ final class AXTranslationRequest {
       }
 
       // One read serves both the duplicate check and the serialization.
-      let hit = snapshot(of: hitHandle, plan: AXReadPlan(keys: keysWithFrame, depth: .limited(0)), reads: reads)
+      let hit = try snapshot(of: hitHandle, plan: AXReadPlan(keys: keysWithFrame, depth: .limited(0)), reads: reads)
       let hitFrame = hit.frame
       let hitFrameKey = "\(hitFrame.origin.x),\(hitFrame.origin.y),\(hitFrame.size.width),\(hitFrame.size.height)"
       if discoveredFrames.contains(hitFrameKey) {
@@ -382,7 +382,7 @@ final class AXTranslationRequest {
 
   private func translation(at point: CGPoint) throws -> AXTranslationReference? {
     let unrotated = try display?.geometry.unrotatedPoint(from: point) ?? point
-    return rawReader.resolve(.point(unrotated, displayID: displayID))
+    return try rawReader.resolve(.point(unrotated, displayID: displayID))
   }
 
   // MARK: - Helpers

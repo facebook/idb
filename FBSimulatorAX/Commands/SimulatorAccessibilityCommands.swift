@@ -235,7 +235,7 @@ final class SimulatorAccessibilityCommands {
     // A quick check: a non-zero accessibility frame indicates a healthy element.
     let reads = AccessibilityRequestOptions.defaultTranslatorReads
     let root = try await dispatcher.performRead(of: handle, for: request, reads: reads) {
-      request.snapshot(of: handle, plan: AXReadPlan(attributes: [], depth: .limited(0)), reads: reads)
+      try request.snapshot(of: handle, plan: AXReadPlan(attributes: [], depth: .limited(0)), reads: reads)
     }
     if !root.frame.equalTo(.zero) {
       return

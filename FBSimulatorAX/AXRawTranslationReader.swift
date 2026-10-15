@@ -35,9 +35,9 @@ struct AXRawTranslationReader {
   /// descendants — an application can answer with a cycle — is not read again below itself. An element
   /// listed more than once elsewhere, as a scroll view lists its scroll bar, is read at each place, as the
   /// platform element reads it.
-  func read(_ root: AXTranslationReference, plan: AXReadPlan) -> AXElementSnapshot {
+  func read(_ root: AXTranslationReference, plan: AXReadPlan) throws -> AXElementSnapshot {
     var ancestors = Set<Identity>()
-    return read(root, plan: plan, ancestors: &ancestors)
+    return try read(root, plan: plan, ancestors: &ancestors)
   }
 
   private struct Identity: Hashable {
@@ -45,20 +45,20 @@ struct AXRawTranslationReader {
     let objectID: UInt64
   }
 
-  private func read(_ translation: AXTranslationReference, plan: AXReadPlan, ancestors: inout Set<Identity>) -> AXElementSnapshot {
+  private func read(_ translation: AXTranslationReference, plan: AXReadPlan, ancestors: inout Set<Identity>) throws -> AXElementSnapshot {
     let identity = Identity(pid: translation.pid, objectID: translation.objectID)
     ancestors.insert(identity)
     defer { ancestors.remove(identity) }
     translation.bridgeDelegateToken = token
     let readsChildren = plan.depth.descendant != nil
-    let answer = self.answer(for: translation, asking: Self.attributes(for: plan, readingChildren: readsChildren))
+    let answer = try self.answer(for: translation, asking: Self.attributes(for: plan, readingChildren: readsChildren))
     let decoded = Decoded(answer, plan: plan)
 
     var children: [AXElementSnapshot] = []
     if let depth = plan.depth.descendant {
       let childPlan = AXReadPlan(attributes: plan.attributes, depth: depth)
       for child in decoded.children where !ancestors.contains(Identity(pid: child.pid, objectID: child.objectID)) {
-        children.append(read(child, plan: childPlan, ancestors: &ancestors))
+        children.append(try read(child, plan: childPlan, ancestors: &ancestors))
       }
     }
     return AXElementSnapshot(
@@ -86,13 +86,13 @@ struct AXRawTranslationReader {
     )
   }
 
-  /// The translator's answer for `attributes` of one element; nil when it could not read the element or
-  /// did not answer in time, which reads as an element with no values.
-  private func answer(for translation: AXTranslationReference, asking attributes: [BridgeAXTranslatorAttribute]) -> BridgeAXTranslatorAnswer? {
-    let response = send(
+  /// The translator's answer for `attributes` of one element; nil when it answered without values, which reads
+  /// as an element with none.
+  private func answer(for translation: AXTranslationReference, asking attributes: [BridgeAXTranslatorAttribute]) throws -> BridgeAXTranslatorAnswer? {
+    let response = try send(
       .multipleAttribute, translation: translation,
       parameters: [BridgeAXTranslatorRequestType.attributesParameterKey: attributes.map { NSNumber(value: $0.rawValue) }])
-    return BridgeAXTranslatorAnswer(resultData: response?.resultData)
+    return BridgeAXTranslatorAnswer(resultData: response.resultData)
   }
 
   // MARK: - Roots
@@ -105,33 +105,36 @@ struct AXRawTranslationReader {
     case point(CGPoint, displayID: UInt32)
   }
 
-  /// The translation of `root`, in the one request the translator would send for it; nil when nothing is
-  /// there or no answer came in time.
-  func resolve(_ root: Root) -> AXTranslationReference? {
-    let response: AXPTranslatorResponse? =
+  /// The translation of `root`, in the one request the translator would send for it; nil when the service
+  /// answered that nothing is there.
+  func resolve(_ root: Root) throws -> AXTranslationReference? {
+    let response: AXPTranslatorResponse =
       switch root {
       case let .frontmostApplication(displayID):
-        send(
+        try send(
           .frontmostApplication, translation: AXPTranslationObject(),
           parameters: [BridgeAXTranslatorRequestType.displayIDParameterKey: NSNumber(value: displayID)])
       case let .application(pid):
-        send(.application, translation: nil, parameters: [BridgeAXTranslatorRequestType.pidParameterKey: NSNumber(value: pid)])
+        try send(.application, translation: nil, parameters: [BridgeAXTranslatorRequestType.pidParameterKey: NSNumber(value: pid)])
       case let .point(point, displayID):
-        send(
+        try send(
           .hitTest, translation: AXPTranslationObject(),
           parameters: [
             BridgeAXTranslatorRequestType.pointParameterKey: NSValue(point: point),
             BridgeAXTranslatorRequestType.displayIDParameterKey: NSNumber(value: displayID),
           ])
       }
-    return response?.resultData as? AXTranslationReference
+    return response.resultData as? AXTranslationReference
   }
 
+  /// The service's answer to one request. A request it does not answer stops the read: carrying on would wait
+  /// out every later request too, and report a tree with values missing as though it were complete.
   private func send(
     _ type: BridgeAXTranslatorRequestType, translation: AXTranslationReference?, parameters: [String: Any]
-  ) -> AXPTranslatorResponse? {
+  ) throws -> AXPTranslatorResponse {
+    let timing = AccessibilityTranslatorRequestTiming(requestType: UInt64(type.rawValue), duration: 0)
     guard let request = AXPTranslatorRequest.request(withTranslation: translation) as? AXPTranslatorRequest else {
-      return nil
+      throw AccessibilityError.serviceNotAnswering(.request(kind: timing.kindName, timeout: timeout), elapsed: collector.elapsed)
     }
     request.requestType = UInt64(type.rawValue)
     request.clientType = clientType.rawValue
@@ -139,6 +142,9 @@ struct AXRawTranslationReader {
     let start = CFAbsoluteTimeGetCurrent()
     let response = transport.send(request, timeout: timeout)
     collector.recordRequest(type: request.requestType, duration: CFAbsoluteTimeGetCurrent() - start, answered: response != nil)
+    guard let response else {
+      throw AccessibilityError.serviceNotAnswering(.request(kind: timing.kindName, timeout: timeout), elapsed: collector.elapsed)
+    }
     return response
   }
 

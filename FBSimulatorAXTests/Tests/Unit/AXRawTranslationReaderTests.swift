@@ -39,7 +39,7 @@ final class AXRawTranslationReaderTests: XCTestCase {
     ])
     let collector = AccessibilityProfilingCollector()
 
-    let root = Self.reader(transport, collector: collector).read(Self.reference(1), plan: Self.defaultPlan)
+    let root = try Self.reader(transport, collector: collector).read(Self.reference(1), plan: Self.defaultPlan)
 
     XCTAssertEqual(transport.requestedObjectIDs, [1, 2, 3])
     XCTAssertEqual(transport.requests.map(\.requestType), [5, 5, 5])
@@ -61,20 +61,20 @@ final class AXRawTranslationReaderTests: XCTestCase {
     XCTAssertEqual(attributes, [.frame, .customActions, .children])
   }
 
-  func testAnElementListedAmongItsOwnDescendantsIsReadOnce() {
+  func testAnElementListedAmongItsOwnDescendantsIsReadOnce() throws {
     let transport = AXRawTranslationTransportDouble(elements: [
       1: [.role: 1, .children: [Self.reference(2)]],
       2: [.role: 5, .children: [Self.reference(2), Self.reference(1)]],
     ])
 
-    let root = Self.reader(transport).read(Self.reference(1), plan: Self.defaultPlan)
+    let root = try Self.reader(transport).read(Self.reference(1), plan: Self.defaultPlan)
 
     XCTAssertEqual(transport.requestedObjectIDs, [1, 2])
     XCTAssertEqual(root.children.count, 1)
     XCTAssertEqual(root.children.first?.children.count, 0)
   }
 
-  func testAChildListedTwiceAmongItsParentsChildren() {
+  func testAChildListedTwiceAmongItsParentsChildren() throws {
     // A scroll view's scroll bar is listed twice among the scroll view's children for the automation tree, and
     // the platform element's batched read reports it at both places.
     let transport = AXRawTranslationTransportDouble(elements: [
@@ -83,20 +83,20 @@ final class AXRawTranslationReaderTests: XCTestCase {
       3: [.role: 13, .label: "Vertical scroll bar"],
     ])
 
-    let root = Self.reader(transport).read(Self.reference(1), plan: Self.defaultPlan)
+    let root = try Self.reader(transport).read(Self.reference(1), plan: Self.defaultPlan)
 
     XCTAssertEqual(root.children.first?.children.map(\.label), ["Vertical scroll bar", "Vertical scroll bar"])
     XCTAssertEqual(transport.requestedObjectIDs, [1, 2, 3, 3])
   }
 
-  func testAnUnansweredElementReadsAsOneWithNoValues() {
+  func testAnUnansweredElementStopsTheRead() {
     let transport = AXRawTranslationTransportDouble(elements: [:])
 
-    let root = Self.reader(transport).read(Self.reference(9), plan: Self.defaultPlan)
-
-    XCTAssertEqual(root.frame, .zero)
-    XCTAssertNil(root.role)
-    XCTAssertEqual(root.children.count, 0)
+    XCTAssertThrowsError(try Self.reader(transport).read(Self.reference(9), plan: Self.defaultPlan)) { error in
+      guard case AccessibilityError.serviceNotAnswering(.request(kind: "multiple_attribute", timeout: 1), _) = error else {
+        return XCTFail("expected an unanswered multiple-attribute request, got \(error)")
+      }
+    }
   }
 
   // MARK: - Conversion
@@ -168,16 +168,16 @@ final class AXRawTranslationReaderTests: XCTestCase {
     XCTAssertNil(decoded.isEnabled)
   }
 
-  func testAttributesWithoutATranslatorNumberReadAsThePlatformElementsBatchReadsThem() {
+  func testAttributesWithoutATranslatorNumberReadAsThePlatformElementsBatchReadsThem() throws {
     let transport = AXRawTranslationTransportDouble(elements: [1: [.role: 2]])
-    let snapshot = Self.reader(transport).read(Self.reference(1), plan: Self.everything)
+    let snapshot = try Self.reader(transport).read(Self.reference(1), plan: Self.everything)
     XCTAssertNil(snapshot.title)
     XCTAssertEqual(snapshot.isRequired, false)
     XCTAssertEqual(snapshot.isHidden, false)
     XCTAssertEqual(snapshot.customActionNames, [])
   }
 
-  func testCustomActionsAreNamedFromTheTranslatorsAnswer() {
+  func testCustomActionsAreNamedFromTheTranslatorsAnswer() throws {
     let transport = AXRawTranslationTransportDouble(elements: [
       1: [
         .role: 2,
@@ -187,7 +187,7 @@ final class AXRawTranslationReaderTests: XCTestCase {
         ],
       ]
     ])
-    let snapshot = Self.reader(transport).read(Self.reference(1), plan: AXReadPlan(attributes: [.customActions], depth: .limited(0)))
+    let snapshot = try Self.reader(transport).read(Self.reference(1), plan: AXReadPlan(attributes: [.customActions], depth: .limited(0)))
     XCTAssertEqual(snapshot.customActionNames, ["Edit mode", "Today"])
   }
 
@@ -210,20 +210,20 @@ final class AXRawTranslationReaderTests: XCTestCase {
       ]))
     request.translator = unsafeBitCast(translator as AnyObject, to: AXPTranslator.self)
 
-    let snapshot = request.snapshot(of: root, plan: AXReadPlan(attributes: [.label], depth: .limited(1)), reads: .raw)
+    let snapshot = try request.snapshot(of: root, plan: AXReadPlan(attributes: [.label], depth: .limited(1)), reads: .raw)
 
     let handle = try XCTUnwrap(snapshot.children.first?.handle)
     XCTAssertTrue(request.element(for: handle) as AnyObject === cached, "acting builds the translator's element")
     XCTAssertEqual(cached.translation.bridgeDelegateToken, request.token, "an action on the handle reaches this read")
   }
 
-  func testARawRequestNamesTheElementsTranslationAndNeverTouchesTheElement() {
+  func testARawRequestNamesTheElementsTranslationAndNeverTouchesTheElement() throws {
     let element = AccessibilityTestElementBuilder.button(withLabel: "Stale", identifier: nil, frame: .zero)
     element.translation = Self.reference(7)
     let transport = AXRawTranslationTransportDouble(elements: [7: [.label: "General"]])
     let request = AXTranslationRequest(kind: .frontmostApplication, transport: transport)
 
-    let snapshot = request.snapshot(of: element, plan: AXReadPlan(attributes: [.label], depth: .limited(0)), reads: .raw)
+    let snapshot = try request.snapshot(of: element, plan: AXReadPlan(attributes: [.label], depth: .limited(0)), reads: .raw)
 
     XCTAssertEqual(snapshot.label, "General")
     XCTAssertEqual(transport.requestedObjectIDs, [7])

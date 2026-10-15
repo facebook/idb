@@ -82,6 +82,11 @@ public final class AccessibilityProfilingCollector {
     }
   }
 
+  /// Time since the read began.
+  public var elapsed: TimeInterval {
+    CFAbsoluteTimeGetCurrent() - readStart
+  }
+
   /// Requests made before the walk: resolving the root and checking it.
   public var acquireRoundTrips: Int64 {
     lock.lock()

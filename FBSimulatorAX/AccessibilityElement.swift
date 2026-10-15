@@ -95,7 +95,7 @@ final class AccessibilityElement {
     let request = self.request
     let reads = AccessibilityRequestOptions.defaultTranslatorReads
     return try await dispatcher.performRead(of: handle, for: request, reads: reads) {
-      request.snapshot(of: handle, plan: plan, reads: reads)
+      try request.snapshot(of: handle, plan: plan, reads: reads)
     }
   }
 

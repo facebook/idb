@@ -185,7 +185,7 @@ final class AXTranslationSmokeTests: ProvidedSimulatorTestCase {
         return nil
       }
       return try? await dispatcher.performRead(of: root, for: request, reads: .raw) {
-        request.snapshot(of: root, plan: AXReadPlan(attributes: [], depth: .limited(1)), reads: .raw)
+        try request.snapshot(of: root, plan: AXReadPlan(attributes: [], depth: .limited(1)), reads: .raw)
       }
     }
     func springBoardPid() async throws -> pid_t? {

@@ -43,6 +43,10 @@ public enum AccessibilityError: LocalizedError, Sendable {
 
   /// The simulator's accessibility service named no element for the query; nil when an element read
   /// earlier is no longer there to act on.
+  /// The simulator's accessibility service did not answer in time, so the read stopped rather than report a
+  /// tree with values missing. Retrying is safe.
+  case serviceNotAnswering(AccessibilityServiceSilence, elapsed: TimeInterval)
+
   case noTranslationObject(AccessibilityElementQuery?)
 
   /// SpringBoard restarted `restartedAgo` seconds ago and the simulator's accessibility service still answers
@@ -90,6 +94,10 @@ public enum AccessibilityError: LocalizedError, Sendable {
       return String(
         format: "SpringBoard restarted %.1f seconds ago. The simulator's accessibility service still answers for the SpringBoard that exited (pid %d) until it refreshes, which takes a few seconds; retry the read.",
         restartedAgo, exitedProcessIdentifier)
+    case let .serviceNotAnswering(.request(kind, timeout), elapsed):
+      return String(
+        format: "The simulator's accessibility service did not answer a %@ request within %.1fs, %.1fs into the read; retry the read.",
+        kind, timeout, elapsed)
     case .springBoardNotRunning:
       return "SpringBoard is not running on the simulator, so there is no frontmost application to describe. Boot/relaunch the simulator (or restart SpringBoard) and retry."
     }
@@ -100,4 +108,11 @@ extension AccessibilityError: CustomStringConvertible {
   /// Mirrors `errorDescription` so string interpolation (`"\(error)"`) and logs
   /// surface the human-readable message rather than the synthesized case name.
   public var description: String { errorDescription ?? "AccessibilityError" }
+}
+
+/// What the accessibility service left unanswered.
+public enum AccessibilityServiceSilence: Sendable, Equatable {
+  /// One request, named by its kind as telemetry spells it (`frontmost`, `multiple_attribute`, …), went
+  /// unanswered for `timeout`.
+  case request(kind: String, timeout: TimeInterval)
 }

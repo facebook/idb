@@ -72,7 +72,7 @@ final class AXReadTimeTests {
 
   // MARK: - Unanswered requests
 
-  @Test func anUnansweredElementWaitsOutItsTimeoutAndTheReadCarriesOn() {
+  @Test func anUnansweredElementStopsTheReadAfterOneTimeout() {
     let transport = AXRawTranslationTransportDouble(
       elements: [1: [.role: 1, .label: "App", .children: [Self.reference(2), Self.reference(3)]]],
       waitsOutUnanswered: true)
@@ -80,15 +80,18 @@ final class AXReadTimeTests {
       transport: transport, clientType: .noClient, timeout: 0.05, collector: AccessibilityProfilingCollector(), token: "token")
 
     let start = ContinuousClock.now
-    let root = reader.read(Self.reference(1), plan: AXReadPlan(keys: AXKeys.defaultSet, depth: .unlimited))
+    #expect {
+      _ = try reader.read(Self.reference(1), plan: AXReadPlan(keys: AXKeys.defaultSet, depth: .unlimited))
+    } throws: { error in
+      guard case AccessibilityError.serviceNotAnswering(.request(kind: "multiple_attribute", timeout: 0.05), _) = error else {
+        return false
+      }
+      return true
+    }
     let elapsed = ContinuousClock.now - start
 
-    // BUG: each unanswered element waits out the whole timeout, and the read reports it as an element with no
-    // values rather than failing — flipped later in the stack.
-    #expect(root.label == "App")
-    #expect(root.children.count == 2)
-    #expect(root.children.allSatisfy { $0.role == nil && $0.label == nil })
-    #expect(elapsed >= .milliseconds(100), "two unanswered requests, each waited out")
+    #expect(transport.requests.count == 2, "the root, then the first child, which went unanswered")
+    #expect(elapsed >= .milliseconds(50) && elapsed < .milliseconds(100), "one unanswered request waited out, not two")
   }
 
   @Test func anUnansweredFrontmostLookupIsReportedAsNoElement() async throws {
@@ -99,46 +102,21 @@ final class AXReadTimeTests {
     do {
       _ = try await commands.resolveElement(for: .frontmost, clientType: .noClient)
       Issue.record("an unanswered frontmost lookup must fail the read")
-    } catch AccessibilityError.noTranslationObject {
-      // BUG: the service did not answer, yet the read reports that it named no element — flipped later in the
-      // stack.
-    }
+    } catch AccessibilityError.serviceNotAnswering(.request(kind: "frontmost", _), _) {}
   }
 
-  @Test func aFrontmostReadWhoseElementRequestsGoUnansweredStillSucceeds() async throws {
+  @Test func aFrontmostReadWhoseStalenessCheckGoesUnansweredFails() async throws {
     let transport = RootOnlyTransportDouble(root: Self.reference(0))
     let commands = try commands(
       transport: transport, launchCtl: LaunchCtlDouble.with(running: ["com.apple.SpringBoard": Self.pid]))
 
-    let element = try await commands.resolveElement(for: .frontmost, clientType: .noClient)
-    defer { element.close() }
-    let response = try await element.serialize(with: AccessibilityRequestOptions())
-
-    // BUG: the SpringBoard staleness check and the root's own read both went unanswered, and the read still
-    // reports success with an element that has no values — flipped later in the stack.
-    #expect(response.translatorMetrics?.elementCount == 1)
+    do {
+      _ = try await commands.resolveElement(for: .frontmost, clientType: .noClient)
+      Issue.record("an unanswered staleness check must fail the read")
+    } catch AccessibilityError.serviceNotAnswering(.request(kind: "multiple_attribute", _), _) {}
     #expect(
-      transport.requestTypes.filter { $0 == UInt64(BridgeAXTranslatorRequestType.multipleAttribute.rawValue) }.count == 2,
-      "the staleness check's request and the root's read")
-  }
-
-  @Test func aReadWithUnansweredRequestsReportsItselfDegraded() async throws {
-    let commands = try commands(
-      transport: RootOnlyTransportDouble(root: Self.reference(0)),
-      launchCtl: LaunchCtlDouble.with(running: ["com.apple.SpringBoard": Self.pid]))
-
-    let element = try await commands.resolveElement(for: .frontmost, clientType: .noClient)
-    defer { element.close() }
-    let response = try await element.serialize(with: AccessibilityRequestOptions(format: .complete))
-
-    let metrics = try #require(response.translatorMetrics)
-    #expect(metrics.unansweredRequests == 2)
-    #expect(metrics.acquireRoundTrips == 2, "the frontmost lookup and the staleness check")
-    #expect(metrics.outcome == .degraded)
-    #expect(metrics.slowestRequest != nil)
-    let document = try #require(
-      try JSONSerialization.jsonObject(with: response.formattedOutputJSON(format: .complete)) as? [String: Any])
-    #expect((document["degraded"] as? [String: Any])?["unanswered_requests"] as? Int == 2)
+      transport.requestTypes.filter { $0 == UInt64(BridgeAXTranslatorRequestType.multipleAttribute.rawValue) }.count == 1,
+      "the staleness check's request, and nothing after it")
   }
 
   // MARK: - Cancellation
@@ -156,7 +134,7 @@ final class AXReadTimeTests {
 
     let read = Task {
       try await dispatcher.performRead(of: root, for: request, reads: .raw) {
-        request.snapshot(of: root, plan: AXReadPlan(attributes: [.role], depth: .unlimited), reads: .raw)
+        try request.snapshot(of: root, plan: AXReadPlan(attributes: [.role], depth: .unlimited), reads: .raw)
       }
     }
     try await Task.sleep(nanoseconds: 60 * NSEC_PER_MSEC)
