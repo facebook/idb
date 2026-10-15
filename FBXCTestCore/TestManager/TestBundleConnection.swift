@@ -50,7 +50,7 @@ enum TestPlanOutcome {
 }
 
 /// What the test bundle and testmanagerd have done over the connection, as events to wait on.
-final class TestBundleEvents: NSObject, TestBundleDTXConnectionDelegate, @unchecked Sendable {
+final class TestBundleEvents: NSObject, @unchecked Sendable {
   let proxyChannelOpened = AsyncEvent<Void>()
   let sessionStarted = AsyncEvent<Void>()
   let bundleReady = AsyncEvent<Void>()
@@ -64,10 +64,12 @@ final class TestBundleEvents: NSObject, TestBundleDTXConnectionDelegate, @unchec
     lock.withLock { outcome }
   }
 
+  /// The test bundle opened its proxy channel.
   func testBundleConnectionDidOpenProxyChannel() {
     proxyChannelOpened.happen()
   }
 
+  /// testmanagerd answered the session request, with an error if it refused it.
   func testBundleConnectionDidStartSessionWithError(_ error: Error?) {
     if let error {
       sessionStarted.fail(error)
@@ -76,19 +78,23 @@ final class TestBundleEvents: NSObject, TestBundleDTXConnectionDelegate, @unchec
     }
   }
 
+  /// The test bundle is ready to execute its test plan.
   func testBundleConnectionBundleDidBecomeReady() {
     bundleReady.happen()
   }
 
+  /// The test bundle cannot run: a protocol mismatch, or UI testing failing to initialize.
   func testBundleConnectionBundleDidFailWithError(_ error: Error) {
     bundleReady.fail(error)
     endTestPlan(.failed(error))
   }
 
+  /// The test bundle finished executing its test plan.
   func testBundleConnectionDidFinishTestPlan() {
     endTestPlan(.finished)
   }
 
+  /// The testmanagerd connection went away.
   func testBundleConnectionDidDisconnect() {
     disconnected.happen()
   }

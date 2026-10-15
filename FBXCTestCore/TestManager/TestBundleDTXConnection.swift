@@ -11,21 +11,6 @@ import Foundation
 import ObjectiveC
 
 /// Told what the test bundle and testmanagerd do over the connection. Called on the work queue.
-protocol TestBundleDTXConnectionDelegate: AnyObject {
-  /// The test bundle opened its proxy channel.
-  func testBundleConnectionDidOpenProxyChannel()
-  /// testmanagerd answered the session request, with an error if it refused it.
-  func testBundleConnectionDidStartSessionWithError(_ error: Error?)
-  /// The test bundle is ready to execute its test plan.
-  func testBundleConnectionBundleDidBecomeReady()
-  /// The test bundle cannot run: a protocol mismatch, or UI testing failing to initialize.
-  func testBundleConnectionBundleDidFailWithError(_ error: Error)
-  /// The test bundle finished executing its test plan.
-  func testBundleConnectionDidFinishTestPlan()
-  /// The testmanagerd connection went away.
-  func testBundleConnectionDidDisconnect()
-}
-
 // DTXConnectionServices' classes and the XCTest categories on them, messaged through their selectors:
 // naming them as types would link against the private frameworks that vend them.
 
@@ -75,7 +60,7 @@ final class TestBundleDTXConnection: NSObject {
   private let workQueue: DispatchQueue
   private let testManagerdSocket: Int32
   private let interface: NSObject
-  private let delegate: TestBundleDTXConnectionDelegate
+  private let delegate: TestBundleEvents
   private let requestQueue: DispatchQueue
   private let logger: TestManagerLogSink
 
@@ -101,7 +86,7 @@ final class TestBundleDTXConnection: NSObject {
     work workQueue: DispatchQueue,
     socket: Int32,
     interface: NSObject,
-    delegate: TestBundleDTXConnectionDelegate,
+    delegate: TestBundleEvents,
     request requestQueue: DispatchQueue,
     logger: TestManagerLogSink
   ) {
