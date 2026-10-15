@@ -44,16 +44,16 @@ final class DeliveredNotificationsServiceTests: XCTestCase {
   }
 
   private func handleDeliveredNotificationsAction(_ action: String?, _ bundleID: String?) -> Int32 {
-    FBDeliveredNotificationsService.handleAction(action, bundleID: bundleID, directory: notificationsDirectory, timeout: timeout)
+    DeliveredNotificationsService.handleAction(action, bundleID: bundleID, directory: notificationsDirectory, timeout: timeout)
   }
 
   private func handleDeliveredNotificationsActionWithCenter(_ action: String?, _ bundleID: String?, _ center: Any?) -> Int32 {
-    FBDeliveredNotificationsService.handleActionWithCenter(
+    DeliveredNotificationsService.handleActionWithCenter(
       action, bundleID: bundleID, center: center, directory: notificationsDirectory, timeout: timeout)
   }
 
   private func clearDeliveredNotificationsWithRemover(_ bundleID: String?, _ remover: Any?) -> Int32 {
-    FBDeliveredNotificationsService.clear(bundleID: bundleID, remover: remover, directory: notificationsDirectory, timeout: timeout)
+    DeliveredNotificationsService.clear(bundleID: bundleID, remover: remover, directory: notificationsDirectory, timeout: timeout)
   }
 
   private func writeArchive(of root: Any, toPath path: String) {

@@ -59,7 +59,7 @@ public struct FBBridgeServices: FBBridgeServiceHandling {
   }
 
   public func deliveredNotifications(_ action: String, bundleID: String?) -> Int32 {
-    FBDeliveredNotificationsService.handleAction(action, bundleID: bundleID, directory: deliveredNotificationsDirectory, timeout: deliveredNotificationsTimeout)
+    DeliveredNotificationsService.handleAction(action, bundleID: bundleID, directory: deliveredNotificationsDirectory, timeout: deliveredNotificationsTimeout)
   }
   #endif
 

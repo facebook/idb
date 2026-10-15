@@ -334,7 +334,7 @@ private struct DeliveredNotificationStore {
   }
 }
 
-public enum FBDeliveredNotificationsService {
+public enum DeliveredNotificationsService {
   /// Used whenever a caller passes a non-positive timeout.
   static let defaultTimeout: TimeInterval = 30
 

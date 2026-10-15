@@ -80,13 +80,13 @@ public enum BridgeServices {
         #if os(tvOS)
         return unavailable("The notifications delivered action", output: output)
         #else
-        return FBDeliveredNotificationsService.handleAction("delivered", bundleID: identifier, directory: nil, timeout: 0, output: output)
+        return DeliveredNotificationsService.handleAction("delivered", bundleID: identifier, directory: nil, timeout: 0, output: output)
         #endif
       case let .clearDelivered(identifier):
         #if os(tvOS)
         return unavailable("The notifications clear-delivered action", output: output)
         #else
-        return FBDeliveredNotificationsService.handleAction("clear-delivered", bundleID: identifier, directory: nil, timeout: 0, output: output)
+        return DeliveredNotificationsService.handleAction("clear-delivered", bundleID: identifier, directory: nil, timeout: 0, output: output)
         #endif
       }
       return Int32(FBNotificationSettingsService.handleNotificationSettingsAction(action: action, bundleID: bundleID, output: output))
