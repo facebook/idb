@@ -160,7 +160,7 @@ public struct OSVersion: CustomStringConvertible, Sendable {
 
 }
 
-public final class TargetConfiguration {
+public enum TargetConfiguration {
 
   // MARK: - Public Methods
 
