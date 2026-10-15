@@ -122,6 +122,25 @@ final class AXReadTimeTests {
       "the staleness check's request and the root's read")
   }
 
+  @Test func aReadWithUnansweredRequestsReportsItselfDegraded() async throws {
+    let commands = try commands(
+      transport: RootOnlyTransportDouble(root: Self.reference(0)),
+      launchCtl: LaunchCtlDouble.with(running: ["com.apple.SpringBoard": Self.pid]))
+
+    let element = try await commands.resolveElement(for: .frontmost, clientType: .noClient)
+    defer { element.close() }
+    let response = try await element.serialize(with: AccessibilityRequestOptions(format: .complete))
+
+    let metrics = try #require(response.translatorMetrics)
+    #expect(metrics.unansweredRequests == 2)
+    #expect(metrics.acquireRoundTrips == 2, "the frontmost lookup and the staleness check")
+    #expect(metrics.outcome == .degraded)
+    #expect(metrics.slowestRequest != nil)
+    let document = try #require(
+      try JSONSerialization.jsonObject(with: response.formattedOutputJSON(format: .complete)) as? [String: Any])
+    #expect((document["degraded"] as? [String: Any])?["unanswered_requests"] as? Int == 2)
+  }
+
   // MARK: - Cancellation
 
   @Test func cancellingAReadDoesNotStopItsWalk() async throws {

@@ -406,7 +406,12 @@ final class AXTranslationRequest {
       readDuration: profile.readDuration,
       totalDuration: profile.totalDuration,
       translatorReads: options.translatorReads,
-      transport: transport.kind)
+      transport: transport.kind,
+      acquireDuration: profile.acquireDuration,
+      springBoardCheckDuration: collector.springBoardCheckDuration,
+      acquireRoundTrips: collector.acquireRoundTrips,
+      unansweredRequests: collector.unansweredRequests,
+      slowestRequest: collector.slowestRequest)
     return AccessibilityElementsResponse(
       elements: elements,
       profilingData: options.enableProfiling ? .translator(profile) : nil,

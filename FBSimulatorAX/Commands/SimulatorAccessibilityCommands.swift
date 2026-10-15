@@ -209,6 +209,8 @@ final class SimulatorAccessibilityCommands {
     }
     if diagnosesSpringBoard {
       do {
+        let checkStart = CFAbsoluteTimeGetCurrent()
+        defer { request.collector.springBoardCheckDuration = CFAbsoluteTimeGetCurrent() - checkStart }
         try await checkSpringBoardAnswersFor(root: root, simulator: simulator, request: request, dispatcher: dispatcher)
       } catch {
         // The request's token was pushed by the dispatcher but is not yet wrapped in an AccessibilityElement.

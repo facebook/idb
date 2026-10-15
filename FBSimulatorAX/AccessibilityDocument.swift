@@ -846,6 +846,10 @@ public struct AccessibilityDocument: Sendable, Encodable {
   /// so a read that did not keeps exactly the document it always had.
   public let client: AccessibilityClientReport?
 
+  /// Present only when the read returned with requests unanswered, so some values are missing. Absent, not
+  /// null, otherwise: a healthy read produces exactly the document it always did.
+  public let degraded: AccessibilityDegradedRead?
+
   public init(
     elements: [AccessibilityDocumentElement],
     modal: AccessibilityModalInfo? = nil,
@@ -859,7 +863,8 @@ public struct AccessibilityDocument: Sendable, Encodable {
     frames: AccessibilityFrameSummary? = nil,
     automation: AccessibilityAutomationState? = nil,
     narrowing: AccessibilityNarrowing? = nil,
-    client: AccessibilityClientReport? = nil
+    client: AccessibilityClientReport? = nil,
+    degraded: AccessibilityDegradedRead? = nil
   ) {
     self.elements = elements
     self.modal = modal
@@ -874,6 +879,7 @@ public struct AccessibilityDocument: Sendable, Encodable {
     self.automation = automation
     self.narrowing = narrowing
     self.client = client
+    self.degraded = degraded
   }
 
   enum CodingKeys: String, CodingKey {
@@ -890,6 +896,7 @@ public struct AccessibilityDocument: Sendable, Encodable {
     case automation
     case narrowing
     case client
+    case degraded
   }
 
   public func encode(to encoder: Encoder) throws {
@@ -907,6 +914,7 @@ public struct AccessibilityDocument: Sendable, Encodable {
     try container.encode(automation, forKey: .automation)
     try container.encode(narrowing, forKey: .narrowing)
     try container.encodeIfPresent(client, forKey: .client)
+    try container.encodeIfPresent(degraded, forKey: .degraded)
   }
 }
 

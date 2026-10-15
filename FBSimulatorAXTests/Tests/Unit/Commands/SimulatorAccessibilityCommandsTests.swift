@@ -590,9 +590,13 @@ final class SimulatorAccessibilityCommandsTests: XCTestCase {
     XCTAssertEqual(metrics.elementCount, 4, "the root and its three children")
     XCTAssertEqual(metrics.translatorReads, .raw)
     XCTAssertEqual(metrics.transport, .coreSimulator, "named by the transport that carried the read")
-    XCTAssertFalse(
-      String(decoding: try response.formattedOutputJSON(format: .complete), as: UTF8.self).contains("translatorMetrics"),
-      "the metrics never reach the document")
+    XCTAssertEqual(metrics.acquireRoundTrips, 2, "the frontmost lookup and the SpringBoard staleness check")
+    XCTAssertEqual(metrics.unansweredRequests, 0)
+    XCTAssertEqual(metrics.outcome, .complete)
+    XCTAssertNotNil(metrics.slowestRequest)
+    let document = String(decoding: try response.formattedOutputJSON(format: .complete), as: UTF8.self)
+    XCTAssertFalse(document.contains("translatorMetrics"), "the metrics never reach the document")
+    XCTAssertFalse(document.contains("degraded"), "a read with every request answered says nothing about it")
   }
 
   func testAnUntokenedRequestIsAnsweredEmptyWithoutARoundTrip() async throws {

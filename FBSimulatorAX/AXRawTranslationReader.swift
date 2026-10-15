@@ -138,7 +138,7 @@ struct AXRawTranslationReader {
     request.parameters = parameters
     let start = CFAbsoluteTimeGetCurrent()
     let response = transport.send(request, timeout: timeout)
-    collector.addXPCCallDuration(CFAbsoluteTimeGetCurrent() - start)
+    collector.recordRequest(type: request.requestType, duration: CFAbsoluteTimeGetCurrent() - start, answered: response != nil)
     return response
   }
 

@@ -95,7 +95,9 @@ struct AccessibilityInfoMethodHandlerTests {
     backend: .ax,
     translatorMetrics: AccessibilityTranslatorReadMetrics(
       elementCount: 114, roundTrips: 225, readDuration: 0.072, totalDuration: 0.081,
-      translatorReads: .batched, transport: .bridge))
+      translatorReads: .batched, transport: .bridge, acquireDuration: 0.004, springBoardCheckDuration: 0.002,
+      acquireRoundTrips: 2, unansweredRequests: 1,
+      slowestRequest: AccessibilityTranslatorRequestTiming(requestType: 4, duration: 0.031)))
 
   @Test(arguments: [false, true])
   func everyReadRecordsHowItWentWithoutAskingForAProfile(byMarker: Bool) async throws {
@@ -111,8 +113,16 @@ struct AccessibilityInfoMethodHandlerTests {
     }
 
     #expect(
-      call.ints == ["ax_element_count": 114, "ax_round_trips": 225, "ax_profile_read_ms": 72, "ax_profile_total_ms": 81])
-    #expect(call.normals == ["ax_backend": "ax", "ax_translator_reads": "batched", "ax_transport": "bridge"])
+      call.ints == [
+        "ax_element_count": 114, "ax_round_trips": 225, "ax_profile_read_ms": 72, "ax_profile_total_ms": 81,
+        "ax_profile_acquire_ms": 4, "ax_springboard_check_ms": 2, "ax_acquire_round_trips": 2, "ax_request_timeouts": 1,
+        "ax_slowest_request_ms": 31,
+      ])
+    #expect(
+      call.normals == [
+        "ax_backend": "ax", "ax_translator_reads": "batched", "ax_transport": "bridge", "ax_read_outcome": "degraded",
+        "ax_slowest_request_type": "frontmost",
+      ])
     #expect(!response.json.contains("profile"), "the caller did not ask for a profile, so none is reported")
   }
 

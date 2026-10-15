@@ -340,7 +340,10 @@ public struct AccessibilityElementsResponse: Sendable {
       frames: AccessibilityFrameSummary(elements: reported),
       automation: automation,
       narrowing: narrowing,
-      client: client
+      client: client,
+      degraded: translatorMetrics.flatMap {
+        $0.unansweredRequests > 0 ? AccessibilityDegradedRead(unansweredRequests: $0.unansweredRequests) : nil
+      }
     )
   }
 
@@ -361,6 +364,16 @@ public struct AccessibilityTranslatorReadMetrics: Sendable, Equatable {
   public let totalDuration: CFAbsoluteTime
   public let translatorReads: AXTranslatorReads
   public let transport: AXTranslationTransportKind
+  /// Resolving the root, before the walk.
+  public let acquireDuration: CFAbsoluteTime
+  /// Checking that SpringBoard answers for a frontmost root; zero for any other read.
+  public let springBoardCheckDuration: CFAbsoluteTime
+  /// Requests made before the walk: resolving the root and checking it.
+  public let acquireRoundTrips: Int64
+  /// Requests the service did not answer within their timeout. The read carried on without their values.
+  public let unansweredRequests: Int64
+  /// The longest request the read made.
+  public let slowestRequest: AccessibilityTranslatorRequestTiming?
 
   public init(
     elementCount: Int64,
@@ -368,7 +381,12 @@ public struct AccessibilityTranslatorReadMetrics: Sendable, Equatable {
     readDuration: CFAbsoluteTime,
     totalDuration: CFAbsoluteTime,
     translatorReads: AXTranslatorReads,
-    transport: AXTranslationTransportKind
+    transport: AXTranslationTransportKind,
+    acquireDuration: CFAbsoluteTime = 0,
+    springBoardCheckDuration: CFAbsoluteTime = 0,
+    acquireRoundTrips: Int64 = 0,
+    unansweredRequests: Int64 = 0,
+    slowestRequest: AccessibilityTranslatorRequestTiming? = nil
   ) {
     self.elementCount = elementCount
     self.roundTrips = roundTrips
@@ -376,5 +394,33 @@ public struct AccessibilityTranslatorReadMetrics: Sendable, Equatable {
     self.totalDuration = totalDuration
     self.translatorReads = translatorReads
     self.transport = transport
+    self.acquireDuration = acquireDuration
+    self.springBoardCheckDuration = springBoardCheckDuration
+    self.acquireRoundTrips = acquireRoundTrips
+    self.unansweredRequests = unansweredRequests
+    self.slowestRequest = slowestRequest
+  }
+
+  /// How the read ended, given that it returned.
+  public var outcome: AccessibilityReadOutcome {
+    unansweredRequests > 0 ? .degraded : .complete
+  }
+}
+
+/// How an accessibility read ended, as telemetry spells it.
+public enum AccessibilityReadOutcome: String, Sendable {
+  /// Every request was answered.
+  case complete
+  /// The read returned, but some requests went unanswered and their values are missing.
+  case degraded
+}
+
+/// A read that returned with requests unanswered, so some values are missing. Absent from a `complete`
+/// document when every request was answered.
+public struct AccessibilityDegradedRead: Sendable, Equatable, Encodable {
+  public let unansweredRequests: Int64
+
+  enum CodingKeys: String, CodingKey {
+    case unansweredRequests = "unanswered_requests"
   }
 }
