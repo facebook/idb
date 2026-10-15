@@ -168,7 +168,7 @@ extension SimulatorAppearance {
     self = entry.value
   }
 
-  var argumentName: String? {
+  public var argumentName: String? {
     SimulatorAppearance.argumentNames.first(where: { $0.value == self })?.name
   }
 

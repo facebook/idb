@@ -157,6 +157,16 @@ public struct SimulatorPreferencesCommands {
     }.events()
   }
 
+  /// Publishes the current appearance and subsequent native changes, keeping only the newest unread value.
+  public func appearanceChanges() async throws -> AsyncThrowingStream<SimulatorAppearance, Error> {
+    let simulator = self.simulator
+    let subscription = try await SimulatorDarwinNotificationObserver.subscribe(
+      on: simulator, name: "com.apple.UIKit.SystemUIServiceUserInterfaceStyleNotification")
+    return SimulatorDarwinNotificationObserver.values(subscription: subscription) { _ in
+      try await SimulatorPreferencesCommands(simulator: simulator).currentAppearance()
+    }
+  }
+
   // MARK: - Private
 
   static func appearance(rawValue: Int) throws -> SimulatorAppearance {
