@@ -38,8 +38,8 @@ func createSimulatorSet(
   logger: (any ControlCoreLogger)? = nil
 ) -> SimulatorSet {
   do {
-    return try SimulatorSet.set(
-      withConfiguration: configuration,
+    return try SimulatorSet(
+      configuration: configuration,
       deviceSet: asSimDeviceSet(fakeDeviceSet),
       delegate: nil,
       logger: logger)

@@ -29,17 +29,13 @@ public final class SimulatorSet: TargetSet {
   /// - Parameter logger: nil means `ControlCoreGlobalConfiguration.defaultLogger`, which is
   ///   os_log-only unless the `FBCONTROLCORE_LOGGING`/`FBCONTROLCORE_DEBUG_LOGGING` environment
   ///   variables are set — see its documentation. The resolved logger is stored non-optionally.
-  public static func set(withConfiguration configuration: SimulatorControlConfiguration, deviceSet: SimDeviceSet, delegate: (any TargetSetDelegate)?, logger: (any ControlCoreLogger)?) throws -> SimulatorSet {
+  public init(configuration: SimulatorControlConfiguration, deviceSet: SimDeviceSet, delegate: (any TargetSetDelegate)?, logger: (any ControlCoreLogger)?) throws {
     let resolvedLogger = logger ?? ControlCoreGlobalConfiguration.defaultLogger
     try SimulatorControlFrameworkLoader.essentialFrameworks.loadPrivateFrameworks(resolvedLogger)
-    return SimulatorSet(configuration: configuration, deviceSet: deviceSet, delegate: delegate, logger: resolvedLogger)
-  }
-
-  private init(configuration: SimulatorControlConfiguration, deviceSet: SimDeviceSet, delegate: (any TargetSetDelegate)?, logger: any ControlCoreLogger) {
     self.configuration = configuration
     self.deviceSet = deviceSet
     self.delegate = delegate
-    self.logger = logger
+    self.logger = resolvedLogger
     self.workQueue = DispatchQueue.main
     self.asyncQueue = DispatchQueue.global(qos: .default)
     self.stateChangeObserver = StateChangeObserver.observing(self)

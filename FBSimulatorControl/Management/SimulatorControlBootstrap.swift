@@ -23,8 +23,8 @@ public final class SimulatorControlBootstrap {
     try SimulatorControlFrameworkLoader.essentialFrameworks.loadPrivateFrameworks(configuration.logger)
     let serviceContext = try SimulatorServiceContext.sharedServiceContext(withLogger: configuration.logger)
     let deviceSet = try serviceContext.createDeviceSet(with: configuration)
-    let set = try SimulatorSet.set(
-      withConfiguration: configuration,
+    let set = try SimulatorSet(
+      configuration: configuration,
       deviceSet: deviceSet,
       delegate: nil,
       logger: configuration.logger.withName("simulator_set"))
