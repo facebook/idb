@@ -46,7 +46,7 @@ public final class DeviceVideoRecordingCommands: VideoRecordingCommands {
     if video != nil {
       throw DeviceVideoRecordingCommandError.recordingAlreadyActive
     }
-    let video = try await DeviceVideo.video(for: device, filePath: filePath)
+    let video = try await DeviceVideo(device: device, filePath: filePath)
     self.video = video
     try await video.startRecording()
     return DeviceVideoRecording(commands: self)

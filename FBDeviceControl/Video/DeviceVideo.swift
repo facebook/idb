@@ -81,10 +81,11 @@ public final class DeviceVideo {
     return session
   }
 
-  public static func video(for device: Device, filePath: String) async throws -> DeviceVideo {
-    let session = try await captureSession(for: device)
+  /// Opens a capture session on `device`'s screen that will record to `filePath`.
+  public convenience init(device: Device, filePath: String) async throws {
+    let session = try await DeviceVideo.captureSession(for: device)
     let encoder = try VideoFileWriter(session: session, filePath: filePath, logger: device.logger)
-    return DeviceVideo(encoder: encoder)
+    self.init(encoder: encoder)
   }
 
   private init(encoder: VideoFileWriter) {
