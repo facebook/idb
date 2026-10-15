@@ -132,6 +132,22 @@ public final class Device: Target, DeviceCommands, CustomStringConvertible {
     return created
   }
 
+  private let deltaUpdateDirectoryLock = NSLock()
+  private var deltaUpdateDirectoryStorage: URL?
+
+  /// The staging directory application installs share, so that a reinstall can be applied as a delta.
+  /// Created on first use.
+  var deltaUpdateDirectory: URL {
+    deltaUpdateDirectoryLock.withLock {
+      if let deltaUpdateDirectoryStorage {
+        return deltaUpdateDirectoryStorage
+      }
+      let created = temporaryDirectory.temporaryDirectory()
+      deltaUpdateDirectoryStorage = created
+      return created
+    }
+  }
+
   public var auxillaryDirectory: String {
     let cwd = FileManager.default.currentDirectoryPath
     return FileManager.default.isWritableFile(atPath: cwd) ? cwd : "/tmp"
@@ -261,7 +277,7 @@ extension Device {
   // MARK: - Shared accessors
 
   public var application: DeviceApplicationCommands {
-    commandCache.resolve { DeviceApplicationCommands(device: self) }
+    DeviceApplicationCommands(device: self)
   }
 
   public var crashLog: DeviceCrashLogCommands {

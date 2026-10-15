@@ -121,26 +121,17 @@ private class DeviceLaunchedApplication: LaunchedApplication {
 // MARK: - DeviceApplicationCommands
 
 public final class DeviceApplicationCommands: ApplicationCommands {
-  fileprivate weak var device: Device?
-  private let deltaUpdateDirectory: URL
+  private let device: Device
 
   // MARK: - Initializers
 
-  public convenience init(device: Device) {
-    self.init(device: device, deltaUpdateDirectory: device.temporaryDirectory.temporaryDirectory())
-  }
-
-  init(device: Device, deltaUpdateDirectory: URL) {
+  public init(device: Device) {
     self.device = device
-    self.deltaUpdateDirectory = deltaUpdateDirectory
   }
 
   // MARK: - Async
 
   public func install(atPath path: String) async throws -> InstalledApplication {
-    guard let device else {
-      throw DeviceNilError.deviceNil
-    }
     let bundle = try BundleDescriptor(path: path)
     let appURL = URL(fileURLWithPath: path, isDirectory: true)
     let options: [String: Any] = [
@@ -149,7 +140,7 @@ public final class DeviceApplicationCommands: ApplicationCommands {
       "InvalidateOnDetach": 1,
       "IsUserInitiated": 1,
       "PackageType": "Developer",
-      "ShadowParentKey": deltaUpdateDirectory,
+      "ShadowParentKey": device.deltaUpdateDirectory,
     ]
     try await device.withConnectedDevice(purpose: "install") { connectedDevice in
       device.logger.log("Installing Application \(appURL)")
@@ -173,9 +164,6 @@ public final class DeviceApplicationCommands: ApplicationCommands {
   }
 
   public func uninstall(bundleID: String) async throws {
-    guard let device else {
-      throw DeviceNilError.deviceNil
-    }
     try await device.withConnectedDevice(purpose: "uninstall_\(bundleID)") { connectedDevice in
       let statistics = DeviceWorkflowStatistics(workflowType: "Uninstall", logger: connectedDevice.logger)
       device.logger.log("Uninstalling Application \(bundleID)")
@@ -251,9 +239,6 @@ public final class DeviceApplicationCommands: ApplicationCommands {
   }
 
   public func launch(_ configuration: ApplicationLaunchConfiguration) async throws -> any LaunchedApplication {
-    guard let device else {
-      throw DeviceNilError.deviceNil
-    }
     let pid: pid_t
     if device.osVersion.version.majorVersion >= 17 {
       let devicectl = AppleDevicectlCommandExecutor(device: device)
@@ -280,9 +265,6 @@ public final class DeviceApplicationCommands: ApplicationCommands {
   }
 
   private func installedApplicationsData(_ returnAttributes: [String]) async throws -> [String: [String: Any]] {
-    guard let device else {
-      throw DeviceNilError.deviceNil
-    }
     return try await device.withConnectedDevice(purpose: "installed_apps") { connectedDevice in
       let options: [String: Any] = [
         "ReturnAttributes": returnAttributes
@@ -306,9 +288,6 @@ public final class DeviceApplicationCommands: ApplicationCommands {
   }
 
   private func withRemoteInstrumentsClient<R>(_ body: (InstrumentsClient) throws -> R) async throws -> R {
-    guard let device else {
-      throw DeviceNilError.deviceNil
-    }
     let usesSecureConnection = device.osVersion.version.majorVersion >= 14
     _ = try await device.developerDiskImage.ensureMounted()
     let serviceName = usesSecureConnection ? "com.apple.instruments.remoteserver.DVTSecureSocketProxy" : "com.apple.instruments.remoteserver"
@@ -318,9 +297,6 @@ public final class DeviceApplicationCommands: ApplicationCommands {
   }
 
   private func pidToRunningProcessName() async throws -> [pid_t: String] {
-    guard let device else {
-      throw DeviceNilError.deviceNil
-    }
     return try await device.withServiceConnection("com.apple.os_trace_relay") { connection in
       do {
         try connection.sendMessage(["Request": "PidList"])
