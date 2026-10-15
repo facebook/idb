@@ -68,10 +68,11 @@ public final class DeviceLinkClient {
   private let connection: LockdownServiceConnection
   private let queue: DispatchQueue
 
-  public static func deviceLinkClient(connection: LockdownServiceConnection) async throws -> DeviceLinkClient {
+  /// Performs the DeviceLink version exchange over `connection` before returning.
+  public convenience init(connection: LockdownServiceConnection) async throws {
     let queue = DispatchQueue(label: "com.facebook.fbdevicecontrol.fbdevicelinkclient")
-    try await performVersionExchange(connection: connection, queue: queue)
-    return DeviceLinkClient(connection: connection, queue: queue)
+    try await DeviceLinkClient.performVersionExchange(connection: connection, queue: queue)
+    self.init(connection: connection, queue: queue)
   }
 
   init(connection: LockdownServiceConnection, queue: DispatchQueue) {

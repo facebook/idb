@@ -253,7 +253,7 @@ extension MobileDevice {
     _ body: (DeviceLinkClient) async throws -> T
   ) async throws -> T {
     try await withServiceConnection(service) { connection in
-      let client = try await DeviceLinkClient.deviceLinkClient(connection: connection)
+      let client = try await DeviceLinkClient(connection: connection)
       return try await body(client)
     }
   }
