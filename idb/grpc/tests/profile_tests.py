@@ -130,6 +130,13 @@ class ProfileJSONTests(TestCase):
         self.assertNotIn("cpuPct", sample)
         self.assertEqual(values, [{"empty": True}, {"text": "Main Thread"}])
 
+    def test_reads_no_descriptor_attribute_protobuf_7_removed(self) -> None:
+        # protobuf 6 deprecates `FieldDescriptor.label` and protobuf 7, which the open-source package requires, removes
+        # it, so a conversion that reads it warns here and raises AttributeError there.
+        # BUG: message_to_json reads `FieldDescriptor.label` — flipped in the following commit.
+        with self.assertWarnsRegex(DeprecationWarning, "label"):
+            message_to_json(_leaks_result().result.report)
+
 
 class _ProfileStream:
     """Answers with `initial`, then with `after_end` once the client ends its requests, as the companion does."""
