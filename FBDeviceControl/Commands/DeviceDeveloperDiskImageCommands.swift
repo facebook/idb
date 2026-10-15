@@ -61,14 +61,12 @@ extension DeviceDiskImageError: LocalizedError {
 }
 
 public final class DeviceDeveloperDiskImageCommands: DeveloperDiskImageCommands {
-  private(set) weak var device: Device?
-  private let diskImages: any DeveloperDiskImageProviding
+  let device: Device
 
   // MARK: - Initializers
 
-  public init(device: Device, diskImages: any DeveloperDiskImageProviding = InstalledDeveloperDiskImages()) {
+  public init(device: Device) {
     self.device = device
-    self.diskImages = diskImages
   }
 
   // MARK: - DeveloperDiskImageCommands
@@ -98,19 +96,16 @@ public final class DeviceDeveloperDiskImageCommands: DeveloperDiskImageCommands 
   }
 
   public func mountableDiskImages() -> [DeveloperDiskImage] {
-    return diskImages.availableDiskImages
+    return device.developerDiskImages.availableDiskImages
   }
 
   public func ensureMounted() async throws -> DeveloperDiskImage {
-    guard let device else {
-      throw DeviceNilError.deviceNil
-    }
     guard let productVersion = device.productVersion else {
       throw DeviceDiskImageError.noProductVersion(deviceDescription: String(describing: device))
     }
     let targetVersion = OSVersion.operatingSystemVersion(fromName: productVersion)
     let diskImage = try DeveloperDiskImage.bestImage(
-      forImages: diskImages.availableDiskImages,
+      forImages: device.developerDiskImages.availableDiskImages,
       targetVersion: targetVersion,
       logger: device.logger)
     return try await mountDeveloperDiskImage(diskImage, imageType: DiskImageTypeDeveloper)
@@ -120,9 +115,9 @@ public final class DeviceDeveloperDiskImageCommands: DeveloperDiskImageCommands 
 
   /// The disk image behind each mounted entry, in the order the device reports them.
   private func diskImagesOfMountedEntries() async throws -> [DeveloperDiskImage] {
-    let logger = device?.logger
+    let logger = device.logger
     let entries = try await mountedImageEntries()
-    let images = diskImages.availableDiskImages
+    let images = device.developerDiskImages.availableDiskImages
     var imagesBySignature: [Data: DeveloperDiskImage] = [:]
     for image in images {
       imagesBySignature[image.signature] = image
@@ -132,15 +127,12 @@ public final class DeviceDeveloperDiskImageCommands: DeveloperDiskImageCommands 
       if let image = signature.flatMap({ imagesBySignature[$0] }) {
         return image
       }
-      logger?.log("Could not find the location of the image mounted on the device \(mountEntry)")
+      logger.log("Could not find the location of the image mounted on the device \(mountEntry)")
       return DeveloperDiskImage.unknownDiskImage(withSignature: signature ?? Data())
     }
   }
 
   private func mountedImageEntries() async throws -> [[String: Any]] {
-    guard let device else {
-      throw DeviceNilError.deviceNil
-    }
     return try await device.withServiceConnection(ImageMounterService) { connection in
       let request: [String: Any] = [
         CommandKey: "CopyDevices"
@@ -168,19 +160,16 @@ public final class DeviceDeveloperDiskImageCommands: DeveloperDiskImageCommands 
   }
 
   private func mountDeveloperDiskImage(_ diskImage: DeveloperDiskImage, imageType: String) async throws -> DeveloperDiskImage {
-    let logger = device?.logger
+    let logger = device.logger
     let signatureToDiskImage = try await signatureToDiskImageOfMountedDisks()
     if signatureToDiskImage[diskImage.signature] != nil {
-      logger?.log("Disk Image \(diskImage) is already mounted, avoiding re-mounting it")
+      logger.log("Disk Image \(diskImage) is already mounted, avoiding re-mounting it")
       return diskImage
     }
     return try await performDiskImageMount(diskImage, imageType: imageType)
   }
 
   private func performDiskImageMount(_ diskImage: DeveloperDiskImage, imageType: String) async throws -> DeveloperDiskImage {
-    guard let device else {
-      throw DeviceNilError.deviceNil
-    }
     return try await device.withConnectedDevice(purpose: "mount_disk_image") { connectedDevice in
       let options: [String: Any] = [
         ImageSignatureKey: diskImage.signature,
@@ -206,9 +195,6 @@ public final class DeviceDeveloperDiskImageCommands: DeveloperDiskImageCommands 
   }
 
   private func unmountDiskImageAtPath(_ mountPath: String) async throws {
-    guard let device else {
-      throw DeviceNilError.deviceNil
-    }
     try await device.withServiceConnection(ImageMounterService) { connection in
       let request: [String: Any] = [
         CommandKey: "UnmountImage",

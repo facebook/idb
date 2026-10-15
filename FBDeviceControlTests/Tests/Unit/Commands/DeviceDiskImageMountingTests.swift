@@ -47,10 +47,7 @@ struct DeviceDiskImageMountingTests {
     } else {
       amDevice.values.removeValue(forKey: "ProductVersion")
     }
-    let device = amDevice.makeDevice()
-    device.commandCache.register(
-      DeviceDeveloperDiskImageCommands(device: device, diskImages: StubDiskImages(availableDiskImages: available)),
-      as: DeviceDeveloperDiskImageCommands.self)
+    let device = amDevice.makeDevice(developerDiskImages: StubDiskImages(availableDiskImages: available))
     amDevice.service(ImageMounterService).messageReplies = [
       ["EntryList": mounted.map { ["ImageSignature": $0.signature, "MountPath": "/Developer"] }]
     ]

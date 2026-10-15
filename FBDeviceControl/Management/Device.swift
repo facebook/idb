@@ -68,6 +68,9 @@ public final class Device: Target, DeviceCommands, CustomStringConvertible {
 
   public private(set) var state: TargetState = .unknown
 
+  /// The developer disk images this device can mount.
+  public let developerDiskImages: any DeveloperDiskImageProviding
+
   public var uniqueIdentifier: String { cachedUniqueIdentifier ?? "" }
   public var udid: String { cachedUDID ?? "" }
   public var name: String { cachedName ?? "" }
@@ -84,11 +87,13 @@ public final class Device: Target, DeviceCommands, CustomStringConvertible {
   public init(
     amDevice: MobileDevice?,
     restorableDevice: RestorableDevice?,
-    logger: any ControlCoreLogger
+    logger: any ControlCoreLogger,
+    developerDiskImages: any DeveloperDiskImageProviding = InstalledDeveloperDiskImages()
   ) {
     self.amDeviceStorage = amDevice
     self.restorableDeviceStorage = restorableDevice
     self.commandCache = TargetCommandCache()
+    self.developerDiskImages = developerDiskImages
     // Without a backing device there is no call table; fail here rather than through a null
     // function pointer later.
     if let amDevice {
@@ -322,7 +327,7 @@ extension Device {
   }
 
   public var developerDiskImage: DeviceDeveloperDiskImageCommands {
-    commandCache.resolve { DeviceDeveloperDiskImageCommands(device: self) }
+    DeviceDeveloperDiskImageCommands(device: self)
   }
 
   public var socketForwarding: DeviceSocketForwardingCommands {
