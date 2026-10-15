@@ -65,7 +65,7 @@ public final class XCTestLogger: ControlCoreLogger, @unchecked Sendable {
     } catch {
       NSLog("Failed to create log file at path %@: %@", path, error.localizedDescription)
     }
-    let stderrLogger = ControlCoreLoggerFactory.systemLoggerWriting(toStderr: true, withDebugLogging: true).withDateFormatEnabled(true)
+    let stderrLogger = ControlCoreGlobalConfiguration.systemLogger(writingToStderr: true, debugLogging: true).withDateFormatEnabled(true)
     guard let fileHandle = FileHandle(forWritingAtPath: path) else {
       NSLog("Failed to open the log file at path %@ for writing, logging to stderr only", path)
       return XCTestLogger(baseLogger: stderrLogger, logDirectory: directory)

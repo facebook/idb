@@ -33,7 +33,7 @@ struct Stream: AsyncParsableCommand {
 
   @MainActor
   mutating func run() async throws {
-    let logger = ControlCoreLoggerFactory.systemLoggerWriting(toStderr: true, withDebugLogging: false)
+    let logger = ControlCoreGlobalConfiguration.systemLogger(writingToStderr: true, debugLogging: false)
     let simulator = try target.simulator(logger: logger)
     let (insets, renderer, bars) = try video.composition(simulator: simulator, logger: logger)
     let framebuffer = try await simulator.framebuffer.connect(display: .active)

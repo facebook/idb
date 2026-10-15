@@ -53,7 +53,7 @@ struct Clip: AsyncParsableCommand {
   /// reading back what was written, or writing the report — publishes neither, and a file that
   /// appeared at the destination since `validate()` is not replaced.
   mutating func run() async throws {
-    let logger = ControlCoreLoggerFactory.systemLoggerWriting(toStderr: true, withDebugLogging: false)
+    let logger = ControlCoreGlobalConfiguration.systemLogger(writingToStderr: true, debugLogging: false)
     let destination = URL(fileURLWithPath: output)
     let staging = try ClipStaging(for: destination)
     defer { staging.discard() }

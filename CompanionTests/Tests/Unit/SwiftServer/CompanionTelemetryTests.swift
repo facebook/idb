@@ -102,7 +102,7 @@ private final class RecordingLogger: ControlCoreLogger, @unchecked Sendable {
 struct CompanionTelemetryTests {
 
   private static let logger = IDBLogger(
-    loggers: [ControlCoreLoggerFactory.systemLoggerWriting(toStderr: true, withDebugLogging: false)])
+    loggers: [ControlCoreGlobalConfiguration.systemLogger(writingToStderr: true, debugLogging: false)])
 
   private func makeTelemetry() -> (CompanionTelemetry, RecordingEventReporter) {
     let recorder = RecordingEventReporter()

@@ -13,7 +13,7 @@ import GRPCCore
 import IDBGRPCSwift
 import Testing
 
-private let logger = ControlCoreLoggerFactory.systemLoggerWriting(toStderr: false, withDebugLogging: false)
+private let logger = ControlCoreGlobalConfiguration.systemLogger(writingToStderr: false, debugLogging: false)
 
 /// A request stream the test controls: it yields what the test sends and only ends when the test finishes it.
 private func clientStream() -> (RequestStreamReader<Idb_ProfileRequest>, AsyncThrowingStream<Idb_ProfileRequest, any Error>.Continuation) {

@@ -67,7 +67,7 @@ final class IDBXCTestReporterCoverageTests {
   private func exportCoverage(binariesPath: [String]) async throws -> Data {
     let reporter = IDBXCTestReporter(
       responseStream: RPCWriter(wrapping: DiscardingWriter()),
-      logger: IDBLogger(loggers: [ControlCoreLoggerFactory.systemLoggerWriting(toStderr: true, withDebugLogging: false)]))
+      logger: IDBLogger(loggers: [ControlCoreGlobalConfiguration.systemLogger(writingToStderr: true, debugLogging: false)]))
     let profdataPath = coverageDirectory.appendingPathComponent("coverage.profdata")
     try await reporter.mergeRawCoverage(coverageDirectory: coverageDirectory, profdataPath: profdataPath)
     return try await reporter.exportCoverage(profdataPath: profdataPath, binariesPath: binariesPath)

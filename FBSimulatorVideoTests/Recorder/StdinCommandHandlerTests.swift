@@ -15,7 +15,7 @@ import Testing
   @MainActor
   private func makeHandler(screenshotDir: String? = nil) -> StdinCommandHandler {
     let renderer = OverlayRenderer(width: 100, height: 100)
-    let logger = ControlCoreLoggerFactory.systemLoggerWriting(toStderr: false, withDebugLogging: false)
+    let logger = ControlCoreGlobalConfiguration.systemLogger(writingToStderr: false, debugLogging: false)
     return StdinCommandHandler(
       renderer: renderer,
       screenshotDir: screenshotDir,

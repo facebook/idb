@@ -11,7 +11,7 @@ import GRPCCore
 import IDBGRPCSwift
 import XCTest
 
-private let logger = ControlCoreLoggerFactory.systemLoggerWriting(toStderr: false, withDebugLogging: false)
+private let logger = ControlCoreGlobalConfiguration.systemLogger(writingToStderr: false, debugLogging: false)
 
 private final class ScriptedFilePuller: FilePulling, @unchecked Sendable {
   let temporaryDirectory = TemporaryDirectory(logger: logger)

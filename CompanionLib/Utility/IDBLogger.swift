@@ -118,7 +118,7 @@ public final class IDBLogger: ControlCoreLogger {
 
   private static func systemLoggerSink(withUserDefaults userDefaults: UserDefaults) -> ControlCoreLogger {
     let debugLogging = userDefaults.string(forKey: "-log-level")?.lowercased() != "info"
-    return ControlCoreLoggerFactory.systemLoggerWriting(toStderr: true, withDebugLogging: debugLogging)
+    return ControlCoreGlobalConfiguration.systemLogger(writingToStderr: true, debugLogging: debugLogging)
   }
 
   private static func openLogFile(atPath path: String) throws -> Int32 {

@@ -67,8 +67,8 @@ struct ControlCoreLoggerTests {
 
   @Test
   func systemLoggerLevelFollowsDebugLogging() {
-    let info = ControlCoreLoggerFactory.systemLoggerWriting(toStderr: false, withDebugLogging: false)
-    let debug = ControlCoreLoggerFactory.systemLoggerWriting(toStderr: false, withDebugLogging: true)
+    let info = ControlCoreGlobalConfiguration.systemLogger(writingToStderr: false, debugLogging: false)
+    let debug = ControlCoreGlobalConfiguration.systemLogger(writingToStderr: false, debugLogging: true)
 
     #expect(info.level == .info)
     #expect(debug.level == .debug)

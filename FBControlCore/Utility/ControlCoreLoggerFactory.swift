@@ -9,28 +9,6 @@ import Foundation
 import os
 
 /// Implementations of Loggers.
-public enum ControlCoreLoggerFactory {
-
-  /// A logger backed by os_log.
-  /// `writeToStdErr` additionally mirrors output to stderr unless os_log already does so in this environment.
-  /// `debugLogging` selects the debug level rather than info.
-  public static func systemLoggerWriting(toStderr writeToStdErr: Bool, withDebugLogging debugLogging: Bool) -> ControlCoreLogger {
-    let systemLogger = OSLogLogger(client: OSLog(subsystem: OSLogLogger.subsystem, category: ""), name: nil, level: debugLogging ? .debug : .info)
-    guard writeToStdErr, !systemLoggerWillLogToStdErr else {
-      return systemLogger
-    }
-    return CompositeLogger(loggers: [
-      systemLogger,
-      ConsumerLogger(fileDescriptor: STDERR_FILENO, closeOnEndOfFile: false),
-    ])
-  }
-
-  // rdar://36919139: os_log writes to stderr itself when any of these are set.
-  private static var systemLoggerWillLogToStdErr: Bool {
-    let environment = ProcessInfo.processInfo.environment
-    return environment["OS_ACTIVITY_DT_MODE"] != nil || environment["ACTIVITY_LOG_STDERR"] != nil || environment["CFLOG_FORCE_STDERR"] != nil
-  }
-}
 
 /// Trims surrounding whitespace and newlines; returns nil when nothing remains to log.
 func loggableStringLine(_ string: String) -> String? {
@@ -41,7 +19,7 @@ func loggableStringLine(_ string: String) -> String? {
 // MARK: - OSLogLogger
 
 // SAFETY: all state is immutable, and `OSLog` handles are safe to use from any thread.
-private final class OSLogLogger: ControlCoreLogger, @unchecked Sendable {
+final class OSLogLogger: ControlCoreLogger, @unchecked Sendable {
 
   static let subsystem = "com.facebook.fbcontrolcore"
 

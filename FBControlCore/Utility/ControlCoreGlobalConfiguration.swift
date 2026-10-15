@@ -6,6 +6,7 @@
  */
 
 import Foundation
+import os
 
 private let ConfirmShimsAreSignedEnv = "FBCONTROLCORE_CONFIRM_SIGNED_SHIMS"
 
@@ -71,7 +72,7 @@ public enum ControlCoreGlobalConfiguration {
   }
 
   private static func createDefaultLogger() -> any ControlCoreLogger {
-    ControlCoreLoggerFactory.systemLoggerWriting(toStderr: stderrLoggingEnabledByDefault, withDebugLogging: debugLoggingEnabledByDefault)
+    ControlCoreGlobalConfiguration.systemLogger(writingToStderr: stderrLoggingEnabledByDefault, debugLogging: debugLoggingEnabledByDefault)
   }
 
   private static var stderrLoggingEnabledByDefault: Bool {
@@ -83,4 +84,27 @@ public enum ControlCoreGlobalConfiguration {
     guard let value = ProcessInfo.processInfo.environment[debugLoggingEnvironmentVariable] else { return false }
     return (value as NSString).boolValue
   }
+
+  // MARK: - System Logger
+
+  /// A logger backed by os_log.
+  /// `writeToStdErr` additionally mirrors output to stderr unless os_log already does so in this environment.
+  /// `debugLogging` selects the debug level rather than info.
+  public static func systemLogger(writingToStderr writeToStdErr: Bool, debugLogging: Bool) -> ControlCoreLogger {
+    let systemLogger = OSLogLogger(client: OSLog(subsystem: OSLogLogger.subsystem, category: ""), name: nil, level: debugLogging ? .debug : .info)
+    guard writeToStdErr, !systemLoggerWillLogToStdErr else {
+      return systemLogger
+    }
+    return CompositeLogger(loggers: [
+      systemLogger,
+      ConsumerLogger(fileDescriptor: STDERR_FILENO, closeOnEndOfFile: false),
+    ])
+  }
+
+  // rdar://36919139: os_log writes to stderr itself when any of these are set.
+  private static var systemLoggerWillLogToStdErr: Bool {
+    let environment = ProcessInfo.processInfo.environment
+    return environment["OS_ACTIVITY_DT_MODE"] != nil || environment["ACTIVITY_LOG_STDERR"] != nil || environment["CFLOG_FORCE_STDERR"] != nil
+  }
+
 }

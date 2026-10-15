@@ -52,7 +52,7 @@ final class IDBTestOperationTests: XCTestCase {
   }
 
   private func makeOperation(completion: Task<Void, Error>) -> IDBTestOperation {
-    let logger = IDBLogger(loggers: [ControlCoreLoggerFactory.systemLoggerWriting(toStderr: true, withDebugLogging: false)])
+    let logger = IDBLogger(loggers: [ControlCoreGlobalConfiguration.systemLogger(writingToStderr: true, debugLogging: false)])
     return IDBTestOperation(
       configuration: .logic(
         LogicTestConfiguration(

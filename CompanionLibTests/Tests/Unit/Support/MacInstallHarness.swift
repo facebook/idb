@@ -21,7 +21,7 @@ final class MacInstallHarness {
   private let logger: any ControlCoreLogger
 
   init() throws {
-    logger = ControlCoreLoggerFactory.systemLoggerWriting(toStderr: false, withDebugLogging: false)
+    logger = ControlCoreGlobalConfiguration.systemLogger(writingToStderr: false, debugLogging: false)
     target = MacDevice(logger: logger)
     scratch = URL(fileURLWithPath: NSTemporaryDirectory()).appendingPathComponent("MacInstallHarness-\(UUID().uuidString)")
     try FileManager.default.createDirectory(at: scratch, withIntermediateDirectories: true)
