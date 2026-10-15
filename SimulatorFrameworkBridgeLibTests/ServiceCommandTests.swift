@@ -13,8 +13,8 @@ import Testing
 struct ServiceCommandTests {
   @Test
   func orientationRejectsWritesAndExtraArguments() {
-    #expect(FBOrientationService.run(action: "set", arguments: []) == 1)
-    #expect(FBOrientationService.run(action: "get", arguments: ["ignored"]) == 1)
+    #expect(OrientationService.run(action: "set", arguments: []) == 1)
+    #expect(OrientationService.run(action: "get", arguments: ["ignored"]) == 1)
   }
 
   @Test

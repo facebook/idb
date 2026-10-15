@@ -96,7 +96,7 @@ public struct FBBridgeServices: FBBridgeServiceHandling {
   }
 
   public func orientation(_ action: String, arguments: [String]) -> Int32 {
-    FBOrientationService.run(action: action, arguments: arguments)
+    OrientationService.run(action: action, arguments: arguments)
   }
 
   public func repl(_ socketPath: String?, libraryPath: String, additionalLibraryPaths: [String]) -> Int32 {
