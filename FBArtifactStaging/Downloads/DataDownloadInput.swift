@@ -153,7 +153,7 @@ extension DataDownloadInput: URLSessionDataDelegate {
   func urlSession(_ session: URLSession, task: URLSessionTask, didCompleteWithError error: Error?) {
     if let error {
       logger.error().log("Download task \(task) failed with error \(error)")
-      report.trust = DownloadReport.Trust.evaluating(failure: error)
+      report.trust = DownloadReport.Trust(failure: error)
       fail(InstallError.transferFailed(url: task.originalRequest?.url, underlying: error, report: report))
     } else {
       finished.open()

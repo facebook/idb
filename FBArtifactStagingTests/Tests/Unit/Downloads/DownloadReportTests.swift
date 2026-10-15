@@ -46,11 +46,11 @@ struct DownloadReportTests {
       domain: NSURLErrorDomain, code: NSURLErrorSecureConnectionFailed,
       userInfo: [NSURLErrorFailingURLPeerTrustErrorKey: try untrustedTrust()])
 
-    #expect(DownloadReport.Trust.evaluating(failure: failure)?.chain.map(\.subject) == ["idb.test", "idb test root"])
+    #expect(DownloadReport.Trust(failure: failure)?.chain.map(\.subject) == ["idb.test", "idb test root"])
   }
 
   @Test
   func aFailureWithoutAPeerTrustHasNoTrust() {
-    #expect(DownloadReport.Trust.evaluating(failure: URLError(.networkConnectionLost)) == nil)
+    #expect(DownloadReport.Trust(failure: URLError(.networkConnectionLost)) == nil)
   }
 }

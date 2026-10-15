@@ -81,14 +81,14 @@ extension DownloadReport.Trust {
       chain: certificates.map(DownloadReport.Certificate.init(certificate:)))
   }
 
-  /// The trust a TLS failure's error carries, if it carries one.
-  static func evaluating(failure error: Error) -> Self? {
+  /// The trust a TLS failure's error carries, or nil when it carries none.
+  init?(failure error: Error) {
     let nsError = error as NSError
     let value = nsError.userInfo[NSURLErrorFailingURLPeerTrustErrorKey] as CFTypeRef?
     guard let value, CFGetTypeID(value) == SecTrustGetTypeID() else {
       return nil
     }
-    return Self(evaluating: unsafeDowncast(value, to: SecTrust.self))
+    self.init(evaluating: unsafeDowncast(value, to: SecTrust.self))
   }
 }
 
