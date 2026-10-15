@@ -1589,7 +1589,7 @@ final class AXBridgeReadsTests: XCTestCase {
 
   func testModalParsesSystemAlert() {
     let response: [String: Any] = ["ok": true, "modal": ["kind": "system", "elementType": "SBAlertItemWindow", "label": "Allow \u{201c}Maps\u{201d} to use your location?"]]
-    let modal = AXTreeRead.modal(fromResponse: response)
+    let modal = AccessibilityModalInfo(bridgeResponse: response)
     XCTAssertEqual(modal?.kind, .system)
     XCTAssertEqual(modal?.elementType, "SBAlertItemWindow")
     XCTAssertEqual(modal?.label, "Allow \u{201c}Maps\u{201d} to use your location?")
@@ -1597,16 +1597,16 @@ final class AXBridgeReadsTests: XCTestCase {
 
   func testModalParsesAppAlertWithoutLabel() {
     let response: [String: Any] = ["ok": true, "modal": ["kind": "app", "elementType": "_UIAlertControllerView"]]
-    let modal = AXTreeRead.modal(fromResponse: response)
+    let modal = AccessibilityModalInfo(bridgeResponse: response)
     XCTAssertEqual(modal?.kind, .app)
     XCTAssertEqual(modal?.elementType, "_UIAlertControllerView")
     XCTAssertNil(modal?.label)
   }
 
   func testModalAbsentOrMalformedIsNil() {
-    XCTAssertNil(AXTreeRead.modal(fromResponse: ["ok": true]), "no modal key -> nil")
-    XCTAssertNil(AXTreeRead.modal(fromResponse: ["ok": true, "modal": ["elementType": "X"]]), "missing kind -> nil")
-    XCTAssertNil(AXTreeRead.modal(fromResponse: ["ok": true, "modal": ["kind": "bogus", "elementType": "X"]]), "unknown kind -> nil")
+    XCTAssertNil(AccessibilityModalInfo(bridgeResponse: ["ok": true]), "no modal key -> nil")
+    XCTAssertNil(AccessibilityModalInfo(bridgeResponse: ["ok": true, "modal": ["elementType": "X"]]), "missing kind -> nil")
+    XCTAssertNil(AccessibilityModalInfo(bridgeResponse: ["ok": true, "modal": ["kind": "bogus", "elementType": "X"]]), "unknown kind -> nil")
   }
 
   func testFrontmostTreeCarriesModalDescriptor() throws {

@@ -84,7 +84,7 @@ extension AXTreeRead {
     }
     let truncated = (response[AXWire.Envelope.truncated.rawValue] as? Bool) ?? false
     self.init(
-      tree: tree, pid: pid, truncated: truncated, modal: Self.modal(fromResponse: response),
+      tree: tree, pid: pid, truncated: truncated, modal: AccessibilityModalInfo(bridgeResponse: response),
       automation: AccessibilityAutomationState(bridgeResponse: response)
     )
     self.phases = Self.guestPhases(fromResponse: response)
@@ -110,7 +110,7 @@ extension AXTreeRead {
     }
     let truncated = (response[AXWire.Envelope.truncated.rawValue] as? Bool) ?? false
     self.init(
-      tree: tree, pid: pid, truncated: truncated, modal: Self.modal(fromResponse: response),
+      tree: tree, pid: pid, truncated: truncated, modal: AccessibilityModalInfo(bridgeResponse: response),
       automation: AccessibilityAutomationState(bridgeResponse: response)
     )
     self.phases = Self.guestPhases(fromResponse: response)
@@ -153,15 +153,6 @@ extension AXTreeRead {
     return response[AXWire.Envelope.effect.rawValue] as? String == AXWire.Effect.none.rawValue
   }
 
-  /// Decodes the optional `modal` descriptor the guest adds to a describe response into a typed value,
-  /// or nil when no modal is present. Host-facing enrichment — never emitted in the serialized output.
-  static func modal(fromResponse response: [String: Any]) -> AccessibilityModalInfo? {
-    guard let modal = response[AXWire.Envelope.modal.rawValue] as? [String: Any] else {
-      return nil
-    }
-    return BridgeAXModal(payload: modal).map(AccessibilityModalInfo.init)
-  }
-
   /// The node a successful response carries, or `nil` for a successful *empty* result
   /// (`{ ok: true, empty: true }`) — which only a hit-test produces.
   private static func node(fromValidatedResponse response: [String: Any], pid: pid_t) throws -> [String: Any]? {
@@ -187,5 +178,19 @@ extension AccessibilityAutomationState {
     // `asserted` absent reads as false: a guest that only reports the mode has asserted nothing.
     let asserted = (object[AXWire.Automation.asserted.rawValue] as? Bool) ?? false
     self.init(enabled: enabled, asserted: asserted)
+  }
+}
+
+extension AccessibilityModalInfo {
+
+  /// Decodes the optional `modal` descriptor the guest adds to a describe response, or nil when no modal is present.
+  /// Host-facing enrichment — never emitted in the serialized output.
+  init?(bridgeResponse response: [String: Any]) {
+    guard let modal = response[AXWire.Envelope.modal.rawValue] as? [String: Any],
+      let decoded = BridgeAXModal(payload: modal)
+    else {
+      return nil
+    }
+    self.init(decoded)
   }
 }
