@@ -235,13 +235,13 @@ extension TestManagerAPIMediatorIDEInterface {
 
   @objc(_XCT_testCase:method:didFinishActivity:)
   func testCase(_ testClass: String, method: String, didFinishActivity activity: NSObject) -> Any? {
-    reporter.testCase(testClass, method: method, didFinishActivity: ActivityRecord.from(activity))
+    reporter.testCase(testClass, method: method, didFinishActivity: ActivityRecord(activity))
     return nil
   }
 
   @objc(_XCT_testCase:method:willStartActivity:)
   func testCase(_ testClass: String, method: String, willStartActivity activity: NSObject) -> Any? {
-    reporter.testCase(testClass, method: method, willStartActivity: ActivityRecord.from(activity))
+    reporter.testCase(testClass, method: method, willStartActivity: ActivityRecord(activity))
     return nil
   }
 

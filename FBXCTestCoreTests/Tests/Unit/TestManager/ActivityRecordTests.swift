@@ -40,7 +40,7 @@ struct ActivityRecordTests {
   }
 
   private func wrapActivity(_ record: NSObject) -> ActivityRecord {
-    ActivityRecord.from(record)
+    ActivityRecord(record)
   }
 
   // MARK: - from(_:) field mapping

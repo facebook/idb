@@ -8,7 +8,6 @@
 import Foundation
 
 /// An XCTest activity, copied out of XCTest's own `XCActivityRecord`.
-/// Objective-C only constructs it with `from(_:)` and hands it to reporters.
 @objc public final class ActivityRecord: NSObject {
 
   public let title: String
@@ -24,11 +23,7 @@ import Foundation
   public var subactivities: [ActivityRecord] = []
 
   /// `XCActivityRecord` is read through KVC because the XCTest private headers are not importable from Swift.
-  @objc(from:) public static func from(_ record: NSObject) -> ActivityRecord {
-    ActivityRecord(record)
-  }
-
-  private init(_ record: NSObject) {
+  public init(_ record: NSObject) {
     let start = record.value(forKey: "start") as? Date ?? Date()
     self.title = record.value(forKey: "title") as? String ?? ""
     self.activityType = record.value(forKey: "activityType") as? String ?? ""
@@ -36,7 +31,7 @@ import Foundation
     self.start = start
     self.finish = record.value(forKey: "finish") as? Date ?? start
     let attachments = record.value(forKey: "attachments") as? [NSObject] ?? []
-    self.attachments = attachments.map(Attachment.from)
+    self.attachments = attachments.map(Attachment.init)
     self.duration = record.value(forKey: "duration") as? Double ?? 0
     self.name = record.value(forKey: "name") as? String ?? ""
     super.init()
@@ -57,11 +52,7 @@ public struct Attachment {
   public let userInfo: [String: Any]?
 
   /// `XCTAttachment` is read through KVC because the XCTest private headers are not importable from Swift.
-  public static func from(_ attachment: NSObject) -> Attachment {
-    Attachment(attachment)
-  }
-
-  private init(_ attachment: NSObject) {
+  public init(_ attachment: NSObject) {
     let hasPayload = attachment.value(forKey: "hasPayload") as? Bool ?? false
     self.payload = hasPayload ? attachment.value(forKey: "payload") as? Data : nil
     self.timestamp = attachment.value(forKey: "timestamp") as? Date
