@@ -32,7 +32,7 @@ private enum ProxyConfiguration {
   }
 }
 
-public enum FBProxyService {
+public enum ProxyService {
 
   public static func buildHTTPProxyDict(host: String, port: Int32) -> [String: Any] {
     ProxyConfiguration.http(host: host, port: port).dictionary

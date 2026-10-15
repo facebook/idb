@@ -38,7 +38,7 @@ extension FBNetworkConfigurationTestRuntime {
     run {
       service == "dns"
         ? DnsService.handleDnsAction(action: action, arguments: arguments)
-        : FBProxyService.handleProxyAction(action: action, arguments: arguments)
+        : ProxyService.handleProxyAction(action: action, arguments: arguments)
     }
   }
 }

@@ -62,7 +62,7 @@ public enum BridgeServices {
         action = "set"
         arguments = [host, String(port), kind.rawValue]
       }
-      return Int32(FBProxyService.handleProxyAction(action: action, arguments: arguments, output: output))
+      return Int32(ProxyService.handleProxyAction(action: action, arguments: arguments, output: output))
     case let .notifications(command):
       let action: String
       let bundleID: String?

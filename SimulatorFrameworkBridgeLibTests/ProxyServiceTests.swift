@@ -12,23 +12,23 @@ import XCTest
 final class ProxyServiceTests: XCTestCase {
 
   func testUnknownActionReturnsFailure() {
-    XCTAssertEqual(FBProxyService.handleProxyAction(action: "unknown", arguments: []), 1)
-    XCTAssertEqual(FBProxyService.handleProxyAction(action: "", arguments: []), 1)
-    XCTAssertEqual(FBProxyService.handleProxyAction(action: "remove", arguments: []), 1)
+    XCTAssertEqual(ProxyService.handleProxyAction(action: "unknown", arguments: []), 1)
+    XCTAssertEqual(ProxyService.handleProxyAction(action: "", arguments: []), 1)
+    XCTAssertEqual(ProxyService.handleProxyAction(action: "remove", arguments: []), 1)
   }
 
   func testSetWithNoArgsReturnsFailure() {
-    XCTAssertEqual(FBProxyService.handleProxyAction(action: "set", arguments: []), 1)
+    XCTAssertEqual(ProxyService.handleProxyAction(action: "set", arguments: []), 1)
   }
 
   func testSetWithOneArgReturnsFailure() {
-    XCTAssertEqual(FBProxyService.handleProxyAction(action: "set", arguments: ["127.0.0.1"]), 1)
+    XCTAssertEqual(ProxyService.handleProxyAction(action: "set", arguments: ["127.0.0.1"]), 1)
   }
 
   // MARK: - buildHTTPProxyDict
 
   func testBuildHTTPProxyDictContainsHTTPKeys() {
-    let dict = FBProxyService.buildHTTPProxyDict(host: "10.0.0.1", port: 8080)
+    let dict = ProxyService.buildHTTPProxyDict(host: "10.0.0.1", port: 8080)
     XCTAssertNotNil(dict)
 
     XCTAssertEqual(dict["HTTPProxy"] as? String, "10.0.0.1")
@@ -37,7 +37,7 @@ final class ProxyServiceTests: XCTestCase {
   }
 
   func testBuildHTTPProxyDictContainsHTTPSKeys() {
-    let dict = FBProxyService.buildHTTPProxyDict(host: "proxy.example.com", port: 3128)
+    let dict = ProxyService.buildHTTPProxyDict(host: "proxy.example.com", port: 3128)
 
     XCTAssertEqual(dict["HTTPSProxy"] as? String, "proxy.example.com")
     XCTAssertEqual(dict["HTTPSPort"] as? NSNumber, 3128)
@@ -45,7 +45,7 @@ final class ProxyServiceTests: XCTestCase {
   }
 
   func testBuildHTTPProxyDictContainsFTPPassiveAndExceptions() {
-    let dict = FBProxyService.buildHTTPProxyDict(host: "127.0.0.1", port: 8080)
+    let dict = ProxyService.buildHTTPProxyDict(host: "127.0.0.1", port: 8080)
 
     XCTAssertEqual(dict["FTPPassive"] as? NSNumber, 1)
     let exceptions = dict["ExceptionsList"] as? [String]
@@ -57,7 +57,7 @@ final class ProxyServiceTests: XCTestCase {
   // MARK: - buildSOCKSProxyDict
 
   func testBuildSOCKSProxyDictContainsSOCKSKeys() {
-    let dict = FBProxyService.buildSOCKSProxyDict(host: "10.0.0.1", port: 1080)
+    let dict = ProxyService.buildSOCKSProxyDict(host: "10.0.0.1", port: 1080)
     XCTAssertNotNil(dict)
 
     XCTAssertEqual(dict["SOCKSProxy"] as? String, "10.0.0.1")
@@ -66,7 +66,7 @@ final class ProxyServiceTests: XCTestCase {
   }
 
   func testBuildSOCKSProxyDictDoesNotContainHTTPKeys() {
-    let dict = FBProxyService.buildSOCKSProxyDict(host: "10.0.0.1", port: 1080)
+    let dict = ProxyService.buildSOCKSProxyDict(host: "10.0.0.1", port: 1080)
 
     XCTAssertNil(dict["HTTPProxy"])
     XCTAssertNil(dict["HTTPPort"])
@@ -77,7 +77,7 @@ final class ProxyServiceTests: XCTestCase {
   }
 
   func testBuildSOCKSProxyDictContainsFTPPassiveAndExceptions() {
-    let dict = FBProxyService.buildSOCKSProxyDict(host: "10.0.0.1", port: 1080)
+    let dict = ProxyService.buildSOCKSProxyDict(host: "10.0.0.1", port: 1080)
 
     XCTAssertEqual(dict["FTPPassive"] as? NSNumber, 1)
     let exceptions = dict["ExceptionsList"] as? [String]
@@ -89,7 +89,7 @@ final class ProxyServiceTests: XCTestCase {
   // MARK: - buildEmptyProxyDict
 
   func testBuildEmptyProxyDictContainsOnlyFTPPassive() {
-    let dict = FBProxyService.buildEmptyProxyDict()
+    let dict = ProxyService.buildEmptyProxyDict()
     XCTAssertNotNil(dict)
 
     XCTAssertEqual(dict.count, 1)
@@ -101,7 +101,7 @@ final class ProxyServiceTests: XCTestCase {
   // See the note in DnsServiceTests: a sandboxed XCTest host cannot create an SCDynamicStore,
   // so `list` reports failure here where the `simctl spawn`'d bridge would succeed.
   func testHandleProxyActionListReturnsFailureWithoutADynamicStore() {
-    let result = FBProxyService.handleProxyAction(action: "list", arguments: [])
+    let result = ProxyService.handleProxyAction(action: "list", arguments: [])
     XCTAssertEqual(result, 1)
   }
 }

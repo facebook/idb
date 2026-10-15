@@ -84,7 +84,7 @@ public struct FBBridgeServices: FBBridgeServiceHandling {
   }
 
   public func proxy(_ action: String, arguments: [String]) -> Int32 {
-    Int32(FBProxyService.handleProxyAction(action: action, arguments: arguments))
+    Int32(ProxyService.handleProxyAction(action: action, arguments: arguments))
   }
 
   public func accessibility(_ action: String, arguments: [String]) -> Int32 {
