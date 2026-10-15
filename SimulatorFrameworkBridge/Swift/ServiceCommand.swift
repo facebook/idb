@@ -64,7 +64,7 @@ public struct FBBridgeServices: FBBridgeServiceHandling {
   #endif
 
   public func dns(_ action: String, arguments: [String]) -> Int32 {
-    Int32(FBDnsService.handleDnsAction(action: action, arguments: arguments))
+    Int32(DnsService.handleDnsAction(action: action, arguments: arguments))
   }
 
   public func dynamicStore(_ action: String, arguments: [String]) -> Int32 {

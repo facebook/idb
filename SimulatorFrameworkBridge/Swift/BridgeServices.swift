@@ -40,7 +40,7 @@ public enum BridgeServices {
         action = "set"
         arguments = servers
       }
-      return Int32(FBDnsService.handleDnsAction(action: action, arguments: arguments, output: output))
+      return Int32(DnsService.handleDnsAction(action: action, arguments: arguments, output: output))
     case let .dynamicStore(command):
       switch command {
       case let .snapshot(key):

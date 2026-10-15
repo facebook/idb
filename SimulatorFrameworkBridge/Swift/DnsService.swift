@@ -11,7 +11,7 @@ import Foundation
 @_implementationOnly import SimulatorFrameworkBridgeRuntime
 #endif
 
-public enum FBDnsService {
+public enum DnsService {
 
   public static func buildDnsDict(servers: [String]) -> [String: Any] {
     ["ServerAddresses": servers]

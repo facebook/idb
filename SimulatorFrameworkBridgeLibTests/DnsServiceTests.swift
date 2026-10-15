@@ -14,7 +14,7 @@ final class DnsServiceTests: XCTestCase {
   // MARK: - buildDnsDict
 
   func testBuildDnsDictMultipleServers() {
-    let dict = FBDnsService.buildDnsDict(servers: ["8.8.8.8", "8.8.4.4", "1.1.1.1"])
+    let dict = DnsService.buildDnsDict(servers: ["8.8.8.8", "8.8.4.4", "1.1.1.1"])
 
     let servers = dict["ServerAddresses"] as? [String]
     XCTAssertEqual(servers?.count ?? 0, 3)
@@ -31,15 +31,15 @@ final class DnsServiceTests: XCTestCase {
   // tests can only pin the store-unavailable path. Everything above this point is pure and is
   // covered for real.
   func testHandleDnsActionListReturnsFailureWithoutADynamicStore() {
-    let result = FBDnsService.handleDnsAction(action: "list", arguments: [])
+    let result = DnsService.handleDnsAction(action: "list", arguments: [])
     XCTAssertEqual(result, 1)
   }
 
   func testHandleDnsActionSetMissingArgsReturnsFailure() {
-    XCTAssertEqual(FBDnsService.handleDnsAction(action: "set", arguments: []), 1)
+    XCTAssertEqual(DnsService.handleDnsAction(action: "set", arguments: []), 1)
   }
 
   func testHandleDnsActionUnknownActionReturnsFailure() {
-    XCTAssertEqual(FBDnsService.handleDnsAction(action: "unknown", arguments: []), 1)
+    XCTAssertEqual(DnsService.handleDnsAction(action: "unknown", arguments: []), 1)
   }
 }

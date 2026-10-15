@@ -37,7 +37,7 @@ extension FBNetworkConfigurationTestRuntime {
   func run(service: String, action: String, arguments: [String]) -> Int {
     run {
       service == "dns"
-        ? FBDnsService.handleDnsAction(action: action, arguments: arguments)
+        ? DnsService.handleDnsAction(action: action, arguments: arguments)
         : FBProxyService.handleProxyAction(action: action, arguments: arguments)
     }
   }
