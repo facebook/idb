@@ -50,7 +50,7 @@ enum TestPlanOutcome {
 }
 
 /// What the test bundle and testmanagerd have done over the connection, as events to wait on.
-final class TestBundleEvents: NSObject, @unchecked Sendable {
+final class TestBundleEvents: @unchecked Sendable {
   let proxyChannelOpened = AsyncEvent<Void>()
   let sessionStarted = AsyncEvent<Void>()
   let bundleReady = AsyncEvent<Void>()
