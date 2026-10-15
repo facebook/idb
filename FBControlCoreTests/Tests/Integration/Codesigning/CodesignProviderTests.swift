@@ -54,7 +54,7 @@ struct CodesignProviderTests {
   }
 
   private static func adHocProvider() -> CodesignProvider {
-    CodesignProvider.codeSignCommandWithAdHocIdentity(logger: nil)
+    CodesignProvider(identityName: "-", logger: nil)
   }
 
   private static func posixPermissions(of path: String) throws -> Int16 {

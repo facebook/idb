@@ -29,15 +29,8 @@ public final class CodesignProvider {
   public let identityName: String
   private let logger: ControlCoreLogger?
 
-  public static func codeSignCommand(withIdentityName identityName: String, logger: ControlCoreLogger?) -> Self {
-    self.init(identityName: identityName, logger: logger)
-  }
-
-  public static func codeSignCommandWithAdHocIdentity(logger: ControlCoreLogger?) -> Self {
-    self.init(identityName: "-", logger: logger)
-  }
-
-  required init(identityName: String, logger: ControlCoreLogger?) {
+  /// Signs with the identity named `identityName`; `-` signs ad hoc.
+  public init(identityName: String, logger: ControlCoreLogger?) {
     self.identityName = identityName
     self.logger = logger
   }

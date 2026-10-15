@@ -189,7 +189,7 @@ public final class SimulatorXCTestCommands: XCTestExtendedCommands {
       withTarget: simulator,
       configuration: testLaunchConfiguration,
       codesign: ControlCoreGlobalConfiguration.confirmCodesignaturesAreValid
-        ? CodesignProvider.codeSignCommand(withIdentityName: "-", logger: simulator.logger)
+        ? CodesignProvider(identityName: "-", logger: simulator.logger)
         : nil,
       workingDirectory: simulator.auxillaryDirectory,
       reporter: reporter,
