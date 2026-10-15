@@ -49,16 +49,17 @@ public final class VideoFileWriter: NSObject, AVCaptureFileOutputRecordingDelega
   private var startAwaiters: [CheckedContinuation<Void, Error>] = []
   private var finishAwaiters: [CheckedContinuation<Void, Error>] = []
 
-  public static func writer(withSession session: AVCaptureSession, filePath: String, logger: any ControlCoreLogger) throws -> Self {
+  /// Adds a movie file output to `session` that will write to `filePath`.
+  public convenience init(session: AVCaptureSession, filePath: String, logger: any ControlCoreLogger) throws {
     let output = AVCaptureMovieFileOutput()
     if !session.canAddOutput(output) {
       throw VideoFileWriterError.cannotAddFileOutput(filePath: filePath)
     }
     session.addOutput(output)
-    return self.init(session: session, output: output, filePath: filePath, logger: logger)
+    self.init(session: session, output: output, filePath: filePath, logger: logger)
   }
 
-  required init(session: AVCaptureSession, output: AVCaptureMovieFileOutput, filePath: String, logger: any ControlCoreLogger) {
+  init(session: AVCaptureSession, output: AVCaptureMovieFileOutput, filePath: String, logger: any ControlCoreLogger) {
     self.session = session
     self.output = output
     self.outputURL = URL(fileURLWithPath: filePath)

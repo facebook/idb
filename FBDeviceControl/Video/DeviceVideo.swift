@@ -83,7 +83,7 @@ public final class DeviceVideo {
 
   public static func video(for device: Device, filePath: String) async throws -> DeviceVideo {
     let session = try await captureSession(for: device)
-    let encoder = try VideoFileWriter.writer(withSession: session, filePath: filePath, logger: device.logger)
+    let encoder = try VideoFileWriter(session: session, filePath: filePath, logger: device.logger)
     return DeviceVideo(encoder: encoder)
   }
 
