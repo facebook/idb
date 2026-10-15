@@ -110,7 +110,7 @@ private struct Call: Equatable {
   let arguments: [String?]
 }
 
-private final class RecordingServices: FBBridgeServiceHandling {
+private final class RecordingServices: CommandLineServiceHandling {
   var calls: [Call] = []
 
   private func record(_ service: String, _ action: String, _ arguments: [String?]) -> Int32 {
