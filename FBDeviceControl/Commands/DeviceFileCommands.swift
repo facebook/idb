@@ -342,7 +342,7 @@ public final class DeviceFileCommands: FileCommands {
   ) async throws -> R {
     let device = try requireDevice()
     return try await device.withServiceConnection(ManagedConfigClient.serviceName) { connection in
-      let managedConfig = ManagedConfigClient.managedConfigClient(connection: connection, logger: device.logger)
+      let managedConfig = ManagedConfigClient(connection: connection, logger: device.logger)
       return try await body(DeviceFileContainer.MDMProfiles(managedConfig: managedConfig, queue: device.workQueue))
     }
   }
@@ -364,7 +364,7 @@ public final class DeviceFileCommands: FileCommands {
     return try await device.withServiceConnection(SpringboardServicesClient.serviceName) { springboardConnection in
       try await device.withServiceConnection(ManagedConfigClient.serviceName) { managedConfigConnection in
         let springboard = SpringboardServicesClient(connection: springboardConnection, logger: device.logger)
-        let managedConfig = ManagedConfigClient.managedConfigClient(connection: managedConfigConnection, logger: device.logger)
+        let managedConfig = ManagedConfigClient(connection: managedConfigConnection, logger: device.logger)
         return try await body(
           DeviceFileContainer.Wallpaper(springboard: springboard, managedConfig: managedConfig, queue: device.workQueue))
       }

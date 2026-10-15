@@ -70,9 +70,9 @@ class ManagedConfigClient {
 
   // MARK: - Initializers
 
-  static func managedConfigClient(connection: LockdownServiceConnection, logger: any ControlCoreLogger) -> ManagedConfigClient {
+  convenience init(connection: LockdownServiceConnection, logger: any ControlCoreLogger) {
     let queue = DispatchQueue(label: "com.facebook.FBDeviceControl.managed_config")
-    return ManagedConfigClient(connection: connection, queue: queue, logger: logger)
+    self.init(connection: connection, queue: queue, logger: logger)
   }
 
   init(
