@@ -55,10 +55,10 @@ public final class DeviceSet: TargetSet, TargetSetDelegate, CustomStringConverti
   // MARK: - Querying
 
   public func target(withUDID udid: String) -> (any TargetInfo)? {
-    deviceWithUDID(udid)
+    device(withUDID: udid)
   }
 
-  public func deviceWithUDID(_ udid: String) -> Device? {
+  public func device(withUDID udid: String) -> Device? {
     allDevices.first { $0.udid == udid }
   }
 
