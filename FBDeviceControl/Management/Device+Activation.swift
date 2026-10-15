@@ -11,6 +11,9 @@ import Foundation
 private let DefaultDRMHandshakeURL = "https://albert.apple.com/deviceservices/drmHandshake"
 private let DefaultDeviceActivationURL = "https://albert.apple.com/deviceservices/deviceActivation"
 
+/// The User-Agent both activation requests send.
+let deviceActivationUserAgent = "idb (https://github.com/facebook/idb/blob/main/FBDeviceControl/Strategies/DeviceActivationStrategy.swift)"
+
 public enum DeviceActivationError: Error {
   case invalidActivationState(state: String)
   case activationStateMismatch(expected: String, actual: String)
@@ -149,7 +152,7 @@ extension Device {
     request.httpBody = body
     request.setValue("application/x-apple-plist", forHTTPHeaderField: "Content-Type")
     request.setValue("application/xml", forHTTPHeaderField: "Accept")
-    request.setValue("idb (https://github.com/facebook/idb/blob/main/FBDeviceControl/Strategies/DeviceActivationStrategy.swift)", forHTTPHeaderField: "User-Agent")
+    request.setValue(deviceActivationUserAgent, forHTTPHeaderField: "User-Agent")
 
     let (responseData, httpResponse) = try await data(for: request)
     if httpResponse.statusCode != 200 {
@@ -173,7 +176,7 @@ extension Device {
     request.httpMethod = "POST"
     request.httpBody = multipartData(fromRequestPayload: payloadData, key: "activation-info", boundary: boundaryConstant)
     request.setValue(contentType, forHTTPHeaderField: "Content-Type")
-    request.setValue("idb (https://github.com/facebook/idb/blob/main/FBDeviceControl/Strategies/DeviceActivationStrategy.swift)", forHTTPHeaderField: "User-Agent")
+    request.setValue(deviceActivationUserAgent, forHTTPHeaderField: "User-Agent")
 
     let (responseData, httpResponse) = try await data(for: request)
     if httpResponse.statusCode != 200 {
