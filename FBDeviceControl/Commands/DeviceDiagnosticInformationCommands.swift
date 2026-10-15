@@ -74,7 +74,7 @@ public final class DeviceDiagnosticInformationCommands {
   private func fetchInformationFromMobileConfiguration(device: Device) async throws -> Any {
     let logger = device.logger
     return try await device.withServiceConnection(ManagedConfigClient.serviceName) { connection in
-      try await ManagedConfigClient(connection: connection, logger: logger).getCloudConfiguration()
+      try await ManagedConfigClient(connection: connection, logger: logger).cloudConfiguration()
     }
   }
 }

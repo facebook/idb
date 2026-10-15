@@ -87,7 +87,7 @@ class ManagedConfigClient {
 
   // MARK: - Async
 
-  func getCloudConfiguration() async throws -> [String: Any] {
+  func cloudConfiguration() async throws -> [String: Any] {
     let connectionBox = ManagedConfigConnectionBox(connection)
     return try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<[String: Any], Error>) in
       queue.async {
@@ -113,7 +113,7 @@ class ManagedConfigClient {
     try await changeSettings(settings: [["Item": "Wallpaper", "Image": data, "Where": whereNumber]])
   }
 
-  func getProfileList() async throws -> [String] {
+  func profileList() async throws -> [String] {
     let connectionBox = ManagedConfigConnectionBox(connection)
     return try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<[String], Error>) in
       queue.async {

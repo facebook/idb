@@ -254,7 +254,7 @@ public final class DeviceFileContainer: AsyncFileContainer {
     }
 
     func contents(ofDirectory path: String) async throws -> [String] {
-      try await managedConfig.getProfileList()
+      try await managedConfig.profileList()
     }
   }
 }
