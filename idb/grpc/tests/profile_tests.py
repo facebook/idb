@@ -12,6 +12,7 @@ import io
 import os
 import tarfile
 import tempfile
+import warnings
 
 from grpclib.const import Status
 from grpclib.exceptions import GRPCError, ProtocolError
@@ -133,8 +134,8 @@ class ProfileJSONTests(TestCase):
     def test_reads_no_descriptor_attribute_protobuf_7_removed(self) -> None:
         # protobuf 6 deprecates `FieldDescriptor.label` and protobuf 7, which the open-source package requires, removes
         # it, so a conversion that reads it warns here and raises AttributeError there.
-        # BUG: message_to_json reads `FieldDescriptor.label` — flipped in the following commit.
-        with self.assertWarnsRegex(DeprecationWarning, "label"):
+        with warnings.catch_warnings():
+            warnings.simplefilter("error", DeprecationWarning)
             message_to_json(_leaks_result().result.report)
 
 

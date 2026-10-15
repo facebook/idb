@@ -99,7 +99,7 @@ def message_to_json(message: Message) -> dict[str, object]:
     output: dict[str, object] = {}
     for field in message.DESCRIPTOR.fields:
         value = getattr(message, field.name)
-        if field.label == FieldDescriptor.LABEL_REPEATED:
+        if field.is_repeated:
             output[field.json_name] = [_value_to_json(field, item) for item in value]
             continue
         has_presence = (
