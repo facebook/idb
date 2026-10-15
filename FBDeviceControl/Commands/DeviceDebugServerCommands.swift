@@ -88,7 +88,7 @@ public struct DeviceDebugServerCommands: DebugServerCommands {
       return platformSelectCommand
     }
     do {
-      let developerSymbolsPath = try DeveloperDiskImage.pathForDeveloperSymbols(buildVersion, logger: device.logger)
+      let developerSymbolsPath = try DeveloperDiskImage.developerSymbolsPath(forBuildVersion: buildVersion, logger: device.logger)
       return platformSelectCommand + " --sysroot '\(developerSymbolsPath)'"
     } catch {
       device.logger.log("Failed to get developer symbols for \(device), no symbolication of system libraries will occur. To fix ensure developer symbols are downloaded from the device using the 'Devices and Simulators' tool within Xcode: \(error)")

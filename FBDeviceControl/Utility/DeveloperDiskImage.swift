@@ -126,7 +126,7 @@ public struct DeveloperDiskImage: Sendable, CustomStringConvertible {
 
   // MARK: - Public
 
-  public static func pathForDeveloperSymbols(_ buildVersion: String, logger: any ControlCoreLogger) throws -> String {
+  public static func developerSymbolsPath(forBuildVersion buildVersion: String, logger: any ControlCoreLogger) throws -> String {
     let searchPaths = [
       (NSHomeDirectory() as NSString).appendingPathComponent("Library/Developer/Xcode/iOS DeviceSupport"),
       (XcodeConfiguration.developerDirectory as NSString).appendingPathComponent("Platforms/iPhoneOS.platform/DeviceSupport"),
