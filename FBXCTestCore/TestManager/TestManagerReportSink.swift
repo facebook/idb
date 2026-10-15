@@ -28,7 +28,7 @@ protocol TestManagerReportSink: AnyObject {
   func testCase(_ testClass: String, method: String, didFinishActivity activity: ActivityRecord)
 }
 
-final class XCTestReporterSink: NSObject, TestManagerReportSink {
+final class XCTestReporterSink: TestManagerReportSink {
   private let reporter: XCTestReporter
 
   init(_ reporter: XCTestReporter) {
