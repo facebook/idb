@@ -33,7 +33,7 @@ struct XCTestShimConfigurationTests {
     let dir = try makeShimDirectory()
     defer { try? FileManager.default.removeItem(atPath: dir) }
 
-    let config = try await XCTestShimConfiguration.shimConfiguration(withDirectory: dir)
+    let config = try await XCTestShimConfiguration(directory: dir)
 
     #expect(config.iOSSimulatorTestShimPath == (dir as NSString).appendingPathComponent(Self.iOSShimName))
     #expect(config.macOSTestShimPath == (dir as NSString).appendingPathComponent(Self.macOSShimName))

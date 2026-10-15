@@ -137,14 +137,15 @@ public struct XCTestShimConfiguration: Sendable {
 
   public static func defaultShimConfiguration() async throws -> XCTestShimConfiguration {
     let directory = try await findShimDirectory()
-    return try await shimConfiguration(withDirectory: directory)
+    return try await XCTestShimConfiguration(directory: directory)
   }
 
-  public static func shimConfiguration(withDirectory directory: String) async throws -> XCTestShimConfiguration {
-    _ = try await confirmExistenceOfRequiredShims(inDirectory: directory)
-    async let iOSSimulatorTestShimPath = pathForCanonicallyNamedShim(.iOSSimulatorTest, inDirectory: directory)
-    async let macOSTestShimPath = pathForCanonicallyNamedShim(.macTest, inDirectory: directory)
-    return try await XCTestShimConfiguration(
+  /// The shims in `directory`, which must hold every required shim.
+  public init(directory: String) async throws {
+    _ = try await Self.confirmExistenceOfRequiredShims(inDirectory: directory)
+    async let iOSSimulatorTestShimPath = Self.pathForCanonicallyNamedShim(.iOSSimulatorTest, inDirectory: directory)
+    async let macOSTestShimPath = Self.pathForCanonicallyNamedShim(.macTest, inDirectory: directory)
+    try await self.init(
       iOSSimulatorTestShimPath: iOSSimulatorTestShimPath,
       macOSTestShimPath: macOSTestShimPath)
   }
