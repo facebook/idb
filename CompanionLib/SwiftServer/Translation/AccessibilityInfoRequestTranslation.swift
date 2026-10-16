@@ -141,29 +141,9 @@ enum AccessibilityInfoRequestTranslation {
     }
   }
 
+  /// Reads have always treated an unrecognized key as `.label`.
   static func searchableKey(from key: Idb_AccessibilityActionRequest.SearchableKey) -> AXSearchableKey {
-    switch key {
-    case .label:
-      return .label
-    case .uniqueID:
-      return .uniqueID
-    case .value:
-      return .value
-    case .title:
-      return .title
-    case .role:
-      return .role
-    case .roleDescription:
-      return .roleDescription
-    case .subrole:
-      return .subrole
-    case .help:
-      return .help
-    case .placeholder:
-      return .placeholder
-    case .UNRECOGNIZED:
-      return .label
-    }
+    AXSearchableKey(key) ?? .label
   }
 
   /// The historical byte shape of a point / frontmost read: the bare element array, serialized without

@@ -216,27 +216,38 @@ enum AccessibilityActionRequestTranslation {
   }
 
   private static func searchableKey(from key: Idb_AccessibilityActionRequest.SearchableKey) throws -> AXSearchableKey {
+    guard let searchableKey = AXSearchableKey(key) else {
+      throw RPCError(code: .invalidArgument, message: "unrecognized accessibility key")
+    }
+    return searchableKey
+  }
+
+}
+
+extension AXSearchableKey {
+  /// Nil for a key this companion does not recognize; each request decides what that means.
+  init?(_ key: Idb_AccessibilityActionRequest.SearchableKey) {
     switch key {
     case .label:
-      return .label
+      self = .label
     case .uniqueID:
-      return .uniqueID
+      self = .uniqueID
     case .value:
-      return .value
+      self = .value
     case .title:
-      return .title
+      self = .title
     case .role:
-      return .role
+      self = .role
     case .roleDescription:
-      return .roleDescription
+      self = .roleDescription
     case .subrole:
-      return .subrole
+      self = .subrole
     case .help:
-      return .help
+      self = .help
     case .placeholder:
-      return .placeholder
+      self = .placeholder
     case .UNRECOGNIZED:
-      throw RPCError(code: .invalidArgument, message: "unrecognized accessibility key")
+      return nil
     }
   }
 }
