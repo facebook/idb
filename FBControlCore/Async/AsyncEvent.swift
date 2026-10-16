@@ -104,19 +104,8 @@ public final class AsyncEvent<Value: Sendable>: @unchecked Sendable {
   /// As `wait()`, failing with a `PollTimeoutError` naming `description` if the event has not
   /// happened within `timeout` seconds.
   public func wait(timeout: TimeInterval, waitingFor description: String) async throws -> Value {
-    try await withThrowingTaskGroup(of: Value.self) { group in
-      group.addTask {
-        try await self.wait()
-      }
-      group.addTask {
-        try await Task.sleep(nanoseconds: UInt64(max(timeout, 0) * 1_000_000_000))
-        throw PollTimeoutError(deadline: PollDeadline(timeout: timeout, waitingFor: description))
-      }
-      defer { group.cancelAll() }
-      guard let first = try await group.next() else {
-        preconditionFailure("The task group has two children; next() cannot be empty")
-      }
-      return first
+    try await withTimeout(timeout, orThrow: { PollTimeoutError(deadline: PollDeadline(timeout: timeout, waitingFor: description)) }) {
+      try await self.wait()
     }
   }
 

@@ -220,19 +220,16 @@ final class ExitBroadcast: Sendable {
     guard let deadline else {
       return try await status()
     }
-    return try await withThrowingTaskGroup(of: TerminationStatus?.self) { group in
-      group.addTask { try await self.status() }
-      group.addTask {
-        try await Task.sleep(for: .seconds(deadline))
-        return nil
+    do {
+      return try await withTimeout(deadline, orThrow: { DeadlinePassed() }) {
+        try await self.status()
       }
-      guard let first = try await group.next() else {
-        preconditionFailure("The task group has two children; next() cannot be empty")
-      }
-      group.cancelAll()
-      return first
+    } catch is DeadlinePassed {
+      return nil
     }
   }
+
+  private struct DeadlinePassed: Error {}
 
   /// As `status(within:)`, from a poll rather than a waiter, so it completes
   /// even inside an already-cancelled task.
