@@ -73,8 +73,6 @@ targets:
         embed: false
       - framework: ../Build/Products/Release/libFBVideoCore.a
         embed: false
-      - framework: ../Build/Products/Release/libIDBConcurrency.a
-        embed: false
       - framework: ../Build/Products/Release/libSimulatorIPC.a
         embed: false
   staging-bench:
