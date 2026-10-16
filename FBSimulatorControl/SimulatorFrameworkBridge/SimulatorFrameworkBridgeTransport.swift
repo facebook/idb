@@ -250,10 +250,8 @@ package actor SimulatorFrameworkBridgePersistentTransport: AXBridgeStreamingTran
     } catch {
       return .absent
     }
-    return await withCheckedContinuation { continuation in
-      DispatchQueue.global().async {
-        continuation.resume(returning: probe(fileDescriptor: fileDescriptor))
-      }
+    return await DispatchQueue.global().perform {
+      probe(fileDescriptor: fileDescriptor)
     }
   }
 

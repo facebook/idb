@@ -67,15 +67,8 @@ final class SimulatorPurpleHIDTransport: @unchecked Sendable {
    kernel guarantees the message is not enqueued.
    */
   private func send(_ data: Data, timeoutMs: mach_msg_timeout_t = defaultSendTimeoutMs) async throws {
-    try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
-      sendQueue.async {
-        do {
-          try self.sendBlocking(data, timeoutMs: timeoutMs)
-          continuation.resume()
-        } catch {
-          continuation.resume(throwing: error)
-        }
-      }
+    try await sendQueue.perform {
+      try self.sendBlocking(data, timeoutMs: timeoutMs)
     }
   }
 

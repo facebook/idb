@@ -72,31 +72,29 @@ final class SimulatorFrameworkBridgeConnection: BridgeConnection, @unchecked Sen
   }
 
   private func exchange(_ requestData: Data, receiveTimeout: TimeInterval?) async throws -> Data {
-    try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Data, Error>) in
-      queue.async { [self] in
-        do {
-          if let terminalError { throw terminalError }
-          let request = try BridgeRequest.decode(requestData)
-          if let receiveTimeout {
-            try setReceiveWindow(receiveTimeout)
-          }
-          try SimulatorFrameworkBridgeConnection.writeFrame(fileDescriptor, requestData)
-          let responseData = try SimulatorFrameworkBridgeConnection.readFrame(
-            fileDescriptor, guest: ownership.process, receiveTimeout: receiveTimeout)
-          _ = try BridgeResponse.decode(responseData, for: request)
-          if receiveTimeout != nil {
-            do {
-              try setReceiveWindow(TimeInterval(Self.receiveTimeoutSeconds))
-            } catch {
-              // The answer stands, but the next round trip would inherit this one's narrower window.
-              terminalError = error
-            }
-          }
-          continuation.resume(returning: responseData)
-        } catch {
-          terminalError = error
-          continuation.resume(throwing: error)
+    try await queue.perform { [self] in
+      do {
+        if let terminalError { throw terminalError }
+        let request = try BridgeRequest.decode(requestData)
+        if let receiveTimeout {
+          try setReceiveWindow(receiveTimeout)
         }
+        try SimulatorFrameworkBridgeConnection.writeFrame(fileDescriptor, requestData)
+        let responseData = try SimulatorFrameworkBridgeConnection.readFrame(
+          fileDescriptor, guest: ownership.process, receiveTimeout: receiveTimeout)
+        _ = try BridgeResponse.decode(responseData, for: request)
+        if receiveTimeout != nil {
+          do {
+            try setReceiveWindow(TimeInterval(Self.receiveTimeoutSeconds))
+          } catch {
+            // The answer stands, but the next round trip would inherit this one's narrower window.
+            terminalError = error
+          }
+        }
+        return responseData
+      } catch {
+        terminalError = error
+        throw error
       }
     }
   }
@@ -139,33 +137,27 @@ final class SimulatorFrameworkBridgeConnection: BridgeConnection, @unchecked Sen
     guard path.utf8.count < IPCSocket.pathCapacity else {
       throw AXBridgeError.socketPathTooLong(path: path, limit: IPCSocket.pathCapacity)
     }
-    return try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Int32, Error>) in
-      DispatchQueue.global().async {
-        let deadline = Date().addingTimeInterval(timeout)
-        repeat {
-          if let fileDescriptor = attempt(path) {
-            continuation.resume(returning: fileDescriptor)
-            return
-          }
-          // Our guest exiting does not mean the socket is unbound: the shared per-UDID path may be served by
-          // another host's guest, so try once more before failing.
-          if let guest, let status = guest.observedTerminationStatus {
-            let exit = terminationCause(status)
-            if scope != .shared || exit.signal != nil || exit.exitCode != 0 {
-              if let fileDescriptor = attempt(path) {
-                continuation.resume(returning: fileDescriptor)
-                return
-              }
-              continuation.resume(
-                throwing: AXBridgeError.guestDiedBeforeBinding(
-                  pid: guest.processIdentifier, signal: exit.signal, exitCode: exit.exitCode, path: path))
-              return
+    return try await DispatchQueue.global().perform {
+      let deadline = Date().addingTimeInterval(timeout)
+      repeat {
+        if let fileDescriptor = attempt(path) {
+          return fileDescriptor
+        }
+        // Our guest exiting does not mean the socket is unbound: the shared per-UDID path may be served by
+        // another host's guest, so try once more before failing.
+        if let guest, let status = guest.observedTerminationStatus {
+          let exit = terminationCause(status)
+          if scope != .shared || exit.signal != nil || exit.exitCode != 0 {
+            if let fileDescriptor = attempt(path) {
+              return fileDescriptor
             }
+            throw AXBridgeError.guestDiedBeforeBinding(
+              pid: guest.processIdentifier, signal: exit.signal, exitCode: exit.exitCode, path: path)
           }
-          usleep(100_000)
-        } while Date() < deadline
-        continuation.resume(throwing: AXBridgeError.guestFailure("timed out connecting to the serve socket at \(path)"))
-      }
+        }
+        usleep(100_000)
+      } while Date() < deadline
+      throw AXBridgeError.guestFailure("timed out connecting to the serve socket at \(path)")
     }
   }
 
