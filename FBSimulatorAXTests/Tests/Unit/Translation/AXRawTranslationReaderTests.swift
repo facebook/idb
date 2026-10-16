@@ -76,7 +76,7 @@ final class AXRawTranslationReaderTests: XCTestCase {
 
   func testAChildListedTwiceAmongItsParentsChildren() throws {
     // A scroll view's scroll bar is listed twice among the scroll view's children for the automation tree, and
-    // the platform element's batched read reports it at both places.
+    // AppKit reports it at both places.
     let transport = AXRawTranslationTransportDouble(elements: [
       1: [.role: 1, .children: [Self.reference(2)]],
       2: [.role: 10, .children: [Self.reference(3), Self.reference(3)]],

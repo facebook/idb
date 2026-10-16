@@ -74,14 +74,13 @@ final class CoreSimulatorAXTranslationTransport: AXTranslationTransport, @unchec
   }
 }
 
-/// Sends translator requests straight to the service CoreSimulator's client talks to,
-/// `com.apple.CoreSimulator.accessibility`, which CoreSimulatorBridge vends inside the simulator.
+/// Sends translator requests straight to `com.apple.CoreSimulator.accessibility`, the service
+/// CoreSimulatorBridge vends inside the simulator.
 ///
 /// The bridge answers one archived `AXPTranslatorRequest` per message, on a single serial queue, so this
-/// holds one connection and sends one request at a time, as the translator asks for them. Unlike
-/// CoreSimulator's client it hops through no queue of CoreSimulator's own, and it ignores the
-/// notifications the bridge pushes to every peer: nothing here consumes them, and handing them to the
-/// translator would touch it off the queue that serializes it.
+/// holds one connection and sends one request at a time. It ignores the notifications the bridge pushes to
+/// every peer: nothing here consumes them, and handing them to the translator would touch it off the queue
+/// that serializes it.
 final class CoreSimulatorBridgeAXTranslationTransport: AXTranslationTransport, @unchecked Sendable {
   static let serviceName = "com.apple.CoreSimulator.accessibility"
 
@@ -152,8 +151,8 @@ final class CoreSimulatorBridgeAXTranslationTransport: AXTranslationTransport, @
     }
   }
 
-  /// The live channel, or a new one when there is none: on first use, and after the bridge went away
-  /// (CoreSimulatorBridge is restarted to recover a stale SpringBoard).
+  /// The live channel, or a new one when there is none: on first use, and after the bridge went away, as it
+  /// does when launchd restarts CoreSimulatorBridge.
   private func connectedChannel() throws -> SimulatorXPCChannel {
     lock.lock()
     defer { lock.unlock() }

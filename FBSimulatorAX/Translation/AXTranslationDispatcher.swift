@@ -101,7 +101,7 @@ final class AXTranslationDispatcher: NSObject, AXPTranslationTokenDelegateHelper
     tokenToRequest[request.token] = request
   }
 
-  /// Idempotent: remediation may already have replaced the request.
+  /// Idempotent: a failed root resolution and the element's close can both pop the same request.
   func popRequest(_ request: AXTranslationRequest) {
     lock.lock()
     defer { lock.unlock() }

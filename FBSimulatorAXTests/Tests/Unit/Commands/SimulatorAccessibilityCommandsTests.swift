@@ -1796,7 +1796,7 @@ final class SimulatorAccessibilityCommandsTests: XCTestCase {
     XCTAssertTrue(coverage["additional"] is NSNull, "No remote content -> additional is null, but keeps its key")
   }
 
-  // MARK: - SpringBoard Remediation (zero-frame stale hierarchy)
+  // MARK: - SpringBoard diagnosis (zero-framed root)
 
   func testFrontmostReportsSpringBoardNotRunningWhenZeroFramedRootPidIsDead() async throws {
     // A zero-framed root whose owning pid (12345) is not a live launchd service, with no SpringBoard running.
@@ -1809,7 +1809,6 @@ final class SimulatorAccessibilityCommandsTests: XCTestCase {
       element.close()
       XCTFail("Expected springBoardNotRunning")
     } catch AccessibilityError.springBoardNotRunning {}
-    XCTAssertTrue(launchCtl.stoppedServices.isEmpty, "CoreSimulatorBridge is not restarted")
   }
 
   func testAZeroFramedRootWhoseProcessExitedWhileSpringBoardIsFreshlyRunning() async throws {
@@ -1827,7 +1826,6 @@ final class SimulatorAccessibilityCommandsTests: XCTestCase {
       XCTAssertEqual(exitedProcessIdentifier, 12345)
       XCTAssertEqual(restartedAgo, 2, accuracy: 1)
     }
-    XCTAssertTrue(launchCtl.stoppedServices.isEmpty, "CoreSimulatorBridge is not restarted")
   }
 
   func testAZeroFramedRootWhoseProcessExitedWhileSpringBoardHasBeenRunning() async throws {
@@ -1838,21 +1836,23 @@ final class SimulatorAccessibilityCommandsTests: XCTestCase {
     try setUp(withRootElement: zeroFrameRoot, launchCtl: launchCtl, processesStarted: [4243: Date().addingTimeInterval(-3600)])
 
     let element = try await simulator.accessibility.resolveElement(for: .frontmost)
-    element.close()
+    defer { element.close() }
 
-    XCTAssertTrue(launchCtl.stoppedServices.isEmpty, "read as it is: not a SpringBoard condition, so nothing is restarted")
+    let response = try await element.serialize(with: AccessibilityRequestOptions())
+    XCTAssertEqual(response.translatorMetrics?.elementCount, 1, "read as it is: not a SpringBoard condition")
   }
 
-  func testFrontmostDoesNotRemediateWhenZeroFramedRootPidIsLive() async throws {
-    // A zero frame alone is not stale: when the owning pid is still a live service, no remediation.
+  func testAZeroFramedRootWhoseProcessIsLiveIsReadAsItIs() async throws {
+    // A zero frame alone is not stale: the owning pid is still a live service.
     let zeroFrameRoot = AccessibilityTestElementBuilder.application(withLabel: "App", frame: .zero, children: [])
     let launchCtl = LaunchCtlDouble.with(running: ["com.apple.SpringBoard": 12345])
     try setUp(withRootElement: zeroFrameRoot, launchCtl: launchCtl)
 
     let element = try await simulator.accessibility.resolveElement(for: .frontmost)
-    element.close()
+    defer { element.close() }
 
-    XCTAssertTrue(launchCtl.stoppedServices.isEmpty, "a live pid means the hierarchy is healthy — no remediation")
+    let response = try await element.serialize(with: AccessibilityRequestOptions())
+    XCTAssertEqual(response.translatorMetrics?.elementCount, 1, "a live pid means the hierarchy is healthy")
   }
 
   // MARK: - Frontmost nil-translation (describe-all SpringBoard-down classification)

@@ -13,8 +13,8 @@ import Foundation
 /// The attributes and depth a read must fetch, declared before anything is read.
 ///
 /// A reader fetches exactly what the plan names, and the serializer only consumes what it requested,
-/// so how a backend satisfies a plan — one round trip per attribute, one per element, or none at all for
-/// a tree already in memory — is the reader's business alone.
+/// so how a backend satisfies a plan — one round trip per element, or none at all for a tree already in
+/// memory — is the reader's business alone.
 struct AXReadPlan: Equatable {
 
   /// An attribute a read can fetch beyond the frame, which every read fetches because the serializer and

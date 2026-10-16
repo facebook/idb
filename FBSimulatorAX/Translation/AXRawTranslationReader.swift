@@ -12,18 +12,18 @@ import FBSimulatorControl
 import Foundation
 
 /// Reads translator elements with one multiple-attribute request each, sent straight over the read's
-/// transport and decoded here, rather than through `AXPMacPlatformElement`.
+/// transport and decoded here as `AXPMacPlatformElement` would decode them, without building one.
 ///
-/// The platform element answers the same request but adds requests of its own: whether the element is
-/// remote, and its subrole and role when it falls back to computing a role description. Asking for those
-/// attributes in the one request and applying the platform element's rules to the answer reads the same
-/// values in a single round trip. Those rules, as AppKit applies them:
+/// The platform element would need requests of its own for some values: whether the element is remote, and
+/// its subrole and role when it falls back to computing a role description. Asking for those attributes in
+/// the one request and applying its rules to the answer reads the same values in a single round trip. Those
+/// rules, as AppKit applies them:
 /// - the role is the translator's role numbering named as AppKit names it, and `AXGroup` for a remote element;
 /// - the role description is the application's own when it gives a non-empty one; otherwise empty for a
 ///   generic element, and AppKit's description of the role and subrole for anything else.
 ///
-/// Attributes the translator has no number for — title, required, hidden — are not fetched: the platform
-/// element answers its batched request without them too.
+/// Attributes the translator has no number for — title, required, hidden — are not fetched, and read as the
+/// platform element answers them: nil and false.
 struct AXRawTranslationReader {
   let transport: any AXTranslationTransport
   let clientType: AXClientType

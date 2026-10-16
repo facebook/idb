@@ -97,10 +97,10 @@ final class AXTranslationSmokeTests: ProvidedSimulatorTestCase {
     }
   }
 
-  /// SpringBoard remediation restarts CoreSimulatorBridge and retries the read once. A process that holds its
-  /// connection to the bridge across the restart, as the companion does, must read on that one retry: the read
-  /// straight after the restart has to succeed, not merely a later one. Element handles from before the restart
-  /// are not reused — the restarted bridge's translator knows none of them — so the read resolves its root afresh.
+  /// A process that holds its connection to CoreSimulatorBridge across a restart of the bridge, as the companion
+  /// does, must read straight after the restart, not merely on a later attempt. Element handles from before the
+  /// restart are not reused — the restarted bridge's translator knows none of them — so the read resolves its
+  /// root afresh.
   func testTheFirstReadAfterCoreSimulatorBridgeRestartsSucceeds() async throws {
     try await launchApplication()
     _ = try await describeFrontmost()
@@ -121,10 +121,10 @@ final class AXTranslationSmokeTests: ProvidedSimulatorTestCase {
     XCTAssertGreaterThan(after, 1, "the first read after the restart reaches the restarted bridge")
   }
 
-  /// After SpringBoard restarts, a raw frontmost read with no remediation — no restart of CoreSimulatorBridge —
-  /// must come back to a live root: a running process, with a frame, not the SpringBoard that died. Each
-  /// observation is attached so a failure shows whether the read stuck on the dead process.
-  func testFrontmostRecoversAfterSpringBoardRestartsWithoutRemediation() async throws {
+  /// After SpringBoard restarts, frontmost reads must come back to a live root on their own: a running process,
+  /// with a frame, not the SpringBoard that died. Each observation is attached so a failure shows whether the
+  /// read stuck on the dead process.
+  func testFrontmostRecoversAfterSpringBoardRestarts() async throws {
     try await launchApplication()
     _ = try await describeFrontmost()
     try SimulatorControlFrameworkLoader.accessibilityFrameworks.loadPrivateFrameworks(simulator.logger)
@@ -150,7 +150,6 @@ final class AXTranslationSmokeTests: ProvidedSimulatorTestCase {
     }
     defer {
       add(XCTAttachment(string: log.joined(separator: "\n")))
-      try? log.joined(separator: "\n").write(toFile: NSTemporaryDirectory() + "springboard-restart.log", atomically: true, encoding: .utf8)
     }
 
     // On the home screen SpringBoard is itself the frontmost application, which is where a restart was seen to
@@ -192,7 +191,7 @@ final class AXTranslationSmokeTests: ProvidedSimulatorTestCase {
       }
       try await Task.sleep(nanoseconds: 500 * NSEC_PER_MSEC)
     }
-    XCTAssertNotNil(recovered, "a frontmost read reaches a live root again without restarting CoreSimulatorBridge")
+    XCTAssertNotNil(recovered, "a frontmost read reaches a live root again")
   }
 
   private static let comparedKeys = AXKeys.defaultSet.union([.expanded, .placeholder, .hidden, .focused])
