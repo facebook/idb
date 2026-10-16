@@ -134,105 +134,9 @@ public final class IDBCommandExecutor {
 
   // MARK: - Public Methods
 
-  public func accessibilityTap(label: String) async throws {
-    guard let simulator = target as? Simulator else {
-      throw IDBCommandError.simulatorOnlyOperation(operation: "tap by accessibility label", targetDescription: String(describing: target))
-    }
-    try await simulator.uiAutomation(backend: .accessibility).tap(.marker(value: label, key: .label, depth: .max))
-  }
-
-  public func accessibilityTap(
-    query: AccessibilityElementQuery,
-    backend: UIAutomationBackend = .accessibility,
-    expectedValue: String?,
-    expectedKey: AXSearchableKey
-  ) async throws {
-    guard let simulator = target as? Simulator else {
-      throw IDBCommandError.simulatorOnlyOperation(operation: "tap by accessibility", targetDescription: String(describing: target))
-    }
-    let assertion = expectedValue.map { TapOptions.Assertion(key: expectedKey, value: $0) }
-    try await simulator.uiAutomation(backend: backend).tap(query, options: TapOptions(assertion: assertion))
-  }
-
-  /// Describes the single element `query` names, serialized in `options.format`.
-
-  /// The read itself, before it is formatted, so a caller can also report how the read went.
-  public func accessibilityDescribeResponse(
-    query: AccessibilityElementQuery, options: AccessibilityRequestOptions, backend: UIAutomationBackend = .accessibility
-  ) async throws -> AccessibilityElementsResponse {
-    guard let simulator = target as? Simulator else {
-      throw IDBCommandError.simulatorOnlyOperation(operation: "describe accessibility", targetDescription: String(describing: target))
-    }
-    return try await simulator.uiAutomation(backend: backend).describe(query, options: options)
-  }
-
-  public func accessibilityWait(query: AccessibilityElementQuery, backend: UIAutomationBackend, timeout: TimeInterval, pollInterval: TimeInterval) async throws {
-    guard let simulator = target as? Simulator else {
-      throw IDBCommandError.simulatorOnlyOperation(operation: "wait for accessibility", targetDescription: String(describing: target))
-    }
-    try await simulator.uiAutomation(backend: backend).wait(query, timeout: timeout, pollInterval: pollInterval)
-  }
-
-  public func accessibilityQuiescence(
-    query: AccessibilityElementQuery,
-    parameters: QuiescenceParameters,
-    backend: UIAutomationBackend
-  ) async throws -> AsyncThrowingStream<QuiescenceEvent, Error> {
-    guard let simulator = target as? Simulator else {
-      throw IDBCommandError.simulatorOnlyOperation(operation: "stream accessibility quiescence", targetDescription: String(describing: target))
-    }
-    return try await simulator.uiAutomation(backend: backend).quiescence(query, parameters: parameters)
-  }
-
-  public func processId(forBundleID bundleID: String) async throws -> pid_t {
-    try await target.application.processID(forBundleID: bundleID)
-  }
-
-  public func accessibilityScroll(
-    query: AccessibilityElementQuery,
-    backend: UIAutomationBackend = .accessibility,
-    direction: AccessibilityScrollDirection
-  ) async throws {
-    guard let simulator = target as? Simulator else {
-      throw IDBCommandError.simulatorOnlyOperation(operation: "scroll by accessibility", targetDescription: String(describing: target))
-    }
-    try await simulator.uiAutomation(backend: backend).scroll(query, direction: direction)
-  }
-
-  public func accessibilitySetValue(
-    query: AccessibilityElementQuery,
-    backend: UIAutomationBackend = .accessibility,
-    value: String
-  ) async throws {
-    guard let simulator = target as? Simulator else {
-      throw IDBCommandError.simulatorOnlyOperation(operation: "set value by accessibility", targetDescription: String(describing: target))
-    }
-    try await simulator.uiAutomation(backend: backend).setValue(value, for: query)
-  }
-
-  public func accessibilityDrag(
-    from source: AccessibilityElementQuery,
-    to destination: AccessibilityElementQuery,
-    backend: UIAutomationBackend = .accessibility,
-    options: DragOptions
-  ) async throws {
-    guard let simulator = target as? Simulator else {
-      throw IDBCommandError.simulatorOnlyOperation(operation: "drag by accessibility", targetDescription: String(describing: target))
-    }
-    try await simulator.uiAutomation(backend: backend).drag(from: source, to: destination, options: options)
-  }
-
-  public func accessibilityInfoAtPoint(_ value: NSValue?, format: AccessibilityOutputFormat) async throws -> AccessibilityElementsResponse {
-    return try await accessibilityInfoAtPoint(
-      value, options: AccessibilityRequestOptions(format: format))
-  }
-
-  public func accessibilityInfoAtPoint(_ value: NSValue?, options: AccessibilityRequestOptions, backend: UIAutomationBackend = .accessibility) async throws -> AccessibilityElementsResponse {
-    guard let simulator = target as? Simulator else {
-      throw IDBCommandError.simulatorOnlyOperation(operation: "provide accessibility commands", targetDescription: String(describing: target))
-    }
-    let query: AccessibilityElementQuery = value.map { .point($0.pointValue) } ?? .frontmost
-    return try await simulator.uiAutomation(backend: backend).describe(query, options: options)
+  /// The accessibility reads and actions on the target.
+  var accessibility: CompanionAccessibility {
+    CompanionAccessibility(target: target)
   }
 
   // MARK: - REPL screenshot & recording
@@ -241,16 +145,6 @@ public final class IDBCommandExecutor {
   /// screenshot/video artifacts are staged under a session subdirectory here.
   public var auxillaryDirectory: String {
     target.auxillaryDirectory
-  }
-
-  /// The frame (in screen points) of the frontmost-app accessibility element whose
-  /// label contains `label` -- the same lookup as `accessibilityTap`.
-  public func replAccessibilityFrame(label: String) async throws -> CGRect {
-    guard let simulator = target as? Simulator else {
-      throw IDBCommandError.simulatorOnlyOperation(operation: "look up an accessibility frame", targetDescription: String(describing: target))
-    }
-    return try await simulator.uiAutomation(backend: .accessibility)
-      .frame(.marker(value: label, key: .label, depth: .max))
   }
 
   /// Captures a screenshot, optionally cropped to `cropRect` (in screen points),

@@ -12,7 +12,7 @@ import Foundation
 import GRPCCore
 import IDBGRPCSwift
 
-/// Seam over the `IDBCommandExecutor` calls this handler drives, so the request-to-stream wiring can be
+/// Seam over the `CompanionAccessibility` calls this handler drives, so the request-to-stream wiring can be
 /// tested against a double.
 protocol AccessibilityQuiescenceStreaming {
   func accessibilityQuiescence(
@@ -24,14 +24,12 @@ protocol AccessibilityQuiescenceStreaming {
   func processId(forBundleID bundleID: String) async throws -> pid_t
 }
 
-extension IDBCommandExecutor: AccessibilityQuiescenceStreaming {}
-
 struct AccessibilityQuiescenceMethodHandler {
 
   let commandExecutor: IDBCommandExecutor
 
   func handle(request: Idb_AccessibilityQuiescenceRequest, responseStream: RPCWriter<Idb_AccessibilityQuiescenceResponse>, context: ServerContext) async throws {
-    try await Self.stream(request, using: commandExecutor, cancellation: context.cancellation) { try await responseStream.send($0) }
+    try await Self.stream(request, using: commandExecutor.accessibility, cancellation: context.cancellation) { try await responseStream.send($0) }
   }
 
   /// Forwards every event until the stream ends, the task is cancelled, or `cancellation` reports the RPC

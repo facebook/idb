@@ -12,7 +12,7 @@ import Foundation
 import GRPCCore
 import IDBGRPCSwift
 
-/// Seam over the two `IDBCommandExecutor` reads this handler drives, so the request-to-options wiring
+/// Seam over the two `CompanionAccessibility` reads this handler drives, so the request-to-options wiring
 /// can be tested against a double.
 protocol AccessibilityDescribing: Sendable {
   func accessibilityDescribeResponse(
@@ -28,14 +28,12 @@ protocol AccessibilityDescribing: Sendable {
   ) async throws -> AccessibilityElementsResponse
 }
 
-extension IDBCommandExecutor: AccessibilityDescribing {}
-
 struct AccessibilityInfoMethodHandler {
 
   let commandExecutor: IDBCommandExecutor
 
   func handle(request: Idb_AccessibilityInfoRequest, context: ServerContext) async throws -> Idb_AccessibilityInfoResponse {
-    try await Self.respond(to: request, using: commandExecutor, cancellation: context.cancellation)
+    try await Self.respond(to: request, using: commandExecutor.accessibility, cancellation: context.cancellation)
   }
 
   /// Lifted out of `handle` so it can be tested without a `ServerContext`. `cancellation` is the RPC's.

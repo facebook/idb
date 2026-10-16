@@ -12,7 +12,7 @@ import Foundation
 import GRPCCore
 import IDBGRPCSwift
 
-/// Seam over the five `IDBCommandExecutor` actions this handler drives, so the request-to-action
+/// Seam over the five `CompanionAccessibility` actions this handler drives, so the request-to-action
 /// wiring can be tested against a double.
 protocol AccessibilityActing {
   func accessibilityWait(
@@ -49,14 +49,12 @@ protocol AccessibilityActing {
   ) async throws
 }
 
-extension IDBCommandExecutor: AccessibilityActing {}
-
 struct AccessibilityActionMethodHandler {
 
   let commandExecutor: IDBCommandExecutor
 
   func handle(request: Idb_AccessibilityActionRequest, context: ServerContext) async throws -> Idb_AccessibilityActionResponse {
-    try await Self.respond(to: request, using: commandExecutor)
+    try await Self.respond(to: request, using: commandExecutor.accessibility)
   }
 
   /// Lifted out of `handle` so it can be tested without a `ServerContext`.
