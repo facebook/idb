@@ -388,7 +388,7 @@ final class CompanionServiceProvider: Idb_CompanionService.SimpleServiceProtocol
   func inject_audio(request: RPCAsyncSequence<Idb_InjectAudioRequest, any Error>, context: ServerContext) async throws -> Idb_InjectAudioResponse {
     let reader = RequestStreamReader(request)
     return try await trackedClientStreaming(context) {
-      try await InjectAudioMethodHandler(commandExecutor: commandExecutor)
+      try await InjectAudioMethodHandler(target: target, commandExecutor: commandExecutor)
         .handle(requestStream: reader, context: context)
     }
   }

@@ -170,10 +170,6 @@ public final class IDBCommandExecutor {
     await waitForProcessExit(pid: pid)
   }
 
-  public func injectAudio(_ audioFile: URL) async throws {
-    try await target.simulator().audioInjection.inject(from: audioFile)
-  }
-
   public func audioInjectionAppLaunchEnvironment(
     _ environment: [String: String]
   ) async -> [String: String] {

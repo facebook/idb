@@ -15,19 +15,22 @@ import ShimulatorAudioInjectionCore
 
 struct InjectAudioMethodHandler {
 
+  let target: CompanionTarget
   let commandExecutor: IDBCommandExecutor
 
   func handle(
     requestStream: RequestStreamReader<Idb_InjectAudioRequest>,
     context: ServerContext
   ) async throws -> Idb_InjectAudioResponse {
+    // Resolved up front so the closure can hold it, and thrown only once the audio has been received.
+    let simulator = Result { try target.simulator() }
     do {
       try await Self.withAudioInjection(
         from: requestStream,
         temporaryDirectory: commandExecutor.temporaryDirectory,
         cancellation: context.cancellation
       ) { audioFileURL in
-        try await commandExecutor.injectAudio(audioFileURL)
+        try await simulator.get().audioInjection.inject(from: audioFileURL)
       }
     } catch let error as AudioInjectionError {
       throw Self.rpcError(for: error)
