@@ -160,7 +160,7 @@ All of this is backed by `libdispatch`, due to its affordance for asynchronous I
 
 A huge amount of the "work" that is done inside the Frameworks is based on IO and calling out to other APIs that perform IO. This work is very asynchronous, which means that there is a strong case for a consistent API for performing and waiting on this work.
 
-That API is Swift Concurrency. Framework APIs are `async` and `throws`, so a failure carries a full error and a sequence of dependent calls reads as straight-line code. Where one task has to tell another that something has happened, such as a process reaching a state or a reader reaching the end of its input, `FBControlCore` provides `AsyncEvent`, for a single waiter, and `AsyncLatch`, which any number of tasks can await. IO itself stays on `libdispatch`, as described above, and reaches callers as `async` calls.
+That API is Swift Concurrency. Framework APIs are `async` and `throws`, so a failure carries a full error and a sequence of dependent calls reads as straight-line code. Where one task has to tell another that something has happened, such as a process reaching a state or a reader reaching the end of its input, `FBControlCore` provides `AsyncEvent`, which carries the first outcome to any number of waiting tasks. IO itself stays on `libdispatch`, as described above, and reaches callers as `async` calls.
 
 ## `idb_companion` concepts
 
