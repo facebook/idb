@@ -8,16 +8,15 @@
 import Foundation
 
 /// Something to wait for that may happen, or fail, before it is waited on. Only the first outcome
-/// counts.
+/// counts, and every waiter, before or after it, receives it.
 public final class AsyncEvent<Value: Sendable>: @unchecked Sendable {
   private enum State {
-    case pending
-    case waiting(CheckedContinuation<Value, Error>)
+    case pending(waiters: [UUID: CheckedContinuation<Value, Error>])
     case happened(Result<Value, Error>)
   }
 
   private let lock = NSLock()
-  private var state = State.pending
+  private var state = State.pending(waiters: [:])
 
   public init() {}
 
@@ -27,7 +26,7 @@ public final class AsyncEvent<Value: Sendable>: @unchecked Sendable {
       switch state {
       case .happened:
         return true
-      case .pending, .waiting:
+      case .pending:
         return false
       }
     }
@@ -41,10 +40,12 @@ public final class AsyncEvent<Value: Sendable>: @unchecked Sendable {
     resolve(.failure(error))
   }
 
-  /// Returns once the event has happened, throwing if it failed. Cancelling throws
-  /// `CancellationError` and leaves the event to be waited on again.
+  /// Returns once the event has happened, throwing if it failed. Any number of callers may wait.
+  /// Cancelling throws `CancellationError` for that waiter alone and leaves the event to be waited on
+  /// again.
   public func wait() async throws -> Value {
-    try await withTaskCancellationHandler {
+    let id = UUID()
+    return try await withTaskCancellationHandler {
       try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Value, Error>) in
         lock.lock()
         switch state {
@@ -54,23 +55,21 @@ public final class AsyncEvent<Value: Sendable>: @unchecked Sendable {
         case .pending where Task.isCancelled:
           lock.unlock()
           continuation.resume(throwing: CancellationError())
-        case .pending:
-          state = .waiting(continuation)
+        case var .pending(waiters):
+          waiters[id] = continuation
+          state = .pending(waiters: waiters)
           lock.unlock()
-        case .waiting:
-          lock.unlock()
-          preconditionFailure("An AsyncEvent has one waiter at a time")
         }
       }
     } onCancel: {
-      lock.lock()
-      guard case let .waiting(continuation) = state else {
-        lock.unlock()
-        return
+      let waiter: CheckedContinuation<Value, Error>? = lock.withLock {
+        guard case var .pending(waiters) = state, let waiter = waiters.removeValue(forKey: id) else {
+          return nil
+        }
+        state = .pending(waiters: waiters)
+        return waiter
       }
-      state = .pending
-      lock.unlock()
-      continuation.resume(throwing: CancellationError())
+      waiter?.resume(throwing: CancellationError())
     }
   }
 
@@ -94,17 +93,15 @@ public final class AsyncEvent<Value: Sendable>: @unchecked Sendable {
   }
 
   private func resolve(_ result: Result<Value, Error>) {
-    lock.lock()
-    switch state {
-    case .pending:
+    let waiters: [UUID: CheckedContinuation<Value, Error>] = lock.withLock {
+      guard case let .pending(waiters) = state else {
+        return [:]
+      }
       state = .happened(result)
-      lock.unlock()
-    case let .waiting(continuation):
-      state = .happened(result)
-      lock.unlock()
-      continuation.resume(with: result)
-    case .happened:
-      lock.unlock()
+      return waiters
+    }
+    for waiter in waiters.values {
+      waiter.resume(with: result)
     }
   }
 }

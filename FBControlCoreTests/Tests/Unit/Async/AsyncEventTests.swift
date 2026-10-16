@@ -35,6 +35,35 @@ struct AsyncEventTests {
   }
 
   @Test
+  func everyWaiterReceivesTheOutcome() async throws {
+    let event = AsyncEvent<Int>()
+    let first = Task { try await event.wait() }
+    let second = Task { try await event.wait() }
+    try await Task.sleep(nanoseconds: 50_000_000)
+
+    event.happen(42)
+
+    #expect(try await first.value == 42)
+    #expect(try await second.value == 42)
+  }
+
+  @Test
+  func cancellingOneWaiterLeavesTheOthersWaiting() async throws {
+    let event = AsyncEvent<Int>()
+    let cancelled = Task { try await event.wait() }
+    let remaining = Task { try await event.wait() }
+    try await Task.sleep(nanoseconds: 50_000_000)
+
+    cancelled.cancel()
+    await #expect(throws: CancellationError.self) {
+      try await cancelled.value
+    }
+    event.happen(42)
+
+    #expect(try await remaining.value == 42)
+  }
+
+  @Test
   func onlyTheFirstOutcomeCounts() async throws {
     let event = AsyncEvent<Int>()
     event.happen(1)
