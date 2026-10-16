@@ -92,6 +92,8 @@ actor InventoryTransport: AXBridgeTransport {
   private let inventory: [SimulatorAccessibilityDisplay]
   private let scopedInteractions: Bool
   private(set) var sends = 0
+  /// The receive timeout of each bounded send; an unbounded send records none.
+  private(set) var receiveTimeouts: [TimeInterval] = []
 
   init(_ inventory: [SimulatorAccessibilityDisplay], scopedInteractions: Bool = false) {
     self.inventory = inventory
@@ -103,6 +105,11 @@ actor InventoryTransport: AXBridgeTransport {
     let displays = inventory.map { ["uniqueID": $0.uniqueID, "displayID": $0.displayID] as [String: Any] }
     return try JSONSerialization.data(
       withJSONObject: ["ok": true, "displayScopedInteractions": scopedInteractions, "displays": displays])
+  }
+
+  func send(_ request: AXBridgeRequest, receiveTimeout: TimeInterval) async throws -> Data {
+    receiveTimeouts.append(receiveTimeout)
+    return try await send(request)
   }
 }
 

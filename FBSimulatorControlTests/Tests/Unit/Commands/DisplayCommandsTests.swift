@@ -46,6 +46,17 @@ struct DisplayCommandsTests {
   }
 
   @Test
+  func aDisplayLookupWaitsOnTheConnectionsDeadline() async throws {
+    let displays = DisplayCommandsDouble(.selected(display("inner")))
+    let transport = InventoryTransport(inventory)
+    _ = try await displays.accessibilityID(for: display("inner"), transport: transport)
+    let receiveTimeouts = await transport.receiveTimeouts
+    // BUG: the lookup sends without a receive timeout, so a silent guest holds it for the connection's 30 s —
+    // flipped in the following commit.
+    #expect(receiveTimeouts.isEmpty)
+  }
+
+  @Test
   func newlySelectedDisplayRefreshesTheCache() async throws {
     let displays = DisplayCommandsDouble(.selected(display("inner")), .selected(display("cover")))
     let transport = InventoryTransport(inventory)
