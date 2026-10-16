@@ -11,30 +11,6 @@ import FBControlCore
 import FBSimulatorControl
 import Foundation
 
-/// One unit of work and its result, carried across the hop onto a dispatch queue and
-/// back. SAFETY: the body runs exactly once, on the queue it is dispatched to; the
-/// continuation resume that follows it establishes the happens-before for the result
-/// read after the await.
-// patternlint-disable-next-line unchecked-sendable
-private final class AXPSerializedJob<T>: @unchecked Sendable {
-  private struct NeverRan: Error {}
-
-  private let body: () throws -> T
-  private var result: Result<T, Error> = .failure(NeverRan())
-
-  init(_ body: @escaping () throws -> T) {
-    self.body = body
-  }
-
-  func run() {
-    result = Result(catching: body)
-  }
-
-  func takeResult() throws -> T {
-    try result.get()
-  }
-}
-
 /// Answers `AXPTranslator`'s synchronous bridge callbacks. Holds the token→request registry and, per
 /// request, performs the translator handshake and hands each translator request to that request's
 /// `AXTranslationTransport`.
@@ -98,18 +74,11 @@ final class AXTranslationDispatcher: NSObject, AXPTranslationTokenDelegateHelper
   private func perform<T>(
     _ operation: @escaping () throws -> T, on queue: DispatchQueue, cancellation: AXReadCancellation?
   ) async throws -> T {
-    let job = AXPSerializedJob(operation)
-    await withTaskCancellationHandler {
-      await withCheckedContinuation { (continuation: CheckedContinuation<Void, Never>) in
-        queue.async {
-          job.run()
-          continuation.resume()
-        }
-      }
+    try await withTaskCancellationHandler {
+      try await queue.perform(operation)
     } onCancel: {
       cancellation?.cancel()
     }
-    return try job.takeResult()
   }
 
   /// Resolves `request`'s root in one request over its transport, without touching the translator.
