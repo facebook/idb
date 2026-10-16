@@ -35,7 +35,7 @@ enum XCTestRunFileReader {
     guard fileManager.fileExists(atPath: xctestrunURL.path) else {
       throw XCTestRunFileError.fileMissing(url: xctestrunURL)
     }
-    let testRoot = (xctestrunURL.path as NSString).deletingLastPathComponent
+    let testRoot = xctestrunURL.deletingLastPathComponent().path
     let idbAppStoragePath = (path as NSString).appendingPathComponent(IdbApplicationsFolder)
     guard fileManager.fileExists(atPath: idbAppStoragePath) else {
       throw XCTestRunFileError.appStorageMissing(path: idbAppStoragePath)

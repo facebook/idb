@@ -202,9 +202,9 @@ public struct XCTestRunRequest {
     if coverageRequest.collect {
       let dir = temporaryDirectory.ephemeralTemporaryDirectory()
       let coverageDirName = "coverage_\(NSUUID().uuidString)"
-      let coverageDirPath = (dir.path as NSString).appendingPathComponent(coverageDirName)
-      try FileManager.default.createDirectory(atPath: coverageDirPath, withIntermediateDirectories: true, attributes: nil)
-      coverageConfig = CodeCoverageConfiguration(directory: coverageDirPath, format: coverageRequest.format, enableContinuousCoverageCollection: coverageRequest.shouldEnableContinuousCoverageCollection)
+      let coverageDirectory = dir.appendingPathComponent(coverageDirName)
+      try FileManager.default.createDirectory(at: coverageDirectory, withIntermediateDirectories: true, attributes: nil)
+      coverageConfig = CodeCoverageConfiguration(directory: coverageDirectory.path, format: coverageRequest.format, enableContinuousCoverageCollection: coverageRequest.shouldEnableContinuousCoverageCollection)
     }
 
     let testsToSkipArray = testsToSkip.sorted()
