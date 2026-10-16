@@ -51,17 +51,18 @@ public extension PollDeadline {
 }
 
 /// Evaluates `condition` on `queue` every `interval` until it returns true. `deadline` is checked only after an unsatisfied poll, so a timeout surfaces up to
-/// `interval` late; `nil` polls forever. Throws `PollTimeoutError` on deadline, `CancellationError` if cancelled.
+/// `interval` late; `nil` polls forever. Throws `PollTimeoutError` on deadline, `CancellationError` if cancelled, and
+/// whatever `condition` throws.
 public func pollUntilTrue(
   on queue: DispatchQueue,
   interval: TimeInterval = 0.1,
   deadline: PollDeadline? = nil,
-  condition: @escaping () -> Bool
+  condition: @escaping () throws -> Bool
 ) async throws {
   let checkExpiry = deadline?.start()
   while true {
     try Task.checkCancellation()
-    let satisfied = await queue.perform(condition)
+    let satisfied = try await queue.perform(condition)
     if satisfied {
       return
     }

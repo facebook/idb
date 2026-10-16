@@ -182,7 +182,7 @@ public class ProcessFetcher: @unchecked Sendable {
   /// Throws if the process cannot be looked up.
   public static func waitForDebuggerToAttachAndContinue(for processIdentifier: pid_t) async throws {
     let fetcher = ProcessFetcher()
-    try await poll {
+    try await pollUntilTrue(on: .global()) {
       try fetcher.isDebuggerAttached(to: processIdentifier) && fetcher.isProcessRunning(processIdentifier)
     }
   }
@@ -190,7 +190,7 @@ public class ProcessFetcher: @unchecked Sendable {
   /// Waits for the process to enter the `SSTOP` state. Throws if the process cannot be looked up.
   public static func waitForStopSignal(process processIdentifier: pid_t) async throws {
     let fetcher = ProcessFetcher()
-    try await poll {
+    try await pollUntilTrue(on: .global()) {
       try fetcher.isProcessStopped(processIdentifier)
     }
   }
@@ -209,17 +209,6 @@ public class ProcessFetcher: @unchecked Sendable {
   // MARK: - Private
 
   private static let sampleDuration = 1
-  private static let pollInterval: UInt64 = 100_000_000
-
-  private static func poll(until condition: () throws -> Bool) async throws {
-    while true {
-      try Task.checkCancellation()
-      if try condition() {
-        return
-      }
-      try await Task.sleep(nanoseconds: pollInterval)
-    }
-  }
 
   private func kernelInfo(for processIdentifier: pid_t) throws -> kinfo_proc {
     var info = kinfo_proc()
