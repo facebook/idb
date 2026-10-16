@@ -75,7 +75,30 @@ enum AccessibilityInfoRequestTranslation {
       enableProfiling: request.profile,
       collectFrameCoverage: request.collectFrameCoverage,
       filter: filter(from: request.filter),
-      match: match(from: request))
+      match: match(from: request),
+      clientType: try clientType(from: request.clientType))
+  }
+
+  /// `UNSPECIFIED` names no client, the historical read. An unrecognized value is refused rather than
+  /// dropped: a read that silently claimed no client would answer with a different tree than asked for.
+  static func clientType(from wire: Idb_AccessibilityInfoRequest.ClientType) throws -> AXClientType? {
+    switch wire {
+    case .unspecified: nil
+    case .noClient: .noClient
+    case .unidentified: .unidentified
+    case .application: .application
+    case .xcodeHelper: .xcodeHelper
+    case .xctest: .xctest
+    case .scripter: .scripter
+    case .systemEvents: .systemEvents
+    case .voiceOver: .voiceOver
+    case .switchControl: .switchControl
+    case .fullKeyboardAccess: .fullKeyboardAccess
+    case .voiceControl: .voiceControl
+    case .accessibilityInspector: .accessibilityInspector
+    case let .UNRECOGNIZED(value):
+      throw RPCError(code: .invalidArgument, message: "unrecognized accessibility client type \(value)")
+    }
   }
 
   /// `marker` selects one element; `match` narrows a list. Setting both is rejected rather than given a

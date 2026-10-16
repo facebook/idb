@@ -287,6 +287,38 @@ struct AccessibilityInfoRequestTranslationTests {
     #expect((AccessibilityInfoRequestTranslation.backend(from: .UNRECOGNIZED(9))) == (.accessibility))
   }
 
+  // MARK: - Requesting client
+
+  @Test
+  func unspecifiedClientTypeNamesNoClient() throws {
+    let options = try AccessibilityInfoRequestTranslation.options(from: Idb_AccessibilityInfoRequest(), format: .default)
+    #expect(options.clientType == nil)
+    #expect(options.resolvedClientType == AccessibilityRequestOptions().resolvedClientType)
+  }
+
+  @Test
+  func everyWireClientTypeMapsToTheClientOfTheSameName() throws {
+    let expected: [(Idb_AccessibilityInfoRequest.ClientType, String)] = [
+      (.noClient, "noClient"), (.unidentified, "unidentified"), (.application, "application"), (.xcodeHelper, "xcodeHelper"),
+      (.xctest, "xctest"), (.scripter, "scripter"), (.systemEvents, "systemEvents"), (.voiceOver, "voiceOver"),
+      (.switchControl, "switchControl"), (.fullKeyboardAccess, "fullKeyboardAccess"), (.voiceControl, "voiceControl"),
+      (.accessibilityInspector, "accessibilityInspector"),
+    ]
+    #expect(expected.count == AXClientType.allCases.count, "every client type is reachable over the wire")
+    for (wire, name) in expected {
+      var request = Idb_AccessibilityInfoRequest()
+      request.clientType = wire
+      #expect(try AccessibilityInfoRequestTranslation.options(from: request, format: .default).clientType?.name == name)
+    }
+  }
+
+  @Test
+  func unrecognizedClientTypeIsRefused() {
+    var request = Idb_AccessibilityInfoRequest()
+    request.clientType = .UNRECOGNIZED(99)
+    #expect(throws: RPCError.self) { try AccessibilityInfoRequestTranslation.options(from: request, format: .default) }
+  }
+
   // MARK: - Legacy output shape
 
   @Test

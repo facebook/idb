@@ -458,6 +458,31 @@ message AccessibilityInfoRequest {
   // Compare match — and, on a marker read, marker — case-insensitively.
   bool ignore_case = 12;
   Filter filter = 13;
+  // The assistive client the read claims to be, which decides what the
+  // application answers with: the automation tree (every container and
+  // identifier, as XCUITest sees it) for the automation clients, the flattened
+  // tree VoiceOver reads for the rest. UNSPECIFIED claims no client, the
+  // historical behaviour, so an older client is unaffected; an older server
+  // ignores this field. These numbers are not the accessibility translator's
+  // own values; the companion maps each one by name.
+  enum ClientType {
+    CLIENT_TYPE_UNSPECIFIED = 0;
+    CLIENT_TYPE_NO_CLIENT = 1;
+    CLIENT_TYPE_UNIDENTIFIED = 2;
+    // Automation clients.
+    CLIENT_TYPE_APPLICATION = 3;
+    CLIENT_TYPE_XCODE_HELPER = 4;
+    CLIENT_TYPE_XCTEST = 5;
+    CLIENT_TYPE_SCRIPTER = 6;
+    CLIENT_TYPE_SYSTEM_EVENTS = 7;
+    // Assistive technologies.
+    CLIENT_TYPE_VOICE_OVER = 8;
+    CLIENT_TYPE_SWITCH_CONTROL = 9;
+    CLIENT_TYPE_FULL_KEYBOARD_ACCESS = 10;
+    CLIENT_TYPE_VOICE_CONTROL = 11;
+    CLIENT_TYPE_ACCESSIBILITY_INSPECTOR = 12;
+  }
+  ClientType client_type = 14;
 }
 
 message AccessibilityInfoResponse {

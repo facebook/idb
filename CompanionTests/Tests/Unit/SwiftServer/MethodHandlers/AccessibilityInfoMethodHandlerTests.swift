@@ -105,6 +105,19 @@ struct AccessibilityInfoMethodHandlerTests {
   }
 
   @Test
+  func markerReadCarriesTheRequestedClientToTheExecutor() async throws {
+    let executor = RecordingAccessibilityExecutor()
+    var request = Idb_AccessibilityInfoRequest()
+    request.marker = "OK"
+    request.clientType = .xctest
+
+    _ = try await AccessibilityInfoMethodHandler.respond(to: request, using: executor)
+
+    let options = try #require(executor.describeOptions, "a marker read must reach the describe executor")
+    #expect(options.clientType == .xctest, "the request's client must reach the executor on the marker path")
+  }
+
+  @Test
   func markerReadCarriesProfilingAndFrameCoverageToTheExecutor() async throws {
     let executor = RecordingAccessibilityExecutor()
     var request = Idb_AccessibilityInfoRequest()
