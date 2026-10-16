@@ -110,7 +110,7 @@ private final class FifoDrain: @unchecked Sendable {
   private let consumer: any DataConsumer
   private var keepAlive: Int32?
   private var ended = false
-  private var waiters: [CheckedContinuation<Void, Never>] = []
+  private let drained = AsyncEvent<Void>()
 
   init(readEnd: Int32, keepAlive: Int32, consumer: any DataConsumer) {
     self.keepAlive = keepAlive
@@ -143,19 +143,17 @@ private final class FifoDrain: @unchecked Sendable {
 
   func finish(within grace: TimeInterval) async {
     await withTaskCancellationHandler {
-      await withCheckedContinuation { continuation in
-        queue.async { [self] in
-          closeKeepAlive()
-          guard !ended else {
-            continuation.resume()
-            return
-          }
-          waiters.append(continuation)
-          queue.asyncAfter(deadline: .now() + grace) { [self] in
-            end()
-          }
+      queue.async { [self] in
+        closeKeepAlive()
+        guard !ended else {
+          return
+        }
+        queue.asyncAfter(deadline: .now() + grace) { [self] in
+          end()
         }
       }
+      // Never fails: the drain only ever happens.
+      _ = try? await drained.waitIgnoringCancellation()
     } onCancel: {
       queue.async { [self] in
         end()
@@ -187,9 +185,6 @@ private final class FifoDrain: @unchecked Sendable {
       ended = true
       consumer.consumeEndOfFile()
     }
-    for waiter in waiters {
-      waiter.resume()
-    }
-    waiters = []
+    drained.happen()
   }
 }
