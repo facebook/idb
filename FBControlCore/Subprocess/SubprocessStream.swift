@@ -72,24 +72,20 @@ private final class PipeReader: Sendable {
 
   /// Up to `count` bytes, or nil at end-of-file.
   func read(upToCount count: Int) async throws -> Data? {
-    try await withCheckedThrowingContinuation { continuation in
-      queue.async { [descriptor] in
-        var buffer = Data(count: count)
-        var readCount: Int
-        repeat {
-          readCount = buffer.withUnsafeMutableBytes { Darwin.read(descriptor, $0.baseAddress, count) }
-        } while readCount < 0 && errno == EINTR
-        guard readCount >= 0 else {
-          continuation.resume(throwing: SubprocessError.outputUnavailable(path: "pipe", message: String(cString: strerror(errno))))
-          return
-        }
-        guard readCount > 0 else {
-          continuation.resume(returning: nil)
-          return
-        }
-        buffer.count = readCount
-        continuation.resume(returning: buffer)
+    try await queue.perform { [descriptor] in
+      var buffer = Data(count: count)
+      var readCount: Int
+      repeat {
+        readCount = buffer.withUnsafeMutableBytes { Darwin.read(descriptor, $0.baseAddress, count) }
+      } while readCount < 0 && errno == EINTR
+      guard readCount >= 0 else {
+        throw SubprocessError.outputUnavailable(path: "pipe", message: String(cString: strerror(errno)))
       }
+      guard readCount > 0 else {
+        return nil
+      }
+      buffer.count = readCount
+      return buffer
     }
   }
 }

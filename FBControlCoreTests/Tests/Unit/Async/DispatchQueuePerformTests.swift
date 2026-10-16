@@ -40,6 +40,13 @@ struct DispatchQueuePerformTests {
   }
 
   @Test
+  func workThatCannotFailIsAwaitedWithoutTry() async {
+    let queue = DispatchQueue(label: "com.facebook.fbcontrolcore.tests.perform")
+
+    #expect(await queue.perform { "done" } == "done")
+  }
+
+  @Test
   func acceptsWorkThatIsNotSendable() async throws {
     final class Counter {
       var value = 0

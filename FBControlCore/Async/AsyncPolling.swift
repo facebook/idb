@@ -61,11 +61,7 @@ public func pollUntilTrue(
   let checkExpiry = deadline?.start()
   while true {
     try Task.checkCancellation()
-    let satisfied = await withCheckedContinuation { (continuation: CheckedContinuation<Bool, Never>) in
-      queue.async {
-        continuation.resume(returning: condition())
-      }
-    }
+    let satisfied = await queue.perform(condition)
     if satisfied {
       return
     }

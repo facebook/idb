@@ -21,13 +21,23 @@ extension DispatchQueue {
       }
     }
   }
+
+  /// As `perform(_:)`, for work that cannot fail.
+  public func perform<T>(_ work: @escaping () -> T) async -> T {
+    let job = QueueJob(work)
+    return await withCheckedContinuation { (continuation: CheckedContinuation<T, Never>) in
+      self.async {
+        continuation.resume(returning: job.work())
+      }
+    }
+  }
 }
 
 /// `@unchecked Sendable`: the job is handed to exactly one queue block and only ever run there.
-private final class QueueJob<T>: @unchecked Sendable {
-  let work: () throws -> T
+private final class QueueJob<Work>: @unchecked Sendable {
+  let work: Work
 
-  init(_ work: @escaping () throws -> T) {
+  init(_ work: Work) {
     self.work = work
   }
 }
