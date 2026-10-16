@@ -20,9 +20,13 @@ struct HidMethodHandler {
     case hinge(SimulatorHingeAngle)
   }
 
+  let target: CompanionTarget
   let commandExecutor: IDBCommandExecutor
 
   func handle(requestStream: RequestStreamReader<Idb_HIDEvent>, context: ServerContext) async throws -> Idb_HIDResponse {
+    // Resolved up front so the stream's closure can hold it, and thrown only when a device action needs it.
+    let simulator = Result { try target.simulator() }
+    let commandExecutor = commandExecutor
     try await withRPCCancellation(context.cancellation) {
       try await commandExecutor.hid(
         events: requestStream.compactMap { message -> SimulatorHIDEvent? in
@@ -31,11 +35,11 @@ struct HidMethodHandler {
             return event
           case let .orientation(orientation):
             // Interface numbering is what `idb`'s HID stream has always carried.
-            try await commandExecutor.setOrientation(orientation, convention: .interface)
+            try await simulator.get().orientation.set(orientation, convention: .interface)
           case .shake:
-            try await commandExecutor.shake()
+            try await simulator.get().hardware.shake()
           case let .hinge(angle):
-            try await commandExecutor.setHingeAngle(angle)
+            try await simulator.get().hinge.set(angle)
           }
           return nil
         })

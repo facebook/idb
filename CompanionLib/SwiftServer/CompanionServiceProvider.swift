@@ -238,7 +238,7 @@ final class CompanionServiceProvider: Idb_CompanionService.SimpleServiceProtocol
   func hid(request: RPCAsyncSequence<Idb_HIDEvent, any Error>, context: ServerContext) async throws -> Idb_HIDResponse {
     let reader = RequestStreamReader(request)
     return try await trackedClientStreaming(context) {
-      try await HidMethodHandler(commandExecutor: commandExecutor)
+      try await HidMethodHandler(target: target, commandExecutor: commandExecutor)
         .handle(requestStream: reader, context: context)
     }
   }

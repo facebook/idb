@@ -323,18 +323,6 @@ public final class IDBCommandExecutor {
     try await hid.send(events: events, logger: logger)
   }
 
-  public func setOrientation(_ orientation: SimulatorHIDDeviceOrientation, convention: SimulatorOrientationConvention) async throws {
-    try await target.simulator().orientation.set(orientation, convention: convention)
-  }
-
-  public func shake() async throws {
-    try await target.simulator().hardware.shake()
-  }
-
-  public func setHingeAngle(_ angle: SimulatorHingeAngle) async throws {
-    try await target.simulator().hinge.set(angle)
-  }
-
   // MARK: - File Commands
 
   func pushFileFromTar(_ tarData: Data, toPath destinationPath: String, containerType: String?) async throws {
