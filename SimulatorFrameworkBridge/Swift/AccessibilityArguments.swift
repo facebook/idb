@@ -5,45 +5,45 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+import FBSimulatorBridgeProtocol
 import Foundation
 
 public enum AXBridgeArguments {
   public static func request(action: String, arguments: [String]) -> [String: Any] {
-    var request: [String: Any] = ["verb": action]
+    var request: [String: Any] = [BridgeAXWire.Request.verb.key: action]
     // The CLI consumes pairs, ignores unknown/dangling flags, and lets the last duplicate win.
     for index in stride(from: 0, to: max(0, arguments.count - 1), by: 2) {
-      let value = arguments[index + 1]
-      let string = value as NSString
-      switch arguments[index] {
-      case "--pid": request["pid"] = string.intValue
-      case "--display-id":
-        if let displayID = UInt32(value), displayID > 0 { request["displayID"] = displayID } else { request["displayID"] = value }
-      case "--max-depth": request["maxDepth"] = string.intValue
-      case "--max-nodes": request["maxNodes"] = string.intValue
-      case "--automation-mode": request["automationMode"] = string.boolValue
-      case "--traversal": request["traversal"] = value
-      case "--client-type": request["clientType"] = string.intValue
-      case "--explain-unreachable": request["explainUnreachable"] = string.boolValue
-      case "--attributes": request["attributes"] = value.components(separatedBy: ",")
-      case "--x": request["x"] = string.doubleValue
-      case "--y": request["y"] = string.doubleValue
-      case "--method": request["method"] = value
-      case "--action": request["action"] = value
-      case "--value": request["value"] = value
-      case "--setting": request["setting"] = value
-      case "--enabled":
-        switch value {
-        case "true": request["enabled"] = true
-        case "false": request["enabled"] = false
-        default: request["enabled"] = value
-        }
-      case "--assert-key": request["assertKey"] = value
-      case "--assert-value": request["assertValue"] = value
-      case "--busy-threshold-ms": request["busyThresholdMs"] = string.intValue
-      case "--quiet-window-ms": request["quietWindowMs"] = string.intValue
-      default: break
+      guard let field = BridgeAXWire.Request.allCases.first(where: { $0.flag == arguments[index] }) else {
+        continue
       }
+      request[field.key] = value(of: field, from: arguments[index + 1])
     }
     return request
+  }
+
+  /// The value a flag's argument carries, typed as the persistent transport sends that field.
+  private static func value(of field: BridgeAXWire.Request, from argument: String) -> Any {
+    let string = argument as NSString
+    switch field {
+    case .pid, .maxDepth, .maxNodes, .clientType, .busyThresholdMs, .quietWindowMs:
+      return string.intValue
+    case .automationMode, .explainUnreachable:
+      return string.boolValue
+    case .x, .y:
+      return string.doubleValue
+    case .displayID:
+      guard let displayID = UInt32(argument), displayID > 0 else { return argument }
+      return displayID
+    case .attributes:
+      return argument.components(separatedBy: ",")
+    case .enabled:
+      switch argument {
+      case "true": return true
+      case "false": return false
+      default: return argument
+      }
+    case .verb, .traversal, .method, .action, .value, .setting, .assertKey, .assertValue:
+      return argument
+    }
   }
 }

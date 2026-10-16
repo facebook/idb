@@ -77,7 +77,7 @@ private let nodeElementIdentity = BridgeAXWire.Node.elementIdentity.rawValue
 // Present only on a node where at least one attribute failed to read, mapping the attribute's key to the
 // reason.
 private let nodeAttributeReadFailures = BridgeAXWire.Node.attributeReadFailures.rawValue
-private let requestDisplayID = "displayID"
+private let requestDisplayID = BridgeAXWire.Request.displayID.rawValue
 private let requestX = BridgeAXWire.Request.x.rawValue
 private let requestY = BridgeAXWire.Request.y.rawValue
 // Selects how a fused frontmost read (a `describe` with no pid) resolves the foreground app. Optional;
@@ -1732,14 +1732,6 @@ private final class AccessibilityRequest {
       quietWindow: TimeInterval(quietWindowMs ?? BridgeAXWire.Quiescence.defaultQuietWindowMs) / 1000,
       resolveFrontmost: { client in try AccessibilityRequest().FBAXBridgeResolveFrontmost(client: client, method: method, anchor: anchor, displayID: displayID) }
     )
-  }
-
-  // MARK: - Argv front-end
-
-  fileprivate func FBAXBridgeRequestFromArguments(action: String, arguments: [String]) -> [String: Any] {
-    let request = AXBridgeArguments.request(action: action, arguments: arguments)
-
-    return request
   }
 
   // MARK: - Testing

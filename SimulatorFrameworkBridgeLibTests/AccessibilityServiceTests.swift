@@ -97,8 +97,8 @@ struct AccessibilityServiceTests {
 
   // MARK: - Wire contract
 
-  // Guest and host share no header for these strings. This pins the guest's constants to the literals the
-  // host pins in `AXWireContractTests`; the two files agreeing is the contract.
+  // Pins the spellings the guest sends to the literals the host pins in `AXWireContractTests`, so a rename in
+  // the shared vocabulary cannot change the wire unnoticed.
   @Test
   func guestWireConstantsMatchTheHostContract() {
     let expected = [
