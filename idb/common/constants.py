@@ -14,8 +14,6 @@ LONG_THRIFT_TIMEOUT: float = timedelta(hours=2).total_seconds()
 LOG_POLL_INTERVAL: float = 1.0
 TESTS_POLL_INTERVAL: float = 0.5
 INSTALL_TIMEOUT: float = timedelta(minutes=5).total_seconds()
-START_INSTRUMENTS_TIMEOUT: float = timedelta(minutes=6).total_seconds()
-STOP_INSTRUMENTS_TIMEOUT: float = timedelta(minutes=10).total_seconds()
 CRASH_LIST_TIMEOUT: float = timedelta(minutes=5).total_seconds()
 
 JSONDict = dict[str, Any]

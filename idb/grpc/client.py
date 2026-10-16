@@ -88,7 +88,6 @@ from idb.common.types import (
     InstalledAppInfo,
     InstalledArtifact,
     InstalledTestInfo,
-    InstrumentsTimings,
     LoggingMetadata,
     OnlyFilter,
     Permission,
@@ -143,7 +142,6 @@ from idb.grpc.idb_pb2 import (
     HingeAngleRequest,
     InjectAudioRequest,
     InstallRequest,
-    InstrumentsRunRequest,
     LaunchRequest,
     ListAppsRequest,
     ListSettingRequest,
@@ -187,11 +185,6 @@ from idb.grpc.install import (
     remaining_size,
     select_stream_compression,
     UploadProgress,
-)
-from idb.grpc.instruments import (
-    instruments_drain_until_running,
-    instruments_generate_bytes,
-    translate_instruments_timings,
 )
 from idb.grpc.launch import drain_launch_stream, wait_for_launch_stream
 from idb.grpc.port_forward import forward_port
@@ -1467,87 +1460,6 @@ class Client(ClientBase):
         )
         commands = response.status.lldb_bootstrap_commands
         return commands if commands else None
-
-    @log_and_handle_exceptions("instruments_run")
-    async def run_instruments(
-        self,
-        stop: asyncio.Event,
-        trace_basename: str,
-        template_name: str,
-        app_bundle_id: str,
-        app_environment: dict[str, str] | None = None,
-        app_arguments: list[str] | None = None,
-        tool_arguments: list[str] | None = None,
-        started: asyncio.Event | None = None,
-        timings: InstrumentsTimings | None = None,
-        post_process_arguments: list[str] | None = None,
-    ) -> list[str]:
-        self.logger.info("Starting instruments connection")
-        async with self.stub.instruments_run.open() as stream:
-            self.logger.info("Sending instruments request")
-            await stream.send_message(
-                InstrumentsRunRequest(
-                    start=InstrumentsRunRequest.Start(
-                        template_name=template_name,
-                        app_bundle_id=app_bundle_id,
-                        environment=app_environment,
-                        arguments=app_arguments,
-                        tool_arguments=tool_arguments,
-                        timings=translate_instruments_timings(timings),
-                    )
-                )
-            )
-            self.logger.info("Starting instruments")
-            await instruments_drain_until_running(stream=stream, logger=self.logger)
-            if started:
-                started.set()
-            self.logger.info("Instruments has started, waiting for stop")
-            async for response in stop_wrapper(stream=stream, stop=stop):
-                output = response.log_output
-                if len(output):
-                    self.logger.info(output.decode())
-            self.logger.info("Stopping instruments")
-            await stream.send_message(
-                InstrumentsRunRequest(
-                    stop=InstrumentsRunRequest.Stop(
-                        post_process_arguments=post_process_arguments
-                    )
-                )
-            )
-            await stream.end()
-
-            result = []
-
-            with tempfile.TemporaryDirectory() as tmp_trace_dir:
-                self.logger.info(
-                    f"Writing instruments data from tar to {tmp_trace_dir}"
-                )
-                await drain_untar(
-                    instruments_generate_bytes(stream=stream, logger=self.logger),
-                    output_path=tmp_trace_dir,
-                )
-
-                if os.path.exists(
-                    os.path.join(os.path.abspath(tmp_trace_dir), "instrument_data")
-                ):
-                    # tar is an instruments trace (old behavior)
-                    trace_file = f"{trace_basename}.trace"
-                    shutil.copytree(tmp_trace_dir, trace_file)
-                    result.append(trace_file)
-                    self.logger.info(f"Trace written to {trace_file}")
-                else:
-                    # tar is a folder containing one or more trace files
-                    for file in os.listdir(tmp_trace_dir):
-                        _, file_extension = os.path.splitext(file)
-                        tmp_trace_file = os.path.join(
-                            os.path.abspath(tmp_trace_dir), file
-                        )
-                        trace_file = f"{trace_basename}{file_extension}"
-                        shutil.move(tmp_trace_file, trace_file)
-                        result.append(trace_file)
-                        self.logger.info(f"Trace written to {trace_file}")
-
-            return result
 
     @log_and_handle_exceptions("launch")
     async def launch(

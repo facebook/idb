@@ -90,7 +90,6 @@ from idb.cli.commands.hid import (
     TextCommand,
 )
 from idb.cli.commands.hinge import HingeCommand
-from idb.cli.commands.instruments import InstrumentsCommand
 from idb.cli.commands.keychain import KeychainClearCommand
 from idb.cli.commands.kill import KillCommand
 from idb.cli.commands.launch import LaunchCommand
@@ -357,7 +356,6 @@ def build_builtin_commands(shell_command: ShellCommand) -> list[Command]:
             description="Operations on crashes",
             commands=[CrashListCommand(), CrashShowCommand(), CrashDeleteCommand()],
         ),
-        InstrumentsCommand(),
         KillCommand(),
         MediaAddCommand(),
         CommandGroup(

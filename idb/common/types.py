@@ -195,14 +195,6 @@ class InstalledAppInfo:
     process_id: int
 
 
-@dataclass(frozen=True)
-class InstrumentsTimings:
-    launch_error_timeout: float | None = None
-    launch_retry_timeout: float | None = None
-    terminate_timeout: float | None = None
-    operation_duration: float | None = None
-
-
 class HIDButtonType(Enum):
     APPLE_PAY = 1
     HOME = 2
@@ -1408,22 +1400,6 @@ class Client(ABC):
         ignore_case: bool = False,
         backend: AccessibilityBackend | None = None,
     ) -> None:
-        pass
-
-    @abstractmethod
-    async def run_instruments(
-        self,
-        stop: asyncio.Event,
-        trace_basename: str,
-        template_name: str,
-        app_bundle_id: str,
-        app_environment: dict[str, str] | None = None,
-        app_arguments: list[str] | None = None,
-        tool_arguments: list[str] | None = None,
-        started: asyncio.Event | None = None,
-        timings: InstrumentsTimings | None = None,
-        post_process_arguments: list[str] | None = None,
-    ) -> list[str]:
         pass
 
     @abstractmethod
