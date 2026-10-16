@@ -115,16 +115,6 @@ public final class SimulatorServiceContext {
     self.serviceContext = serviceContext
   }
 
-  func pathsOfAllDeviceSets() -> [String] {
-    var deviceSetPaths: [String] = []
-    if let deviceSets = serviceContext.allDeviceSets() as? [SimDeviceSet] {
-      for deviceSet in deviceSets {
-        deviceSetPaths.append(deviceSet.setPath)
-      }
-    }
-    return deviceSetPaths
-  }
-
   public func supportedRuntimes() -> [SimRuntime] {
     return (serviceContext.supportedRuntimes as? [SimRuntime]) ?? []
   }

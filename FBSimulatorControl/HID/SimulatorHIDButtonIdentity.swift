@@ -26,16 +26,6 @@ enum SimulatorHIDButtonIdentity {
   /// Both a legacy source and a Consumer-page usage.
   case indigoSourceAndConsumerUsage(source: Int32, page: UInt16, code: UInt16)
 
-  /// The legacy Indigo `ButtonEventSource`, where this button has one.
-  var indigoSourceValue: Int32? {
-    switch self {
-    case let .indigoSource(source), let .indigoSourceAndConsumerUsage(source, _, _):
-      return source
-    case .consumerUsage:
-      return nil
-    }
-  }
-
   /// The HID Consumer-page usage, where this button has one.
   var consumerUsage: (page: UInt16, code: UInt16)? {
     switch self {
