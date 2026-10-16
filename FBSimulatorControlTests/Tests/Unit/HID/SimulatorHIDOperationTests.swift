@@ -184,21 +184,21 @@ final class SimulatorHIDOperationTests: XCTestCase {
 
   func testCancellationReleasesBothFingersAndDrainsOutsideCancelledTask() async throws {
     let recorder = Recorder()
-    let entered = Gate()
+    let entered = AsyncEvent<Void>()
     let first = CGPoint(x: 20, y: 30)
     let second = CGPoint(x: 50, y: 60)
     let task = Task {
       var operation = makeOperation(recorder)
       do {
         _ = try await operation.send(.twoFingerTouch(direction: .down, finger1: first, finger2: second))
-        await entered.open()
+        entered.happen()
         try await Task.sleep(nanoseconds: 60_000_000_000)
       } catch {
         await assertCleanup(operation)
         throw error
       }
     }
-    await entered.wait()
+    try? await entered.waitIgnoringCancellation()
     task.cancel()
     do {
       try await task.value
@@ -221,8 +221,8 @@ final class SimulatorHIDOperationTests: XCTestCase {
 
   func testCancellationDuringDisplayLookupDoesNotWrite() async throws {
     let recorder = Recorder()
-    let entered = Gate()
-    let release = Gate()
+    let entered = AsyncEvent<Void>()
+    let release = AsyncEvent<Void>()
     await recorder.block(after: 0, until: release, entered: entered)
     let task = Task {
       var operation = makeOperation(recorder)
@@ -233,9 +233,9 @@ final class SimulatorHIDOperationTests: XCTestCase {
         throw error
       }
     }
-    await entered.wait()
+    try? await entered.waitIgnoringCancellation()
     task.cancel()
-    await release.open()
+    release.happen()
     do {
       try await task.value
       XCTFail("expected cancellation")
@@ -248,7 +248,7 @@ final class SimulatorHIDOperationTests: XCTestCase {
 
   func testSlowDisplayObservationDoesNotDelayTouchSamples() async throws {
     let recorder = Recorder()
-    let release = Gate()
+    let release = AsyncEvent<Void>()
     await recorder.block(after: 1, until: release)
     recorder.identities.remember([SimulatorTouchscreen(displayUniqueID: "inner", digitizerTarget: 7)])
     let sent = expectation(description: "touch samples sent while observation is blocked")
@@ -259,7 +259,7 @@ final class SimulatorHIDOperationTests: XCTestCase {
       try await operation.finish(flushing: true)
     }
     await fulfillment(of: [sent], timeout: 2)
-    await release.open()
+    release.happen()
     try await task.value
     let events = await recorder.events
     XCTAssertEqual(events.count, 2)
@@ -267,21 +267,21 @@ final class SimulatorHIDOperationTests: XCTestCase {
 
   func testLeaseExcludesConcurrentOperationAndCancelledWaiterDoesNotBlockNext() async throws {
     let lease = SimulatorHIDOperationLease()
-    let entered = Gate()
-    let release = Gate()
-    let waiting = Gate()
+    let entered = AsyncEvent<Void>()
+    let release = AsyncEvent<Void>()
+    let waiting = AsyncEvent<Void>()
     let first = Task {
       try await lease.withLease {
-        await entered.open()
-        await release.wait()
+        entered.happen()
+        try? await release.waitIgnoringCancellation()
       }
     }
-    await entered.wait()
+    try? await entered.waitIgnoringCancellation()
     let cancelled = Task {
-      await waiting.open()
+      waiting.happen()
       try await lease.withLease { XCTFail("cancelled waiter must not acquire the lease") }
     }
-    await waiting.wait()
+    try? await waiting.waitIgnoringCancellation()
     cancelled.cancel()
     do {
       try await cancelled.value
@@ -289,7 +289,7 @@ final class SimulatorHIDOperationTests: XCTestCase {
     } catch {
       XCTAssertTrue(error is CancellationError)
     }
-    await release.open()
+    release.happen()
     try await first.value
     let value = try await lease.withLease { 42 }
     XCTAssertEqual(value, 42)
@@ -466,17 +466,17 @@ final class SimulatorHIDOperationTests: XCTestCase {
     var flushes = 0
     var cancelledDeliveries = 0
     private var reads = 0
-    private var blocking: (after: Int, gate: Gate, entered: Gate?)?
+    private var blocking: (after: Int, gate: AsyncEvent<Void>, entered: AsyncEvent<Void>?)?
 
-    func block(after reads: Int, until gate: Gate, entered: Gate? = nil) {
+    func block(after reads: Int, until gate: AsyncEvent<Void>, entered: AsyncEvent<Void>? = nil) {
       blocking = (reads, gate, entered)
     }
 
     func report() async throws -> SimulatorDisplayReport {
       reads += 1
       if let blocking, reads > blocking.after {
-        await blocking.entered?.open()
-        await blocking.gate.wait()
+        blocking.entered?.happen()
+        try? await blocking.gate.waitIgnoringCancellation()
       }
       return .reporting(.selected(currentDisplay))
     }
@@ -491,20 +491,5 @@ final class SimulatorHIDOperationTests: XCTestCase {
       if Task.isCancelled { cancelledDeliveries += 1 }
     }
     func flush() { flushes += 1 }
-  }
-
-  private actor Gate {
-    private var opened = false
-    private var waiters: [CheckedContinuation<Void, Never>] = []
-    func wait() async {
-      if opened { return }
-      await withCheckedContinuation { waiters.append($0) }
-    }
-    func open() {
-      opened = true
-      let pending = waiters
-      waiters = []
-      for waiter in pending { waiter.resume() }
-    }
   }
 }

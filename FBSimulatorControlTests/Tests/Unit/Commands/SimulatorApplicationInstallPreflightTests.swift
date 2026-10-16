@@ -5,30 +5,10 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+import FBControlCore
 @testable import FBSimulatorControl
 import Foundation
 import XCTest
-
-private actor AsyncGate {
-  private var continuations: [CheckedContinuation<Void, Never>] = []
-  private var isOpen = false
-
-  func wait() async {
-    if isOpen {
-      return
-    }
-    await withCheckedContinuation { continuations.append($0) }
-  }
-
-  func open() {
-    isOpen = true
-    let waiting = continuations
-    continuations.removeAll()
-    for continuation in waiting {
-      continuation.resume()
-    }
-  }
-}
 
 final class SimulatorApplicationInstallPreflightTests: XCTestCase {
 
@@ -256,14 +236,14 @@ final class SimulatorApplicationInstallPreflightTests: XCTestCase {
 
   func testCancellationFromInstallAttemptIsPreserved() async {
     let started = expectation(description: "preflight started")
-    let gate = AsyncGate()
+    let gate = AsyncEvent<Void>()
     var installCalls = 0
 
     let task = Task {
       let _: String = try await SimulatorApplicationCommands.installAndResolveApplication(
         install: { _ in
           started.fulfill()
-          await gate.wait()
+          try? await gate.waitIgnoringCancellation()
           try Task.checkCancellation()
           installCalls += 1
         },
@@ -272,7 +252,7 @@ final class SimulatorApplicationInstallPreflightTests: XCTestCase {
     }
     await fulfillment(of: [started], timeout: 1)
     task.cancel()
-    await gate.open()
+    gate.happen()
 
     switch await task.result {
     case .failure(let error):
@@ -285,14 +265,14 @@ final class SimulatorApplicationInstallPreflightTests: XCTestCase {
 
   func testCancellationAfterInstallAttemptReturnsIsPreserved() async {
     let started = expectation(description: "install attempt started")
-    let gate = AsyncGate()
+    let gate = AsyncEvent<Void>()
     var resolveCalls = 0
 
     let task = Task {
       let _: String = try await SimulatorApplicationCommands.installAndResolveApplication(
         install: { _ in
           started.fulfill()
-          await gate.wait()
+          try? await gate.waitIgnoringCancellation()
         },
         resolveInstalledApplication: {
           resolveCalls += 1
@@ -302,7 +282,7 @@ final class SimulatorApplicationInstallPreflightTests: XCTestCase {
     }
     await fulfillment(of: [started], timeout: 1)
     task.cancel()
-    await gate.open()
+    gate.happen()
 
     switch await task.result {
     case .failure(let error):
@@ -315,13 +295,13 @@ final class SimulatorApplicationInstallPreflightTests: XCTestCase {
 
   func testCancellationAfterInstallAttemptThrowsIsPreserved() async {
     let started = expectation(description: "install attempt started")
-    let gate = AsyncGate()
+    let gate = AsyncEvent<Void>()
 
     let task = Task {
       let _: String = try await SimulatorApplicationCommands.installAndResolveApplication(
         install: { _ in
           started.fulfill()
-          await gate.wait()
+          try? await gate.waitIgnoringCancellation()
           throw TestError.conditionNotMet
         },
         resolveInstalledApplication: { "installed" },
@@ -329,7 +309,7 @@ final class SimulatorApplicationInstallPreflightTests: XCTestCase {
     }
     await fulfillment(of: [started], timeout: 1)
     task.cancel()
-    await gate.open()
+    gate.happen()
 
     switch await task.result {
     case .failure(let error):
