@@ -131,17 +131,12 @@ public final class CrashLogStore {
 }
 
 /// Holds the first crash log matching its predicate from the moment it is created, and hands it to
-/// the one caller of `next()`.
+/// every caller of `next()`.
+// SAFETY: `observer` is only touched under `lock`.
+// patternlint-disable-next-line unchecked-sendable
 public final class CrashLogListener: @unchecked Sendable {
-  private enum State {
-    case listening
-    case waiting(CheckedContinuation<CrashLogInfo, Error>)
-    case resolved(Result<CrashLogInfo, Error>)
-    case consumed
-  }
-
+  private let appeared = AsyncEvent<CrashLogInfo>()
   private let lock = NSLock()
-  private var state = State.listening
   private var observer: NSObjectProtocol?
 
   init(predicate: CrashLogPredicate) {
@@ -160,49 +155,29 @@ public final class CrashLogListener: @unchecked Sendable {
   }
 
   /// Returns the first matching crash log, waiting for one if none has appeared yet. Cancellation,
-  /// including before the call, throws `CancellationError` unless a crash log has already appeared.
-  /// Must be awaited at most once.
+  /// including before the call, throws `CancellationError` and stops the listener, unless a crash log
+  /// has already appeared.
   public func next() async throws -> CrashLogInfo {
     try await withTaskCancellationHandler {
-      try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<CrashLogInfo, Error>) in
-        lock.lock()
-        switch state {
-        case .listening:
-          state = .waiting(continuation)
-          lock.unlock()
-        case let .resolved(result):
-          state = .consumed
-          lock.unlock()
-          continuation.resume(with: result)
-        case .waiting, .consumed:
-          lock.unlock()
-          preconditionFailure("CrashLogListener.next() must be awaited at most once")
-        }
-      }
+      try await appeared.wait()
     } onCancel: {
       resolve(.failure(CancellationError()))
     }
   }
 
   private func resolve(_ result: Result<CrashLogInfo, Error>) {
-    lock.lock()
-    let observer = self.observer
-    self.observer = nil
-    let continuation: CheckedContinuation<CrashLogInfo, Error>?
-    switch state {
-    case .listening:
-      state = .resolved(result)
-      continuation = nil
-    case let .waiting(waiting):
-      state = .consumed
-      continuation = waiting
-    case .resolved, .consumed:
-      continuation = nil
+    let observer: NSObjectProtocol? = lock.withLock {
+      defer { self.observer = nil }
+      return self.observer
     }
-    lock.unlock()
     if let observer {
       NotificationCenter.default.removeObserver(observer)
     }
-    continuation?.resume(with: result)
+    switch result {
+    case let .success(crashLog):
+      appeared.happen(crashLog)
+    case let .failure(error):
+      appeared.fail(error)
+    }
   }
 }
