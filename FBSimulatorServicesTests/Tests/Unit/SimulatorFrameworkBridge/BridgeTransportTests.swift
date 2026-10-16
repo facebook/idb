@@ -262,6 +262,17 @@ final class BridgeTransportTests: XCTestCase {
     XCTAssertEqual(afterwards, 2, "the timed-out connection is not reused")
   }
 
+  func testACancelledReadIsNotRetried() async throws {
+    let connection = RecordingBridgeConnection(failures: 0, cancelled: true)
+    let transport = SimulatorFrameworkBridgePersistentTransport(connector: RecordingBridgeFactory([connection]))
+    do {
+      _ = try await transport.send(BridgeRequest(command: .dns(.list)))
+      XCTFail("a cancelled round trip cannot complete")
+    } catch is CancellationError {}
+    let commands = await connection.commands
+    XCTAssertEqual(commands, [.dns(.list)], "a read that may otherwise be retried is sent once: its caller has gone")
+  }
+
   func testAConnectionGivenAReceiveTimeoutReportsAGuestThatDoesNotAnswer() async throws {
     let (connection, peer) = try validationSocketPair()
     defer { close(peer) }
@@ -393,14 +404,19 @@ private actor RecordingBridgeConnection: BridgeConnection {
   private var failures: Int
   private let wrongID: Bool
   private let notAnswering: Bool
+  private let cancelled: Bool
   private let result: BridgeResult
   private(set) var commands: [BridgeCommand] = []
   private(set) var receiveTimeouts: [TimeInterval?] = []
 
-  init(failures: Int, wrongID: Bool = false, notAnswering: Bool = false, result: BridgeResult = BridgeResult(exitCode: 0)) {
+  init(
+    failures: Int, wrongID: Bool = false, notAnswering: Bool = false, cancelled: Bool = false,
+    result: BridgeResult = BridgeResult(exitCode: 0)
+  ) {
     self.failures = failures
     self.wrongID = wrongID
     self.notAnswering = notAnswering
+    self.cancelled = cancelled
     self.result = result
   }
 
@@ -410,6 +426,9 @@ private actor RecordingBridgeConnection: BridgeConnection {
     receiveTimeouts.append(receiveTimeout)
     if notAnswering, let receiveTimeout {
       throw AXBridgeError.guestNotAnswering(after: receiveTimeout)
+    }
+    if cancelled {
+      throw CancellationError()
     }
     if failures > 0 {
       failures -= 1
