@@ -124,9 +124,9 @@ public final class MacDevice: Target {
     asyncQueue = DispatchQueue.global(qos: .userInitiated)
     let explicitTmpDirectory = ProcessInfo.processInfo.environment["IDB_MAC_AUXILLIARY_DIR"]
     if let explicitTmpDirectory {
-      auxillaryDirectory = ((explicitTmpDirectory as NSString).appendingPathComponent("idb-mac-aux") as NSString).appendingPathComponent(ProcessInfo.processInfo.globallyUniqueString)
+      auxillaryDirectory = (explicitTmpDirectory as NSString).appendingPathComponent("idb-mac-aux/\(ProcessInfo.processInfo.globallyUniqueString)")
     } else {
-      auxillaryDirectory = ((NSTemporaryDirectory() as NSString).appendingPathComponent("idb-mac-cwd") as NSString).appendingPathComponent(ProcessInfo.processInfo.globallyUniqueString)
+      auxillaryDirectory = (NSTemporaryDirectory() as NSString).appendingPathComponent("idb-mac-cwd/\(ProcessInfo.processInfo.globallyUniqueString)")
     }
     bundleIDToProductMap = MacDevice.fetchInstalledApplications()
     bundleIDToRunningTask = [:]
