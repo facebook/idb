@@ -13,22 +13,6 @@ private let ProfileMetadata = "ProfileMetadata"
 private let PayloadUUID = "PayloadUUID"
 private let PayloadVersion = "PayloadVersion"
 
-/// Carries the non-`Sendable` connection across the serial-queue boundary; only touched on that queue.
-private final class ManagedConfigConnectionBox: @unchecked Sendable {
-  let connection: LockdownServiceConnection
-  init(_ connection: LockdownServiceConnection) {
-    self.connection = connection
-  }
-}
-
-/// Wraps an `Any` payload so it can be captured by a `@Sendable` closure.
-private final class ManagedConfigDataBox: @unchecked Sendable {
-  let value: Any
-  init(_ value: Any) {
-    self.value = value
-  }
-}
-
 public enum ManagedConfigError: Error {
   case invalidWallpaperName(name: String)
   case orderedIdentifiersMissing(key: String)
@@ -88,21 +72,12 @@ class ManagedConfigClient {
   // MARK: - Async
 
   func cloudConfiguration() async throws -> [String: Any] {
-    let connectionBox = ManagedConfigConnectionBox(connection)
-    return try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<[String: Any], Error>) in
-      queue.async {
-        do {
-          let result = try connectionBox.connection.sendAndReceiveMessage(["RequestType": "GetCloudConfiguration"])
-          guard let resultDict = result as? [String: Any] else {
-            continuation.resume(returning: [:])
-            return
-          }
-          let filtered = CollectionOperations.recursiveFilteredJSONSerializableRepresentation(of: resultDict) as [String: Any]
-          continuation.resume(returning: filtered)
-        } catch {
-          continuation.resume(throwing: error)
-        }
+    try await queue.perform { [connection] in
+      let result = try connection.sendAndReceiveMessage(["RequestType": "GetCloudConfiguration"])
+      guard let resultDict = result as? [String: Any] else {
+        return [:]
       }
+      return CollectionOperations.recursiveFilteredJSONSerializableRepresentation(of: resultDict) as [String: Any]
     }
   }
 
@@ -114,88 +89,57 @@ class ManagedConfigClient {
   }
 
   func profileList() async throws -> [String] {
-    let connectionBox = ManagedConfigConnectionBox(connection)
-    return try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<[String], Error>) in
-      queue.async {
-        do {
-          let result = try connectionBox.connection.sendAndReceiveMessage(["RequestType": "GetProfileList"])
-          guard let resultDict = result as? [String: Any] else {
-            continuation.resume(returning: [])
-            return
-          }
-          guard let orderedIdentifiers = resultDict[OrderedIdentifiers] as? [Any] else {
-            continuation.resume(throwing: ManagedConfigError.orderedIdentifiersMissing(key: OrderedIdentifiers))
-            return
-          }
-          guard let identifiers = orderedIdentifiers as? [String] else {
-            continuation.resume(throwing: ManagedConfigError.orderedIdentifiersNotStrings(key: OrderedIdentifiers))
-            return
-          }
-          continuation.resume(returning: identifiers)
-        } catch {
-          continuation.resume(throwing: error)
-        }
+    return try await queue.perform { [connection] in
+      let result = try connection.sendAndReceiveMessage(["RequestType": "GetProfileList"])
+      guard let resultDict = result as? [String: Any] else {
+        return []
       }
+      guard let orderedIdentifiers = resultDict[OrderedIdentifiers] as? [Any] else {
+        throw ManagedConfigError.orderedIdentifiersMissing(key: OrderedIdentifiers)
+      }
+      guard let identifiers = orderedIdentifiers as? [String] else {
+        throw ManagedConfigError.orderedIdentifiersNotStrings(key: OrderedIdentifiers)
+      }
+      return identifiers
     }
   }
 
   func installProfile(_ payload: Data) async throws -> [String: Any] {
-    let connectionBox = ManagedConfigConnectionBox(connection)
-    let payloadBox = ManagedConfigDataBox(payload)
-    return try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<[String: Any], Error>) in
-      queue.async {
-        do {
-          let result = try connectionBox.connection.sendAndReceiveMessage(["RequestType": "InstallProfile", "Payload": payloadBox.value])
-          guard let resultDict = result as? [String: Any] else {
-            continuation.resume(returning: [:])
-            return
-          }
-          let filtered = CollectionOperations.recursiveFilteredJSONSerializableRepresentation(of: resultDict) as [String: Any]
-          continuation.resume(returning: filtered)
-        } catch {
-          continuation.resume(throwing: error)
-        }
+    return try await queue.perform { [connection, payload] in
+      let result = try connection.sendAndReceiveMessage(["RequestType": "InstallProfile", "Payload": payload])
+      guard let resultDict = result as? [String: Any] else {
+        return [:]
       }
+      let filtered = CollectionOperations.recursiveFilteredJSONSerializableRepresentation(of: resultDict) as [String: Any]
+      return filtered
     }
   }
 
   func removeProfile(_ profileName: String) async throws {
-    let connectionBox = ManagedConfigConnectionBox(connection)
-    try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
-      queue.async {
-        do {
-          let result = try connectionBox.connection.sendAndReceiveMessage(["RequestType": "GetProfileList"])
-          guard let resultDict = result as? [String: Any] else {
-            continuation.resume(returning: ())
-            return
-          }
-          guard let metadata = resultDict[ProfileMetadata] as? [String: Any],
-            let profileMetadata = metadata[profileName] as? [String: Any]
-          else {
-            let identifiers = (resultDict[OrderedIdentifiers] as? [Any] ?? []).map { String(describing: $0) }
-            continuation.resume(throwing: ManagedConfigError.profileNotInstalled(profileName: profileName, identifiers: identifiers))
-            return
-          }
-          let profileIdentifier: [String: Any] = [
-            "PayloadType": "Configuration",
-            "PayloadIdentifier": profileName,
-            PayloadUUID: profileMetadata[PayloadUUID] as Any,
-            PayloadVersion: profileMetadata[PayloadVersion] as Any,
-          ]
-          let payload = try PropertyListSerialization.data(fromPropertyList: profileIdentifier, format: .binary, options: 0)
-          let removeResult = try connectionBox.connection.sendAndReceiveMessage(["RequestType": "RemoveProfile", "ProfileIdentifier": payload])
-          guard let removeResultDict = removeResult as? [String: Any] else {
-            continuation.resume(returning: ())
-            return
-          }
-          if (removeResultDict["Status"] as? String) == "Error" {
-            continuation.resume(throwing: ManagedConfigError.removeFailed(response: String(describing: removeResultDict)))
-            return
-          }
-          continuation.resume(returning: ())
-        } catch {
-          continuation.resume(throwing: error)
-        }
+    try await queue.perform { [connection] in
+      let result = try connection.sendAndReceiveMessage(["RequestType": "GetProfileList"])
+      guard let resultDict = result as? [String: Any] else {
+        return
+      }
+      guard let metadata = resultDict[ProfileMetadata] as? [String: Any],
+        let profileMetadata = metadata[profileName] as? [String: Any]
+      else {
+        let identifiers = (resultDict[OrderedIdentifiers] as? [Any] ?? []).map { String(describing: $0) }
+        throw ManagedConfigError.profileNotInstalled(profileName: profileName, identifiers: identifiers)
+      }
+      let profileIdentifier: [String: Any] = [
+        "PayloadType": "Configuration",
+        "PayloadIdentifier": profileName,
+        PayloadUUID: profileMetadata[PayloadUUID] as Any,
+        PayloadVersion: profileMetadata[PayloadVersion] as Any,
+      ]
+      let payload = try PropertyListSerialization.data(fromPropertyList: profileIdentifier, format: .binary, options: 0)
+      let removeResult = try connection.sendAndReceiveMessage(["RequestType": "RemoveProfile", "ProfileIdentifier": payload])
+      guard let removeResultDict = removeResult as? [String: Any] else {
+        return
+      }
+      if (removeResultDict["Status"] as? String) == "Error" {
+        throw ManagedConfigError.removeFailed(response: String(describing: removeResultDict))
       }
     }
   }
@@ -203,17 +147,8 @@ class ManagedConfigClient {
   // MARK: - Private Methods
 
   private func changeSettings(settings: [[String: Any]]) async throws {
-    let connectionBox = ManagedConfigConnectionBox(connection)
-    let settingsBox = ManagedConfigDataBox(settings)
-    try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
-      queue.async {
-        do {
-          _ = try connectionBox.connection.sendAndReceiveMessage(["RequestType": "Settings", "Settings": settingsBox.value])
-          continuation.resume(returning: ())
-        } catch {
-          continuation.resume(throwing: error)
-        }
-      }
+    try await queue.perform { [connection, settings] in
+      _ = try connection.sendAndReceiveMessage(["RequestType": "Settings", "Settings": settings])
     }
   }
 }
