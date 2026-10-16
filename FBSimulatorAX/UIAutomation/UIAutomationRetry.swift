@@ -63,7 +63,25 @@ public enum UIAutomationRetry: Equatable, Sendable {
       self = error.retry
     case let error as AXBridgeError:
       self = error.retry
+    case let error as AccessibilityError:
+      guard let retry = error.retry else { return nil }
+      self = retry
     default:
+      return nil
+    }
+  }
+}
+
+public extension AccessibilityError {
+  /// Nil for a failure this module does not judge.
+  var retry: UIAutomationRetry? {
+    switch self {
+    // Reads, which sent nothing to the application; each message says to retry.
+    case .serviceNotAnswering, .springBoardRestarting:
+      return .nothingWritten
+    case .closedElement, .noStringValue, .pressUnsupported, .customActionUnsupported, .customActionAmbiguous,
+      .customActionFailed, .pressFailed, .elementNotFound, .simulatorNotBooted, .accessibilityUnavailable,
+      .dispatcherUnavailable, .noTranslationObject, .springBoardNotRunning:
       return nil
     }
   }

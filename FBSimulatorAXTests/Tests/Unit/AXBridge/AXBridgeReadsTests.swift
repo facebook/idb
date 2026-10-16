@@ -711,16 +711,14 @@ final class AXBridgeReadsTests: XCTestCase {
     XCTAssertNil(UIAutomationRetry(for: CancellationError()))
   }
 
-  func testAReadThatTimedOutOrMetARestartingSpringBoardHasNoVerdict() {
+  func testAReadThatTimedOutOrMetARestartingSpringBoardIsSafeToRetry() {
     let errors: [AccessibilityError] = [
       .serviceNotAnswering(.request(kind: "multiple_attribute", timeout: 5), elapsed: 5, behindAbandoned: 0),
       .serviceNotAnswering(.query(timeout: 10), elapsed: 10, behindAbandoned: 0),
       .springBoardRestarting(exitedProcessIdentifier: 42, restartedAgo: 1),
     ]
     for error in errors {
-      // BUG: each sent nothing to the application and says to retry the read, but carries no verdict, so a client
-      // treats it as unsafe — flipped in the following commit.
-      XCTAssertNil(UIAutomationRetry(for: error), "\(error)")
+      XCTAssertEqual(UIAutomationRetry(for: error), .nothingWritten, "\(error)")
     }
   }
 
