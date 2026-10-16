@@ -27,7 +27,9 @@ final class SimulatorDisplayInteractionSmokeTests: ProvidedSimulatorTestCase {
       case .transitioning:
         return XCTFail("Display did not settle")
       }
-      accessibilityID = try await commands.accessibilityID(for: display, transport: AXBridgeOneshotTransport(simulator: simulator))
+      accessibilityID = try await commands.accessibilityID(
+        for: display, transport: AXBridgeOneshotTransport(simulator: simulator),
+        receiveTimeout: simulator.accessibilityTiming.queryTimeout)
       digitizerTarget = try await commands.digitizerTarget(for: display)
     } catch SimulatorCoreDeviceError.unsupported(let reason) {
       throw XCTSkip(reason)

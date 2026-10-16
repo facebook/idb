@@ -35,10 +35,10 @@ struct DisplayCommandsTests {
   func selectedDisplayIdentityIsLookedUpOnceAndConfirmed() async throws {
     let displays = DisplayCommandsDouble(.selected(display("inner")))
     let transport = InventoryTransport(inventory)
-    let first = try await displays.accessibilityID(for: display("inner"), transport: transport)
+    let first = try await displays.accessibilityID(for: display("inner"), transport: transport, receiveTimeout: 5)
     #expect(first == 3)
     #expect(displays.reads == 1)
-    let second = try await displays.accessibilityID(for: display("inner"), transport: transport)
+    let second = try await displays.accessibilityID(for: display("inner"), transport: transport, receiveTimeout: 5)
     #expect(second == first)
     #expect(displays.reads == 1)
     let sends = await transport.sends
@@ -46,22 +46,20 @@ struct DisplayCommandsTests {
   }
 
   @Test
-  func aDisplayLookupWaitsOnTheConnectionsDeadline() async throws {
+  func aDisplayLookupIsBoundedByTheCallersTimeout() async throws {
     let displays = DisplayCommandsDouble(.selected(display("inner")))
     let transport = InventoryTransport(inventory)
-    _ = try await displays.accessibilityID(for: display("inner"), transport: transport)
+    _ = try await displays.accessibilityID(for: display("inner"), transport: transport, receiveTimeout: 5)
     let receiveTimeouts = await transport.receiveTimeouts
-    // BUG: the lookup sends without a receive timeout, so a silent guest holds it for the connection's 30 s —
-    // flipped in the following commit.
-    #expect(receiveTimeouts.isEmpty)
+    #expect(receiveTimeouts == [5])
   }
 
   @Test
   func newlySelectedDisplayRefreshesTheCache() async throws {
     let displays = DisplayCommandsDouble(.selected(display("inner")), .selected(display("cover")))
     let transport = InventoryTransport(inventory)
-    let inner = try await displays.accessibilityID(for: display("inner"), transport: transport)
-    let cover = try await displays.accessibilityID(for: display("cover"), transport: transport)
+    let inner = try await displays.accessibilityID(for: display("inner"), transport: transport, receiveTimeout: 5)
+    let cover = try await displays.accessibilityID(for: display("cover"), transport: transport, receiveTimeout: 5)
     #expect(inner == 3)
     #expect(cover == 2)
     let sends = await transport.sends
@@ -72,7 +70,7 @@ struct DisplayCommandsTests {
   func unlistedDisplayHasNoMapping() async throws {
     let displays = DisplayCommandsDouble(.selected(display("rear")))
     do {
-      _ = try await displays.accessibilityID(for: display("rear"), transport: InventoryTransport(inventory))
+      _ = try await displays.accessibilityID(for: display("rear"), transport: InventoryTransport(inventory), receiveTimeout: 5)
       Issue.record("Expected a missing mapping")
     } catch SimulatorDisplayInteractionError.missingMapping("rear") {}
     #expect(displays.identities.accessibilityID(for: "inner") == nil)
@@ -82,7 +80,7 @@ struct DisplayCommandsTests {
   func displayChangeDuringLookupFails() async throws {
     let displays = DisplayCommandsDouble(.selected(display("cover")))
     do {
-      _ = try await displays.accessibilityID(for: display("inner"), transport: InventoryTransport(inventory))
+      _ = try await displays.accessibilityID(for: display("inner"), transport: InventoryTransport(inventory), receiveTimeout: 5)
       Issue.record("Expected a display change")
     } catch SimulatorDisplayError.changed {}
     #expect(displays.identities.accessibilityID(for: "inner") == nil)
@@ -151,7 +149,7 @@ struct DisplayCommandsTests {
     selected.identities.remember(inventory)
     let oldGuest = InventoryTransport(inventory)
     do {
-      _ = try await selected.accessibilityID(for: display("inner"), transport: oldGuest, requiring: .scopedInteractions)
+      _ = try await selected.accessibilityID(for: display("inner"), transport: oldGuest, requiring: .scopedInteractions, receiveTimeout: 5)
       Issue.record("Expected the guest to lack scoped interactions")
     } catch SimulatorDisplayInteractionError.unsupportedCapability {}
     let oldGuestSends = await oldGuest.sends
@@ -159,7 +157,7 @@ struct DisplayCommandsTests {
 
     let currentGuest = InventoryTransport(inventory, scopedInteractions: true)
     for _ in 0..<2 {
-      let resolved = try await selected.accessibilityID(for: display("inner"), transport: currentGuest, requiring: .scopedInteractions)
+      let resolved = try await selected.accessibilityID(for: display("inner"), transport: currentGuest, requiring: .scopedInteractions, receiveTimeout: 5)
       #expect(resolved == 3)
     }
     let currentGuestSends = await currentGuest.sends
@@ -173,7 +171,7 @@ struct DisplayCommandsTests {
     let accessibility = DisplayCommandsDouble([transition, settled])
     let hid = DisplayCommandsDouble([transition, settled], touchscreens: touchscreens)
     let transport = InventoryTransport(inventory)
-    let accessibilityID = await outcome { try await accessibility.accessibilityID(for: selected(accessibility), transport: transport) }
+    let accessibilityID = await outcome { try await accessibility.accessibilityID(for: selected(accessibility), transport: transport, receiveTimeout: 5) }
     let digitizerTarget = await outcome { try await hid.digitizerTarget(for: selected(hid)) }
     #expect(try accessibilityID.get() == 3)
     #expect(try digitizerTarget.get() == 29)

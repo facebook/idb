@@ -169,6 +169,7 @@ A Simulator set takes them from `SimulatorControlConfiguration(…, accessibilit
 
 - **Host backends** wait at most `elementTimeout` for each request, and never past the time the query has left. A read stops at the first request the service does not answer, rather than carrying on without its values.
 - **axbridge** reads the whole tree in one round trip, so that round trip waits at most `queryTimeout`. `elementTimeout` is not carried into the guest's own accessibility calls.
+- **Naming a display**, on any backend, asks the guest for its display inventory the first time a display is used. That lookup is cached for the Simulator, so it waits at most the Simulator's `queryTimeout` rather than one read's.
 
 A read that runs out of either fails with `AccessibilityError.serviceNotAnswering`, whose message starts with `The simulator's accessibility service did not answer` on every backend. Match that prefix rather than the rest of the message, which names the request kind and timings. Retrying is safe: nothing was changed.
 

@@ -112,7 +112,8 @@ final class AXBridgeUIAutomation: AXBridgeTreeReader, @unchecked Sendable {
       display = .sole(sole)
     case let .target(.selected(selected)):
       let accessibilityID = try await displays.accessibilityID(
-        for: selected, transport: transport, requiring: [.scopedInteractions, .scopedTrees])
+        for: selected, transport: transport, requiring: [.scopedInteractions, .scopedTrees],
+        receiveTimeout: simulator.accessibilityTiming.queryTimeout)
       display = .selected(selected, id: accessibilityID)
     }
     try selection.confirm(routedTo: display?.interactionDisplay, latest: displays.configurationTracker.latest)
@@ -425,7 +426,9 @@ final class AXBridgeUIAutomation: AXBridgeTreeReader, @unchecked Sendable {
       try selection.confirm(routedTo: .identified(display), latest: latest)
       selected = display
     }
-    let displayID = try await displays.accessibilityID(for: selected, transport: transport, requiring: Self.quiescenceCapabilities)
+    let displayID = try await displays.accessibilityID(
+      for: selected, transport: transport, requiring: Self.quiescenceCapabilities,
+      receiveTimeout: simulator.accessibilityTiming.queryTimeout)
     let first = try await quiescenceFrames(pid: nil, displayID: displayID, parameters: parameters)
     return AsyncThrowingStream { continuation in
       let task = Task {
@@ -499,7 +502,9 @@ final class AXBridgeUIAutomation: AXBridgeTreeReader, @unchecked Sendable {
         for await configuration in displays.followConfigurations(polling: Self.displayPollInterval) {
           guard configuration.phase == .settled, case let .identified(next) = configuration.active, next.uniqueID != uniqueID,
             configuration.displays.filter(\.isIntegrated).count > 1,
-            let displayID = try? await displays.accessibilityID(for: next, transport: self.transport, requiring: Self.quiescenceCapabilities),
+            let displayID = try? await displays.accessibilityID(
+              for: next, transport: self.transport, requiring: Self.quiescenceCapabilities,
+              receiveTimeout: self.simulator.accessibilityTiming.queryTimeout),
             // The lookup can outlast a transient report; only a fresh read that still agrees moves the stream.
             (try? await displays.settledConfiguration(within: .zero))?.generation == configuration.generation
           else { continue }

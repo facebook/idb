@@ -242,14 +242,16 @@ extension DisplayCommands {
   }
 
   /// The accessibility identity of a display that has to be named. The guest is asked only for a display it
-  /// has not seen, and only then are `capabilities` required of it.
+  /// has not seen, and only then are `capabilities` required of it; it has `receiveTimeout` to answer.
   package func accessibilityID(
-    for display: SimulatorDisplay, transport: any AXBridgeTransport, requiring capabilities: AXBridgeDisplayCapabilities = []
+    for display: SimulatorDisplay, transport: any AXBridgeTransport, requiring capabilities: AXBridgeDisplayCapabilities = [],
+    receiveTimeout: TimeInterval
   ) async throws -> UInt32 {
     if let accessibilityID = identities.accessibilityID(for: display.uniqueID, requiring: capabilities) {
       return accessibilityID
     }
-    let inventory = try AXBridgeDisplayInventory.decode(await transport.send(.displays), requiring: capabilities)
+    let inventory = try AXBridgeDisplayInventory.decode(
+      await transport.send(.displays, receiveTimeout: receiveTimeout), requiring: capabilities)
     let matches = inventory.filter { $0.uniqueID == display.uniqueID }
     guard matches.count == 1, let match = matches.first else {
       throw SimulatorDisplayInteractionError.missingMapping(display.uniqueID)
