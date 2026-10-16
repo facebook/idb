@@ -323,14 +323,14 @@ final class BridgeTransportTests: XCTestCase {
     defer { close(peer) }
     let request = try BridgeRequest(command: .dns(.list)).encoded()
     let start = Date()
-    let roundTrip = Task { try await connection.roundTrip(request, receiveTimeout: 0.5) }
+    let roundTrip = Task { try await connection.roundTrip(request, receiveTimeout: 30) }
     try await Task.sleep(nanoseconds: 50_000_000)
     roundTrip.cancel()
     do {
       _ = try await roundTrip.value
       XCTFail("a guest that never answers cannot complete the round trip")
     } catch is CancellationError {
-      XCTAssertLessThan(Date().timeIntervalSince(start), 0.3, "it returned when cancelled, not at its timeout")
+      XCTAssertLessThan(Date().timeIntervalSince(start), 5, "it returned when cancelled, not at its 30 s timeout")
     }
   }
 
