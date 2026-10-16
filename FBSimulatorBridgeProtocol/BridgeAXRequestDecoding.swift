@@ -24,10 +24,10 @@ import Foundation
   case missingSetting
   case missingEnabled
   case unsupportedFrontmostMethod(String)
-  /// The traversal is not a string, or not one the bridge runs.
-  case unsupportedTraversal(BridgeJSONValue)
-  /// The client type is not an integer, or not one the translator carries.
-  case unsupportedClientType(BridgeJSONValue)
+  /// The traversal is absent (nil), not a string, or not one the bridge runs.
+  case unsupportedTraversal(BridgeJSONValue?)
+  /// The client type is absent (nil), not an integer, or not one the translator carries.
+  case unsupportedClientType(BridgeJSONValue?)
   /// A read named a client but a traversal that makes no translator request.
   case clientTypeNeedsSemanticTraversal(BridgeAXTraversal)
   /// A flag that is neither a boolean, a number nor a string.
@@ -140,9 +140,7 @@ private struct Fields {
   }
 
   func traversal() throws(BridgeAXRequestError) -> BridgeAXTraversal {
-    guard let value = self[.traversal] else {
-      return .viewHierarchy
-    }
+    let value = self[.traversal]
     guard case let .string(name) = value, let traversal = BridgeAXTraversal(rawValue: name) else {
       throw .unsupportedTraversal(value)
     }
@@ -150,9 +148,7 @@ private struct Fields {
   }
 
   func clientType() throws(BridgeAXRequestError) -> BridgeAXClientType {
-    guard let value = self[.clientType] else {
-      return .noClient
-    }
+    let value = self[.clientType]
     let raw: UInt64? =
       switch value {
       case let .integer(integer): UInt64(exactly: integer)

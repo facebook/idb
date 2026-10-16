@@ -65,7 +65,7 @@ final class AccessibilityInitializationTests: XCTestCase {
 
   func testInvalidPidDoesNotInitializeTheRuntime() {
     XCTAssertEqual(
-      FBAXRuntimeInitializationProbe(.exceptionWithReason, false) { AccessibilityService.handleRequest(["verb": "describe", "pid": 0]) } as NSDictionary,
+      FBAXRuntimeInitializationProbe(.exceptionWithReason, false) { AccessibilityService.handleRequest(["verb": "describe", "traversal": "view-hierarchy", "clientType": 0, "pid": 0]) } as NSDictionary,
       [
         "preparationException": NSNull(), "calls": 0,
         "response": ["ok": false, "error": "pid 0 names no application", "error_kind": "application_unavailable", "pid": 0],

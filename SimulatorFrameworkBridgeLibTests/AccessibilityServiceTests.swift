@@ -83,7 +83,7 @@ struct AccessibilityServiceTests {
   // that kind on every verb.
   @Test
   func nonPositivePidIsReportedAsAnUnavailableApplication() {
-    let requests: [[String: Any]] = [["verb": "describe", "pid": 0], ["verb": "describe", "pid": (-1) as NSNumber], ["verb": "hittest", "pid": 0, "x": 200, "y": 400], ["verb": "hittest", "pid": (-1) as NSNumber, "x": 200, "y": 400], ["verb": "perform", "pid": 0, "x": 200, "y": 400, "action": "press"], ["verb": "perform", "pid": (-1) as NSNumber, "x": 200, "y": 400, "action": "press"], ["verb": "setvalue", "pid": 0, "x": 200, "y": 400, "value": "hello"], ["verb": "setvalue", "pid": (-1) as NSNumber, "x": 200, "y": 400, "value": "hello"]]
+    let requests: [[String: Any]] = [["verb": "describe", "traversal": "view-hierarchy", "clientType": 0, "pid": 0], ["verb": "describe", "traversal": "view-hierarchy", "clientType": 0, "pid": (-1) as NSNumber], ["verb": "hittest", "clientType": 0, "pid": 0, "x": 200, "y": 400], ["verb": "hittest", "clientType": 0, "pid": (-1) as NSNumber, "x": 200, "y": 400], ["verb": "perform", "pid": 0, "x": 200, "y": 400, "action": "press"], ["verb": "perform", "pid": (-1) as NSNumber, "x": 200, "y": 400, "action": "press"], ["verb": "setvalue", "pid": 0, "x": 200, "y": 400, "value": "hello"], ["verb": "setvalue", "pid": (-1) as NSNumber, "x": 200, "y": 400, "value": "hello"]]
     for request in requests {
       let response = AccessibilityService.handleRequest(request)
       #expect(response["ok"] as? NSNumber == NSNumber(value: false), "\(String(describing: request))")

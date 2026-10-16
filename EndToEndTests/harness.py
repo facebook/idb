@@ -62,7 +62,7 @@ ROUTE_ATTESTATION_ENV = "IDB_E2E_ROUTER_ATTESTATION"
 EXPECTED_IMPLEMENTATION_ENV = "IDB_E2E_EXPECTED_IMPLEMENTATION"
 CLAIM_KIND_ENV = "IDB_E2E_CLAIM_KIND"
 # The bridge protocol version a guest speaks: `BridgeRequest.currentVersion`. A guest refuses any other.
-GUEST_PROTOCOL_VERSION = 2
+GUEST_PROTOCOL_VERSION = 3
 
 T = TypeVar("T")
 

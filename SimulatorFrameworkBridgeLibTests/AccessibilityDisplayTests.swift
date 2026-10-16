@@ -77,7 +77,7 @@ final class AccessibilityDisplayTests: XCTestCase {
       runtime.applicationElements[123] = root
       FBAXClientProvider.setRuntimeForTesting(runtime)
       let response = AccessibilityService.handleRequest([
-        "verb": "describe", "pid": 123, "displayID": 71, "traversal": snapshot ? "single-fetch" : "view-hierarchy",
+        "verb": "describe", "clientType": 0, "pid": 123, "displayID": 71, "traversal": snapshot ? "single-fetch" : "view-hierarchy",
       ])
       XCTAssertEqual(response["ok"] as? Bool, true, "\(response)")
       let tree = try XCTUnwrap(response["tree"] as? [String: Any])
@@ -100,7 +100,7 @@ final class AccessibilityDisplayTests: XCTestCase {
     ]
     FBAXClientProvider.setRuntimeForTesting(runtime)
     let response = AccessibilityService.handleRequest([
-      "verb": "describe", "pid": 123, "displayID": 71, "traversal": "semantic",
+      "verb": "describe", "clientType": 0, "pid": 123, "displayID": 71, "traversal": "semantic",
     ])
     XCTAssertEqual(response["ok"] as? Bool, true, "\(response)")
     let tree = try XCTUnwrap(response["tree"] as? [String: Any])
@@ -118,7 +118,7 @@ final class AccessibilityDisplayTests: XCTestCase {
       root.children = [window("unknown", displayID: identity)]
       runtime.applicationElements[123] = root
       FBAXClientProvider.setRuntimeForTesting(runtime)
-      let response = AccessibilityService.handleRequest(["verb": "describe", "pid": 123, "displayID": 71])
+      let response = AccessibilityService.handleRequest(["verb": "describe", "traversal": "view-hierarchy", "clientType": 0, "pid": 123, "displayID": 71])
       XCTAssertEqual(response["ok"] as? Bool, false, "\(response)")
       XCTAssertTrue((response["error"] as? String)?.contains("display identity") == true)
       XCTAssertEqual(response["error_kind"] as? String, "capability_unavailable")
@@ -133,7 +133,7 @@ final class AccessibilityDisplayTests: XCTestCase {
     root.children = [selected]
     runtime.applicationElements[123] = root
     FBAXClientProvider.setRuntimeForTesting(runtime)
-    let response = AccessibilityService.handleRequest(["verb": "describe", "pid": 123, "displayID": 71])
+    let response = AccessibilityService.handleRequest(["verb": "describe", "traversal": "view-hierarchy", "clientType": 0, "pid": 123, "displayID": 71])
     let tree = try XCTUnwrap(response["tree"] as? [String: Any])
     let children = try XCTUnwrap(tree["XC_kAXXCAttributeChildren"] as? [[String: Any]])
     XCTAssertEqual((children.first?["XC_kAXXCAttributeChildren"] as? [Any])?.count, 0)
@@ -145,7 +145,7 @@ final class AccessibilityDisplayTests: XCTestCase {
     root.children = [window("other-display", displayID: 42)]
     runtime.applicationElements[123] = root
     FBAXClientProvider.setRuntimeForTesting(runtime)
-    let response = AccessibilityService.handleRequest(["verb": "describe", "pid": 123, "displayID": 71])
+    let response = AccessibilityService.handleRequest(["verb": "describe", "traversal": "view-hierarchy", "clientType": 0, "pid": 123, "displayID": 71])
     XCTAssertEqual(response["ok"] as? Bool, false)
     XCTAssertEqual(response["error_kind"] as? String, "application_unavailable")
     XCTAssertNil(response["tree"])
@@ -157,7 +157,7 @@ final class AccessibilityDisplayTests: XCTestCase {
     root.children = [window("cover", displayID: 42), window("inner", displayID: 71)]
     runtime.applicationElements[123] = root
     FBAXClientProvider.setRuntimeForTesting(runtime)
-    let response = AccessibilityService.handleRequest(["verb": "describe", "pid": 123])
+    let response = AccessibilityService.handleRequest(["verb": "describe", "traversal": "view-hierarchy", "clientType": 0, "pid": 123])
     let tree = try XCTUnwrap(response["tree"] as? [String: Any])
     XCTAssertEqual((tree["XC_kAXXCAttributeChildren"] as? [Any])?.count, 2)
   }

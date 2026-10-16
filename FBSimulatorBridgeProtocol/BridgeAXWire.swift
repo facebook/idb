@@ -183,11 +183,10 @@ public enum BridgeAXWire {
     /// observe without touching the device, which is what a host predating the field sends; `true` and
     /// `false` each assert that state. Omitted and `false` are different requests.
     case automationMode
-    /// Which walk a read runs: a `BridgeAXTraversal` raw value. The host always sends it; a read without one
-    /// walks the view hierarchy.
+    /// Which walk a read runs: a `BridgeAXTraversal` raw value. Required on every read.
     case traversal
     /// The assistive client the guest's translator requests claim to come from: a `BridgeAXClientType` raw
-    /// value. The host always sends it; a request without one claims no client.
+    /// value. Required on every read and hit-test; `noClient` (0) claims none.
     case clientType
     /// The attributes the guest fetches per element. Omitted for a default read; the guest falls back
     /// to `Node.defaultFetchList`.

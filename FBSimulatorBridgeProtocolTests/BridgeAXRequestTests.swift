@@ -51,7 +51,9 @@ struct BridgeAXRequestTests {
 
   @Test
   func omittedReadFieldsTakeTheDefaults() throws {
-    let request = try BridgeAXRequest(payload: ["verb": .string("describe"), "pid": .integer(5)])
+    let request = try BridgeAXRequest(payload: [
+      "verb": .string("describe"), "pid": .integer(5), "traversal": .string("view-hierarchy"), "clientType": .integer(0),
+    ])
     let defaults = BridgeAXReadOptions(
       maxDepth: BridgeAXReadOptions.defaultMaxDepth, maxNodes: BridgeAXReadOptions.defaultMaxNodes, attributes: nil, explainUnreachable: false,
       traversal: .viewHierarchy, automationMode: nil, clientType: .noClient)
@@ -62,7 +64,8 @@ struct BridgeAXRequestTests {
   func eachTraversalDecodesFromItsNameAndStringFlagsReadAsFoundationDoes() throws {
     for traversal in BridgeAXTraversal.allCases {
       let request = try BridgeAXRequest(payload: [
-        "verb": .string("describe"), "pid": .integer(5), "traversal": .string(traversal.rawValue), "explainUnreachable": .string("NO"),
+        "verb": .string("describe"), "pid": .integer(5), "traversal": .string(traversal.rawValue), "clientType": .integer(0),
+        "explainUnreachable": .string("NO"),
       ])
       guard case let .read(_, options, _) = request else {
         Issue.record("\(request)")
@@ -107,27 +110,28 @@ struct BridgeAXRequestTests {
   }
 
   @Test
-  func aRequestWithoutAClientTypeClaimsNoClient() throws {
-    guard case let .read(_, options, _) = try BridgeAXRequest(payload: ["verb": .string("describe"), "pid": .integer(5)]) else {
-      Issue.record("not a read")
-      return
+  func aReadOrHitTestWithoutAClientTypeIsRefused() {
+    let requests: [[String: BridgeJSONValue]] = [
+      ["verb": .string("describe"), "pid": .integer(5), "traversal": .string("semantic")],
+      ["verb": .string("hittest"), "x": .integer(1), "y": .integer(2)],
+    ]
+    for payload in requests {
+      #expect(throws: BridgeAXRequestError.unsupportedClientType(nil), "\(payload)") { try BridgeAXRequest(payload: payload) }
     }
-    #expect(options.clientType == .noClient)
   }
 
   @Test
-  func aReadWithoutATraversalWalksTheViewHierarchy() throws {
-    guard case let .read(_, options, _) = try BridgeAXRequest(payload: ["verb": .string("describe"), "pid": .integer(5)]) else {
-      Issue.record("not a read")
-      return
+  func aReadWithoutATraversalIsRefused() {
+    #expect(throws: BridgeAXRequestError.unsupportedTraversal(nil)) {
+      try BridgeAXRequest(payload: ["verb": .string("describe"), "pid": .integer(5), "clientType": .integer(0)])
     }
-    #expect(options.traversal == .viewHierarchy)
   }
 
   @Test
   func nonStringAttributesAreDropped() throws {
     let request = try BridgeAXRequest(payload: [
-      "verb": .string("hittest"), "x": .integer(1), "y": .integer(2), "attributes": .array([.string("a"), .integer(3), .string("b")]),
+      "verb": .string("hittest"), "x": .integer(1), "y": .integer(2), "clientType": .integer(0),
+      "attributes": .array([.string("a"), .integer(3), .string("b")]),
     ])
     #expect(request == .hitTest(x: 1, y: 2, attributes: ["a", "b"], clientType: .noClient))
   }
@@ -146,8 +150,11 @@ struct BridgeAXRequestTests {
       (point.merging(["verb": .string("hittest"), "displayID": .number(1.5)]) { $1 }, .invalidDisplayID),
       (point.merging(["verb": .string("hittest"), "displayID": .null]) { $1 }, .invalidDisplayID),
       (["verb": .string("hittest"), "x": .string("left"), "y": .integer(2)], .missingPoint(.hitTest)),
-      (["verb": .string("describe")], .missingPoint(.describe)),
-      (point.merging(["verb": .string("describe"), "method": .string("guess")]) { $1 }, .unsupportedFrontmostMethod("guess")),
+      (["verb": .string("describe"), "traversal": .string("view-hierarchy"), "clientType": .integer(0)], .missingPoint(.describe)),
+      (
+        point.merging(["verb": .string("describe"), "method": .string("guess"), "traversal": .string("view-hierarchy"), "clientType": .integer(0)]) { $1 },
+        .unsupportedFrontmostMethod("guess")
+      ),
       (point.merging(["verb": .string("perform")]) { $1 }, .unsupportedAction(nil)),
       (point.merging(["verb": .string("perform"), "action": .string("tap")]) { $1 }, .unsupportedAction(.string("tap"))),
       (["verb": .string("perform"), "action": .string("press")], .missingPoint(.perform)),
@@ -161,12 +168,21 @@ struct BridgeAXRequestTests {
       (["verb": .string("quiet"), "busyThresholdMs": .integer(-1)], .negativeTunable(.busyThresholdMs, -1)),
       (["verb": .string("describe"), "pid": .integer(5), "traversal": .null], .unsupportedTraversal(.null)),
       (["verb": .string("describe"), "pid": .integer(5), "traversal": .string("sideways")], .unsupportedTraversal(.string("sideways"))),
-      (["verb": .string("describe"), "pid": .integer(5), "clientType": .integer(12)], .unsupportedClientType(.integer(12))),
-      (["verb": .string("describe"), "pid": .integer(5), "clientType": .integer(4)], .clientTypeNeedsSemanticTraversal(.viewHierarchy)),
+      (["verb": .string("describe"), "pid": .integer(5), "traversal": .string("semantic"), "clientType": .integer(12)], .unsupportedClientType(.integer(12))),
+      (
+        ["verb": .string("describe"), "pid": .integer(5), "traversal": .string("view-hierarchy"), "clientType": .integer(4)],
+        .clientTypeNeedsSemanticTraversal(.viewHierarchy)
+      ),
       (["verb": .string("describe"), "pid": .integer(5), "traversal": .string("single-fetch"), "clientType": .integer(4)], .clientTypeNeedsSemanticTraversal(.singleFetch)),
-      (["verb": .string("describe"), "pid": .integer(5), "clientType": .string("xctest")], .unsupportedClientType(.string("xctest"))),
+      (["verb": .string("describe"), "pid": .integer(5), "traversal": .string("semantic"), "clientType": .string("xctest")], .unsupportedClientType(.string("xctest"))),
+      (["verb": .string("describe"), "pid": .integer(5), "clientType": .integer(0)], .unsupportedTraversal(nil)),
+      (["verb": .string("describe"), "pid": .integer(5), "traversal": .string("semantic")], .unsupportedClientType(nil)),
+      (["verb": .string("hittest"), "x": .integer(1), "y": .integer(2)], .unsupportedClientType(nil)),
       (["verb": .string("hittest"), "x": .integer(1), "y": .integer(2), "clientType": .integer(-1)], .unsupportedClientType(.integer(-1))),
-      (["verb": .string("describe"), "pid": .integer(5), "explainUnreachable": .object([:])], .malformedFlag(.explainUnreachable)),
+      (
+        ["verb": .string("describe"), "pid": .integer(5), "traversal": .string("view-hierarchy"), "clientType": .integer(0), "explainUnreachable": .object([:])],
+        .malformedFlag(.explainUnreachable)
+      ),
     ]
     for (payload, expected) in cases {
       #expect(throws: expected, "\(payload)") { try BridgeAXRequest(payload: payload) }
@@ -175,7 +191,7 @@ struct BridgeAXRequestTests {
 
   @Test
   func anUndecodableRequestFailsTheFrameButKeepsItsParameters() throws {
-    let frame = Data(#"{"command":{"accessibility":{"_0":{"verb":"quiet","quietWindowMs":-1}}},"id":"bad","version":2}"#.utf8)
+    let frame = Data(#"{"command":{"accessibility":{"_0":{"verb":"quiet","quietWindowMs":-1}}},"id":"bad","version":3}"#.utf8)
     #expect(throws: (any Error).self) { try BridgeRequest.decode(frame) }
     #expect(BridgeRequest.identity(of: frame) == "bad")
     #expect(BridgeRequest.accessibilityParameters(of: frame) == ["verb": .string("quiet"), "quietWindowMs": .integer(-1)])

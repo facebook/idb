@@ -1426,9 +1426,15 @@ private final class AccessibilityRequest {
     case let .clientTypeNeedsSemanticTraversal(traversal):
       return badRequest("a client type applies only to the semantic traversal: \(traversal.rawValue) makes no translator request")
     case let .unsupportedClientType(value):
+      guard let value else {
+        return badRequest("a read or hit-test requires a client type: an integer from 0 to \(BridgeAXClientType.allCases.count - 1)")
+      }
       return badRequest("unsupported client type: \(describe(value)); expected an integer from 0 to \(BridgeAXClientType.allCases.count - 1)")
     case let .unsupportedTraversal(value):
       let traversals = BridgeAXTraversal.allCases.map(\.rawValue).joined(separator: ", ")
+      guard let value else {
+        return badRequest("a read requires a traversal: one of \(traversals)")
+      }
       return badRequest("unsupported traversal: \(describe(value)); expected one of \(traversals)")
     }
   }

@@ -14,7 +14,7 @@ import Foundation
 }
 
 public struct BridgeRequest: Codable, Equatable, Sendable {
-  public static let currentVersion = 2
+  public static let currentVersion = 3
   public let version: Int
   public let id: String
   public let command: BridgeCommand

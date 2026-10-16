@@ -18,9 +18,9 @@ final class AccessibilityExceptionTests: XCTestCase {
   }
 
   func testEveryRuntimeExceptionStopsTheRequestAndAllowsTheNextRequest() {
-    let describe: [String: Any] = ["verb": "describe", "pid": 4321]
+    let describe: [String: Any] = ["verb": "describe", "traversal": "view-hierarchy", "clientType": 0, "pid": 4321]
     let snapshot: [String: Any] = [
-      "verb": "describe", "pid": 4321, "traversal": "single-fetch",
+      "verb": "describe", "clientType": 0, "pid": 4321, "traversal": "single-fetch",
       "attributes": ["XC_kAXXCAttributeLabel", "XC_kAXXCAttributeFrame", "XC_kAXXCAttributeVisiblePoint"],
     ]
     let cases: [(String, [String: Any])] = [
@@ -31,14 +31,14 @@ final class AccessibilityExceptionTests: XCTestCase {
       ("snapshotContinuation", snapshot),
       ("getRect", snapshot),
       ("getPoint", snapshot),
-      ("hitTest", ["verb": "hittest", "x": 1, "y": 2]),
+      ("hitTest", ["verb": "hittest", "clientType": 0, "x": 1, "y": 2]),
       ("performAction", ["verb": "perform", "x": 1, "y": 2, "action": "press"]),
       ("setValue", ["verb": "setvalue", "x": 1, "y": 2, "value": "changed"]),
-      ("windowServerFrontmost", ["verb": "describe", "x": 1, "y": 2, "method": "window-server"]),
-      ("runningBoardFrontmost", ["verb": "describe", "x": 1, "y": 2, "method": "runningboard"]),
-      ("translatorAttributes", ["verb": "describe", "pid": 4321, "traversal": "semantic"]),
+      ("windowServerFrontmost", ["verb": "describe", "traversal": "view-hierarchy", "clientType": 0, "x": 1, "y": 2, "method": "window-server"]),
+      ("runningBoardFrontmost", ["verb": "describe", "traversal": "view-hierarchy", "clientType": 0, "x": 1, "y": 2, "method": "runningboard"]),
+      ("translatorAttributes", ["verb": "describe", "clientType": 0, "pid": 4321, "traversal": "semantic"]),
       ("automationRead", describe),
-      ("automationWrite", ["verb": "describe", "pid": 4321, "automationMode": true]),
+      ("automationWrite", ["verb": "describe", "traversal": "view-hierarchy", "clientType": 0, "pid": 4321, "automationMode": true]),
       ("settingRead", ["verb": "settings-get", "setting": "reduce-motion"]),
       ("settingWrite", ["verb": "settings-set", "setting": "reduce-motion", "enabled": true]),
     ]
@@ -61,7 +61,7 @@ final class AccessibilityExceptionTests: XCTestCase {
     let child = root?.children.first
     child?.readRaiseReason = "child disappeared"
     FBAXClientProvider.setRuntimeForTesting(runtime)
-    let request: [String: Any] = ["verb": "describe", "pid": 4321]
+    let request: [String: Any] = ["verb": "describe", "traversal": "view-hierarchy", "clientType": 0, "pid": 4321]
 
     XCTAssertEqual(AccessibilityService.handleRequest(request) as NSDictionary, exceptionResponse("child disappeared"))
     XCTAssertEqual(runtime.operations.lastObject as? String, "readAttributes")

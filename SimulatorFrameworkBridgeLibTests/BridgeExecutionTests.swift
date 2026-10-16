@@ -56,8 +56,8 @@ final class BridgeExecutionTests: XCTestCase {
     // A request whose identity survives decoding is answered under that identity, so the host can
     // match the failure to what it sent instead of reporting a mismatched response.
     let unanswerable: [(String, String)] = [
-      (#"{"version":3,"id":"future-version","command":{"ping":{}}}"#, "unsupportedVersion(3)"),
-      (#"{"version":2,"id":"future-command","command":{"future":{}}}"#, "command"),
+      (#"{"version":4,"id":"future-version","command":{"ping":{}}}"#, "unsupportedVersion(4)"),
+      (#"{"version":3,"id":"future-command","command":{"future":{}}}"#, "command"),
     ]
     for (text, expected) in unanswerable {
       let reply = BridgeRPC.process(Data(text.utf8), execute: execute)
@@ -345,7 +345,7 @@ final class BridgeExecutionTests: XCTestCase {
   }
 
   func testAnAccessibilityRequestThatDoesNotDecodeIsAnsweredAsABadRequest() throws {
-    let frame = Data(#"{"command":{"accessibility":{"_0":{"verb":"hittest","x":"left","y":2}}},"id":"malformed","version":2}"#.utf8)
+    let frame = Data(#"{"command":{"accessibility":{"_0":{"verb":"hittest","x":"left","y":2}}},"id":"malformed","version":3}"#.utf8)
     for data in [BridgeRPC.process(frame).data, try XCTUnwrap(BridgeRPC.handle(frame).frame).data] {
       let response = try JSONDecoder().decode(BridgeResponse.self, from: data)
       XCTAssertEqual(response.id, "malformed")
