@@ -194,26 +194,26 @@ public struct AccessibilityElementsResponse: Sendable {
 
   /// Whether the read's tree walk was cut short by a depth or node bound, so the elements are a
   /// partial view. Only the `complete` document surfaces this.
-  public let truncated: Bool
+  public private(set) var truncated: Bool
 
   /// The bounds the element frames are relative to, when the read knows them.
-  public let screen: AccessibilityScreenInfo?
+  public private(set) var screen: AccessibilityScreenInfo?
 
   /// Which backend produced the read.
-  public let backend: UIAutomationBackendName?
+  public private(set) var backend: UIAutomationBackendName?
 
   /// What the read was asked for.
-  public let target: AccessibilityTargetDescriptor?
+  public private(set) var target: AccessibilityTargetDescriptor?
 
   /// The device's accessibility automation mode for this read, when the backend reported it.
   public let automation: AccessibilityAutomationState?
 
   /// What narrowed the read and how much survived, for a read that could narrow. Nil for the
   /// single-element reads, which select an element rather than narrow a list.
-  public let narrowing: AccessibilityNarrowing?
+  public private(set) var narrowing: AccessibilityNarrowing?
 
   /// The client the read's translator requests claimed to come from, when the read named one.
-  public let client: AccessibilityClientReport?
+  public private(set) var client: AccessibilityClientReport?
 
   /// How a translator-backed read went, whether or not the caller asked for a profile. Never encoded:
   /// it is for the reader's own telemetry, not the document.
@@ -254,74 +254,33 @@ public struct AccessibilityElementsResponse: Sendable {
     screen: AccessibilityScreenInfo? = nil,
     truncated: Bool? = nil
   ) -> AccessibilityElementsResponse {
-    AccessibilityElementsResponse(
-      elements: elements,
-      profilingData: profilingData,
-      coverage: coverage,
-      modal: modal,
-      truncated: truncated ?? self.truncated,
-      screen: screen ?? self.screen,
-      backend: backend ?? self.backend,
-      target: target ?? self.target,
-      automation: automation,
-      narrowing: narrowing,
-      client: client,
-      translatorMetrics: translatorMetrics
-    )
+    var copy = self
+    if let truncated { copy.truncated = truncated }
+    if let screen { copy.screen = screen }
+    if let backend { copy.backend = backend }
+    if let target { copy.target = target }
+    return copy
   }
 
   /// A copy reporting the client the read named; nil leaves the read reporting none.
   public func withClient(_ client: AccessibilityClientReport?) -> AccessibilityElementsResponse {
-    AccessibilityElementsResponse(
-      elements: elements,
-      profilingData: profilingData,
-      coverage: coverage,
-      modal: modal,
-      truncated: truncated,
-      screen: screen,
-      backend: backend,
-      target: target,
-      automation: automation,
-      narrowing: narrowing,
-      client: client,
-      translatorMetrics: translatorMetrics
-    )
+    var copy = self
+    copy.client = client
+    return copy
   }
 
   /// A copy reporting what narrowed the read.
   public func withNarrowing(_ narrowing: AccessibilityNarrowing) -> AccessibilityElementsResponse {
-    AccessibilityElementsResponse(
-      elements: elements,
-      profilingData: profilingData,
-      coverage: coverage,
-      modal: modal,
-      truncated: truncated,
-      screen: screen,
-      backend: backend,
-      target: target,
-      automation: automation,
-      narrowing: narrowing,
-      client: client,
-      translatorMetrics: translatorMetrics
-    )
+    var copy = self
+    copy.narrowing = narrowing
+    return copy
   }
 
   /// A copy whose screen bounds are replaced, including with `nil` when a read has no screen context.
   public func replacingScreen(_ screen: AccessibilityScreenInfo?) -> AccessibilityElementsResponse {
-    AccessibilityElementsResponse(
-      elements: elements,
-      profilingData: profilingData,
-      coverage: coverage,
-      modal: modal,
-      truncated: truncated,
-      screen: screen,
-      backend: backend,
-      target: target,
-      automation: automation,
-      narrowing: narrowing,
-      client: client,
-      translatorMetrics: translatorMetrics
-    )
+    var copy = self
+    copy.screen = screen
+    return copy
   }
 
   /// The `complete` output format for this read.
