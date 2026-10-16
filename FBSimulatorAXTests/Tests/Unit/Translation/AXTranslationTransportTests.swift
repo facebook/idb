@@ -112,6 +112,27 @@ final class AXTranslationTransportTests: XCTestCase {
     ) { transport.abandonedRequests == 0 }
   }
 
+  func testACoreSimulatorRequestWhoseAnswerComesLateIsCountedUntilItArrives() async throws {
+    let device = SimDeviceAccessibilityDouble()
+    let response = Self.emptyResponse
+    let late = DispatchSemaphore(value: 0)
+    device.accessibilityResponseHandler = { _, respond in
+      DispatchQueue.global().async {
+        late.wait()
+        respond(response)
+      }
+    }
+    let transport = CoreSimulatorAXTranslationTransport(device: SimulatorTestSupport.testableSimulator(withDevice: device).device)
+
+    XCTAssertNil(transport.send(try Self.request(), timeout: 0.1))
+    XCTAssertEqual(transport.abandonedRequests, 1, "CoreSimulator's client still owes the abandoned request its answer")
+
+    late.signal()
+    try await pollUntilTrue(
+      on: .global(), interval: 0.01, deadline: PollDeadline(timeout: 5, waitingFor: "the late answer to arrive")
+    ) { transport.abandonedRequests == 0 }
+  }
+
   func testAServiceTheSimulatorDoesNotVendFailsToConnect() throws {
     let transport = self.transport
     XCTAssertThrowsError(try transport.connect())

@@ -34,11 +34,6 @@ protocol AXTranslationTransport: Sendable {
   var abandonedRequests: Int { get }
 }
 
-extension AXTranslationTransport {
-  /// Built for one read, so it holds no request across reads to count.
-  var abandonedRequests: Int { 0 }
-}
-
 /// Sends translator requests through CoreSimulator's own client,
 /// `-[SimDevice sendAccessibilityRequestAsync:completionQueue:completionHandler:]`. The fallback when
 /// `CoreSimulatorBridgeAXTranslationTransport` cannot reach the service.
@@ -51,9 +46,10 @@ extension AXTranslationTransport {
 final class CoreSimulatorAXTranslationTransport: AXTranslationTransport, @unchecked Sendable {
   let kind = AXTranslationTransportKind.coreSimulator
 
-  // SAFETY: both are only read after init; `SimDevice` messages its service from any queue.
+  // SAFETY: all are only read after init; `SimDevice` messages its service from any queue.
   private let device: SimDevice
   private let completionQueue: DispatchQueue
+  private let abandoned = AXAbandonedRequests()
 
   init(device: SimDevice) {
     self.device = device
@@ -61,16 +57,15 @@ final class CoreSimulatorAXTranslationTransport: AXTranslationTransport, @unchec
   }
 
   func send(_ request: AXPTranslatorRequest, timeout: TimeInterval) -> AXPTranslatorResponse? {
-    let answered = DispatchSemaphore(value: 0)
-    let box = AXResultBox<AXPTranslatorResponse>()
-    device.sendAccessibilityRequestAsync(request, completionQueue: completionQueue) { response in
-      box.value = response
-      answered.signal()
+    let response: AXPTranslatorResponse?? = abandoned.wait(within: timeout) { answer in
+      device.sendAccessibilityRequestAsync(request, completionQueue: completionQueue) { answer($0) }
     }
-    guard answered.wait(timeout: .now() + timeout) == .success else {
-      return nil
-    }
-    return box.value
+    return response ?? nil
+  }
+
+  /// Held for the simulator, as the bridge transport is, and queued on the same service, so it counts the same way.
+  var abandonedRequests: Int {
+    abandoned.count
   }
 }
 
@@ -201,14 +196,6 @@ enum AXTranslationWire {
     }
     return Data(bytes: bytes, count: length)
   }
-}
-
-/// Carries a result out of a `@Sendable` completion handler to a synchronous wait. The semaphore wait orders
-/// the write before the read.
-// SAFETY: written before the semaphore is signalled, and read only after a wait on it succeeds.
-// patternlint-disable-next-line unchecked-sendable
-final class AXResultBox<T>: @unchecked Sendable {
-  var value: T?
 }
 
 /// The requests a transport stopped waiting for whose answers have not yet arrived.

@@ -16,6 +16,7 @@ import Testing
 /// the application but then stops answering does.
 private final class RootOnlyTransportDouble: AXTranslationTransport, @unchecked Sendable {
   let kind = AXTranslationTransportKind.bridge
+  let abandonedRequests = 0
   private let root: AXPTranslationObjectDouble
   private let lock = NSLock()
   private var _requestTypes: [UInt64] = []

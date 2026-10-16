@@ -225,6 +225,7 @@ extension AXPMacPlatformElementDouble: AXWritableElement {
 /// does not answer, with nothing, as a transport whose wait timed out does.
 final class AXTranslationTransportDouble: AXTranslationTransport, @unchecked Sendable {
   let kind = AXTranslationTransportKind.coreSimulator
+  let abandonedRequests = 0
   private let lock = NSLock()
   private var _requests: [AXPTranslatorRequest] = []
   private let answers: Bool
@@ -270,6 +271,7 @@ final class AXTranslationTransportDouble: AXTranslationTransport, @unchecked Sen
 /// every request.
 final class AXRawTranslationTransportDouble: AXTranslationTransport, @unchecked Sendable {
   let kind = AXTranslationTransportKind.bridge
+  let abandonedRequests = 0
   private let lock = NSLock()
   private var _requests: [AXPTranslatorRequest] = []
   private let elements: [UInt64: [BridgeAXTranslatorAttribute: Any]]
