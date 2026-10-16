@@ -111,28 +111,8 @@ public final class MacDevice: Target {
 
   // MARK: - Initializers
 
-  public init() {
-    architectures = Array(ArchitectureProcessAdapter.hostMachineSupportedArchitectures())
-    asyncQueue = DispatchQueue.global(qos: .userInitiated)
-    let explicitTmpDirectory = ProcessInfo.processInfo.environment["IDB_MAC_AUXILLIARY_DIR"]
-    if let explicitTmpDirectory {
-      auxillaryDirectory = ((explicitTmpDirectory as NSString).appendingPathComponent("idb-mac-aux") as NSString).appendingPathComponent(ProcessInfo.processInfo.globallyUniqueString)
-    } else {
-      auxillaryDirectory = ((NSTemporaryDirectory() as NSString).appendingPathComponent("idb-mac-cwd") as NSString).appendingPathComponent(ProcessInfo.processInfo.globallyUniqueString)
-    }
-    bundleIDToProductMap = MacDevice.fetchInstalledApplications()
-    bundleIDToRunningTask = [:]
-    udid = MacDevice.resolveDeviceUDID()
-    state = .booted
-    targetType = .localMac
-    workQueue = DispatchQueue.main
-    workingDirectory = (NSTemporaryDirectory() as NSString).appendingPathComponent(ProcessInfo.processInfo.globallyUniqueString)
-    screenInfo = nil
-    osVersion = OSVersion.generic(withName: "mac")
-    name = Host.current().localizedName ?? ""
-    self.logger = ControlCoreGlobalConfiguration.defaultLogger
-    self.catalyst = false
-    temporaryDirectory = TemporaryDirectory(logger: ControlCoreGlobalConfiguration.defaultLogger)
+  public convenience init() {
+    self.init(logger: ControlCoreGlobalConfiguration.defaultLogger, catalyst: false)
   }
 
   public convenience init(logger: ControlCoreLogger) {
