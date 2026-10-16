@@ -39,27 +39,31 @@ extension SimulatorDefaultsError: LocalizedError {
 }
 
 /// Reads and writes a simulator's defaults with the runtime's own `defaults` tool.
-struct SimulatorDefaults {
+package struct SimulatorDefaults {
 
   let simulator: Simulator
+
+  package init(simulator: Simulator) {
+    self.simulator = simulator
+  }
 
   // MARK: - Preferences
 
   private static let appleGlobalDomain = "Apple Global Domain"
 
-  func setPreference(_ name: String, value: String, type: String?, domain: String?) async throws {
+  package func setPreference(_ name: String, value: String, type: String?, domain: String?) async throws {
     let effectiveDomain = domain ?? SimulatorDefaults.appleGlobalDomain
     try await setDefault(inDomain: effectiveDomain, key: name, value: value, type: type)
   }
 
-  func currentPreference(_ name: String, domain: String?) async throws -> String {
+  package func currentPreference(_ name: String, domain: String?) async throws -> String {
     let effectiveDomain = domain ?? SimulatorDefaults.appleGlobalDomain
     return try await defaultValue(inDomain: effectiveDomain, key: name)
   }
 
   // MARK: - Location Services
 
-  func approveLocationServices(forBundleIDs bundleIDs: [String]) async throws {
+  package func approveLocationServices(forBundleIDs bundleIDs: [String]) async throws {
     var defaults: [String: Any] = [:]
     for bundleID in bundleIDs {
       defaults[bundleID] =
@@ -81,7 +85,7 @@ struct SimulatorDefaults {
     )
   }
 
-  func revokeLocationServices(forBundleIDs bundleIDs: [String]) async throws {
+  package func revokeLocationServices(forBundleIDs bundleIDs: [String]) async throws {
     let state = simulator.state
     guard state == .booted || state == .shutdown else {
       throw SimulatorDefaultsError.invalidState(state, action: "modify")

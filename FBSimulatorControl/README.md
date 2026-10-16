@@ -70,7 +70,7 @@ For each library you use, as `manifest.json` lists it:
 
 ### Resources
 
-The simulator libraries run helpers inside the simulator: the guest bridge for services and accessibility, and the shims for XCTest and the REPL. Point `BundledResources.hostDirectoryPath` at the package's `Resources/` (or wherever you copy it) before using them. Without it, they are looked for in an application's own resources, or in a `Resources/` directory beside the executable. Copy them as they are: the guests are signed for the simulator and must not be re-signed.
+The simulator libraries run helpers inside the simulator: the guest bridge for `FBSimulatorServices` (and the accessibility and REPL libraries built on it), and the shims for XCTest, audio injection and the REPL. `manifest.json` lists each library's; a consumer ships only those of the libraries it links. Point `BundledResources.hostDirectoryPath` at the package's `Resources/` (or wherever you copy it) before using them. Without it, they are looked for in an application's own resources, or in a `Resources/` directory beside the executable. Copy them as they are: the guests are signed for the simulator and must not be re-signed.
 
 ## Usage
 
@@ -121,7 +121,7 @@ The framework also provides functionality that has no equivalent in `simctl`, `x
 - **Live screen access.** A booted Simulator's screen is available to the linking process as an `IOSurface`-backed framebuffer. The framework turns this into screenshots, and [`FBSimulatorVideo`](../FBSimulatorVideo/README.md) into video files or live streams of hardware-encoded H.264, MJPEG, or raw frames. `simctl` can only record a video file after the fact; it cannot stream, and it cannot give your process access to the GPU-resident surface.
 - **Input synthesis.** Touch, keyboard and hardware-button events are delivered over the Simulator's own HID services: the reverse-engineered Indigo mach protocol, or the `dtuhidd` XPC path on newer Xcodes. Device orientation is delivered over GSEvent ("Purple"), and shake via Darwin notifications. Apple's only supported route to synthesized input is an XCUITest bundle.
 - **Accessibility reading.** [`FBSimulatorAX`](../FBSimulatorAX/README.md) reads the full element hierarchy of the frontmost application without a test bundle, either through host-side translation or in-guest at XCUITest fidelity via the bundled `SimulatorFrameworkBridge` helper.
-- **In-guest state injection.** `SimulatorFrameworkBridge` runs inside the booted Simulator and can modify state that no `simctl` verb reaches, such as overwriting the contacts database or clearing the photo library.
+- **In-guest state injection.** [`FBSimulatorServices`](../FBSimulatorServices/README.md) runs `SimulatorFrameworkBridge` inside the booted Simulator to modify state that no `simctl` verb reaches, such as overwriting the contacts database or clearing the photo library.
 
 Combined, live screen access, input synthesis and accessibility reading are enough to build a new "simulator app": a macOS application or remote-streaming service that presents and drives Simulators with its own UI and transport, the way `Simulator.app` does.
 

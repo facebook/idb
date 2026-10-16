@@ -9,7 +9,7 @@ import Foundation
 
 /// What a simulator's motion provider advertises, as `querymotioncapabilities` reports it. A
 /// capability the provider does not mention is not supported, the same as one it reports `false`.
-struct MotionCapabilities: Decodable, Equatable, Sendable {
+package struct MotionCapabilities: Decodable, Equatable, Sendable {
   static let service = "com.apple.coredevice.feature.monitormotion"
   static let action = "com.apple.coredevice.action.querymotioncapabilities"
 
@@ -21,7 +21,7 @@ struct MotionCapabilities: Decodable, Equatable, Sendable {
 
   /// The capabilities the simulator advertises. A runtime, CoreDevice installation or toolchain
   /// that cannot answer the query at all advertises `none`; an operational failure is an error.
-  static func resolve(on simulator: Simulator) async throws -> MotionCapabilities {
+  package static func resolve(on simulator: Simulator) async throws -> MotionCapabilities {
     try await resolve { try await simulator.coreDevice.motionCapabilities() }
   }
 
@@ -56,7 +56,7 @@ struct MotionCapabilities: Decodable, Equatable, Sendable {
   /// Orientation reads come from the guest's own motion state where the runtime reports device
   /// motion, since the CoreDevice stream can replay a stale snapshot; otherwise from the legacy
   /// orientation service.
-  var orientationReadBackend: OrientationReadBackend {
+  package var orientationReadBackend: OrientationReadBackend {
     supports(.deviceMotionState) ? .guestMotionState : .legacyService
   }
 }
@@ -66,7 +66,7 @@ enum OrientationWriteBackend: Equatable, Sendable {
   case purple
 }
 
-enum OrientationReadBackend: Equatable, Sendable {
+package enum OrientationReadBackend: Equatable, Sendable {
   case guestMotionState
   case legacyService
 }

@@ -71,21 +71,6 @@ struct SimulatorOrientationTests {
   }
 
   @Test
-  func motionStatePreservesPhysicalDirectionsAndFlatStates() throws {
-    let orientations: [SimulatorDeviceOrientation] = [.unknown, .portrait, .portraitUpsideDown, .landscapeLeft, .landscapeRight, .faceUp, .faceDown]
-    for (value, orientation) in orientations.enumerated() {
-      #expect(try SimulatorOrientationCommands.decodeMotionState("{\"orientation\":\(value)}") == orientation)
-    }
-  }
-
-  @Test
-  func invalidMotionStateDoesNotDefaultToPortrait() {
-    for output in ["", "{}", "null", "[]", "{\"orientation\":null}", "{\"orientation\":true}", "{\"orientation\":\"1\"}", "{\"orientation\":1.5}", "{\"orientation\":-1}", "{\"orientation\":7}"] {
-      #expect(throws: (any Error).self, "\(output)") { try SimulatorOrientationCommands.decodeMotionState(output) }
-    }
-  }
-
-  @Test
   func legacyRequestUsesCurrentOrientation() throws {
     let request = try SimulatorOrientationProtocol.request()
     #expect(String(cString: xpc_dictionary_get_string(request, "messageType")!) == "OrientationRequest")

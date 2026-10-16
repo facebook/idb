@@ -9,6 +9,7 @@ import CoreGraphics
 import FBControlCore
 import FBSimulatorAX
 import FBSimulatorControl
+import FBSimulatorServices
 import FBSimulatorVideo
 import FBVideoCore
 import Foundation

@@ -12,6 +12,7 @@ import FBDeviceControl
 import FBSimulatorAX
 import FBSimulatorCodeInjection
 import FBSimulatorControl
+import FBSimulatorServices
 import FBSimulatorXCTest
 import FBVideoCore
 import FBXCTestCore

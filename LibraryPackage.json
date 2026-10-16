@@ -92,9 +92,10 @@
     "FBSimulatorAX": {
       "archives": [
         "libFBSimulatorAX.a",
-        "libFBSimulatorBridgeProtocol.a",
         "libFBControlCore.a",
+        "libFBSimulatorBridgeProtocol.a",
         "libFBSimulatorControl.a",
+        "libFBSimulatorServices.a",
         "libFBControlCoreObjC.a",
         "libSimulatorIPC.a"
       ],
@@ -140,6 +141,7 @@
         "libSimulatorIPC.a",
         "libFBControlCore.a",
         "libFBSimulatorControl.a",
+        "libFBSimulatorServices.a",
         "libFBSimulatorXCTest.a",
         "libFBXCTestCore.a",
         "libShimulatorAudioInjectionCore.a",
@@ -193,10 +195,7 @@
         "-weak_library",
         "PrivateHeaders/CoreSimulator/CoreSimulator.tbd"
       ],
-      "resources": [
-        "SimulatorFrameworkBridge-tvOS",
-        "SimulatorFrameworkBridge-iOS"
-      ],
+      "resources": [],
       "search_paths": [
         "PrivateHeaders"
       ]
@@ -210,6 +209,33 @@
         "libFBControlCoreObjC.a",
         "libFBSimulatorBridgeProtocol.a",
         "libSimulatorIPC.a"
+      ],
+      "frameworks": [
+        "Cocoa.framework",
+        "CoreGraphics.framework",
+        "CoreImage.framework",
+        "Foundation.framework",
+        "IOSurface.framework",
+        "ServiceManagement.framework",
+        "UniformTypeIdentifiers.framework"
+      ],
+      "linker_flags": [
+        "-weak_library",
+        "PrivateHeaders/CoreSimulator/CoreSimulator.tbd"
+      ],
+      "resources": [],
+      "search_paths": [
+        "PrivateHeaders"
+      ]
+    },
+    "FBSimulatorServices": {
+      "archives": [
+        "libFBSimulatorServices.a",
+        "libFBControlCore.a",
+        "libFBSimulatorBridgeProtocol.a",
+        "libFBSimulatorControl.a",
+        "libSimulatorIPC.a",
+        "libFBControlCoreObjC.a"
       ],
       "frameworks": [
         "Cocoa.framework",
@@ -263,10 +289,7 @@
         "-weak_library",
         "PrivateHeaders/CoreSimulator/CoreSimulator.tbd"
       ],
-      "resources": [
-        "SimulatorFrameworkBridge-tvOS",
-        "SimulatorFrameworkBridge-iOS"
-      ],
+      "resources": [],
       "search_paths": [
         "PrivateHeaders"
       ]
@@ -296,8 +319,6 @@
         "PrivateHeaders/CoreSimulator/CoreSimulator.tbd"
       ],
       "resources": [
-        "SimulatorFrameworkBridge-tvOS",
-        "SimulatorFrameworkBridge-iOS",
         "libShimulator-iOS.dylib",
         "libShimulator-macOS.dylib"
       ],

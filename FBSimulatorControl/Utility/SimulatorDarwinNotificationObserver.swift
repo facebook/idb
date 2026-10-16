@@ -9,16 +9,16 @@
 @preconcurrency import FBControlCore
 import Foundation
 
-enum SimulatorDarwinNotificationObserver {
-  typealias Cancel = @Sendable () -> Void
-  typealias Subscription = (changes: AsyncThrowingStream<Void, Error>, cancel: Cancel, failure: @Sendable () -> Error?)
-  typealias Register =
+package enum SimulatorDarwinNotificationObserver {
+  package typealias Cancel = @Sendable () -> Void
+  package typealias Subscription = (changes: AsyncThrowingStream<Void, Error>, cancel: Cancel, failure: @Sendable () -> Error?)
+  package typealias Register =
     @Sendable (
       @escaping @Sendable () -> Void, @escaping @Sendable (Result<Cancel, Error>) -> Void,
       @escaping @Sendable (Error) -> Void
     ) -> Void
 
-  static func subscribe(on simulator: Simulator, name: String) async throws -> Subscription {
+  package static func subscribe(on simulator: Simulator, name: String) async throws -> Subscription {
     guard simulator.device.responds(to: NSSelectorFromString("observeDarwinNotification:onQueue:handler:completionHandler:")) else {
       throw SimulatorNotificationObservationError.unsupported
     }
@@ -68,7 +68,7 @@ enum SimulatorDarwinNotificationObserver {
     return (stream, { observation.finish(throwing: nil) }, { observation.sourceFailure() })
   }
 
-  static func values<Value: Sendable>(
+  package static func values<Value: Sendable>(
     subscription: Subscription, read: @escaping @Sendable (Bool) async throws -> Value
   ) -> AsyncThrowingStream<Value, Error> {
     let readValue: @Sendable (Bool) async throws -> Value = { initial in

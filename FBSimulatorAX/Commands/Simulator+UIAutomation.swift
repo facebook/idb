@@ -7,6 +7,7 @@
 
 import FBControlCore
 @preconcurrency import FBSimulatorControl
+import FBSimulatorServices
 import Foundation
 
 // The simulator's accessibility reading and UI automation, added onto `Simulator` from outside

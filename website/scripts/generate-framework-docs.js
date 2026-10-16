@@ -19,6 +19,7 @@ const FRAMEWORKS = [
   { repoPath: 'FBArtifactStaging', id: 'fbartifactstaging' },
   { repoPath: 'FBSimulatorBridgeProtocol', id: 'fbsimulatorbridgeprotocol' },
   { repoPath: 'FBSimulatorControl', id: 'fbsimulatorcontrol' },
+  { repoPath: 'FBSimulatorServices', id: 'fbsimulatorservices' },
   { repoPath: 'FBSimulatorVideo', id: 'fbsimulatorvideo' },
   {
     repoPath: 'FBSimulatorAX',

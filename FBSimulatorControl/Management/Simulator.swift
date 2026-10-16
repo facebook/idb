@@ -177,7 +177,7 @@ public final class Simulator: Target, Hashable, CustomStringConvertible, @unchec
   }
 
   /// The Directory that Contains the Simulator's Data.
-  var dataDirectory: String? { device.dataPath() }
+  package var dataDirectory: String? { device.dataPath() }
 
   public var customDeviceSetPath: String? {
     let setPath = device.deviceSet?.setPath
@@ -293,10 +293,6 @@ extension Simulator {
     commandCache.resolve { SimulatorDisplayCommands(simulator: self) }
   }
 
-  public var orientation: SimulatorOrientationCommands {
-    SimulatorOrientationCommands(simulator: self)
-  }
-
   public var hinge: SimulatorHingeCommands {
     SimulatorHingeCommands(simulator: self)
   }
@@ -317,40 +313,12 @@ extension Simulator {
     SimulatorKeychainCommands(simulator: self)
   }
 
-  public var privacy: SimulatorPrivacyCommands {
-    SimulatorPrivacyCommands(simulator: self)
-  }
-
-  public var preferences: SimulatorPreferencesCommands {
-    SimulatorPreferencesCommands(simulator: self)
-  }
-
   public var statusBar: SimulatorStatusBarCommands {
     SimulatorStatusBarCommands(simulator: self)
   }
 
-  public var network: SimulatorNetworkCommands {
-    SimulatorNetworkCommands(simulator: self)
-  }
-
-  public var health: SimulatorHealthCommands {
-    SimulatorHealthCommands(simulator: self)
-  }
-
-  public var contacts: SimulatorContactsCommands {
-    SimulatorContactsCommands(simulator: self)
-  }
-
-  public var photos: SimulatorPhotosCommands {
-    SimulatorPhotosCommands(simulator: self)
-  }
-
   public var dapServer: SimulatorDapServerCommand {
     SimulatorDapServerCommand(simulator: self)
-  }
-
-  public var notification: SimulatorNotificationCommands {
-    SimulatorNotificationCommands(simulator: self)
   }
 
   public var memory: SimulatorMemoryCommands {

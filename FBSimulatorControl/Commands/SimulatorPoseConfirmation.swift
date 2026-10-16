@@ -32,7 +32,7 @@ public enum SimulatorPoseConfirmationError: Error, LocalizedError, Equatable {
 }
 
 /// A pose that can be written and read back, so that a change to it can be confirmed.
-protocol PoseCommands {
+package protocol PoseCommands {
   associatedtype Value
 
   var displays: any DisplayCommands { get }
@@ -50,7 +50,7 @@ extension PoseCommands {
 
   /// Sets `target`, then reads the pose until it is reached and waits for the displays to settle, all within
   /// `timeout`. The configuration is `.transitioning` when the displays outlast the budget.
-  func set(
+  package func set(
     _ target: Value, confirmingWithin timeout: Duration, interval: Duration
   ) async throws -> SimulatorDisplayConfiguration {
     let clock = ContinuousClock()

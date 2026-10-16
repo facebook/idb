@@ -83,17 +83,21 @@ flowchart TD
     companion["idb_companion"] --> CompanionLib
     CompanionLib --> FBSimulatorVideo
     CompanionLib --> FBSimulatorAX
+    CompanionLib --> FBSimulatorServices
     CompanionLib --> FBSimulatorXCTest
     CompanionLib --> FBSimulatorCodeInjection
     CompanionLib --> FBDeviceControl
     CompanionLib --> FBArtifactStaging
     FBSimulatorVideo --> FBSimulatorControl
     FBSimulatorVideo --> FBVideoCore
-    FBSimulatorAX --> FBSimulatorControl
+    FBSimulatorAX --> FBSimulatorServices
     FBSimulatorAX --> FBSimulatorBridgeProtocol
+    FBSimulatorServices --> FBSimulatorControl
+    FBSimulatorServices --> FBSimulatorBridgeProtocol
     FBSimulatorXCTest --> FBSimulatorControl
     FBSimulatorXCTest --> FBXCTestCore
     FBSimulatorCodeInjection --> FBSimulatorXCTest
+    FBSimulatorCodeInjection --> FBSimulatorServices
     FBSimulatorControl --> FBSimulatorBridgeProtocol
     guest["SimulatorFrameworkBridge (in the Simulator)"] --> FBSimulatorBridgeProtocol
     FBDeviceControl --> FBVideoCore

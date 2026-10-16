@@ -9,6 +9,7 @@ import FBControlCore
 @testable import FBSimulatorAX
 import FBSimulatorBridgeProtocol
 @testable import FBSimulatorControl
+@testable import FBSimulatorServices
 import Foundation
 import XCTest
 

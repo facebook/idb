@@ -7,6 +7,7 @@
 
 import FBControlCore
 import FBSimulatorControl
+import FBSimulatorServices
 import Foundation
 import GRPCCore
 import IDBGRPCSwift

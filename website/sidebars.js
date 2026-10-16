@@ -24,6 +24,7 @@ module.exports = {
         "idb/fbartifactstaging",
         "idb/fbsimulatorbridgeprotocol",
         "idb/fbsimulatorcontrol",
+        "idb/fbsimulatorservices",
         "idb/fbsimulatorvideo",
         "idb/fbsimulatorax",
         "idb/fbsimulatorxctest",

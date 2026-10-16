@@ -57,11 +57,11 @@ public struct SimulatorHingeCommands {
 }
 
 extension SimulatorHingeCommands: PoseCommands {
-  var displays: any DisplayCommands { simulator.displays }
+  package var displays: any DisplayCommands { simulator.displays }
 
-  func reached(_ value: SimulatorHingeAngle, target: SimulatorHingeAngle) -> Bool {
+  package func reached(_ value: SimulatorHingeAngle, target: SimulatorHingeAngle) -> Bool {
     abs(value.degrees - target.degrees) <= 0.5
   }
 
-  func pose(_ value: SimulatorHingeAngle) -> SimulatorPose { .hinge(value) }
+  package func pose(_ value: SimulatorHingeAngle) -> SimulatorPose { .hinge(value) }
 }

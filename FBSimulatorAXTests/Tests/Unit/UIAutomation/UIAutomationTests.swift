@@ -7,6 +7,7 @@
 
 @testable import FBSimulatorAX
 @testable import FBSimulatorControl
+@testable import FBSimulatorServices
 import Foundation
 import Testing
 

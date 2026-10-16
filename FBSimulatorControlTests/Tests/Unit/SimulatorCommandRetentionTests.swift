@@ -25,19 +25,11 @@ enum SimulatorCommandAccessor: CaseIterable, Sendable {
   case xctraceRecord
   case instruments
   case lifecycle
-  case orientation
   case power
   case media
   case keychain
-  case privacy
-  case preferences
   case statusBar
-  case network
-  case health
-  case contacts
-  case photos
   case dapServer
-  case notification
   case memory
   case audio
   case runtimeTools
@@ -67,32 +59,16 @@ enum SimulatorCommandAccessor: CaseIterable, Sendable {
       _ = simulator.instruments
     case .lifecycle:
       _ = simulator.lifecycle
-    case .orientation:
-      _ = simulator.orientation
     case .power:
       _ = simulator.power
     case .media:
       _ = simulator.media
     case .keychain:
       _ = simulator.keychain
-    case .privacy:
-      _ = simulator.privacy
-    case .preferences:
-      _ = simulator.preferences
     case .statusBar:
       _ = simulator.statusBar
-    case .network:
-      _ = simulator.network
-    case .health:
-      _ = simulator.health
-    case .contacts:
-      _ = simulator.contacts
-    case .photos:
-      _ = simulator.photos
     case .dapServer:
       _ = simulator.dapServer
-    case .notification:
-      _ = simulator.notification
     case .memory:
       _ = simulator.memory
     case .audio:

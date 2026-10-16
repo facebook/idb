@@ -48,6 +48,7 @@ targets:
           - FBControlCore
           - FBSimulatorAX
           - FBSimulatorControl
+          - FBSimulatorServices
           - FBSimulatorVideo
           - FBVideoCore
           - IDBConcurrency

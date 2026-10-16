@@ -10,6 +10,7 @@ import AppKit
 import CoreSimulator
 import FBControlCore
 import FBSimulatorControl
+import FBSimulatorServices
 import Foundation
 
 // MARK: - Simulator (translation dispatcher construction)

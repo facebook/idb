@@ -58,9 +58,9 @@ package enum AXBridgeResponse {
 }
 
 package struct AXDeviceSettingResponse {
-  let enabled: Bool
+  package let enabled: Bool
 
-  init(data: Data) throws {
+  package init(data: Data) throws {
     let response = try AXBridgeResponse.validated(data, context: "device setting")
     guard let enabled = response[AXWire.Envelope.enabled.rawValue] as? Bool else {
       throw AXBridgeError.guestFailure("device setting response without an enabled value")

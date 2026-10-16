@@ -33,6 +33,8 @@ targets:
         embed: false
       - framework: ../Build/Products/Release/libFBSimulatorProfiling.a
         embed: false
+      - framework: ../Build/Products/Release/libFBSimulatorServices.a
+        embed: false
       - framework: ../Build/Products/Release/libFBSimulatorVideo.a
         embed: false
       - framework: ../Build/Products/Release/libFBSimulatorXCTest.a
@@ -107,6 +109,8 @@ targets:
         embed: false
       - framework: ../Build/Products/Release/libFBSimulatorProfiling.a
         embed: false
+      - framework: ../Build/Products/Release/libFBSimulatorServices.a
+        embed: false
       - framework: ../Build/Products/Release/libFBSimulatorVideo.a
         embed: false
       - framework: ../Build/Products/Release/libFBSimulatorXCTest.a
@@ -148,6 +152,8 @@ targets:
       - framework: ../Build/Products/Release/libFBSimulatorControl.a
         embed: false
       - framework: ../Build/Products/Release/libFBSimulatorProfiling.a
+        embed: false
+      - framework: ../Build/Products/Release/libFBSimulatorServices.a
         embed: false
       - framework: ../Build/Products/Release/libFBSimulatorVideo.a
         embed: false

@@ -9,7 +9,7 @@ import Foundation
 import XPC
 
 /// The orientation service older runtimes vend, which speaks the `dtuhidd` message envelope.
-enum SimulatorOrientationProtocol {
+package enum SimulatorOrientationProtocol {
   static let service = "com.apple.coredevice.feature.remote.devicecontrol.orientation"
 
   private enum Request: Encodable {
@@ -20,7 +20,7 @@ enum SimulatorOrientationProtocol {
     let currentDeviceOrientation: SimulatorDeviceOrientation
   }
 
-  static func read(on simulator: Simulator) async throws -> SimulatorDeviceOrientation {
+  package static func read(on simulator: Simulator) async throws -> SimulatorDeviceOrientation {
     try await simulator.coreDevice.send(service: service, message: request(), decode: orientation)
   }
 

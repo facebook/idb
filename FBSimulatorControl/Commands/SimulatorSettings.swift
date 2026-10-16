@@ -54,16 +54,16 @@ public enum SimulatorSettingsEvent: Equatable, Sendable {
   case sourceEnded
 }
 
-struct SimulatorSettingsPublisher: Sendable {
-  typealias Source = @Sendable () async throws -> AsyncThrowingStream<Data, Error>
+package struct SimulatorSettingsPublisher: Sendable {
+  package typealias Source = @Sendable () async throws -> AsyncThrowingStream<Data, Error>
 
   private let source: Source
 
-  init(source: @escaping Source) {
+  package init(source: @escaping Source) {
     self.source = source
   }
 
-  func events() -> AsyncStream<SimulatorSettingsEvent> {
+  package func events() -> AsyncStream<SimulatorSettingsEvent> {
     AsyncStream(bufferingPolicy: .bufferingNewest(1)) { continuation in
       let task = Task {
         var lastSnapshot: SimulatorSettingsSnapshot?
