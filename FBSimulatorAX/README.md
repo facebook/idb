@@ -2,7 +2,7 @@
 
 Reads and drives the accessibility tree of an iOS Simulator's frontmost application, without a test bundle. It is the Simulator's accessibility capability, added onto `Simulator` from outside `FBSimulatorControl`: a consumer that does not read accessibility does not link it.
 
-It holds the accessibility model its readers answer with, and builds on `FBSimulatorControl`, whose display routing and guest bridge it reads through, and on [`FBSimulatorBridgeProtocol`](../FBSimulatorBridgeProtocol/README.md), the vocabulary it and the in-guest reader share.
+It holds the accessibility model its readers answer with, and builds on `FBSimulatorControl`, whose display routing it reads through, on [`FBSimulatorServices`](../FBSimulatorServices/README.md), whose guest bridge client the in-guest reader uses, and on [`FBSimulatorBridgeProtocol`](../FBSimulatorBridgeProtocol/README.md), the vocabulary it and the in-guest reader share.
 
 It is what serves `idb`'s accessibility reads and element actions, and it can be linked directly by any process that wants to read and drive a Simulator's screen the same way. That supports:
 
@@ -407,7 +407,7 @@ Actions, frames and waits take no options and claim no client. A read that names
 `Simulator.uiAutomation(backend:display:)` returns a `UIAutomation`: one query-shaped surface for element reads (`describe`, `wait`, `quiescence`) and element-targeted actions (`tap`, `scroll`, `setValue`, `drag`). The backend decides how the tree is read, as described in [Backends](#backends).
 
 - **`.accessibility`** is `--api ax` and **`.coreSimulatorAccessibility`** is `--api ax-coresimulator`: host-side translation over idb's own connection to CoreSimulatorBridge, or through CoreSimulator's client. Both reach only the active display.
-- **`.axBridge`** is `--api axbridge`: the in-guest reader, through the `SimulatorFrameworkBridge` helper that `FBSimulatorControl` runs inside the booted Simulator. Its persistence chooses which guest serves the read:
+- **`.axBridge`** is `--api axbridge`: the in-guest reader, through the `SimulatorFrameworkBridge` helper that `FBSimulatorServices` runs inside the booted Simulator. Its persistence chooses which guest serves the read:
   - `.oneShot` spawns a guest per read. It holds nothing, so it costs nothing to reconstruct.
   - `.shared` reads over the Simulator's well-known socket, shared with every other process reading the same Simulator. The connection is released after each round trip so the next reader can have it, and only the guest's own idle timeout ends it.
   - `.exclusive` reads over a guest of the caller's own, on a socket nobody else can discover, and holds its connection between reads. The guest exits when that connection closes, so it suits a process that owns the Simulator for its lifetime.
