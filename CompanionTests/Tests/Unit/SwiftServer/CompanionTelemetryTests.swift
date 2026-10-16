@@ -425,7 +425,7 @@ struct CompanionTelemetryTests {
   /// Spelled out rather than derived: these are a logged dimension, so a proto rename that
   /// silently moved one would otherwise reach Scuba with nothing failing in between.
   private static let expectedMethodNames: Set<String> = [
-    "connect", "debugserver", "dap", "forward_port", "describe", "install", "instruments_run", "log",
+    "connect", "debugserver", "dap", "forward_port", "describe", "install", "log",
     "xctrace_record", "profile", "accessibility_info", "accessibility_action",
     "accessibility_quiescence",
     "focus", "hid", "open_url",

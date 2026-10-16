@@ -157,14 +157,6 @@ final class CompanionServiceProvider: Idb_CompanionService.SimpleServiceProtocol
     }
   }
 
-  func instruments_run(request: RPCAsyncSequence<Idb_InstrumentsRunRequest, any Error>, response: RPCWriter<Idb_InstrumentsRunResponse>, context: ServerContext) async throws {
-    let reader = RequestStreamReader(request)
-    try await trackedBidiStreaming(context) {
-      try await InstrumentsRunMethodHandler(target: target, targetLogger: targetLogger, commandExecutor: commandExecutor, logger: logger)
-        .handle(requestStream: reader, responseStream: response, context: context)
-    }
-  }
-
   func log(request: Idb_LogRequest, response: RPCWriter<Idb_LogResponse>, context: ServerContext) async throws {
     try await trackedServerStreaming(context, request: request) {
       try await LogMethodHandler(target: target, commandExecutor: commandExecutor)

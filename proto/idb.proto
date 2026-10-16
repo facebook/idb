@@ -20,8 +20,6 @@ service CompanionService {
       returns (stream ForwardPortResponse) {}
   rpc describe(TargetDescriptionRequest) returns (TargetDescriptionResponse) {}
   rpc install(stream InstallRequest) returns (stream InstallResponse) {}
-  rpc instruments_run(stream InstrumentsRunRequest)
-      returns (stream InstrumentsRunResponse) {}
   rpc log(LogRequest) returns (stream LogResponse) {}
   rpc xctrace_record(stream XctraceRecordRequest)
       returns (stream XctraceRecordResponse) {}
@@ -1040,43 +1038,6 @@ message InjectAudioRequest {
 }
 
 message InjectAudioResponse {}
-
-message InstrumentsRunRequest {
-  message InstrumentsTimings {
-    double terminate_timeout = 1;
-    double launch_retry_timeout = 2;
-    double launch_error_timeout = 3;
-    double operation_duration = 4;
-  }
-  message Start {
-    string template_name = 2;
-    string app_bundle_id = 3;
-    map<string, string> environment = 4;
-    repeated string arguments = 5;
-    InstrumentsTimings timings = 6;
-    repeated string tool_arguments = 7;
-  }
-  message Stop {
-    repeated string post_process_arguments = 1;
-  }
-  oneof control {
-    Start start = 1;
-    Stop stop = 2;
-  }
-}
-
-message InstrumentsRunResponse {
-  enum State {
-    UNKNOWN = 0;
-    RUNNING_INSTRUMENTS = 1;
-    POST_PROCESSING = 2;
-  }
-  oneof output {
-    bytes log_output = 1;
-    Payload payload = 2;
-    State state = 3;
-  }
-}
 
 message XctraceRecordRequest {
   message LauchProcess {
