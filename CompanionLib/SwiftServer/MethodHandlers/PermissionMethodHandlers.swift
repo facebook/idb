@@ -25,16 +25,8 @@ struct ApproveMethodHandler {
       .notification: .notification,
     ]
 
-    var services = try Set(
-      request.permissions.map { permission -> TargetSettingsService in
-        guard let service = mapping[permission] else {
-          throw RPCError(code: .invalidArgument, message: "Unrecognized permission \(permission)")
-        }
-        return service
-      }
-    )
-    if services.contains(.url) {
-      services.remove(.url)
+    let (services, includesURL) = try settingsServices(request.permissions, mapping: mapping)
+    if includesURL {
       try await target.simulator().privacy.grantAccess(Set([request.bundleID]), toDeeplink: request.scheme)
     }
 
@@ -61,16 +53,8 @@ struct RevokeMethodHandler {
       .notification: .notification,
     ]
 
-    var services = try Set(
-      request.permissions.map { permission -> TargetSettingsService in
-        guard let service = mapping[permission] else {
-          throw RPCError(code: .invalidArgument, message: "Unrecognized permission \(permission)")
-        }
-        return service
-      }
-    )
-    if services.contains(.url) {
-      services.remove(.url)
+    let (services, includesURL) = try settingsServices(request.permissions, mapping: mapping)
+    if includesURL {
       try await target.simulator().privacy.revokeAccess(Set([request.bundleID]), toDeeplink: request.scheme)
     }
 
@@ -79,4 +63,21 @@ struct RevokeMethodHandler {
     }
     return .init()
   }
+}
+
+/// The services `permissions` name, with the URL scheme permission split out: it is granted or revoked
+/// per deeplink rather than as a service.
+private func settingsServices<Permission: Hashable>(
+  _ permissions: [Permission], mapping: [Permission: TargetSettingsService]
+) throws -> (services: Set<TargetSettingsService>, includesURL: Bool) {
+  var services = try Set(
+    permissions.map { permission -> TargetSettingsService in
+      guard let service = mapping[permission] else {
+        throw RPCError(code: .invalidArgument, message: "Unrecognized permission \(permission)")
+      }
+      return service
+    }
+  )
+  let includesURL = services.remove(.url) != nil
+  return (services, includesURL)
 }
