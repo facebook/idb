@@ -52,7 +52,7 @@ public struct SimulatorNetworkCommands {
 
     public func set(host: String, port: UInt, type: String) async throws {
       try await simulator.runSimulatorFrameworkBridge(
-        .proxy(.set(host: host, port: (String(port) as NSString).intValue, kind: type == "socks" ? .socks : .http)))
+        .proxy(.set(host: host, port: Int32(clamping: port), kind: type == "socks" ? .socks : .http)))
     }
 
     public func clear() async throws {
