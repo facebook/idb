@@ -507,10 +507,12 @@ class AccessibilityBackend(Enum):
     AX = 1
     AXBRIDGE = 2
     AXBRIDGE_PERSISTENT = 3
+    AX_CORESIMULATOR = 4
 
 
 ACCESSIBILITY_BACKEND_BY_NAME: dict[str, AccessibilityBackend] = {
     "ax": AccessibilityBackend.AX,
+    "ax-coresimulator": AccessibilityBackend.AX_CORESIMULATOR,
     "axbridge": AccessibilityBackend.AXBRIDGE_PERSISTENT,
 }
 

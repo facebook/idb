@@ -1496,6 +1496,21 @@ class TestParser(TestCase):
             backend=AccessibilityBackend.AX,
         )
 
+    async def test_tap_marker_through_coresimulators_client(self) -> None:
+        self.client_mock.accessibility_tap = AsyncMock(return_value=[])
+        await cli_main(cmd_input=["ui", "tap", "Login", "--api", "ax-coresimulator"])
+        self.client_mock.accessibility_tap.assert_called_once_with(
+            target=AccessibilityMarker(
+                value="Login",
+                match_key=AccessibilitySearchableKey.LABEL,
+                depth=10,
+            ),
+            expected_value=None,
+            expected_key=AccessibilitySearchableKey.LABEL,
+            ignore_case=False,
+            backend=AccessibilityBackend.AX_CORESIMULATOR,
+        )
+
     async def test_tap_point_on_the_guest_backend_is_not_a_hid_tap(self) -> None:
         # Naming an accessibility backend moves a coordinate off the HID path, the
         # same way --api ax always has.
@@ -2772,6 +2787,16 @@ class TestParser(TestCase):
             target=AccessibilityPoint(x=10, y=20),
             options=AccessibilityInfoOptions(
                 nested=False, backend=AccessibilityBackend.AXBRIDGE_PERSISTENT
+            ),
+        )
+
+    async def test_accessibility_info_all_api_ax_coresimulator(self) -> None:
+        self.client_mock.accessibility_info = AsyncMock()
+        await cli_main(cmd_input=["ui", "describe-all", "--api", "ax-coresimulator"])
+        self.client_mock.accessibility_info.assert_called_once_with(
+            target=None,
+            options=AccessibilityInfoOptions(
+                nested=False, backend=AccessibilityBackend.AX_CORESIMULATOR
             ),
         )
 

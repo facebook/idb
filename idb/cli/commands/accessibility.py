@@ -244,12 +244,14 @@ def _add_backend_arg(parser: ArgumentParser) -> None:
         choices=list(ACCESSIBILITY_BACKEND_BY_NAME),
         default=None,
         help=(
-            "Which backend serves the read or action. axbridge uses the "
+            "Which backend serves the read or action. ax and ax-coresimulator "
+            "read on the host: ax over the companion's own connection to the "
+            "simulator's accessibility service, ax-coresimulator through "
+            "CoreSimulator's client to the same service. axbridge uses the "
             "companion's private, persistent guest reader, which is the only "
             "one that can see across a process boundary such as web content in "
-            "Safari. Reads default to the companion's standard accessibility "
-            "backend; actions default to axbridge. A companion that predates "
-            "backend selection ignores this and uses the default backend."
+            "Safari. Reads default to ax; actions default to axbridge. A "
+            "companion that predates a backend ignores it and uses the default."
         ),
     )
 

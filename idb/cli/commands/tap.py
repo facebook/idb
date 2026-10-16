@@ -59,8 +59,9 @@ class TapCommand(ClientCommand):
             "--api",
             choices=["hid", *ACCESSIBILITY_BACKEND_BY_NAME],
             default=None,
-            help="How the tap is delivered: hid is a coordinate touch; ax and "
-            "axbridge are accessibility presses, served by the named backend. "
+            help="How the tap is delivered: hid is a coordinate touch; ax, "
+            "ax-coresimulator and axbridge are accessibility presses, served by "
+            "the named backend. "
             "A marker is always a press, served by axbridge unless this says "
             "otherwise, because it is the only backend that can see across a "
             "process boundary such as web content in Safari. A coordinate with "
