@@ -316,10 +316,6 @@ extension Device {
     TargetXCTraceRecordCommands(target: self)
   }
 
-  public var instruments: DeviceInstrumentsCommands {
-    DeviceInstrumentsCommands(device: self)
-  }
-
   // MARK: - Device-only accessors
 
   public var diagnosticInformation: DeviceDiagnosticInformationCommands {

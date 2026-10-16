@@ -26,7 +26,6 @@ enum DeviceCommandAccessor: CaseIterable, Sendable {
   case videoStream
   case xctest
   case xctraceRecord
-  case instruments
   case diagnosticInformation
   case power
   case provisioningProfile
@@ -62,8 +61,6 @@ enum DeviceCommandAccessor: CaseIterable, Sendable {
       _ = device.xctest
     case .xctraceRecord:
       _ = device.xctraceRecord
-    case .instruments:
-      _ = device.instruments
     case .diagnosticInformation:
       _ = device.diagnosticInformation
     case .power:

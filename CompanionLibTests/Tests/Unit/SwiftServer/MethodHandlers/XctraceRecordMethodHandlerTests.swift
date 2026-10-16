@@ -203,4 +203,68 @@ struct XctraceRecordMethodHandlerTests {
     #expect(FileManager.default.contents(atPath: extracted.appendingPathComponent("corespace/run1/store").path) == sample)
     #expect(FileManager.default.contents(atPath: extracted.appendingPathComponent("form.template").path) == Data("form".utf8))
   }
+
+  @Test
+  func postProcessingWithoutArgumentsPassesTheTraceThrough() async throws {
+    let traceFile = URL(fileURLWithPath: "/tmp/does-not-need-to-exist.trace")
+
+    #expect(try await XctraceRecordMethodHandler.postProcess(arguments: nil, traceFile: traceFile, logger: nil) == traceFile)
+    #expect(try await XctraceRecordMethodHandler.postProcess(arguments: [], traceFile: traceFile, logger: nil) == traceFile)
+  }
+
+  @Test
+  func postProcessingReturnsTheToolOutputBesideTheTrace() async throws {
+    let directory = try temporaryDirectory()
+    defer { try? FileManager.default.removeItem(at: directory) }
+    let (traceFile, result) = try await postProcess(
+      in: directory, script: #"printf '%s\n' "$@" > "$3""#, extraArguments: ["--extra", "value"])
+
+    #expect(result == traceFile.deletingLastPathComponent().appendingPathComponent("processed.trace"))
+    #expect(
+      try String(contentsOf: result, encoding: .utf8)
+        == [traceFile.path, "-o", result.path, "--extra", "value"].joined(separator: "\n") + "\n",
+      "the tool receives the trace, the output path and the extra arguments in that order")
+  }
+
+  @Test
+  func postProcessingFailsWhenTheToolExitsNonZero() async throws {
+    await #expect(throws: (any Error).self) {
+      let directory = try temporaryDirectory()
+      defer { try? FileManager.default.removeItem(at: directory) }
+      _ = try await postProcess(in: directory, script: "exit 7", logger: logger)
+    }
+  }
+
+  @Test
+  func postProcessingHandsTheToolAnOpenStandardInputThatIsNeverWritten() async throws {
+    // A pipe rules out /dev/null and a closed descriptor; a `read` that waits out its timeout rather
+    // than returning at once rules out end-of-file. bash 3.2 exits 1 for both, hence the clock.
+    // perl fstats descriptor 0 itself; `[ -p /dev/stdin ]` goes through devfs and fails on CI hosts.
+    let directory = try temporaryDirectory()
+    defer { try? FileManager.default.removeItem(at: directory) }
+    let (_, result) = try await postProcess(
+      in: directory, script: #"perl -e 'exit 3 unless -p STDIN' || exit 3; start=$SECONDS; read -t 2 _ && exit 4; [ $((SECONDS - start)) -ge 1 ] || exit 5; : > "$3""#)
+
+    #expect(FileManager.default.fileExists(atPath: result.path))
+  }
+
+  private func temporaryDirectory() throws -> URL {
+    let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+    try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+    return directory
+  }
+
+  /// Runs `script` in `directory` as the post-processing tool: `bash <script> <trace> -o <output> <extra...>`.
+  private func postProcess(
+    in directory: URL, script: String, extraArguments: [String] = [], logger: (any ControlCoreLogger)? = nil
+  ) async throws -> (traceFile: URL, result: URL) {
+    let scriptFile = directory.appendingPathComponent("tool.sh")
+    try script.write(to: scriptFile, atomically: true, encoding: .utf8)
+    let traceFile = directory.appendingPathComponent("recording.trace")
+
+    let result = try await XctraceRecordMethodHandler.postProcess(
+      arguments: ["/bin/bash", scriptFile.path, "processed.trace"] + extraArguments,
+      traceFile: traceFile, logger: logger)
+    return (traceFile, result)
+  }
 }

@@ -254,10 +254,6 @@ extension Simulator {
     TargetXCTraceRecordCommands(target: self)
   }
 
-  public var instruments: SimulatorInstrumentsCommands {
-    SimulatorInstrumentsCommands(simulator: self)
-  }
-
   // MARK: - Sim-only accessors
 
   public var lifecycle: SimulatorLifecycleCommands {

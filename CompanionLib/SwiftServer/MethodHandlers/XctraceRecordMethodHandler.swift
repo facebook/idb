@@ -109,7 +109,7 @@ struct XctraceRecordMethodHandler {
     }
     try await responseStream.send(response)
 
-    let processed = try await InstrumentsOperation.postProcess(
+    let processed = try await Self.postProcess(
       arguments: stop.args,
       traceFile: operation.traceDir,
       logger: logger)
@@ -127,6 +127,32 @@ struct XctraceRecordMethodHandler {
       }
       try await responseStream.send(response)
     }
+  }
+
+  /// Runs the client's post-processing tool over the trace, returning the processed trace beside it.
+  ///
+  /// `arguments` is `[tool, script, output name, extra...]`; the tool runs as `tool script <trace> -o <output> extra...`.
+  static func postProcess(
+    arguments: [String]?,
+    traceFile: URL,
+    logger: (any ControlCoreLogger)?
+  ) async throws -> URL {
+    guard let arguments, !arguments.isEmpty else {
+      return traceFile
+    }
+    let outputTraceFile = traceFile.deletingLastPathComponent().appendingPathComponent(arguments[2])
+    var launchArguments = [arguments[1], traceFile.path, "-o", outputTraceFile.path]
+    if arguments.count > 3 {
+      launchArguments.append(contentsOf: arguments[3...])
+    }
+
+    logger?.log("Starting post processing | Launch path: \(arguments[0]) | Arguments: \(CollectionInformation.oneLineDescription(from: launchArguments))")
+    let standardInput = InputSource()
+    defer { standardInput.finish() }
+    let output: Subprocess.Output<Void> = logger.map { .logger($0) } ?? .nullDevice
+    _ = try await Subprocess(executable: arguments[0], arguments: launchArguments)
+      .run(output: output, error: output, input: .source(standardInput), logger: logger)
+    return outputTraceFile
   }
 
   private func xcTraceRecordConfiguration(from request: Idb_XctraceRecordRequest.Start) -> XCTraceRecordConfiguration {

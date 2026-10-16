@@ -505,8 +505,6 @@ extension MacDevice {
 
   public var file: MacDevice { self }
 
-  public var instruments: MacDevice { self }
-
   public var lifecycle: MacDevice { self }
 
   public var location: MacDevice { self }
@@ -627,15 +625,6 @@ extension MacDevice: ScreenshotCommands {
 extension MacDevice: XCTraceRecordCommands {
 
   public func start(configuration: XCTraceRecordConfiguration, logger: any ControlCoreLogger) async throws -> XCTraceRecordOperation {
-    throw macUnsupported("start")
-  }
-}
-
-// MARK: - MacDevice+InstrumentsCommands
-
-extension MacDevice: InstrumentsCommands {
-
-  public func start(configuration: InstrumentsConfiguration, logger: any ControlCoreLogger) async throws -> InstrumentsOperation {
     throw macUnsupported("start")
   }
 }

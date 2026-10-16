@@ -111,9 +111,6 @@ public protocol Target: TargetInfo {
   associatedtype File: FileCommands
   var file: File { get }
 
-  associatedtype Instruments: InstrumentsCommands
-  var instruments: Instruments { get }
-
   associatedtype Lifecycle: LifecycleCommands
   var lifecycle: Lifecycle { get }
 
