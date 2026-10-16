@@ -203,37 +203,27 @@
     },
     "FBSimulatorControlBootTests": {
       "bootedSimulator": false,
-      "prerequisites": [
-        "fbsimulatorcontrol_resources"
-      ],
+      "prerequisites": [],
       "runner": "large"
     },
     "FBSimulatorControlSmokeTests": {
       "bootedSimulator": true,
-      "prerequisites": [
-        "fbsimulatorcontrol_resources"
-      ],
+      "prerequisites": [],
       "runner": "large"
     },
     "FBSimulatorControlUnitTests": {
       "bootedSimulator": false,
-      "prerequisites": [
-        "fbsimulatorcontrol_resources"
-      ],
+      "prerequisites": [],
       "runner": "large"
     },
     "FBSimulatorProfilingSmokeTests": {
       "bootedSimulator": true,
-      "prerequisites": [
-        "fbsimulatorcontrol_resources"
-      ],
+      "prerequisites": [],
       "runner": "large"
     },
     "FBSimulatorProfilingTests": {
       "bootedSimulator": false,
-      "prerequisites": [
-        "fbsimulatorcontrol_resources"
-      ],
+      "prerequisites": [],
       "runner": "standard"
     },
     "FBSimulatorServicesSmokeTests": {
