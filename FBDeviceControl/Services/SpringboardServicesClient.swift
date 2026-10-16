@@ -54,22 +54,6 @@ public enum SpringboardServicesError: Error, LocalizedError {
   }
 }
 
-/// Carries the non-`Sendable` connection across the serial-queue boundary; only touched on that queue.
-private final class SpringboardConnectionBox: @unchecked Sendable {
-  let connection: LockdownServiceConnection
-  init(_ connection: LockdownServiceConnection) {
-    self.connection = connection
-  }
-}
-
-/// Wraps an `Any` payload so it can be captured by a `@Sendable` closure.
-private final class SpringboardDataBox: @unchecked Sendable {
-  let value: Any
-  init(_ value: Any) {
-    self.value = value
-  }
-}
-
 class SpringboardServicesClient {
   private let connection: LockdownServiceConnection
   fileprivate let queue: DispatchQueue
@@ -110,17 +94,10 @@ class SpringboardServicesClient {
   }
 
   func rawIconState(formatVersion: UInt) async throws -> AnyObject {
-    let connectionBox = SpringboardConnectionBox(connection)
     let formatVersionString = "\(formatVersion)"
-    return try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<AnyObject, Error>) in
-      queue.async {
-        do {
-          let result = try connectionBox.connection.sendAndReceiveMessage(["command": "getIconState", "formatVersion": formatVersionString])
-          continuation.resume(returning: result as AnyObject)
-        } catch {
-          continuation.resume(throwing: error)
-        }
-      }
+    return try await queue.perform { [connection] in
+      let result = try connection.sendAndReceiveMessage(["command": "getIconState", "formatVersion": formatVersionString])
+      return result as AnyObject
     }
   }
 
@@ -129,70 +106,41 @@ class SpringboardServicesClient {
   }
 
   private func sendIconLayout(_ iconLayout: NSArray) async throws {
-    let connectionBox = SpringboardConnectionBox(connection)
-    let layoutBox = SpringboardDataBox(iconLayout)
-    try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
-      queue.async {
-        do {
-          try connectionBox.connection.sendMessage(["command": "setIconState", "iconState": layoutBox.value])
-          let response = try connectionBox.connection.receive(Int(IconLayoutSize))
-          if response.count != Int(IconLayoutSize) {
-            continuation.resume(
-              throwing: SpringboardServicesError.unexpectedResponse(
-                command: "setIconState",
-                expected: "\(IconLayoutSize) response bytes",
-                actual: "\(response.count) response bytes"))
-            return
-          }
-          continuation.resume(returning: ())
-        } catch {
-          continuation.resume(throwing: error)
-        }
+    try await queue.perform { [connection, iconLayout] in
+      try connection.sendMessage(["command": "setIconState", "iconState": iconLayout])
+      let response = try connection.receive(Int(IconLayoutSize))
+      if response.count != Int(IconLayoutSize) {
+        throw SpringboardServicesError.unexpectedResponse(
+          command: "setIconState",
+          expected: "\(IconLayoutSize) response bytes",
+          actual: "\(response.count) response bytes")
       }
     }
   }
 
   func homeScreenIconMetrics() async throws -> [String: Any] {
-    let connectionBox = SpringboardConnectionBox(connection)
-    return try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<[String: Any], Error>) in
-      queue.async {
-        do {
-          let result = try connectionBox.connection.sendAndReceiveMessage(["command": "getHomeScreenIconMetrics"])
-          guard let metrics = result as? [String: Any] else {
-            continuation.resume(
-              throwing: SpringboardServicesError.unexpectedResponse(
-                command: "getHomeScreenIconMetrics",
-                expected: "a dictionary",
-                actual: String(describing: result)))
-            return
-          }
-          continuation.resume(returning: metrics)
-        } catch {
-          continuation.resume(throwing: error)
-        }
+    return try await queue.perform { [connection] in
+      let result = try connection.sendAndReceiveMessage(["command": "getHomeScreenIconMetrics"])
+      guard let metrics = result as? [String: Any] else {
+        throw SpringboardServicesError.unexpectedResponse(
+          command: "getHomeScreenIconMetrics",
+          expected: "a dictionary",
+          actual: String(describing: result))
       }
+      return metrics
     }
   }
 
   func wallpaperImageData(forKind name: String) async throws -> Data {
-    let connectionBox = SpringboardConnectionBox(connection)
-    return try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Data, Error>) in
-      queue.async {
-        do {
-          let response = try connectionBox.connection.sendAndReceiveMessage(["command": "getWallpaperPreviewImage", "wallpaperName": name])
-          guard let responseDict = response as? [String: Any] else {
-            continuation.resume(throwing: SpringboardServicesError.responseNotADictionary(response: String(describing: response)))
-            return
-          }
-          guard let data = responseDict["pngData"] as? Data else {
-            continuation.resume(throwing: SpringboardServicesError.missingImageData(response: String(describing: responseDict)))
-            return
-          }
-          continuation.resume(returning: data)
-        } catch {
-          continuation.resume(throwing: error)
-        }
+    return try await queue.perform { [connection] in
+      let response = try connection.sendAndReceiveMessage(["command": "getWallpaperPreviewImage", "wallpaperName": name])
+      guard let responseDict = response as? [String: Any] else {
+        throw SpringboardServicesError.responseNotADictionary(response: String(describing: response))
       }
+      guard let data = responseDict["pngData"] as? Data else {
+        throw SpringboardServicesError.missingImageData(response: String(describing: responseDict))
+      }
+      return data
     }
   }
 }
