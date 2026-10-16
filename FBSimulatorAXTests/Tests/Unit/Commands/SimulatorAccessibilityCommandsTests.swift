@@ -1621,7 +1621,7 @@ final class SimulatorAccessibilityCommandsTests: XCTestCase {
 
   func testALegacyReadReportsTheClientItNamedAndOnlyThen() async throws {
     try setUp(withRootElement: defaultElementTree)
-    let reader = AccessibilityUIAutomation(simulator: simulator)
+    let reader = AccessibilityUIAutomation(simulator: simulator, transport: .bridge)
 
     let named = try await reader.describe(.frontmost, options: AccessibilityRequestOptions(format: .complete, clientType: .xctest))
     XCTAssertEqual(named.client, AccessibilityClientReport(clientType: .xctest))
@@ -1635,7 +1635,7 @@ final class SimulatorAccessibilityCommandsTests: XCTestCase {
 
   func testLegacyWaitCarriesTheTraversalNonmatches() async throws {
     try setUp(withRootElement: defaultElementTree)
-    let reader = AccessibilityUIAutomation(simulator: simulator)
+    let reader = AccessibilityUIAutomation(simulator: simulator, transport: .bridge)
     do {
       try await reader.wait(.marker(value: "missing", key: .label, depth: 10), timeout: 0, pollInterval: 0)
       XCTFail("a missing label must time out")

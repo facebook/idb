@@ -13,6 +13,7 @@ import Testing
 enum SimulatorAccessibilityCommandAccessor: CaseIterable, Sendable {
   case uiAutomation
   case accessibility
+  case coreSimulatorAccessibility
 
   func resolve(on simulator: Simulator) {
     switch self {
@@ -23,6 +24,8 @@ enum SimulatorAccessibilityCommandAccessor: CaseIterable, Sendable {
       }
     case .accessibility:
       _ = simulator.accessibility
+    case .coreSimulatorAccessibility:
+      _ = simulator.accessibility(through: .coreSimulator)
     }
   }
 }
@@ -32,5 +35,19 @@ struct SimulatorAccessibilityCommandRetentionTests {
   @Test("Resolving a command does not retain the simulator", arguments: SimulatorAccessibilityCommandAccessor.allCases)
   func resolvingACommandDoesNotRetainTheSimulator(_ accessor: SimulatorAccessibilityCommandAccessor) {
     #expect(simulatorSurvives { accessor.resolve(on: $0) } == false)
+  }
+}
+
+@Suite("Simulator accessibility commands per transport")
+struct SimulatorAccessibilityCommandTransportTests {
+  @Test("The ax-coresimulator backend's commands send through CoreSimulator's client, held apart from the bridge's")
+  func theCoreSimulatorCommandsAreTheirOwn() {
+    let simulator = SimulatorTestSupport.testableSimulator()
+    let coreSimulator = simulator.accessibility(through: .coreSimulator)
+    #expect(coreSimulator === simulator.accessibility(through: .coreSimulator), "memoized for the simulator")
+    #expect(coreSimulator !== simulator.accessibility, "not the bridge's commands")
+    #expect(simulator.accessibility(through: .bridge) === simulator.accessibility)
+    #expect(coreSimulator.transport is CoreSimulatorAXTranslationTransport)
+    #expect(simulator.accessibility.transport == nil, "the bridge's commands resolve their transport on first read")
   }
 }

@@ -152,6 +152,8 @@ public extension UIAutomationBackend {
     switch self {
     case .accessibility:
       return "The accessibility backend"
+    case .coreSimulatorAccessibility:
+      return "The ax-coresimulator backend"
     case .axBridge:
       return "The axbridge backend"
     }

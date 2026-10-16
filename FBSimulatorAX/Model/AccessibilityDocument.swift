@@ -12,6 +12,7 @@ import Foundation
 /// The canonical name of the backend that served a UI-automation request.
 public enum UIAutomationBackendName: String, Sendable, Encodable, CaseIterable {
   case ax
+  case axCoreSimulator = "ax-coresimulator"
   case axBridgeOneShot = "axbridge-oneshot"
   case axBridgePersistent = "axbridge-persistent"
   case axBridgeExclusive = "axbridge-exclusive"

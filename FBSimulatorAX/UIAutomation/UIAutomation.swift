@@ -29,8 +29,12 @@ public enum AXBridgePersistence: Sendable, Hashable {
 
 /// Selects the backend a UI-automation element operation runs against.
 public enum UIAutomationBackend: Sendable, Equatable {
-  /// The legacy CoreSimulator accessibility-translation path.
+  /// The host's accessibility translation, sending its translator requests over idb's own connection to
+  /// CoreSimulatorBridge, or through CoreSimulator's client when that service cannot be reached.
   case accessibility
+  /// The host's accessibility translation, always sending its translator requests through CoreSimulator's
+  /// own client.
+  case coreSimulatorAccessibility
   /// The guest AX reader: the `SimulatorFrameworkBridge` `accessibility` service spawned in the
   /// simulator. `persistence` picks which guest; `frontmostMethod` is how it resolves the foreground
   /// app; `automationMode` is `true` to assert automation mode, `false` to assert it off, `nil` to
@@ -48,6 +52,8 @@ public extension UIAutomationBackend {
     switch self {
     case .accessibility:
       return .ax
+    case .coreSimulatorAccessibility:
+      return .axCoreSimulator
     case let .axBridge(persistence, _, _):
       switch persistence {
       case .oneShot:
@@ -69,6 +75,8 @@ public extension UIAutomationBackend {
     switch name {
     case .ax:
       self = .accessibility
+    case .axCoreSimulator:
+      self = .coreSimulatorAccessibility
     case .axBridgeOneShot:
       self = .axBridge(persistence: .oneShot, frontmostMethod: frontmostMethod, automationMode: automationMode)
     case .axBridgePersistent:

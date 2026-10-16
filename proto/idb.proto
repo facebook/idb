@@ -423,6 +423,10 @@ message AccessibilityInfoRequest {
     AX = 1;
     AXBRIDGE = 2;
     AXBRIDGE_PERSISTENT = 3;
+    // The host translation sent through CoreSimulator's own accessibility
+    // client rather than idb's connection to CoreSimulatorBridge. An older
+    // server does not recognize it and serves the read as if it were unset.
+    AX_CORESIMULATOR = 4;
   }
   Point point = 2;
   Format format = 3;

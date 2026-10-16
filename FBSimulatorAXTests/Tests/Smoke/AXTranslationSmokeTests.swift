@@ -76,25 +76,24 @@ final class AXTranslationSmokeTests: ProvidedSimulatorTestCase {
       "At least one element should cover a non-empty area")
   }
 
-  /// Talking to CoreSimulatorBridge's accessibility service directly must read exactly what CoreSimulator's
-  /// own client reads.
-  func testTheBridgeTransportReadsWhatCoreSimulatorsClientReads() async throws {
+  /// The two host backends must read the same tree: `ax` over idb's connection to CoreSimulatorBridge, and
+  /// `ax-coresimulator` through CoreSimulator's own client to the same service. Each reports its own name.
+  func testBothHostBackendsReadTheSameTree() async throws {
     try await launchApplication()
     _ = try await describeFrontmost()
 
-    let bridge = CoreSimulatorBridgeAXTranslationTransport(connector: .simulator(simulator))
-    try bridge.connect()
-    let viaBridge = SimulatorAccessibilityCommands(simulator: simulator, transport: bridge)
-    let viaCoreSimulator = SimulatorAccessibilityCommands(
-      simulator: simulator, transport: CoreSimulatorAXTranslationTransport(device: simulator.device))
+    let ax = try simulator.uiAutomation(backend: .accessibility)
+    let coreSimulator = try simulator.uiAutomation(backend: .coreSimulatorAccessibility)
     for clientType in [AXClientType.noClient, .xctest] {
-      func read(_ commands: SimulatorAccessibilityCommands) async throws -> [AccessibilityDocumentElement] {
-        let element = try await commands.resolveElement(for: .frontmost, clientType: clientType)
-        defer { element.close() }
-        return try await element.serialize(with: AccessibilityRequestOptions(keys: Self.comparedKeys)).elements.elements
+      func read(_ automation: any UIAutomation, as name: UIAutomationBackendName) async throws -> [AccessibilityDocumentElement] {
+        let response = try await automation.describe(
+          .frontmost, options: AccessibilityRequestOptions(keys: Self.comparedKeys, clientType: clientType))
+        XCTAssertEqual(response.backend, name)
+        return response.elements.elements
       }
       try await assertSettledReadsAgree(
-        expected: { try await read(viaCoreSimulator) }, actual: { try await read(viaBridge) }, "client \(clientType)")
+        expected: { try await read(coreSimulator, as: .axCoreSimulator) }, actual: { try await read(ax, as: .ax) },
+        "client \(clientType)")
     }
   }
 

@@ -116,6 +116,8 @@ enum AccessibilityInfoRequestTranslation {
       return .accessibility
     case .ax:
       return UIAutomationBackend(resolvedName: .ax)
+    case .axCoresimulator:
+      return UIAutomationBackend(resolvedName: .axCoreSimulator)
     case .axbridge, .axbridgePersistent:
       // The companion owns its simulator for its whole run, so it holds a bridge. Holding the shared
       // one would make every other process on this machine wait and then spawn a duplicate.

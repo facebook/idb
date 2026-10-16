@@ -277,6 +277,7 @@ struct AccessibilityInfoRequestTranslationTests {
   @Test
   func backendMapsWireValuesToFrameworkBackends() {
     #expect((AccessibilityInfoRequestTranslation.backend(from: .ax)) == (.accessibility))
+    #expect((AccessibilityInfoRequestTranslation.backend(from: .axCoresimulator)) == (.coreSimulatorAccessibility))
     #expect((AccessibilityInfoRequestTranslation.backend(from: .axbridge)) == (.axBridge(persistence: .exclusive, frontmostMethod: .windowServer, automationMode: true)), "axbridge must select the companion-owned transport")
     #expect((AccessibilityInfoRequestTranslation.backend(from: .axbridgePersistent)) == (.axBridge(persistence: .exclusive, frontmostMethod: .windowServer, automationMode: true)), "the historical wire value must select the same companion-owned transport")
 

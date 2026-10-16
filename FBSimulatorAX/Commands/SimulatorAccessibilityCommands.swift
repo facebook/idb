@@ -51,7 +51,8 @@ final class SimulatorAccessibilityCommands {
   private weak var simulator: Simulator?
 
   private let translationDispatcher: AXTranslationDispatcher?
-  private let transport: (any AXTranslationTransport)?
+  /// The transport every read uses when one was given, rather than resolving the bridge's.
+  let transport: (any AXTranslationTransport)?
   private let launchCtl: (any LaunchCtlCommands)?
   private let displays: (any DisplayCommands)?
   /// When a simulator process started, read from the host.

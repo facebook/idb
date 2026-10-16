@@ -32,11 +32,11 @@ extension Simulator {
   /// backends route to a display, so `.accessibility` refuses any selection but `.active`.
   public func uiAutomation(backend: UIAutomationBackend, display: DisplaySelection = .active) throws -> any UIAutomation {
     switch backend {
-    case .accessibility:
+    case .accessibility, .coreSimulatorAccessibility:
       guard display == .active else {
         throw UIAutomationError.operationUnsupported(backend: backend, operation: "Selecting a display other than the active one")
       }
-      return AccessibilityUIAutomation(simulator: self)
+      return AccessibilityUIAutomation(simulator: self, transport: backend == .accessibility ? .bridge : .coreSimulator)
     case let .axBridge(persistence, frontmostMethod, automationMode):
       let transport: any AXBridgeTransport =
         switch persistence {
@@ -54,5 +54,28 @@ extension Simulator {
 
   var accessibility: SimulatorAccessibilityCommands {
     commandCache.resolve { SimulatorAccessibilityCommands(simulator: self) }
+  }
+
+  /// The accessibility commands whose reads travel over `transport`, each memoized for the simulator.
+  func accessibility(through transport: AXTranslationTransportKind) -> SimulatorAccessibilityCommands {
+    switch transport {
+    case .bridge:
+      return accessibility
+    case .coreSimulator:
+      return commandCache.resolve {
+        CoreSimulatorClientAccessibility(
+          commands: SimulatorAccessibilityCommands(simulator: self, transport: CoreSimulatorAXTranslationTransport(device: device)))
+      }.commands
+    }
+  }
+}
+
+/// The command cache holds one value per type; this keeps CoreSimulator's-client commands apart from the
+/// bridge's.
+private final class CoreSimulatorClientAccessibility {
+  let commands: SimulatorAccessibilityCommands
+
+  init(commands: SimulatorAccessibilityCommands) {
+    self.commands = commands
   }
 }
