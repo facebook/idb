@@ -186,8 +186,7 @@ public final class Simulator: Target, Hashable, CustomStringConvertible, @unchec
 
   /// The directory path of the expected location of the CoreSimulator logs directory.
   var coreSimulatorLogsDirectory: String {
-    ((NSHomeDirectory() as NSString).appendingPathComponent("Library/Logs/CoreSimulator") as NSString)
-      .appendingPathComponent(udid)
+    (NSHomeDirectory() as NSString).appendingPathComponent("Library/Logs/CoreSimulator/\(udid)")
   }
 
   // MARK: - Hashable
