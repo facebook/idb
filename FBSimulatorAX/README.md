@@ -332,7 +332,16 @@ Every request the accessibility translator sends an application says which assis
 - **Which tree it answers with.** Clients used for automation get the application's *automation tree*: the children the application lists in `automationElements`, falling back to the ones `XCUITest` reads. Every other client gets the flattened, labelled leaves VoiceOver reads.
 - **What individual elements report.** Whether an element is exposed at all, and its traits and values, can vary by client.
 
-A read that names no client claims none. That is what every read has always done, and it gets the VoiceOver-style tree. A caller of the `FBSimulatorAX` library can name a client with `AccessibilityRequestOptions.clientType`; `idb` does not expose it yet.
+A read that names no client claims none. That is what every read has always done, and it gets the VoiceOver-style tree. Name one with `--client-type` on `idb ui describe-all`, `idb ui describe-point` and `idb ui describe` (or `AccessibilityRequestOptions.clientType` in the `FBSimulatorAX` library), spelling the client as the table below does:
+
+```
+$ idb ui describe-all --client-type xctest --format complete | jq .client
+{
+  "type": "xctest",
+  "tree": "automation",
+  "caveat": "The automation tree takes roughly ten times the translator round trips of a default read, ..."
+}
+```
 
 | Client | Tree the application answers with |
 |---|---|
