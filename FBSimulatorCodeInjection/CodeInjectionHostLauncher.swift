@@ -197,31 +197,27 @@ func stableHashHex(_ string: String) -> String {
 /// (ENOENT/ECONNREFUSED), so a closed app is detected without waiting.
 func replListenerIsAlive(at path: String) async -> Bool {
   let queue = DispatchQueue(label: "com.facebook.idb.repl.probe")
-  return await withCheckedContinuation { continuation in
-    queue.async {
-      let fd = Darwin.socket(AF_UNIX, SOCK_STREAM, 0)
-      guard fd >= 0 else {
-        continuation.resume(returning: false)
-        return
-      }
-      defer { Darwin.close(fd) }
-      var addr = sockaddr_un()
-      addr.sun_family = sa_family_t(AF_UNIX)
-      let maxLength = MemoryLayout.size(ofValue: addr.sun_path)
-      guard path.utf8.count < maxLength else {
-        continuation.resume(returning: false)
-        return
-      }
-      _ = withUnsafeMutablePointer(to: &addr.sun_path) { ptr in
-        path.withCString { src in memcpy(ptr, src, path.utf8.count + 1) }
-      }
-      let size = socklen_t(MemoryLayout<sockaddr_un>.size)
-      let result = withUnsafePointer(to: &addr) { ptr in
-        ptr.withMemoryRebound(to: sockaddr.self, capacity: 1) { sockPtr in
-          Darwin.connect(fd, sockPtr, size)
-        }
-      }
-      continuation.resume(returning: result == 0)
+  return await queue.perform {
+    let fd = Darwin.socket(AF_UNIX, SOCK_STREAM, 0)
+    guard fd >= 0 else {
+      return false
     }
+    defer { Darwin.close(fd) }
+    var addr = sockaddr_un()
+    addr.sun_family = sa_family_t(AF_UNIX)
+    let maxLength = MemoryLayout.size(ofValue: addr.sun_path)
+    guard path.utf8.count < maxLength else {
+      return false
+    }
+    _ = withUnsafeMutablePointer(to: &addr.sun_path) { ptr in
+      path.withCString { src in memcpy(ptr, src, path.utf8.count + 1) }
+    }
+    let size = socklen_t(MemoryLayout<sockaddr_un>.size)
+    let result = withUnsafePointer(to: &addr) { ptr in
+      ptr.withMemoryRebound(to: sockaddr.self, capacity: 1) { sockPtr in
+        Darwin.connect(fd, sockPtr, size)
+      }
+    }
+    return result == 0
   }
 }

@@ -35,43 +35,37 @@ final class ControlSocketClient: @unchecked Sendable {
   /// only appears once the test process has launched and the shim has bound it).
   static func connect(path: String, timeout: TimeInterval) async throws -> ControlSocketClient {
     let queue = DispatchQueue(label: "com.facebook.idb.repl.connect")
-    let fd: Int32 = try await withCheckedThrowingContinuation { continuation in
-      queue.async {
-        let fd = Darwin.socket(AF_UNIX, SOCK_STREAM, 0)
-        guard fd >= 0 else {
-          continuation.resume(throwing: CodeInjectionError.socketCreationFailed)
-          return
+    let fd: Int32 = try await queue.perform {
+      let fd = Darwin.socket(AF_UNIX, SOCK_STREAM, 0)
+      guard fd >= 0 else {
+        throw CodeInjectionError.socketCreationFailed
+      }
+      var addr = sockaddr_un()
+      addr.sun_family = sa_family_t(AF_UNIX)
+      let maxLength = MemoryLayout.size(ofValue: addr.sun_path)
+      guard path.utf8.count < maxLength else {
+        Darwin.close(fd)
+        throw CodeInjectionError.socketPathTooLong(path: path)
+      }
+      _ = withUnsafeMutablePointer(to: &addr.sun_path) { ptr in
+        path.withCString { src in memcpy(ptr, src, path.utf8.count + 1) }
+      }
+      let size = socklen_t(MemoryLayout<sockaddr_un>.size)
+      let deadline = Date().addingTimeInterval(timeout)
+      while true {
+        let result = withUnsafePointer(to: &addr) { ptr in
+          ptr.withMemoryRebound(to: sockaddr.self, capacity: 1) { sockPtr in
+            Darwin.connect(fd, sockPtr, size)
+          }
         }
-        var addr = sockaddr_un()
-        addr.sun_family = sa_family_t(AF_UNIX)
-        let maxLength = MemoryLayout.size(ofValue: addr.sun_path)
-        guard path.utf8.count < maxLength else {
+        if result == 0 {
+          return fd
+        }
+        if Date() >= deadline {
           Darwin.close(fd)
-          continuation.resume(throwing: CodeInjectionError.socketPathTooLong(path: path))
-          return
+          throw CodeInjectionError.connectTimedOut(path: path)
         }
-        _ = withUnsafeMutablePointer(to: &addr.sun_path) { ptr in
-          path.withCString { src in memcpy(ptr, src, path.utf8.count + 1) }
-        }
-        let size = socklen_t(MemoryLayout<sockaddr_un>.size)
-        let deadline = Date().addingTimeInterval(timeout)
-        while true {
-          let result = withUnsafePointer(to: &addr) { ptr in
-            ptr.withMemoryRebound(to: sockaddr.self, capacity: 1) { sockPtr in
-              Darwin.connect(fd, sockPtr, size)
-            }
-          }
-          if result == 0 {
-            continuation.resume(returning: fd)
-            return
-          }
-          if Date() >= deadline {
-            Darwin.close(fd)
-            continuation.resume(throwing: CodeInjectionError.connectTimedOut(path: path))
-            return
-          }
-          usleep(100_000)
-        }
+        usleep(100_000)
       }
     }
     return ControlSocketClient(fd: fd)
@@ -92,21 +86,15 @@ final class ControlSocketClient: @unchecked Sendable {
   /// Must be called exactly once, before the first `execute`.
   func readGreeting() async throws -> Greeting {
     let fd = self.fd
-    return try await withCheckedThrowingContinuation { continuation in
-      ioQueue.async {
-        do {
-          let message = try Self.readMessage(fd: fd)
-          guard message["type"] as? String == "greeting" else {
-            throw CodeInjectionError.missingGreeting(received: message["type"] as? String)
-          }
-          let interfaces = message["interfaces"] as? [String] ?? []
-          let nextRunIndex = (message["nextRunIndex"] as? NSNumber)?.uint32Value ?? 0
-          let sessionID = message["sessionID"] as? String ?? ""
-          continuation.resume(returning: Greeting(interfaces: interfaces, nextRunIndex: nextRunIndex, sessionID: sessionID))
-        } catch {
-          continuation.resume(throwing: error)
-        }
+    return try await ioQueue.perform {
+      let message = try Self.readMessage(fd: fd)
+      guard message["type"] as? String == "greeting" else {
+        throw CodeInjectionError.missingGreeting(received: message["type"] as? String)
       }
+      let interfaces = message["interfaces"] as? [String] ?? []
+      let nextRunIndex = (message["nextRunIndex"] as? NSNumber)?.uint32Value ?? 0
+      let sessionID = message["sessionID"] as? String ?? ""
+      return Greeting(interfaces: interfaces, nextRunIndex: nextRunIndex, sessionID: sessionID)
     }
   }
 
