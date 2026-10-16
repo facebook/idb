@@ -14,19 +14,8 @@ extension CrashLogCommands {
   /// within `timeout`.
   func notifyOfCrash(matching predicate: CrashLogPredicate, within timeout: TimeInterval, orThrow timeoutError: any Error) async throws -> CrashLogInfo {
     let query = CrashLogQuery(crashLogCommands: self, predicate: predicate)
-    return try await withThrowingTaskGroup(of: CrashLogInfo.self) { group in
-      group.addTask {
-        try await query.next()
-      }
-      group.addTask {
-        try await Task.sleep(nanoseconds: UInt64(timeout * 1_000_000_000))
-        throw timeoutError
-      }
-      defer { group.cancelAll() }
-      guard let first = try await group.next() else {
-        preconditionFailure("The task group has two children; next() cannot be empty")
-      }
-      return first
+    return try await withTimeout(timeout, orThrow: { timeoutError }) {
+      try await query.next()
     }
   }
 }
