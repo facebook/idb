@@ -66,11 +66,6 @@ public final class CrashLogStore {
     return nil
   }
 
-  func removeCrashLog(atPath path: String) -> CrashLogInfo? {
-    let key = (path as NSString).lastPathComponent
-    return lock.withLock { ingestedCrashLogs.removeValue(forKey: key) }
-  }
-
   // MARK: - Fetching
 
   public func ingestedCrashLog(withName name: String) -> CrashLogInfo? {
