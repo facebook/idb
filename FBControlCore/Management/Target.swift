@@ -305,8 +305,7 @@ public func TargetResolveState(
   _ state: TargetState,
   deadline: PollDeadline? = nil
 ) async throws {
-  let box = TargetBox(target)
-  try await pollUntilTrue(on: target.workQueue, deadline: deadline) { box.target.state == state }
+  try await pollUntilTrue(on: target.workQueue, deadline: deadline) { target.state == state }
 }
 
 /// Waits until the target leaves a provided state.
@@ -317,15 +316,5 @@ public func TargetResolveLeavesState(
   _ state: TargetState,
   deadline: PollDeadline? = nil
 ) async throws {
-  let box = TargetBox(target)
-  try await pollUntilTrue(on: target.workQueue, deadline: deadline) { box.target.state != state }
-}
-
-/// Carries a target into the `@Sendable` polling closure. The target is read only for its `state`,
-/// and only on its own work queue, which is the serialisation point the protocol documents.
-private final class TargetBox: @unchecked Sendable {
-  let target: any Target
-  init(_ target: any Target) {
-    self.target = target
-  }
+  try await pollUntilTrue(on: target.workQueue, deadline: deadline) { target.state != state }
 }

@@ -56,7 +56,7 @@ public func pollUntilTrue(
   on queue: DispatchQueue,
   interval: TimeInterval = 0.1,
   deadline: PollDeadline? = nil,
-  condition: @escaping @Sendable () -> Bool
+  condition: @escaping () -> Bool
 ) async throws {
   let checkExpiry = deadline?.start()
   while true {
