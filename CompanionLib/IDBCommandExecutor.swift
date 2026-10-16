@@ -305,25 +305,6 @@ public final class IDBCommandExecutor {
     }
   }
 
-  public func launchApp(_ configuration: ApplicationLaunchConfiguration) async throws -> LaunchedApplication {
-    var replacements: [String: String] = [:]
-    replacements.merge(storageManager.replacementMapping) { _, new in new }
-    replacements.merge(target.replacementMapping()) { _, new in new }
-    let environment = applyEnvironmentReplacements(configuration.environment, replacements: replacements)
-
-    let derived = ApplicationLaunchConfiguration(
-      bundleID: configuration.bundleID,
-      bundleName: configuration.bundleName,
-      arguments: configuration.arguments,
-      environment: environment,
-      waitForDebugger: configuration.waitForDebugger,
-      stdOut: configuration.stdOut,
-      stdErr: configuration.stdErr,
-      launchMode: configuration.launchMode
-    )
-    return try await target.application.launch(derived)
-  }
-
   /// Injects code into a logic test bundle for the `test` REPL context. The session is hosted by
   /// the test run, which finishes once the session is closed.
   public func replStartTest(bundlePath: String) async throws -> CodeInjectionSession {
@@ -495,20 +476,6 @@ public final class IDBCommandExecutor {
   }
 
   // MARK: - Private Methods
-
-  private func applyEnvironmentReplacements(_ environment: [String: String], replacements: [String: String]) -> [String: String] {
-    logger.log("Original environment: \(environment)")
-    logger.log("Existing replacement mapping: \(replacements)")
-    var interpolatedEnvironment: [String: String] = [:]
-    for (name, var value) in environment {
-      for (interpolationName, interpolationValue) in replacements {
-        value = value.replacingOccurrences(of: interpolationName, with: interpolationValue)
-      }
-      interpolatedEnvironment[name] = value
-    }
-    logger.log("Interpolated environment: \(interpolatedEnvironment)")
-    return interpolatedEnvironment
-  }
 
   private func removeAllStorageAndClearKeychain() async throws {
     try storageManager.clean()

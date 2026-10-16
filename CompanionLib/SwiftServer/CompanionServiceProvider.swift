@@ -351,7 +351,7 @@ final class CompanionServiceProvider: Idb_CompanionService.SimpleServiceProtocol
   func launch(request: RPCAsyncSequence<Idb_LaunchRequest, any Error>, response: RPCWriter<Idb_LaunchResponse>, context: ServerContext) async throws {
     let reader = RequestStreamReader(request)
     try await trackedBidiStreaming(context) {
-      try await LaunchMethodHandler(commandExecutor: commandExecutor)
+      try await LaunchMethodHandler(target: target, commandExecutor: commandExecutor)
         .handle(requestStream: reader, responseStream: response, context: context)
     }
   }

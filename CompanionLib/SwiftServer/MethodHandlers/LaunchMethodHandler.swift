@@ -13,6 +13,7 @@ import IDBGRPCSwift
 
 struct LaunchMethodHandler: @unchecked Sendable {
 
+  let target: CompanionTarget
   let commandExecutor: IDBCommandExecutor
 
   func handle(requestStream: RequestStreamReader<Idb_LaunchRequest>, responseStream: RPCWriter<Idb_LaunchResponse>, context: ServerContext) async throws {
@@ -61,7 +62,7 @@ struct LaunchMethodHandler: @unchecked Sendable {
       stdOut: stdOut,
       stdErr: stdErr,
       launchMode: launchMode)
-    let launchedApp = try await commandExecutor.launchApp(config)
+    let launchedApp = try await launch(config)
     let response = Idb_LaunchResponse.with {
       $0.debugger.pid = UInt64(launchedApp.processIdentifier)
     }
@@ -84,6 +85,41 @@ struct LaunchMethodHandler: @unchecked Sendable {
       }
       try await group.waitForAll()
     }
+  }
+
+  /// Launches with the storage and target path placeholders in the environment replaced by their values.
+  private func launch(_ configuration: ApplicationLaunchConfiguration) async throws -> LaunchedApplication {
+    var replacements: [String: String] = [:]
+    replacements.merge(commandExecutor.storageManager.replacementMapping) { _, new in new }
+    replacements.merge(target.replacementMapping()) { _, new in new }
+    let environment = applyEnvironmentReplacements(configuration.environment, replacements: replacements)
+
+    let derived = ApplicationLaunchConfiguration(
+      bundleID: configuration.bundleID,
+      bundleName: configuration.bundleName,
+      arguments: configuration.arguments,
+      environment: environment,
+      waitForDebugger: configuration.waitForDebugger,
+      stdOut: configuration.stdOut,
+      stdErr: configuration.stdErr,
+      launchMode: configuration.launchMode
+    )
+    return try await target.application.launch(derived)
+  }
+
+  private func applyEnvironmentReplacements(_ environment: [String: String], replacements: [String: String]) -> [String: String] {
+    let logger = commandExecutor.logger
+    logger.log("Original environment: \(environment)")
+    logger.log("Existing replacement mapping: \(replacements)")
+    var interpolatedEnvironment: [String: String] = [:]
+    for (name, var value) in environment {
+      for (interpolationName, interpolationValue) in replacements {
+        value = value.replacingOccurrences(of: interpolationName, with: interpolationValue)
+      }
+      interpolatedEnvironment[name] = value
+    }
+    logger.log("Interpolated environment: \(interpolatedEnvironment)")
+    return interpolatedEnvironment
   }
 
   static func pipeOutput(interface: Idb_ProcessOutput.Interface, send: @escaping (Idb_LaunchResponse) throws -> Void) -> (DataConsumer & DataConsumerLifecycle) {
