@@ -12,14 +12,6 @@ import MobileDeviceAPI
 private let MountRootPath = "mounted"
 private let ExtractedSymbolsDirectory = "Symbols"
 
-/// Carries the non-`Sendable` connection across the serial-queue boundary; only touched on that queue.
-private final class AFCConnectionBox: @unchecked Sendable {
-  let connection: FileConduit
-  init(_ connection: FileConduit) {
-    self.connection = connection
-  }
-}
-
 // MARK: - DeviceFileContainerError
 
 public enum DeviceFileContainerError: Error {
@@ -60,26 +52,18 @@ extension DeviceFileContainerError: LocalizedError {
 
 public final class DeviceFileContainer: AsyncFileContainer {
   private let queue: DispatchQueue
-  private let connectionBox: AFCConnectionBox
+  private let connection: FileConduit
 
   public init(afcConnection connection: FileConduit, queue: DispatchQueue) {
-    self.connectionBox = AFCConnectionBox(connection)
+    self.connection = connection
     self.queue = queue
   }
 
   // MARK: - AsyncFileContainer
 
   public func copy(fromHost sourcePath: String, toContainer destinationPath: String) async throws {
-    let box = connectionBox
-    try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
-      queue.async {
-        do {
-          try box.connection.copy(fromHost: sourcePath, toContainerPath: destinationPath)
-          continuation.resume(returning: ())
-        } catch {
-          continuation.resume(throwing: error)
-        }
-      }
+    try await queue.perform { [connection] in
+      try connection.copy(fromHost: sourcePath, toContainerPath: destinationPath)
     }
   }
 
@@ -98,72 +82,34 @@ public final class DeviceFileContainer: AsyncFileContainer {
   }
 
   public func createDirectory(_ directoryPath: String) async throws {
-    let box = connectionBox
-    try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
-      queue.async {
-        do {
-          try box.connection.createDirectory(directoryPath)
-          continuation.resume(returning: ())
-        } catch {
-          continuation.resume(throwing: error)
-        }
-      }
+    try await queue.perform { [connection] in
+      try connection.createDirectory(directoryPath)
     }
   }
 
   public func move(from sourcePath: String, to destinationPath: String) async throws {
-    let box = connectionBox
-    try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
-      queue.async {
-        do {
-          try box.connection.renamePath(sourcePath, destination: destinationPath)
-          continuation.resume(returning: ())
-        } catch {
-          continuation.resume(throwing: error)
-        }
-      }
+    try await queue.perform { [connection] in
+      try connection.renamePath(sourcePath, destination: destinationPath)
     }
   }
 
   public func remove(_ path: String) async throws {
-    let box = connectionBox
-    try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
-      queue.async {
-        do {
-          try box.connection.removePath(path, recursively: true)
-          continuation.resume(returning: ())
-        } catch {
-          continuation.resume(throwing: error)
-        }
-      }
+    try await queue.perform { [connection] in
+      try connection.removePath(path, recursively: true)
     }
   }
 
   public func contents(ofDirectory path: String) async throws -> [String] {
-    let box = connectionBox
-    return try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<[String], Error>) in
-      queue.async {
-        do {
-          continuation.resume(returning: try box.connection.contents(ofDirectory: path))
-        } catch {
-          continuation.resume(throwing: error)
-        }
-      }
+    return try await queue.perform { [connection] in
+      try connection.contents(ofDirectory: path)
     }
   }
 
   // MARK: - Private
 
   private func readFile(inContainer path: String) async throws -> Data {
-    let box = connectionBox
-    return try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Data, Error>) in
-      queue.async {
-        do {
-          continuation.resume(returning: try box.connection.contents(ofPath: path))
-        } catch {
-          continuation.resume(throwing: error)
-        }
-      }
+    return try await queue.perform { [connection] in
+      try connection.contents(ofPath: path)
     }
   }
 
