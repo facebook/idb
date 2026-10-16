@@ -40,7 +40,7 @@ public enum DataConsumption: Sendable {
 /// Observation of a Data Consumer's lifecycle.
 public protocol DataConsumerLifecycle: Sendable {
   /// Opens when there is no more data to write and any underlying resource managed by the consumer is released.
-  var finishedConsuming: AsyncLatch { get }
+  var finishedConsuming: AsyncEvent<Void> { get }
 }
 
 public extension DataConsumerLifecycle {
@@ -71,7 +71,7 @@ public struct LoggingDataConsumer: DataConsumer {
 /// A consumer that forwards everything it receives to each of `consumers`, in order.
 public struct CompositeDataConsumer: DataConsumer, DataConsumerLifecycle, CustomStringConvertible {
   private let consumers: [DataConsumer]
-  public let finishedConsuming = AsyncLatch()
+  public let finishedConsuming = AsyncEvent<Void>()
 
   public init(consumers: [DataConsumer]) {
     self.consumers = consumers
@@ -91,7 +91,7 @@ public struct CompositeDataConsumer: DataConsumer, DataConsumerLifecycle, Custom
     for consumer in consumers {
       consumer.consumeEndOfFile()
     }
-    finishedConsuming.open()
+    finishedConsuming.happen()
   }
 }
 

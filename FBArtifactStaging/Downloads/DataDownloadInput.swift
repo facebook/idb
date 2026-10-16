@@ -38,7 +38,7 @@ final class DataDownloadInput: NSObject, @unchecked Sendable {
     return report
   }
 
-  private let finished = AsyncLatch()
+  private let finished = AsyncEvent<Void>()
   private let task = OSAllocatedUnfairLock<URLSessionDataTask?>(initialState: nil)
   private let cancelRequested = OSAllocatedUnfairLock(initialState: false)
   // Written with `failure`.
@@ -156,7 +156,7 @@ extension DataDownloadInput: URLSessionDataDelegate {
       report.trust = DownloadReport.Trust(failure: error)
       fail(InstallError.transferFailed(url: task.originalRequest?.url, underlying: error, report: report))
     } else {
-      finished.open()
+      finished.happen()
     }
     spool.end()
   }
@@ -164,11 +164,11 @@ extension DataDownloadInput: URLSessionDataDelegate {
   // The first failure wins, so a cancellation triggered by a rejected response
   // does not displace the HTTP status that caused it.
   private func fail(_ error: Error) {
-    guard !finished.isOpen else {
+    guard !finished.hasHappened else {
       return
     }
     failure = error
     failedBeforeCancel = !cancelRequested.withLock { $0 }
-    finished.open()
+    finished.happen()
   }
 }

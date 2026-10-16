@@ -67,7 +67,7 @@ final class FileWriterTests: XCTestCase {
     // original (blocking) flags and forces O_NONBLOCK onto it.
     writer.consumeData("ping".data(using: .utf8)!)
     writer.consumeEndOfFile()
-    try await writer.finishedConsuming.wait(within: PollDeadline(timeout: 10, waitingFor: "the writer to finish consuming"))
+    try await writer.finishedConsuming.wait(timeout: 10, waitingFor: "the writer to finish consuming")
 
     var buffer = [UInt8](repeating: 0, count: 4)
     XCTAssertEqual(recv(remoteSocket, &buffer, 4, MSG_DONTWAIT), 4)
@@ -94,7 +94,7 @@ final class FileWriterTests: XCTestCase {
     // original (blocking) flags and forces O_NONBLOCK onto it.
     writer.consumeData("ping".data(using: .utf8)!)
     writer.consumeEndOfFile()
-    try await writer.finishedConsuming.wait(within: PollDeadline(timeout: 10, waitingFor: "the writer to finish consuming"))
+    try await writer.finishedConsuming.wait(timeout: 10, waitingFor: "the writer to finish consuming")
 
     var buffer = [UInt8](repeating: 0, count: 4)
     XCTAssertEqual(recv(remoteSocket, &buffer, 4, MSG_DONTWAIT), 4)
@@ -117,13 +117,13 @@ final class FileWriterTests: XCTestCase {
     // asynchronous teardown runs. `finishedConsuming` is retained separately
     // and opens from that teardown either way, so it still orders the reads
     // below after the write and the close.
-    let finishedConsuming: AsyncLatch = try autoreleasepool {
+    let finishedConsuming: AsyncEvent<Void> = try autoreleasepool {
       let writer = try FileWriter.asyncWriter(withFileDescriptor: writeEnd, closeOnEndOfFile: true)
       writer.consumeData("ping".data(using: .utf8)!)
       writer.consumeEndOfFile()
       return writer.finishedConsuming
     }
-    try await finishedConsuming.wait(within: PollDeadline(timeout: 10, waitingFor: "the writer to finish consuming"))
+    try await finishedConsuming.wait(timeout: 10, waitingFor: "the writer to finish consuming")
 
     var buffer = [UInt8](repeating: 0, count: 16)
     XCTAssertEqual(read(readEnd, &buffer, buffer.count), 4)
@@ -157,7 +157,7 @@ final class FileWriterTests: XCTestCase {
 
     // All waits are bounded so a teardown wedge fails this test alone rather than timing out the whole target.
     writer.consumeEndOfFile()
-    try await writer.finishedConsuming.wait(within: PollDeadline(timeout: 10, waitingFor: "the writer to finish consuming"))
+    try await writer.finishedConsuming.wait(timeout: 10, waitingFor: "the writer to finish consuming")
     XCTAssertEqual(fcntl(writerDescriptor, F_GETFD), -1)
     let readerFinished = AsyncEvent<DescriptorReader.Outcome>()
     Task { readerFinished.happen(await reader.finished(within: 4)) }

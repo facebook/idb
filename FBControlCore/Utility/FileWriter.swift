@@ -29,7 +29,7 @@ public class FileWriter: @unchecked Sendable {
 
   fileprivate let fileDescriptor: Int32
   fileprivate let closeOnEndOfFile: Bool
-  let finishedConsuming = AsyncLatch()
+  let finishedConsuming = AsyncEvent<Void>()
 
   // MARK: - Initializers
 
@@ -125,7 +125,7 @@ public class FileWriter: @unchecked Sendable {
     }
 
     func consumeEndOfFile() {
-      finishedConsuming.open()
+      finishedConsuming.happen()
       if closeOnEndOfFile {
         close(fileDescriptor)
       }
@@ -190,7 +190,7 @@ public class FileWriter: @unchecked Sendable {
           close(fileDescriptor)
         }
         // Since writing is asynchronous, wait until the io channel is fully closed.
-        finishedConsuming.open()
+        finishedConsuming.happen()
       }
       guard io != nil else {
         throw FileWriterError.ioChannelCreationFailed(fileDescriptor: fileDescriptor)

@@ -81,7 +81,7 @@ public final class AsyncEvent<Value: Sendable>: @unchecked Sendable {
         try await self.wait()
       }
       group.addTask {
-        try await Task.sleep(nanoseconds: UInt64(timeout * 1_000_000_000))
+        try await Task.sleep(nanoseconds: UInt64(max(timeout, 0) * 1_000_000_000))
         throw PollTimeoutError(deadline: PollDeadline(timeout: timeout, waitingFor: description))
       }
       defer { group.cancelAll() }

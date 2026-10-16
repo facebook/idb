@@ -368,7 +368,7 @@ private enum BridgeTestFailure: Error, Equatable { case dropped }
 /// waits, deaf to cancellation, until `release()`.
 private struct UnheedingTransport: AXBridgeTransport, Sendable {
   var answer: Data?
-  private let released = AsyncLatch()
+  private let released = AsyncEvent<Void>()
 
   init(answer: Data? = nil) {
     self.answer = answer
@@ -384,7 +384,7 @@ private struct UnheedingTransport: AXBridgeTransport, Sendable {
   }
 
   func release() {
-    released.open()
+    released.happen()
   }
 }
 

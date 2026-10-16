@@ -120,7 +120,7 @@ struct FileBackedOutputTests {
     try await Task.sleep(for: .milliseconds(500))
 
     #expect(!FileManager.default.fileExists(atPath: path))
-    #expect(buffer.finishedConsuming.isOpen)
+    #expect(buffer.finishedConsuming.hasHappened)
   }
 
   @Test("A file output hands the process the path it was given, and finishing it leaves the file alone")

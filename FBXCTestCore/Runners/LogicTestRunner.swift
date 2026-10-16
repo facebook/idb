@@ -134,7 +134,7 @@ public final class LogicTestRunner {
     await shimOutput.finish()
     // Bounded so that a consumer that never finishes delays the result without failing the run.
     do {
-      try await consumer.finishedConsuming.wait(within: PollDeadline(timeout: EndOfFileTimeout, waitingFor: "an end-of-file from the shim after the xctest process exited"))
+      try await consumer.finishedConsuming.wait(timeout: EndOfFileTimeout, waitingFor: "an end-of-file from the shim after the xctest process exited")
     } catch {
       logger.log("\(error.localizedDescription)")
     }

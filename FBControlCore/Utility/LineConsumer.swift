@@ -25,7 +25,7 @@ public final class LineConsumer: DataConsumer, DataConsumerLifecycle, @unchecked
   private let lock = NSLock()
   /// `nil` once end-of-file has been consumed.
   private var pending: Data? = Data()
-  public let finishedConsuming = AsyncLatch()
+  public let finishedConsuming = AsyncEvent<Void>()
 
   /// Delivers each line as data.
   public init(delivery: Delivery = .queue(LineConsumer.privateQueue()), dataConsumer: @escaping (Data) -> Void) {
@@ -70,10 +70,10 @@ public final class LineConsumer: DataConsumer, DataConsumerLifecycle, @unchecked
       let finished = finishedConsuming
       switch delivery {
       case .synchronous:
-        finished.open()
+        finished.happen()
       case let .queue(queue):
         queue.async {
-          finished.open()
+          finished.happen()
         }
       }
     }

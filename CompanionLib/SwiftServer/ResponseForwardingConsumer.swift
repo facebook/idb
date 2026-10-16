@@ -42,7 +42,7 @@ final class ResponseForwardingConsumer: DataConsumer, DataConsumerLifecycle, @un
     consumer.consumeEndOfFile()
   }
 
-  var finishedConsuming: AsyncLatch {
+  var finishedConsuming: AsyncEvent<Void> {
     consumer.finishedConsuming
   }
 

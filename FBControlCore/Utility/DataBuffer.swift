@@ -15,7 +15,7 @@ public class AccumulatingBuffer: DataConsumer, DataConsumerLifecycle, CustomStri
   let lock = NSLock()
   fileprivate var buffer = Data()
   private let capacity: Int
-  public let finishedConsuming = AsyncLatch()
+  public let finishedConsuming = AsyncEvent<Void>()
 
   /// A buffer that keeps everything it consumes.
   public convenience init() {
@@ -52,7 +52,7 @@ public class AccumulatingBuffer: DataConsumer, DataConsumerLifecycle, CustomStri
 
   public func consumeData(_ data: Data) {
     lock.withLock {
-      if finishedConsuming.isOpen {
+      if finishedConsuming.hasHappened {
         return
       }
       buffer.append(data)
@@ -65,7 +65,7 @@ public class AccumulatingBuffer: DataConsumer, DataConsumerLifecycle, CustomStri
 
   public func consumeEndOfFile() {
     lock.withLock {
-      finishedConsuming.open()
+      finishedConsuming.happen()
     }
   }
 }

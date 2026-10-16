@@ -15,7 +15,7 @@ public final class SynchronousDataConsumer: DataConsumer, DataConsumerLifecycle,
   // Recursive because the block runs under the lock, and a block may feed this consumer again.
   private let lock = NSRecursiveLock()
   private var consumer: ((Data) -> Void)?
-  public let finishedConsuming = AsyncLatch()
+  public let finishedConsuming = AsyncEvent<Void>()
 
   public init(consumer: @escaping (Data) -> Void) {
     self.consumer = consumer
@@ -30,7 +30,7 @@ public final class SynchronousDataConsumer: DataConsumer, DataConsumerLifecycle,
   public func consumeEndOfFile() {
     lock.withLock {
       consumer = nil
-      finishedConsuming.open()
+      finishedConsuming.happen()
     }
   }
 
@@ -50,7 +50,7 @@ public final class AsynchronousDataConsumer: DataConsumer, DataConsumerLifecycle
   private var consumer: ((Data) -> Void)?
   private let pendingLock = NSLock()
   private var pending = 0
-  public let finishedConsuming = AsyncLatch()
+  public let finishedConsuming = AsyncEvent<Void>()
 
   public init(queue: DispatchQueue = AsynchronousDataConsumer.privateQueue(), consumer: @escaping (Data) -> Void) {
     self.queue = queue
@@ -80,7 +80,7 @@ public final class AsynchronousDataConsumer: DataConsumer, DataConsumerLifecycle
     }
     // Outside the lock: a queued delivery that feeds this consumer again takes it.
     group.wait()
-    finishedConsuming.open()
+    finishedConsuming.happen()
   }
 
   public var consumption: DataConsumption { .queued(unprocessed: unprocessedDataCount()) }
