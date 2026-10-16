@@ -12,8 +12,7 @@ import IDBConcurrency
 /// Forwards each chunk of data it consumes, in order on a private queue, until a send fails or
 /// `stopForwarding()` is called. Data consumed after that is dropped, so a stream that has gone away
 /// is never written to again.
-// SAFETY: `stopped` is an `Atomic`; `consumer` is itself `Sendable`.
-final class ResponseForwardingConsumer: DataConsumer, DataConsumerLifecycle, @unchecked Sendable {
+final class ResponseForwardingConsumer: DataConsumer, DataConsumerLifecycle, Sendable {
   private let stopped: Atomic<Bool>
   private let consumer: AsynchronousDataConsumer
 

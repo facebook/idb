@@ -62,8 +62,7 @@ private final class GlobalLoggers: @unchecked Sendable {
 
 private let globalLoggers = GlobalLoggers()
 
-// @unchecked Sendable: all stored properties are immutable lets wrapping thread-safe objects.
-private final class IDBLoggerOperation: LogOperation, @unchecked Sendable {
+private final class IDBLoggerOperation: LogOperation, Sendable {
   let consumer: DataConsumer
   let logger: ControlCoreLogger
 

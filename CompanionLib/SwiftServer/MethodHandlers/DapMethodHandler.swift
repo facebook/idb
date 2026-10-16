@@ -12,7 +12,7 @@ import GRPCCore
 import IDBConcurrency
 import IDBGRPCSwift
 
-struct DapMethodHandler: @unchecked Sendable {
+struct DapMethodHandler: Sendable {
 
   let commandExecutor: IDBCommandExecutor
   let targetLogger: ControlCoreLogger
