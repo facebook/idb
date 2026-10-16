@@ -74,6 +74,19 @@ struct AsyncEventTests {
   }
 
   @Test
+  func aWaitIgnoringCancellationOutlastsTheCancellation() async throws {
+    let event = AsyncEvent<Int>()
+    let waiter = Task { try await event.waitIgnoringCancellation() }
+    try await Task.sleep(nanoseconds: 50_000_000)
+
+    waiter.cancel()
+    try await Task.sleep(nanoseconds: 50_000_000)
+    event.happen(42)
+
+    #expect(try await waiter.value == 42)
+  }
+
+  @Test
   func onlyTheFirstOutcomeCounts() async throws {
     let event = AsyncEvent<Int>()
     event.happen(1)

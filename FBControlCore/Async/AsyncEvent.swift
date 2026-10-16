@@ -83,6 +83,24 @@ public final class AsyncEvent<Value: Sendable>: @unchecked Sendable {
     }
   }
 
+  /// As `wait()`, but cancelling the waiting task does not end the wait: it returns only once the
+  /// event has happened. For waits that must see an outcome through, such as a file being finalised.
+  public func waitIgnoringCancellation() async throws -> Value {
+    let id = UUID()
+    return try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Value, Error>) in
+      lock.lock()
+      switch state {
+      case let .happened(result):
+        lock.unlock()
+        continuation.resume(with: result)
+      case var .pending(waiters):
+        waiters[id] = continuation
+        state = .pending(waiters: waiters)
+        lock.unlock()
+      }
+    }
+  }
+
   /// As `wait()`, failing with a `PollTimeoutError` naming `description` if the event has not
   /// happened within `timeout` seconds.
   public func wait(timeout: TimeInterval, waitingFor description: String) async throws -> Value {
