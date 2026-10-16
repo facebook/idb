@@ -8,9 +8,7 @@
 import Foundation
 
 /// A composite logger that logs to many loggers.
-// SAFETY: holds only an immutable array of child loggers, which are themselves required to be
-// thread-safe by the `ControlCoreLogger` contract.
-public final class CompositeLogger: ControlCoreLogger, @unchecked Sendable {
+public final class CompositeLogger: ControlCoreLogger, Sendable {
 
   /// The loggers to log to.
   public let loggers: [ControlCoreLogger]

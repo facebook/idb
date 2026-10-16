@@ -54,8 +54,7 @@ func loggableStringLine(_ string: String) -> String? {
 
 // MARK: - OSLogLogger
 
-// SAFETY: all state is immutable, and `OSLog` handles are safe to use from any thread.
-final class OSLogLogger: ControlCoreLogger, @unchecked Sendable {
+final class OSLogLogger: ControlCoreLogger, Sendable {
 
   static let subsystem = "com.facebook.fbcontrolcore"
 
@@ -111,10 +110,8 @@ final class OSLogLogger: ControlCoreLogger, @unchecked Sendable {
 
 // MARK: - ConsumerLogger
 
-// SAFETY: all state is immutable; writes to the shared consumer are serialized by `writeLock`,
-// which loggers derived from one another share along with the consumer.
 /// Logs each message as a line of text to a data consumer.
-public final class ConsumerLogger: ControlCoreLogger, @unchecked Sendable {
+public final class ConsumerLogger: ControlCoreLogger, Sendable {
 
   private let consumer: DataConsumer
   private let writeLock: NSLock

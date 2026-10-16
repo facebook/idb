@@ -94,7 +94,7 @@ public class FileWriter: @unchecked Sendable {
 
   // MARK: - Draining
 
-  final class Draining: @unchecked Sendable {
+  final class Draining: Sendable {
 
     private let writer: Async
     /// Writes and end-of-file without waiting, as `asyncWriter` does.

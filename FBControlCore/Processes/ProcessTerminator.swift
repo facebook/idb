@@ -29,10 +29,7 @@ enum ProcessTerminatorError: Error, LocalizedError {
   }
 }
 
-// SAFETY: every stored property is immutable; the fetcher serialises its own buffers, and the
-// logger is shared across threads throughout the tree.
-// patternlint-disable-next-line unchecked-sendable
-public final class ProcessTerminator: @unchecked Sendable {
+public final class ProcessTerminator: Sendable {
 
   // MARK: - Private Properties
 
