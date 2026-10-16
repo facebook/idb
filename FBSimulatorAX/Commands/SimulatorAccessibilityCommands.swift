@@ -197,7 +197,7 @@ final class SimulatorAccessibilityCommands {
     guard let dispatcher = resolvedDispatcher else {
       throw AccessibilityError.dispatcherUnavailable
     }
-    let root: AXElementHandle
+    let root: AXTranslationReference
     do {
       root = try await dispatcher.rootHandle(withRequest: request)
     } catch let AccessibilityError.noTranslationObject(query) where diagnosesSpringBoard {
@@ -234,12 +234,11 @@ final class SimulatorAccessibilityCommands {
   /// be the cause. A root whose process is alive, as an application's is while it launches, or one that exited
   /// while SpringBoard has been up for longer, is read as it is: it is not a SpringBoard condition.
   private func checkSpringBoardAnswersFor(
-    root handle: AXElementHandle, simulator: Simulator, request: AXTranslationRequest, dispatcher: AXTranslationDispatcher
+    root handle: AXTranslationReference, simulator: Simulator, request: AXTranslationRequest, dispatcher: AXTranslationDispatcher
   ) async throws {
     // A quick check: a non-zero accessibility frame indicates a healthy element.
-    let reads = AccessibilityRequestOptions.defaultTranslatorReads
-    let root = try await dispatcher.performRead(of: handle, for: request, reads: reads) {
-      try request.snapshot(of: handle, plan: AXReadPlan(attributes: [], depth: .limited(0)), reads: reads)
+    let root = try await dispatcher.performUnserialized(cancelling: request.cancellation) {
+      try request.snapshot(of: handle, plan: AXReadPlan(attributes: [], depth: .limited(0)))
     }
     if !root.frame.equalTo(.zero) {
       return

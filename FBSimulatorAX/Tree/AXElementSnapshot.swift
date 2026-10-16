@@ -134,7 +134,7 @@ final class AXElementSnapshot {
   let frame: NSRect
   let pid: pid_t
   /// The element actions go through, when the backend can act on what it read.
-  let handle: AXElementHandle?
+  let handle: AXTranslationReference?
   let role: String?
   let label: String?
   let value: AccessibilityAttributeValue?
@@ -161,7 +161,7 @@ final class AXElementSnapshot {
   init(
     frame: NSRect,
     pid: pid_t,
-    handle: AXElementHandle? = nil,
+    handle: AXTranslationReference? = nil,
     role: String? = nil,
     label: String? = nil,
     value: AccessibilityAttributeValue? = nil,
@@ -225,171 +225,6 @@ extension AXElementSnapshot {
     case .subrole: subrole
     case .help: help
     case .placeholder: placeholder
-    }
-  }
-}
-
-// MARK: - Reading an AXPlatformElement
-
-extension AXElementSnapshot {
-
-  /// Reads a translator element and its descendants against `plan`. `token` routes the element's reads to
-  /// the request that owns them; it is set on every element before it is read, as the translator requires.
-  ///
-  /// The translator cannot say whether a touch reaches an element — NSAccessibility has no counterpart,
-  /// and `isAccessibilityHidden` is a self-declared property rather than "something is on top of me" — so
-  /// planned hittability and its explanation read as nil, fetching nothing.
-  static func read(
-    _ element: AXPlatformElement, plan: AXReadPlan, token: String, mode: AXTranslatorReads = .batched
-  ) -> AXElementSnapshot {
-    element.axSetBridgeDelegateToken(token)
-    let fields: Fields =
-      switch mode {
-      // A raw read sends over the read's transport, which an element does not carry;
-      // `AXTranslationRequest.snapshot(of:plan:reads:)` reads raw.
-      case .batched, .raw: Fields(batchedFrom: element, plan: plan)
-      case .perAttribute: Fields(accessorsOf: element, plan: plan)
-      }
-    let children: [AXElementSnapshot] =
-      plan.depth.descendant.map { depth -> [AXElementSnapshot] in
-        let childPlan = AXReadPlan(attributes: plan.attributes, depth: depth)
-        return fields.children.map { read($0, plan: childPlan, token: token, mode: mode) }
-      } ?? []
-    let rawValue = fields.value
-    return AXElementSnapshot(
-      frame: fields.frame,
-      pid: element.axTranslationPid,
-      handle: .element(element),
-      role: fields.role,
-      label: fields.label,
-      value: AccessibilityAttributeValue(rawValue),
-      stringValue: rawValue as? String,
-      identifier: fields.identifier,
-      title: fields.title,
-      help: fields.help,
-      isEnabled: fields.isEnabled,
-      customActionNames: fields.customActionNames,
-      roleDescription: fields.roleDescription,
-      subrole: fields.subrole,
-      isRequired: fields.isRequired,
-      traits: fields.traits,
-      isExpanded: fields.isExpanded,
-      placeholder: fields.placeholder,
-      isHidden: fields.isHidden,
-      isFocused: fields.isFocused,
-      children: children
-    )
-  }
-
-  /// One translator element's planned values, before its children are read.
-  private struct Fields {
-    var frame: NSRect = .zero
-    var children: [AXPlatformElement] = []
-    var role: String?
-    var label: String?
-    var value: Any?
-    var identifier: String?
-    var title: String?
-    var help: String?
-    var isEnabled: Bool?
-    var customActionNames: [String]?
-    var roleDescription: String?
-    var subrole: String?
-    var isRequired: Bool?
-    var traits: [String]?
-    var isExpanded: Bool?
-    var placeholder: String?
-    var isHidden: Bool?
-    var isFocused: Bool?
-
-    /// The NSAccessibility name each attribute is fetched by. Hittability and its explanation have none.
-    private static func attributeName(_ attribute: AXReadPlan.Attribute) -> String? {
-      switch attribute {
-      case .role: "AXRole"
-      // The translator reports an iOS accessibility label as the element's description.
-      case .label: "AXDescription"
-      case .value: "AXValue"
-      case .identifier: "AXIdentifier"
-      case .title: "AXTitle"
-      case .help: "AXHelp"
-      case .enabled: "AXEnabled"
-      case .customActions: "AXCustomActions"
-      case .roleDescription: "AXRoleDescription"
-      case .subrole: "AXSubrole"
-      case .required: "AXRequired"
-      case .traits: "AXTraits"
-      case .expanded: "AXExpanded"
-      case .placeholder: "AXPlaceholderValue"
-      case .hidden: "AXHidden"
-      case .focused: "AXFocused"
-      case .hittability, .explainedBy: nil
-      }
-    }
-
-    /// Converts each value as the element's own accessor does, so the two modes read identically.
-    init(batchedFrom element: AXPlatformElement, plan: AXReadPlan) {
-      var names = ["AXFrame"] + plan.attributes.compactMap(Self.attributeName)
-      if plan.depth.descendant != nil {
-        names.append("AXChildren")
-      }
-      let values = element.axMultipleAttributes(names)
-      func value(_ attribute: AXReadPlan.Attribute) -> Any? {
-        guard plan.attributes.contains(attribute), let name = Self.attributeName(attribute) else { return nil }
-        return values[name]
-      }
-      func flag(_ attribute: AXReadPlan.Attribute) -> Bool? {
-        guard plan.attributes.contains(attribute) else { return nil }
-        return (value(attribute) as? NSNumber)?.boolValue ?? false
-      }
-
-      frame = (values["AXFrame"] as? NSValue)?.rectValue ?? .zero
-      children = ((values["AXChildren"] as? [Any]) ?? []).compactMap { $0 as? AXPlatformElement }
-      role = value(.role) as? String
-      label = value(.label) as? String
-      self.value = value(.value)
-      identifier = value(.identifier) as? String
-      title = value(.title) as? String
-      help = value(.help) as? String
-      isEnabled = flag(.enabled)
-      if plan.attributes.contains(.customActions) {
-        customActionNames = ((value(.customActions) as? [Any]) ?? []).compactMap { ($0 as? NSAccessibilityCustomAction)?.name }
-      }
-      roleDescription = value(.roleDescription) as? String
-      subrole = value(.subrole) as? String
-      isRequired = flag(.required)
-      traits = (value(.traits) as? NSNumber).map { AXExtractTraits($0.uint64Value) }
-      isExpanded = flag(.expanded)
-      placeholder = value(.placeholder) as? String
-      isHidden = flag(.hidden)
-      isFocused = flag(.focused)
-    }
-
-    init(accessorsOf element: AXPlatformElement, plan: AXReadPlan) {
-      let attributes = plan.attributes
-      func fetch<T>(_ attribute: AXReadPlan.Attribute, _ value: () -> T?) -> T? {
-        attributes.contains(attribute) ? value() : nil
-      }
-
-      frame = element.axFrame()
-      role = fetch(.role) { element.axRole() }
-      label = fetch(.label) { element.axLabel() }
-      value = fetch(.value) { element.axValue() }
-      identifier = fetch(.identifier) { element.axIdentifier() }
-      title = fetch(.title) { element.axTitle() }
-      help = fetch(.help) { element.axHelp() }
-      isEnabled = fetch(.enabled) { element.axIsEnabled() }
-      customActionNames = fetch(.customActions) { element.axCustomActionNames() }
-      roleDescription = fetch(.roleDescription) { element.axRoleDescription() }
-      subrole = fetch(.subrole) { element.axSubrole() }
-      isRequired = fetch(.required) { element.axIsRequired() }
-      traits = fetch(.traits) { element.axTraits() }
-      isExpanded = fetch(.expanded) { element.axIsExpanded() }
-      placeholder = fetch(.placeholder) { element.axPlaceholderValue() }
-      isHidden = fetch(.hidden) { element.axIsHidden() }
-      isFocused = fetch(.focused) { element.axIsFocused() }
-      if plan.depth.descendant != nil {
-        children = element.axChildren()
-      }
     }
   }
 }

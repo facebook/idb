@@ -12,43 +12,6 @@ import FBSimulatorControl
 import Foundation
 import ObjectiveC
 
-/// A translator element as `AXElementSnapshot.read` sees it: one accessor per attribute, each a round trip
-/// to the simulator. Actions live in `AXWritableElement`.
-///
-/// `AXPMacPlatformElement` is a private-framework class tests cannot subclass; the protocol admits test
-/// doubles without unsafe casts.
-protocol AXPlatformElement: AnyObject {
-  func axFrame() -> NSRect
-  func axRole() -> String?
-  func axLabel() -> String?
-  func axValue() -> Any?
-  func axIdentifier() -> String?
-  func axTitle() -> String?
-  func axHelp() -> String?
-  func axRoleDescription() -> String?
-  func axSubrole() -> String?
-  func axPlaceholderValue() -> String?
-  func axIsEnabled() -> Bool?
-  func axIsRequired() -> Bool
-  func axIsExpanded() -> Bool
-  func axIsHidden() -> Bool
-  func axIsFocused() -> Bool
-  func axCustomActionNames() -> [String]
-  func axActionNames() -> [String]
-  func axTraits() -> [String]?
-  func axChildren() -> [AXPlatformElement]
-  /// The values of many NSAccessibility attributes, keyed by name, in one round trip. An attribute with no
-  /// value is absent.
-  func axMultipleAttributes(_ names: [String]) -> [String: Any]
-
-  /// The pid of the backing translation object (0 when absent).
-  var axTranslationPid: pid_t { get }
-  /// The backing translation object, which a raw read names the element by; nil when absent.
-  var axTranslationReference: AXTranslationReference? { get }
-  /// Sets the backing translation object's bridge-delegate token (no-op when absent).
-  func axSetBridgeDelegateToken(_ token: String?)
-}
-
 /// A translator element's identity on the wire: what a raw request names, and what an element's children
 /// answer with. `AXPTranslationObject` is a private-framework class tests cannot subclass; the protocol admits
 /// test doubles.
@@ -62,33 +25,16 @@ protocol AXTranslationReference: AnyObject {
 
 extension AXPTranslationObject: AXTranslationReference {}
 
-/// What an element is read and acted on through: the translator's platform element where a read already
-/// has one, or the element's translation, from which the platform element is built only when something
-/// acts on the element. A raw read hands out translations, so reading builds no platform elements.
-enum AXElementHandle {
-  case element(AXPlatformElement)
-  case translation(AXTranslationReference)
-
-  var translation: AXTranslationReference? {
-    switch self {
-    case let .element(element): element.axTranslationReference
-    case let .translation(translation): translation
-    }
-  }
-
-  var pid: pid_t {
-    switch self {
-    case let .element(element): element.axTranslationPid
-    case let .translation(translation): translation.pid
-    }
-  }
-}
-
-/// The mutating action surface — press, scroll, set-value — layered on the read surface.
-/// Only the legacy CoreSimulator element (`AXPMacPlatformElement`) and its test double
-/// perform these, so a caller that acts on an element (`AccessibilityElement`) demands
-/// this refinement and the type system keeps actions off the read-only axbridge tree.
-protocol AXWritableElement: AXPlatformElement {
+/// What an action on a translator element goes through: the translator's platform element, built from the
+/// element's translation only when something acts on it. Reads never build one.
+///
+/// `AXPMacPlatformElement` is a private-framework class tests cannot subclass; the protocol admits test
+/// doubles without unsafe casts.
+protocol AXWritableElement: AnyObject {
+  func axCustomActionNames() -> [String]
+  func axActionNames() -> [String]
+  /// Sets the backing translation object's bridge-delegate token (no-op when absent).
+  func axSetBridgeDelegateToken(_ token: String?)
   func axPerformPress() -> Bool
   func axPerformCustomAction(named name: String) -> Bool
   func axScroll(_ direction: AccessibilityScrollDirection)
@@ -150,22 +96,7 @@ func invokeAccessibilityCustomAction(_ action: NSAccessibilityCustomAction) -> B
   }
 }
 
-extension AXPMacPlatformElement: AXPlatformElement {
-  func axFrame() -> NSRect { accessibilityFrame() }
-  func axRole() -> String? { accessibilityRole()?.rawValue }
-  func axLabel() -> String? { accessibilityLabel() }
-  func axValue() -> Any? { accessibilityValue() }
-  func axIdentifier() -> String? { accessibilityIdentifier() }
-  func axTitle() -> String? { accessibilityTitle() }
-  func axHelp() -> String? { accessibilityHelp() }
-  func axRoleDescription() -> String? { accessibilityRoleDescription() }
-  func axSubrole() -> String? { accessibilitySubrole()?.rawValue }
-  func axPlaceholderValue() -> String? { accessibilityPlaceholderValue() }
-  func axIsEnabled() -> Bool? { isAccessibilityEnabled() }
-  func axIsRequired() -> Bool { isAccessibilityRequired() }
-  func axIsExpanded() -> Bool { isAccessibilityExpanded() }
-  func axIsHidden() -> Bool { isAccessibilityHidden() }
-  func axIsFocused() -> Bool { isAccessibilityFocused() }
+extension AXPMacPlatformElement: AXWritableElement {
   func axCustomActionNames() -> [String] { (accessibilityCustomActions() ?? []).map { $0.name } }
   func axActionNames() -> [String] {
     // Read by message: the instance `accessibilityActionNames` is shadowed by a
@@ -179,46 +110,8 @@ extension AXPMacPlatformElement: AXPlatformElement {
     return raw.compactMap { $0 as? String }
   }
 
-  func axTraits() -> [String]? {
-    // `accessibilityAttributeValue:` is a Swift-unavailable deprecated NSAccessibility
-    // API, so read AXTraits by message.
-    let selector = NSSelectorFromString("accessibilityAttributeValue:")
-    guard responds(to: selector) else {
-      return nil
-    }
-    guard let result = perform(selector, with: "AXTraits")?.takeUnretainedValue() as? NSNumber else {
-      return nil
-    }
-    return AXExtractTraits(result.uint64Value)
-  }
-
-  func axChildren() -> [AXPlatformElement] {
-    (accessibilityChildren() ?? []).compactMap { $0 as? AXPlatformElement }
-  }
-
-  func axMultipleAttributes(_ names: [String]) -> [String: Any] {
-    // Read by message: `accessibilityMultipleAttributes:` is private to `AXPMacPlatformElement`. It sends one
-    // multiple-attribute request through the bridge for every attribute it does not answer locally.
-    let selector = NSSelectorFromString("accessibilityMultipleAttributes:")
-    guard responds(to: selector),
-      let raw = perform(selector, with: names as NSArray)?.takeUnretainedValue() as? NSDictionary
-    else {
-      return [:]
-    }
-    var values: [String: Any] = [:]
-    for (key, value) in raw {
-      guard let key = key as? String, !(value is NSNull) else { continue }
-      values[key] = value
-    }
-    return values
-  }
-
-  var axTranslationPid: pid_t { translation?.pid ?? 0 }
-  var axTranslationReference: AXTranslationReference? { translation }
   func axSetBridgeDelegateToken(_ token: String?) { translation?.bridgeDelegateToken = token }
-}
 
-extension AXPMacPlatformElement: AXWritableElement {
   func axPerformPress() -> Bool { accessibilityPerformPress() }
 
   func axPerformCustomAction(named name: String) -> Bool {

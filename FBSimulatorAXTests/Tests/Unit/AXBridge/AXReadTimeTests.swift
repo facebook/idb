@@ -248,7 +248,7 @@ final class AXReadTimeTests {
 
   @Test func aReadWithUnansweredRequestsSaysSoInItsDocument() throws {
     let metrics = AccessibilityTranslatorReadMetrics(
-      elementCount: 3, roundTrips: 5, readDuration: 0, totalDuration: 0, translatorReads: .batched, transport: .bridge,
+      elementCount: 3, roundTrips: 5, readDuration: 0, totalDuration: 0, transport: .bridge,
       unansweredRequests: 2)
     let degraded = AccessibilityElementsResponse(elements: .tree([]), translatorMetrics: metrics)
     let document = try #require(
@@ -259,7 +259,7 @@ final class AXReadTimeTests {
     let healthy = AccessibilityElementsResponse(
       elements: .tree([]),
       translatorMetrics: AccessibilityTranslatorReadMetrics(
-        elementCount: 3, roundTrips: 3, readDuration: 0, totalDuration: 0, translatorReads: .raw, transport: .bridge))
+        elementCount: 3, roundTrips: 3, readDuration: 0, totalDuration: 0, transport: .bridge))
     let healthyDocument = try #require(
       try JSONSerialization.jsonObject(with: healthy.formattedOutputJSON(format: .complete)) as? [String: Any])
     #expect(healthyDocument["degraded"] == nil)
@@ -311,11 +311,11 @@ final class AXReadTimeTests {
     let transport = AXRawTranslationTransportDouble(elements: elements, delay: 0.05)
     let dispatcher = Simulator.createAccessibilityTranslationDispatcher(withTranslator: AXPTranslatorDouble())
     let request = AXTranslationRequest(kind: .frontmostApplication, transport: transport)
-    let root = AXElementHandle.translation(Self.reference(1))
+    let root = Self.reference(1)
 
     let read = Task {
-      try await dispatcher.performRead(of: root, for: request, reads: .raw) {
-        try request.snapshot(of: root, plan: AXReadPlan(attributes: [.role], depth: .unlimited), reads: .raw)
+      try await dispatcher.performUnserialized(cancelling: request.cancellation) {
+        try request.snapshot(of: root, plan: AXReadPlan(attributes: [.role], depth: .unlimited))
       }
     }
     try await Task.sleep(nanoseconds: 60 * NSEC_PER_MSEC)

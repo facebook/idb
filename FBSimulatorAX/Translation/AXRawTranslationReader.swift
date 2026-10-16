@@ -68,7 +68,7 @@ struct AXRawTranslationReader {
     return AXElementSnapshot(
       frame: decoded.frame,
       pid: translation.pid,
-      handle: .translation(translation),
+      handle: translation,
       role: decoded.role,
       label: decoded.label,
       value: AccessibilityAttributeValue(decoded.value),

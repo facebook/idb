@@ -258,11 +258,11 @@ final class AccessibilitySerializationTests: XCTestCase {
     // *match* to a handle that still carries the root's `.frontmostApplication` request. This reproduces
     // that: the request kind says "tree", the element is the match, and `isMarkerMatch` is what tells
     // the request the caller asked for this element rather than the tree it was found in.
-    let match = AXSnapshotPlatformElementDouble(AXTreeWalk.snapshot(fromTree: Self.valueOnlyMatchTree(), pid: 7))
+    let match = AXTreeWalk.snapshot(fromTree: Self.valueOnlyMatchTree(), pid: 7)
     var options = AccessibilityRequestOptions()
     options.keys = [.label, .value]
     options.filter = filter
-    return try AXTranslationRequest(kind: .frontmostApplication).run(match, options: options, isMarkerMatch: true)
+    return try AXTranslationRequest(kind: .frontmostApplication).serialize(match, options: options, isMarkerMatch: true)
   }
 
   // MARK: - The ax marker read's shape
@@ -870,13 +870,13 @@ final class AccessibilitySerializationTests: XCTestCase {
   // The named target is never filtered (it would not survive `.interactable` here); its descendants are walked
   // with the caller's filter exactly as a whole-tree read walks them.
   func testSingleElementReadKeepsTheTargetAndFiltersItsDescendants() throws {
-    let element = AXSnapshotPlatformElementDouble(AXTreeWalk.snapshot(fromTree: Self.unlabeledTargetTree(), pid: 7))
+    let element = AXTreeWalk.snapshot(fromTree: Self.unlabeledTargetTree(), pid: 7)
     var options = AccessibilityRequestOptions()
     options.keys = [.label]
     options.filter = .interactable
     options.format = .nested
 
-    let response = try AXTranslationRequest(kind: .point(.zero)).run(element, options: options)
+    let response = try AXTranslationRequest(kind: .point(.zero)).serialize(element, options: options)
     guard case let .single(target) = response.elements else {
       return XCTFail("a point read yields one element, got \(response.elements)")
     }

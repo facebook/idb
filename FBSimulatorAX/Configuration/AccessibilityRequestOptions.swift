@@ -126,18 +126,6 @@ extension BridgeAXTraversal {
   }
 }
 
-/// How the accessibility-translation backend fetches each element's attributes. Ignored by axbridge, whose
-/// guest fetches the tree itself. Reported on every read's metrics; only idb's own equivalence checks select it.
-public enum AXTranslatorReads: String, Sendable, CaseIterable {
-  /// One multiple-attribute request per element.
-  case batched
-  /// One request per attribute, through the element's own accessors: the reads a batch replaces.
-  case perAttribute = "per-attribute"
-  /// One multiple-attribute request per element, sent and decoded without the translator's platform
-  /// element, which adds requests of its own to a batch.
-  case raw
-}
-
 /// The traversal a read asks for, or `auto` to let the serving backend choose. Kept apart from
 /// `AXTraversal` so an unresolved request can never be sent to a guest or reported as the walk that ran.
 public enum AXTraversalStrategy: String, Sendable, CaseIterable {
@@ -252,14 +240,6 @@ public struct AccessibilityRequestOptions: Sendable {
   /// How the read asks to traverse.
   public var traversalStrategy: AXTraversalStrategy
 
-  /// How the accessibility-translation backend fetches each element's attributes. Always `.raw` for a
-  /// caller outside idb; package-scoped so idb's smoke suite can compare against the reads it replaces.
-  package var translatorReads: AXTranslatorReads = Self.defaultTranslatorReads
-
-  /// The fetch a read makes when nothing chose another: every read's default, and what element reads —
-  /// marker search, frames, value checks — always make, since they take no options.
-  package static let defaultTranslatorReads: AXTranslatorReads = .raw
-
   /// How long this read may take, per element and for the whole query, or nil for the simulator's
   /// `accessibilityTiming`. Applies to every backend.
   public var timing: SimulatorAccessibilityTiming?
@@ -306,6 +286,6 @@ public struct AccessibilityRequestOptions: Sendable {
 
 extension AccessibilityRequestOptions: CustomStringConvertible {
   public var description: String {
-    "<AccessibilityRequestOptions: format=\(format.rawValue), keys=\(keys), profiling=\(enableProfiling), collectFrameCoverage=\(collectFrameCoverage), remote=\(String(describing: remoteContentOptions)), filter=\(filter.rawValue), match=\(match.map(String.init(describing:)) ?? "none"), traversal=\(traversalStrategy.rawValue), translatorReads=\(translatorReads.rawValue)\(clientType.map { ", clientType=\($0)" } ?? "")>"
+    "<AccessibilityRequestOptions: format=\(format.rawValue), keys=\(keys), profiling=\(enableProfiling), collectFrameCoverage=\(collectFrameCoverage), remote=\(String(describing: remoteContentOptions)), filter=\(filter.rawValue), match=\(match.map(String.init(describing:)) ?? "none"), traversal=\(traversalStrategy.rawValue)\(clientType.map { ", clientType=\($0)" } ?? "")>"
   }
 }

@@ -362,7 +362,6 @@ public struct AccessibilityTranslatorReadMetrics: Sendable, Equatable {
   public let roundTrips: Int64
   public let readDuration: CFAbsoluteTime
   public let totalDuration: CFAbsoluteTime
-  public let translatorReads: AXTranslatorReads
   public let transport: AXTranslationTransportKind
   /// Resolving the root, before the walk.
   public let acquireDuration: CFAbsoluteTime
@@ -382,7 +381,6 @@ public struct AccessibilityTranslatorReadMetrics: Sendable, Equatable {
     roundTrips: Int64,
     readDuration: CFAbsoluteTime,
     totalDuration: CFAbsoluteTime,
-    translatorReads: AXTranslatorReads,
     transport: AXTranslationTransportKind,
     acquireDuration: CFAbsoluteTime = 0,
     springBoardCheckDuration: CFAbsoluteTime = 0,
@@ -395,7 +393,6 @@ public struct AccessibilityTranslatorReadMetrics: Sendable, Equatable {
     self.roundTrips = roundTrips
     self.readDuration = readDuration
     self.totalDuration = totalDuration
-    self.translatorReads = translatorReads
     self.transport = transport
     self.acquireDuration = acquireDuration
     self.springBoardCheckDuration = springBoardCheckDuration

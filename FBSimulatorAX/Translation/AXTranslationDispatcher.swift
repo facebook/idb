@@ -59,16 +59,6 @@ final class AXTranslationDispatcher: NSObject, AXPTranslationTokenDelegateHelper
     try await perform(operation, on: .global(qos: .userInitiated), cancellation: cancellation)
   }
 
-  /// Runs a read of `handle` on the translator's work queue when it goes through the translator, and off it
-  /// when it is raw.
-  func performRead<T>(
-    of handle: AXElementHandle, for request: AXTranslationRequest, reads: AXTranslatorReads,
-    _ operation: @escaping () throws -> T
-  ) async throws -> T {
-    request.readsRaw(handle, reads: reads)
-      ? try await performUnserialized(cancelling: request.cancellation, operation) : try await performSerialized(operation)
-  }
-
   /// `cancellation` carries the awaiting task's cancellation into `operation`, which runs where a task cannot
   /// reach it.
   private func perform<T>(
@@ -82,20 +72,20 @@ final class AXTranslationDispatcher: NSObject, AXPTranslationTokenDelegateHelper
   }
 
   /// Resolves `request`'s root in one request over its transport, without touching the translator.
-  func rootHandle(withRequest request: AXTranslationRequest) async throws -> AXElementHandle {
+  func rootHandle(withRequest request: AXTranslationRequest) async throws -> AXTranslationReference {
     request.translator = self.translator
     // Registered before resolving: actions on the root and its descendants reach the translator, whose
     // callbacks find the request by its token.
     self.pushRequest(request)
     do {
-      return try await performUnserialized(cancelling: request.cancellation) { () throws -> AXElementHandle in
+      return try await performUnserialized(cancelling: request.cancellation) { () throws -> AXTranslationReference in
         let translationStart = CFAbsoluteTimeGetCurrent()
         guard let translation = try request.resolveRoot() else {
           throw AccessibilityError.noTranslationObject(request.query)
         }
         request.collector.translationDuration = CFAbsoluteTimeGetCurrent() - translationStart
         translation.bridgeDelegateToken = request.token
-        return .translation(translation)
+        return translation
       }
     } catch {
       self.popRequest(request)

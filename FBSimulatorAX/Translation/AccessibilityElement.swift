@@ -18,7 +18,7 @@ import Foundation
 /// token; after close, serialization fails.
 final class AccessibilityElement {
 
-  private let handle: AXElementHandle
+  private let handle: AXTranslationReference
   private let request: AXTranslationRequest
   private let dispatcher: AXTranslationDispatcher
   private weak var simulator: Simulator?
@@ -30,7 +30,7 @@ final class AccessibilityElement {
   let rootBounds: CGRect?
 
   init(
-    handle: AXElementHandle,
+    handle: AXTranslationReference,
     request: AXTranslationRequest,
     dispatcher: AXTranslationDispatcher,
     simulator: Simulator,
@@ -66,7 +66,7 @@ final class AccessibilityElement {
     let request = self.request
     let handle = self.handle
     let isMarkerMatch = self.isMarkerMatch
-    return try await dispatcher.performRead(of: handle, for: request, reads: options.translatorReads) {
+    return try await dispatcher.performUnserialized(cancelling: request.cancellation) {
       try request.run(handle, options: options, isMarkerMatch: isMarkerMatch)
     }
   }
@@ -89,13 +89,12 @@ final class AccessibilityElement {
     return value
   }
 
-  /// Reads this element against `plan`: on the translator's work queue when the read goes through it.
+  /// Reads this element against `plan`, off the translator's work queue: a read never touches it.
   private func read(_ plan: AXReadPlan) async throws -> AXElementSnapshot {
     let handle = self.handle
     let request = self.request
-    let reads = AccessibilityRequestOptions.defaultTranslatorReads
-    return try await dispatcher.performRead(of: handle, for: request, reads: reads) {
-      try request.snapshot(of: handle, plan: plan, reads: reads)
+    return try await dispatcher.performUnserialized(cancelling: request.cancellation) {
+      try request.snapshot(of: handle, plan: plan)
     }
   }
 
@@ -104,7 +103,7 @@ final class AccessibilityElement {
     let handle = self.handle
     let request = self.request
     return try await dispatcher.performSerialized {
-      guard let element = request.element(for: handle) as? AXWritableElement else {
+      guard let element = request.element(for: handle) else {
         throw AccessibilityError.noTranslationObject(nil)
       }
       return try action(element)

@@ -99,11 +99,6 @@ final class AXTranslationRequest {
     self.collector = AccessibilityProfilingCollector()
   }
 
-  /// Whether a read of `handle` is raw, and so never touches the translator.
-  func readsRaw(_ handle: AXElementHandle, reads: AXTranslatorReads) -> Bool {
-    reads == .raw && handle.translation != nil
-  }
-
   /// Resolves the root translation object for this request's kind, in one request over the transport.
   func resolveRoot() throws -> AXTranslationReference? {
     switch kind {
@@ -124,65 +119,56 @@ final class AXTranslationRequest {
       .takeUnretainedValue() as? AXWritableElement
   }
 
-  /// The platform element `handle` is read or acted on through, built from its translation when it has none,
-  /// carrying this request's token. The translator caches elements by translation and a cached element keeps
-  /// the token it was built with, so the token is set every time.
-  func element(for handle: AXElementHandle) -> AXPlatformElement? {
-    switch handle {
-    case let .element(element):
-      return element
-    case let .translation(translation):
-      translation.bridgeDelegateToken = token
-      let element = platformElement(for: translation)
-      element?.axSetBridgeDelegateToken(token)
-      return element
-    }
+  /// The platform element an action on `translation` goes through, carrying this request's token. The
+  /// translator caches elements by translation and a cached element keeps the token it was built with, so the
+  /// token is set every time.
+  func element(for translation: AXTranslationReference) -> AXWritableElement? {
+    translation.bridgeDelegateToken = token
+    let element = platformElement(for: translation)
+    element?.axSetBridgeDelegateToken(token)
+    return element
   }
 
-  /// Serializes the resolved element. The frontmost path adds frame coverage and remote content; the
-  /// point path is a single element. `isMarkerMatch` forces single-element serialization: a marker
-  /// match descends from the frontmost tree, so its request's `kind` is still `.frontmostApplication`.
+  /// Reads `translation` and serializes it. The frontmost path adds frame coverage and remote content; the
+  /// point path is a single element. `isMarkerMatch` forces single-element serialization: a marker match
+  /// descends from the frontmost tree, so its request's `kind` is still `.frontmostApplication`.
   func run(
-    _ handle: AXElementHandle,
+    _ translation: AXTranslationReference,
     options: AccessibilityRequestOptions,
     isMarkerMatch: Bool = false
   ) throws -> AccessibilityElementsResponse {
-    guard !isMarkerMatch else {
-      return try runNamedElement(handle, options: options)
+    let walkStart = CFAbsoluteTimeGetCurrent()
+    collector.markWalkStart()
+    let serialization = AXSerialization(options)
+    let depth: AXReadPlan.Depth =
+      readsSingleElement(isMarkerMatch: isMarkerMatch) && !serialization.nested ? .limited(0) : .unlimited
+    let snapshot = try snapshot(of: translation, plan: serialization.readPlan(depth: depth))
+    return try serialize(snapshot, options: options, isMarkerMatch: isMarkerMatch, walkStart: walkStart)
+  }
+
+  /// Serializes an element already read, as `run` does after reading it.
+  func serialize(
+    _ snapshot: AXElementSnapshot,
+    options: AccessibilityRequestOptions,
+    isMarkerMatch: Bool = false,
+    walkStart: CFAbsoluteTime = CFAbsoluteTimeGetCurrent()
+  ) throws -> AccessibilityElementsResponse {
+    guard readsSingleElement(isMarkerMatch: isMarkerMatch) else {
+      return try serializeTree(snapshot, options: options, walkStart: walkStart)
     }
+    return serializeNamedElement(snapshot, options: options, walkStart: walkStart)
+  }
+
+  private func readsSingleElement(isMarkerMatch: Bool) -> Bool {
     switch kind {
-    case .point:
-      return try runNamedElement(handle, options: options)
-    case .frontmostApplication, .applicationForPid:
-      return try runFrontmostApplication(handle, options: options)
+    case .point: true
+    case .frontmostApplication, .applicationForPid: isMarkerMatch
     }
   }
 
-  func run(
-    _ element: AXPlatformElement,
-    options: AccessibilityRequestOptions,
-    isMarkerMatch: Bool = false
-  ) throws -> AccessibilityElementsResponse {
-    try run(.element(element), options: options, isMarkerMatch: isMarkerMatch)
-  }
-
-  // MARK: - Reading
-
-  /// Reads `handle` against `plan`, raw over this request's transport when `reads` asks for it and the
-  /// handle has a translation to name, and through its platform element otherwise. An element with neither
-  /// reads as one with no values.
-  func snapshot(of handle: AXElementHandle, plan: AXReadPlan, reads: AXTranslatorReads) throws -> AXElementSnapshot {
-    if reads == .raw, let reference = handle.translation {
-      return try rawReader.read(reference, plan: plan)
-    }
-    guard let element = element(for: handle) else {
-      return AXElementSnapshot(frame: .zero, pid: handle.pid, children: [])
-    }
-    return AXElementSnapshot.read(element, plan: plan, token: token, mode: reads)
-  }
-
-  func snapshot(of element: AXPlatformElement, plan: AXReadPlan, reads: AXTranslatorReads) throws -> AXElementSnapshot {
-    try snapshot(of: .element(element), plan: plan, reads: reads)
+  /// Reads `translation` against `plan`, one request per element over this request's transport.
+  func snapshot(of translation: AXTranslationReference, plan: AXReadPlan) throws -> AXElementSnapshot {
+    try rawReader.read(translation, plan: plan)
   }
 
   /// Sends this request's translator requests itself, over its transport.
@@ -196,13 +182,10 @@ final class AXTranslationRequest {
 
   /// Serializes the one element a caller named — by point, or by a marker match. The element itself is
   /// always reported; only its descendants are subject to the filter.
-  private func runNamedElement(_ element: AXElementHandle, options: AccessibilityRequestOptions) throws -> AccessibilityElementsResponse {
-    let walkStart = CFAbsoluteTimeGetCurrent()
-    collector.markWalkStart()
+  private func serializeNamedElement(
+    _ snapshot: AXElementSnapshot, options: AccessibilityRequestOptions, walkStart: CFAbsoluteTime
+  ) -> AccessibilityElementsResponse {
     let serialization = AXSerialization(options)
-    let snapshot = try snapshot(
-      of: element, plan: serialization.readPlan(depth: serialization.nested ? .unlimited : .limited(0)),
-      reads: options.translatorReads)
     var elements = AXNodeSerializer.formattedDescription(ofSnapshot: snapshot, serialization: serialization, collector: collector)
     if let children = elements.children {
       elements.children = options.filter.apply(to: children, screen: nil)
@@ -213,12 +196,10 @@ final class AXTranslationRequest {
 
   // MARK: - Frontmost Application
 
-  private func runFrontmostApplication(_ element: AXElementHandle, options: AccessibilityRequestOptions) throws -> AccessibilityElementsResponse {
-    let walkStart = CFAbsoluteTimeGetCurrent()
-    collector.markWalkStart()
-
+  private func serializeTree(
+    _ snapshot: AXElementSnapshot, options: AccessibilityRequestOptions, walkStart: CFAbsoluteTime
+  ) throws -> AccessibilityElementsResponse {
     let serialization = AXSerialization(options)
-    let snapshot = try snapshot(of: element, plan: serialization.readPlan(depth: .unlimited), reads: options.translatorReads)
     let screen = AXReadScreen(display: display, rootFrame: snapshot.frame)
     let seenPids = SeenPIDs()
 
@@ -269,8 +250,7 @@ final class AXTranslationRequest {
     beyond tree: TranslatedTree,
     grid: AccessibilityCoverageGrid?,
     plan: AXRemoteContentPlan,
-    keys: Set<AXKeys>,
-    reads: AXTranslatorReads
+    keys: Set<AXKeys>
   ) throws -> [AccessibilityDocumentElement] {
     var discoveredElements: [AccessibilityDocumentElement] = []
     var discoveredFrames = Set<String>()
@@ -304,19 +284,8 @@ final class AXTranslationRequest {
       if tree.seenPids.contains(hitPid) || hitPid <= 0 || hitPid == tree.pid {
         continue
       }
-      // A raw read names the hit by its translation; the platform element's reads need the element built.
-      let hitHandle: AXElementHandle
-      if reads == .raw {
-        hitHandle = .translation(hitTranslation)
-      } else {
-        guard let hitElement = platformElement(for: hitTranslation) else {
-          continue
-        }
-        hitHandle = .element(hitElement)
-      }
-
       // One read serves both the duplicate check and the serialization.
-      let hit = try snapshot(of: hitHandle, plan: AXReadPlan(keys: keysWithFrame, depth: .limited(0)), reads: reads)
+      let hit = try snapshot(of: hitTranslation, plan: AXReadPlan(keys: keysWithFrame, depth: .limited(0)))
       let hitFrame = hit.frame
       let hitFrameKey = "\(hitFrame.origin.x),\(hitFrame.origin.y),\(hitFrame.size.width),\(hitFrame.size.height)"
       if discoveredFrames.contains(hitFrameKey) {
@@ -343,7 +312,7 @@ final class AXTranslationRequest {
     let coverageBefore = grid?.coverageRatio() ?? 0
 
     let discoveredElements = try discoverRemoteElements(
-      beyond: tree, grid: grid, plan: plan, keys: options.serializationKeys, reads: options.translatorReads)
+      beyond: tree, grid: grid, plan: plan, keys: options.serializationKeys)
 
     var additionalFrameCoverage: Double?
     if let grid, !discoveredElements.isEmpty {
@@ -408,7 +377,6 @@ final class AXTranslationRequest {
       roundTrips: profile.xpcCallCount,
       readDuration: profile.readDuration,
       totalDuration: profile.totalDuration,
-      translatorReads: options.translatorReads,
       transport: transport.kind,
       acquireDuration: profile.acquireDuration,
       springBoardCheckDuration: collector.springBoardCheckDuration,

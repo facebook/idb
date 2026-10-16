@@ -84,7 +84,6 @@ final class SimulatorAccessibilityCommandsTests: XCTestCase {
   ) {
     let expected: [Set<BridgeAXTranslatorAttribute>] = afterStalenessCheck ? [[.frame], attributes] : [attributes]
     XCTAssertEqual(rawRequests(naming: element).map(Set.init), expected, message, file: file, line: line)
-    XCTAssertEqual(element.multipleAttributeRequests, [], message, file: file, line: line)
   }
 
   /// The attributes of each multiple-attribute request the accessibility service received for `element`.
@@ -588,7 +587,6 @@ final class SimulatorAccessibilityCommandsTests: XCTestCase {
     XCTAssertNil(response.profilingData, "no profile was asked for")
     let metrics = try XCTUnwrap(response.translatorMetrics)
     XCTAssertEqual(metrics.elementCount, 4, "the root and its three children")
-    XCTAssertEqual(metrics.translatorReads, .raw)
     XCTAssertEqual(metrics.transport, .coreSimulator, "named by the transport that carried the read")
     XCTAssertEqual(metrics.acquireRoundTrips, 2, "the frontmost lookup and the SpringBoard staleness check")
     XCTAssertEqual(metrics.unansweredRequests, 0)
@@ -635,14 +633,12 @@ final class SimulatorAccessibilityCommandsTests: XCTestCase {
       bridgeCallbackClientTypes(fixture!.device.accessibilityRequests as! [Any]), [AXClientType.xctest.rawValue, AXClientType.xctest.rawValue])
   }
 
-  func testAFrontmostRootIsResolvedInOneLookupWithoutTheTranslator() async throws {
+  func testAFrontmostRootIsResolvedInOneLookup() async throws {
     try setUp(withRootElement: defaultElementTree)
     let element = try await simulator.accessibility.resolveElement(for: .frontmost)
     defer { element.close() }
 
     XCTAssertEqual(fixture!.translator.rawLookups, [.frontmostApplication])
-    XCTAssertFalse(
-      fixture!.translator.methodCalls.compactMap { $0 as? String }.contains { $0.hasPrefix("frontmostApplicationWithDisplayId:") })
   }
 
   func testAccessibilityCommandsProducesCorrectFlatOutput() async throws {
@@ -1022,7 +1018,7 @@ final class SimulatorAccessibilityCommandsTests: XCTestCase {
       XCTAssertEqual(point, CGPoint(x: 401, y: 120))
       XCTAssertEqual(bounds, CGSize(width: 400, height: 600))
     }
-    XCTAssertFalse(fixture!.translator.methodCalls.compactMap { $0 as? String }.contains { $0.hasPrefix("objectAtPoint:") })
+    XCTAssertEqual(fixture!.translator.rawHitTests, [], "an invalid point is never hit-tested")
   }
 
   func testRemoteContentRegionBeyondTheDisplaySkipsUntranslatablePoints() async throws {

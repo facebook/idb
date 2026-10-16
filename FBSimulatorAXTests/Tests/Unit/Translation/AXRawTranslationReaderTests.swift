@@ -168,7 +168,7 @@ final class AXRawTranslationReaderTests: XCTestCase {
     XCTAssertNil(decoded.isEnabled)
   }
 
-  func testAttributesWithoutATranslatorNumberReadAsThePlatformElementsBatchReadsThem() throws {
+  func testAttributesTheTranslatorDoesNotAnswerTakeTheirDefaults() throws {
     let transport = AXRawTranslationTransportDouble(elements: [1: [.role: 2]])
     let snapshot = try Self.reader(transport).read(Self.reference(1), plan: Self.everything)
     XCTAssertNil(snapshot.title)
@@ -210,23 +210,10 @@ final class AXRawTranslationReaderTests: XCTestCase {
       ]))
     request.translator = unsafeBitCast(translator as AnyObject, to: AXPTranslator.self)
 
-    let snapshot = try request.snapshot(of: root, plan: AXReadPlan(attributes: [.label], depth: .limited(1)), reads: .raw)
+    let snapshot = try request.snapshot(of: root.translation, plan: AXReadPlan(attributes: [.label], depth: .limited(1)))
 
     let handle = try XCTUnwrap(snapshot.children.first?.handle)
     XCTAssertTrue(request.element(for: handle) as AnyObject === cached, "acting builds the translator's element")
     XCTAssertEqual(cached.translation.bridgeDelegateToken, request.token, "an action on the handle reaches this read")
-  }
-
-  func testARawRequestNamesTheElementsTranslationAndNeverTouchesTheElement() throws {
-    let element = AccessibilityTestElementBuilder.button(withLabel: "Stale", identifier: nil, frame: .zero)
-    element.translation = Self.reference(7)
-    let transport = AXRawTranslationTransportDouble(elements: [7: [.label: "General"]])
-    let request = AXTranslationRequest(kind: .frontmostApplication, transport: transport)
-
-    let snapshot = try request.snapshot(of: element, plan: AXReadPlan(attributes: [.label], depth: .limited(0)), reads: .raw)
-
-    XCTAssertEqual(snapshot.label, "General")
-    XCTAssertEqual(transport.requestedObjectIDs, [7])
-    XCTAssertFalse(element.accessedProperties.contains("accessibilityMultipleAttributes"))
   }
 }

@@ -111,7 +111,6 @@ enum AccessibilityReadTelemetry {
     call.setInt(Int(metrics.roundTrips), forKey: "ax_round_trips")
     call.setInt(Int(metrics.readDuration * 1000), forKey: "ax_profile_read_ms")
     call.setInt(Int(metrics.totalDuration * 1000), forKey: "ax_profile_total_ms")
-    call.setNormal(metrics.translatorReads.rawValue, forKey: "ax_translator_reads")
     call.setNormal(metrics.transport.rawValue, forKey: "ax_transport")
     call.setNormal(metrics.outcome.rawValue, forKey: "ax_read_outcome")
     call.setInt(Int(metrics.acquireDuration * 1000), forKey: "ax_profile_acquire_ms")

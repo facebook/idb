@@ -50,8 +50,6 @@ class AXPMacPlatformElementDouble: NSObject {
   private var _translation: AXPTranslationObjectDouble
   private(set) var performedCustomActions: [String] = []
   @objc private(set) var accessedProperties = NSMutableSet()
-  /// The names of each multiple-attribute request, in order.
-  private(set) var multipleAttributeRequests: [[String]] = []
 
   init(
     label: String?,
@@ -178,53 +176,6 @@ class AXPMacPlatformElementDouble: NSObject {
   }
 }
 
-// Attributes the double does not model (placeholder/expanded/hidden/focused) are inert — none are
-// in the default key set.
-extension AXPMacPlatformElementDouble: AXPlatformElement {
-  func axFrame() -> NSRect { accessibilityFrame }
-  func axRole() -> String? { accessibilityRole?.rawValue }
-  func axLabel() -> String? { accessibilityLabel }
-  func axValue() -> Any? { accessibilityValue }
-  func axIdentifier() -> String? { accessibilityIdentifier }
-  func axTitle() -> String? { accessibilityTitle }
-  func axHelp() -> String? { accessibilityHelp }
-  func axRoleDescription() -> String? { accessibilityRoleDescription }
-  func axSubrole() -> String? { accessibilitySubrole?.rawValue }
-  func axPlaceholderValue() -> String? { nil }
-  func axIsEnabled() -> Bool? { isAccessibilityEnabled }
-  func axIsRequired() -> Bool { isAccessibilityRequired }
-  func axIsExpanded() -> Bool { false }
-  func axIsHidden() -> Bool { false }
-  func axIsFocused() -> Bool { false }
-  func axCustomActionNames() -> [String] {
-    (accessibilityCustomActions ?? []).compactMap { ($0 as? NSAccessibilityCustomAction)?.name }
-  }
-  func axActionNames() -> [String] { accessibilityActionNames().map { $0.rawValue } }
-  func axTraits() -> [String]? { nil }
-  func axChildren() -> [AXPlatformElement] {
-    (accessibilityChildren ?? []).compactMap { $0 as? AXPlatformElement }
-  }
-  /// Answers as the real element does, one entry per attribute with a value, without touching the single
-  /// accessors, so a test can tell a batched read from a per-attribute one.
-  func axMultipleAttributes(_ names: [String]) -> [String: Any] {
-    accessedProperties.add("accessibilityMultipleAttributes")
-    multipleAttributeRequests.append(names)
-    var values: [String: Any] = [
-      "AXFrame": NSValue(rect: _frame),
-      "AXEnabled": NSNumber(value: _enabled),
-      "AXRequired": NSNumber(value: _required),
-      "AXChildren": _children,
-    ]
-    values["AXDescription"] = _label
-    values["AXIdentifier"] = _identifier
-    values["AXRole"] = _role
-    return values.filter { names.contains($0.key) }
-  }
-  var axTranslationPid: pid_t { translation.pid }
-  var axTranslationReference: AXTranslationReference? { translation }
-  func axSetBridgeDelegateToken(_ token: String?) { translation.bridgeDelegateToken = token }
-}
-
 extension AXPMacPlatformElementDouble {
   /// The element's descendants, depth first, starting with itself.
   var subtree: [AXPMacPlatformElementDouble] {
@@ -246,8 +197,13 @@ extension AXPMacPlatformElementDouble {
   }
 }
 
-// Only press is exercised (via `AccessibilityElement.tap()`); scroll and set-value are inert.
+// Only press and custom actions are exercised; scroll and set-value are inert.
 extension AXPMacPlatformElementDouble: AXWritableElement {
+  func axCustomActionNames() -> [String] {
+    (accessibilityCustomActions ?? []).compactMap { ($0 as? NSAccessibilityCustomAction)?.name }
+  }
+  func axActionNames() -> [String] { accessibilityActionNames().map { $0.rawValue } }
+  func axSetBridgeDelegateToken(_ token: String?) { translation.bridgeDelegateToken = token }
   func axPerformPress() -> Bool { accessibilityPerformPress() }
   func axPerformCustomAction(named name: String) -> Bool {
     guard
@@ -261,63 +217,6 @@ extension AXPMacPlatformElementDouble: AXWritableElement {
   }
   func axScroll(_ direction: AccessibilityScrollDirection) {}
   func axSetValue(_ value: Any?) {}
-}
-
-// MARK: - Snapshot-backed AXPlatformElement Double
-
-/// Presents a decoded snapshot as a translator element, so a translator read can be driven from the same
-/// attribute-dictionary fixtures the guest-backed suites use. Attributes the snapshot does not carry read
-/// as the translator's defaults.
-final class AXSnapshotPlatformElementDouble: AXPlatformElement {
-  private let snapshot: AXElementSnapshot
-
-  init(_ snapshot: AXElementSnapshot) {
-    self.snapshot = snapshot
-  }
-
-  func axFrame() -> NSRect { snapshot.frame }
-  func axRole() -> String? { snapshot.role }
-  func axLabel() -> String? { snapshot.label }
-  func axValue() -> Any? { snapshot.stringValue }
-  func axIdentifier() -> String? { snapshot.identifier }
-  func axTitle() -> String? { snapshot.title }
-  func axHelp() -> String? { snapshot.help }
-  func axRoleDescription() -> String? { snapshot.roleDescription }
-  func axSubrole() -> String? { snapshot.subrole }
-  func axPlaceholderValue() -> String? { snapshot.placeholder }
-  func axIsEnabled() -> Bool? { snapshot.isEnabled }
-  func axIsRequired() -> Bool { snapshot.isRequired ?? false }
-  func axIsExpanded() -> Bool { snapshot.isExpanded ?? false }
-  func axIsHidden() -> Bool { snapshot.isHidden ?? false }
-  func axIsFocused() -> Bool { snapshot.isFocused ?? false }
-  func axCustomActionNames() -> [String] { snapshot.customActionNames ?? [] }
-  func axActionNames() -> [String] { [] }
-  func axTraits() -> [String]? { snapshot.traits }
-  func axChildren() -> [AXPlatformElement] { snapshot.children.map(AXSnapshotPlatformElementDouble.init) }
-  func axMultipleAttributes(_ names: [String]) -> [String: Any] {
-    var values: [String: Any] = [
-      "AXFrame": NSValue(rect: snapshot.frame),
-      "AXChildren": snapshot.children.map(AXSnapshotPlatformElementDouble.init),
-      "AXEnabled": NSNumber(value: snapshot.isEnabled ?? false),
-      "AXRequired": NSNumber(value: snapshot.isRequired ?? false),
-      "AXExpanded": NSNumber(value: snapshot.isExpanded ?? false),
-      "AXHidden": NSNumber(value: snapshot.isHidden ?? false),
-      "AXFocused": NSNumber(value: snapshot.isFocused ?? false),
-    ]
-    values["AXRole"] = snapshot.role
-    values["AXDescription"] = snapshot.label
-    values["AXValue"] = snapshot.stringValue
-    values["AXIdentifier"] = snapshot.identifier
-    values["AXTitle"] = snapshot.title
-    values["AXHelp"] = snapshot.help
-    values["AXRoleDescription"] = snapshot.roleDescription
-    values["AXSubrole"] = snapshot.subrole
-    values["AXPlaceholderValue"] = snapshot.placeholder
-    return values.filter { names.contains($0.key) }
-  }
-  var axTranslationPid: pid_t { snapshot.pid }
-  var axTranslationReference: AXTranslationReference? { nil }
-  func axSetBridgeDelegateToken(_ token: String?) {}
 }
 
 // MARK: - AXTranslationTransport Double
@@ -445,57 +344,18 @@ class AXPTranslatorDouble: NSObject {
     let displayID: UInt32
   }
   var rawHitTests: [HitTest] = []
-  /// Wall time burned inside the two calls the dispatcher times, so a test can assert a floor on the
-  /// acquisition phases rather than merely non-negative. Zero by default.
+  /// Wall time the fixture's service burns answering a frontmost lookup, so a test can assert a floor on the
+  /// acquisition phase rather than merely non-negative. Zero by default.
   var frontmostApplicationDelay: TimeInterval = 0
-  var macPlatformElementDelay: TimeInterval = 0
   @objc weak var bridgeTokenDelegate: AnyObject?
   private(set) var methodCalls = NSMutableArray()
   /// Invoked at the top of each frontmost resolution, on the thread driving it. Lets a
   /// test observe — or deliberately hold open — the window in which a resolution is
   /// inside the shared translator, so overlap between concurrent resolutions is testable.
   var resolutionEnterHook: (() -> Void)?
-  /// The `clientType` of each request to send through the bridge delegate during a frontmost resolution, as
-  /// the real translator does when it reads the application's attributes. Empty sends none.
-  var bridgeRequestClientTypes: [UInt64] = []
-
-  @objc
-  func frontmostApplication(withDisplayId displayId: Int32, bridgeDelegateToken token: String) -> AXPTranslationObjectDouble? {
-    resolutionEnterHook?()
-    methodCalls.add("frontmostApplicationWithDisplayId:\(displayId) token:\(token)")
-    if frontmostApplicationDelay > 0 {
-      Thread.sleep(forTimeInterval: frontmostApplicationDelay)
-    }
-    sendBridgeRequests(token: token)
-    let result = frontmostApplicationResult
-    result?.bridgeDelegateToken = token
-    return result
-  }
-
-  /// What the bridge delegate answered each request in `bridgeRequestClientTypes` with, in order.
-  private(set) var bridgeResponses: [AnyObject?] = []
-
-  private func sendBridgeRequests(token: String) {
-    for clientType in bridgeRequestClientTypes {
-      bridgeResponses.append(
-        AccessibilityTranslatorRequests.send(AccessibilityTranslatorRequests.make(clientType: clientType), through: bridgeTokenDelegate, token: token))
-    }
-  }
-
-  @objc(objectAtPoint:displayId:bridgeDelegateToken:)
-  func object(at point: CGPoint, displayId: Int32, bridgeDelegateToken token: String) -> AXPTranslationObjectDouble? {
-    methodCalls.add("objectAtPoint:{\(String(format: "%.1f", point.x)),\(String(format: "%.1f", point.y))} displayId:\(displayId) token:\(token)")
-    let result = objectAtPointResult
-    result?.bridgeDelegateToken = token
-    return result
-  }
-
   @objc
   func macPlatformElement(fromTranslation translation: AXPTranslationObjectDouble) -> AXPMacPlatformElementDouble? {
     methodCalls.add("macPlatformElementFromTranslation")
-    if macPlatformElementDelay > 0 {
-      Thread.sleep(forTimeInterval: macPlatformElementDelay)
-    }
     if let cached = cachedElementsByObjectID[translation.objectID] {
       return cached
     }
@@ -511,22 +371,6 @@ class AXPTranslatorDouble: NSObject {
   /// and so the token — they were built with, as the translator's element cache does.
   var cachedElementsByObjectID: [UInt64: AXPMacPlatformElementDouble] = [:]
 
-  @objc(translationApplicationObjectForPid:)
-  /// As the real translator does: asks the bridge with an application-object request that carries no
-  /// translation, and so no bridge-delegate token, and answers only if the bridge did.
-  func translationApplicationObject(forPid pid: pid_t) -> AXPTranslationObjectDouble? {
-    methodCalls.add("translationApplicationObjectForPid:\(pid)")
-    let request = AccessibilityTranslatorRequests.make(clientType: 0)
-    request?.setValue(1, forKey: "requestType")
-    request?.setValue(["pid": pid], forKey: "parameters")
-    let response = AccessibilityTranslatorRequests.send(request, through: bridgeTokenDelegate, token: "")
-    guard response?.value(forKey: "resultData") != nil else {
-      return nil
-    }
-    let translation = AXPTranslationObjectDouble()
-    translation.pid = pid
-    return translation
-  }
 }
 
 /// Builds, sends and reads real `AXPTranslatorRequest`s through the Objective-C runtime, as the translator

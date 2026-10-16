@@ -140,7 +140,7 @@ struct AccessibilityInfoMethodHandlerTests {
     backend: .ax,
     translatorMetrics: AccessibilityTranslatorReadMetrics(
       elementCount: 114, roundTrips: 225, readDuration: 0.072, totalDuration: 0.081,
-      translatorReads: .batched, transport: .bridge, acquireDuration: 0.004, springBoardCheckDuration: 0.002,
+      transport: .bridge, acquireDuration: 0.004, springBoardCheckDuration: 0.002,
       acquireRoundTrips: 2, unansweredRequests: 1,
       slowestRequest: AccessibilityTranslatorRequestTiming(requestType: 4, duration: 0.031), requestsBehindAbandoned: 3))
 
@@ -165,7 +165,7 @@ struct AccessibilityInfoMethodHandlerTests {
       ])
     #expect(
       call.normals == [
-        "ax_backend": "ax", "ax_translator_reads": "batched", "ax_transport": "bridge", "ax_read_outcome": "degraded",
+        "ax_backend": "ax", "ax_transport": "bridge", "ax_read_outcome": "degraded",
         "ax_slowest_request_type": "frontmost",
       ])
     #expect(!response.json.contains("profile"), "the caller did not ask for a profile, so none is reported")
