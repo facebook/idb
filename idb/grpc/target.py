@@ -27,6 +27,10 @@ from idb.grpc.idb_pb2 import (
 def target_to_py(
     target: GrpcTargetDescription, companion: CompanionInfo, metadata: bytes
 ) -> TargetDescription:
+    extended = json.loads(target.extended.decode()) if len(target.extended) else {}
+    # Local device listings put `device` at the top level; describe responses
+    # put it inside `extended`.
+    device = extended.get("device") if isinstance(extended, dict) else None
     return TargetDescription(
         udid=target.udid,
         name=target.name,
@@ -40,7 +44,8 @@ def target_to_py(
         os_version=target.os_version,
         architecture=target.architecture,
         companion_info=companion,
-        extended=(json.loads(target.extended.decode()) if len(target.extended) else {}),
+        device=device,
+        extended=extended,
         diagnostics=(
             json.loads(target.diagnostics.decode()) if len(target.diagnostics) else {}
         ),

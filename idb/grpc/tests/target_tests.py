@@ -5,9 +5,11 @@
 # LICENSE file in the root directory of this source tree.
 
 
+import json
 import unittest
 from unittest.mock import AsyncMock, MagicMock
 
+from idb.common.format import json_data_target_info, target_description_from_dictionary
 from idb.common.types import (
     CompanionInfo,
     Compression,
@@ -16,8 +18,13 @@ from idb.common.types import (
     TCPAddress,
 )
 from idb.grpc.client import Client
-from idb.grpc.idb_pb2 import CompanionInfo as GrpcCompanionInfo, FocusRequest, Payload
-from idb.grpc.target import companion_to_py, merge_connected_targets
+from idb.grpc.idb_pb2 import (
+    CompanionInfo as GrpcCompanionInfo,
+    FocusRequest,
+    Payload,
+    TargetDescription as GrpcTargetDescription,
+)
+from idb.grpc.target import companion_to_py, merge_connected_targets, target_to_py
 from idb.utils.testing import TestCase
 
 
@@ -144,6 +151,81 @@ class TargetTests(unittest.TestCase):
                 ),
             ],
         )
+
+
+_DEVICE = {"DeviceClass": "iPhone", "ProductType": "iPhone14,7"}
+_REMOTE_COMPANION = CompanionInfo(
+    udid="a",
+    address=TCPAddress(host="127.0.0.1", port=35511),
+    is_local=False,
+    pid=None,
+)
+
+
+def _described_device(extended: bytes) -> GrpcTargetDescription:
+    return GrpcTargetDescription(
+        udid="a",
+        name="PDX640610705",
+        state="Booted",
+        target_type="device",
+        os_version="iOS 26.2",
+        extended=extended,
+    )
+
+
+class TargetToPyTests(unittest.TestCase):
+    def test_sets_device_from_extended(self) -> None:
+        extended = {"device": _DEVICE, "other": "value"}
+        target = target_to_py(
+            target=_described_device(json.dumps(extended).encode()),
+            companion=_REMOTE_COMPANION,
+            metadata=b"",
+        )
+        self.assertEqual(target.device, _DEVICE)
+        self.assertEqual(json.loads(target.as_json)["device"], _DEVICE)
+        self.assertEqual(target.extended, extended)
+
+    def test_leaves_device_unset_without_extended_device(self) -> None:
+        for extended in [b"", b"{}", b'{"other": "value"}', b"[]", b'{"device": null}']:
+            with self.subTest(extended=extended):
+                target = target_to_py(
+                    target=_described_device(extended),
+                    companion=_REMOTE_COMPANION,
+                    metadata=b"",
+                )
+                self.assertIsNone(target.device)
+                self.assertIsNone(json.loads(target.as_json)["device"])
+                self.assertNotIn("device", json_data_target_info(target))
+
+    def test_json_target_info_includes_device_for_tcp_companion(self) -> None:
+        target = target_to_py(
+            target=_described_device(json.dumps({"device": _DEVICE}).encode()),
+            companion=_REMOTE_COMPANION,
+            metadata=b"",
+        )
+        data = json_data_target_info(target)
+        self.assertEqual(data["device"], _DEVICE)
+        self.assertEqual(data["companion"], "127.0.0.1:35511")
+        self.assertFalse(data["is_local"])
+
+    def test_merged_local_device_keeps_connected_device_details_in_json(self) -> None:
+        local = target_description_from_dictionary(
+            {"udid": "a", "name": "local device", "type": "device", "device": _DEVICE}
+        )
+        connected = target_to_py(
+            target=_described_device(json.dumps({"device": _DEVICE}).encode()),
+            companion=_REMOTE_COMPANION,
+            metadata=b"",
+        )
+        merged = merge_connected_targets(
+            local_targets=[local], connected_targets=[connected]
+        )
+        self.assertEqual(merged, [connected])
+        self.assertEqual(json.loads(merged[0].as_json)["device"], _DEVICE)
+        data = json_data_target_info(merged[0])
+        self.assertEqual(data["device"], _DEVICE)
+        self.assertEqual(data["companion"], "127.0.0.1:35511")
+        self.assertFalse(data["is_local"])
 
 
 class CompanionToPyTests(unittest.TestCase):
