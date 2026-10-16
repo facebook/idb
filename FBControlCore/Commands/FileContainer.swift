@@ -86,14 +86,6 @@ extension FileContainerError: LocalizedError {
   }
 }
 
-/// Carries a non-`Sendable` `ProvisioningProfileCommands` across the async boundary.
-private final class ProvisioningCommandsBox: @unchecked Sendable {
-  let commands: any ProvisioningProfileCommands
-  init(_ commands: any ProvisioningProfileCommands) {
-    self.commands = commands
-  }
-}
-
 /// Handle to a running `tail` started by a file container. Cancelling stops the
 /// underlying `tail` subprocess and waits for it to exit.
 public final class FileContainerTailOperation {
@@ -430,17 +422,17 @@ public enum FileContainer {
   /// File container backed by `ProvisioningProfileCommands`.
   public final class ProvisioningProfile: AsyncFileContainer {
 
-    private let commandsBox: ProvisioningCommandsBox
+    private let commands: any ProvisioningProfileCommands
 
     public init(commands: any ProvisioningProfileCommands) {
-      self.commandsBox = ProvisioningCommandsBox(commands)
+      self.commands = commands
     }
 
     // MARK: - AsyncFileContainer
 
     public func copy(fromHost sourcePath: String, toContainer destinationPath: String) async throws {
       let data = try Data(contentsOf: URL(fileURLWithPath: sourcePath))
-      _ = try await commandsBox.commands.install(data)
+      _ = try await commands.install(data)
     }
 
     public func copy(fromContainer sourcePath: String, toHost destinationPath: String) async throws -> String {
@@ -460,11 +452,11 @@ public enum FileContainer {
     }
 
     public func remove(_ path: String) async throws {
-      _ = try await commandsBox.commands.remove(uuid: path)
+      _ = try await commands.remove(uuid: path)
     }
 
     public func contents(ofDirectory path: String) async throws -> [String] {
-      let profiles = try await commandsBox.commands.all()
+      let profiles = try await commands.all()
       var files: [String] = []
       for profile in profiles {
         if let uuid = profile["UUID"] as? String {
