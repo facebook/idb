@@ -100,11 +100,8 @@ public final class LogicTestRunner {
     // The reporter is not Sendable, but every call to it, this one included, runs on that one
     // serial queue.
     nonisolated(unsafe) let report = report
-    await withCheckedContinuation { (continuation: CheckedContinuation<Void, Never>) in
-      target.workQueue.async {
-        report()
-        continuation.resume()
-      }
+    await target.workQueue.perform {
+      report()
     }
   }
 
