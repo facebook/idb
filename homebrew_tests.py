@@ -85,22 +85,18 @@ def zipped(files):
     return buffer.getvalue()
 
 
-def release_json(
-    tag="v1.6.2", with_formulae=True, published_at="2026-09-01T00:00:00Z", draft=False
-):
-    names = [f"{n}.rb" for n in homebrew.FORMULAE] + [homebrew.RELEASE_MANIFEST]
-    base = f"https://github.com/facebook/idb/releases/download/{tag}"
+def release_json(tag="v1.6.2", published_at="2026-09-01T00:00:00Z", draft=False):
     return {
         "tag_name": tag,
         "draft": draft,
         "prerelease": False,
         "published_at": published_at,
         "html_url": f"https://github.com/facebook/idb/releases/tag/{tag}",
-        "assets": [
-            {"name": n, "browser_download_url": f"{base}/{n}"}
-            for n in (names if with_formulae else [COMPANION])
-        ],
     }
+
+
+def stable_route(carried="v1.6.2"):
+    return {homebrew.STABLE_MANIFEST_URL: json_response({"tag": carried})}
 
 
 def run_json(run_id=42, sha="a" * 40, path=homebrew.CI_WORKFLOW_PATH):
@@ -137,18 +133,11 @@ def artifacts_json(run_id, names, expired=()):
     }
 
 
-def release_routes(tag="v1.6.2", tamper=None):
-    formulae, manifest = rendered(
-        f"https://github.com/facebook/idb/releases/download/{tag}"
-    )
-    base = f"https://github.com/facebook/idb/releases/download/{tag}"
-    routes = {f"{REPO_API}/releases/tags/{tag}": json_response(release_json(tag))}
-    for name, text in formulae.items():
-        if name == tamper:
-            text += "# tampered\n"
-        routes[f"{base}/{name}"] = Response(200, {}, text.encode())
-    routes[f"{base}/{homebrew.RELEASE_MANIFEST}"] = json_response(manifest)
-    return routes
+def release_routes(tag="v1.6.2", carried="v1.6.2"):
+    return {
+        f"{REPO_API}/releases/tags/{tag}": json_response(release_json(tag)),
+        **stable_route(carried),
+    }
 
 
 def ci_routes(run_id=42, artifacts=("formulae", "idb-companion", "fb-idb-dist")):
@@ -180,6 +169,7 @@ class FakeBrew:
     def __init__(self, root):
         self.root = Path(root)
         self.calls = []
+        self.stable_version = "1.6.2"  # what its facebook/fb clone resolves
         for name in ("repository", "prefix/opt", "cellar"):
             (self.root / name).mkdir(parents=True)
 
@@ -200,6 +190,9 @@ class FakeBrew:
             return subprocess.CompletedProcess(
                 argv, 0, str(self.root / paths[args[0]]), ""
             )
+        if args[:2] == ["info", "--json=v2"]:
+            info = {"formulae": [{"versions": {"stable": self.stable_version}}]}
+            return subprocess.CompletedProcess(argv, 0, json.dumps(info), "")
         self.calls.append(args)
         return subprocess.CompletedProcess(argv, 0, "", "")
 
@@ -415,44 +408,53 @@ class RepointTests(TestCase):
 
 
 class InstallTests(TestCase):
-    def test_a_release_is_staged_and_installed_fully_qualified(self):
-        ctx = self.context(release_routes())
-        homebrew.install(ctx, "v1.6.2")
-        formula_dir = self.fake_brew.tap_dir / "Formula"
-        self.assertEqual(
-            sorted(p.name for p in formula_dir.iterdir()),
-            ["idb-cli.rb", "idb-companion.rb", "idb.rb"],
-        )
-        record = json.loads((self.fake_brew.tap_dir / "build.json").read_text())
-        self.assertEqual(record["kind"], "release")
-        self.assertEqual(record["tag"], "v1.6.2")
+    def test_a_release_installs_from_facebook_fb_without_the_local_tap(self):
+        homebrew.install(self.context(release_routes()), "v1.6.2")
         self.assertEqual(
             self.fake_brew.calls,
             [
-                ["trust", "idb-local/builds"],
-                [
-                    "install",
-                    "idb-local/builds/idb-companion",
-                    "idb-local/builds/idb-cli",
-                ],
+                ["tap", "facebook/fb"],
+                ["install", "facebook/fb/idb-companion", "facebook/fb/idb-cli"],
             ],
         )
-
-    def test_a_tampered_release_installs_nothing(self):
-        ctx = self.context(release_routes(tamper="idb-companion.rb"))
-        with self.assertRaisesRegex(HomebrewError, "does not match"):
-            homebrew.install(ctx, "v1.6.2")
-        self.assertEqual(self.fake_brew.calls, [])
         self.assertFalse(self.fake_brew.tap_dir.exists())
 
-    def test_a_release_without_formulae_is_reported(self):
-        routes = {
-            f"{REPO_API}/releases/tags/v1.2.0": json_response(
-                release_json("v1.2.0", with_formulae=False)
-            )
-        }
-        with self.assertRaisesRegex(HomebrewError, "no rendered formulae"):
-            homebrew.install(self.context(routes), "v1.2.0")
+    def test_a_release_facebook_fb_does_not_carry_is_refused(self):
+        ctx = self.context(release_routes("v1.6.1", carried="v1.6.2"))
+        with self.assertRaisesRegex(HomebrewError, "facebook/fb carries v1.6.2"):
+            homebrew.install(ctx, "v1.6.1")
+        self.assertEqual(self.fake_brew.calls, [])
+
+    def test_a_stale_clone_of_facebook_fb_installs_nothing(self):
+        self.fake_brew.stable_version = "1.6.1"
+        with self.assertRaisesRegex(HomebrewError, "run `brew update`"):
+            homebrew.install(self.context(release_routes()), "v1.6.2")
+        self.assertEqual(self.fake_brew.calls, [["tap", "facebook/fb"]])
+
+    def test_a_release_leaves_facebook_fb_installs_for_brew_to_upgrade(self):
+        for name in homebrew.FORMULAE:
+            self.fake_brew.install_keg(name, "1.6.1", "facebook/fb")
+
+        def confirm(_):
+            raise AssertionError("upgrading facebook/fb's own install should not ask")
+
+        homebrew.install(self.context(release_routes(), confirm=confirm), "v1.6.2")
+        self.assertEqual(
+            self.fake_brew.calls[1:],
+            [["install", "facebook/fb/idb-companion", "facebook/fb/idb-cli"]],
+        )
+
+    def test_a_release_replaces_local_builds_without_asking(self):
+        self.fake_brew.install_keg("idb-cli", "0.0.0", homebrew.TAP)
+        self.fake_brew.install_keg("idb-companion", "0.0.0", homebrew.TAP)
+        homebrew.install(self.context(release_routes()), "v1.6.2")
+        self.assertEqual(
+            self.fake_brew.calls[1:],
+            [
+                ["uninstall", "--ignore-dependencies", "idb-companion", "idb-cli"],
+                ["install", "facebook/fb/idb-companion", "facebook/fb/idb-cli"],
+            ],
+        )
 
     def test_a_ci_build_points_at_the_downloaded_assets(self):
         ctx = self.context(ci_routes())
@@ -482,17 +484,16 @@ class InstallTests(TestCase):
             return False
 
         with self.assertRaisesRegex(HomebrewError, "left the installed"):
-            homebrew.install(self.context(release_routes(), confirm=decline), "v1.6.2")
+            homebrew.install(self.context(ci_routes(), confirm=decline), "run:42")
         self.assertEqual(len(questions), 1)
         self.assertIn("idb-cli 1.6.2 (facebook/fb)", questions[0])
         self.assertEqual(self.fake_brew.calls, [])
+        self.assertFalse(self.fake_brew.tap_dir.exists())
 
     def test_a_confirmed_replacement_removes_the_metapackage_too(self):
         for name in homebrew.FORMULAE:
             self.fake_brew.install_keg(name, "1.6.2", "facebook/fb")
-        homebrew.install(
-            self.context(release_routes(), confirm=lambda _: True), "v1.6.2"
-        )
+        homebrew.install(self.context(ci_routes(), confirm=lambda _: True), "run:42")
         self.assertEqual(
             self.fake_brew.calls[1],
             ["uninstall", "--ignore-dependencies", "idb", "idb-companion", "idb-cli"],
@@ -504,8 +505,8 @@ class InstallTests(TestCase):
         def confirm(_):
             raise AssertionError("--yes should not ask")
 
-        ctx = self.context(release_routes(), confirm=confirm)
-        homebrew.install(ctx, "v1.6.2", only="cli", assume_yes=True)
+        ctx = self.context(ci_routes(), confirm=confirm)
+        homebrew.install(ctx, "run:42", only="cli", assume_yes=True)
         self.assertEqual(
             self.fake_brew.calls[1:],
             [
@@ -517,7 +518,7 @@ class InstallTests(TestCase):
     def test_replacing_an_earlier_local_build_does_not_ask(self):
         self.fake_brew.install_keg("idb-cli", "0.0.0", homebrew.TAP)
         self.fake_brew.install_keg("idb-companion", "0.0.0", homebrew.TAP)
-        homebrew.install(self.context(release_routes()), "v1.6.2")
+        homebrew.install(self.context(ci_routes()), "run:42")
         self.assertEqual(
             self.fake_brew.calls[1][:2], ["uninstall", "--ignore-dependencies"]
         )
@@ -598,15 +599,21 @@ class BuildsTests(TestCase):
             ],
         )
 
-    def test_release_rows_flag_releases_without_formulae(self):
+    def test_release_rows_offer_only_the_release_facebook_fb_carries(self):
         routes = {
             f"{REPO_API}/releases": json_response(
-                [release_json("v1.7.0"), release_json("v1.2.0", with_formulae=False)]
-            )
+                [
+                    release_json("v1.7.0", published_at="2026-09-23T00:00:00Z"),
+                    release_json("v1.6.2", published_at="2026-09-17T00:00:00Z"),
+                ]
+            ),
+            **stable_route("v1.6.2"),
         }
         rows = homebrew.release_rows(GitHub(None, FakeTransport(routes)), 2)
-        self.assertEqual([r.installable for r in rows], [True, False])
-        self.assertEqual(rows[1].note, "no formulae attached")
+        self.assertEqual(
+            [(r.spec, r.installable, r.note) for r in rows],
+            [("v1.7.0", False, "facebook/fb carries v1.6.2"), ("v1.6.2", True, "")],
+        )
 
     def test_release_rows_skip_drafts_and_list_newest_first(self):
         routes = {
@@ -617,7 +624,8 @@ class BuildsTests(TestCase):
                     release_json("v1.6.2", published_at="2026-09-23T00:00:00Z"),
                     release_json("v1.6.0", published_at="2026-09-17T00:00:00Z"),
                 ]
-            )
+            ),
+            **stable_route(),
         }
         rows = homebrew.release_rows(GitHub(None, FakeTransport(routes)), 2)
         self.assertEqual([r.spec for r in rows], ["v1.6.2", "v1.6.1"])

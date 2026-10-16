@@ -10,11 +10,11 @@
 
 """List, install and inspect idb builds through Homebrew.
 
-Any facebook/idb release, and any commit with a successful CI run, can be
-installed:
+The release the facebook/fb tap carries, and any commit with a successful CI
+run, can be installed:
 
     ./homebrew.py builds               releases and recent CI builds of main
-    ./homebrew.py install v1.6.2       a release
+    ./homebrew.py install v1.6.2       a release, if facebook/fb carries it
     ./homebrew.py install 1a2b3c4      the CI build of a commit
     ./homebrew.py install pr:123       ... of a pull request's head
     ./homebrew.py install run:456      ... of one CI run
@@ -22,10 +22,11 @@ installed:
     ./homebrew.py uninstall --restore  back to facebook/fb/idb
     ./homebrew.py                      interactive picker
 
-Builds are installed from a local tap, idb-local/builds, whose formulae each
-install replaces; the facebook/fb tap is never modified. Downloading CI
-artifacts needs a GitHub token: GITHUB_TOKEN or GH_TOKEN, or a logged-in `gh`.
-Standard library only, Python 3.9 or later.
+A release installs from facebook/fb itself. A CI build installs from a local
+tap, idb-local/builds, whose formulae each install replaces; the facebook/fb
+tap is never modified. Downloading CI artifacts needs a GitHub token:
+GITHUB_TOKEN or GH_TOKEN, or a logged-in `gh`. Standard library only, Python
+3.9 or later.
 """
 
 from __future__ import annotations
@@ -55,7 +56,13 @@ CI_WORKFLOW_PATH = ".github/workflows/ci.yml"
 
 TAP = "idb-local/builds"
 TAP_PATH = Path("Library/Taps/idb-local/homebrew-builds")
-STABLE_FORMULA = "facebook/fb/idb"
+STABLE_TAP = "facebook/fb"
+STABLE_FORMULA = f"{STABLE_TAP}/idb"
+# Every tap bump commits the render manifest of its release beside the
+# formulae, so its tag names the one release facebook/fb can install.
+STABLE_MANIFEST_URL = (
+    "https://raw.githubusercontent.com/facebook/homebrew-fb/main/idb-release.json"
+)
 BUILD_RECORD = "build.json"
 
 # `idb` is left out of installs: its unqualified `depends_on "idb-cli"` is
@@ -64,7 +71,6 @@ BUILD_RECORD = "build.json"
 FORMULAE = ("idb-companion", "idb-cli", "idb")
 INSTALLABLE = {"companion": "idb-companion", "cli": "idb-cli"}
 
-RELEASE_MANIFEST = "formulae-manifest.json"
 CI_MANIFEST = "manifest.json"
 CI_FORMULAE_ARTIFACT = "formulae"
 CI_ASSET_ARTIFACTS = ("idb-companion", "fb-idb-dist")
@@ -123,12 +129,6 @@ class Release:
     prerelease: bool
     published_at: str
     url: str
-    assets: Mapping[str, str]  # asset name -> download url
-
-    @property
-    def has_formulae(self):
-        wanted = [f"{name}.rb" for name in FORMULAE] + [RELEASE_MANIFEST]
-        return all(name in self.assets for name in wanted)
 
 
 @dataclass(frozen=True)
@@ -167,7 +167,6 @@ def release_from_json(data):
         prerelease=bool(data.get("prerelease")),
         published_at=data.get("published_at") or "",
         url=data.get("html_url") or "",
-        assets={a["name"]: a["browser_download_url"] for a in data.get("assets", [])},
     )
 
 
@@ -249,6 +248,10 @@ class GitHub:
         return release_from_json(
             self.api("releases/latest", missing="facebook/idb has no releases")
         )
+
+    def stable_tag(self):
+        """The release facebook/fb carries."""
+        return json.loads(self.download(STABLE_MANIFEST_URL))["tag"]
 
     def ci_runs(self, limit, branch=None, head_sha=None):
         data = self.api(
@@ -393,27 +396,6 @@ def verify(manifest, formulae):
             )
 
 
-def fetch(github, build, cache, log=print):
-    if isinstance(build, Release):
-        return fetch_release(github, build, log)
-    return fetch_ci(github, build, cache / f"ci-{build.id}", log)
-
-
-def fetch_release(github, release, log=print):
-    if not release.has_formulae:
-        raise HomebrewError(
-            f"{release.tag} has no rendered formulae attached; only releases "
-            "published with formulae as assets can be installed this way"
-        )
-    log(f"Fetching the formulae attached to {release.tag}")
-    manifest = json.loads(github.download(release.assets[RELEASE_MANIFEST]))
-    formulae = {
-        f"{n}.rb": github.download(release.assets[f"{n}.rb"]).decode() for n in FORMULAE
-    }
-    verify(manifest, formulae)
-    return Fetched(release, formulae)
-
-
 def fetch_ci(github, run, directory, log=print):
     artifacts = github.artifacts(run.id)
     wanted = (CI_FORMULAE_ARTIFACT, *CI_ASSET_ARTIFACTS)
@@ -538,6 +520,11 @@ class Brew:
     def tap_dir(self):
         return Path(self.output("--repository")) / TAP_PATH
 
+    def stable_version(self, formula):
+        """The version brew's clone of the formula's tap would install."""
+        info = json.loads(self.output("info", "--json=v2", formula))
+        return info["formulae"][0]["versions"]["stable"]
+
     def installed(self):
         """The installed idb formulae, read from their kegs' install receipts."""
         prefix = Path(self.output("--prefix"))
@@ -604,13 +591,50 @@ class Context:
 def install(ctx, spec, only=None, assume_yes=False):
     ctx.brew.require()
     build = resolve(ctx.github, spec)
-    fetched = fetch(ctx.github, build, ctx.cache, ctx.log)
     names = [INSTALLABLE[only]] if only else list(INSTALLABLE.values())
+    if isinstance(build, Release):
+        require_stable_release(ctx, build)
+        removing = removals(ctx, names, STABLE_TAP, assume_yes)
+        tap = STABLE_TAP
+    else:
+        fetched = fetch_ci(ctx.github, build, ctx.cache / f"ci-{build.id}", ctx.log)
+        # Every CI build is 0.0.0, so brew would keep an earlier one in place.
+        removing = removals(ctx, names, None, assume_yes)
+        stage(ctx.brew, fetched)
+        tap = TAP
+    if removing:
+        ctx.brew.call("uninstall", "--ignore-dependencies", *removing)
+    ctx.brew.call("install", *(f"{tap}/{n}" for n in names))
+    ctx.log(f"Installed {', '.join(names)} from {describe_record(build_record(build))}")
+
+
+def require_stable_release(ctx, release):
+    """A release installs from facebook/fb, which carries only the newest
+    bump; brew's clone of the tap has to have caught up with it, or `brew
+    install` would quietly install another."""
+    carried = ctx.github.stable_tag()
+    if release.tag != carried:
+        raise HomebrewError(
+            f"{STABLE_TAP} carries {carried}, the only release that can be installed"
+        )
+    ctx.brew.call("tap", STABLE_TAP)
+    cloned = ctx.brew.stable_version(f"{STABLE_TAP}/idb-companion")
+    if cloned != release.tag[1:]:
+        raise HomebrewError(
+            f"brew's clone of {STABLE_TAP} is at {cloned}, behind {carried}: "
+            "run `brew update` and try again"
+        )
+
+
+def removals(ctx, names, keep_tap, assume_yes):
+    """What has to be uninstalled before `names` install, once the user has
+    agreed to replace anything not from the local tap. Installs from
+    `keep_tap` stay, for `brew install` to upgrade in place."""
     current = ctx.brew.installed()
+    removing = [n for n in names if n in current and current[n].tap != keep_tap]
     # facebook/fb's idb metapackage holds its dependencies in place, so it
     # goes too whenever one of them is being replaced.
-    removing = [n for n in names if n in current]
-    if removing and "idb" in current:
+    if removing and "idb" in current and current["idb"].tap != keep_tap:
         removing.insert(0, "idb")
     foreign = [n for n in removing if current[n].tap != TAP]
     if foreign:
@@ -619,11 +643,7 @@ def install(ctx, spec, only=None, assume_yes=False):
         )
         if not (assume_yes or ctx.confirm(f"Replace {summary}?")):
             raise HomebrewError("left the installed idb formulae in place")
-    stage(ctx.brew, fetched)
-    if removing:
-        ctx.brew.call("uninstall", "--ignore-dependencies", *removing)
-    ctx.brew.call("install", *(f"{TAP}/{n}" for n in names))
-    ctx.log(f"Installed {', '.join(names)} from {describe_record(build_record(build))}")
+    return removing
 
 
 def uninstall(ctx, restore=False):
@@ -679,12 +699,13 @@ class Row:
 
 
 def release_rows(github, limit):
+    carried = github.stable_tag()
     return [
         Row(
             r.tag,
             (r.tag, r.published_at[:10], "prerelease" if r.prerelease else ""),
-            r.has_formulae,
-            "" if r.has_formulae else "no formulae attached",
+            r.tag == carried,
+            "" if r.tag == carried else f"{STABLE_TAP} carries {carried}",
         )
         for r in github.releases(limit)
     ]
