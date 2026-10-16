@@ -590,18 +590,18 @@ private func runSelectedCommand(_ userDefaults: UserDefaults, xcodeAvailable: Bo
 /// Suspends until `signalCode` is delivered, returning the signal number. The default disposition is set
 /// to `SIG_IGN` so the dispatch source is the sole handler; cancelling the awaiting task tears it down.
 private func waitForSignal(_ signalCode: Int32, exitMessage: String, logger: ControlCoreLogger) async throws -> Int32 {
-  let promise = AsyncPromise<Int32>()
+  let promise = AsyncEvent<Int32>()
   let source = DispatchSource.makeSignalSource(signal: signalCode, queue: DispatchQueue.main)
   source.setEventHandler {
     logger.error().log(exitMessage)
-    promise.resolve(signalCode)
+    promise.happen(signalCode)
   }
   source.resume()
   var action = sigaction()
   action.__sigaction_u.__sa_handler = SIG_IGN
   sigaction(signalCode, &action, nil)
   defer { source.cancel() }
-  return try await promise.value
+  return try await promise.wait()
 }
 
 /// Suspends until any of `signals` is delivered, returning the first signal

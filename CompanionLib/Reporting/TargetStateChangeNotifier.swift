@@ -7,7 +7,6 @@
 
 import FBControlCore
 import Foundation
-import IDBConcurrency
 
 enum TargetStateChangeNotifierError: Error {
   case noTargetSets
@@ -40,7 +39,7 @@ public final class TargetStateChangeNotifier: TargetSetDelegate {
   private let targetSets: [TargetSet]
   private let logger: ControlCoreLogger
   private var current: [String: TargetDescription]
-  private let donePromise = AsyncPromise<Void>()
+  private let donePromise = AsyncEvent<Void>()
 
   /// Writes each update to `filePath`, which is created holding an empty list.
   public convenience init(filePath: String, targetSets: [TargetSet], logger: ControlCoreLogger) throws {
@@ -104,7 +103,7 @@ public final class TargetStateChangeNotifier: TargetSetDelegate {
 
   /// Suspends until the notifier finishes (on a write error) or is cancelled.
   public func waitUntilDone() async throws {
-    try await donePromise.value
+    try await donePromise.wait()
   }
 
   @discardableResult

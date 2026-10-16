@@ -65,7 +65,7 @@ extension IDBXCTestReporterError: LocalizedError {
 
 final class IDBXCTestReporter: XCTestReporter, DataConsumer, @unchecked Sendable {
 
-  private let reportingTerminated = AsyncPromise<Int>()
+  private let reportingTerminated = AsyncEvent<Int>()
 
   /// Set once the test operation has started, which is the earliest point the configuration is known.
   var configuration: Configuration?
@@ -74,7 +74,7 @@ final class IDBXCTestReporter: XCTestReporter, DataConsumer, @unchecked Sendable
 
   private let logger: ControlCoreLogger
 
-  private let processUnderTestExited = AsyncPromise<Void>()
+  private let processUnderTestExited = AsyncEvent<Void>()
 
   @Atomic private var currentInfo = CurrentTestInfo()
 
@@ -85,7 +85,7 @@ final class IDBXCTestReporter: XCTestReporter, DataConsumer, @unchecked Sendable
 
   /// Waits until reporting has terminated. Returns the status raw value reported.
   func awaitReportingTerminated() async throws -> Int {
-    try await reportingTerminated.value
+    try await reportingTerminated.wait()
   }
 
   // MARK: - DataConsumer implementation
@@ -126,7 +126,7 @@ final class IDBXCTestReporter: XCTestReporter, DataConsumer, @unchecked Sendable
   }
 
   func processUnderTestDidExit() {
-    processUnderTestExited.resolve(())
+    processUnderTestExited.happen()
   }
 
   func testSuite(_ testSuite: String, didStartAt startTime: String) {
@@ -401,7 +401,7 @@ final class IDBXCTestReporter: XCTestReporter, DataConsumer, @unchecked Sendable
 
     if shouldCloseStream {
       logger.log("Test Reporting has finished with status \(response.status)")
-      reportingTerminated.resolve(response.status.rawValue)
+      reportingTerminated.happen(response.status.rawValue)
     }
   }
 
@@ -414,7 +414,7 @@ final class IDBXCTestReporter: XCTestReporter, DataConsumer, @unchecked Sendable
   }
 
   private func getCoverageResponseData(config: CodeCoverageConfiguration, binariesPath: [String]) async throws -> Data {
-    try await processUnderTestExited.value
+    try await processUnderTestExited.wait()
     switch config.format {
     case .exported:
       let data = try await getCoverageDataExported(config: config, binariesPath: binariesPath)

@@ -6,8 +6,8 @@
  */
 
 import ArgumentParser
+import FBControlCore
 import Foundation
-import IDBConcurrency
 
 @main
 struct VideoCommand: AsyncParsableCommand {
@@ -18,12 +18,12 @@ struct VideoCommand: AsyncParsableCommand {
 }
 
 func waitForStopSignal() async {
-  let stopped = AsyncPromise<Void>()
+  let stopped = AsyncEvent<Void>()
   let previousInterrupt = signal(SIGINT, SIG_IGN)
   let previousTerminate = signal(SIGTERM, SIG_IGN)
   let sources = [SIGINT, SIGTERM].map { number in
     let source = DispatchSource.makeSignalSource(signal: number, queue: .global())
-    source.setEventHandler { stopped.resolve(()) }
+    source.setEventHandler { stopped.happen() }
     source.resume()
     return source
   }
@@ -32,5 +32,5 @@ func waitForStopSignal() async {
     signal(SIGINT, previousInterrupt)
     signal(SIGTERM, previousTerminate)
   }
-  _ = try? await stopped.value
+  _ = try? await stopped.wait()
 }

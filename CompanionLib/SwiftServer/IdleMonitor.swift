@@ -8,7 +8,6 @@
 import Dispatch
 import FBControlCore
 import Foundation
-import IDBConcurrency
 
 /// Tracks in-flight work and signals when none has run for `idleTime`.
 ///
@@ -20,11 +19,11 @@ import IDBConcurrency
 /// runs synchronously and then `expired` resolves.
 public final class IdleMonitor: @unchecked Sendable {
 
-  private let expiredPromise = AsyncPromise<Void>()
+  private let expiredPromise = AsyncEvent<Void>()
 
   /// Suspends until `idleTime` seconds pass with no active or newly-received requests.
   public func waitUntilExpired() async throws {
-    try await expiredPromise.value
+    try await expiredPromise.wait()
   }
 
   private let idleTime: TimeInterval
@@ -123,6 +122,6 @@ public final class IdleMonitor: @unchecked Sendable {
 
     logger.info().log("No activity for \(Int(idleTime))s; signalling idle")
     onShutdownStarted?()
-    expiredPromise.resolve(())
+    expiredPromise.happen()
   }
 }

@@ -45,10 +45,10 @@ struct LogMethodHandler: @unchecked Sendable {
     send: @escaping @Sendable (Idb_LogResponse) throws -> Void,
     log: any LogStarting
   ) async throws {
-    let writingDone = AsyncPromise<Void>()
+    let writingDone = AsyncEvent<Void>()
 
     let consumer = SynchronousDataConsumer { data in
-      if writingDone.isResolved {
+      if writingDone.hasHappened {
         return
       }
       let response = Idb_LogResponse.with {
@@ -64,7 +64,7 @@ struct LogMethodHandler: @unchecked Sendable {
     let operation = try await log.start(consumer: consumer)
 
     let observeWritingDone = Task<Void, Error> {
-      try await writingDone.value
+      try await writingDone.wait()
     }
     // `operation` is a thread-safe handle but not Sendable; rebind as
     // nonisolated(unsafe) so the observer Task can capture it.
@@ -73,7 +73,7 @@ struct LogMethodHandler: @unchecked Sendable {
       try await operationToObserve.waitUntilCompleted()
     }
     try await Task.select(observeWritingDone, observeOperationCompletion).value
-    writingDone.resolve(())
+    writingDone.happen()
 
     observeOperationCompletion.cancel()
   }
