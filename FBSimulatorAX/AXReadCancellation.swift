@@ -34,7 +34,7 @@ final class AXReadCancellation: @unchecked Sendable {
   /// straight away and `body` finishes unobserved.
   func wait<T>(for body: @escaping () -> T) throws -> T {
     let finished = DispatchSemaphore(value: 0)
-    let box = AXReadResultBox<T>()
+    let box = AXResultBox<T>()
     let registered: Bool = lock.withLock {
       guard !cancelled else { return false }
       waiters.append(finished)
@@ -50,12 +50,4 @@ final class AXReadCancellation: @unchecked Sendable {
     guard let value = box.value, !isCancelled else { throw CancellationError() }
     return value
   }
-}
-
-/// Carries a request's result off the queue it was waited on. The semaphore wait orders the write before the
-/// read.
-// SAFETY: written once, before the semaphore is signalled, and read only after the wait returns.
-// patternlint-disable-next-line unchecked-sendable
-private final class AXReadResultBox<T>: @unchecked Sendable {
-  var value: T?
 }

@@ -62,15 +62,15 @@ final class CoreSimulatorAXTranslationTransport: AXTranslationTransport, @unchec
 
   func send(_ request: AXPTranslatorRequest, timeout: TimeInterval) -> AXPTranslatorResponse? {
     let answered = DispatchSemaphore(value: 0)
-    let box = ResponseBox()
+    let box = AXResultBox<AXPTranslatorResponse>()
     device.sendAccessibilityRequestAsync(request, completionQueue: completionQueue) { response in
-      box.response = response
+      box.value = response
       answered.signal()
     }
     guard answered.wait(timeout: .now() + timeout) == .success else {
       return nil
     }
-    return box.response
+    return box.value
   }
 }
 
@@ -224,13 +224,15 @@ enum AXTranslationWire {
   }
 }
 
-/// Mutable holder so the synchronous send can capture the response out of a `@Sendable` completion
-/// handler. The semaphore wait establishes the happens-before needed before the value is read.
-private final class ResponseBox: @unchecked Sendable {
-  var response: AXPTranslatorResponse?
+/// Carries a result out of a `@Sendable` completion handler to a synchronous wait. The semaphore wait orders
+/// the write before the read.
+// SAFETY: written before the semaphore is signalled, and read only after a wait on it succeeds.
+// patternlint-disable-next-line unchecked-sendable
+final class AXResultBox<T>: @unchecked Sendable {
+  var value: T?
 }
 
-/// As `ResponseBox`, for the channel's reply, and whether the send stopped waiting for it. Both are written
+/// As `AXResultBox`, for the channel's reply, and whether the send stopped waiting for it. Both are written
 /// under the transport's lock, which is what orders a late reply against the send giving up.
 private final class ReplyBox: @unchecked Sendable {
   var result: Result<xpc_object_t, SimulatorXPCError>?
