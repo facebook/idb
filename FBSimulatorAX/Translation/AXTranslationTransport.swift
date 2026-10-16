@@ -86,12 +86,12 @@ final class CoreSimulatorBridgeAXTranslationTransport: AXTranslationTransport, @
 
   let kind = AXTranslationTransportKind.bridge
 
-  // SAFETY: `channel` and `abandoned` are only read or written under `lock`; the rest is immutable.
+  // SAFETY: `channel` is only read or replaced under `lock`; the rest is immutable.
   private let connector: SimulatorXPCConnector
   private let queue = DispatchQueue(label: "com.facebook.fbsimulatorcontrol.accessibility_translator.bridge")
   private let lock = NSLock()
   private var channel: SimulatorXPCChannel?
-  private var abandoned = 0
+  private let abandoned = AXAbandonedRequests()
 
   init(connector: SimulatorXPCConnector) {
     self.connector = connector
@@ -107,17 +107,13 @@ final class CoreSimulatorBridgeAXTranslationTransport: AXTranslationTransport, @
     guard let message = AXTranslationWire.message(for: request), let channel = try? connectedChannel() else {
       return nil
     }
-    let answered = DispatchSemaphore(value: 0)
-    let box = ReplyBox()
-    channel.request(message) { [weak self] result in
-      self?.settle(box, with: result)
-      answered.signal()
+    let reply: Result<xpc_object_t, SimulatorXPCError>? = abandoned.wait(within: timeout) { answer in
+      channel.request(message) { answer($0) }
     }
-    guard answered.wait(timeout: .now() + timeout) == .success, let result = box.result else {
-      abandon(box)
+    guard let reply else {
       return nil
     }
-    switch result {
+    switch reply {
     case let .success(reply):
       return AXTranslationWire.response(from: reply)
     case .failure:
@@ -131,24 +127,7 @@ final class CoreSimulatorBridgeAXTranslationTransport: AXTranslationTransport, @
   /// Held for the simulator, so a request abandoned by one read is still counted when the next read sends: XPC
   /// cannot withdraw a message, and the bridge answers it before anything sent after it.
   var abandonedRequests: Int {
-    lock.withLock { abandoned }
-  }
-
-  private func abandon(_ box: ReplyBox) {
-    lock.withLock {
-      guard box.result == nil else { return }
-      box.abandoned = true
-      abandoned += 1
-    }
-  }
-
-  private func settle(_ box: ReplyBox, with result: Result<xpc_object_t, SimulatorXPCError>) {
-    lock.withLock {
-      box.result = result
-      if box.abandoned {
-        abandoned -= 1
-      }
-    }
+    abandoned.count
   }
 
   /// The live channel, or a new one when there is none: on first use, and after the bridge went away, as it
@@ -232,9 +211,46 @@ final class AXResultBox<T>: @unchecked Sendable {
   var value: T?
 }
 
-/// As `AXResultBox`, for the channel's reply, and whether the send stopped waiting for it. Both are written
-/// under the transport's lock, which is what orders a late reply against the send giving up.
-private final class ReplyBox: @unchecked Sendable {
-  var result: Result<xpc_object_t, SimulatorXPCError>?
-  var abandoned = false
+/// The requests a transport stopped waiting for whose answers have not yet arrived.
+// SAFETY: `outstanding` and every `Pending` are only read or written under `lock`.
+// patternlint-disable-next-line unchecked-sendable
+final class AXAbandonedRequests: @unchecked Sendable {
+  private let lock = NSLock()
+  private var outstanding = 0
+
+  var count: Int {
+    lock.withLock { outstanding }
+  }
+
+  /// The answer `send` delivers to the closure it is given, or nil when none arrived within `timeout`. A request
+  /// not answered in time is counted until its answer does arrive.
+  func wait<Answer>(within timeout: TimeInterval, send: (@escaping @Sendable (Answer) -> Void) -> Void) -> Answer? {
+    let answered = DispatchSemaphore(value: 0)
+    let pending = Pending<Answer>()
+    send { [self] answer in
+      lock.withLock {
+        pending.answer = answer
+        if pending.abandoned {
+          outstanding -= 1
+        }
+      }
+      answered.signal()
+    }
+    guard answered.wait(timeout: .now() + timeout) == .success else {
+      lock.withLock {
+        guard pending.answer == nil else { return }
+        pending.abandoned = true
+        outstanding += 1
+      }
+      return nil
+    }
+    return lock.withLock { pending.answer }
+  }
+
+  // SAFETY: only read or written under the owning `AXAbandonedRequests`'s lock.
+  // patternlint-disable-next-line unchecked-sendable
+  private final class Pending<Answer>: @unchecked Sendable {
+    var answer: Answer?
+    var abandoned = false
+  }
 }
