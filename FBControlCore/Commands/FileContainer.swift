@@ -313,85 +313,66 @@ public enum FileContainer {
 
     public func copy(fromHost sourcePath: String, toContainer destinationPath: String) async throws {
       let rootFile = self.rootFile
-      try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
-        queue.async {
-          do {
-            let directory = try rootFile.file(byAppendingPathComponent: destinationPath)
-            if !directory.fileExists().exists {
-              try directory.createDirectory()
-            }
-            // Attempt to delete first to overwrite.
-            let destination = try directory.file(byAppendingPathComponent: (sourcePath as NSString).lastPathComponent)
-            try? destination.removeItem()
-            do {
-              try destination.populate(withContentsOfHostPath: sourcePath)
-            } catch {
-              throw FileContainerError.copyIntoContainerFailed(source: sourcePath, destination: destinationPath, underlying: error)
-            }
-            continuation.resume(returning: ())
-          } catch {
-            continuation.resume(throwing: error)
-          }
+      try await queue.perform {
+        let directory = try rootFile.file(byAppendingPathComponent: destinationPath)
+        if !directory.fileExists().exists {
+          try directory.createDirectory()
+        }
+        // Attempt to delete first to overwrite.
+        let destination = try directory.file(byAppendingPathComponent: (sourcePath as NSString).lastPathComponent)
+        try? destination.removeItem()
+        do {
+          try destination.populate(withContentsOfHostPath: sourcePath)
+        } catch {
+          throw FileContainerError.copyIntoContainerFailed(source: sourcePath, destination: destinationPath, underlying: error)
         }
       }
     }
 
     public func copy(fromContainer sourcePath: String, toHost destinationPath: String) async throws -> String {
       let rootFile = self.rootFile
-      return try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<String, Error>) in
-        queue.async {
+      return try await queue.perform {
+        let source = try rootFile.file(byAppendingPathComponent: sourcePath)
+        let (sourceExists, sourceIsDirectory) = source.fileExists()
+        guard sourceExists else {
+          throw FileContainerError.sourceDoesNotExist(source: String(describing: source))
+        }
+        var dstPath = destinationPath
+        if !sourceIsDirectory {
           do {
-            let source = try rootFile.file(byAppendingPathComponent: sourcePath)
-            let (sourceExists, sourceIsDirectory) = source.fileExists()
-            guard sourceExists else {
-              throw FileContainerError.sourceDoesNotExist(source: String(describing: source))
-            }
-            var dstPath = destinationPath
-            if !sourceIsDirectory {
-              do {
-                try FileManager.default.createDirectory(atPath: dstPath, withIntermediateDirectories: true)
-              } catch {
-                throw FileContainerError.temporaryDirectoryCreationFailed(underlying: error)
-              }
-              dstPath = (dstPath as NSString).appendingPathComponent((sourcePath as NSString).lastPathComponent)
-            }
-            // If it already exists at the destination path it must be removed before copying again.
-            var destinationIsDirectory: ObjCBool = false
-            if FileManager.default.fileExists(atPath: dstPath, isDirectory: &destinationIsDirectory) {
-              do {
-                try FileManager.default.removeItem(atPath: dstPath)
-              } catch {
-                throw FileContainerError.removalBeforeOverwriteFailed(path: dstPath, underlying: error)
-              }
-            }
-            do {
-              try source.populateHostPath(withContents: dstPath)
-            } catch {
-              throw FileContainerError.copyOutOfContainerFailed(source: String(describing: source), destination: dstPath, underlying: error)
-            }
-            continuation.resume(returning: destinationPath)
+            try FileManager.default.createDirectory(atPath: dstPath, withIntermediateDirectories: true)
           } catch {
-            continuation.resume(throwing: error)
+            throw FileContainerError.temporaryDirectoryCreationFailed(underlying: error)
+          }
+          dstPath = (dstPath as NSString).appendingPathComponent((sourcePath as NSString).lastPathComponent)
+        }
+        // If it already exists at the destination path it must be removed before copying again.
+        var destinationIsDirectory: ObjCBool = false
+        if FileManager.default.fileExists(atPath: dstPath, isDirectory: &destinationIsDirectory) {
+          do {
+            try FileManager.default.removeItem(atPath: dstPath)
+          } catch {
+            throw FileContainerError.removalBeforeOverwriteFailed(path: dstPath, underlying: error)
           }
         }
+        do {
+          try source.populateHostPath(withContents: dstPath)
+        } catch {
+          throw FileContainerError.copyOutOfContainerFailed(source: String(describing: source), destination: dstPath, underlying: error)
+        }
+        return destinationPath
       }
     }
 
     public func tail(_ path: String, to consumer: any DataConsumer) async throws -> FileContainerTailOperation {
       let rootFile = self.rootFile
       let serialQueue = queue
-      let hostPath: String = try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<String, Error>) in
-        serialQueue.async {
-          do {
-            let fileToTail = try rootFile.file(byAppendingPathComponent: path)
-            guard let hostPath = fileToTail.pathOnHostFileSystem else {
-              throw FileContainerError.notOnLocalFilesystem(file: String(describing: fileToTail))
-            }
-            continuation.resume(returning: hostPath)
-          } catch {
-            continuation.resume(throwing: error)
-          }
+      let hostPath = try await serialQueue.perform {
+        let fileToTail = try rootFile.file(byAppendingPathComponent: path)
+        guard let hostPath = fileToTail.pathOnHostFileSystem else {
+          throw FileContainerError.notOnLocalFilesystem(file: String(describing: fileToTail))
         }
+        return hostPath
       }
       // The unset builder default buffered stderr into memory that nothing
       // ever read; an open null device discards it outright.
@@ -402,73 +383,46 @@ public enum FileContainer {
 
     public func createDirectory(_ directoryPath: String) async throws {
       let rootFile = self.rootFile
-      try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
-        queue.async {
-          do {
-            let directory = try rootFile.file(byAppendingPathComponent: directoryPath)
-            do {
-              try directory.createDirectory()
-            } catch {
-              throw FileContainerError.directoryCreationFailed(directory: String(describing: directory), underlying: error)
-            }
-            continuation.resume(returning: ())
-          } catch {
-            continuation.resume(throwing: error)
-          }
+      try await queue.perform {
+        let directory = try rootFile.file(byAppendingPathComponent: directoryPath)
+        do {
+          try directory.createDirectory()
+        } catch {
+          throw FileContainerError.directoryCreationFailed(directory: String(describing: directory), underlying: error)
         }
       }
     }
 
     public func move(from sourcePath: String, to destinationPath: String) async throws {
       let rootFile = self.rootFile
-      try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
-        queue.async {
-          do {
-            let source = try rootFile.file(byAppendingPathComponent: sourcePath)
-            let destination = try rootFile.file(byAppendingPathComponent: destinationPath)
-            do {
-              try source.move(to: destination)
-            } catch {
-              throw FileContainerError.moveFailed(source: String(describing: source), destination: String(describing: destination), underlying: error)
-            }
-            continuation.resume(returning: ())
-          } catch {
-            continuation.resume(throwing: error)
-          }
+      try await queue.perform {
+        let source = try rootFile.file(byAppendingPathComponent: sourcePath)
+        let destination = try rootFile.file(byAppendingPathComponent: destinationPath)
+        do {
+          try source.move(to: destination)
+        } catch {
+          throw FileContainerError.moveFailed(source: String(describing: source), destination: String(describing: destination), underlying: error)
         }
       }
     }
 
     public func remove(_ path: String) async throws {
       let rootFile = self.rootFile
-      try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
-        queue.async {
-          do {
-            let file = try rootFile.file(byAppendingPathComponent: path)
-            do {
-              try file.removeItem()
-            } catch {
-              throw FileContainerError.removalFailed(path: String(describing: file), underlying: error)
-            }
-            continuation.resume(returning: ())
-          } catch {
-            continuation.resume(throwing: error)
-          }
+      try await queue.perform {
+        let file = try rootFile.file(byAppendingPathComponent: path)
+        do {
+          try file.removeItem()
+        } catch {
+          throw FileContainerError.removalFailed(path: String(describing: file), underlying: error)
         }
       }
     }
 
     public func contents(ofDirectory path: String) async throws -> [String] {
       let rootFile = self.rootFile
-      return try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<[String], Error>) in
-        queue.async {
-          do {
-            let directory = try rootFile.file(byAppendingPathComponent: path)
-            continuation.resume(returning: try directory.contentsOfDirectory())
-          } catch {
-            continuation.resume(throwing: error)
-          }
-        }
+      return try await queue.perform {
+        let directory = try rootFile.file(byAppendingPathComponent: path)
+        return try directory.contentsOfDirectory()
       }
     }
   }
