@@ -14,7 +14,7 @@ extension CrashLogCommands {
   /// within `timeout`.
   func notifyOfCrash(matching predicate: CrashLogPredicate, within timeout: TimeInterval, orThrow timeoutError: any Error) async throws -> CrashLogInfo {
     let query = CrashLogQuery(crashLogCommands: self, predicate: predicate)
-    return try await withThrowingTaskGroup(of: CrashLogBox.self) { group in
+    return try await withThrowingTaskGroup(of: CrashLogInfo.self) { group in
       group.addTask {
         try await query.next()
       }
@@ -26,7 +26,7 @@ extension CrashLogCommands {
       guard let first = try await group.next() else {
         preconditionFailure("The task group has two children; next() cannot be empty")
       }
-      return first.value
+      return first
     }
   }
 }
@@ -37,12 +37,7 @@ private struct CrashLogQuery: @unchecked Sendable {
   let crashLogCommands: any CrashLogCommands
   let predicate: CrashLogPredicate
 
-  func next() async throws -> CrashLogBox {
-    CrashLogBox(try await crashLogCommands.notifyOfCrash(matching: predicate))
+  func next() async throws -> CrashLogInfo {
+    try await crashLogCommands.notifyOfCrash(matching: predicate)
   }
-}
-
-private final class CrashLogBox: @unchecked Sendable {
-  let value: CrashLogInfo
-  init(_ value: CrashLogInfo) { self.value = value }
 }

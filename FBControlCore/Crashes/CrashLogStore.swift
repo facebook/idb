@@ -135,8 +135,8 @@ public final class CrashLogStore {
 public final class CrashLogListener: @unchecked Sendable {
   private enum State {
     case listening
-    case waiting(CheckedContinuation<CrashLogResultBox, Error>)
-    case resolved(Result<CrashLogResultBox, Error>)
+    case waiting(CheckedContinuation<CrashLogInfo, Error>)
+    case resolved(Result<CrashLogInfo, Error>)
     case consumed
   }
 
@@ -149,7 +149,7 @@ public final class CrashLogListener: @unchecked Sendable {
     defer { lock.unlock() }
     observer = NotificationCenter.default.addObserver(forName: CrashLogAppeared, object: nil, queue: nil) { [weak self] notification in
       guard let crashLog = notification.object as? CrashLogInfo, predicate.matches(crashLog) else { return }
-      self?.resolve(.success(CrashLogResultBox(crashLog)))
+      self?.resolve(.success(crashLog))
     }
   }
 
@@ -163,8 +163,8 @@ public final class CrashLogListener: @unchecked Sendable {
   /// including before the call, throws `CancellationError` unless a crash log has already appeared.
   /// Must be awaited at most once.
   public func next() async throws -> CrashLogInfo {
-    let box = try await withTaskCancellationHandler {
-      try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<CrashLogResultBox, Error>) in
+    try await withTaskCancellationHandler {
+      try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<CrashLogInfo, Error>) in
         lock.lock()
         switch state {
         case .listening:
@@ -182,14 +182,13 @@ public final class CrashLogListener: @unchecked Sendable {
     } onCancel: {
       resolve(.failure(CancellationError()))
     }
-    return box.value
   }
 
-  private func resolve(_ result: Result<CrashLogResultBox, Error>) {
+  private func resolve(_ result: Result<CrashLogInfo, Error>) {
     lock.lock()
     let observer = self.observer
     self.observer = nil
-    let continuation: CheckedContinuation<CrashLogResultBox, Error>?
+    let continuation: CheckedContinuation<CrashLogInfo, Error>?
     switch state {
     case .listening:
       state = .resolved(result)
@@ -206,9 +205,4 @@ public final class CrashLogListener: @unchecked Sendable {
     }
     continuation?.resume(with: result)
   }
-}
-
-private final class CrashLogResultBox: @unchecked Sendable {
-  let value: CrashLogInfo
-  init(_ value: CrashLogInfo) { self.value = value }
 }

@@ -86,7 +86,7 @@ extension CrashLogError: LocalizedError {
   }
 }
 
-public final class CrashLogInfo: CustomStringConvertible {
+public final class CrashLogInfo: CustomStringConvertible, Sendable {
 
   // MARK: - Properties
 
