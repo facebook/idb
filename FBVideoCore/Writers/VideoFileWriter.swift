@@ -43,11 +43,8 @@ public final class VideoFileWriter: NSObject, AVCaptureFileOutputRecordingDelega
   private let output: AVCaptureMovieFileOutput
   private let logger: any ControlCoreLogger
   private let outputURL: URL
-  private let lifecycleLock = NSLock()
-  private var hasStarted = false
-  private var hasFinished = false
-  private var startAwaiters: [CheckedContinuation<Void, Error>] = []
-  private var finishAwaiters: [CheckedContinuation<Void, Error>] = []
+  private let started = AsyncEvent<Void>()
+  private let finished = AsyncEvent<Void>()
 
   /// Adds a movie file output to `session` that will write to `filePath`.
   public convenience init(session: AVCaptureSession, filePath: String, logger: any ControlCoreLogger) throws {
@@ -95,73 +92,23 @@ public final class VideoFileWriter: NSObject, AVCaptureFileOutputRecordingDelega
     } catch {
       throw VideoFileWriterError.failedToCreateAuxiliaryDirectory(filePath: filePath, cause: error)
     }
-    try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
-      registerStartAwaiter(continuation)
-      session.startRunning()
-      output.startRecording(to: outputURL, recordingDelegate: self)
-      logger.log("Started Video Session for Device Video at file \(filePath)")
-    }
+    session.startRunning()
+    output.startRecording(to: outputURL, recordingDelegate: self)
+    logger.log("Started Video Session for Device Video at file \(filePath)")
+    try await started.waitIgnoringCancellation()
   }
 
   private func stopWriting() async throws {
-    try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
-      registerFinishAwaiter(continuation)
-      output.stopRecording()
-      session.stopRunning()
-    }
-  }
-
-  private func registerStartAwaiter(_ continuation: CheckedContinuation<Void, Error>) {
-    lifecycleLock.lock()
-    if hasStarted {
-      lifecycleLock.unlock()
-      continuation.resume()
-    } else {
-      startAwaiters.append(continuation)
-      lifecycleLock.unlock()
-    }
-  }
-
-  private func registerFinishAwaiter(_ continuation: CheckedContinuation<Void, Error>) {
-    lifecycleLock.lock()
-    if hasFinished {
-      lifecycleLock.unlock()
-      continuation.resume()
-    } else {
-      finishAwaiters.append(continuation)
-      lifecycleLock.unlock()
-    }
-  }
-
-  private func markStarted() -> [CheckedContinuation<Void, Error>]? {
-    lifecycleLock.lock()
-    defer { lifecycleLock.unlock() }
-    if hasStarted {
-      return nil
-    }
-    hasStarted = true
-    let awaiters = startAwaiters
-    startAwaiters = []
-    return awaiters
-  }
-
-  private func markFinished() -> [CheckedContinuation<Void, Error>]? {
-    lifecycleLock.lock()
-    defer { lifecycleLock.unlock() }
-    if hasFinished {
-      return nil
-    }
-    hasFinished = true
-    let awaiters = finishAwaiters
-    finishAwaiters = []
-    return awaiters
+    output.stopRecording()
+    session.stopRunning()
+    try await finished.waitIgnoringCancellation()
   }
 
   // MARK: - AVCaptureFileOutputRecordingDelegate
 
   public func fileOutput(_ output: AVCaptureFileOutput, didStartRecordingTo fileURL: URL, from connections: [AVCaptureConnection]) {
     logger.log("Did Start Recording at \(filePath)")
-    markStarted()?.forEach { $0.resume() }
+    started.happen()
   }
 
   public func fileOutput(_ output: AVCaptureFileOutput, didPauseRecordingTo fileURL: URL, from connections: [AVCaptureConnection]) {
@@ -174,7 +121,7 @@ public final class VideoFileWriter: NSObject, AVCaptureFileOutputRecordingDelega
 
   public func fileOutput(_ output: AVCaptureFileOutput, didFinishRecordingTo outputFileURL: URL, from connections: [AVCaptureConnection], error: Error?) {
     logger.log("Did Finish Recording at \(filePath)")
-    markFinished()?.forEach { $0.resume() }
+    finished.happen()
   }
 
   public func fileOutput(_ output: AVCaptureFileOutput, didResumeRecordingTo fileURL: URL, from connections: [AVCaptureConnection]) {
