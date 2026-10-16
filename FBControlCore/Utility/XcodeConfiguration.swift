@@ -50,15 +50,15 @@ public enum XcodeConfiguration {
     // Xcode 27 renamed Simulator.app to DeviceHub.app and moved it from
     // Contents/Developer/Applications to Contents/Applications. Prefer the new
     // location, falling back to the legacy Simulator.app for Xcode <= 26.
-    let deviceHubPath = ((contentsDirectory as NSString).appendingPathComponent("Applications") as NSString).appendingPathComponent("DeviceHub.app")
+    let deviceHubPath = (contentsDirectory as NSString).appendingPathComponent("Applications/DeviceHub.app")
     if FileManager.default.fileExists(atPath: deviceHubPath) {
       return deviceHubPath
     }
-    return ((developerDirectory as NSString).appendingPathComponent("Applications") as NSString).appendingPathComponent("Simulator.app")
+    return (developerDirectory as NSString).appendingPathComponent("Applications/Simulator.app")
   }
 
   private static var iPhoneSimulatorPlatformInfoPlistPath: String {
-    ((developerDirectory as NSString).appendingPathComponent("Platforms/iPhoneSimulator.platform") as NSString).appendingPathComponent("Info.plist")
+    (developerDirectory as NSString).appendingPathComponent("Platforms/iPhoneSimulator.platform/Info.plist")
   }
 
   private static var xcodeInfoPlistPath: String {
