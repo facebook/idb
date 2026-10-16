@@ -906,13 +906,6 @@ public actor SimulatorVideoStream: VideoStreamOperation {
     framebuffer.currentStats()
   }
 
-  /// Total number of frames pushed to the encoder since streaming started.
-  var currentFrameNumber: UInt { frameNumber }
-
-  /// `systemUptime` when the first frame was pushed, or 0 if not yet started. Uptime, not wall
-  /// clock, because it is what every frame's presentation timestamp is measured from.
-  var currentTimeAtFirstFrame: TimeInterval { timeAtFirstFrame }
-
   /// The Unix timestamp of media time zero, for a file anchored `anchor` seconds after the first
   /// pushed frame, or nil before a frame was pushed. Worked out from the wall clock as it read when
   /// that frame was pushed, so the answer is unchanged by how long the recording ran and by the
