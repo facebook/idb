@@ -64,6 +64,16 @@ struct AsyncEventTests {
   }
 
   @Test
+  func theOutcomeCanBeReadWithoutWaiting() throws {
+    let event = AsyncEvent<Int>()
+    #expect(event.result == nil)
+
+    event.happen(42)
+
+    #expect(try event.result?.get() == 42)
+  }
+
+  @Test
   func onlyTheFirstOutcomeCounts() async throws {
     let event = AsyncEvent<Int>()
     event.happen(1)

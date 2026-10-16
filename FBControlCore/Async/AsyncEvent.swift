@@ -32,6 +32,16 @@ public final class AsyncEvent<Value: Sendable>: @unchecked Sendable {
     }
   }
 
+  /// The outcome, without waiting: nil until the event has happened.
+  public var result: Result<Value, Error>? {
+    lock.withLock {
+      guard case let .happened(result) = state else {
+        return nil
+      }
+      return result
+    }
+  }
+
   public func happen(_ value: Value) {
     resolve(.success(value))
   }

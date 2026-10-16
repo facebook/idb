@@ -188,75 +188,30 @@ extension Subprocess {
 }
 
 /// A one-shot, multi-awaiter termination status.
-///
-// SAFETY: `reaped`, `resolved`, `waiters` and `cancelledWaiters` are only ever read or
-// written inside `lock`, and every continuation is resumed after the lock is
-// released, so no caller code runs under it.
-// patternlint-disable-next-line unchecked-sendable
-final class ExitBroadcast: @unchecked Sendable {
-  private let lock = NSLock()
-  private var reaped = false
-  private var resolved: TerminationStatus?
-  private var waiters: [UUID: CheckedContinuation<TerminationStatus, any Error>] = [:]
-  private var cancelledWaiters: Set<UUID> = []
+final class ExitBroadcast: Sendable {
+  private let exited = AsyncEvent<TerminationStatus>()
+  private let reaped = AsyncEvent<Void>()
 
   var current: TerminationStatus? {
-    lock.withLock { resolved }
+    exited.result.flatMap { try? $0.get() }
   }
 
   /// Whether the process has been reaped, which precedes resolution by the drains.
   var hasBeenReaped: Bool {
-    lock.withLock { reaped || resolved != nil }
+    reaped.hasHappened || exited.hasHappened
   }
 
   func markReaped() {
-    lock.withLock { reaped = true }
+    reaped.happen()
   }
 
   func resolve(_ status: TerminationStatus) {
-    let continuations: [CheckedContinuation<TerminationStatus, any Error>] = lock.withLock {
-      guard resolved == nil else {
-        return []
-      }
-      resolved = status
-      let pending = Array(waiters.values)
-      waiters.removeAll()
-      return pending
-    }
-    for continuation in continuations {
-      continuation.resume(returning: status)
-    }
+    exited.happen(status)
   }
 
   /// Awaits resolution; throws only `CancellationError`.
   func status() async throws -> TerminationStatus {
-    let identifier = UUID()
-    return try await withTaskCancellationHandler {
-      try await withCheckedThrowingContinuation { continuation in
-        let immediate: Result<TerminationStatus, any Error>? = lock.withLock {
-          if cancelledWaiters.remove(identifier) != nil {
-            return .failure(CancellationError())
-          }
-          if let resolved {
-            return .success(resolved)
-          }
-          waiters[identifier] = continuation
-          return nil
-        }
-        if let immediate {
-          continuation.resume(with: immediate)
-        }
-      }
-    } onCancel: {
-      let continuation: CheckedContinuation<TerminationStatus, any Error>? = lock.withLock {
-        guard let waiting = waiters.removeValue(forKey: identifier) else {
-          cancelledWaiters.insert(identifier)
-          return nil
-        }
-        return waiting
-      }
-      continuation?.resume(throwing: CancellationError())
-    }
+    try await exited.wait()
   }
 
   /// Awaits resolution for up to `deadline` (forever when nil); nil on
