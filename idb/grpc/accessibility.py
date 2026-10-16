@@ -46,6 +46,8 @@ def accessibility_info_to_grpc(
         request.ignore_case = True
     if options.filter is not None:
         request.filter = options.filter.value
+    if options.client_type is not None:
+        request.client_type = options.client_type.value
     # A match narrows the elements a whole-app read reports, so it is only
     # meaningful without a target. A marker read is the other verb — it selects
     # one element, and shares `match_key` with the match on the wire — and a

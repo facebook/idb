@@ -545,6 +545,40 @@ ACCESSIBILITY_FILTER_BY_NAME: dict[str, AccessibilityElementFilter] = {
 }
 
 
+class AccessibilityClientType(Enum):
+    # The values are the proto's AccessibilityInfoRequest.ClientType numbers.
+    NO_CLIENT = 1
+    UNIDENTIFIED = 2
+    APPLICATION = 3
+    XCODE_HELPER = 4
+    XCTEST = 5
+    SCRIPTER = 6
+    SYSTEM_EVENTS = 7
+    VOICE_OVER = 8
+    SWITCH_CONTROL = 9
+    FULL_KEYBOARD_ACCESS = 10
+    VOICE_CONTROL = 11
+    ACCESSIBILITY_INSPECTOR = 12
+
+
+# The stable client names every idb surface spells, matching the companion's
+# `client.type` in the complete format.
+ACCESSIBILITY_CLIENT_TYPE_BY_NAME: dict[str, AccessibilityClientType] = {
+    "noClient": AccessibilityClientType.NO_CLIENT,
+    "unidentified": AccessibilityClientType.UNIDENTIFIED,
+    "application": AccessibilityClientType.APPLICATION,
+    "xcodeHelper": AccessibilityClientType.XCODE_HELPER,
+    "xctest": AccessibilityClientType.XCTEST,
+    "scripter": AccessibilityClientType.SCRIPTER,
+    "systemEvents": AccessibilityClientType.SYSTEM_EVENTS,
+    "voiceOver": AccessibilityClientType.VOICE_OVER,
+    "switchControl": AccessibilityClientType.SWITCH_CONTROL,
+    "fullKeyboardAccess": AccessibilityClientType.FULL_KEYBOARD_ACCESS,
+    "voiceControl": AccessibilityClientType.VOICE_CONTROL,
+    "accessibilityInspector": AccessibilityClientType.ACCESSIBILITY_INSPECTOR,
+}
+
+
 # Shapes the accessibility_info request: the format, which accessibility
 # keys are reported, which elements are reported, and which backend serves the
 # read. This grows as describe-all gains enrichers.
@@ -567,6 +601,9 @@ class AccessibilityInfoOptions:
     # Compare `match` — and a marker, on a read — case-insensitively.
     ignore_case: bool = False
     filter: AccessibilityElementFilter | None = None
+    # The assistive client the read claims to be. None claims no client, the
+    # historical read.
+    client_type: AccessibilityClientType | None = None
 
 
 class AccessibilityScrollDirection(Enum):

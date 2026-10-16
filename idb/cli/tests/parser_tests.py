@@ -26,6 +26,7 @@ from idb.common import plugin
 from idb.common.command import Command, CommandGroup
 from idb.common.types import (
     AccessibilityBackend,
+    AccessibilityClientType,
     AccessibilityDragOptions,
     AccessibilityElementFilter,
     AccessibilityInfo,
@@ -2999,6 +3000,46 @@ class TestParser(TestCase):
             self.assertEqual(
                 element_filter.value,
                 getattr(AccessibilityInfoRequest, f"FILTER_{element_filter.name}"),
+            )
+
+    async def test_accessibility_info_client_type_reaches_every_describe_verb(
+        self,
+    ) -> None:
+        for argv, target in [
+            (["ui", "describe-all"], None),
+            (["ui", "describe-point", "10", "20"], AccessibilityPoint(x=10, y=20)),
+            (
+                ["ui", "describe", "Login"],
+                AccessibilityMarker(
+                    value="Login",
+                    match_key=AccessibilitySearchableKey.LABEL,
+                    depth=10,
+                ),
+            ),
+        ]:
+            self.client_mock.accessibility_info = AsyncMock()
+            await cli_main(cmd_input=argv + ["--client-type", "xctest"])
+            self.client_mock.accessibility_info.assert_called_once_with(
+                target=target,
+                options=AccessibilityInfoOptions(
+                    nested=False, client_type=AccessibilityClientType.XCTEST
+                ),
+            )
+
+    async def test_accessibility_info_without_client_type_names_none(self) -> None:
+        self.client_mock.accessibility_info = AsyncMock()
+        await cli_main(cmd_input=["ui", "describe-all"])
+        options = self.client_mock.accessibility_info.call_args.kwargs["options"]
+        self.assertIsNone(options.client_type)
+
+    async def test_client_type_enum_matches_wire_values(self) -> None:
+        # By name and by number, and UNSPECIFIED is zero: a request that does
+        # not ask, and an older companion that drops the field, claim no client.
+        self.assertEqual(AccessibilityInfoRequest.CLIENT_TYPE_UNSPECIFIED, 0)
+        for client_type in AccessibilityClientType:
+            self.assertEqual(
+                client_type.value,
+                getattr(AccessibilityInfoRequest, f"CLIENT_TYPE_{client_type.name}"),
             )
 
     async def test_crash_list_all(self) -> None:

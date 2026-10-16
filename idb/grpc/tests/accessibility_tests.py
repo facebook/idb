@@ -11,6 +11,7 @@ from grpclib.const import Status
 from grpclib.exceptions import GRPCError
 from idb.common.types import (
     AccessibilityBackend,
+    AccessibilityClientType,
     AccessibilityDragOptions,
     AccessibilityElementFilter,
     AccessibilityInfoOptions,
@@ -179,6 +180,22 @@ class AccessibilityInfoRequestTests(TestCase):
     def test_unset_filter_is_the_wire_default(self) -> None:
         request = accessibility_info_to_grpc(None, AccessibilityInfoOptions())
         self.assertEqual(request.filter, AccessibilityInfoRequest.FILTER_ALL)
+
+    def test_every_client_type_maps(self) -> None:
+        for client_type in AccessibilityClientType:
+            request = accessibility_info_to_grpc(
+                None, AccessibilityInfoOptions(client_type=client_type)
+            )
+            self.assertEqual(
+                request.client_type,
+                getattr(AccessibilityInfoRequest, f"CLIENT_TYPE_{client_type.name}"),
+            )
+
+    def test_unset_client_type_is_the_wire_default(self) -> None:
+        request = accessibility_info_to_grpc(None, AccessibilityInfoOptions())
+        self.assertEqual(
+            request.client_type, AccessibilityInfoRequest.CLIENT_TYPE_UNSPECIFIED
+        )
 
     def test_filter_and_match_compose(self) -> None:
         request = accessibility_info_to_grpc(

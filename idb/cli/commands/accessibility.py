@@ -17,10 +17,12 @@ from typing import Any
 from idb.cli import ClientCommand
 from idb.common.types import (
     ACCESSIBILITY_BACKEND_BY_NAME,
+    ACCESSIBILITY_CLIENT_TYPE_BY_NAME,
     ACCESSIBILITY_FILTER_BY_NAME,
     ACCESSIBILITY_FORMAT_BY_NAME,
     ACCESSIBILITY_KEY_BY_NAME,
     AccessibilityBackend,
+    AccessibilityClientType,
     AccessibilityDragOptions,
     AccessibilityElementFilter,
     AccessibilityInfoOptions,
@@ -211,6 +213,31 @@ def _filter(args: Namespace) -> AccessibilityElementFilter | None:
     return ACCESSIBILITY_FILTER_BY_NAME[name] if name else None
 
 
+def _add_client_type_arg(parser: ArgumentParser) -> None:
+    parser.add_argument(
+        "--client-type",
+        dest="client_type",
+        choices=list(ACCESSIBILITY_CLIENT_TYPE_BY_NAME),
+        default=None,
+        help=(
+            "The assistive client the read claims to be, which decides what the "
+            "application answers with. xctest, xcodeHelper, application, "
+            "scripter and systemEvents get the automation tree: every container "
+            "and identifier, as XCUITest sees it. It costs roughly ten times the "
+            "round trips of a default read, is not a superset of the default "
+            "tree, and an app that stores automationElements serves them as "
+            "stored. The rest get the flattened tree VoiceOver reads. Unset "
+            "claims no client, as reads always have. --format complete reports "
+            "the client under `client`."
+        ),
+    )
+
+
+def _client_type(args: Namespace) -> AccessibilityClientType | None:
+    name = getattr(args, "client_type", None)
+    return ACCESSIBILITY_CLIENT_TYPE_BY_NAME[name] if name else None
+
+
 def _add_backend_arg(parser: ArgumentParser) -> None:
     parser.add_argument(
         "--api",
@@ -316,6 +343,7 @@ class AccessibilityInfoAllCommand(ClientCommand):
         _add_filter_arg(parser)
         _add_enricher_args(parser)
         _add_backend_arg(parser)
+        _add_client_type_arg(parser)
         _add_format_arg(parser)
 
     async def run_with_client(self, args: Namespace, client: Client) -> None:
@@ -333,6 +361,7 @@ class AccessibilityInfoAllCommand(ClientCommand):
                 match_key=ACCESSIBILITY_KEY_BY_NAME[args.match_key],
                 ignore_case=args.ignore_case,
                 filter=_filter(args),
+                client_type=_client_type(args),
             ),
         )
         _warn_if_complete_downgraded(requested_format, info.json)
@@ -360,6 +389,7 @@ class AccessibilityInfoAtPointCommand(ClientCommand):
         parser.add_argument("y", help="The y-coordinate", type=int)
         _add_enricher_args(parser)
         _add_backend_arg(parser)
+        _add_client_type_arg(parser)
         _add_format_arg(parser)
 
     async def run_with_client(self, args: Namespace, client: Client) -> None:
@@ -373,6 +403,7 @@ class AccessibilityInfoAtPointCommand(ClientCommand):
                 format=requested_format,
                 profile=args.profile,
                 collect_frame_coverage=args.collect_frame_coverage,
+                client_type=_client_type(args),
             ),
         )
         _warn_if_complete_downgraded(requested_format, info.json)
@@ -412,6 +443,7 @@ class AccessibilityDescribeMarkerCommand(ClientCommand):
         _add_ignore_case_arg(parser, subject="the marker")
         _add_enricher_args(parser)
         _add_backend_arg(parser)
+        _add_client_type_arg(parser)
         _add_format_arg(parser)
 
     async def run_with_client(self, args: Namespace, client: Client) -> None:
@@ -430,6 +462,7 @@ class AccessibilityDescribeMarkerCommand(ClientCommand):
                 profile=args.profile,
                 collect_frame_coverage=args.collect_frame_coverage,
                 ignore_case=args.ignore_case,
+                client_type=_client_type(args),
             ),
         )
         _warn_if_complete_downgraded(requested_format, info.json)
