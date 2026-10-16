@@ -245,6 +245,7 @@ def _search_field(document: Any, value: str | None = None) -> dict[str, Any]:
 ACCESSIBILITY_READ_TESTS = frozenset(
     {
         "test_ui_describe_all_reads_the_fixture_through_both_backends",
+        "test_ui_describe_all_reads_as_the_named_client_through_both_backends",
         "test_ui_describe_all_reports_what_its_options_ask_for",
         "test_ui_describe_all_filtered_to_interactable_reports_only_visible_rows",
         "test_ui_describe_resolves_a_point_and_a_marker",
@@ -301,9 +302,9 @@ class AccessibilityFixtureTestCase(IdbEndToEndTestCase):
         await self.setup_idb("launch", FIXTURE_APP_BUNDLE_ID, FIXTURE_LAUNCH_ARGUMENT)
         self.control = await self.wait_for_control()
 
-    async def describe_all_complete(self, api: str) -> dict[str, Any]:
+    async def describe_all_complete(self, api: str, *arguments: str) -> dict[str, Any]:
         document = await self.idb_json(
-            "ui", "describe-all", "--api", api, "--format", "complete"
+            "ui", "describe-all", "--api", api, "--format", "complete", *arguments
         )
         self.assertIsInstance(
             document,
@@ -389,6 +390,41 @@ class AccessibilityTests(AccessibilityFixtureTestCase):
             f"{AX_BACKEND} saw {sorted(_labels(ax))} and "
             f"{AXBRIDGE_BACKEND} saw {sorted(_labels(axbridge))}",
         )
+
+    async def test_ui_describe_all_reads_as_the_named_client_through_both_backends(
+        self,
+    ) -> None:
+        for api in ("ax", "axbridge"):
+            with self.subTest(api=api):
+                default = await self.describe_all_complete(api)
+                automation = await self.describe_all_complete(
+                    api, "--client-type", "xctest"
+                )
+                voiceover = await self.describe_all_complete(
+                    api, "--client-type", "voiceOver"
+                )
+
+                self.assertNotIn(
+                    "client", default, "a read that names no client reports none"
+                )
+                self.assertEqual(automation["client"]["type"], "xctest")
+                self.assertEqual(automation["client"]["tree"], "automation")
+                self.assertTrue(automation["client"]["caveat"])
+                self.assertEqual(
+                    voiceover["client"],
+                    {"type": "voiceOver", "tree": "voiceover", "caveat": None},
+                )
+                automation_count = sum(
+                    "type" in element for element in _elements(automation["elements"])
+                )
+                voiceover_count = sum(
+                    "type" in element for element in _elements(voiceover["elements"])
+                )
+                self.assertGreater(
+                    automation_count,
+                    voiceover_count,
+                    f"{api}: the automation tree should carry the containers the VoiceOver tree flattens",
+                )
 
     async def test_ui_describe_all_reports_what_its_options_ask_for(self) -> None:
         selected = await self.idb_json(
