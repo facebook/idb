@@ -449,18 +449,6 @@ public final class IDBStorageManager {
     try framework.clean()
   }
 
-  public func interpolateArgumentReplacements(_ arguments: [String]?) -> [String] {
-    guard let arguments else { return [] }
-    logger.log("Original arguments: \(arguments)")
-    let nameToPath = replacementMapping
-    logger.log("Existing replacement mapping: \(nameToPath)")
-    let interpolatedArguments = arguments.map { argument -> String in
-      nameToPath[argument] ?? argument
-    }
-    logger.log("Interpolated arguments: \(interpolatedArguments)")
-    return interpolatedArguments
-  }
-
   public var replacementMapping: [String: String] {
     var combined: [String: String] = [:]
     for mapping in [application.replacementMapping, dylib.replacementMapping, framework.replacementMapping, dsym.replacementMapping] {
