@@ -90,7 +90,7 @@ private struct RequestedLog: LogStarting, @unchecked Sendable {
 
   func start(consumer: any DataConsumer) async throws -> any LogOperation {
     if request.source == .companion {
-      return try await commandExecutor.tailCompanionLogs(consumer)
+      return try await commandExecutor.logger.tailToConsumer(consumer)
     }
     return try await target.log.tail(arguments: request.arguments, consumer: consumer)
   }

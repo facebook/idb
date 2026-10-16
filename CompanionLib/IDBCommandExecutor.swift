@@ -77,7 +77,8 @@ public protocol InstallEventObserving: Sendable {
 public final class IDBCommandExecutor {
 
   private let target: CompanionTarget
-  private let logger: IDBLogger
+  /// The companion's own log, named `grpc_handler`, which handlers log their work to.
+  public let logger: IDBLogger
   private let debugserverPort: in_port_t
 
   public let storageManager: IDBStorageManager
@@ -435,10 +436,6 @@ public final class IDBCommandExecutor {
     try await server.cancel()
     debugServer = nil
     return server
-  }
-
-  public func tailCompanionLogs(_ consumer: DataConsumer) async throws -> any LogOperation {
-    return try await logger.tailToConsumer(consumer)
   }
 
   public func hid(_ event: SimulatorHIDEvent) async throws {
