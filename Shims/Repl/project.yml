@@ -32,11 +32,12 @@ targets:
         OTHER_CFLAGS: $(inherited) -Wno-deprecated-declarations
         # TestRepl subclasses XCTestCase (forward-declared in XCTestPrivate.h, not
         # linked). The class is provided by the xctest host this dylib is injected
-        # into, so defer the XCTestCase superclass symbol to runtime resolution.
+        # into, so its two class symbols, and only those, are left to runtime
+        # resolution. `$$` is Xcode's literal `$`.
         # -headerpad_max_install_names: package managers rewrite the dylib
         # install ID to their install prefix; leave header slack so the longer
         # path fits without relinking.
-        OTHER_LDFLAGS: $(inherited) -undefined dynamic_lookup -headerpad_max_install_names
+        OTHER_LDFLAGS: $(inherited) -Wl,-U,_OBJC_CLASS_$$_XCTestCase -Wl,-U,_OBJC_METACLASS_$$_XCTestCase -headerpad_max_install_names
         # Nothing in this target is Swift, so Xcode does not add the Swift back-deployment libraries ReplRuntimeProbe links.
         LIBRARY_SEARCH_PATHS: $(inherited) $(DEVELOPER_DIR)/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/$(PLATFORM_NAME)
     dependencies:
@@ -71,7 +72,7 @@ targets:
         OTHER_CFLAGS: $(inherited) -Wno-deprecated-declarations
         # See Repl-iOS: XCTestCase is provided by the injected xctest host, and
         # the headerpad leaves room for install-name rewriting.
-        OTHER_LDFLAGS: $(inherited) -undefined dynamic_lookup -headerpad_max_install_names
+        OTHER_LDFLAGS: $(inherited) -Wl,-U,_OBJC_CLASS_$$_XCTestCase -Wl,-U,_OBJC_METACLASS_$$_XCTestCase -headerpad_max_install_names
         # Nothing in this target is Swift, so Xcode does not add the Swift back-deployment libraries ReplRuntimeProbe links.
         LIBRARY_SEARCH_PATHS: $(inherited) $(DEVELOPER_DIR)/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/$(PLATFORM_NAME)
     dependencies:
