@@ -291,7 +291,7 @@ private final class StateChangeObserver: @unchecked Sendable {
 
   private func startNotifyingOfStateChanges() {
     guard let set = self.set else { return }
-    notifier = CoreSimulatorNotifier.notifier(for: set, queue: set.workQueue) { [weak self] (info: [String: Any]) in
+    notifier = CoreSimulatorNotifier(set: set, queue: set.workQueue) { [weak self] (info: [String: Any]) in
       guard let device = info["device"] as? SimDevice else {
         return
       }

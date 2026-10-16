@@ -73,9 +73,9 @@ public final class CoreSimulatorNotifier {
   private let handle: UInt64
   private let notifier: SimDeviceNotifier? // nil in test doubles
 
-  public static func notifier(for simDevice: SimDevice, queue: DispatchQueue, block: @escaping @Sendable ([String: Any]) -> Void) -> CoreSimulatorNotifier {
-    let notifier = simDevice.notificationManager as AnyObject?
-    return CoreSimulatorNotifier(notifier: notifier, queue: queue, block: block)
+  /// Calls `block` on `queue` with each notification `simDevice` posts, until terminated.
+  public convenience init(device simDevice: SimDevice, queue: DispatchQueue, block: @escaping @Sendable ([String: Any]) -> Void) {
+    self.init(notifier: simDevice.notificationManager as AnyObject?, queue: queue, block: block)
   }
 
   /// Suspends until `device` reports a state other than `state`. The CoreSimulator notification
@@ -88,7 +88,7 @@ public final class CoreSimulatorNotifier {
           return
         }
         let queue = DispatchQueue(label: "com.facebook.fbsimulatorcontrol.resolve_state")
-        let notifier = self.notifier(for: device, queue: queue) { info in
+        let notifier = CoreSimulatorNotifier(device: device, queue: queue) { info in
           guard let notification = info["notification"] as? String, notification == "device_state" else {
             return
           }
@@ -112,10 +112,10 @@ public final class CoreSimulatorNotifier {
     notifier?.unregisterNotificationHandler(handle, error: nil)
   }
 
-  static func notifier(for set: SimulatorSet, queue: DispatchQueue, block: @escaping @Sendable ([String: Any]) -> Void) -> CoreSimulatorNotifier {
+  /// Calls `block` on `queue` with each notification `set`'s device set posts, until terminated.
+  convenience init(set: SimulatorSet, queue: DispatchQueue, block: @escaping @Sendable ([String: Any]) -> Void) {
     // notificationManager may be nil in test doubles (ObjC nil messaging returns nil).
-    let notifier = (set.deviceSet as AnyObject).notificationManager as AnyObject?
-    return CoreSimulatorNotifier(notifier: notifier, queue: queue, block: block)
+    self.init(notifier: (set.deviceSet as AnyObject).notificationManager as AnyObject?, queue: queue, block: block)
   }
 
   private init(notifier: AnyObject?, queue: DispatchQueue, block: @escaping @Sendable ([String: Any]) -> Void) {
