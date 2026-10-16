@@ -5,6 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+import FBControlCore
 import Foundation
 @preconcurrency import XPC
 import os
@@ -145,11 +146,10 @@ package final class SimulatorXPCChannel: Sendable {
   func firstAnswer<Value: Sendable>(timeout: DispatchTimeInterval, _ start: (FirstAnswer<Value>) -> Void) async throws -> Value {
     let answer = FirstAnswer<Value>()
     return try await withTaskCancellationHandler {
-      try await withCheckedThrowingContinuation { continuation in
-        guard answer.await(continuation) else { return }
-        start(answer)
-        queue.asyncAfter(deadline: .now() + timeout) { answer.resolve(.failure(SimulatorXPCError.timedOut)) }
-      }
+      try Task.checkCancellation()
+      start(answer)
+      queue.asyncAfter(deadline: .now() + timeout) { answer.resolve(.failure(SimulatorXPCError.timedOut)) }
+      return try await answer.outcome.wait()
     } onCancel: {
       answer.resolve(.failure(CancellationError()))
     }
@@ -172,42 +172,17 @@ package final class SimulatorXPCChannel: Sendable {
   }
 }
 
-/// Whichever of an answer, a deadline or a cancellation comes first resumes the request; the rest are
-/// dropped. Only a cancellation can come before the continuation exists, so that is all that is kept.
+/// Whichever of an answer, a deadline or a cancellation comes first resolves the request; the rest are
+/// dropped.
 final class FirstAnswer<Value: Sendable>: Sendable {
-  private enum State {
-    case pending(CheckedContinuation<Value, Error>?)
-    case cancelledEarly
-    case answered
-  }
-
-  // SAFETY: The state is only read and written under the lock.
-  // patternlint-disable-next-line swift-nonisolated-unsafe
-  nonisolated(unsafe) private var state = State.pending(nil)
-  private let lock = NSLock()
-
-  /// Holds `continuation` for the answer. False when the request was already cancelled, in which
-  /// case it has been resumed and there is nothing to send.
-  fileprivate func await(_ continuation: CheckedContinuation<Value, Error>) -> Bool {
-    let cancelled = lock.withLock {
-      guard case .cancelledEarly = state else {
-        state = .pending(continuation)
-        return false
-      }
-      state = .answered
-      return true
-    }
-    guard cancelled else { return true }
-    continuation.resume(throwing: CancellationError())
-    return false
-  }
+  fileprivate let outcome = AsyncEvent<Value>()
 
   func resolve(_ result: sending Result<Value, Error>) {
-    let continuation: CheckedContinuation<Value, Error>? = lock.withLock {
-      guard case let .pending(continuation) = state else { return nil }
-      state = continuation == nil ? .cancelledEarly : .answered
-      return continuation
+    switch result {
+    case let .success(value):
+      outcome.happen(value)
+    case let .failure(error):
+      outcome.fail(error)
     }
-    continuation?.resume(with: result)
   }
 }
