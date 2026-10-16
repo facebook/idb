@@ -18,7 +18,7 @@ import ImageIO
 // `.swiftinterface` generation (it emits unparseable `IDB.IDB.X` references).
 //
 // Commands reach the host through `FBReplInvokeHostCommand`, resolved with `dlsym` from
-// the loaded `libRepl` (same image, so no link dependency); the only link dependency is
+// the loaded shim (`libShimulator`) (same image, so no link dependency); the only link dependency is
 // `ReplProtocol`.
 //
 // Calls do not throw: a lost connection ends the submission (see `haltReplExecution`),
@@ -80,7 +80,7 @@ private func haltReplExecution() {
 
 /// Whether the REPL host process outlives a single session -- true in the app
 /// context (`FBReplServeSocket(..., keepListening: YES)`), false for the disposable
-/// test and simulator hosts. Resolved from the loaded `libRepl` with `dlsym`, like
+/// test and simulator hosts. Resolved from the loaded shim (`libShimulator`) with `dlsym`, like
 /// `FBReplInvokeHostCommand`; treated as false if the host predates this entry point.
 private func hostOutlivesSession() -> Bool {
   typealias QueryFunction = @convention(c) () -> ObjCBool
@@ -170,7 +170,7 @@ public enum IDB {
   ///
   /// A computed property rather than a stored global on purpose: injected code is
   /// compiled against the library-evolution `IDB.swiftinterface` and so reaches
-  /// `ui` through a getter, but `libRepl` is built without library evolution,
+  /// `ui` through a getter, but the shim is built without library evolution,
   /// where a stored value would export only an addressor (no getter symbol) and
   /// the load-time lookup would fail. A computed property's getter is an ordinary
   /// exported function, resolved like the command methods. `UI` is stateless, so

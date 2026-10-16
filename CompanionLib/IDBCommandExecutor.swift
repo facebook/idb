@@ -263,7 +263,7 @@ public final class IDBCommandExecutor {
     return bundleID
   }
 
-  /// The environment that arms an app launch for the REPL (DYLD-inject libRepl and
+  /// The environment that arms an app launch for the REPL (DYLD-inject the shim and
   /// libReplIDB + the IDB_REPL_* vars), used by `idb launch --enable-repl`. The control-socket
   /// path is deterministic, so a later `idb-repl app` reattaches. Simulator
   /// targets only.

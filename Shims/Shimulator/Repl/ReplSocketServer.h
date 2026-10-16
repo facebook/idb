@@ -7,7 +7,7 @@
 
 #import <Foundation/Foundation.h>
 
-// The REPL control-socket server shared by every host (`libRepl` in the xctest and app
+// The REPL control-socket server shared by every host (`libShimulator` in the xctest and app
 // contexts, `SimulatorFrameworkBridge` in the simulator context). Binds a Unix-domain
 // socket, accepts one connection at a time, and exchanges frames: a 4-byte big-endian
 // byte count followed by that many bytes of a binary property list. Length framing lets

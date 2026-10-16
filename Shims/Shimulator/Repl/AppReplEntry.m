@@ -11,13 +11,13 @@
 
 #import "ReplSocketServer.h"
 
-// The `app` REPL context: `libRepl` is injected into a launched app via
+// The `app` REPL context: `libShimulator` is injected into a launched app via
 // DYLD_INSERT_LIBRARIES, and this constructor starts the control-socket server
 // inside it. In the test / simulator contexts the host calls FBReplServeSocket
 // explicitly (an xctest method, or SimulatorFrameworkBridge); an app has no such
-// host, so libRepl must start itself on load.
+// host, so the shim must start the REPL itself on load.
 //
-// Gated on IDB_REPL_APP_AUTOSTART so libRepl stays inert everywhere else -- the
+// Gated on IDB_REPL_APP_AUTOSTART so the REPL stays inert everywhere else -- the
 // test / simulator contexts don't set it, nor does any unrelated process that
 // happens to inherit DYLD_INSERT_LIBRARIES.
 
@@ -33,7 +33,7 @@ static void *ReplAppServeThread(void *context)
   return NULL;
 }
 
-// Constructor is required: nothing in an injected app calls into libRepl (see header above).
+// Constructor is required: nothing in an injected app calls into the shim (see header above).
 // patternlint-disable-next-line static-initializer-constructor-attribute
 __attribute__((constructor)) static void ReplAppAutostart(void)
 {

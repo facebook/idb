@@ -28,7 +28,7 @@ The library's second injection mechanism plays audio into a Simulator app's micr
 
 ## How it works
 
-The shim, `libRepl`, is this library's resource: a bundle that links the library carries it, and the library finds it there or in the `Resources/` directory beside a standalone binary. It is injected into the host with `DYLD_INSERT_LIBRARIES` for an app, loaded by the guest bridge for the Simulator, and injected by the logic-test runner for a test bundle, which is why this library depends on [`FBSimulatorXCTest`](../FBSimulatorXCTest/README.md).
+The shim, `libShimulator` (the one idb injects for XCTest and audio injection too, each part inert unless armed), is this library's resource: a bundle that links the library carries it, and the library finds it there or in the `Resources/` directory beside a standalone binary. It is injected into the host with `DYLD_INSERT_LIBRARIES` for an app, loaded by the guest bridge for the Simulator, and injected by the logic-test runner for a test bundle, which is why this library depends on [`FBSimulatorXCTest`](../FBSimulatorXCTest/README.md).
 
 Inside the host, the shim binds a Unix-domain control socket and serves one connection at a time. On connect it greets the session with the host's session id and the interfaces it generated; each execute loads a dylib and calls its entry point, and a host command the injected code sends while it runs travels back over the same socket and waits for its answer. An app's socket path is derived from the Simulator and the bundle id, so a later session can find an app still serving one.
 

@@ -7,7 +7,7 @@
 
 #import <Foundation/Foundation.h>
 
-#import "XCTestPrivate.h"
+#import "TestReplXCTest.h"
 
 @interface TestRepl : XCTestCase
 

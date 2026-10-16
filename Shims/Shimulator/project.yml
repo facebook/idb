@@ -112,6 +112,31 @@ targets:
       - target: ShimulatorProtocol-iOS
       - sdk: Foundation.framework
 
+  # FBReplGenerateSwiftInterface for the shim's REPL, as a static library so the shim's own sources are Objective-C.
+  ReplRuntimeProbe-iOS:
+    type: library.static
+    platform: iOS
+    deploymentTarget: "17.0"
+    sources:
+      - path: Repl/RuntimeProbe
+    settings:
+      base:
+        SDKROOT: iphonesimulator
+        IPHONEOS_DEPLOYMENT_TARGET: "17.0"
+        PRODUCT_MODULE_NAME: ReplRuntimeProbe
+
+  ReplRuntimeProbe-macOS:
+    type: library.static
+    platform: macOS
+    deploymentTarget: "15.0"
+    sources:
+      - path: Repl/RuntimeProbe
+    settings:
+      base:
+        SDKROOT: macosx
+        MACOSX_DEPLOYMENT_TARGET: "15.0"
+        PRODUCT_MODULE_NAME: ReplRuntimeProbe
+
   Shimulator-iOS:
     type: library.dynamic
     platform: iOS
@@ -124,6 +149,9 @@ targets:
       - path: TestReporterShim
       - path: TestCrashShim
       - path: TestLoadingShim
+      - path: Repl
+        excludes:
+          - RuntimeProbe
     settings:
       base:
         SDKROOT: iphonesimulator
@@ -135,7 +163,9 @@ targets:
         OTHER_CFLAGS: $(inherited) -Wno-deprecated-declarations
         # Package managers rewrite the dylib install ID to their install
         # prefix; leave header slack so the longer path fits without relinking.
-        OTHER_LDFLAGS: $(inherited) -all_load -headerpad_max_install_names
+        # The REPL's TestRepl subclasses XCTestCase, which only the xctest host provides, so its
+        # two class symbols, and only those, are left to runtime resolution. `$$` is Xcode's literal `$`.
+        OTHER_LDFLAGS: $(inherited) -all_load -Wl,-U,_OBJC_CLASS_$$_XCTestCase -Wl,-U,_OBJC_METACLASS_$$_XCTestCase -headerpad_max_install_names
         # Nothing in this target is Swift, so Xcode does not add the Swift back-deployment libraries its archives link.
         # Name the default toolchain explicitly: TOOLCHAIN_DIR can resolve to another installed toolchain, such as Metal's.
         LIBRARY_SEARCH_PATHS: $(inherited) $(DEVELOPER_DIR)/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/$(PLATFORM_NAME)
@@ -152,6 +182,8 @@ targets:
         target: ShimulatorProtocol-iOS
       - link: true
         target: SimulatorIPC-iOS
+      - link: true
+        target: ReplRuntimeProbe-iOS
       - sdk: CoreAudio.framework
       - sdk: Foundation.framework
       - sdk: UIKit.framework
@@ -168,6 +200,9 @@ targets:
       - path: TestReporterShim
       - path: TestCrashShim
       - path: TestLoadingShim
+      - path: Repl
+        excludes:
+          - RuntimeProbe
     settings:
       base:
         SDKROOT: macosx
@@ -177,8 +212,12 @@ targets:
         CLANG_ENABLE_OBJC_ARC: NO
         GCC_PREPROCESSOR_DEFINITIONS: $(inherited) SENTEST_IGNORE_DEPRECATION_WARNING=1
         OTHER_CFLAGS: $(inherited) -Wno-deprecated-declarations
-        # See Shimulator-iOS: header slack for install-name rewriting.
-        OTHER_LDFLAGS: $(inherited) -headerpad_max_install_names
+        # See Shimulator-iOS: header slack for install-name rewriting, and the XCTestCase symbols.
+        OTHER_LDFLAGS: $(inherited) -Wl,-U,_OBJC_CLASS_$$_XCTestCase -Wl,-U,_OBJC_METACLASS_$$_XCTestCase -headerpad_max_install_names
+        # Nothing in this target is Swift, so Xcode does not add the Swift back-deployment libraries ReplRuntimeProbe links.
+        LIBRARY_SEARCH_PATHS: $(inherited) $(DEVELOPER_DIR)/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/$(PLATFORM_NAME)
     dependencies:
+      - link: true
+        target: ReplRuntimeProbe-macOS
       - sdk: Foundation.framework
       - sdk: AppKit.framework

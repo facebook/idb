@@ -19,7 +19,7 @@ final class SimulatorCodeInjectionCommandsTests: XCTestCase {
 
     let environment = try simulator.codeInjection.launchEnvironment(forApplication: "com.example.App")
 
-    let shim = try XCTUnwrap(BundledResources.path(forItem: "libRepl-iOS.dylib"))
+    let shim = try XCTUnwrap(BundledResources.path(forItem: "libShimulator-iOS.dylib"))
     XCTAssertEqual(environment["DYLD_INSERT_LIBRARIES"], shim)
     XCTAssertEqual(environment["IDB_REPL_APP_AUTOSTART"], "1")
     XCTAssertEqual(environment["IDB_REPL_SOCKET_PATH"], replSocketPath(udid: simulator.udid, bundleID: "com.example.App"))
@@ -30,9 +30,9 @@ final class SimulatorCodeInjectionCommandsTests: XCTestCase {
 
     let environment = try simulator.codeInjection.launchEnvironment(
       forApplication: "com.example.App",
-      shim: .path("/opt/shims/libRepl-iOS.dylib"),
+      shim: .path("/opt/shims/libShimulator-iOS.dylib"),
       additionalLibraries: ["/opt/shims/libExtra.dylib"])
 
-    XCTAssertEqual(environment["DYLD_INSERT_LIBRARIES"], "/opt/shims/libRepl-iOS.dylib:/opt/shims/libExtra.dylib")
+    XCTAssertEqual(environment["DYLD_INSERT_LIBRARIES"], "/opt/shims/libShimulator-iOS.dylib:/opt/shims/libExtra.dylib")
   }
 }

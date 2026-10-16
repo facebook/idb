@@ -25,7 +25,7 @@ enum SimScopeMain {
       for resource in [
         "SimulatorFrameworkBridge-iOS", "SimulatorFrameworkBridge-tvOS",
         "libShimulator-iOS.dylib", "libShimulator-macOS.dylib",
-        "libRepl-iOS.dylib", "libRepl-macOS.dylib", "ReplHost.app", "IDBAPI.swiftinterface",
+        "ReplHost.app", "IDBAPI.swiftinterface",
       ] {
         guard BundledResources.path(forItem: resource) != nil else {
           throw NSError(

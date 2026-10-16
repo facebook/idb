@@ -113,10 +113,10 @@ Build/Distribution/
   *.bundle                   # SwiftPM resource bundles, when present
   Resources/
     Swift/                   # Swift back-deployment libraries
-    libShimulator-iOS.dylib
+    libShimulator-iOS.dylib  # the shim injected into simulator processes, the REPL included
     libShimulator-macOS.dylib
-    libRepl-iOS.dylib
-    libRepl-macOS.dylib
+    libReplIDB-iOS.dylib     # the IDB API idb-repl injects alongside it
+    libReplIDB-macOS.dylib
     SimulatorFrameworkBridge-iOS
     SimulatorFrameworkBridge-tvOS
     ReplHost.app

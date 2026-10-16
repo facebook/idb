@@ -100,10 +100,10 @@ public struct CommandLineServices: CommandLineServiceHandling {
   }
 
   public func repl(_ socketPath: String?, libraryPath: String, additionalLibraryPaths: [String]) -> Int32 {
-    // The socket server and any library injected code calls through must use libRepl's one
+    // The socket server and any library injected code calls through must use the shim's one
     // control connection, so everything loads globally into this process.
     guard let handle = dlopen((libraryPath as NSString).fileSystemRepresentation, RTLD_NOW | RTLD_GLOBAL) else {
-      NSLog("Failed to load libRepl at %@: %@", libraryPath, Self.lastLoaderError())
+      NSLog("Failed to load the shim at %@: %@", libraryPath, Self.lastLoaderError())
       return 1
     }
     for additionalLibraryPath in additionalLibraryPaths {
@@ -113,7 +113,7 @@ public struct CommandLineServices: CommandLineServiceHandling {
       }
     }
     guard let symbol = dlsym(handle, "FBReplServeSocket") else {
-      NSLog("libRepl is missing FBReplServeSocket: %@", Self.lastLoaderError())
+      NSLog("The shim is missing FBReplServeSocket: %@", Self.lastLoaderError())
       return 1
     }
     typealias Serve = @convention(c) (NSString?, NSArray, ObjCBool) -> Int32
@@ -178,7 +178,7 @@ public enum BridgeCommandLine {
         return 1
       }
       guard arguments.count > 1, !arguments[1].isEmpty else {
-        NSLog("repl start requires the libRepl path as its second argument")
+        NSLog("repl start requires the shim's path as its second argument")
         return 1
       }
       return services.repl(arguments.first, libraryPath: arguments[1], additionalLibraryPaths: Array(arguments.dropFirst(2)))

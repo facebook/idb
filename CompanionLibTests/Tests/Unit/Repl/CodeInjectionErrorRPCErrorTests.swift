@@ -35,7 +35,7 @@ struct CodeInjectionErrorRPCErrorTests {
   }
 
   @Test(arguments: [
-    (CodeInjectionError.resourceMissing(name: "libRepl-iOS.dylib"), "libRepl-iOS.dylib not found in the bundled resources"),
+    (CodeInjectionError.resourceMissing(name: "libShimulator-iOS.dylib"), "libShimulator-iOS.dylib not found in the bundled resources"),
     (.socketDirectoryCreationFailed(path: "/tmp/idb_repl_501"), "Could not create a private REPL socket directory at /tmp/idb_repl_501"),
     (
       .notALaunchableApplication(bundleID: "com.apple.springboard", processIdentifier: 42),

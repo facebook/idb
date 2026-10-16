@@ -9,7 +9,7 @@
 //
 // It walks a target image's Swift metadata and symbol table to reconstruct a
 // best-effort `.swiftinterface` for each module the image contains, and writes
-// one `<Module>.swiftinterface` file per module. It lives only in the `libRepl`
+// one `<Module>.swiftinterface` file per module. It lives only in the `libShimulator`
 // shim.
 //
 // Sources used:

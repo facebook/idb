@@ -19,8 +19,8 @@ struct CodeInjectionErrorTests {
   @Test
   func bundledResourceMissingNamesTheItem() throws {
     let message = try #require(
-      CodeInjectionError.resourceMissing(name: "libRepl-iOS.dylib").errorDescription)
-    #expect(message.contains("libRepl-iOS.dylib"))
+      CodeInjectionError.resourceMissing(name: "libShimulator-iOS.dylib").errorDescription)
+    #expect(message.contains("libShimulator-iOS.dylib"))
   }
 
   @Test

@@ -730,9 +730,8 @@ function build_all_libraries() {
 function build_shim() {
   local name=$1
   local sdk=$2
-  # The Repl shims live in their own project (Shims/Repl) to avoid an
-  # XCTestPrivate.h header collision with the Shimulator shims; default to the
-  # Shimulator project otherwise.
+  # libReplIDB lives in its own project (Shims/Repl); default to the Shimulator
+  # project, which builds the shim itself.
   local project=${3:-Shims/Shimulator/Shimulator.xcodeproj}
 
   invoke_xcodebuild \
@@ -748,8 +747,6 @@ function build_shim() {
 function build_shims() {
   build_shim Shimulator-iOS iphonesimulator
   build_shim Shimulator-macOS macosx
-  build_shim Repl-iOS iphonesimulator Shims/Repl/Repl.xcodeproj
-  build_shim Repl-macOS macosx Shims/Repl/Repl.xcodeproj
   build_shim ReplIDB-iOS iphonesimulator Shims/Repl/Repl.xcodeproj
   build_shim ReplIDB-macOS macosx Shims/Repl/Repl.xcodeproj
 }
@@ -917,8 +914,6 @@ function build_staging_bench() {
 #       Swift/                    Swift back-deployment libraries
 #       libShimulator-iOS.dylib
 #       libShimulator-macOS.dylib
-#       libRepl-iOS.dylib
-#       libRepl-macOS.dylib
 #       libReplIDB-iOS.dylib
 #       libReplIDB-macOS.dylib
 #       SimulatorFrameworkBridge-iOS
@@ -941,8 +936,6 @@ function build_distribution() {
     "$release/sim-video"
     "$sim/libShimulator-iOS.dylib"
     "$release/libShimulator-macOS.dylib"
-    "$sim/libRepl-iOS.dylib"
-    "$release/libRepl-macOS.dylib"
     "$sim/libReplIDB-iOS.dylib"
     "$release/libReplIDB-macOS.dylib"
     "$sim/SimulatorFrameworkBridge-iOS"
@@ -976,8 +969,6 @@ function build_distribution() {
   # Shims + the guest binaries live under Resources/ next to idb_companion.
   cp "$sim/libShimulator-iOS.dylib" "$dist/Resources/"
   cp "$release/libShimulator-macOS.dylib" "$dist/Resources/"
-  cp "$sim/libRepl-iOS.dylib" "$dist/Resources/"
-  cp "$release/libRepl-macOS.dylib" "$dist/Resources/"
   cp "$sim/libReplIDB-iOS.dylib" "$dist/Resources/"
   cp "$release/libReplIDB-macOS.dylib" "$dist/Resources/"
   cp "$sim/SimulatorFrameworkBridge-iOS" "$dist/Resources/"
@@ -1086,10 +1077,6 @@ function build() {
         build_shim Shimulator-iOS iphonesimulator;;
       Shimulator-macOS)
         build_shim Shimulator-macOS macosx;;
-      Repl-iOS)
-        build_shim Repl-iOS iphonesimulator Shims/Repl/Repl.xcodeproj;;
-      Repl-macOS)
-        build_shim Repl-macOS macosx Shims/Repl/Repl.xcodeproj;;
       ReplIDB-iOS)
         build_shim ReplIDB-iOS iphonesimulator Shims/Repl/Repl.xcodeproj;;
       ReplIDB-macOS)
@@ -1116,7 +1103,7 @@ function build() {
         build_target "$target";;
       *)
         echo "Unknown target: $target"
-        echo "Valid targets: all, simscope, libraries, shims, fixtures, idb_companion, idb-repl, sim-video, FBControlCore, FBXCTestCore, FBSimulatorControl, FBSimulatorXCTest, FBDeviceControl, Shimulator-iOS, Shimulator-macOS, Repl-iOS, Repl-macOS, ReplHost, SimulatorFrameworkBridge-iOS, SimulatorFrameworkBridge-tvOS, distribution"
+        echo "Valid targets: all, simscope, libraries, shims, fixtures, idb_companion, idb-repl, sim-video, FBControlCore, FBXCTestCore, FBSimulatorControl, FBSimulatorXCTest, FBDeviceControl, Shimulator-iOS, Shimulator-macOS, ReplHost, SimulatorFrameworkBridge-iOS, SimulatorFrameworkBridge-tvOS, distribution"
         exit 1;;
     esac
   fi
@@ -1236,10 +1223,8 @@ Commands:
       FBDeviceControl Build FBDeviceControl framework
       FBSimulatorControl Build FBSimulatorControl framework
       FBSimulatorXCTest Build the FBSimulatorXCTest static library
-      Repl-iOS        Build Repl-iOS dylib (iOS simulator)
-      Repl-macOS      Build Repl-macOS dylib (macOS)
       ReplHost        Build the ReplHost.app host app (iOS simulator)
-      Shimulator-iOS  Build Shimulator-iOS dylib (iOS simulator)
+      Shimulator-iOS  Build Shimulator-iOS dylib (iOS simulator), the REPL included
       Shimulator-macOS Build Shimulator-macOS dylib (macOS)
       SimulatorFrameworkBridge-iOS Build the iOS-simulator guest executable
       SimulatorFrameworkBridge-tvOS Build the tvOS-simulator guest executable

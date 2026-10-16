@@ -48,13 +48,13 @@ final class SimulatorAudioInjectionTests: XCTestCase {
     XCTAssertEqual(appEnvironment(prepared), prepared)
   }
 
-  func testCallerLibrariesReplaceInheritedAndKeepRepl() {
+  func testCallerLibrariesReplaceInheritedAndKeepReplIDB() {
     let prepared = appEnvironment(
-      ["DYLD_INSERT_LIBRARIES": "/tmp/old/libShimulator-iOS.dylib:/tmp/libProfiler.dylib:/tmp/libRepl-iOS.dylib"],
+      ["DYLD_INSERT_LIBRARIES": "/tmp/old/libShimulator-iOS.dylib:/tmp/libProfiler.dylib:/tmp/libReplIDB-iOS.dylib"],
       inherited: "/tmp/inherited/libProfiler.dylib")
     XCTAssertEqual(
       prepared["DYLD_INSERT_LIBRARIES"],
-      "/tmp/libProfiler.dylib:/tmp/libRepl-iOS.dylib:/tmp/current/libShimulator-iOS.dylib")
+      "/tmp/libProfiler.dylib:/tmp/libReplIDB-iOS.dylib:/tmp/current/libShimulator-iOS.dylib")
   }
 
   func testInheritedOldShimIsReplaced() {

@@ -51,7 +51,7 @@ struct CodeInjectionOutcome: Sendable {
 /// for the next — which is the REPL behaviour worth having, without a long-lived pipe to keep alive,
 /// drain, and recover.
 ///
-/// Shelling out rather than loading `libRepl` directly: the tool owns toolchain selection, the launch
+/// Shelling out rather than loading the shim directly: the tool owns toolchain selection, the launch
 /// hook, session reattach, and the report format. SimScope's contribution to an injection is the
 /// narration around it, not the compilation.
 struct CodeInjector: Sendable {

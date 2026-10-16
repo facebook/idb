@@ -61,16 +61,16 @@ struct CodeInjectionHostLauncher {
     guard let bridgePath = simulator.frameworkBridgePath else {
       throw CodeInjectionError.resourceMissing(name: "SimulatorFrameworkBridge binary")
     }
-    return try await startSimulator(bridgePath: bridgePath, libReplPath: shim.resolvedPath(), additionalLibraries: additionalLibraries)
+    return try await startSimulator(bridgePath: bridgePath, shimPath: shim.resolvedPath(), additionalLibraries: additionalLibraries)
   }
 
-  func startSimulator(bridgePath: String, libReplPath: String, additionalLibraries: [String] = []) async throws -> CodeInjectionHost {
+  func startSimulator(bridgePath: String, shimPath: String, additionalLibraries: [String] = []) async throws -> CodeInjectionHost {
     // `repl start` blocks until the socket is closed, which is what keeps the session alive.
     let socketPath = "/tmp/idb_repl_\(UUID().uuidString).sock"
 
     let process = try await Subprocess(
       executable: bridgePath,
-      arguments: ["repl", "start", socketPath, libReplPath] + additionalLibraries,
+      arguments: ["repl", "start", socketPath, shimPath] + additionalLibraries,
       environment: .exact(XCTestShimConfiguration.unarmedAudioInjectionEnvironment([:])),
       mode: .posixSpawn
     ).launch(on: SimulatorSubprocessLauncher(simulator: simulator), output: .nullDevice, error: .nullDevice)

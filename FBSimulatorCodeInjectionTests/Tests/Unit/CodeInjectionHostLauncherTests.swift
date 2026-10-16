@@ -22,11 +22,11 @@ final class CodeInjectionHostLauncherTests: XCTestCase {
     let device = HeldSpawnDevice()
     let launcher = CodeInjectionHostLauncher(simulator: SimulatorTestSupport.testableSimulator(withDevice: device))
 
-    let repl = try await launcher.startSimulator(bridgePath: "/bridge", libReplPath: "/libRepl.dylib")
+    let repl = try await launcher.startSimulator(bridgePath: "/bridge", shimPath: "/libShimulator.dylib")
 
     XCTAssertTrue(repl.socketPath.hasPrefix("/tmp/idb_repl_"))
     let options = try XCTUnwrap(device.spawnedOptions)
-    XCTAssertEqual(options["arguments"] as? [String], ["/bridge", "repl", "start", repl.socketPath, "/libRepl.dylib"])
+    XCTAssertEqual(options["arguments"] as? [String], ["/bridge", "repl", "start", repl.socketPath, "/libShimulator.dylib"])
     XCTAssertEqual(options["environment"] as? [String: String], ["IDB_AUDIO_INJECTION": "0"])
     XCTAssertTrue(Self.isWritable(options["stdout"]), "The bridge writes to /dev/null")
     XCTAssertTrue(Self.isWritable(options["stderr"]), "The bridge writes to /dev/null")
@@ -37,10 +37,10 @@ final class CodeInjectionHostLauncherTests: XCTestCase {
     let device = HeldSpawnDevice()
     let launcher = CodeInjectionHostLauncher(simulator: SimulatorTestSupport.testableSimulator(withDevice: device))
 
-    let repl = try await launcher.startSimulator(bridgePath: "/bridge", libReplPath: "/libRepl.dylib", additionalLibraries: ["/first.dylib", "/second.dylib"])
+    let repl = try await launcher.startSimulator(bridgePath: "/bridge", shimPath: "/libShimulator.dylib", additionalLibraries: ["/first.dylib", "/second.dylib"])
 
     let options = try XCTUnwrap(device.spawnedOptions)
-    XCTAssertEqual(options["arguments"] as? [String], ["/bridge", "repl", "start", repl.socketPath, "/libRepl.dylib", "/first.dylib", "/second.dylib"])
+    XCTAssertEqual(options["arguments"] as? [String], ["/bridge", "repl", "start", repl.socketPath, "/libShimulator.dylib", "/first.dylib", "/second.dylib"])
     device.terminate(statLoc: 0)
   }
 
@@ -49,7 +49,7 @@ final class CodeInjectionHostLauncherTests: XCTestCase {
 
     let environment = try launcher.appLaunchEnvironment(bundleID: "com.example.App", shim: .bundled, additionalLibraries: ["/first.dylib", "/second.dylib"])
 
-    let shim = try XCTUnwrap(BundledResources.path(forItem: "libRepl-iOS.dylib"))
+    let shim = try XCTUnwrap(BundledResources.path(forItem: "libShimulator-iOS.dylib"))
     XCTAssertEqual(environment["DYLD_INSERT_LIBRARIES"], "\(shim):/first.dylib:/second.dylib")
   }
 
@@ -57,7 +57,7 @@ final class CodeInjectionHostLauncherTests: XCTestCase {
     let device = HeldSpawnDevice()
     let launcher = CodeInjectionHostLauncher(simulator: SimulatorTestSupport.testableSimulator(withDevice: device))
 
-    let repl = try await launcher.startSimulator(bridgePath: "/bridge", libReplPath: "/libRepl.dylib")
+    let repl = try await launcher.startSimulator(bridgePath: "/bridge", shimPath: "/libShimulator.dylib")
 
     guard case let .process(process) = repl.host else {
       return XCTFail("Expected the bridge process to host the session, got \(repl.host)")

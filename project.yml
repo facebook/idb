@@ -1431,20 +1431,16 @@ targets:
       - path: FBSimulatorControlTests/Tests/Unit/Support/SimulatorTestSupport.swift
     postBuildScripts:
       - name: Copy generated bundle resources
-        script: set -e && DEST="$TARGET_BUILD_DIR/$UNLOCALIZED_RESOURCES_FOLDER_PATH" && mkdir -p "$DEST" && cp -R "$SYMROOT/Release-appletvsimulator/SimulatorFrameworkBridge-tvOS" "$DEST/" && cp -R "$SYMROOT/Release-iphonesimulator/SimulatorFrameworkBridge-iOS" "$DEST/" && cp -R "$SYMROOT/Release-iphonesimulator/libRepl-iOS.dylib" "$DEST/" && cp -R "$SYMROOT/Release-iphonesimulator/libShimulator-iOS.dylib" "$DEST/" && cp -R "$SYMROOT/Release/libRepl-macOS.dylib" "$DEST/" && cp -R "$SYMROOT/Release/libShimulator-macOS.dylib" "$DEST/"
+        script: set -e && DEST="$TARGET_BUILD_DIR/$UNLOCALIZED_RESOURCES_FOLDER_PATH" && mkdir -p "$DEST" && cp -R "$SYMROOT/Release-appletvsimulator/SimulatorFrameworkBridge-tvOS" "$DEST/" && cp -R "$SYMROOT/Release-iphonesimulator/SimulatorFrameworkBridge-iOS" "$DEST/" && cp -R "$SYMROOT/Release-iphonesimulator/libShimulator-iOS.dylib" "$DEST/" && cp -R "$SYMROOT/Release/libShimulator-macOS.dylib" "$DEST/"
         inputFiles:
           - $(SYMROOT)/Release-appletvsimulator/SimulatorFrameworkBridge-tvOS
           - $(SYMROOT)/Release-iphonesimulator/SimulatorFrameworkBridge-iOS
-          - $(SYMROOT)/Release-iphonesimulator/libRepl-iOS.dylib
           - $(SYMROOT)/Release-iphonesimulator/libShimulator-iOS.dylib
-          - $(SYMROOT)/Release/libRepl-macOS.dylib
           - $(SYMROOT)/Release/libShimulator-macOS.dylib
         outputFiles:
           - $(TARGET_BUILD_DIR)/$(UNLOCALIZED_RESOURCES_FOLDER_PATH)/SimulatorFrameworkBridge-tvOS
           - $(TARGET_BUILD_DIR)/$(UNLOCALIZED_RESOURCES_FOLDER_PATH)/SimulatorFrameworkBridge-iOS
-          - $(TARGET_BUILD_DIR)/$(UNLOCALIZED_RESOURCES_FOLDER_PATH)/libRepl-iOS.dylib
           - $(TARGET_BUILD_DIR)/$(UNLOCALIZED_RESOURCES_FOLDER_PATH)/libShimulator-iOS.dylib
-          - $(TARGET_BUILD_DIR)/$(UNLOCALIZED_RESOURCES_FOLDER_PATH)/libRepl-macOS.dylib
           - $(TARGET_BUILD_DIR)/$(UNLOCALIZED_RESOURCES_FOLDER_PATH)/libShimulator-macOS.dylib
     settings:
       base:
@@ -1488,22 +1484,18 @@ targets:
       - path: FBSimulatorControlTests/Tests/Smoke/Support/ProvidedSimulatorTestCase.swift
     postBuildScripts:
       - name: Copy generated bundle resources
-        script: set -e && DEST="$TARGET_BUILD_DIR/$UNLOCALIZED_RESOURCES_FOLDER_PATH" && mkdir -p "$DEST" && cp -R "$SYMROOT/Release-appletvsimulator/SimulatorFrameworkBridge-tvOS" "$DEST/" && cp -R "$SYMROOT/Release-iphonesimulator/SimulatorFrameworkBridge-iOS" "$DEST/" && cp -R "$SYMROOT/Release-iphonesimulator/libCodeInjectionPayload-iOS.dylib" "$DEST/" && cp -R "$SYMROOT/Release-iphonesimulator/libRepl-iOS.dylib" "$DEST/" && cp -R "$SYMROOT/Release-iphonesimulator/libShimulator-iOS.dylib" "$DEST/" && cp -R "$SYMROOT/Release/libRepl-macOS.dylib" "$DEST/" && cp -R "$SYMROOT/Release/libShimulator-macOS.dylib" "$DEST/"
+        script: set -e && DEST="$TARGET_BUILD_DIR/$UNLOCALIZED_RESOURCES_FOLDER_PATH" && mkdir -p "$DEST" && cp -R "$SYMROOT/Release-appletvsimulator/SimulatorFrameworkBridge-tvOS" "$DEST/" && cp -R "$SYMROOT/Release-iphonesimulator/SimulatorFrameworkBridge-iOS" "$DEST/" && cp -R "$SYMROOT/Release-iphonesimulator/libCodeInjectionPayload-iOS.dylib" "$DEST/" && cp -R "$SYMROOT/Release-iphonesimulator/libShimulator-iOS.dylib" "$DEST/" && cp -R "$SYMROOT/Release/libShimulator-macOS.dylib" "$DEST/"
         inputFiles:
           - $(SYMROOT)/Release-appletvsimulator/SimulatorFrameworkBridge-tvOS
           - $(SYMROOT)/Release-iphonesimulator/SimulatorFrameworkBridge-iOS
           - $(SYMROOT)/Release-iphonesimulator/libCodeInjectionPayload-iOS.dylib
-          - $(SYMROOT)/Release-iphonesimulator/libRepl-iOS.dylib
           - $(SYMROOT)/Release-iphonesimulator/libShimulator-iOS.dylib
-          - $(SYMROOT)/Release/libRepl-macOS.dylib
           - $(SYMROOT)/Release/libShimulator-macOS.dylib
         outputFiles:
           - $(TARGET_BUILD_DIR)/$(UNLOCALIZED_RESOURCES_FOLDER_PATH)/SimulatorFrameworkBridge-tvOS
           - $(TARGET_BUILD_DIR)/$(UNLOCALIZED_RESOURCES_FOLDER_PATH)/SimulatorFrameworkBridge-iOS
           - $(TARGET_BUILD_DIR)/$(UNLOCALIZED_RESOURCES_FOLDER_PATH)/libCodeInjectionPayload-iOS.dylib
-          - $(TARGET_BUILD_DIR)/$(UNLOCALIZED_RESOURCES_FOLDER_PATH)/libRepl-iOS.dylib
           - $(TARGET_BUILD_DIR)/$(UNLOCALIZED_RESOURCES_FOLDER_PATH)/libShimulator-iOS.dylib
-          - $(TARGET_BUILD_DIR)/$(UNLOCALIZED_RESOURCES_FOLDER_PATH)/libRepl-macOS.dylib
           - $(TARGET_BUILD_DIR)/$(UNLOCALIZED_RESOURCES_FOLDER_PATH)/libShimulator-macOS.dylib
     settings:
       base:

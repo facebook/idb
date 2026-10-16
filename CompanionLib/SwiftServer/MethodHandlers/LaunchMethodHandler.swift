@@ -40,7 +40,7 @@ struct LaunchMethodHandler: @unchecked Sendable {
     var environment = start.env
     var launchMode: ApplicationLaunchMode = start.foregroundIfRunning ? .foregroundIfRunning : .failIfRunning
     if start.enableRepl {
-      // Setup the launch for the REPL (inject libRepl, the idb command API in libReplIDB, and the
+      // Setup the launch for the REPL (inject the shim, the idb command API in libReplIDB, and the
       // IDB_REPL_* vars) and force a relaunch so an already-running, un-injected app picks them up.
       let replEnvironment = try await commandExecutor.replAppLaunchEnvironment(bundleID: start.bundleID)
       for (key, value) in replEnvironment {

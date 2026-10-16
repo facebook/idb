@@ -10,7 +10,7 @@ import os
 
 /// Locates the `Resources/` directory that ships alongside the running binary and
 /// holds its bundled helper tools and shims (`SimulatorFrameworkBridge`,
-/// `libRepl-*.dylib`, `libShimulator-*.dylib`, `IDBAPI.swiftinterface`, `ReplHost.app`).
+/// `libShimulator-*.dylib`, `libReplIDB-*.dylib`, `IDBAPI.swiftinterface`, `ReplHost.app`).
 public struct BundledResources {
 
   /// Where a host keeps the resources itself. A host that links idb's libraries rather than

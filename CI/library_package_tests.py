@@ -234,10 +234,9 @@ class PublishedManifestTests(unittest.TestCase):
 
     def test_code_injection_ships_what_each_target_injects_through(self) -> None:
         resources = set(self.libraries["FBSimulatorCodeInjection"]["resources"])
-        # The shim injected into every host, the guest bridge that hosts `.simulator`, and
-        # the XCTest shim the logic-test runner loads for `.logicTestBundle`.
+        # The shim injected into every host, the REPL included, and the guest bridge that
+        # hosts `.simulator`.
         for item in (
-            "libRepl-iOS.dylib",
             "SimulatorFrameworkBridge-iOS",
             "libShimulator-iOS.dylib",
         ):
