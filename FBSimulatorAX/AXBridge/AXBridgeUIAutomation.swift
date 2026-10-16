@@ -113,7 +113,7 @@ final class AXBridgeUIAutomation: AXBridgeTreeReader, @unchecked Sendable {
     case let .target(.selected(selected)):
       let accessibilityID = try await displays.accessibilityID(
         for: selected, transport: transport, requiring: [.scopedInteractions, .scopedTrees],
-        receiveTimeout: simulator.accessibilityTiming.queryTimeout)
+        timing: simulator.accessibilityTiming)
       display = .selected(selected, id: accessibilityID)
     }
     try selection.confirm(routedTo: display?.interactionDisplay, latest: displays.configurationTracker.latest)
@@ -428,7 +428,7 @@ final class AXBridgeUIAutomation: AXBridgeTreeReader, @unchecked Sendable {
     }
     let displayID = try await displays.accessibilityID(
       for: selected, transport: transport, requiring: Self.quiescenceCapabilities,
-      receiveTimeout: simulator.accessibilityTiming.queryTimeout)
+      timing: simulator.accessibilityTiming)
     let first = try await quiescenceFrames(pid: nil, displayID: displayID, parameters: parameters)
     return AsyncThrowingStream { continuation in
       let task = Task {
@@ -504,7 +504,7 @@ final class AXBridgeUIAutomation: AXBridgeTreeReader, @unchecked Sendable {
             configuration.displays.filter(\.isIntegrated).count > 1,
             let displayID = try? await displays.accessibilityID(
               for: next, transport: self.transport, requiring: Self.quiescenceCapabilities,
-              receiveTimeout: self.simulator.accessibilityTiming.queryTimeout),
+              timing: self.simulator.accessibilityTiming),
             // The lookup can outlast a transient report; only a fresh read that still agrees moves the stream.
             (try? await displays.settledConfiguration(within: .zero))?.generation == configuration.generation
           else { continue }
