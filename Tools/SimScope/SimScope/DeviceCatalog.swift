@@ -62,7 +62,7 @@ final class DeviceCatalog {
     case let .custom(custom): path = custom
     }
     let configuration = SimulatorControlConfiguration(deviceSetPath: path, logger: nil)
-    let created = try SimulatorControlBootstrap.withConfiguration(configuration)
+    let created = try SimulatorControlBootstrap(configuration: configuration)
     controls[identity] = created
     return created
   }

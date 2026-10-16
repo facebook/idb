@@ -34,7 +34,7 @@ enum SimScopeMain {
         }
       }
       let configuration = SimulatorControlConfiguration(deviceSetPath: nil, logger: nil)
-      let control = try SimulatorControlBootstrap.withConfiguration(configuration)
+      let control = try SimulatorControlBootstrap(configuration: configuration)
       print("SimScope installation OK (\(control.set.allSimulators.count) simulators available)")
       return
     }

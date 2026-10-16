@@ -76,7 +76,7 @@ class ProvidedSimulatorTestCase: XCTestCase {
     let configuration = SimulatorControlConfiguration(
       deviceSetPath: environment[DeviceSetPathEnvKey],
       logger: noLogger)
-    let control = try SimulatorControlBootstrap.withConfiguration(configuration)
+    let control = try SimulatorControlBootstrap(configuration: configuration)
 
     if let udid = environment[DeviceUDIDEnvKey] {
       guard let simulator = control.set.simulator(withUDID: udid) else {

@@ -68,8 +68,9 @@ final class SimulatorBootTestCase: XCTestCase {
     expectedConfiguration = SimulatorConfiguration(deviceType: deviceType, runtime: runtime)
     let noLogger: (any ControlCoreLogger)? = nil
     ownedDeviceSetPath = Self.deviceSetPath
-    control = try SimulatorControlBootstrap.withConfiguration(
-      SimulatorControlConfiguration(deviceSetPath: ownedDeviceSetPath, logger: noLogger))
+    control = try SimulatorControlBootstrap(
+      configuration:
+        SimulatorControlConfiguration(deviceSetPath: ownedDeviceSetPath, logger: noLogger))
   }
 
   override func tearDown() async throws {

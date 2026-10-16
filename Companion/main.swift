@@ -136,7 +136,7 @@ private func simulatorSetWithPath(_ deviceSetPath: String?, userDefaults: UserDe
   try SimulatorControlFrameworkLoader.essentialFrameworks.loadPrivateFrameworks(logger)
   let configuration = SimulatorControlConfiguration(
     deviceSetPath: deviceSetPath, logger: logger, hidEventLogging: hidEventLogging(userDefaults))
-  return try SimulatorControlBootstrap.withConfiguration(configuration).set
+  return try SimulatorControlBootstrap(configuration: configuration).set
 }
 
 private func simulatorSet(_ userDefaults: UserDefaults, logger: ControlCoreLogger) throws -> SimulatorSet {

@@ -19,21 +19,16 @@ public final class SimulatorControlBootstrap {
   public let serviceContext: SimulatorServiceContext
   public let set: SimulatorSet
 
-  public static func withConfiguration(_ configuration: SimulatorControlConfiguration) throws -> SimulatorControlBootstrap {
+  public init(configuration: SimulatorControlConfiguration) throws {
     try SimulatorControlFrameworkLoader.essentialFrameworks.loadPrivateFrameworks(configuration.logger)
     let serviceContext = try SimulatorServiceContext.sharedServiceContext(withLogger: configuration.logger)
     let deviceSet = try serviceContext.createDeviceSet(with: configuration)
-    let set = try SimulatorSet(
+    self.configuration = configuration
+    self.serviceContext = serviceContext
+    self.set = try SimulatorSet(
       configuration: configuration,
       deviceSet: deviceSet,
       delegate: nil,
       logger: configuration.logger.withName("simulator_set"))
-    return SimulatorControlBootstrap(configuration: configuration, serviceContext: serviceContext, set: set)
-  }
-
-  private init(configuration: SimulatorControlConfiguration, serviceContext: SimulatorServiceContext, set: SimulatorSet) {
-    self.configuration = configuration
-    self.serviceContext = serviceContext
-    self.set = set
   }
 }

@@ -19,7 +19,7 @@ struct SimulatorOptions: ParsableArguments {
   @MainActor
   func simulator(logger: any ControlCoreLogger) throws -> Simulator {
     let configuration = SimulatorControlConfiguration(deviceSetPath: set, logger: logger)
-    let control = try SimulatorControlBootstrap.withConfiguration(configuration)
+    let control = try SimulatorControlBootstrap(configuration: configuration)
     guard let simulator = control.set.simulator(withUDID: udid) else {
       throw ValidationError("No simulator \(udid) in \(set)")
     }
