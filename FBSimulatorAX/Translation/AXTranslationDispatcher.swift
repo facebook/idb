@@ -128,7 +128,7 @@ final class AXTranslationDispatcher: NSObject, AXPTranslationTokenDelegateHelper
     }
     let transport = request.transport
     let collector = request.collector
-    let timeoutSeconds = request.requestTimeoutSeconds
+    let timeoutSeconds = request.timing.elementTimeout
     let clientType = request.clientType
     return { axRequest in
       guard let axRequest else {

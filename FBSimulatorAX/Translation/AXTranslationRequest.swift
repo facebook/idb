@@ -79,9 +79,6 @@ final class AXTranslationRequest {
   let cancellation = AXReadCancellation()
   var translator: AXPTranslator?
 
-  /// The longest one translator request may go unanswered: the timing's `elementTimeout`. `0` (or negative)
-  /// is "wait nothing"; there is no "wait forever".
-  var requestTimeoutSeconds: TimeInterval
   /// How long this read may take, per element and for the whole query.
   let timing: SimulatorAccessibilityTiming
 
@@ -94,7 +91,6 @@ final class AXTranslationRequest {
     self.clientType = clientType
     self.transport = transport
     self.token = UUID().uuidString
-    self.requestTimeoutSeconds = timing.elementTimeout
     self.timing = timing
     self.collector = AccessibilityProfilingCollector()
   }
@@ -174,7 +170,7 @@ final class AXTranslationRequest {
   /// Sends this request's translator requests itself, over its transport.
   private var rawReader: AXRawTranslationReader {
     AXRawTranslationReader(
-      transport: transport, clientType: clientType, timeout: requestTimeoutSeconds, collector: collector, token: token,
+      transport: transport, clientType: clientType, timeout: timing.elementTimeout, collector: collector, token: token,
       queryTimeout: timing.queryTimeout, cancellation: cancellation)
   }
 
