@@ -33,7 +33,6 @@ public final class AccessibilityProfilingCollector {
   private var _totalXPCDuration: CFAbsoluteTime = 0
   private var _xpcDurationBeforeWalk: CFAbsoluteTime = 0
   private var _xpcCallsBeforeWalk: Int64 = 0
-  private var _unansweredRequests: Int64 = 0
   private var _requestsBehindAbandoned: Int64 = 0
   private var _slowestRequest: AccessibilityTranslatorRequestTiming?
   private var _fetchedKeys = Set<String>()
@@ -68,16 +67,13 @@ public final class AccessibilityProfilingCollector {
     lock.unlock()
   }
 
-  /// One translator request: its kind, the translator's `requestType`, how long it took, whether the
-  /// service answered it, and whether it was sent while a request abandoned earlier was still unanswered.
-  func recordRequest(type: UInt64, duration: CFAbsoluteTime, answered: Bool, behindAbandoned: Bool = false) {
+  /// One translator request: its kind, the translator's `requestType`, how long it took, and whether it was
+  /// sent while a request abandoned earlier was still unanswered.
+  func recordRequest(type: UInt64, duration: CFAbsoluteTime, behindAbandoned: Bool = false) {
     lock.lock()
     defer { lock.unlock() }
     _xpcCallCount += 1
     _totalXPCDuration += duration
-    if !answered {
-      _unansweredRequests += 1
-    }
     if behindAbandoned {
       _requestsBehindAbandoned += 1
     }
@@ -96,13 +92,6 @@ public final class AccessibilityProfilingCollector {
     lock.lock()
     defer { lock.unlock() }
     return _xpcCallsBeforeWalk
-  }
-
-  /// Requests the service did not answer within their timeout.
-  public var unansweredRequests: Int64 {
-    lock.lock()
-    defer { lock.unlock() }
-    return _unansweredRequests
   }
 
   /// Requests sent while one abandoned earlier, by this read or another, was still unanswered: the service

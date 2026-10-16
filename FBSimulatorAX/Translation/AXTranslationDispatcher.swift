@@ -139,7 +139,7 @@ final class AXTranslationDispatcher: NSObject, AXPTranslationTokenDelegateHelper
       let xpcStart = CFAbsoluteTimeGetCurrent()
       let response = transport.send(axRequest, timeout: timeoutSeconds)
       collector.recordRequest(
-        type: axRequest.requestType, duration: CFAbsoluteTimeGetCurrent() - xpcStart, answered: response != nil,
+        type: axRequest.requestType, duration: CFAbsoluteTimeGetCurrent() - xpcStart,
         behindAbandoned: behindAbandoned)
       // Unanswered within the timeout: the translator reads the empty response as "no value".
       return response ?? Self.emptyResponse()

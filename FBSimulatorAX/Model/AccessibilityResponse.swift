@@ -340,10 +340,7 @@ public struct AccessibilityElementsResponse: Sendable {
       frames: AccessibilityFrameSummary(elements: reported),
       automation: automation,
       narrowing: narrowing,
-      client: client,
-      degraded: translatorMetrics.flatMap {
-        $0.unansweredRequests > 0 ? AccessibilityDegradedRead(unansweredRequests: $0.unansweredRequests) : nil
-      }
+      client: client
     )
   }
 
@@ -369,8 +366,6 @@ public struct AccessibilityTranslatorReadMetrics: Sendable, Equatable {
   public let springBoardCheckDuration: CFAbsoluteTime
   /// Requests made before the walk: resolving the root and checking it.
   public let acquireRoundTrips: Int64
-  /// Requests the service did not answer within their timeout. The read carried on without their values.
-  public let unansweredRequests: Int64
   /// The longest request the read made.
   public let slowestRequest: AccessibilityTranslatorRequestTiming?
   /// Requests sent while one abandoned earlier, by this read or another, was still unanswered.
@@ -385,7 +380,6 @@ public struct AccessibilityTranslatorReadMetrics: Sendable, Equatable {
     acquireDuration: CFAbsoluteTime = 0,
     springBoardCheckDuration: CFAbsoluteTime = 0,
     acquireRoundTrips: Int64 = 0,
-    unansweredRequests: Int64 = 0,
     slowestRequest: AccessibilityTranslatorRequestTiming? = nil,
     requestsBehindAbandoned: Int64 = 0
   ) {
@@ -397,23 +391,15 @@ public struct AccessibilityTranslatorReadMetrics: Sendable, Equatable {
     self.acquireDuration = acquireDuration
     self.springBoardCheckDuration = springBoardCheckDuration
     self.acquireRoundTrips = acquireRoundTrips
-    self.unansweredRequests = unansweredRequests
     self.slowestRequest = slowestRequest
     self.requestsBehindAbandoned = requestsBehindAbandoned
-  }
-
-  /// How the read ended, given that it returned.
-  public var outcome: AccessibilityReadOutcome {
-    unansweredRequests > 0 ? .degraded : .complete
   }
 }
 
 /// How an accessibility read ended, as telemetry spells it.
 public enum AccessibilityReadOutcome: String, Sendable {
-  /// Every request was answered.
+  /// The read returned, every request answered.
   case complete
-  /// The read returned, but some requests went unanswered and their values are missing.
-  case degraded
   /// The read stopped at a request the service did not answer within the element timeout.
   case abortedUnanswered = "aborted_unanswered"
   /// The read stopped when the query ran out of its timeout.
@@ -433,15 +419,5 @@ public enum AccessibilityReadOutcome: String, Sendable {
     default:
       return nil
     }
-  }
-}
-
-/// A read that returned with requests unanswered, so some values are missing. Absent from a `complete`
-/// document when every request was answered.
-public struct AccessibilityDegradedRead: Sendable, Equatable, Encodable {
-  public let unansweredRequests: Int64
-
-  enum CodingKeys: String, CodingKey {
-    case unansweredRequests = "unanswered_requests"
   }
 }

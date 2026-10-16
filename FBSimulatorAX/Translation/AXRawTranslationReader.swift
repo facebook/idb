@@ -159,7 +159,7 @@ struct AXRawTranslationReader {
       try cancellation.map { try $0.wait { transport.send(request, timeout: wait) } }
       ?? transport.send(request, timeout: wait)
     collector.recordRequest(
-      type: request.requestType, duration: CFAbsoluteTimeGetCurrent() - start, answered: response != nil,
+      type: request.requestType, duration: CFAbsoluteTimeGetCurrent() - start,
       behindAbandoned: behindAbandoned)
     guard let response else {
       // Blamed on the query whenever it has run out, including when both ran out together.
