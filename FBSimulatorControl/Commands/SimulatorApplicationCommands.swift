@@ -241,15 +241,7 @@ public struct SimulatorApplicationCommands: ApplicationCommands {
       throw error
     } catch let error as SimulatorApplicationInstallError {
       try Task.checkCancellation()
-      switch error {
-      case .processSuspended,
-        .processDebuggerAttached,
-        .targetNotBooted,
-        .targetUnavailable:
-        throw error
-      default:
-        throw installFailure()
-      }
+      throw Self.surfaced(error, otherwise: installFailure)
     } catch {
       try Task.checkCancellation()
       guard (error as NSError).description.contains("Failed to load Info.plist from bundle at path") else {
@@ -264,15 +256,7 @@ public struct SimulatorApplicationCommands: ApplicationCommands {
       throw error
     } catch let error as SimulatorApplicationInstallError {
       try Task.checkCancellation()
-      switch error {
-      case .processSuspended,
-        .processDebuggerAttached,
-        .targetNotBooted,
-        .targetUnavailable:
-        throw error
-      default:
-        throw installFailure()
-      }
+      throw Self.surfaced(error, otherwise: installFailure)
     } catch {
       try Task.checkCancellation()
       throw installFailure()
@@ -280,6 +264,21 @@ public struct SimulatorApplicationCommands: ApplicationCommands {
     let installedApplication = try await resolveInstalledApplication()
     try Task.checkCancellation()
     return installedApplication
+  }
+
+  /// Lets the install errors a caller can act on through, and reports every other one as `installFailure()`.
+  private static func surfaced(
+    _ error: SimulatorApplicationInstallError, otherwise installFailure: () -> SimulatorApplicationInstallError
+  ) -> SimulatorApplicationInstallError {
+    switch error {
+    case .processSuspended,
+      .processDebuggerAttached,
+      .targetNotBooted,
+      .targetUnavailable:
+      return error
+    default:
+      return installFailure()
+    }
   }
 
   private func confirmApplicationInstallPreconditions(bundleID: String) async throws {
