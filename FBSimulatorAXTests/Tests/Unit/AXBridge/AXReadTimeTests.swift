@@ -229,6 +229,23 @@ final class AXReadTimeTests {
     #expect(transport.timeouts.last == 1.5)
   }
 
+  @Test func aDisplayLookupThatRunsOutOfTimeFailsAsTheGuestTransportDoes() async throws {
+    let display = SimulatorDisplay(
+      uniqueID: "selected", name: "Selected", activity: .active, isPrimary: false, isIntegrated: true,
+      bounds: CGRect(x: 0, y: 0, width: 1200, height: 800), scale: 2, rotation: .upright)
+    let displays = DisplayCommandsDouble(.selected(display))
+    await #expect {
+      _ = try await displays.accessibilityID(
+        for: display, transport: SilentGuestTransportDouble(), timing: SimulatorAccessibilityTiming(elementTimeout: 1, queryTimeout: 0.5))
+    } throws: { error in
+      // BUG: a read that runs out of time while naming its display fails as the guest transport's
+      // `guestNotAnswering`, not the documented `serviceNotAnswering`, and records no outcome — flipped in the
+      // following commit.
+      guard case AXBridgeError.guestNotAnswering(after: 0.5) = error else { return false }
+      return true
+    }
+  }
+
   @Test func theGuestsRoundTripIsBoundedByTheQueryTimeoutAndFailsAsTheHostDoes() async throws {
     let transport = SilentGuestTransportDouble()
     let reader = AXBridgeUIAutomation(
