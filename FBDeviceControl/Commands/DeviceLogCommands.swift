@@ -36,7 +36,7 @@ public final class DeviceLogOperation: LogOperation {
   /// tail, and only the caller decides that. Cancelling is what invalidates the connection.
   public func waitUntilCompleted() async throws {
     do {
-      try await Task.sleep(nanoseconds: .max)
+      try await AsyncEvent<Void>().wait()
     } catch {
       await MobileDevice.invalidateServiceConnection(connection, service: service, logger: logger)
       throw error

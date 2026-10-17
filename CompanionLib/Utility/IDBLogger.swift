@@ -74,7 +74,7 @@ private final class IDBLoggerOperation: LogOperation, Sendable {
   /// Tails until cancelled, then stops delivering to the consumer.
   func waitUntilCompleted() async throws {
     do {
-      try await Task.sleep(nanoseconds: .max)
+      try await AsyncEvent<Void>().wait()
     } catch {
       globalLoggers.remove(logger)
       throw error
