@@ -9,32 +9,43 @@ import Darwin
 import FBSimulatorBridgeProtocol
 import Foundation
 
-/// Parses the response envelope shared by every axbridge verb and preserves the guest's typed failure.
+/// Decodes the answer every axbridge verb sends, a `BridgeAXOutcome`, and preserves the guest's typed failure.
 package enum AXBridgeResponse {
-  package static func validated(
+  /// The verb's answer, decoded as `Success`; a failure is raised as the error its kind names.
+  package static func decode<Success: Codable & Equatable & Sendable>(
     _ data: Data,
+    as _: Success.Type,
     context: String,
     pid: pid_t? = nil,
     frontmostMethod: AXBridgeFrontmostMethod? = nil
-  ) throws -> [String: Any] {
-    guard let object = try? JSONSerialization.jsonObject(with: data), let response = object as? [String: Any] else {
-      throw AXBridgeError.guestFailure("\(context): unparseable guest response")
+  ) throws -> Success {
+    switch try outcome(data, as: Success.self, context: context) {
+    case let .success(success):
+      return success
+    case let .failure(failure):
+      throw self.failure(from: failure, pid: pid, frontmostMethod: frontmostMethod)
     }
-    guard (response[AXWire.Envelope.ok.rawValue] as? Bool) == true else {
-      throw failure(from: response, pid: pid, frontmostMethod: frontmostMethod)
-    }
-    return response
   }
 
-  private static func failure(
-    from response: [String: Any],
+  /// The answer as it came, a failure included, for a caller that treats some failures as values.
+  package static func outcome<Success: Codable & Equatable & Sendable>(
+    _ data: Data, as _: Success.Type, context: String
+  ) throws -> BridgeAXOutcome<Success> {
+    do {
+      return try JSONDecoder().decode(BridgeAXOutcome<Success>.self, from: data)
+    } catch {
+      throw AXBridgeError.guestFailure("\(context): unparseable guest response (\(error))")
+    }
+  }
+
+  package static func failure(
+    from failure: BridgeAXFailure,
     pid: pid_t?,
     frontmostMethod: AXBridgeFrontmostMethod?
   ) -> AXBridgeError {
-    let message = (response[AXWire.Envelope.error.rawValue] as? String) ?? "the guest reported a failure with no message"
-    let reportedPid = (response[AXWire.Envelope.pid.rawValue] as? Int).flatMap(pid_t.init(exactly:)) ?? pid
-    let rawKind = response[AXWire.Envelope.errorKind.rawValue] as? String
-    switch rawKind.flatMap(AXWire.ErrorKind.init(rawValue:)) {
+    let message = failure.message ?? "the guest reported a failure with no message"
+    let reportedPid = failure.pid ?? pid
+    switch failure.kind {
     case .applicationUnavailable:
       return .applicationUnavailable(pid: reportedPid)
     case .applicationNotResponding:
@@ -61,10 +72,6 @@ package struct AXDeviceSettingResponse {
   package let enabled: Bool
 
   package init(data: Data) throws {
-    let response = try AXBridgeResponse.validated(data, context: "device setting")
-    guard let enabled = response[AXWire.Envelope.enabled.rawValue] as? Bool else {
-      throw AXBridgeError.guestFailure("device setting response without an enabled value")
-    }
-    self.enabled = enabled
+    enabled = try AXBridgeResponse.decode(data, as: BridgeAXSettingResponse.self, context: "device setting").enabled
   }
 }

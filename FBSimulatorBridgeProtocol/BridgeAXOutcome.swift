@@ -72,12 +72,14 @@ public struct BridgeAXFailure: Codable, Equatable, Sendable {
   public init(from decoder: Decoder) throws {
     let envelope = try decoder.container(keyedBy: BridgeAXWire.Envelope.self)
     message = try envelope.decodeIfPresent(String.self, forKey: .error)
-    kind = try envelope.decodeIfPresent(String.self, forKey: .errorKind).flatMap(BridgeAXWire.ErrorKind.init(rawValue:))
-    pid = try envelope.decodeIfPresent(Int32.self, forKey: .pid)
+    // A kind that is not one of this revision's names, or not a name at all, degrades to a generic failure.
+    kind = ((try? envelope.decodeIfPresent(String.self, forKey: .errorKind)) ?? nil).flatMap(BridgeAXWire.ErrorKind.init(rawValue:))
+    // A pid that does not fit a `pid_t` names no process, so it reads as no pid rather than failing the answer.
+    pid = try envelope.decodeIfPresent(Int64.self, forKey: .pid).flatMap { Int32(exactly: $0) }
     axError = try envelope.decodeIfPresent(Int32.self, forKey: .axError)
     timeoutSeconds = try envelope.decodeIfPresent(Double.self, forKey: .timeoutSeconds)
     outstanding = try envelope.decodeIfPresent(Bool.self, forKey: .outstanding) ?? false
-    effect = try envelope.decodeIfPresent(String.self, forKey: .effect).flatMap(BridgeAXWire.Effect.init(rawValue:))
+    effect = ((try? envelope.decodeIfPresent(String.self, forKey: .effect)) ?? nil).flatMap(BridgeAXWire.Effect.init(rawValue:))
   }
 
   public func encode(to encoder: Encoder) throws {
@@ -130,7 +132,8 @@ public struct BridgeAXTreeResponse: Codable, Equatable, Sendable {
     automation = try envelope.decodeIfPresent(BridgeAXAutomationState.self, forKey: .automation)
     phases = try envelope.decodeIfPresent(BridgeAXGuestPhases.self, forKey: .phases)
     method = try envelope.decodeIfPresent(BridgeAXFrontmostMethod.self, forKey: .method)
-    modal = try envelope.decodeIfPresent(BridgeAXModal.self, forKey: .modal)
+    // A modal this revision cannot read is reported as none rather than costing the whole tree.
+    modal = (try? envelope.decodeIfPresent(BridgeAXModal.self, forKey: .modal)) ?? nil
   }
 
   public func encode(to encoder: Encoder) throws {
@@ -158,7 +161,8 @@ public struct BridgeAXAutomationState: Codable, Equatable, Sendable {
   public init(from decoder: Decoder) throws {
     let automation = try decoder.container(keyedBy: BridgeAXWire.Automation.self)
     enabled = try automation.decode(Bool.self, forKey: .enabled)
-    asserted = try automation.decode(Bool.self, forKey: .asserted)
+    // Absent is the state before anything asserts the mode, and false is the truthful answer for it.
+    asserted = try automation.decodeIfPresent(Bool.self, forKey: .asserted) ?? false
   }
 
   public func encode(to encoder: Encoder) throws {
@@ -271,10 +275,12 @@ public struct BridgeAXSettingSnapshot: Codable, Equatable, Sendable {
   }
 
   public var setting: String
-  public var enabled: Bool
+  /// Nil when the frame's value is not a boolean: a setting newer than this revision may carry anything, and its
+  /// snapshot must not fail the stream it arrives on.
+  public var enabled: Bool?
   public var otherSettings: [String: BridgeAXOutcome<BridgeAXSettingResponse>]
 
-  public init(setting: String, enabled: Bool, otherSettings: [String: BridgeAXOutcome<BridgeAXSettingResponse>] = [:]) {
+  public init(setting: String, enabled: Bool?, otherSettings: [String: BridgeAXOutcome<BridgeAXSettingResponse>] = [:]) {
     self.setting = setting
     self.enabled = enabled
     self.otherSettings = otherSettings
@@ -284,7 +290,7 @@ public struct BridgeAXSettingSnapshot: Codable, Equatable, Sendable {
     let snapshot = try decoder.container(keyedBy: BridgeAXWireKey.self)
     _ = try snapshot.decode(BridgeAXWire.Settings.Event.self, forKey: CodingKeys.event)
     setting = try snapshot.decode(String.self, forKey: CodingKeys.setting)
-    enabled = try snapshot.decode(Bool.self, forKey: CodingKeys.enabled)
+    enabled = (try? snapshot.decodeIfPresent(Bool.self, forKey: CodingKeys.enabled)) ?? nil
     otherSettings = try snapshot.decodeIfPresent([String: BridgeAXOutcome<BridgeAXSettingResponse>].self, forKey: CodingKeys.settings) ?? [:]
   }
 
@@ -292,7 +298,7 @@ public struct BridgeAXSettingSnapshot: Codable, Equatable, Sendable {
     var snapshot = encoder.container(keyedBy: BridgeAXWireKey.self)
     try snapshot.encode(BridgeAXWire.Settings.Event.snapshot, forKey: CodingKeys.event)
     try snapshot.encode(setting, forKey: CodingKeys.setting)
-    try snapshot.encode(enabled, forKey: CodingKeys.enabled)
+    try snapshot.encodeIfPresent(enabled, forKey: CodingKeys.enabled)
     if !otherSettings.isEmpty {
       try snapshot.encode(otherSettings, forKey: CodingKeys.settings)
     }

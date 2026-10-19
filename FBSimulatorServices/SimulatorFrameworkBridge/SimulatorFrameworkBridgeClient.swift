@@ -179,11 +179,12 @@ private struct SimulatorBridgeGuestLauncher: BridgeGuestLauncher {
 }
 
 extension BridgeResult {
+  /// The `BridgeAXOutcome` the guest encoded, for the caller to decode as the type its request answers with.
   func accessibilityData() throws -> Data {
-    guard values.count == 1, case .object = values[0] else {
-      throw AXBridgeError.guestFailure(error ?? "accessibility returned \(values.count) values instead of one response object")
+    guard let accessibility else {
+      throw AXBridgeError.guestFailure(error ?? "accessibility returned no answer")
     }
-    return try JSONEncoder().encode(values[0])
+    return accessibility
   }
 
   var jsonLines: String {

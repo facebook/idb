@@ -56,8 +56,8 @@ final class BridgeExecutionTests: XCTestCase {
     // A request whose identity survives decoding is answered under that identity, so the host can
     // match the failure to what it sent instead of reporting a mismatched response.
     let unanswerable: [(String, String)] = [
-      (#"{"version":4,"id":"future-version","command":{"ping":{}}}"#, "unsupportedVersion(4)"),
-      (#"{"version":3,"id":"future-command","command":{"future":{}}}"#, "command"),
+      (#"{"version":5,"id":"future-version","command":{"ping":{}}}"#, "unsupportedVersion(5)"),
+      (#"{"version":4,"id":"future-command","command":{"future":{}}}"#, "command"),
     ]
     for (text, expected) in unanswerable {
       let reply = BridgeRPC.process(Data(text.utf8), execute: execute)
@@ -132,25 +132,18 @@ final class BridgeExecutionTests: XCTestCase {
     XCTAssertEqual(BridgeOutput().finish(status: 0), BridgeResult(exitCode: 0))
   }
 
-  func testMalformedSerializedOutputReportsFailureInBothAdaptersAndAllowsRecovery() throws {
-    let request = BridgeRequest(command: .accessibility(.displays), id: "decode")
-    for text in ["{", "", #"{"ok":true,"value":1e999}"#] {
-      let output = BridgeOutput()
-      XCTAssertNil(output.write(json: Data(text.utf8)))
-      let result = output.finish(status: 0)
-      XCTAssertEqual(result.exitCode, 1)
-      XCTAssertTrue(result.values.isEmpty)
-      XCTAssertTrue(result.error?.hasPrefix("Could not decode command output:") == true)
-      let cli = BridgeRPC.process(try request.encoded()) { _ in result }
-      let socket = BridgeRPC.handle(try request.encoded()) { _ in result }
-      XCTAssertEqual(cli.data, socket.frame?.data)
-      XCTAssertEqual(try BridgeResponse.decode(cli.data, for: request).result, result)
-    }
-
+  // The answer is the guest's own serialization, so neither adapter parses or re-encodes it.
+  func testAnAccessibilityAnswerTravelsAsItsBytesInBothAdapters() throws {
+    let request = BridgeRequest(command: .accessibility(.displays), id: "answer")
+    let answer = Data(#"{"ok":true,"displays":[]}"#.utf8)
     let output = BridgeOutput()
-    let expected: BridgeJSONValue = .object(["ok": .bool(true)])
-    XCTAssertEqual(output.write(json: Data(#"{"ok":true}"#.utf8)), expected)
-    XCTAssertEqual(output.finish(status: 0), BridgeResult(exitCode: 0, values: [expected]))
+    output.write(accessibility: answer)
+    let result = output.finish(status: 0)
+    XCTAssertEqual(result, BridgeResult(exitCode: 0, accessibility: answer))
+    let cli = BridgeRPC.process(try request.encoded()) { _ in result }
+    let socket = BridgeRPC.handle(try request.encoded()) { _ in result }
+    XCTAssertEqual(cli.data, socket.frame?.data)
+    XCTAssertEqual(try BridgeResponse.decode(cli.data, for: request).result.accessibility, answer)
   }
 
   func testNetworkCommandsCollectResultsWithoutWritingStdout() throws {
@@ -345,13 +338,15 @@ final class BridgeExecutionTests: XCTestCase {
   }
 
   func testAnAccessibilityRequestThatDoesNotDecodeIsAnsweredAsABadRequest() throws {
-    let frame = Data(#"{"command":{"accessibility":{"_0":{"verb":"hittest","x":"left","y":2}}},"id":"malformed","version":3}"#.utf8)
+    let frame = Data(#"{"command":{"accessibility":{"_0":{"verb":"hittest","x":"left","y":2}}},"id":"malformed","version":4}"#.utf8)
     for data in [BridgeRPC.process(frame).data, try XCTUnwrap(BridgeRPC.handle(frame).frame).data] {
       let response = try JSONDecoder().decode(BridgeResponse.self, from: data)
       XCTAssertEqual(response.id, "malformed")
       XCTAssertEqual(response.result.exitCode, 1)
+      XCTAssertEqual(response.result.values, [])
       XCTAssertEqual(
-        response.result.values, [.object(["ok": .bool(false), "error_kind": .string("bad_request"), "error": .string("hittest requires numeric x and y")])])
+        try JSONDecoder().decode(BridgeAXOutcome<BridgeAXHitTestResponse>.self, from: XCTUnwrap(response.result.accessibility)),
+        .failure(BridgeAXFailure(message: "hittest requires numeric x and y", kind: .badRequest)))
     }
   }
 

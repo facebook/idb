@@ -14,7 +14,7 @@ import Foundation
 }
 
 public struct BridgeRequest: Codable, Equatable, Sendable {
-  public static let currentVersion = 3
+  public static let currentVersion = 4
   public let version: Int
   public let id: String
   public let command: BridgeCommand
@@ -81,12 +81,16 @@ public struct BridgeResult: Codable, Equatable, Sendable {
   public let values: [BridgeJSONValue]
   public let error: String?
   public let propertyList: Data?
+  /// An accessibility answer: a `BridgeAXOutcome` as the guest encoded it, for the host to decode as the type its
+  /// request's verb answers with. Carried as bytes so neither side parses the answer into anything else on the way.
+  public let accessibility: Data?
 
-  public init(exitCode: Int32, values: [BridgeJSONValue] = [], error: String? = nil, propertyList: Data? = nil) {
+  public init(exitCode: Int32, values: [BridgeJSONValue] = [], error: String? = nil, propertyList: Data? = nil, accessibility: Data? = nil) {
     self.exitCode = exitCode
     self.values = values
     self.error = error
     self.propertyList = propertyList
+    self.accessibility = accessibility
   }
 }
 

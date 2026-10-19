@@ -118,15 +118,14 @@ public enum BridgeServices {
       return Int32(HealthSettingsService.handleHealthSettingsAction(action: action, bundleID: bundleID, typeIdentifiers: types, output: output))
       #endif
     case let .accessibility(request):
-      let response = AccessibilityService.handleRequest(request)
-      return accessibility(AccessibilityService.serializeResponse(response), output: output)
+      return accessibility(AccessibilityService.handleRequest(request), output: output)
     }
   }
 
   /// The answer to an accessibility frame whose parameters are not a request, in the response a malformed request has
   /// always had.
   public static func undecodedAccessibility(_ parameters: [String: BridgeJSONValue]) -> BridgeResult {
-    accessibilityResult(AccessibilityService.serializeResponse(AccessibilityService.handleRequest(parameters: parameters)))
+    accessibilityResult(AccessibilityService.handleRequest(parameters: parameters))
   }
 
   /// Commands that answer with a stream of results rather than one; nil for every other command.
@@ -136,19 +135,31 @@ public enum BridgeServices {
     case let .stream(events):
       return .stream(AccessibilityResultStream(events: events))
     case let .failure(response):
-      return .result(accessibilityResult(AccessibilityService.serializeResponse(response)))
+      return .result(accessibilityResult(response))
     }
   }
 
-  private static func accessibility(_ data: Data, output: BridgeOutput) -> Int32 {
-    guard let value = output.write(json: data) else { return 1 }
-    if case let .object(fields) = value, fields[BridgeAXWire.Envelope.ok.rawValue] == .bool(true) { return 0 }
-    return 1
+  /// The answer goes on the wire as the bytes `serializeResponse` wrote, so nothing parses it before the host does.
+  private static func accessibility(_ response: [String: Any], output: BridgeOutput) -> Int32 {
+    output.write(accessibility: AccessibilityService.serializeResponse(response))
+    return (response[BridgeAXWire.Envelope.ok.rawValue] as? NSNumber)?.boolValue == true ? 0 : 1
   }
 
+  fileprivate static func accessibilityResult(_ response: [String: Any]) -> BridgeResult {
+    let output = BridgeOutput()
+    return output.finish(status: accessibility(response, output: output))
+  }
+
+  /// A streamed frame arrives already serialized; only its `ok` is read back, to set the exit status.
   fileprivate static func accessibilityResult(_ data: Data) -> BridgeResult {
     let output = BridgeOutput()
-    return output.finish(status: accessibility(data, output: output))
+    output.write(accessibility: data)
+    let ok = (try? JSONDecoder().decode(StreamedFrameStatus.self, from: data))?.ok == true
+    return output.finish(status: ok ? 0 : 1)
+  }
+
+  private struct StreamedFrameStatus: Decodable {
+    let ok: Bool
   }
 
   private static func unavailable(_ subject: String, output: BridgeOutput) -> Int32 {

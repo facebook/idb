@@ -19,7 +19,7 @@ public struct BridgeAXNode: Codable, Equatable, Sendable {
   public var value: BridgeAXScalar?
   public var identifier: BridgeAXScalar?
   public var frame: BridgeAXRect?
-  public var automationType: Int64?
+  public var automationType: BridgeAXScalar?
   /// The `UIAccessibilityTraits` bitmask as XCTest's vocabulary answers it.
   public var xcTraits: UInt64?
   /// Nil when the read did not carry the key; a leaf the guest read carries an empty list.
@@ -65,7 +65,7 @@ public struct BridgeAXNode: Codable, Equatable, Sendable {
     value = try node.decodeIfPresent(BridgeAXScalar.self, forKey: .value)
     identifier = try node.decodeIfPresent(BridgeAXScalar.self, forKey: .identifier)
     frame = try node.decodeIfPresent(BridgeAXRect.self, forKey: .frame)
-    automationType = try node.decodeIfPresent(Int64.self, forKey: .automationType)
+    automationType = try node.decodeIfPresent(BridgeAXScalar.self, forKey: .automationType)
     xcTraits = try node.decodeIfPresent(UInt64.self, forKey: .xcTraits)
     children = try node.decodeIfPresent([BridgeAXNode].self, forKey: .children)
     windowDisplayID = try node.decodeIfPresent(UInt32.self, forKey: .windowDisplayID)
@@ -109,8 +109,8 @@ public struct BridgeAXNode: Codable, Equatable, Sendable {
 }
 
 /// An attribute whose type is whatever the accessibility server answered. The guest passes strings and numbers
-/// through and describes anything else, so these four kinds are all it can carry. The element-type attributes
-/// arrive as a class name or as an `XCUIElementType` number.
+/// through and describes anything else, so these four kinds are all it can carry. The element-type and automation-type
+/// attributes arrive as a class name or as an `XCUIElementType` number.
 @frozen public enum BridgeAXScalar: Codable, Equatable, Sendable {
   case string(String)
   case bool(Bool)

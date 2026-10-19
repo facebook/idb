@@ -11,6 +11,7 @@ import Foundation
 public final class BridgeOutput {
   public private(set) var values: [BridgeJSONValue] = []
   public private(set) var propertyList: Data?
+  public private(set) var accessibility: Data?
   public private(set) var failed = false
   public private(set) var error: String?
 
@@ -28,15 +29,9 @@ public final class BridgeOutput {
     }
   }
 
-  @discardableResult
-  public func write(json data: Data) -> BridgeJSONValue? {
-    do {
-      let value = try JSONDecoder().decode(BridgeJSONValue.self, from: data)
-      return write(value.foundationValue) ? value : nil
-    } catch {
-      failure("Could not decode command output: \(error.localizedDescription)")
-      return nil
-    }
+  /// An accessibility answer, as `AccessibilityService` serialized it.
+  public func write(accessibility data: Data) {
+    accessibility = data
   }
 
   @discardableResult
@@ -58,6 +53,6 @@ public final class BridgeOutput {
   }
 
   public func finish(status: Int32) -> BridgeResult {
-    BridgeResult(exitCode: failed ? 1 : status, values: values, error: error, propertyList: propertyList)
+    BridgeResult(exitCode: failed ? 1 : status, values: values, error: error, propertyList: propertyList, accessibility: accessibility)
   }
 }

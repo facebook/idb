@@ -48,7 +48,7 @@ final class AXBridgeStreamTests {
   }
 
   private func event(_ name: String) -> BridgeResult {
-    BridgeResult(exitCode: 0, values: [.object(["ok": .bool(true), "event": .string(name)])])
+    BridgeResult(exitCode: 0, accessibility: Data(#"{"ok":true,"event":"\#(name)"}"#.utf8))
   }
 
   private func closeGuest() {

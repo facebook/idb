@@ -33,7 +33,11 @@ extension BridgeServerSocketTests {
 
   /// The accessibility envelope a streamed frame carries.
   private func readEvent(fd: Int32) -> NSDictionary? {
-    ((readResponse(fd: fd)?["result"] as? NSDictionary)?["values"] as? [Any])?.first as? NSDictionary
+    // The envelope travels as the bytes the guest encoded, which a JSON frame carries base64-encoded.
+    guard let encoded = (readResponse(fd: fd)?["result"] as? NSDictionary)?["accessibility"] as? String,
+      let envelope = Data(base64Encoded: encoded)
+    else { return nil }
+    return (try? JSONSerialization.jsonObject(with: envelope)) as? NSDictionary
   }
 
   // The exclusive server exits once the client hangs up, and must be waited for inside the test body.

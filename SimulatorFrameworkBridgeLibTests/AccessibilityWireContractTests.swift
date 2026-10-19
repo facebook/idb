@@ -15,18 +15,14 @@ import XCTest
 
 private let kAppPid: pid_t = 4321
 
-/// The accessibility answers a guest frame carries, decoded from the frame's bytes as the host decodes them.
-private struct GuestFrame<Success: Codable & Equatable & Sendable>: Decodable {
-  struct Result: Decodable {
-    let values: [BridgeAXOutcome<Success>]
-  }
-
-  let result: Result
-
+/// The accessibility answer a guest frame carries, decoded from the frame's bytes as the host decodes it: the frame
+/// as a `BridgeResponse`, then its answer as the type the request's verb answers with.
+private enum GuestFrame<Success: Codable & Equatable & Sendable> {
   static func answer(in frame: Data, file: StaticString = #filePath, line: UInt = #line) throws -> BridgeAXOutcome<Success> {
-    let values = try JSONDecoder().decode(Self.self, from: frame).result.values
-    XCTAssertEqual(values.count, 1, "an accessibility frame carries one answer", file: file, line: line)
-    return try XCTUnwrap(values.first, file: file, line: line)
+    let result = try JSONDecoder().decode(BridgeResponse.self, from: frame).result
+    XCTAssertEqual(result.values, [], "an accessibility answer is not carried as values", file: file, line: line)
+    let answer = try XCTUnwrap(result.accessibility, "the frame carries no accessibility answer", file: file, line: line)
+    return try JSONDecoder().decode(BridgeAXOutcome<Success>.self, from: answer)
   }
 }
 
@@ -127,7 +123,7 @@ final class AccessibilityWireContractTests: XCTestCase {
     XCTAssertEqual(child.value, .string("On"))
     XCTAssertEqual(child.identifier, .string("wifi"))
     XCTAssertEqual(child.frame, BridgeAXRect(x: 16, y: 293, width: 370, height: 52))
-    XCTAssertEqual(child.automationType, 9)
+    XCTAssertEqual(child.automationType, .integer(9))
     XCTAssertEqual(child.children, [], "a leaf the guest read carries an empty list")
   }
 
@@ -480,7 +476,7 @@ extension BridgeServerSocketTests {
     let snapshot = try success(nextEvent(BridgeAXSettingSnapshot.self, fd: client))
 
     XCTAssertEqual(snapshot.setting, "state-settings")
-    XCTAssertFalse(snapshot.enabled)
+    XCTAssertEqual(snapshot.enabled, false)
     XCTAssertEqual(snapshot.otherSettings["button-shapes"], .success(BridgeAXSettingResponse(enabled: false)))
     XCTAssertEqual(snapshot.otherSettings["reduce-transparency"], .success(BridgeAXSettingResponse(enabled: false)))
     XCTAssertEqual(

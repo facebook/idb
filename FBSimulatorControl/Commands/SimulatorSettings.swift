@@ -101,50 +101,50 @@ package struct SimulatorSettingsPublisher: Sendable {
   }
 
   static func event(from data: Data) throws -> SimulatorSettingsEvent? {
-    guard let response = try JSONSerialization.jsonObject(with: data) as? [String: Any] else {
-      throw AXBridgeError.guestFailure("simulator settings response was not a JSON object")
+    let snapshot: BridgeAXSettingSnapshot
+    switch try Self.outcome(data) {
+    case let .success(answer):
+      snapshot = answer
+    case let .failure(failure):
+      return .unavailable(Self.availability(errorKind: failure.kind?.rawValue, message: failure.message ?? "the guest reported no detail"))
     }
-    let message = response[BridgeAXWire.Envelope.error.rawValue] as? String ?? "the guest reported no detail"
-    guard response[BridgeAXWire.Envelope.ok.rawValue] as? Bool == true else {
-      let errorKind = response[BridgeAXWire.Envelope.errorKind.rawValue] as? String
-      return .unavailable(Self.availability(errorKind: errorKind, message: message))
-    }
-    guard response[BridgeAXWire.Settings.Key.event.rawValue] as? String == BridgeAXWire.Settings.Event.snapshot.rawValue,
-      let setting = response[BridgeAXWire.Request.setting.rawValue] as? String,
-      !setting.isEmpty
-    else {
+    guard !snapshot.setting.isEmpty else {
       throw AXBridgeError.guestFailure("simulator settings response was not a settings snapshot")
     }
-    guard setting == "reduce-motion" || setting == "state-settings" else { return nil }
-    guard let enabled = response[BridgeAXWire.Envelope.enabled.rawValue] as? Bool else {
+    guard snapshot.setting == "reduce-motion" || snapshot.setting == "state-settings" else { return nil }
+    guard let enabled = snapshot.enabled else {
       throw AXBridgeError.guestFailure("simulator settings response was not a Reduce Motion snapshot")
     }
-    guard setting == "state-settings" else {
+    guard snapshot.setting == "state-settings" else {
       return .snapshot(SimulatorSettingsSnapshot(reduceMotionEnabled: enabled))
     }
-    let settings = response[BridgeAXWire.Settings.Key.settings.rawValue] as? [String: Any] ?? [:]
     return .snapshot(
       SimulatorSettingsSnapshot(
         reduceMotionEnabled: enabled,
-        reduceTransparency: try reading(settings["reduce-transparency"]),
-        buttonShapes: try reading(settings["button-shapes"]),
-        increaseContrast: try reading(settings["increase-contrast"])))
+        reduceTransparency: try reading(snapshot.otherSettings["reduce-transparency"]),
+        buttonShapes: try reading(snapshot.otherSettings["button-shapes"]),
+        increaseContrast: try reading(snapshot.otherSettings["increase-contrast"])))
   }
 
-  private static func reading(_ value: Any?) throws -> SimulatorSettingsReading {
-    guard let envelope = value as? [String: Any], let ok = envelope[BridgeAXWire.Envelope.ok.rawValue] as? Bool else {
+  private static func outcome(_ data: Data) throws -> BridgeAXOutcome<BridgeAXSettingSnapshot> {
+    do {
+      return try JSONDecoder().decode(BridgeAXOutcome<BridgeAXSettingSnapshot>.self, from: data)
+    } catch let DecodingError.typeMismatch(_, context) where context.codingPath.isEmpty {
+      throw AXBridgeError.guestFailure("simulator settings response was not a JSON object")
+    } catch {
+      throw AXBridgeError.guestFailure("simulator settings response was not a settings snapshot: \(error)")
+    }
+  }
+
+  private static func reading(_ outcome: BridgeAXOutcome<BridgeAXSettingResponse>?) throws -> SimulatorSettingsReading {
+    switch outcome {
+    case nil:
       throw AXBridgeError.guestFailure("simulator settings response omitted an observed setting")
+    case let .success(setting)?:
+      return .available(setting.enabled)
+    case let .failure(failure)?:
+      return .unavailable(availability(errorKind: failure.kind?.rawValue, message: failure.message ?? "Setting read failed"))
     }
-    if ok {
-      guard let enabled = envelope[BridgeAXWire.Envelope.enabled.rawValue] as? Bool else {
-        throw AXBridgeError.guestFailure("simulator settings response omitted an enabled value")
-      }
-      return .available(enabled)
-    }
-    return .unavailable(
-      availability(
-        errorKind: envelope[BridgeAXWire.Envelope.errorKind.rawValue] as? String,
-        message: envelope[BridgeAXWire.Envelope.error.rawValue] as? String ?? "Setting read failed"))
   }
 
   static func availability(errorKind: String?, message: String) -> SimulatorSettingsAvailability {

@@ -79,7 +79,7 @@ final class BridgeTransportTests: XCTestCase {
     let secondData = try secondRequest.encoded()
     let cases: [(Data, BridgeProtocolError?)] = [
       (Data("{".utf8), nil),
-      (Data(#"{"version":4,"id":"first","result":{"exitCode":0,"values":[]}}"#.utf8), .unsupportedVersion(4)),
+      (Data(#"{"version":5,"id":"first","result":{"exitCode":0,"values":[]}}"#.utf8), .unsupportedVersion(5)),
       (try BridgeResponse(id: "wrong", result: BridgeResult(exitCode: 0)).encoded(), .mismatchedResponse),
     ]
     for (payload, expectedError) in cases {
@@ -171,8 +171,15 @@ final class BridgeTransportTests: XCTestCase {
     }
     XCTAssertThrowsError(try BridgeResult(exitCode: 1).accessibilityData()) { error in
       guard case let .guestFailure(message)? = error as? AXBridgeError else { return XCTFail("\(error)") }
-      XCTAssertEqual(message, "accessibility returned 0 values instead of one response object")
+      XCTAssertEqual(message, "accessibility returned no answer")
     }
+  }
+
+  // The host reads the answer the guest encoded, byte for byte, rather than re-encoding a copy of it.
+  func testAnAccessibilityAnswerIsHandedOnAsTheGuestsBytes() throws {
+    let answer = Data(#"{"ok":true,"displays":[]}"#.utf8)
+    XCTAssertEqual(try BridgeResult(exitCode: 0, accessibility: answer).accessibilityData(), answer)
+    XCTAssertEqual(try BridgeResult(exitCode: 1, error: "partial", accessibility: answer).accessibilityData(), answer)
   }
 
   func testMutationIsNeverReplayedAfterAnAmbiguousFailure() async throws {

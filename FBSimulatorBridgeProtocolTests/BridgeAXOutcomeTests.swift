@@ -94,7 +94,7 @@ struct BridgeAXOutcomeTests {
     node.value = .number(0.5)
     node.identifier = .string("done")
     node.frame = BridgeAXRect(x: 10, y: 20.5, width: 100, height: nil)
-    node.automationType = 9
+    node.automationType = .integer(9)
     node.xcTraits = 1
     node.children = []
     node.windowDisplayID = 3
@@ -132,6 +132,26 @@ struct BridgeAXOutcomeTests {
   func aKindThisRevisionDoesNotKnowDegradesToNone() throws {
     let outcome = try decode(BridgeAXOutcome<BridgeAXSettingResponse>.self, #"{"ok":false,"error":"new","error_kind":"from_the_future"}"#)
     #expect(outcome == .failure(BridgeAXFailure(message: "new")))
+  }
+
+  @Test
+  func aFailurePidThatNamesNoProcessReadsAsNone() throws {
+    let outcome = try decode(
+      BridgeAXOutcome<BridgeAXTreeResponse>.self, #"{"ok":false,"error":"gone","error_kind":"application_unavailable","pid":99999999999}"#)
+    #expect(outcome == .failure(BridgeAXFailure(message: "gone", kind: .applicationUnavailable)))
+  }
+
+  @Test
+  func anAutomationStateThatAssertedNothingSaysSo() throws {
+    let read = try decode(BridgeAXTreeResponse.self, #"{"tree":{},"pid":3,"automation":{"enabled":true}}"#)
+    #expect(read.automation == BridgeAXAutomationState(enabled: true, asserted: false))
+  }
+
+  @Test
+  func aModalThisRevisionCannotReadIsNone() throws {
+    let read = try decode(BridgeAXTreeResponse.self, #"{"tree":{},"pid":3,"modal":{"kind":"bogus","elementType":"X"}}"#)
+    #expect(read.modal == nil)
+    #expect(read.pid == 3)
   }
 
   @Test
