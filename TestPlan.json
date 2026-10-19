@@ -126,6 +126,9 @@
     "ShimulatorProtocolTests": [
       "ShimulatorProtocolTests"
     ],
+    "SimulatorFrameworkBridgeLibTests": [
+      "SimulatorFrameworkBridgeLibTests"
+    ],
     "SimulatorIPCTests": [
       "SimulatorIPCTests"
     ]
@@ -278,6 +281,13 @@
       "bootedSimulator": false,
       "prerequisites": [],
       "runner": "standard"
+    },
+    "SimulatorFrameworkBridgeLibTests": {
+      "bootedSimulator": false,
+      "platform": "iOS Simulator",
+      "prerequisites": [],
+      "project": "SimulatorFrameworkBridge/SimulatorFrameworkBridge.xcodeproj",
+      "runner": "large"
     },
     "SimulatorIPCTests": {
       "bootedSimulator": false,

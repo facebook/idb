@@ -6,25 +6,25 @@
  */
 
 import FBControlCore
+import FBSimulatorBridgeProtocol
 import FBSimulatorControl
 import Foundation
 
-/// Walks an axbridge `XC_kAXXC*` attribute-dictionary tree and provides marker matching and
+/// Walks an axbridge `BridgeAXNode` tree and provides marker matching and
 /// frame-centre geometry. Per-node serialization is delegated to
 /// `AXNodeSerializer`.
 enum AXTreeWalk {
 
-  /// Serializes an attribute-dictionary tree into the schema, tagging each element with `pid`. The
+  /// Serializes a node tree into the schema, tagging each element with `pid`. The
   /// result is unfiltered so a caller can keep both the whole walk and the reported subset.
-  static func describeAllElements(fromTree tree: [String: Any], keys: Set<AXKeys>, nestedFormat: Bool, pid: pid_t) -> [AccessibilityDocumentElement] {
+  static func describeAllElements(fromTree tree: BridgeAXNode, keys: Set<AXKeys>, nestedFormat: Bool, pid: pid_t) -> [AccessibilityDocumentElement] {
     AXNodeSerializer.recursiveDescription(
       fromSnapshot: snapshot(fromTree: tree, pid: pid), serialization: AXSerialization(keys: keys, nested: nestedFormat),
       collector: nil, seenPids: nil)
   }
 
-  /// The snapshot a serialization consumes, decoded from an attribute-dictionary tree the guest has
-  /// already fetched.
-  static func snapshot(fromTree tree: [String: Any], pid: pid_t) -> AXElementSnapshot {
+  /// The snapshot a serialization consumes, decoded from a node tree the guest has already fetched.
+  static func snapshot(fromTree tree: BridgeAXNode, pid: pid_t) -> AXElementSnapshot {
     AXBridgeSnapshotDecoder.snapshot(fromTree: tree, pid: pid)
   }
 
@@ -34,7 +34,7 @@ enum AXTreeWalk {
   ///
   /// Decodes the frame as the serializer's snapshots do, so this cannot disagree with the frames on the
   /// elements it describes.
-  static func screenInfo(fromTree tree: [String: Any]) -> AccessibilityScreenInfo? {
+  static func screenInfo(fromTree tree: BridgeAXNode) -> AccessibilityScreenInfo? {
     let frame = AXBridgeSnapshotDecoder.snapshot(fromNode: tree, pid: 0).frame
     guard frame.width > 0, frame.height > 0 else {
       return nil

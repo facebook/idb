@@ -6,6 +6,7 @@
  */
 
 import Foundation
+@_implementationOnly import SimulatorFrameworkBridgeRuntime
 @_implementationOnly import SimulatorFrameworkBridgeSupport
 import XCTest
 
@@ -100,7 +101,9 @@ final class ProxyServiceTests: XCTestCase {
 
   // See the note in DnsServiceTests: a sandboxed XCTest host cannot create an SCDynamicStore,
   // so `list` reports failure here where the `simctl spawn`'d bridge would succeed.
-  func testHandleProxyActionListReturnsFailureWithoutADynamicStore() {
+  func testHandleProxyActionListReturnsFailureWithoutADynamicStore() throws {
+    // An unhosted test bundle is not sandboxed, so it gets a store and this path cannot be reached.
+    try XCTSkipIf(FBNetworkConfigurationStore.proxy() != nil, "this process can create a dynamic store")
     let result = ProxyService.handleProxyAction(action: "list", arguments: [])
     XCTAssertEqual(result, 1)
   }

@@ -79,7 +79,7 @@ final class BridgeTransportTests: XCTestCase {
     let secondData = try secondRequest.encoded()
     let cases: [(Data, BridgeProtocolError?)] = [
       (Data("{".utf8), nil),
-      (Data(#"{"version":4,"id":"first","result":{"exitCode":0,"values":[]}}"#.utf8), .unsupportedVersion(4)),
+      (Data(#"{"version":5,"id":"first","result":{"exitCode":0,"values":[]}}"#.utf8), .unsupportedVersion(5)),
       (try BridgeResponse(id: "wrong", result: BridgeResult(exitCode: 0)).encoded(), .mismatchedResponse),
     ]
     for (payload, expectedError) in cases {
@@ -165,14 +165,21 @@ final class BridgeTransportTests: XCTestCase {
   }
 
   func testAccessibilityFailureWithoutAResponseCarriesTheGuestDiagnostic() throws {
-    XCTAssertThrowsError(try BridgeResult(exitCode: 1, error: "could not decode accessibility output").accessibilityData()) { error in
+    XCTAssertThrowsError(try BridgeResult(exitCode: 1, error: "could not decode accessibility output").accessibilityAnswer()) { error in
       guard case let .guestFailure(message)? = error as? AXBridgeError else { return XCTFail("\(error)") }
       XCTAssertEqual(message, "could not decode accessibility output")
     }
-    XCTAssertThrowsError(try BridgeResult(exitCode: 1).accessibilityData()) { error in
+    XCTAssertThrowsError(try BridgeResult(exitCode: 1).accessibilityAnswer()) { error in
       guard case let .guestFailure(message)? = error as? AXBridgeError else { return XCTFail("\(error)") }
-      XCTAssertEqual(message, "accessibility returned 0 values instead of one response object")
+      XCTAssertEqual(message, "accessibility returned no answer")
     }
+  }
+
+  func testAnAccessibilityAnswerIsHandedOnAsTheGuestGaveIt() throws {
+    let answer = BridgeAXAnswer.displays(
+      BridgeAXDisplayInventory(displayScopedInteractions: true, displayScopedTrees: true, displayScopedQuiescence: true, displays: []))
+    XCTAssertEqual(try BridgeResult(exitCode: 0, accessibility: answer).accessibilityAnswer(), answer)
+    XCTAssertEqual(try BridgeResult(exitCode: 1, error: "partial", accessibility: answer).accessibilityAnswer(), answer)
   }
 
   func testMutationIsNeverReplayedAfterAnAmbiguousFailure() async throws {
@@ -311,9 +318,10 @@ final class BridgeTransportTests: XCTestCase {
   }
 
   func testTheDefaultReceiveTimeoutPassesAnAnswerThrough() async throws {
-    let transport = UnheedingTransport(answer: Data("answer".utf8))
-    let data = try await transport.send(.displays, receiveTimeout: 5)
-    XCTAssertEqual(data, Data("answer".utf8))
+    let answer = AXBridgeReply(answer: .failure(BridgeAXFailure(message: "answer")), frameBytes: 6)
+    let transport = UnheedingTransport(answer: answer)
+    let reply = try await transport.send(.displays, receiveTimeout: 5)
+    XCTAssertEqual(reply, answer)
   }
 
   func testCancellingTheCallerEndsTheDefaultReceiveTimeoutAtOnce() async throws {
@@ -378,14 +386,14 @@ private enum BridgeTestFailure: Error, Equatable { case dropped }
 /// Implements only the unbounded `send`, so the default receive timeout races it. Without an `answer` the send
 /// waits, deaf to cancellation, until `release()`.
 private struct UnheedingTransport: AXBridgeTransport, Sendable {
-  var answer: Data?
+  var answer: AXBridgeReply?
   private let released = AsyncEvent<Void>()
 
-  init(answer: Data? = nil) {
+  init(answer: AXBridgeReply? = nil) {
     self.answer = answer
   }
 
-  func send(_ request: AXBridgeRequest) async throws -> Data {
+  func send(_ request: AXBridgeRequest) async throws -> AXBridgeReply {
     if let answer {
       return answer
     }

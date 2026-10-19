@@ -243,18 +243,18 @@ public struct SimulatorPreferencesCommands {
     guard let settingName = key.accessibilityBridgeName else {
       throw SimulatorPreferencesError.settingNotPreferenceBacked(setting: key.rawValue)
     }
-    let data = try await AXBridgeOneshotTransport(simulator: simulator)
+    let reply = try await AXBridgeOneshotTransport(simulator: simulator)
       .send(.deviceSettingRead(settingName))
-    return try AXDeviceSettingResponse(data: data).enabled
+    return try AXDeviceSettingResponse(answer: reply.answer).enabled
   }
 
   private func setAccessibilitySetting(_ key: SimulatorSettingKey, enabled: Bool) async throws {
     guard let settingName = key.accessibilityBridgeName else {
       throw SimulatorPreferencesError.settingNotPreferenceBacked(setting: key.rawValue)
     }
-    let data = try await AXBridgeOneshotTransport(simulator: simulator)
+    let reply = try await AXBridgeOneshotTransport(simulator: simulator)
       .send(.deviceSettingWrite(settingName, enabled: enabled))
-    let actual = try AXDeviceSettingResponse(data: data).enabled
+    let actual = try AXDeviceSettingResponse(answer: reply.answer).enabled
     guard actual == enabled else {
       throw SimulatorPreferencesError.accessibilitySettingsReadbackMismatch(
         setting: settingName,

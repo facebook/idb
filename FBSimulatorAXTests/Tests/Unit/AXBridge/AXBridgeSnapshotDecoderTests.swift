@@ -31,6 +31,16 @@ struct AXBridgeSnapshotDecoderTests {
     #expect(element.pid == 42)
   }
 
+  // The guest sends null for an attribute the server could not answer; it is no label, not the text "<null>".
+  @Test
+  func anAttributeTheServerCouldNotAnswerIsAbsentRatherThanDescribed() {
+    let element = AXBridgeSnapshotDecoder.snapshot(
+      fromNode: [AXWire.Node.label.rawValue: NSNull(), AXWire.Node.identifier.rawValue: NSNull()], pid: 0)
+
+    #expect(element.label == nil)
+    #expect(element.identifier == nil)
+  }
+
   @Test
   func parsesFrameFromDictionaryRepresentation() {
     let expected = CGRect(x: 16, y: 380, width: 370, height: 52)
@@ -44,13 +54,6 @@ struct AXBridgeSnapshotDecoderTests {
     #expect(abs(frame.origin.y - expected.origin.y) <= 0.001)
     #expect(abs(frame.size.width - expected.size.width) <= 0.001)
     #expect(abs(frame.size.height - expected.size.height) <= 0.001)
-  }
-
-  @Test
-  func parsesFrameFromNSValueFallback() {
-    let expected = NSRect(x: 0, y: 0, width: 402, height: 874)
-    let element = AXBridgeSnapshotDecoder.snapshot(fromNode: [AXWire.Node.frame.rawValue: NSValue(rect: expected)], pid: 0)
-    #expect(element.frame == expected)
   }
 
   @Test

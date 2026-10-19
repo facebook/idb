@@ -9,11 +9,42 @@ import FBControlCore
 import FBSimulatorBridgeProtocol
 import Foundation
 
+/// A guest's answer to one request, and the size of the frame it came in.
+package struct AXBridgeReply: Sendable, Equatable {
+  package let answer: BridgeAXAnswer
+  /// Bytes the guest sent back, for a read's profile.
+  package let frameBytes: Int
+
+  package init(answer: BridgeAXAnswer, frameBytes: Int) {
+    self.answer = answer
+    self.frameBytes = frameBytes
+  }
+
+  /// The answer a guest wrote on its own for `request`. One that does not decode is the guest's failure, as the
+  /// transports raise it.
+  package init(answer data: Data, for request: AXBridgeRequest) throws {
+    self.init(answer: try Self.decoding(request) { try BridgeAXAnswer.decode(data, as: request.answerKind) }, frameBytes: data.count)
+  }
+
+  /// Runs `decode`, raising an answer that does not decode as the guest's failure to answer `request`.
+  package static func decoding<T>(_ request: AXBridgeRequest, _ decode: () throws -> T) throws -> T {
+    do {
+      return try decode()
+    } catch let error as DecodingError {
+      throw unparseable(error, answering: request)
+    }
+  }
+
+  package static func unparseable(_ error: DecodingError, answering request: AXBridgeRequest) -> AXBridgeError {
+    .guestFailure("\(request.verb.rawValue): unparseable guest response (\(error))")
+  }
+}
+
 package protocol AXBridgeTransport {
-  func send(_ request: AXBridgeRequest) async throws -> Data
+  func send(_ request: AXBridgeRequest) async throws -> AXBridgeReply
   /// As `send`, failing with `AXBridgeError.guestNotAnswering` when the guest has sent nothing back within
   /// `receiveTimeout`.
-  func send(_ request: AXBridgeRequest, receiveTimeout: TimeInterval) async throws -> Data
+  func send(_ request: AXBridgeRequest, receiveTimeout: TimeInterval) async throws -> AXBridgeReply
 }
 
 extension AXBridgeTransport where Self: Sendable {
@@ -22,8 +53,8 @@ extension AXBridgeTransport where Self: Sendable {
   ///
   /// The round trip runs unstructured, so a `send` that ignores cancellation cannot hold the caller past the
   /// timeout; it is cancelled and left to finish alone.
-  package func send(_ request: AXBridgeRequest, receiveTimeout: TimeInterval) async throws -> Data {
-    let answer = AsyncEvent<Data>()
+  package func send(_ request: AXBridgeRequest, receiveTimeout: TimeInterval) async throws -> AXBridgeReply {
+    let answer = AsyncEvent<AXBridgeReply>()
     let roundTrip = Task {
       do {
         answer.happen(try await send(request))
@@ -42,5 +73,5 @@ extension AXBridgeTransport where Self: Sendable {
 
 /// A transport that can hold a connection open for a response streamed in many frames.
 package protocol AXBridgeStreamingTransport: AXBridgeTransport {
-  func stream(_ request: AXBridgeRequest) async throws -> AsyncThrowingStream<Data, Error>
+  func stream(_ request: AXBridgeRequest) async throws -> AsyncThrowingStream<BridgeAXAnswer, Error>
 }

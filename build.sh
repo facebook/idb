@@ -1119,6 +1119,23 @@ function test_plan() {
   python3 CI/test_plan.py "$@"
 }
 
+# The UDID of an available iPhone simulator, preferring a booted one, for a bundle
+# that runs in the simulator rather than on the Mac.
+function available_iphone_simulator() {
+  local udid
+  udid="$(xcrun simctl list devices available -j | python3 -c '
+import json, sys
+devices = [d for runtime in json.load(sys.stdin)["devices"].values() for d in runtime if d["name"].startswith("iPhone")]
+devices.sort(key=lambda d: d["state"] != "Booted")
+print(devices[0]["udid"] if devices else "")
+')"
+  if [[ -z $udid ]]; then
+    echo "error: no iPhone simulator is available to run the tests in" >&2
+    exit 1
+  fi
+  echo "$udid"
+}
+
 function test_target() {
   local name=$1
   # Bundles copy products other projects build -- the shims and guest binaries,
@@ -1128,8 +1145,16 @@ function test_target() {
   for step in $(test_plan prerequisites "$name"); do
     "build_$step"
   done
-  local project settings=()
+  local project platform settings=() destination=()
   project="$(test_plan project "$name")"
+  platform="$(test_plan platform "$name")"
+  # A bundle built for the simulator runs in one, which needs no host app and no
+  # simulator booted first: xcodebuild boots the one it is given.
+  if [[ $platform == "iOS Simulator" ]]; then
+    destination=(-destination "platform=iOS Simulator,id=$(available_iphone_simulator)")
+  else
+    destination=(-sdk macosx)
+  fi
   # As for every other build from the companion's project: the libFBDeviceControl
   # it links carries a bridging header that explicit module scanning cannot
   # resolve from there.
@@ -1147,7 +1172,7 @@ function test_target() {
     ${settings[@]+"${settings[@]}"} \
     -project "$project" \
     -scheme "$name" \
-    -sdk macosx \
+    "${destination[@]}" \
     -derivedDataPath "$BUILD_DIRECTORY" \
     -test-timeouts-enabled YES \
     -default-test-execution-time-allowance 60 \

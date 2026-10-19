@@ -116,10 +116,10 @@ final class AccessibilitySerializationTests: XCTestCase {
   // An off-screen element can report a non-finite frame coordinate; JSON has no representation for it, and an
   // unsanitized value makes `JSONSerialization` throw an uncaught NSException that terminates the process.
   func testSerializedJSONSanitizesNonFiniteFrame() throws {
-    let frameDict = CGRectCreateDictionaryRepresentation(CGRect(x: CGFloat.infinity, y: 0, width: 10, height: 20)) as NSDictionary
+    // As the guest sends it: the non-finite edge as null.
     let tree: [String: Any] = [
       AXWire.Node.label.rawValue: "icon",
-      AXWire.Node.frame.rawValue: frameDict,
+      AXWire.Node.frame.rawValue: ["X": NSNull(), "Y": 0, "Width": 10, "Height": 20],
     ]
     let elements = AXTreeWalk.describeAllElements(
       fromTree: tree, keys: [.label, .frameDict], nestedFormat: false, pid: 7
@@ -475,23 +475,25 @@ final class AccessibilitySerializationTests: XCTestCase {
     )
   }
 
+  /// An element carrying `value`, as a backend that reads `accessibilityValue` directly reports it. The axbridge guest
+  /// describes a value that is not a string or number before sending it, so these do not come from its wire.
+  private func elements(withValue value: AccessibilityAttributeValue) -> [AccessibilityDocumentElement] {
+    AXNodeSerializer.recursiveDescription(
+      fromSnapshot: AXElementSnapshot(frame: .zero, pid: 7, value: value), serialization: AXSerialization(keys: [.value], nested: false),
+      collector: nil, seenPids: nil)
+  }
+
   // `accessibilityValue` is untyped and not always scalar; a collection must survive as a collection rather
   // than its `String(describing:)` form.
   func testCollectionAttributeValuesSurviveAsCollections() throws {
-    let arrayTree: [String: Any] = [AXWire.Node.value.rawValue: ["alpha", "beta"] as [Any]]
-    let arrayElements = AXTreeWalk.describeAllElements(
-      fromTree: arrayTree, keys: [.value], nestedFormat: false, pid: 7
-    )
+    let arrayElements = elements(withValue: .array([.string("alpha"), .string("beta")]))
     XCTAssertEqual(
       try renderedJSON(AccessibilityElementsResponse(elements: .tree(arrayElements))),
       #"{"elements":[{"AXValue":["alpha","beta"]}]}"#,
       "an array value stays an array"
     )
 
-    let objectTree: [String: Any] = [AXWire.Node.value.rawValue: ["min": 0, "max": 10] as [String: Any]]
-    let objectElements = AXTreeWalk.describeAllElements(
-      fromTree: objectTree, keys: [.value], nestedFormat: false, pid: 7
-    )
+    let objectElements = elements(withValue: .object(["min": .int(0), "max": .int(10)]))
     XCTAssertEqual(
       try renderedJSON(AccessibilityElementsResponse(elements: .tree(objectElements))),
       #"{"elements":[{"AXValue":{"max":10,"min":0}}]}"#,
@@ -502,12 +504,9 @@ final class AccessibilitySerializationTests: XCTestCase {
   // A null inside a collection value is a member of that collection and must survive as JSON `null`, distinct
   // from a null top-level value.
   func testNullInsideACollectionAttributeValueStaysNull() throws {
-    let tree: [String: Any] = [AXWire.Node.value.rawValue: ["alpha", NSNull(), "beta"] as [Any]]
-    let elements = AXTreeWalk.describeAllElements(
-      fromTree: tree, keys: [.value], nestedFormat: false, pid: 7
-    )
+    let withNull = elements(withValue: .array([.string("alpha"), .null, .string("beta")]))
     XCTAssertEqual(
-      try renderedJSON(AccessibilityElementsResponse(elements: .tree(elements))),
+      try renderedJSON(AccessibilityElementsResponse(elements: .tree(withNull))),
       #"{"elements":[{"AXValue":["alpha",null,"beta"]}]}"#,
       "a null element of an array value is null, not a stringified placeholder"
     )
@@ -743,10 +742,10 @@ final class AccessibilitySerializationTests: XCTestCase {
   // A non-finite coordinate has no JSON form, so each edge degrades independently to null while the
   // finite ones survive.
   func testNonFiniteFrameEdgesDegradeIndependently() throws {
-    let rect = CGRect(x: CGFloat.infinity, y: 0, width: CGFloat.nan, height: 20)
+    // As the guest sends it: each non-finite edge as null.
     let tree: [String: Any] = [
       AXWire.Node.label.rawValue: "icon",
-      AXWire.Node.frame.rawValue: CGRectCreateDictionaryRepresentation(rect) as NSDictionary,
+      AXWire.Node.frame.rawValue: ["X": NSNull(), "Y": 0, "Width": NSNull(), "Height": 20],
     ]
     let element = try renderedElement(keys: [.frameDict], tree: tree)
     let frame = try XCTUnwrap(element[AXKeys.frameDict.rawValue] as? [String: Any])

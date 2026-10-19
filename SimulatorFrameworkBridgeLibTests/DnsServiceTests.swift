@@ -6,6 +6,7 @@
  */
 
 import Foundation
+@_implementationOnly import SimulatorFrameworkBridgeRuntime
 @_implementationOnly import SimulatorFrameworkBridgeSupport
 import XCTest
 
@@ -30,7 +31,9 @@ final class DnsServiceTests: XCTestCase {
   // is `simctl spawn`'d rather than launched as an app and does get a store, which is why these
   // tests can only pin the store-unavailable path. Everything above this point is pure and is
   // covered for real.
-  func testHandleDnsActionListReturnsFailureWithoutADynamicStore() {
+  func testHandleDnsActionListReturnsFailureWithoutADynamicStore() throws {
+    // An unhosted test bundle is not sandboxed, so it gets a store and this path cannot be reached.
+    try XCTSkipIf(FBNetworkConfigurationStore.dns() != nil, "this process can create a dynamic store")
     let result = DnsService.handleDnsAction(action: "list", arguments: [])
     XCTAssertEqual(result, 1)
   }

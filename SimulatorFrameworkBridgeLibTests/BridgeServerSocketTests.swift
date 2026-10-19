@@ -166,9 +166,13 @@ final class BridgeServerSocketTests: XCTestCase {
     return (try? JSONSerialization.jsonObject(with: data)) as? NSDictionary
   }
 
-  func assertEOF(fd: Int32) {
+  func assertEOF(fd: Int32, file: StaticString = #filePath, line: UInt = #line) {
     var byte: UInt8 = 0
-    XCTAssertEqual(recv(fd, &byte, 1, 0), 0)
+    let received = recv(fd, &byte, 1, 0)
+    let error = errno
+    XCTAssertEqual(
+      received, 0, received < 0 ? "recv failed: \(String(cString: strerror(error)))" : "the server sent more",
+      file: file, line: line)
   }
 
   func testAnotherStarterCannotUnlinkTheLiveListener() throws {

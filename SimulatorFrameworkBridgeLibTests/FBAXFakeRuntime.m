@@ -168,6 +168,9 @@ NSDictionary<NSString *, id> *FBAXGeometryDictionaryProbe(BOOL rectangle, BOOL r
 
 - (void)checkNumericRead
 {
+  if (self.raises) {
+    [NSException raise:NSInternalInconsistencyException format:@"visibility failed"];
+  }
   if (self.raisesOnNumericRead) {
     [NSException raise:NSInternalInconsistencyException format:@"geometry coordinate failed"];
   }

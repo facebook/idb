@@ -179,7 +179,7 @@ final class AXBridgeUIAutomation: AXBridgeTreeReader, @unchecked Sendable {
 
   /// One round trip to the guest, which is the whole query on this backend, so it may take no longer than the
   /// query's timeout. Running out is the same failure a host read reports.
-  private func send(_ request: AXBridgeRequest, queryTimeout: TimeInterval) async throws -> Data {
+  private func send(_ request: AXBridgeRequest, queryTimeout: TimeInterval) async throws -> AXBridgeReply {
     do {
       return try await transport.send(request, receiveTimeout: queryTimeout)
     } catch let AXBridgeError.guestNotAnswering(after) {
@@ -189,7 +189,7 @@ final class AXBridgeUIAutomation: AXBridgeTreeReader, @unchecked Sendable {
 
   /// Assembles what both sides measured; the phases come off the envelope `AXTreeRead` already parsed.
   private static func timings(
-    response: Data, sent: CFAbsoluteTime, returned: CFAbsoluteTime, read: AXTreeRead
+    response: AXBridgeReply, sent: CFAbsoluteTime, returned: CFAbsoluteTime, read: AXTreeRead
   ) -> AXReadTimings {
     let decoded = CFAbsoluteTimeGetCurrent()
     let phases = read.phases
@@ -198,7 +198,7 @@ final class AXBridgeUIAutomation: AXBridgeTreeReader, @unchecked Sendable {
       decode: decoded - returned,
       traverse: phases.traverse,
       machRoundTrips: phases.machRoundTrips,
-      responseBytes: Int64(response.count)
+      responseBytes: Int64(response.frameBytes)
     )
   }
 
@@ -248,7 +248,7 @@ final class AXBridgeUIAutomation: AXBridgeTreeReader, @unchecked Sendable {
         let response = try await send(
           .read(pid: pid, options: options, displayID: display?.accessibilityID), queryTimeout: queryTimeout)
         let returned = CFAbsoluteTimeGetCurrent()
-        var read = try AXTreeRead(wholeTreeResponse: response, pid: pid)
+        var read = try AXTreeRead(wholeTreeResponse: response.answer, pid: pid)
         read.screen = display?.screen
         read.timings = Self.timings(response: response, sent: sent, returned: returned, read: read)
         return read
@@ -268,7 +268,7 @@ final class AXBridgeUIAutomation: AXBridgeTreeReader, @unchecked Sendable {
         .readFrontmost(x: anchor.x, y: anchor.y, method: frontmostMethod, options: options, displayID: display?.accessibilityID),
         queryTimeout: queryTimeout)
       let returned = CFAbsoluteTimeGetCurrent()
-      var read = try AXTreeRead(frontmostResponse: response, method: frontmostMethod)
+      var read = try AXTreeRead(frontmostResponse: response.answer, method: frontmostMethod)
       read.screen = display?.screen
       read.timings = Self.timings(response: response, sent: sent, returned: returned, read: read)
       return read
@@ -291,7 +291,7 @@ final class AXBridgeUIAutomation: AXBridgeTreeReader, @unchecked Sendable {
           clientType: options.resolvedClientType,
           displayID: display?.accessibilityID),
         queryTimeout: options.timing?.queryTimeout ?? simulator.accessibilityTiming.queryTimeout)
-      guard let hit = try AXTreeRead(hitTestResponse: response) else {
+      guard let hit = try AXTreeRead(hitTestResponse: response.answer) else {
         return nil
       }
       let snapshot = AXTreeWalk.snapshot(fromTree: hit.tree, pid: hit.pid)
@@ -376,7 +376,7 @@ final class AXBridgeUIAutomation: AXBridgeTreeReader, @unchecked Sendable {
     return forwarding(try await quiescenceFrames(pid: pid, displayID: nil, parameters: parameters), pid: pid)
   }
 
-  private func quiescenceFrames(pid: pid_t?, displayID: UInt32?, parameters: QuiescenceParameters) async throws -> AsyncThrowingStream<Data, Error> {
+  private func quiescenceFrames(pid: pid_t?, displayID: UInt32?, parameters: QuiescenceParameters) async throws -> AsyncThrowingStream<BridgeAXAnswer, Error> {
     guard let transport = transport as? any AXBridgeStreamingTransport else {
       throw UIAutomationError.operationUnsupported(backend: backend, operation: "Quiescence")
     }
@@ -384,7 +384,7 @@ final class AXBridgeUIAutomation: AXBridgeTreeReader, @unchecked Sendable {
       .quiescence(pid: pid, busyThresholdMs: parameters.busyThresholdMs, quietWindowMs: parameters.quietWindowMs, displayID: displayID))
   }
 
-  private func forwarding(_ frames: AsyncThrowingStream<Data, Error>, pid: pid_t?) -> AsyncThrowingStream<QuiescenceEvent, Error> {
+  private func forwarding(_ frames: AsyncThrowingStream<BridgeAXAnswer, Error>, pid: pid_t?) -> AsyncThrowingStream<QuiescenceEvent, Error> {
     AsyncThrowingStream { continuation in
       let task = Task {
         do {
@@ -476,14 +476,14 @@ final class AXBridgeUIAutomation: AXBridgeTreeReader, @unchecked Sendable {
   private static let displayPollInterval: Duration = .milliseconds(250)
 
   private enum FollowStep: Sendable {
-    case frame(Data)
+    case frame(BridgeAXAnswer)
     case moved(uniqueID: String, displayID: UInt32)
   }
 
   /// Relays `frames` until they end, or until another display becomes active and resolves. A display read
   /// that fails, as one does mid-transition, leaves the stream where it is until a later read succeeds.
   private func following(
-    _ frames: AsyncThrowingStream<Data, Error>,
+    _ frames: AsyncThrowingStream<BridgeAXAnswer, Error>,
     from uniqueID: String,
     displays: any DisplayCommands
   ) -> AsyncThrowingStream<FollowStep, Error> {
@@ -657,9 +657,9 @@ final class AXBridgeUIAutomation: AXBridgeTreeReader, @unchecked Sendable {
       assertion: target.assertion,
       displayID: display?.accessibilityID
     )
-    let response: Data
+    let response: BridgeAXAnswer
     do {
-      response = try await send(.write(request), queryTimeout: simulator.accessibilityTiming.queryTimeout)
+      response = try await send(.write(request), queryTimeout: simulator.accessibilityTiming.queryTimeout).answer
     } catch let error as AXBridgeError where error.retry == .willNotChange {
       // No guest could be reached, so the write never left the host.
       throw error

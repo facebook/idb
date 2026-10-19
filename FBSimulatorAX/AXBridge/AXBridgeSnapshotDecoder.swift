@@ -11,42 +11,39 @@ import FBSimulatorBridgeProtocol
 import FBSimulatorControl
 import Foundation
 
-/// Decodes the `XC_kAXXC*` attribute dictionaries the axbridge guest returns into snapshots.
+/// Decodes the `BridgeAXNode` trees the axbridge guest returns into snapshots.
 ///
 /// The guest has already fetched everything its traversal asked for, so decoding takes the whole tree in
 /// one pass; there is no plan to honour on this side.
 enum AXBridgeSnapshotDecoder {
 
-  /// Decodes a nested attribute-dictionary tree, tagging every node with the owning application's pid.
-  static func snapshot(fromTree node: [String: Any], pid: pid_t) -> AXElementSnapshot {
-    let childNodes = (node[AXWire.Node.children.rawValue] as? [[String: Any]]) ?? []
-    return snapshot(fromNode: node, pid: pid, children: childNodes.map { snapshot(fromTree: $0, pid: pid) })
+  /// Decodes a nested node tree, tagging every node with the owning application's pid.
+  static func snapshot(fromTree node: BridgeAXNode, pid: pid_t) -> AXElementSnapshot {
+    snapshot(fromNode: node, pid: pid, children: (node.children ?? []).map { snapshot(fromTree: $0, pid: pid) })
   }
 
   /// Decodes one node, ignoring any children it carries.
-  static func snapshot(fromNode node: [String: Any], pid: pid_t, children: [AXElementSnapshot] = []) -> AXElementSnapshot {
-    let attributes = Attributes(node)
-    let explanation = (node[AXWire.Node.explainedBy.rawValue] as? [String: Any]).map { snapshot(fromNode: $0, pid: pid) }
-    return AXElementSnapshot(
-      frame: attributes.frame,
+  static func snapshot(fromNode node: BridgeAXNode, pid: pid_t, children: [AXElementSnapshot] = []) -> AXElementSnapshot {
+    AXElementSnapshot(
+      frame: frame(of: node),
       pid: pid,
-      role: attributes.role,
-      label: attributes.string(AXWire.Node.label),
-      value: AccessibilityAttributeValue(node[AXWire.Node.value.rawValue]),
-      stringValue: node[AXWire.Node.value.rawValue] as? String,
-      identifier: attributes.string(AXWire.Node.identifier),
+      role: role(of: node),
+      label: node.label?.text,
+      value: node.value.map(AccessibilityAttributeValue.init(scalar:)),
+      stringValue: node.value?.string,
+      identifier: node.identifier?.text,
       // Answered only by a read through the translator's vocabulary, which is the only one that fetches
       // it. Absent on every other read, so those still report `enabled` as unknown rather than
       // fabricating it.
-      isEnabled: attributes.bool(AXWire.Node.isEnabled),
+      isEnabled: node.isEnabled,
       customActionNames: [],
       isRequired: false,
-      traits: attributes.traits,
+      traits: (node.xcTraits ?? node.traits).map(AXExtractTraits),
       isExpanded: false,
       isHidden: false,
       isFocused: false,
-      hittability: attributes.hittability,
-      explainedBy: explanation,
+      hittability: hittability(of: node),
+      explainedBy: node.explainedBy.map { snapshot(fromNode: $0, pid: pid) },
       children: children
     )
   }
@@ -56,144 +53,84 @@ enum AXBridgeSnapshotDecoder {
 
 extension AXBridgeSnapshotDecoder {
 
-  /// Typed reads over one node's dictionary.
-  private struct Attributes {
-    let node: [String: Any]
+  /// JSON has no infinity or NaN, so the guest sends null for a non-finite coordinate (routine for an
+  /// off-screen or still-laying-out element). Restored to infinity here; `AccessibilityFrame` then nulls
+  /// each non-finite edge independently. A node that carries no frame is at the origin with no size.
+  private static func frame(of node: BridgeAXNode) -> NSRect {
+    guard let frame = node.frame else { return .zero }
+    return NSRect(x: frame.x ?? .infinity, y: frame.y ?? .infinity, width: frame.width ?? .infinity, height: frame.height ?? .infinity)
+  }
 
-    init(_ node: [String: Any]) {
-      self.node = node
-    }
+  /// Resolution order: a named automation type (skipping `Any`, which means "untyped"), then the element
+  /// type, then translator subrole before role (the refinement is the name a caller wants), then a
+  /// class-name string. `Any` and stringified numbers come last so nothing identifying is discarded.
+  private static func role(of node: BridgeAXNode) -> String? {
+    let automationName = node.automationType?.integer.flatMap { AXRoleVocabulary.name(forElementType: Int($0)) }
+    let identifying =
+      (automationName == AXRoleVocabulary.untypedName ? nil : automationName)
+      ?? node.elementType?.integer.flatMap { AXRoleVocabulary.name(forElementType: Int($0)) }
+      ?? node.translatorSubrole.flatMap { BridgeAXTranslatorSubrole(rawValue: $0)?.name }
+      ?? node.translatorRole.flatMap { BridgeAXTranslatorRole(rawValue: $0)?.name }
+      ?? node.elementType?.string
+    return identifying
+      ?? automationName
+      ?? node.automationType?.text
+      ?? node.elementType?.text
+  }
 
-    var frame: NSRect {
-      guard let raw = node[AXWire.Node.frame.rawValue] else { return .zero }
-      // The daemon serializes the frame as a CGRect dictionary representation (mirroring the CGPoint
-      // dictionary `requestElementAtPoint:` consumes); tolerate an `NSValue` rect as a fallback.
-      var rect = CGRect.zero
-      if let dict = raw as? NSDictionary,
-        CGRectMakeWithDictionaryRepresentation(Self.restoringNonFinite(dict) as CFDictionary, &rect)
-      {
-        return rect
-      }
-      if let value = raw as? NSValue {
-        return value.rectValue
-      }
-      return .zero
-    }
-
-    /// JSON has no infinity or NaN, so the guest sends null for a non-finite coordinate (routine for an
-    /// off-screen or still-laying-out element). Restored to infinity so
-    /// `CGRectMakeWithDictionaryRepresentation` does not fail and read the whole rect as zero;
-    /// `AccessibilityFrame` then nulls each non-finite edge independently.
-    private static func restoringNonFinite(_ dictionary: NSDictionary) -> NSDictionary {
-      guard dictionary.allValues.contains(where: { $0 is NSNull }) else {
-        return dictionary
-      }
-      let restored = NSMutableDictionary(dictionary: dictionary)
-      for (key, value) in dictionary where value is NSNull {
-        restored[key] = NSNumber(value: Double.infinity)
-      }
-      return restored
-    }
-
-    var role: String? {
-      // Resolution order: a named automation type (skipping `Any`, which means "untyped"), then the element
-      // type, then translator subrole before role (the refinement is the name a caller wants), then a
-      // class-name string. `Any` and stringified numbers come last so nothing identifying is discarded.
-      let automationName = elementTypeName(AXWire.Node.automationType)
-      let identifying =
-        (automationName == AXRoleVocabulary.untypedName ? nil : automationName)
-        ?? elementTypeName(AXWire.Node.elementType)
-        ?? translatorSubroleName
-        ?? translatorRoleName
-        ?? className(AXWire.Node.elementType)
-      return identifying
-        ?? automationName
-        ?? string(AXWire.Node.automationType)
-        ?? string(AXWire.Node.elementType)
-    }
-
-    var traits: [String]? {
-      let bitmask = node[AXWire.Node.xcTraits.rawValue] ?? node[AXWire.Node.traits.rawValue]
-      guard let bitmask = bitmask as? NSNumber else {
-        return nil
-      }
-      return AXExtractTraits(bitmask.uint64Value)
-    }
-
-    /// Nil when the read did not ask whether a touch reaches the element.
-    var hittability: AXHittability? {
-      guard let isHittable = bool(AXWire.Node.isVisible) else {
-        return nil
-      }
-      return AXHittability(
-        isHittable: isHittable,
-        isHidden: false,
-        isEnabled: bool(AXWire.Node.isEnabled),
-        isUserInteractionEnabled: bool(AXWire.Node.userInteractionEnabled),
-        hittablePoint: point(AXWire.Node.visiblePoint)
-      )
-    }
-
-    /// A boolean attribute, or nil when the read did not carry it — which is the case for every read that
-    /// did not ask for it, and is what makes "not requested" distinguishable from a definite `false`.
-    func bool(_ key: AXWire.Node) -> Bool? {
-      (node[key.rawValue] as? NSNumber)?.boolValue
-    }
-
-    /// A point attribute, as the guest emits it: an `X`/`Y` dictionary, tolerating an `NSValue` as the
-    /// frame does. The accessibility server's `(-1, -1)` "nothing is reachable" sentinel is carried through
-    /// unchanged — turning it into an absent point is the serializer's job, where it becomes the absence
-    /// of the actionable case rather than a coordinate anyone has to recognise.
-    func point(_ key: AXWire.Node) -> CGPoint? {
-      guard let raw = node[key.rawValue] else { return nil }
-      var point = CGPoint.zero
-      if let dictionary = raw as? NSDictionary,
-        CGPointMakeWithDictionaryRepresentation(dictionary as CFDictionary, &point)
-      {
-        return point
-      }
-      if let value = raw as? NSValue {
-        return value.pointValue
-      }
+  /// Nil when the read did not ask whether a touch reaches the element.
+  ///
+  /// The point is carried as the accessibility server reported it, its `(-1, -1)` "nothing is reachable"
+  /// sentinel included: turning that into an absent point is the serializer's job.
+  private static func hittability(of node: BridgeAXNode) -> AXHittability? {
+    guard let isHittable = node.isVisible else {
       return nil
     }
-
-    // The daemon returns most attributes as strings, but the element-type attributes can arrive as
-    // numbers; coerce so callers see a stable `String?`.
-    func string(_ key: AXWire.Node) -> String? {
-      guard let raw = node[key.rawValue] else { return nil }
-      if let string = raw as? String { return string }
-      return String(describing: raw)
-    }
-
-    /// The name for the translator's subrole integer, or nil when the wire carries none or it is not
-    /// identified.
-    private var translatorSubroleName: String? {
-      guard let raw = (node[AXWire.Node.translatorSubrole.rawValue] as? NSNumber)?.intValue else {
-        return nil
+    return AXHittability(
+      isHittable: isHittable,
+      isHidden: false,
+      isEnabled: node.isEnabled,
+      isUserInteractionEnabled: node.userInteractionEnabled,
+      hittablePoint: node.visiblePoint.flatMap { point in
+        guard let x = point.x, let y = point.y else { return nil }
+        return CGPoint(x: x, y: y)
       }
-      return BridgeAXTranslatorSubrole(rawValue: raw)?.name
-    }
+    )
+  }
+}
 
-    /// The role name for the translator's own role integer, or nil when the wire carries none or the
-    /// integer is not in the table.
-    private var translatorRoleName: String? {
-      guard let raw = (node[AXWire.Node.translatorRole.rawValue] as? NSNumber)?.intValue else {
-        return nil
-      }
-      return BridgeAXTranslatorRole(rawValue: raw)?.name
-    }
+extension BridgeAXScalar {
 
-    /// The attribute when it arrived as a class name; nil when it arrived as a number.
-    private func className(_ key: AXWire.Node) -> String? {
-      node[key.rawValue] as? String
+  /// The attribute as text: strings as they are, other kinds as Foundation describes them, so an
+  /// element-type number reads as it always has.
+  var text: String {
+    switch self {
+    case let .string(string): string
+    case let .bool(bool): NSNumber(value: bool).stringValue
+    case let .integer(integer): String(integer)
+    case let .number(number): NSNumber(value: number).stringValue
     }
+  }
 
-    /// The readable name for an `XCUIElementType`-valued attribute, or `nil` when the attribute is
-    /// absent or its raw number is not a known type (letting the caller fall back to the raw value).
-    private func elementTypeName(_ key: AXWire.Node) -> String? {
-      guard let number = (node[key.rawValue] as? NSNumber)?.intValue else { return nil }
-      return AXRoleVocabulary.name(forElementType: number)
+  var string: String? {
+    guard case let .string(string) = self else { return nil }
+    return string
+  }
+
+  var integer: Int64? {
+    guard case let .integer(integer) = self else { return nil }
+    return integer
+  }
+}
+
+extension AccessibilityAttributeValue {
+
+  init(scalar: BridgeAXScalar) {
+    switch scalar {
+    case let .string(string): self = .string(string)
+    case let .bool(bool): self = .bool(bool)
+    case let .integer(integer): self = .int(integer)
+    case let .number(number): self = .double(number)
     }
   }
 }

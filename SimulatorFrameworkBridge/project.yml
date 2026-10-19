@@ -3,6 +3,9 @@ name: SimulatorFrameworkBridge
 options:
   createIntermediateGroups: true
 
+# The guest is three modules, as the Buck targets of the same names are: the Objective-C runtime layer
+# (SimulatorFrameworkBridgeRuntime), the Swift services built on it (SimulatorFrameworkBridgeSupport), and the
+# command-line tool that runs them. Splitting them is what lets SimulatorFrameworkBridgeLibTests import both.
 targetTemplates:
   Protocol:
     type: library.static
@@ -26,25 +29,59 @@ targetTemplates:
         SWIFT_VERSION: "6"
     dependencies:
       - sdk: Foundation.framework
+  Runtime:
+    type: framework.static
+    deploymentTarget: "17.0"
+    sources:
+      - path: Runtime
+        excludes:
+          - "Private/**"
+        headerVisibility: public
+      - path: Runtime/Private
+        headerVisibility: project
+    settings:
+      base:
+        PRODUCT_NAME: SimulatorFrameworkBridgeRuntime
+        PRODUCT_MODULE_NAME: SimulatorFrameworkBridgeRuntime
+        DEFINES_MODULE: "YES"
+        MODULEMAP_FILE: Modules/SimulatorFrameworkBridgeRuntime.modulemap
+        GENERATE_INFOPLIST_FILE: "YES"
+        OTHER_CFLAGS: $(inherited) -Wno-deprecated-declarations
+    dependencies:
+      # Everything else the bridge reaches (BulletinBoard, SystemConfiguration, the accessibility
+      # private frameworks) is dlopen-ed at runtime, so it is intentionally not linked here.
+      - sdk: Foundation.framework
+      - sdk: CoreGraphics.framework
+      - sdk: Photos.framework
+      - sdk: CoreData.framework
+      - sdk: UIKit.framework
+  Support:
+    type: library.static
+    deploymentTarget: "17.0"
+    sources:
+      - path: Swift
+    settings:
+      base:
+        PRODUCT_NAME: SimulatorFrameworkBridgeSupport
+        PRODUCT_MODULE_NAME: SimulatorFrameworkBridgeSupport
+        SWIFT_VERSION: "6"
+        OTHER_SWIFT_FLAGS: $(inherited) -Wwarning DeprecatedDeclaration
   Guest:
     type: tool
     deploymentTarget: "17.0"
+    sources:
+      - path: SimulatorFrameworkBridge.swift
     settings:
       base:
-        HEADER_SEARCH_PATHS: $(inherited) $(OBJECT_FILE_DIR_normal)/$(CURRENT_ARCH)
-        PRODUCT_MODULE_NAME: SimulatorFrameworkBridgeSupport
+        PRODUCT_MODULE_NAME: SimulatorFrameworkBridge
         SWIFT_VERSION: "6"
-        SWIFT_OBJC_BRIDGING_HEADER: SimulatorFrameworkBridge-Bridging-Header.h
         OTHER_SWIFT_FLAGS: $(inherited) -parse-as-library -Wwarning DeprecatedDeclaration
         # Ad-hoc sign with the bridge's private entitlements (TCC/HealthKit) so the
         # services it drives are permitted inside the simulator.
         CODE_SIGN_IDENTITY: "-"
         CODE_SIGN_ENTITLEMENTS: SimulatorFrameworkBridge.entitlements
-        OTHER_LDFLAGS: $(inherited) -Wl,-sectcreate,__TEXT,__entitlements,$(SRCROOT)/SimulatorFrameworkBridge.entitlements
-        OTHER_CFLAGS: $(inherited) -Wno-deprecated-declarations
+        OTHER_LDFLAGS: $(inherited) -ObjC -Wl,-sectcreate,__TEXT,__entitlements,$(SRCROOT)/SimulatorFrameworkBridge.entitlements
     dependencies:
-      # Everything else the bridge reaches (BulletinBoard, SystemConfiguration, the accessibility
-      # private frameworks) is dlopen-ed at runtime, so it is intentionally not linked here.
       - sdk: Foundation.framework
       - sdk: CoreGraphics.framework
       - sdk: Photos.framework
@@ -76,25 +113,54 @@ targets:
     settings:
       base:
         SDKROOT: appletvsimulator
+  SimulatorFrameworkBridgeRuntime-iOS:
+    templates: [Runtime]
+    platform: iOS
+    settings:
+      base:
+        SDKROOT: iphonesimulator
+  SimulatorFrameworkBridgeRuntime-tvOS:
+    templates: [Runtime]
+    platform: tvOS
+    settings:
+      base:
+        SDKROOT: appletvsimulator
+  SimulatorFrameworkBridgeSupport-iOS:
+    templates: [Support]
+    platform: iOS
+    settings:
+      base:
+        SDKROOT: iphonesimulator
+    dependencies:
+      - target: FBSimulatorBridgeProtocol-iOS
+      - target: SimulatorIPC-iOS
+      - target: SimulatorFrameworkBridgeRuntime-iOS
+      - sdk: Contacts.framework
+      - sdk: UserNotifications.framework
+  SimulatorFrameworkBridgeSupport-tvOS:
+    templates: [Support]
+    platform: tvOS
+    settings:
+      base:
+        SDKROOT: appletvsimulator
+    dependencies:
+      - target: FBSimulatorBridgeProtocol-tvOS
+      - target: SimulatorIPC-tvOS
+      - target: SimulatorFrameworkBridgeRuntime-tvOS
   # A command-line executable spawned inside the simulator runtime by idb_companion (from the bundled
   # `Resources/SimulatorFrameworkBridge-<platform>`) to drive privacy/services state, read the
   # accessibility tree and serve the REPL socket. Mirrors the Buck targets of the same names.
   SimulatorFrameworkBridge-iOS:
     templates: [Guest]
     platform: iOS
-    sources:
-      - path: .
-        excludes:
-          - "**/*.entitlements"
-          - "**/*.xcodeproj"
-          - "project.yml"
-          - "Build"
     settings:
       base:
         SDKROOT: iphonesimulator
         IPHONEOS_DEPLOYMENT_TARGET: "17.0"
         PRODUCT_NAME: SimulatorFrameworkBridge-iOS
     dependencies:
+      - target: SimulatorFrameworkBridgeSupport-iOS
+      - target: SimulatorFrameworkBridgeRuntime-iOS
       - target: FBSimulatorBridgeProtocol-iOS
       - target: SimulatorIPC-iOS
       - sdk: Contacts.framework
@@ -103,18 +169,50 @@ targets:
   SimulatorFrameworkBridge-tvOS:
     templates: [Guest]
     platform: tvOS
-    sources:
-      - path: .
-        excludes:
-          - "**/*.entitlements"
-          - "**/*.xcodeproj"
-          - "project.yml"
-          - "Build"
     settings:
       base:
         SDKROOT: appletvsimulator
         TVOS_DEPLOYMENT_TARGET: "17.0"
         PRODUCT_NAME: SimulatorFrameworkBridge-tvOS
     dependencies:
+      - target: SimulatorFrameworkBridgeSupport-tvOS
+      - target: SimulatorFrameworkBridgeRuntime-tvOS
       - target: FBSimulatorBridgeProtocol-tvOS
       - target: SimulatorIPC-tvOS
+
+  # The guest's unit tests, run in an iOS simulator against the fake runtimes they carry, so they need no
+  # host application and no booted simulator of their own.
+  SimulatorFrameworkBridgeLibTests:
+    type: bundle.unit-test
+    platform: iOS
+    deploymentTarget: "17.0"
+    sources:
+      - path: ../SimulatorFrameworkBridgeLibTests
+        excludes:
+          - "**/*-Info.plist"
+    settings:
+      base:
+        SDKROOT: iphonesimulator
+        SWIFT_VERSION: "6"
+        SWIFT_OBJC_BRIDGING_HEADER: ../SimulatorFrameworkBridgeLibTests/SimulatorFrameworkBridgeLibTests-Bridging-Header.h
+        INFOPLIST_FILE: ../SimulatorFrameworkBridgeLibTests/SimulatorFrameworkBridgeLibTests-Info.plist
+        PRODUCT_BUNDLE_IDENTIFIER: com.facebook.SimulatorFrameworkBridgeLibTests
+        OTHER_LDFLAGS: $(inherited) -ObjC
+        # As the host's test bundles are built: an Objective-C exception the fakes raise unwinds through
+        # these frames, and without ARC exception cleanup the closures they hold are never released.
+        OTHER_CFLAGS: $(inherited) -Wno-deprecated-declarations -fobjc-arc-exceptions
+    dependencies:
+      - target: SimulatorFrameworkBridgeSupport-iOS
+      - target: SimulatorFrameworkBridgeRuntime-iOS
+      - target: FBSimulatorBridgeProtocol-iOS
+      - target: SimulatorIPC-iOS
+      - sdk: Foundation.framework
+      - sdk: CoreGraphics.framework
+      - sdk: Photos.framework
+      - sdk: CoreData.framework
+      - sdk: UIKit.framework
+      - sdk: Contacts.framework
+      - sdk: UserNotifications.framework
+    scheme:
+      testTargets:
+        - SimulatorFrameworkBridgeLibTests

@@ -118,15 +118,14 @@ public enum BridgeServices {
       return Int32(HealthSettingsService.handleHealthSettingsAction(action: action, bundleID: bundleID, typeIdentifiers: types, output: output))
       #endif
     case let .accessibility(request):
-      let response = AccessibilityService.handleRequest(request)
-      return accessibility(AccessibilityService.serializeResponse(response), output: output)
+      return accessibility(AccessibilityService.handleRequest(request), output: output)
     }
   }
 
   /// The answer to an accessibility frame whose parameters are not a request, in the response a malformed request has
   /// always had.
   public static func undecodedAccessibility(_ parameters: [String: BridgeJSONValue]) -> BridgeResult {
-    accessibilityResult(AccessibilityService.serializeResponse(AccessibilityService.handleRequest(parameters: parameters)))
+    accessibilityResult(AccessibilityService.handleRequest(parameters: parameters))
   }
 
   /// Commands that answer with a stream of results rather than one; nil for every other command.
@@ -136,19 +135,19 @@ public enum BridgeServices {
     case let .stream(events):
       return .stream(AccessibilityResultStream(events: events))
     case let .failure(response):
-      return .result(accessibilityResult(AccessibilityService.serializeResponse(response)))
+      return .result(accessibilityResult(.failure(response)))
     }
   }
 
-  private static func accessibility(_ data: Data, output: BridgeOutput) -> Int32 {
-    guard let value = output.write(json: data) else { return 1 }
-    if case let .object(fields) = value, fields[BridgeAXWire.Envelope.ok.rawValue] == .bool(true) { return 0 }
-    return 1
+  /// The answer goes in the frame as it is, so nothing encodes or parses it twice.
+  private static func accessibility(_ answer: BridgeAXAnswer, output: BridgeOutput) -> Int32 {
+    output.write(accessibility: answer)
+    return answer.succeeded ? 0 : 1
   }
 
-  fileprivate static func accessibilityResult(_ data: Data) -> BridgeResult {
+  fileprivate static func accessibilityResult(_ answer: BridgeAXAnswer) -> BridgeResult {
     let output = BridgeOutput()
-    return output.finish(status: accessibility(data, output: output))
+    return output.finish(status: accessibility(answer, output: output))
   }
 
   private static func unavailable(_ subject: String, output: BridgeOutput) -> Int32 {
@@ -157,9 +156,9 @@ public enum BridgeServices {
 }
 
 private final class AccessibilityResultStream: BridgeResultStream {
-  private let events: BridgeResponseStream
+  private let events: any AccessibilityAnswerStream
 
-  init(events: BridgeResponseStream) {
+  init(events: any AccessibilityAnswerStream) {
     self.events = events
   }
 

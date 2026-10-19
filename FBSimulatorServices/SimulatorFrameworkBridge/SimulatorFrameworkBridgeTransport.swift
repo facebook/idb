@@ -56,17 +56,30 @@ package actor SimulatorFrameworkBridgePersistentTransport: AXBridgeStreamingTran
     self.connector = connector
   }
 
-  package func send(_ request: AXBridgeRequest) async throws -> Data {
-    try await send(BridgeRequest(command: request.command)).accessibilityData()
+  package func send(_ request: AXBridgeRequest) async throws -> AXBridgeReply {
+    try await reply(to: request, receiveTimeout: nil)
   }
 
   /// Bounds the guest's silence on the socket itself, so a timed-out round trip drops its connection rather
   /// than leaving a late reply for the next request.
-  package func send(_ request: AXBridgeRequest, receiveTimeout: TimeInterval) async throws -> Data {
-    try await send(BridgeRequest(command: request.command), receiveTimeout: receiveTimeout).accessibilityData()
+  package func send(_ request: AXBridgeRequest, receiveTimeout: TimeInterval) async throws -> AXBridgeReply {
+    try await reply(to: request, receiveTimeout: receiveTimeout)
+  }
+
+  private func reply(to request: AXBridgeRequest, receiveTimeout: TimeInterval?) async throws -> AXBridgeReply {
+    do {
+      let response = try await exchange(BridgeRequest(command: request.command), receiveTimeout: receiveTimeout)
+      return AXBridgeReply(answer: try response.result.accessibilityAnswer(), frameBytes: response.frameBytes)
+    } catch let error as DecodingError {
+      throw AXBridgeReply.unparseable(error, answering: request)
+    }
   }
 
   func send(_ request: BridgeRequest, receiveTimeout: TimeInterval? = nil) async throws -> BridgeResult {
+    try await exchange(request, receiveTimeout: receiveTimeout).result
+  }
+
+  private func exchange(_ request: BridgeRequest, receiveTimeout: TimeInterval?) async throws -> (result: BridgeResult, frameBytes: Int) {
     do {
       return try await roundTrip(request, receiveTimeout: receiveTimeout)
     } catch AXBridgeError.guestNotAnswering(let after) {
@@ -80,13 +93,17 @@ package actor SimulatorFrameworkBridgePersistentTransport: AXBridgeStreamingTran
     }
   }
 
-  package func stream(_ request: AXBridgeRequest) async throws -> AsyncThrowingStream<Data, Error> {
+  package func stream(_ request: AXBridgeRequest) async throws -> AsyncThrowingStream<BridgeAXAnswer, Error> {
     let results = try await connector.streamConnection().stream(BridgeRequest(command: request.command))
     return AsyncThrowingStream { continuation in
       let task = Task {
         do {
-          for try await result in results {
-            continuation.yield(try result.accessibilityData())
+          do {
+            for try await result in results {
+              continuation.yield(try result.accessibilityAnswer())
+            }
+          } catch let error as DecodingError {
+            throw AXBridgeReply.unparseable(error, answering: request)
           }
           continuation.finish()
         } catch {
@@ -97,13 +114,13 @@ package actor SimulatorFrameworkBridgePersistentTransport: AXBridgeStreamingTran
     }
   }
 
-  private func roundTrip(_ request: BridgeRequest, receiveTimeout: TimeInterval?) async throws -> BridgeResult {
+  private func roundTrip(_ request: BridgeRequest, receiveTimeout: TimeInterval?) async throws -> (result: BridgeResult, frameBytes: Int) {
     let lease = try await connection()
     do {
-      let response = try BridgeResponse.decode(
-        await lease.connection.roundTrip(request.encoded(), receiveTimeout: receiveTimeout), for: request)
+      let frame = try await lease.connection.roundTrip(request.encoded(), receiveTimeout: receiveTimeout)
+      let response = try BridgeResponse.decode(frame, for: request)
       if request.command == .shutdown || !lease.connection.mayBeHeldBetweenRoundTrips { invalidate(lease.generation) }
-      return response.result
+      return (response.result, frame.count)
     } catch {
       invalidate(lease.generation)
       throw error

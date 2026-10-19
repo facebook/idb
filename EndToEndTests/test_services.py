@@ -83,10 +83,17 @@ class ServiceTests(IdbEndToEndTestCase):
                     for command, arguments in cases:
                         with self.subTest(command=command):
                             expected = json.loads((await self.guest(*arguments)).stdout)
+                            result = await rpc.send_result(command)
+                            # An accessibility answer has a field of its own; every
+                            # other service answers in `values`.
+                            if "accessibility" in command:
+                                answer = result.get("accessibility")
+                            else:
+                                answer, expected = result["values"], [expected]
                             # Compared as JSON, where `1` and `true` differ.
                             self.assertEqual(
-                                json.dumps(await rpc.send(command), sort_keys=True),
-                                json.dumps([expected], sort_keys=True),
+                                json.dumps(answer, sort_keys=True),
+                                json.dumps(expected, sort_keys=True),
                             )
 
     async def test_guest_rpc_writes_network_and_notification_state(self) -> None:

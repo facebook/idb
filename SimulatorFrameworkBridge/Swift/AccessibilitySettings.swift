@@ -25,7 +25,7 @@ enum DeviceSettingRead: Equatable {
 /// the lock-protected run-loop reference and cancellation flag.
 // SAFETY: cross-thread state is protected by `lock`; all remaining mutable state is confined to `runLoop`.
 // patternlint-disable-next-line unchecked-sendable
-final class DeviceSettingStream: BridgeResponseStream, @unchecked Sendable {
+final class DeviceSettingStream: AccessibilityAnswerStream, @unchecked Sendable {
   struct AdditionalSetting {
     let observe: (@escaping () -> Void) -> FBAXDeviceSettingMonitorOutcome
     let read: () throws -> DeviceSettingRead
@@ -45,7 +45,7 @@ final class DeviceSettingStream: BridgeResponseStream, @unchecked Sendable {
   private var observer: (any FBAXDeviceSettingMonitor)?
   private var additionalObservers: [any FBAXDeviceSettingMonitor] = []
   private var additionalRegistrationFailures: [String: DeviceSettingRead] = [:]
-  private var emit: ((Data) -> Bool)?
+  private var emit: ((BridgeAXAnswer) -> Bool)?
   private var lastEnabled: Bool?
   private var lastAdditionalReads: [String: DeviceSettingRead]?
   private var trailingTimer: CFRunLoopTimer?
@@ -68,7 +68,7 @@ final class DeviceSettingStream: BridgeResponseStream, @unchecked Sendable {
     self.additionalSettings = additionalSettings
   }
 
-  func run(emit: @escaping (Data) -> Bool) {
+  func run(emit: @escaping (BridgeAXAnswer) -> Bool) {
     lock.lock()
     guard !cancelled else {
       lock.unlock()
@@ -203,7 +203,7 @@ final class DeviceSettingStream: BridgeResponseStream, @unchecked Sendable {
       guard enabled != lastEnabled || additional != lastAdditionalReads else { return }
       lastEnabled = enabled
       lastAdditionalReads = additional
-      write(snapshot(enabled: enabled, additional: additional))
+      write(.settingSnapshot(BridgeAXSettingSnapshot(setting: settingName, enabled: enabled, otherSettings: additional.mapValues(Self.outcome))))
     case let .unavailable(message):
       fail(message, kind: .capabilityUnavailable)
     case let .failed(message):
@@ -211,40 +211,23 @@ final class DeviceSettingStream: BridgeResponseStream, @unchecked Sendable {
     }
   }
 
-  private func snapshot(enabled: Bool, additional: [String: DeviceSettingRead]) -> [String: Any] {
-    var envelope: [String: Any] = [
-      BridgeAXWire.Envelope.ok.rawValue: true,
-      BridgeAXWire.Settings.Key.event.rawValue: BridgeAXWire.Settings.Event.snapshot.rawValue,
-      BridgeAXWire.Request.setting.rawValue: settingName,
-      BridgeAXWire.Envelope.enabled.rawValue: enabled,
-    ]
-    if !additional.isEmpty {
-      envelope[BridgeAXWire.Settings.Key.settings.rawValue] = additional.mapValues(Self.envelope)
-    }
-    return envelope
-  }
-
-  private static func envelope(_ read: DeviceSettingRead) -> [String: Any] {
+  private static func outcome(_ read: DeviceSettingRead) -> BridgeAXOutcome<BridgeAXSettingResponse> {
     switch read {
-    case let .available(enabled): return [BridgeAXWire.Envelope.ok.rawValue: true, BridgeAXWire.Envelope.enabled.rawValue: enabled]
-    case let .unavailable(reason): return [BridgeAXWire.Envelope.ok.rawValue: false, BridgeAXWire.Envelope.error.rawValue: reason, BridgeAXWire.Envelope.errorKind.rawValue: BridgeAXWire.ErrorKind.capabilityUnavailable.rawValue]
-    case let .failed(reason): return [BridgeAXWire.Envelope.ok.rawValue: false, BridgeAXWire.Envelope.error.rawValue: reason, BridgeAXWire.Envelope.errorKind.rawValue: BridgeAXWire.ErrorKind.readerUnavailable.rawValue]
+    case let .available(enabled): return .success(BridgeAXSettingResponse(enabled: enabled))
+    case let .unavailable(reason): return .failure(BridgeAXFailure(message: reason, kind: .capabilityUnavailable))
+    case let .failed(reason): return .failure(BridgeAXFailure(message: reason, kind: .readerUnavailable))
     }
   }
 
   private func fail(_ message: String, kind: BridgeAXWire.ErrorKind) {
     failed = true
-    write([
-      BridgeAXWire.Envelope.ok.rawValue: false,
-      BridgeAXWire.Envelope.error.rawValue: message,
-      BridgeAXWire.Envelope.errorKind.rawValue: kind.rawValue,
-    ])
+    write(.failure(BridgeAXFailure(message: message, kind: kind)))
     finish()
   }
 
-  private func write(_ envelope: [String: Any]) {
+  private func write(_ answer: BridgeAXAnswer) {
     guard !isCancelled, let emit else { return }
-    if !emit(AccessibilityService.serializeResponse(envelope)) {
+    if !emit(answer) {
       finish()
     }
   }
@@ -261,8 +244,8 @@ final class DeviceSettingStream: BridgeResponseStream, @unchecked Sendable {
 }
 
 enum AccessibilityStreamStart {
-  case stream(any BridgeResponseStream)
-  case failure([String: Any])
+  case stream(any AccessibilityAnswerStream)
+  case failure(BridgeAXFailure)
 }
 
 extension AccessibilityService {
@@ -311,11 +294,7 @@ extension AccessibilityService {
     }
   }
 
-  private static func failure(_ message: String, kind: BridgeAXWire.ErrorKind) -> [String: Any] {
-    [
-      BridgeAXWire.Envelope.ok.rawValue: false,
-      BridgeAXWire.Envelope.error.rawValue: message,
-      BridgeAXWire.Envelope.errorKind.rawValue: kind.rawValue,
-    ]
+  private static func failure(_ message: String, kind: BridgeAXWire.ErrorKind) -> BridgeAXFailure {
+    BridgeAXFailure(message: message, kind: kind)
   }
 }

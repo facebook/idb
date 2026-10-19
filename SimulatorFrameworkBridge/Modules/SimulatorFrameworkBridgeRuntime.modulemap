@@ -1,0 +1,20 @@
+// The Objective-C layer the guest's Swift reaches the private frameworks through, as the Buck build exports it.
+framework module SimulatorFrameworkBridgeRuntime {
+  header "AccessibilityClient.h"
+  header "AccessibilityClientProvider.h"
+  header "AccessibilityRuntime.h"
+  header "AccessibilitySnapshotClient.h"
+  header "AccessibilityWireValue.h"
+  header "ContactsStoreClient.h"
+  header "DeliveredNotificationsClient.h"
+  header "DeviceStateClient.h"
+  header "DynamicStoreClient.h"
+  header "HealthSettingsClient.h"
+  header "KeyedArchiveReference.h"
+  header "NetworkConfigurationStore.h"
+  header "NotificationSettingsClient.h"
+  header "PhotoLibraryClient.h"
+  header "PrivacyRuntime.h"
+  header "SystemConfigurationLoader.h"
+  export *
+}

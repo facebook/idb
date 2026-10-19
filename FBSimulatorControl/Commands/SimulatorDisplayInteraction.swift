@@ -56,16 +56,16 @@ package struct AXBridgeDisplayCapabilities: OptionSet, Sendable {
 }
 
 enum AXBridgeDisplayInventory {
-  static func decode(_ data: Data, requiring capabilities: AXBridgeDisplayCapabilities = []) throws -> [SimulatorAccessibilityDisplay] {
-    if let response = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
-      response[AXWire.Envelope.ok.rawValue] as? Bool == false,
-      response[AXWire.Envelope.errorKind.rawValue] as? String == AXWire.ErrorKind.capabilityUnavailable.rawValue
-    {
-      throw SimulatorDisplayInteractionError.unsupportedCapability("accessibility display discovery")
-    }
-    _ = try AXBridgeResponse.validated(data, context: "display inventory")
-    guard let inventory = try? JSONDecoder().decode(BridgeAXDisplayInventory.self, from: data) else {
-      throw AXBridgeError.guestFailure("Invalid accessibility display inventory")
+  static func decode(_ answer: BridgeAXAnswer, requiring capabilities: AXBridgeDisplayCapabilities = []) throws -> [SimulatorAccessibilityDisplay] {
+    let inventory: BridgeAXDisplayInventory
+    switch try AXBridgeResponse.outcome(answer, as: BridgeAXDisplayInventory.self, context: "display inventory") {
+    case let .success(answer):
+      inventory = answer
+    case let .failure(failure):
+      if failure.kind == .capabilityUnavailable {
+        throw SimulatorDisplayInteractionError.unsupportedCapability("accessibility display discovery")
+      }
+      throw AXBridgeResponse.failure(from: failure, pid: nil, frontmostMethod: nil)
     }
     if capabilities.contains(.scopedInteractions), !inventory.displayScopedInteractions {
       throw SimulatorDisplayInteractionError.unsupportedCapability("display-scoped accessibility interactions in this guest")

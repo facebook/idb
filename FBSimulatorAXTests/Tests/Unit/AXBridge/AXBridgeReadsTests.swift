@@ -27,10 +27,10 @@ final class AXBridgeReadsTests: XCTestCase {
       AXWire.Node.label.rawValue: "General",
       AXWire.Node.identifier.rawValue: "com.apple.settings.general",
     ]
-    let data = try envelope(["ok": true, "tree": tree])
+    let data = try envelope(["ok": true, "tree": tree, "pid": 42])
     let parsed = try AXTreeRead(wholeTreeResponse: data, pid: 42)
-    XCTAssertEqual(parsed.tree[AXWire.Node.label.rawValue] as? String, "General")
-    XCTAssertEqual(parsed.tree[AXWire.Node.identifier.rawValue] as? String, "com.apple.settings.general")
+    XCTAssertEqual(parsed.tree.label, BridgeAXScalar.string("General"))
+    XCTAssertEqual(parsed.tree.identifier, BridgeAXScalar.string("com.apple.settings.general"))
     XCTAssertFalse(parsed.truncated, "a whole-tree read with no truncated flag is a complete tree")
   }
 
@@ -38,7 +38,7 @@ final class AXBridgeReadsTests: XCTestCase {
     // A guest walk cut short by the depth or node bound tags its envelope `truncated: true`, so the
     // conformer can warn the tree is incomplete rather than pass it off as whole.
     let tree: [String: Any] = [AXWire.Node.label.rawValue: "root"]
-    let data = try envelope(["ok": true, "tree": tree, "truncated": true])
+    let data = try envelope(["ok": true, "tree": tree, "pid": 42, "truncated": true])
     let parsed = try AXTreeRead(wholeTreeResponse: data, pid: 42)
     XCTAssertTrue(parsed.truncated, "the guest's truncation flag must be surfaced to the caller")
   }
@@ -46,7 +46,7 @@ final class AXBridgeReadsTests: XCTestCase {
   func testParsesTheAutomationStateFromTheEnvelope() throws {
     let tree: [String: Any] = [AXWire.Node.label.rawValue: "root"]
     let data = try envelope([
-      "ok": true, "tree": tree, "automation": ["enabled": true, "asserted": false],
+      "ok": true, "tree": tree, "pid": 42, "automation": ["enabled": true, "asserted": false],
     ])
     let parsed = try AXTreeRead(wholeTreeResponse: data, pid: 42)
     XCTAssertEqual(parsed.automation?.enabled, true)
@@ -57,7 +57,7 @@ final class AXBridgeReadsTests: XCTestCase {
   // different fact from saying it was off.
   func testAnEnvelopeWithoutAutomationReportsNothingRatherThanOff() throws {
     let tree: [String: Any] = [AXWire.Node.label.rawValue: "root"]
-    let data = try envelope(["ok": true, "tree": tree])
+    let data = try envelope(["ok": true, "tree": tree, "pid": 42])
     let parsed = try AXTreeRead(wholeTreeResponse: data, pid: 42)
     XCTAssertNil(parsed.automation, "an absent automation object must not read as automation mode being off")
   }
@@ -65,7 +65,7 @@ final class AXBridgeReadsTests: XCTestCase {
   // `asserted` absent is the state before anything asserts, and false is the truthful answer for it.
   func testAutomationAssertedDefaultsToFalseWhenOmitted() throws {
     let tree: [String: Any] = [AXWire.Node.label.rawValue: "root"]
-    let data = try envelope(["ok": true, "tree": tree, "automation": ["enabled": true]])
+    let data = try envelope(["ok": true, "tree": tree, "pid": 42, "automation": ["enabled": true]])
     let parsed = try AXTreeRead(wholeTreeResponse: data, pid: 42)
     XCTAssertEqual(parsed.automation?.enabled, true)
     XCTAssertEqual(parsed.automation?.asserted, false)
@@ -828,7 +828,7 @@ final class AXBridgeReadsTests: XCTestCase {
           AXWire.Node.frame.rawValue: CGRectCreateDictionaryRepresentation(CGRect(x: 60, y: 160, width: 40, height: 40)) as NSDictionary,
         ],
       ]),
-      envelope(["ok": true]),
+      envelope(["ok": true, "pid": 42]),
     ])
     let reader = AXBridgeUIAutomation(
       simulator: SimulatorTestSupport.testableSimulator(withDevice: AXBridgeWaitDevice()),
@@ -1490,7 +1490,7 @@ final class AXBridgeReadsTests: XCTestCase {
     let node: [String: Any] = [AXWire.Node.identifier.rawValue: "com.apple.settings.general"]
     let data = try envelope(["ok": true, "tree": node, "pid": 8865])
     let parsed = try AXTreeRead(hitTestResponse: data)
-    XCTAssertEqual(parsed?.tree[AXWire.Node.identifier.rawValue] as? String, "com.apple.settings.general")
+    XCTAssertEqual(parsed?.tree.identifier, BridgeAXScalar.string("com.apple.settings.general"))
     XCTAssertEqual(parsed?.pid, 8865)
   }
 
@@ -1533,7 +1533,7 @@ final class AXBridgeReadsTests: XCTestCase {
     let data = try envelope(["ok": true, "tree": tree, "pid": 8865, "method": "center-point", "truncated": false])
     let parsed = try AXTreeRead(frontmostResponse: data, method: .centerPoint)
     XCTAssertEqual(parsed.pid, 8865)
-    XCTAssertEqual(parsed.tree[AXWire.Node.label.rawValue] as? String, "Settings")
+    XCTAssertEqual(parsed.tree.label, BridgeAXScalar.string("Settings"))
     XCTAssertFalse(parsed.truncated)
   }
 
@@ -1599,26 +1599,34 @@ final class AXBridgeReadsTests: XCTestCase {
 
   // MARK: - Fullscreen-modal descriptor parsing + non-serialization
 
-  func testModalParsesSystemAlert() {
+  /// The modal a frontmost read's answer carries beside an otherwise minimal tree.
+  private func modal(in response: [String: Any]) throws -> AccessibilityModalInfo? {
+    var answer = response
+    answer["tree"] = [String: Any]()
+    answer["pid"] = 1
+    return try AXTreeRead(frontmostResponse: envelope(answer), method: .windowServer).modal
+  }
+
+  func testModalParsesSystemAlert() throws {
     let response: [String: Any] = ["ok": true, "modal": ["kind": "system", "elementType": "SBAlertItemWindow", "label": "Allow \u{201c}Maps\u{201d} to use your location?"]]
-    let modal = AccessibilityModalInfo(bridgeResponse: response)
+    let modal = try modal(in: response)
     XCTAssertEqual(modal?.kind, .system)
     XCTAssertEqual(modal?.elementType, "SBAlertItemWindow")
     XCTAssertEqual(modal?.label, "Allow \u{201c}Maps\u{201d} to use your location?")
   }
 
-  func testModalParsesAppAlertWithoutLabel() {
+  func testModalParsesAppAlertWithoutLabel() throws {
     let response: [String: Any] = ["ok": true, "modal": ["kind": "app", "elementType": "_UIAlertControllerView"]]
-    let modal = AccessibilityModalInfo(bridgeResponse: response)
+    let modal = try modal(in: response)
     XCTAssertEqual(modal?.kind, .app)
     XCTAssertEqual(modal?.elementType, "_UIAlertControllerView")
     XCTAssertNil(modal?.label)
   }
 
-  func testModalAbsentOrMalformedIsNil() {
-    XCTAssertNil(AccessibilityModalInfo(bridgeResponse: ["ok": true]), "no modal key -> nil")
-    XCTAssertNil(AccessibilityModalInfo(bridgeResponse: ["ok": true, "modal": ["elementType": "X"]]), "missing kind -> nil")
-    XCTAssertNil(AccessibilityModalInfo(bridgeResponse: ["ok": true, "modal": ["kind": "bogus", "elementType": "X"]]), "unknown kind -> nil")
+  func testModalAbsentOrMalformedIsNil() throws {
+    XCTAssertNil(try modal(in: ["ok": true]), "no modal key -> nil")
+    XCTAssertNil(try modal(in: ["ok": true, "modal": ["elementType": "X"]]), "missing kind -> nil")
+    XCTAssertNil(try modal(in: ["ok": true, "modal": ["kind": "bogus", "elementType": "X"]]), "unknown kind -> nil")
   }
 
   func testFrontmostTreeCarriesModalDescriptor() throws {
@@ -1657,7 +1665,7 @@ final class AXBridgeReadsTests: XCTestCase {
         ] as [String: Any]
       ],
     ]
-    let data = try envelope(["ok": true, "tree": tree])
+    let data = try envelope(["ok": true, "tree": tree, "pid": 99])
     let parsed = try AXTreeRead(wholeTreeResponse: data, pid: 99)
 
     let elements = AXTreeWalk.describeAllElements(
@@ -3187,7 +3195,7 @@ private actor StubAXBridgeWaitTransport: AXBridgeTransport {
     self.responses = responses
   }
 
-  func send(_ request: AXBridgeRequest) async throws -> Data {
+  func send(_ request: AXBridgeRequest) async throws -> AXBridgeReply {
     if case .write = request {
       writeCount += 1
     } else {
@@ -3197,7 +3205,7 @@ private actor StubAXBridgeWaitTransport: AXBridgeTransport {
     guard !responses.isEmpty else {
       throw AXBridgeError.bridgeUnavailable
     }
-    return responses.removeFirst()
+    return try AXBridgeReply(answer: responses.removeFirst(), for: request)
   }
 }
 

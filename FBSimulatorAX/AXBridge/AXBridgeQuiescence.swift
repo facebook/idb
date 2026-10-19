@@ -6,43 +6,30 @@
  */
 
 import Darwin
+import FBSimulatorBridgeProtocol
 import FBSimulatorControl
 import Foundation
 
 extension QuiescenceEvent {
-  /// Decodes one frame of a `quiet` stream. An `ok: false` frame throws the guest's typed failure.
-  init(axBridgeFrame frame: Data, pid requestedPid: pid_t?) throws {
-    let response = try AXBridgeResponse.validated(frame, context: "quiescence", pid: requestedPid)
-    guard let pid = (response[AXWire.Envelope.pid.rawValue] as? Int).flatMap(pid_t.init(exactly:)) else {
-      throw AXBridgeError.guestFailure("quiescence event without a pid")
-    }
-    let rawEvent = response[AXWire.Quiescence.Key.event.rawValue] as? String
-    switch rawEvent.flatMap(AXWire.Quiescence.Event.init(rawValue:)) {
-    case .state:
-      self = .state(try Self.state(of: response), pid: pid)
-    case .touchesCompleted:
+  /// Decodes one frame of a `quiet` stream. A failure throws the guest's typed failure.
+  init(axBridgeFrame frame: BridgeAXAnswer, pid requestedPid: pid_t?) throws {
+    switch try AXBridgeResponse.decode(frame, as: BridgeAXQuiescenceEvent.self, context: "quiescence", pid: requestedPid) {
+    case let .state(state, signals, pid):
+      self = .state(Self.state(state, busySignals: signals), pid: pid)
+    case let .touchesCompleted(pid):
       self = .touchesCompleted(pid: pid)
-    case .targetChanged:
+    case let .targetChanged(pid):
       self = .targetChanged(pid: pid)
-    case .targetExited:
+    case let .targetExited(pid):
       self = .targetExited(pid: pid)
-    case .none:
-      throw AXBridgeError.guestFailure("unknown quiescence event \(rawEvent ?? "(none)")")
     }
   }
 
-  private static func state(of response: [String: Any]) throws -> QuiescenceState {
-    let rawState = response[AXWire.Quiescence.Key.state.rawValue] as? String
-    switch rawState.flatMap(AXWire.Quiescence.State.init(rawValue:)) {
-    case .busy:
-      let rawSignals = response[AXWire.Quiescence.Key.signals.rawValue] as? [String] ?? []
-      return .busy(Set(rawSignals.compactMap(AXWire.Quiescence.Signal.init(rawValue:)).map(QuiescenceSignal.init)))
-    case .settling:
-      return .settling
-    case .quiet:
-      return .quiet
-    case .none:
-      throw AXBridgeError.guestFailure("unknown quiescence state \(rawState ?? "(none)")")
+  private static func state(_ state: AXWire.Quiescence.State, busySignals: [AXWire.Quiescence.Signal]) -> QuiescenceState {
+    switch state {
+    case .busy: .busy(Set(busySignals.map(QuiescenceSignal.init)))
+    case .settling: .settling
+    case .quiet: .quiet
     }
   }
 }

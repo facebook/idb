@@ -445,16 +445,21 @@ private actor StubAXBridgeStreamingTransport: AXBridgeStreamingTransport {
     self.holdsOpen = holdsOpen
   }
 
-  func send(_ request: AXBridgeRequest) async throws -> Data {
+  func send(_ request: AXBridgeRequest) async throws -> AXBridgeReply {
     throw AXBridgeError.bridgeUnavailable
   }
 
-  func stream(_ request: AXBridgeRequest) async throws -> AsyncThrowingStream<Data, Error> {
+  func stream(_ request: AXBridgeRequest) async throws -> AsyncThrowingStream<BridgeAXAnswer, Error> {
     requests.append(request)
-    let (stream, continuation) = AsyncThrowingStream<Data, Error>.makeStream()
+    let (stream, continuation) = AsyncThrowingStream<BridgeAXAnswer, Error>.makeStream()
     continuation.onTermination = { _ in Task { await self.terminate() } }
     for frame in frames {
-      continuation.yield(frame)
+      do {
+        continuation.yield(try AXBridgeReply(answer: frame, for: request).answer)
+      } catch {
+        continuation.finish(throwing: error)
+        return stream
+      }
     }
     if !holdsOpen {
       continuation.finish()
@@ -494,20 +499,26 @@ private actor FollowingTransport: AXBridgeStreamingTransport {
     self.holdsOpen = holdsOpen
   }
 
-  func send(_ request: AXBridgeRequest) async throws -> Data {
+  func send(_ request: AXBridgeRequest) async throws -> AXBridgeReply {
     let displays = inventory.map { ["uniqueID": $0.uniqueID, "displayID": $0.displayID] as [String: Any] }
-    return try JSONSerialization.data(withJSONObject: [
-      "ok": true, "displayScopedInteractions": true, "displayScopedTrees": true, "displayScopedQuiescence": scopedQuiescence,
-      "displays": displays,
-    ])
+    return try AXBridgeReply(
+      answer: JSONSerialization.data(withJSONObject: [
+        "ok": true, "displayScopedInteractions": true, "displayScopedTrees": true, "displayScopedQuiescence": scopedQuiescence,
+        "displays": displays,
+      ]), for: request)
   }
 
-  func stream(_ request: AXBridgeRequest) async throws -> AsyncThrowingStream<Data, Error> {
+  func stream(_ request: AXBridgeRequest) async throws -> AsyncThrowingStream<BridgeAXAnswer, Error> {
     streamRequests.append(request)
-    let (stream, continuation) = AsyncThrowingStream<Data, Error>.makeStream()
+    let (stream, continuation) = AsyncThrowingStream<BridgeAXAnswer, Error>.makeStream()
     continuation.onTermination = { _ in Task { await self.terminate() } }
     for frame in streams.isEmpty ? [] : streams.removeFirst() {
-      continuation.yield(frame)
+      do {
+        continuation.yield(try AXBridgeReply(answer: frame, for: request).answer)
+      } catch {
+        continuation.finish(throwing: error)
+        return stream
+      }
     }
     if !holdsOpen {
       continuation.finish()

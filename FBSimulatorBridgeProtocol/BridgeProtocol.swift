@@ -14,7 +14,7 @@ import Foundation
 }
 
 public struct BridgeRequest: Codable, Equatable, Sendable {
-  public static let currentVersion = 3
+  public static let currentVersion = 4
   public let version: Int
   public let id: String
   public let command: BridgeCommand
@@ -81,12 +81,17 @@ public struct BridgeResult: Codable, Equatable, Sendable {
   public let values: [BridgeJSONValue]
   public let error: String?
   public let propertyList: Data?
+  /// An accessibility command's answer, carried in the frame in its own shape.
+  public let accessibility: BridgeAXAnswer?
 
-  public init(exitCode: Int32, values: [BridgeJSONValue] = [], error: String? = nil, propertyList: Data? = nil) {
+  public init(
+    exitCode: Int32, values: [BridgeJSONValue] = [], error: String? = nil, propertyList: Data? = nil, accessibility: BridgeAXAnswer? = nil
+  ) {
     self.exitCode = exitCode
     self.values = values
     self.error = error
     self.propertyList = propertyList
+    self.accessibility = accessibility
   }
 }
 
@@ -111,10 +116,30 @@ public struct BridgeResponse: Codable, Equatable, Sendable {
     return try encoder.encode(self)
   }
 
+  /// Decodes the response to `request`; an accessibility answer decodes as the kind the request's verb answers with.
   public static func decode(_ data: Data, for request: BridgeRequest) throws -> Self {
-    let response = try JSONDecoder().decode(Self.self, from: data)
-    guard response.version == BridgeRequest.currentVersion else { throw BridgeProtocolError.unsupportedVersion(response.version) }
-    guard response.id == request.id else { throw BridgeProtocolError.mismatchedResponse }
+    let decoder = JSONDecoder()
+    if case let .accessibility(accessibility) = request.command {
+      decoder.userInfo[.bridgeAXAnswerKind] = accessibility.answerKind
+    }
+    let response = try decoder.decode(Self.self, from: data)
+    try check(version: response.version, id: response.id, for: request)
     return response
+  }
+
+  /// Checks `data` is the response to `request`, at this version, without decoding its result.
+  public static func validate(_ data: Data, for request: BridgeRequest) throws {
+    let identity = try JSONDecoder().decode(Identity.self, from: data)
+    try check(version: identity.version, id: identity.id, for: request)
+  }
+
+  private static func check(version: Int, id: String?, for request: BridgeRequest) throws {
+    guard version == BridgeRequest.currentVersion else { throw BridgeProtocolError.unsupportedVersion(version) }
+    guard id == request.id else { throw BridgeProtocolError.mismatchedResponse }
+  }
+
+  private struct Identity: Decodable {
+    let version: Int
+    let id: String?
   }
 }

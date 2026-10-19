@@ -102,7 +102,7 @@ public struct QuiescenceTracker: Sendable {
 ///
 /// Everything after `run` starts happens on the serving thread's run loop, which is also where the
 /// monitor delivers, so no state here is shared between threads except the cancellation flag.
-final class QuiescenceStream: BridgeResponseStream {
+final class QuiescenceStream: AccessibilityAnswerStream {
   enum Target {
     case pid(pid_t)
     case frontmost
@@ -123,7 +123,7 @@ final class QuiescenceStream: BridgeResponseStream {
   private var cancelled = false
   private var runLoop: CFRunLoop?
 
-  private var emit: ((Data) -> Bool)?
+  private var emit: ((BridgeAXAnswer) -> Bool)?
   private var client: FBAXClient?
   private var monitor: FBAXQuiescenceMonitorClient?
   private var pid: pid_t = 0
@@ -141,7 +141,7 @@ final class QuiescenceStream: BridgeResponseStream {
     tracker = QuiescenceTracker(busyThreshold: busyThreshold, quietWindow: quietWindow)
   }
 
-  func run(emit: @escaping (Data) -> Bool) {
+  func run(emit: @escaping (BridgeAXAnswer) -> Bool) {
     lock.lock()
     runLoop = CFRunLoopGetCurrent()
     lock.unlock()
@@ -254,7 +254,7 @@ final class QuiescenceStream: BridgeResponseStream {
       }
     case .touchesCompleted:
       if pid == self.pid {
-        write([BridgeAXWire.Envelope.ok.rawValue: true, Wire.Key.event.rawValue: Wire.Event.touchesCompleted.rawValue, BridgeAXWire.Envelope.pid.rawValue: pid])
+        write(.quiescence(.touchesCompleted(pid: pid)))
       }
     case .runLoopIdle, .animationsInactive:
       guard pid == self.pid else { return }
@@ -314,7 +314,7 @@ final class QuiescenceStream: BridgeResponseStream {
     generation += 1
     tracker.reset()
     lastState = nil
-    write([BridgeAXWire.Envelope.ok.rawValue: true, Wire.Key.event.rawValue: Wire.Event.targetChanged.rawValue, BridgeAXWire.Envelope.pid.rawValue: outcome.processIdentifier])
+    write(.quiescence(.targetChanged(pid: outcome.processIdentifier)))
     try arm(outcome.processIdentifier)
   }
 
@@ -324,7 +324,7 @@ final class QuiescenceStream: BridgeResponseStream {
     application = nil
     tracker.reset()
     guard case .pid = target, !Self.isAlive(pid) else { return }
-    write([BridgeAXWire.Envelope.ok.rawValue: true, Wire.Key.event.rawValue: Wire.Event.targetExited.rawValue, BridgeAXWire.Envelope.pid.rawValue: pid])
+    write(.quiescence(.targetExited(pid: pid)))
     finish()
   }
 
@@ -337,7 +337,7 @@ final class QuiescenceStream: BridgeResponseStream {
     let now = Self.now
     if let state = tracker.state(at: now), state != lastState {
       lastState = state
-      write(Self.envelope(for: state, pid: pid))
+      write(.quiescence(Self.event(for: state, pid: pid)))
     }
     deadlineTimer?.invalidate()
     deadlineTimer = nil
@@ -347,18 +347,12 @@ final class QuiescenceStream: BridgeResponseStream {
     deadlineTimer = timer
   }
 
-  private static func envelope(for state: QuiescenceTracker.State, pid: pid_t) -> [String: Any] {
-    var envelope: [String: Any] = [BridgeAXWire.Envelope.ok.rawValue: true, Wire.Key.event.rawValue: Wire.Event.state.rawValue, BridgeAXWire.Envelope.pid.rawValue: pid]
+  private static func event(for state: QuiescenceTracker.State, pid: pid_t) -> BridgeAXQuiescenceEvent {
     switch state {
-    case let .busy(signals):
-      envelope[Wire.Key.state.rawValue] = Wire.State.busy.rawValue
-      envelope[Wire.Key.signals.rawValue] = signals.map(\.rawValue).sorted()
-    case .settling:
-      envelope[Wire.Key.state.rawValue] = Wire.State.settling.rawValue
-    case .quiet:
-      envelope[Wire.Key.state.rawValue] = Wire.State.quiet.rawValue
+    case let .busy(signals): .state(.busy, busySignals: signals.sorted { $0.rawValue < $1.rawValue }, pid: pid)
+    case .settling: .state(.settling, busySignals: [], pid: pid)
+    case .quiet: .state(.quiet, busySignals: [], pid: pid)
     }
-    return envelope
   }
 
   private static func errorKind(for status: FBAXFrontmostStatus) -> BridgeAXWire.ErrorKind {
@@ -381,13 +375,13 @@ final class QuiescenceStream: BridgeResponseStream {
 
   private func fail(_ message: String, kind: BridgeAXWire.ErrorKind) {
     failed = true
-    write([BridgeAXWire.Envelope.ok.rawValue: false, BridgeAXWire.Envelope.error.rawValue: message, BridgeAXWire.Envelope.errorKind.rawValue: kind.rawValue])
+    write(.failure(BridgeAXFailure(message: message, kind: kind)))
     finish()
   }
 
-  private func write(_ envelope: [String: Any]) {
+  private func write(_ answer: BridgeAXAnswer) {
     guard !isCancelled, let emit else { return }
-    if !emit(AccessibilityService.serializeResponse(envelope)) {
+    if !emit(answer) {
       finish()
     }
   }

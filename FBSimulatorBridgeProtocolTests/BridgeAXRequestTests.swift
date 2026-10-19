@@ -191,7 +191,7 @@ struct BridgeAXRequestTests {
 
   @Test
   func anUndecodableRequestFailsTheFrameButKeepsItsParameters() throws {
-    let frame = Data(#"{"command":{"accessibility":{"_0":{"verb":"quiet","quietWindowMs":-1}}},"id":"bad","version":3}"#.utf8)
+    let frame = Data(#"{"command":{"accessibility":{"_0":{"verb":"quiet","quietWindowMs":-1}}},"id":"bad","version":4}"#.utf8)
     #expect(throws: (any Error).self) { try BridgeRequest.decode(frame) }
     #expect(BridgeRequest.identity(of: frame) == "bad")
     #expect(BridgeRequest.accessibilityParameters(of: frame) == ["verb": .string("quiet"), "quietWindowMs": .integer(-1)])

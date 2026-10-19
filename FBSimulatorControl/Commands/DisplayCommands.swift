@@ -251,7 +251,7 @@ extension DisplayCommands {
       return accessibilityID
     }
     let inventory = try AXBridgeDisplayInventory.decode(
-      await transport.send(.displays, receiveTimeout: receiveTimeout), requiring: capabilities)
+      await transport.send(.displays, receiveTimeout: receiveTimeout).answer, requiring: capabilities)
     let matches = inventory.filter { $0.uniqueID == display.uniqueID }
     guard matches.count == 1, let match = matches.first else {
       throw SimulatorDisplayInteractionError.missingMapping(display.uniqueID)
