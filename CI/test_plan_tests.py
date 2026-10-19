@@ -89,6 +89,36 @@ class TestPlanTest(unittest.TestCase):
             (0, "Companion/idb_companion.xcodeproj\n"),
         )
 
+    def test_a_test_target_runs_on_the_mac_unless_the_plan_names_a_simulator(
+        self,
+    ) -> None:
+        document = json.loads(json.dumps(PLAN))
+        document["schemes"]["SimulatorFrameworkBridgeLibTests"] = [
+            "SimulatorFrameworkBridgeLibTests"
+        ]
+        document["testTargets"]["SimulatorFrameworkBridgeLibTests"] = {
+            "bootedSimulator": False,
+            "runner": "standard",
+            "prerequisites": [],
+            "project": "SimulatorFrameworkBridge/SimulatorFrameworkBridge.xcodeproj",
+            "platform": "iOS Simulator",
+        }
+        self.path.write_text(json.dumps(document))
+        self.assertEqual(self._run("platform", "FBControlCore"), (0, "macOS\n"))
+        self.assertEqual(
+            self._run("platform", "SimulatorFrameworkBridgeLibTests"),
+            (0, "iOS Simulator\n"),
+        )
+
+    def test_a_scheme_spanning_two_platforms_is_refused(self) -> None:
+        document = json.loads(json.dumps(PLAN))
+        document["testTargets"]["FBSimulatorControlSmokeTests"]["platform"] = (
+            "iOS Simulator"
+        )
+        self.path.write_text(json.dumps(document))
+        with self.assertRaises(ValueError):
+            TestPlan.load(self.path).platform("FBSimulatorControl")
+
     def test_a_test_target_that_generates_the_grpc_sources_asks_its_job_for_codegen(
         self,
     ) -> None:

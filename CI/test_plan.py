@@ -21,6 +21,8 @@ from pathlib import Path
 DEFAULT_PLAN = Path("TestPlan.json")
 # The generated spec's project, where every test target runs unless the plan names another.
 DEFAULT_PROJECT = "FBSimulatorControl.xcodeproj"
+# Where every test target runs unless the plan names another platform.
+DEFAULT_PLATFORM = "macOS"
 
 # The GitHub-hosted runner each runner class in the plan runs on.
 RUNNER_LABELS: Mapping[str, str] = {"standard": "macos-26", "large": "macos-26-xlarge"}
@@ -36,6 +38,8 @@ class TestTarget:
     prerequisites: tuple[str, ...]
     runner: str
     project: str = DEFAULT_PROJECT
+    # Where the bundle runs: the host Mac unless the plan names a simulator platform.
+    platform: str = DEFAULT_PLATFORM
 
 
 @dataclass(frozen=True)
@@ -57,6 +61,7 @@ class TestPlan:
                     prerequisites=tuple(fields["prerequisites"]),
                     runner=fields["runner"],
                     project=fields.get("project", DEFAULT_PROJECT),
+                    platform=fields.get("platform", DEFAULT_PLATFORM),
                 )
                 for name, fields in document["testTargets"].items()
             },
@@ -80,6 +85,15 @@ class TestPlan:
         if len(projects) != 1:
             raise ValueError(f"{scheme} spans several projects: {sorted(projects)}")
         return projects.pop()
+
+    def platform(self, scheme: str) -> str:
+        """The platform the scheme's bundles run on, which has to be one platform."""
+        platforms = {
+            self.test_targets[target].platform for target in self.schemes[scheme]
+        }
+        if len(platforms) != 1:
+            raise ValueError(f"{scheme} spans several platforms: {sorted(platforms)}")
+        return platforms.pop()
 
     def display_name(self, target: str) -> str:
         """The framework a test target tests, then its suite when it has one.
@@ -132,6 +146,10 @@ def main(argv: Sequence[str] | None = None) -> int:
         "project", help="the Xcode project the scheme runs from"
     )
     project.add_argument("scheme")
+    platform = commands.add_parser(
+        "platform", help="the platform the scheme's bundles run on"
+    )
+    platform.add_argument("scheme")
     arguments = parser.parse_args(argv)
     plan = TestPlan.load(arguments.plan)
     if arguments.command == "schemes":
@@ -144,6 +162,8 @@ def main(argv: Sequence[str] | None = None) -> int:
         parser.error(f"unknown scheme: {arguments.scheme}")
     elif arguments.command == "project":
         print(plan.project(arguments.scheme))
+    elif arguments.command == "platform":
+        print(plan.platform(arguments.scheme))
     else:
         print("\n".join(plan.prerequisites(arguments.scheme)))
     return 0
