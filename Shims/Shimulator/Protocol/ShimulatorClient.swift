@@ -20,7 +20,7 @@ public struct ShimulatorMethodUpdate: Equatable, Sendable {
 }
 
 public protocol ShimulatorMethodHandler: AnyObject {
-  associatedtype Parameters: Codable & Sendable
+  associatedtype Parameters: Codable, Sendable
   associatedtype Admission
 
   func start(_ parameters: Parameters) throws -> Admission
