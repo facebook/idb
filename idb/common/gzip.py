@@ -50,6 +50,11 @@ async def drain_gzip_decompress(stream: AsyncIterator[bytes], output_path: str) 
             await writer.drain()
         writer.write_eof()
         await writer.drain()
+        # gunzip is still writing output_path after its stdin closes, and the last bytes it was
+        # sent only reach it if the event loop outlives the pipe transport's buffer.
+        returncode = await process.wait()
+    if returncode != 0:
+        raise OSError(f"gunzip exited with {returncode} decompressing to {output_path}")
 
 
 async def generate_gzip(path: str) -> AsyncIterator[bytes]:
