@@ -51,7 +51,7 @@ struct FrameCadence: AsyncSequence {
       // The first tick fires immediately, before any sleep.
       if firstTickPending {
         firstTickPending = false
-        return FrameTrigger(forceKeyFrame: false, overran: false)
+        return FrameTrigger(forceKeyFrame: false, overran: false, overlayOnly: false)
       }
 
       let now = mach_absolute_time()
@@ -70,7 +70,7 @@ struct FrameCadence: AsyncSequence {
         nextTargetTime += missed * frameIntervalMach
       }
       nextTargetTime += frameIntervalMach
-      return FrameTrigger(forceKeyFrame: false, overran: overran)
+      return FrameTrigger(forceKeyFrame: false, overran: overran, overlayOnly: false)
     }
   }
 }

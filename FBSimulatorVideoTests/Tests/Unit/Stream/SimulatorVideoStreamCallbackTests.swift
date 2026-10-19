@@ -471,6 +471,26 @@ final class SimulatorVideoStreamDeliveryTests: XCTestCase {
     try await stream.stopStreaming()
   }
 
+  func testOverlayUpdatesKeepPushingWhileTheScreenIsIdle() async throws {
+    let surface = FakeFramebufferSurface()
+    surface.immediateSurface = makeTestIOSurface()
+    let consumer = AccumulatingBuffer()
+    let stream = makeStream(surface: surface)
+    try await stream.startStreaming(consumer)
+    let overlay = OverlayRenderer(width: 16, height: 16).buffer
+
+    // Each push composites the overlay over the screen, reading the surface; an update after it must
+    // still find the screen presented
+    var before = try await settledCount(of: consumer)
+    await stream.updateOverlayBuffer(overlay)
+    try await expectEventually("an overlay swap over an idle screen pushes a frame") { consumer.data().count > before }
+    before = try await settledCount(of: consumer)
+    await stream.updateOverlayBuffer(overlay)
+    try await expectEventually("an in-place overlay update over an idle screen pushes a frame") { consumer.data().count > before }
+
+    try await stream.stopStreaming()
+  }
+
   /// Creates an IOSurface with no pixel format: `CVPixelBufferCreateWithIOSurface` rejects it
   /// (-6661), so mounting it always fails — the trigger for the failed-initial-mount path.
   private func makeUnmountableIOSurface() -> IOSurface {

@@ -194,6 +194,12 @@ public actor SimulatorVideoStream: VideoStreamOperation {
   /// and `updateOverlayBuffer` poke to drive a push through the shared loop. Created in `mountSurface`,
   /// finished in `cadenceTeardown`. Nil in `.eager` mode (the cadence clock drives pushes there).
   private var lazyTriggers: LazyFrameTriggers?
+  /// In `.lazy` mode, the mounted surface's modification seed as of its mount or the latest rendered frame: the screen
+  /// the Simulator last presented. A seed that has moved on since means the Simulator wrote into the surface without
+  /// reporting a frame.
+  private var presentedSurfaceSeed: UInt32?
+  /// Whether the next triggered push must force the keyframe of an overlay swap whose own push was held back
+  private var keyFrameHeldBack = false
 
   var pixelBuffer: CVPixelBuffer?
   /// The mounted surface as the interface shows it.
@@ -480,6 +486,7 @@ public actor SimulatorVideoStream: VideoStreamOperation {
     case .frameRendered:
       switch cadence {
       case .lazy:
+        presentedSurfaceSeed = mountedSurfaceSeed
         lazyTriggers?.signalFrameRendered()
       case .eager:
         break
@@ -593,6 +600,7 @@ public actor SimulatorVideoStream: VideoStreamOperation {
     let previousSource = mountedSource
     self.pixelBuffer = buffer
     self.pixelBufferAttributes = attributes
+    presentedSurfaceSeed = mountedSurfaceSeed
     self.framePusher = framePusher
     self.mountedSource = source
     if case .fixedAtFirstMount = canvasPolicy {
@@ -851,7 +859,7 @@ public actor SimulatorVideoStream: VideoStreamOperation {
     switch cadence {
     case .lazy:
       if sameReference {
-        lazyTriggers?.signalFrameRendered()
+        lazyTriggers?.signalOverlayChanged()
       } else {
         lazyTriggers?.signalKeyFrame()
       }
@@ -964,8 +972,9 @@ public actor SimulatorVideoStream: VideoStreamOperation {
     for await trigger in stimulus {
       guard !Task.isCancelled else { break }
       guard let stream = stream() else { break }
-      let pushDurationMach = await stream.pushTriggered(forceKeyFrame: trigger.forceKeyFrame)
-      stats?.record(pushDurationMach: pushDurationMach, overran: trigger.overran)
+      if let pushDurationMach = await stream.pushTriggered(trigger) {
+        stats?.record(pushDurationMach: pushDurationMach, overran: trigger.overran)
+      }
     }
   }
 
@@ -974,16 +983,30 @@ public actor SimulatorVideoStream: VideoStreamOperation {
     for await trigger in stimulus {
       guard !Task.isCancelled else { break }
       guard let stream = stream() else { break }
-      let pushDurationMach = await stream.pushTriggered(forceKeyFrame: trigger.forceKeyFrame)
-      stats?.record(pushDurationMach: pushDurationMach, overran: trigger.overran)
+      if let pushDurationMach = await stream.pushTriggered(trigger) {
+        stats?.record(pushDurationMach: pushDurationMach, overran: trigger.overran)
+      }
     }
   }
 
   /// One trigger's worth of work, shared by both cadence loops: push a frame, returning the push
-  /// duration in Mach ticks for the caller's cadence statistics.
-  private func pushTriggered(forceKeyFrame: Bool) -> UInt64 {
+  /// duration in Mach ticks for the caller's cadence statistics, or nil when an overlay-only push is
+  /// held back until the Simulator presents the frame it drew
+  func pushTriggered(_ trigger: FrameTrigger) -> UInt64? {
+    // The Simulator has drawn into the surface without presenting the frame yet. That frame's rendered event pushes it
+    // with the overlay change included.
+    if trigger.overlayOnly, mountedSurfaceSeed != presentedSurfaceSeed {
+      keyFrameHeldBack = keyFrameHeldBack || trigger.forceKeyFrame
+      return nil
+    }
     let beforePush = mach_absolute_time()
-    pushFrame(forceKeyFrame: forceKeyFrame)
+    pushFrame(forceKeyFrame: trigger.forceKeyFrame || keyFrameHeldBack)
+    keyFrameHeldBack = false
     return mach_absolute_time() - beforePush
+  }
+
+  /// The mounted surface's modification seed, which moves on whenever anything writes into the surface
+  private var mountedSurfaceSeed: UInt32? {
+    pixelBuffer.flatMap { CVPixelBufferGetIOSurface($0)?.takeUnretainedValue() }.map(IOSurfaceGetSeed)
   }
 }

@@ -18,12 +18,14 @@ struct FrameTrigger {
   let forceKeyFrame: Bool
   /// True when the previous push overshot its deadline (eager cadence only — always false for VFR).
   let overran: Bool
+  /// True when no rendered frame was signaled since the previous `.lazy` trigger, so the push only redraws the overlay
+  /// over the screen the Simulator last presented. Always false for the eager clock.
+  let overlayOnly: Bool
 }
 
-/// The `.lazy` (VFR) stimulus: an `AsyncSequence` of `FrameTrigger`s poked by `signalFrameRendered()`
-/// and `signalKeyFrame()`. Triggers coalesce to the newest (`bufferingNewest(1)`) so a slow consumer
-/// drops redundant frames; a keyframe request must survive that coalescing, so it is a sticky flag the
-/// iterator reads-and-clears rather than a payload on a droppable trigger.
+/// The `.lazy` (VFR) stimulus: an `AsyncSequence` of `FrameTrigger`s poked by rendered frames and overlay changes.
+/// Triggers coalesce to the newest (`bufferingNewest(1)`) so a slow consumer drops redundant frames, and a trigger
+/// still reports any keyframe request or rendered frame signaled since the previous one.
 ///
 /// Triggers are paced to at most `maximumFramesPerSecond`: a trigger that arrives sooner than that
 /// after the last one is held, not dropped, until the interval has passed, so the newest content is
@@ -38,9 +40,13 @@ final class LazyFrameTriggers: AsyncSequence, Sendable {
 
   private let stream: AsyncStream<Void>
   private let continuation: AsyncStream<Void>.Continuation
-  /// Whether the next pushed frame must be a keyframe. Set by `signalKeyFrame`, read-and-cleared by
-  /// the iterator, so coalescing never drops a pending keyframe.
-  private let pendingKeyFrame = OSAllocatedUnfairLock(initialState: false)
+  /// What the next trigger reports, held beside the stream rather than in its elements, which coalescing drops
+  private struct Pending {
+    var keyFrame = false
+    var frameRendered = false
+  }
+
+  private let pending = OSAllocatedUnfairLock(initialState: Pending())
   fileprivate let minimumIntervalMach: UInt64
 
   init(maximumFramesPerSecond: UInt = LazyFrameTriggers.defaultMaximumFramesPerSecond) {
@@ -56,13 +62,19 @@ final class LazyFrameTriggers: AsyncSequence, Sendable {
 
   /// Signal that a new frame was rendered — enqueue a push of the latest state.
   func signalFrameRendered() {
+    pending.withLock { $0.frameRendered = true }
+    continuation.yield(())
+  }
+
+  /// Signal that the overlay's contents changed in place, enqueueing a push that redraws it
+  func signalOverlayChanged() {
     continuation.yield(())
   }
 
   /// Signal that the overlay changed — mark the next push a keyframe so consumers that need a keyframe
   /// can decode the change immediately, then enqueue a push.
   func signalKeyFrame() {
-    pendingKeyFrame.withLock { $0 = true }
+    pending.withLock { $0.keyFrame = true }
     continuation.yield(())
   }
 
@@ -71,10 +83,9 @@ final class LazyFrameTriggers: AsyncSequence, Sendable {
     continuation.finish()
   }
 
-  /// Atomically read and clear the sticky keyframe flag.
-  private func takePendingKeyFrame() -> Bool {
-    pendingKeyFrame.withLock { pending in
-      defer { pending = false }
+  private func takePending() -> Pending {
+    pending.withLock { pending in
+      defer { pending = Pending() }
       return pending
     }
   }
@@ -104,7 +115,8 @@ final class LazyFrameTriggers: AsyncSequence, Sendable {
         }
       }
       lastTriggerMach = mach_absolute_time()
-      return FrameTrigger(forceKeyFrame: source.takePendingKeyFrame(), overran: false)
+      let pending = source.takePending()
+      return FrameTrigger(forceKeyFrame: pending.keyFrame, overran: false, overlayOnly: !pending.frameRendered)
     }
   }
 }

@@ -76,4 +76,19 @@ final class LazyFrameTriggersTests: XCTestCase {
 
     XCTAssertLessThan(clock.now - started, .milliseconds(50))
   }
+
+  func testATriggerIsOverlayOnlyUnlessAFrameWasRenderedSinceThePreviousOne() async throws {
+    let triggers = LazyFrameTriggers(maximumFramesPerSecond: 1000)
+    var iterator = triggers.makeAsyncIterator()
+
+    triggers.signalOverlayChanged()
+    triggers.signalFrameRendered()
+    let coalesced = await iterator.next()
+    triggers.signalKeyFrame()
+    let swap = await iterator.next()
+
+    XCTAssertEqual(coalesced?.overlayOnly, false, "a rendered frame coalesced with an overlay change is not overlay-only")
+    XCTAssertEqual(swap?.overlayOnly, true)
+    XCTAssertEqual(swap?.forceKeyFrame, true)
+  }
 }

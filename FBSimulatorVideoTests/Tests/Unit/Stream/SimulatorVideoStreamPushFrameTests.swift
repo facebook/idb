@@ -166,6 +166,40 @@ final class SimulatorVideoStreamPushFrameTests: XCTestCase {
     let stats = await started.stream.currentEncoderStats()
     XCTAssertEqual(stats.tornFrameCount, 1)
   }
+
+  func testAnOverlayOnlyPushOverThePresentedScreenIsPushed() async throws {
+    let started = try await startStream()
+    defer { Task { try? await started.stream.stopStreaming() } }
+
+    let pushed = await started.stream.pushTriggered(FrameTrigger(forceKeyFrame: false, overran: false, overlayOnly: true))
+
+    XCTAssertNotNil(pushed)
+    XCTAssertEqual(started.pusher.writes.count, 1)
+  }
+
+  func testAnOverlayOnlyPushWaitsForTheFrameTheSimulatorIsDrawing() async throws {
+    let started = try await startStream()
+    defer { Task { try? await started.stream.stopStreaming() } }
+    // The render server drawing into the surface before it reports the frame
+    try started.ioSurface.lock(options: [], seed: nil)
+    started.ioSurface.baseAddress.assumingMemoryBound(to: UInt8.self)[0] ^= 0xFF
+    try started.ioSurface.unlock(options: [], seed: nil)
+
+    let held = await started.stream.pushTriggered(FrameTrigger(forceKeyFrame: true, overran: false, overlayOnly: true))
+    XCTAssertNil(held)
+    XCTAssertTrue(started.pusher.writes.isEmpty, "an overlay-only push must not encode a frame the Simulator has not presented")
+
+    let rendered = expectation(description: "the rendered frame is pushed")
+    rendered.assertForOverFulfill = false
+    started.pusher.onWrite = { rendered.fulfill() }
+    started.surface.frameRendered?()
+    await fulfillment(of: [rendered], timeout: 5)
+    let resumed = await started.stream.pushTriggered(FrameTrigger(forceKeyFrame: false, overran: false, overlayOnly: true))
+
+    XCTAssertNotNil(resumed)
+    // The rendered frame carries the held-back swap's keyframe; once it is presented, overlay-only pushes go ahead
+    XCTAssertEqual(started.pusher.writes.map(\.forceKeyFrame), [true, false])
+  }
 }
 
 /// A frame pusher that records what `pushFrame` hands it and can fail or act on demand.
