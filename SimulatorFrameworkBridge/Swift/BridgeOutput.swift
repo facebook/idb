@@ -11,7 +11,7 @@ import Foundation
 public final class BridgeOutput {
   public private(set) var values: [BridgeJSONValue] = []
   public private(set) var propertyList: Data?
-  public private(set) var accessibility: Data?
+  public private(set) var accessibility: BridgeAXAnswer?
   public private(set) var failed = false
   public private(set) var error: String?
 
@@ -29,9 +29,9 @@ public final class BridgeOutput {
     }
   }
 
-  /// An accessibility answer, as `AccessibilityService` serialized it.
-  public func write(accessibility data: Data) {
-    accessibility = data
+  /// An accessibility command's answer, which the frame carries in its own shape.
+  public func write(accessibility answer: BridgeAXAnswer) {
+    accessibility = answer
   }
 
   @discardableResult

@@ -164,6 +164,50 @@ struct BridgeAXOutcomeTests {
     #expect(try decode(BridgeAXOutcome<BridgeAXQuiescenceEvent>.self, json) == .failure(failure))
   }
 
+  // MARK: - Answers
+
+  @Test
+  func anAnswerDecodesAsTheKindItsRequestAnswersWith() throws {
+    #expect(try BridgeAXAnswer.decode(Data(#"{"ok":true,"enabled":true}"#.utf8), as: .setting) == .setting(BridgeAXSettingResponse(enabled: true)))
+    #expect(try BridgeAXAnswer.decode(Data(#"{"ok":true,"empty":true}"#.utf8), as: .hitTest) == .hitTest(.empty))
+    #expect(try BridgeAXAnswer.decode(Data(#"{"ok":true,"empty":true}"#.utf8), as: .write) == .write(.empty))
+    #expect(
+      try BridgeAXAnswer.decode(Data(#"{"ok":true,"event":"target_exited","pid":4}"#.utf8), as: .quiescence) == .quiescence(.targetExited(pid: 4)))
+  }
+
+  @Test
+  func aFailureReadsTheSameWhateverTheRequest() throws {
+    let failure = Data(#"{"ok":false,"error":"no reader","error_kind":"reader_unavailable"}"#.utf8)
+    for kind in [BridgeAXAnswer.Kind.tree, .hitTest, .write, .setting, .displays, .settingSnapshot, .quiescence] {
+      #expect(try BridgeAXAnswer.decode(failure, as: kind) == .failure(BridgeAXFailure(message: "no reader", kind: .readerUnavailable)))
+    }
+  }
+
+  @Test
+  func everyRequestNamesTheKindOfAnswerItGets() {
+    let options = BridgeAXReadOptions(
+      maxDepth: 1, maxNodes: 1, attributes: nil, explainUnreachable: false, traversal: .viewHierarchy, automationMode: nil, clientType: .noClient)
+    let write = BridgeAXWriteRequest(kind: .perform(.press), x: 1, y: 2, pid: nil, assertion: nil)
+    let kinds: [(BridgeAXRequest, BridgeAXAnswer.Kind)] = [
+      (.read(pid: 1, options: options), .tree), (.readFrontmost(x: 1, y: 2, method: .windowServer, options: options), .tree),
+      (.hitTest(x: 1, y: 2, attributes: nil, clientType: .noClient), .hitTest), (.write(write), .write),
+      (.deviceSettingRead("voiceover"), .setting), (.deviceSettingWrite("voiceover", enabled: true), .setting),
+      (.deviceSettingChanges("reduce-motion"), .settingSnapshot), (.quiescence(pid: 1, busyThresholdMs: nil, quietWindowMs: nil), .quiescence),
+      (.displays, .displays),
+    ]
+    for (request, kind) in kinds {
+      #expect(request.answerKind == kind, "\(request)")
+    }
+  }
+
+  @Test
+  func everyAnswerEncodesAsItsOutcome() throws {
+    let answer = BridgeAXAnswer.setting(BridgeAXSettingResponse(enabled: false))
+    #expect(try jsonObject(JSONEncoder().encode(answer)) == ["ok": true, "enabled": false])
+    let failure = BridgeAXAnswer.failure(BridgeAXFailure(message: "no", kind: .badRequest))
+    #expect(try jsonObject(JSONEncoder().encode(failure)) == ["ok": false, "error": "no", "error_kind": "bad_request"])
+  }
+
   // The guest will encode these types itself, so what they write must decode back to the same answer.
   @Test
   func everyAnswerRoundTripsThroughItsOwnEncoding() throws {

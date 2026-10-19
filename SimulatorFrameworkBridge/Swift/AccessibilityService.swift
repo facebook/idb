@@ -1486,7 +1486,7 @@ private final class AccessibilityRequest {
     }
   }
 
-  fileprivate func FBAXBridgeDispatchRequest(request: BridgeAXRequest) throws -> AccessibilityAnswer {
+  fileprivate func FBAXBridgeDispatchRequest(request: BridgeAXRequest) throws -> BridgeAXAnswer {
     if request.verb == .quiet || request.verb == .settingsObserve {
       return .failure(FBAXBridgeTaggedErrorResponse(
         message: "\(request.verb.rawValue) streams its answer, so it is only served over a serve connection or the one-shot CLI",
@@ -1519,43 +1519,43 @@ private final class AccessibilityRequest {
           displayScopedQuiescence: true,
           displays: outcome.displays.map { BridgeAXDisplayInventory.Display(uniqueID: $0.uniqueID, displayID: $0.displayID) }
         )
-        return .displays(.success(inventory))
+        return .displays(inventory)
       case .unavailable:
-        return .displays(.failure(FBAXBridgeTaggedErrorResponse(
+        return .failure(FBAXBridgeTaggedErrorResponse(
           message: outcome.failureReason ?? "Accessibility display inventory is unavailable",
-          kind: .capabilityUnavailable, pid: nil)))
+          kind: .capabilityUnavailable, pid: nil))
       case .failed:
-        return .displays(.failure(FBAXBridgeTaggedErrorResponse(
+        return .failure(FBAXBridgeTaggedErrorResponse(
           message: outcome.failureReason ?? "Accessibility display inventory failed",
-          kind: .readerUnavailable, pid: nil)))
+          kind: .readerUnavailable, pid: nil))
       @unknown default:
-        return .displays(.failure(FBAXBridgeTaggedErrorResponse(
+        return .failure(FBAXBridgeTaggedErrorResponse(
           message: "Unknown accessibility display inventory outcome",
-          kind: .readerUnavailable, pid: nil)))
+          kind: .readerUnavailable, pid: nil))
       }
 
     case let .deviceSettingRead(name):
-      return .setting(try FBAXBridgeDeviceSetting(client: client, name: name, enabled: nil))
+      return BridgeAXAnswer(try FBAXBridgeDeviceSetting(client: client, name: name, enabled: nil), BridgeAXAnswer.setting)
     case let .deviceSettingWrite(name, enabled):
-      return .setting(try FBAXBridgeDeviceSetting(client: client, name: name, enabled: enabled))
+      return BridgeAXAnswer(try FBAXBridgeDeviceSetting(client: client, name: name, enabled: enabled), BridgeAXAnswer.setting)
     // `hittest` is self-contained: with a pid it hit-tests that app; with no pid it hit-tests display-wide
     // — the app owning the point, resolved in-guest, with no frontmost pid query.
     case let .hitTest(x, y, attributes, clientType, displayID, pid):
-      return .hitTest(try FBAXBridgeHitTest(
-        client: client, point: CGPoint(x: x, y: y), pid: pid, attributes: attributes, displayID: displayID, clientType: clientType))
+      return BridgeAXAnswer(try FBAXBridgeHitTest(
+        client: client, point: CGPoint(x: x, y: y), pid: pid, attributes: attributes, displayID: displayID, clientType: clientType), BridgeAXAnswer.hitTest)
     // Writes are point-addressed: a one-shot guest exits between requests, so an element handle cannot
     // survive one.
     case let .write(write):
       switch write.kind {
       case let .perform(action):
-        return .write(try FBAXBridgePerform(client: client, request: write, action: action))
+        return BridgeAXAnswer(try FBAXBridgePerform(client: client, request: write, action: action), BridgeAXAnswer.write)
       case let .setValue(value):
-        return .write(try FBAXBridgeSetValue(client: client, request: write, value: value))
+        return BridgeAXAnswer(try FBAXBridgeSetValue(client: client, request: write, value: value), BridgeAXAnswer.write)
       }
     case let .read(pid, options, displayID):
-      return .tree(try FBAXBridgeDescribe(client: client, pid: pid, frontmost: nil, options: options, displayID: displayID))
+      return BridgeAXAnswer(try FBAXBridgeDescribe(client: client, pid: pid, frontmost: nil, options: options, displayID: displayID), BridgeAXAnswer.tree)
     case let .readFrontmost(x, y, method, options, displayID):
-      return .tree(try FBAXBridgeDescribe(client: client, pid: 0, frontmost: (method, CGPoint(x: x, y: y)), options: options, displayID: displayID))
+      return BridgeAXAnswer(try FBAXBridgeDescribe(client: client, pid: 0, frontmost: (method, CGPoint(x: x, y: y)), options: options, displayID: displayID), BridgeAXAnswer.tree)
     }
   }
 
@@ -1802,7 +1802,7 @@ public enum AccessibilityService {
   }
 
   /// Decodes `parameters` into a request and answers it.
-  public static func handleRequest(parameters: [String: BridgeJSONValue]) -> AccessibilityAnswer {
+  public static func handleRequest(parameters: [String: BridgeJSONValue]) -> BridgeAXAnswer {
     do {
       return handleRequest(try BridgeAXRequest(payload: parameters))
     } catch {
@@ -1810,7 +1810,7 @@ public enum AccessibilityService {
     }
   }
 
-  public static func handleRequest(_ request: BridgeAXRequest) -> AccessibilityAnswer {
+  public static func handleRequest(_ request: BridgeAXRequest) -> BridgeAXAnswer {
     do {
       return try AccessibilityRequest().FBAXBridgeDispatchRequest(request: request)
     } catch AXDisplayScopeError.missingWindowIdentity {
@@ -1864,14 +1864,14 @@ public enum AccessibilityService {
       case let .stream(stream):
         var lostOutput = false
         withoutActuallyEscaping(writeResponse) { writeResponse in
-          stream.run { data in
-            lostOutput = !writeResponse(data)
+          stream.run { answer in
+            lostOutput = !writeResponse(answer.encoded())
             return !lostOutput
           }
         }
         return stream.failed || lostOutput ? 1 : 0
       case let .failure(failure):
-        _ = writeResponse(AccessibilityAnswer.failure(failure).encoded())
+        _ = writeResponse(BridgeAXAnswer.failure(failure).encoded())
         return 1
       }
     }

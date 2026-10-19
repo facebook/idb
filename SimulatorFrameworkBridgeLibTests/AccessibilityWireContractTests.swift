@@ -10,19 +10,40 @@ import FBSimulatorBridgeProtocol
 import Foundation
 @_implementationOnly import SimulatorFrameworkBridgeRuntime
 @_implementationOnly import SimulatorFrameworkBridgeSupport
+@_implementationOnly import SimulatorIPC
 import UIKit
 import XCTest
 
 private let kAppPid: pid_t = 4321
 
-/// The accessibility answer a guest frame carries, decoded from the frame's bytes as the host decodes it: the frame
-/// as a `BridgeResponse`, then its answer as the type the request's verb answers with.
+/// The accessibility answer a guest frame carries, decoded from the frame's bytes as the host decodes it: against the
+/// request it answers, as the outcome its verb answers with.
 private enum GuestFrame<Success: Codable & Equatable & Sendable> {
-  static func answer(in frame: Data, file: StaticString = #filePath, line: UInt = #line) throws -> BridgeAXOutcome<Success> {
-    let result = try JSONDecoder().decode(BridgeResponse.self, from: frame).result
+  static func answer(
+    in frame: Data, for request: BridgeRequest, file: StaticString = #filePath, line: UInt = #line
+  ) throws -> BridgeAXOutcome<Success> {
+    let result = try BridgeResponse.decode(frame, for: request).result
     XCTAssertEqual(result.values, [], "an accessibility answer is not carried as values", file: file, line: line)
     let answer = try XCTUnwrap(result.accessibility, "the frame carries no accessibility answer", file: file, line: line)
-    return try JSONDecoder().decode(BridgeAXOutcome<Success>.self, from: answer)
+    return try outcome(of: answer)
+  }
+
+  static func outcome(of answer: BridgeAXAnswer) throws -> BridgeAXOutcome<Success> {
+    let success: Any
+    switch answer {
+    case let .failure(failure): return .failure(failure)
+    case let .tree(answer): success = answer
+    case let .hitTest(answer): success = answer
+    case let .write(answer): success = answer
+    case let .setting(answer): success = answer
+    case let .displays(answer): success = answer
+    case let .settingSnapshot(answer): success = answer
+    case let .quiescence(answer): success = answer
+    }
+    guard let success = success as? Success else {
+      throw UnexpectedOutcome(description: "expected \(Success.self), got \(answer)")
+    }
+    return .success(success)
   }
 }
 
@@ -61,16 +82,18 @@ final class AccessibilityWireContractTests: XCTestCase {
     super.tearDown()
   }
 
+  private let frameID = "contract"
+
   /// The frame the guest sends for `request`.
   private func frame(_ request: BridgeAXRequest) throws -> Data {
-    let sent = BridgeRequest(command: request.command)
+    let sent = BridgeRequest(command: request.command, id: frameID)
     return try BridgeResponse(request: sent, result: BridgeServices.execute(request.command)).encoded()
   }
 
   private func answer<Success>(
     _ request: BridgeAXRequest, as _: Success.Type, file: StaticString = #filePath, line: UInt = #line
   ) throws -> BridgeAXOutcome<Success> {
-    try GuestFrame<Success>.answer(in: frame(request), file: file, line: line)
+    try GuestFrame<Success>.answer(in: frame(request), for: BridgeRequest(command: request.command, id: frameID), file: file, line: line)
   }
 
   private func options(
@@ -244,7 +267,7 @@ final class AccessibilityWireContractTests: XCTestCase {
   func testEachVerbIsAnsweredWithItsOwnTypedOutcome() throws {
     let root = FBAXFakeElement.readable("UIApplication")
     runtime.applicationElements[NSNumber(value: kAppPid)] = root
-    guard case let .tree(.success(read)) = AccessibilityService.handleRequest(.read(pid: kAppPid, options: options())) else {
+    guard case let .tree(read) = AccessibilityService.handleRequest(.read(pid: kAppPid, options: options())) else {
       return XCTFail("a read is answered with a tree")
     }
     XCTAssertEqual(read.tree.elementType, .string("UIApplication"))
@@ -252,21 +275,20 @@ final class AccessibilityWireContractTests: XCTestCase {
 
     runtime.hitTestOutcome = FBAXHitTestOutcome.empty()
     XCTAssertEqual(
-      AccessibilityService.handleRequest(.hitTest(x: 1, y: 2, attributes: nil, clientType: .noClient, pid: kAppPid)), .hitTest(.success(.empty)))
-    XCTAssertEqual(AccessibilityService.handleRequest(press()), .write(.success(.empty)))
+      AccessibilityService.handleRequest(.hitTest(x: 1, y: 2, attributes: nil, clientType: .noClient, pid: kAppPid)), .hitTest(.empty))
+    XCTAssertEqual(AccessibilityService.handleRequest(press()), .write(.empty))
 
     runtime.deviceSettings[NSNumber(value: FBAXDeviceSetting.reduceMotion.rawValue)] = NSNumber(value: true)
     XCTAssertEqual(
-      AccessibilityService.handleRequest(.deviceSettingRead("reduce-motion")), .setting(.success(BridgeAXSettingResponse(enabled: true))))
+      AccessibilityService.handleRequest(.deviceSettingRead("reduce-motion")), .setting(BridgeAXSettingResponse(enabled: true)))
 
     runtime.displayInventoryOutcome = .available([FBAXDisplayIdentity(uniqueID: "main", displayID: 1)])
     XCTAssertEqual(
       AccessibilityService.handleRequest(.displays),
       .displays(
-        .success(
-          BridgeAXDisplayInventory(
-            displayScopedInteractions: true, displayScopedTrees: true, displayScopedQuiescence: true,
-            displays: [.init(uniqueID: "main", displayID: 1)]))))
+        BridgeAXDisplayInventory(
+          displayScopedInteractions: true, displayScopedTrees: true, displayScopedQuiescence: true,
+          displays: [.init(uniqueID: "main", displayID: 1)])))
 
     XCTAssertEqual(
       AccessibilityService.handleRequest(parameters: ["verb": .string("hittest"), "clientType": .integer(0), "x": .string("left"), "y": .integer(2)]),
@@ -378,10 +400,11 @@ final class AccessibilityWireContractTests: XCTestCase {
 
   func testAFrameThatIsNotARequestIsABadRequest() throws {
     let result = BridgeServices.undecodedAccessibility(["verb": .string("hittest"), "clientType": .integer(0), "x": .string("left"), "y": .integer(2)])
-    let frame = try BridgeResponse(id: "undecoded", result: result).encoded()
+    let request = BridgeRequest(command: .accessibility(.hitTest(x: 0, y: 0, attributes: nil, clientType: .noClient)), id: "undecoded")
+    let frame = try BridgeResponse(request: request, result: result).encoded()
 
     XCTAssertEqual(
-      try failure(GuestFrame<BridgeAXHitTestResponse>.answer(in: frame)),
+      try failure(GuestFrame<BridgeAXHitTestResponse>.answer(in: frame, for: request)),
       BridgeAXFailure(message: "hittest requires numeric x and y", kind: .badRequest))
   }
 
@@ -405,12 +428,13 @@ extension BridgeServerSocketTests {
     addTeardownBlock { FBAXClientProvider.setRuntimeForTesting(nil) }
   }
 
-  private func openStream(_ runtime: FBAXFakeRuntime, _ request: BridgeAXRequest) throws -> Int32 {
+  private func openStream(_ runtime: FBAXFakeRuntime, _ request: BridgeAXRequest) throws -> (client: Int32, request: BridgeRequest) {
     useContractRuntime(runtime)
     startServerExclusive(exclusive: true)
     let client = connectClient()
-    sendData(data: try frame(command: request.command), to: client)
-    return client
+    let sent = BridgeRequest(command: request.command)
+    sendData(data: try sent.encoded().framed(), to: client)
+    return (client, sent)
   }
 
   private func closeStream(_ client: Int32) {
@@ -425,8 +449,8 @@ extension BridgeServerSocketTests {
     return try XCTUnwrap(readBytes(length: Int(length), from: fd))
   }
 
-  private func nextEvent<Success>(_: Success.Type, fd: Int32) throws -> BridgeAXOutcome<Success> {
-    try GuestFrame<Success>.answer(in: readFrameBytes(fd: fd))
+  private func nextEvent<Success>(_: Success.Type, on stream: (client: Int32, request: BridgeRequest)) throws -> BridgeAXOutcome<Success> {
+    try GuestFrame<Success>.answer(in: readFrameBytes(fd: stream.client), for: stream.request)
   }
 
   private func quiescenceMonitor(of runtime: FBAXFakeRuntime, requests: Int) throws -> FBAXFakeQuiescenceMonitor {
@@ -452,51 +476,52 @@ extension BridgeServerSocketTests {
   func testAQuietApplicationAndItsFinishedTouchesDecode() throws {
     let pid = getpid()
     let runtime = runtimeServing([pid])
-    let client = try openStream(runtime, .quiescence(pid: pid, busyThresholdMs: 5000, quietWindowMs: 0))
-    defer { closeStream(client) }
+    let stream = try openStream(runtime, .quiescence(pid: pid, busyThresholdMs: 5000, quietWindowMs: 0))
+    defer { closeStream(stream.client) }
 
     let monitor = try quiescenceMonitor(of: runtime, requests: 2)
     monitor.deliver(.runLoopIdle, pid: pid)
     monitor.deliver(.animationsInactive, pid: pid)
-    XCTAssertEqual(try success(nextEvent(BridgeAXQuiescenceEvent.self, fd: client)), .state(.quiet, busySignals: [], pid: pid))
+    XCTAssertEqual(try success(nextEvent(BridgeAXQuiescenceEvent.self, on: stream)), .state(.quiet, busySignals: [], pid: pid))
     _ = try quiescenceMonitor(of: runtime, requests: 4)
     monitor.deliver(.touchesCompleted, pid: pid)
-    XCTAssertEqual(try success(nextEvent(BridgeAXQuiescenceEvent.self, fd: client)), .touchesCompleted(pid: pid))
+    XCTAssertEqual(try success(nextEvent(BridgeAXQuiescenceEvent.self, on: stream)), .touchesCompleted(pid: pid))
   }
 
+  // Long enough a threshold that the first signal is always answered within it, however loaded the machine.
   func testABusyApplicationNamesTheSignalsHoldingItBusy() throws {
     let pid = getpid()
     let runtime = runtimeServing([pid])
-    let client = try openStream(runtime, .quiescence(pid: pid, busyThresholdMs: 20, quietWindowMs: 0))
-    defer { closeStream(client) }
+    let stream = try openStream(runtime, .quiescence(pid: pid, busyThresholdMs: 500, quietWindowMs: 0))
+    defer { closeStream(stream.client) }
 
     let monitor = try quiescenceMonitor(of: runtime, requests: 2)
     monitor.deliver(.runLoopIdle, pid: pid)
     XCTAssertEqual(
-      try success(nextEvent(BridgeAXQuiescenceEvent.self, fd: client)), .state(.busy, busySignals: [.animationsInactive], pid: pid))
+      try success(nextEvent(BridgeAXQuiescenceEvent.self, on: stream)), .state(.busy, busySignals: [.animationsInactive], pid: pid))
   }
 
   func testAQuiescenceStreamFollowingTheFrontmostApplicationSaysWhenItMoves() throws {
     let (first, second) = (getpid(), getppid())
     let runtime = runtimeServing([first, second])
     runtime.windowServerOutcome = .resolved(first)
-    let client = try openStream(runtime, .quiescence(pid: nil, busyThresholdMs: 5000, quietWindowMs: 0))
-    defer { closeStream(client) }
+    let stream = try openStream(runtime, .quiescence(pid: nil, busyThresholdMs: 5000, quietWindowMs: 0))
+    defer { closeStream(stream.client) }
 
     let monitor = try quiescenceMonitor(of: runtime, requests: 2)
     runtime.windowServerOutcome = .resolved(second)
     monitor.deliver(.applicationStateChanged, pid: second)
 
-    XCTAssertEqual(try success(nextEvent(BridgeAXQuiescenceEvent.self, fd: client)), .targetChanged(pid: second))
+    XCTAssertEqual(try success(nextEvent(BridgeAXQuiescenceEvent.self, on: stream)), .targetChanged(pid: second))
   }
 
   func testAQuiescenceStreamForAnExitedApplicationSaysSo() throws {
     // Above the kernel's highest pid, so certain not to be running.
     let exited: pid_t = 99999
-    let client = try openStream(runtimeServing([]), .quiescence(pid: exited, busyThresholdMs: nil, quietWindowMs: nil))
-    defer { closeStream(client) }
+    let stream = try openStream(runtimeServing([]), .quiescence(pid: exited, busyThresholdMs: nil, quietWindowMs: nil))
+    defer { closeStream(stream.client) }
 
-    XCTAssertEqual(try success(nextEvent(BridgeAXQuiescenceEvent.self, fd: client)), .targetExited(pid: exited))
+    XCTAssertEqual(try success(nextEvent(BridgeAXQuiescenceEvent.self, on: stream)), .targetExited(pid: exited))
   }
 
   func testASettingsSnapshotCarriesTheOtherSettingsAsTheirOwnOutcomes() throws {
@@ -505,10 +530,10 @@ extension BridgeServerSocketTests {
       runtime.deviceSettings[NSNumber(value: setting.rawValue)] = false
     }
     runtime.deviceSettingMonitorOutcomes[NSNumber(value: FBAXDeviceSetting.increaseContrast.rawValue)] = FBAXDeviceSettingMonitorOutcome.unavailable("notification missing")
-    let client = try openStream(runtime, .deviceSettingChanges("state-settings"))
-    defer { closeStream(client) }
+    let stream = try openStream(runtime, .deviceSettingChanges("state-settings"))
+    defer { closeStream(stream.client) }
 
-    let snapshot = try success(nextEvent(BridgeAXSettingSnapshot.self, fd: client))
+    let snapshot = try success(nextEvent(BridgeAXSettingSnapshot.self, on: stream))
 
     XCTAssertEqual(snapshot.setting, "state-settings")
     XCTAssertEqual(snapshot.enabled, false)
@@ -519,11 +544,20 @@ extension BridgeServerSocketTests {
   }
 
   func testAnUnavailableSettingsStreamFailsWithItsKind() throws {
-    let client = try openStream(FBAXFakeRuntime(), .deviceSettingChanges("reduce-motion"))
-    defer { closeStream(client) }
+    let stream = try openStream(FBAXFakeRuntime(), .deviceSettingChanges("reduce-motion"))
+    defer { closeStream(stream.client) }
 
     XCTAssertEqual(
-      try failure(nextEvent(BridgeAXSettingSnapshot.self, fd: client)),
+      try failure(nextEvent(BridgeAXSettingSnapshot.self, on: stream)),
       BridgeAXFailure(message: "setting unavailable", kind: .capabilityUnavailable))
+  }
+}
+
+private extension Data {
+  /// The frame a client writes: the request after its length.
+  func framed() throws -> Data {
+    var frame = try IPCFrame.header(forSize: count)
+    frame.append(self)
+    return frame
   }
 }

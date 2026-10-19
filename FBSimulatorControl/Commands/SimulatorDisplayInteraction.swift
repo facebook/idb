@@ -56,9 +56,9 @@ package struct AXBridgeDisplayCapabilities: OptionSet, Sendable {
 }
 
 enum AXBridgeDisplayInventory {
-  static func decode(_ data: Data, requiring capabilities: AXBridgeDisplayCapabilities = []) throws -> [SimulatorAccessibilityDisplay] {
+  static func decode(_ answer: BridgeAXAnswer, requiring capabilities: AXBridgeDisplayCapabilities = []) throws -> [SimulatorAccessibilityDisplay] {
     let inventory: BridgeAXDisplayInventory
-    switch try AXBridgeResponse.outcome(data, as: BridgeAXDisplayInventory.self, context: "display inventory") {
+    switch try AXBridgeResponse.outcome(answer, as: BridgeAXDisplayInventory.self, context: "display inventory") {
     case let .success(answer):
       inventory = answer
     case let .failure(failure):

@@ -48,7 +48,7 @@ final class AXBridgeStreamTests {
   }
 
   private func event(_ name: String) -> BridgeResult {
-    BridgeResult(exitCode: 0, accessibility: Data(#"{"ok":true,"event":"\#(name)"}"#.utf8))
+    BridgeResult(exitCode: 0, accessibility: .quiescence(.touchesCompleted(pid: name == "one" ? 1 : 2)))
   }
 
   private func closeGuest() {
@@ -143,11 +143,11 @@ final class AXBridgeStreamTests {
     try SimulatorFrameworkBridgeConnection.writeFrame(guest, BridgeResponse(request: sent, result: event("one")).encoded())
     closeGuest()
 
-    var envelopes: [NSDictionary] = []
-    for try await data in stream {
-      envelopes.append(try #require(JSONSerialization.jsonObject(with: data) as? NSDictionary))
+    var answers: [BridgeAXAnswer] = []
+    for try await answer in stream {
+      answers.append(answer)
     }
-    #expect(envelopes == [["ok": true, "event": "one"]])
+    #expect(answers == [.quiescence(.touchesCompleted(pid: 1))])
   }
 
   // A consumer cancelled mid-silence, as a cancelled RPC is, must still reach the guest so that it stops.

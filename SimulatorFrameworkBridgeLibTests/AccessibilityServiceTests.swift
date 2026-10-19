@@ -18,8 +18,8 @@ struct AccessibilityServiceTests {
     (try? JSONSerialization.jsonObject(with: data)) as? NSDictionary
   }
 
-  private static func FBAXTestsTree(_ node: BridgeAXNode) -> AccessibilityAnswer {
-    .tree(.success(BridgeAXTreeResponse(tree: node, pid: 1, truncated: false)))
+  private static func FBAXTestsTree(_ node: BridgeAXNode) -> BridgeAXAnswer {
+    .tree(BridgeAXTreeResponse(tree: node, pid: 1, truncated: false))
   }
 
   // A non-finite coordinate has no JSON form; the answer still encodes, with that edge as null.

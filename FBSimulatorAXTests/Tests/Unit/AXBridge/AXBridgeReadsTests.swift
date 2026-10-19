@@ -29,8 +29,8 @@ final class AXBridgeReadsTests: XCTestCase {
     ]
     let data = try envelope(["ok": true, "tree": tree, "pid": 42])
     let parsed = try AXTreeRead(wholeTreeResponse: data, pid: 42)
-    XCTAssertEqual(parsed.tree.label, .string("General"))
-    XCTAssertEqual(parsed.tree.identifier, .string("com.apple.settings.general"))
+    XCTAssertEqual(parsed.tree.label, BridgeAXScalar.string("General"))
+    XCTAssertEqual(parsed.tree.identifier, BridgeAXScalar.string("com.apple.settings.general"))
     XCTAssertFalse(parsed.truncated, "a whole-tree read with no truncated flag is a complete tree")
   }
 
@@ -1490,7 +1490,7 @@ final class AXBridgeReadsTests: XCTestCase {
     let node: [String: Any] = [AXWire.Node.identifier.rawValue: "com.apple.settings.general"]
     let data = try envelope(["ok": true, "tree": node, "pid": 8865])
     let parsed = try AXTreeRead(hitTestResponse: data)
-    XCTAssertEqual(parsed?.tree.identifier, .string("com.apple.settings.general"))
+    XCTAssertEqual(parsed?.tree.identifier, BridgeAXScalar.string("com.apple.settings.general"))
     XCTAssertEqual(parsed?.pid, 8865)
   }
 
@@ -1533,7 +1533,7 @@ final class AXBridgeReadsTests: XCTestCase {
     let data = try envelope(["ok": true, "tree": tree, "pid": 8865, "method": "center-point", "truncated": false])
     let parsed = try AXTreeRead(frontmostResponse: data, method: .centerPoint)
     XCTAssertEqual(parsed.pid, 8865)
-    XCTAssertEqual(parsed.tree.label, .string("Settings"))
+    XCTAssertEqual(parsed.tree.label, BridgeAXScalar.string("Settings"))
     XCTAssertFalse(parsed.truncated)
   }
 
@@ -3195,7 +3195,7 @@ private actor StubAXBridgeWaitTransport: AXBridgeTransport {
     self.responses = responses
   }
 
-  func send(_ request: AXBridgeRequest) async throws -> Data {
+  func send(_ request: AXBridgeRequest) async throws -> AXBridgeReply {
     if case .write = request {
       writeCount += 1
     } else {
@@ -3205,7 +3205,7 @@ private actor StubAXBridgeWaitTransport: AXBridgeTransport {
     guard !responses.isEmpty else {
       throw AXBridgeError.bridgeUnavailable
     }
-    return responses.removeFirst()
+    return try AXBridgeReply(answer: responses.removeFirst(), for: request)
   }
 }
 

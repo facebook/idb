@@ -146,6 +146,11 @@ package struct SimulatorFrameworkBridgeOneshotTransport: Sendable {
   }
 
   func send(_ request: BridgeRequest) async throws -> BridgeResult {
+    try await exchange(request).result
+  }
+
+  /// The result, and the size of the output it was printed as.
+  func exchange(_ request: BridgeRequest) async throws -> (result: BridgeResult, frameBytes: Int) {
     let output = try await launcher.launch(request.arguments)
     guard !output.stdout.isEmpty else {
       throw AXBridgeError.guestFailure("exit \(output.exitCode); \(SimulatorFrameworkBridgeError.failureDetails(stderr: output.stderr, stdout: output.stdout))")
@@ -154,7 +159,7 @@ package struct SimulatorFrameworkBridgeOneshotTransport: Sendable {
     guard output.exitCode == response.result.exitCode else {
       throw AXBridgeError.guestFailure("process exited with \(output.exitCode) after reporting \(response.result.exitCode)")
     }
-    return response.result
+    return (response.result, output.stdout.count)
   }
 }
 
@@ -179,8 +184,8 @@ private struct SimulatorBridgeGuestLauncher: BridgeGuestLauncher {
 }
 
 extension BridgeResult {
-  /// The `BridgeAXOutcome` the guest encoded, for the caller to decode as the type its request answers with.
-  func accessibilityData() throws -> Data {
+  /// The guest's answer to an accessibility command.
+  func accessibilityAnswer() throws -> BridgeAXAnswer {
     guard let accessibility else {
       throw AXBridgeError.guestFailure(error ?? "accessibility returned no answer")
     }

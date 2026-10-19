@@ -25,7 +25,7 @@ enum DeviceSettingRead: Equatable {
 /// the lock-protected run-loop reference and cancellation flag.
 // SAFETY: cross-thread state is protected by `lock`; all remaining mutable state is confined to `runLoop`.
 // patternlint-disable-next-line unchecked-sendable
-final class DeviceSettingStream: BridgeResponseStream, @unchecked Sendable {
+final class DeviceSettingStream: AccessibilityAnswerStream, @unchecked Sendable {
   struct AdditionalSetting {
     let observe: (@escaping () -> Void) -> FBAXDeviceSettingMonitorOutcome
     let read: () throws -> DeviceSettingRead
@@ -45,7 +45,7 @@ final class DeviceSettingStream: BridgeResponseStream, @unchecked Sendable {
   private var observer: (any FBAXDeviceSettingMonitor)?
   private var additionalObservers: [any FBAXDeviceSettingMonitor] = []
   private var additionalRegistrationFailures: [String: DeviceSettingRead] = [:]
-  private var emit: ((Data) -> Bool)?
+  private var emit: ((BridgeAXAnswer) -> Bool)?
   private var lastEnabled: Bool?
   private var lastAdditionalReads: [String: DeviceSettingRead]?
   private var trailingTimer: CFRunLoopTimer?
@@ -68,7 +68,7 @@ final class DeviceSettingStream: BridgeResponseStream, @unchecked Sendable {
     self.additionalSettings = additionalSettings
   }
 
-  func run(emit: @escaping (Data) -> Bool) {
+  func run(emit: @escaping (BridgeAXAnswer) -> Bool) {
     lock.lock()
     guard !cancelled else {
       lock.unlock()
@@ -203,7 +203,7 @@ final class DeviceSettingStream: BridgeResponseStream, @unchecked Sendable {
       guard enabled != lastEnabled || additional != lastAdditionalReads else { return }
       lastEnabled = enabled
       lastAdditionalReads = additional
-      write(.success(BridgeAXSettingSnapshot(setting: settingName, enabled: enabled, otherSettings: additional.mapValues(Self.outcome))))
+      write(.settingSnapshot(BridgeAXSettingSnapshot(setting: settingName, enabled: enabled, otherSettings: additional.mapValues(Self.outcome))))
     case let .unavailable(message):
       fail(message, kind: .capabilityUnavailable)
     case let .failed(message):
@@ -225,10 +225,9 @@ final class DeviceSettingStream: BridgeResponseStream, @unchecked Sendable {
     finish()
   }
 
-  private func write(_ frame: BridgeAXOutcome<BridgeAXSettingSnapshot>) {
+  private func write(_ answer: BridgeAXAnswer) {
     guard !isCancelled, let emit else { return }
-    let data = (try? JSONEncoder().encode(frame)) ?? AccessibilityAnswer.failure(BridgeAXFailure(message: "response serialization failed")).encoded()
-    if !emit(data) {
+    if !emit(answer) {
       finish()
     }
   }
@@ -245,7 +244,7 @@ final class DeviceSettingStream: BridgeResponseStream, @unchecked Sendable {
 }
 
 enum AccessibilityStreamStart {
-  case stream(any BridgeResponseStream)
+  case stream(any AccessibilityAnswerStream)
   case failure(BridgeAXFailure)
 }
 

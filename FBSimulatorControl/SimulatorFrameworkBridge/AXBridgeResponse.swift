@@ -9,17 +9,17 @@ import Darwin
 import FBSimulatorBridgeProtocol
 import Foundation
 
-/// Decodes the answer every axbridge verb sends, a `BridgeAXOutcome`, and preserves the guest's typed failure.
+/// Reads the answer every axbridge verb gets and preserves the guest's typed failure.
 package enum AXBridgeResponse {
-  /// The verb's answer, decoded as `Success`; a failure is raised as the error its kind names.
+  /// The verb's answer as `Success`; a failure is raised as the error its kind names.
   package static func decode<Success: Codable & Equatable & Sendable>(
-    _ data: Data,
+    _ answer: BridgeAXAnswer,
     as _: Success.Type,
     context: String,
     pid: pid_t? = nil,
     frontmostMethod: AXBridgeFrontmostMethod? = nil
   ) throws -> Success {
-    switch try outcome(data, as: Success.self, context: context) {
+    switch try outcome(answer, as: Success.self, context: context) {
     case let .success(success):
       return success
     case let .failure(failure):
@@ -29,13 +29,23 @@ package enum AXBridgeResponse {
 
   /// The answer as it came, a failure included, for a caller that treats some failures as values.
   package static func outcome<Success: Codable & Equatable & Sendable>(
-    _ data: Data, as _: Success.Type, context: String
+    _ answer: BridgeAXAnswer, as _: Success.Type, context: String
   ) throws -> BridgeAXOutcome<Success> {
-    do {
-      return try JSONDecoder().decode(BridgeAXOutcome<Success>.self, from: data)
-    } catch {
-      throw AXBridgeError.guestFailure("\(context): unparseable guest response (\(error))")
+    let success: Any
+    switch answer {
+    case let .failure(failure): return .failure(failure)
+    case let .tree(answer): success = answer
+    case let .hitTest(answer): success = answer
+    case let .write(answer): success = answer
+    case let .setting(answer): success = answer
+    case let .displays(answer): success = answer
+    case let .settingSnapshot(answer): success = answer
+    case let .quiescence(answer): success = answer
     }
+    guard let success = success as? Success else {
+      throw AXBridgeError.guestFailure("\(context): the guest answered with \(type(of: success)) where \(Success.self) was expected")
+    }
+    return .success(success)
   }
 
   package static func failure(
@@ -71,7 +81,7 @@ package enum AXBridgeResponse {
 package struct AXDeviceSettingResponse {
   package let enabled: Bool
 
-  package init(data: Data) throws {
-    enabled = try AXBridgeResponse.decode(data, as: BridgeAXSettingResponse.self, context: "device setting").enabled
+  package init(answer: BridgeAXAnswer) throws {
+    enabled = try AXBridgeResponse.decode(answer, as: BridgeAXSettingResponse.self, context: "device setting").enabled
   }
 }

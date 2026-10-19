@@ -8,58 +8,34 @@
 import FBSimulatorBridgeProtocol
 import Foundation
 
-/// The guest's answer to a unary accessibility request: the outcome its verb answers with, built as the shared type
-/// the host decodes it as, and encoded once to go on the wire.
-public enum AccessibilityAnswer: Equatable, Sendable {
-  case tree(BridgeAXOutcome<BridgeAXTreeResponse>)
-  case hitTest(BridgeAXOutcome<BridgeAXHitTestResponse>)
-  case write(BridgeAXOutcome<BridgeAXWriteResponse>)
-  case setting(BridgeAXOutcome<BridgeAXSettingResponse>)
-  case displays(BridgeAXOutcome<BridgeAXDisplayInventory>)
-  /// A failure before any verb could answer, such as a request that did not decode or a raise while answering, which
-  /// reads the same whatever the verb.
-  case failure(BridgeAXFailure)
+/// An accessibility stream: answers its request with a run of answers, each its own frame.
+protocol AccessibilityAnswerStream: AnyObject {
+  /// Whether the stream ended because its source failed rather than because it was cancelled.
+  var failed: Bool { get }
+  /// Runs on the serving thread until the stream ends, handing each answer to `emit`, which answers false once
+  /// one could not be sent.
+  func run(emit: @escaping (BridgeAXAnswer) -> Bool)
+  /// Asks a running stream to end, from another thread; `run` must return promptly afterwards.
+  func cancel()
+}
 
-  public var succeeded: Bool {
-    switch self {
-    case let .tree(outcome): outcome.succeeded
-    case let .hitTest(outcome): outcome.succeeded
-    case let .write(outcome): outcome.succeeded
-    case let .setting(outcome): outcome.succeeded
-    case let .displays(outcome): outcome.succeeded
-    case .failure: false
-    }
-  }
-
-  /// The answer as the host receives it. One that cannot be encoded goes on the wire as a failure saying so: the guest
-  /// serves a long-lived connection, so it must never abort or send nothing.
+extension BridgeAXAnswer {
+  /// The answer on its own, as the one-shot command line prints it. One that cannot be encoded is printed as a
+  /// failure saying so: the guest must never abort or print nothing.
   public func encoded() -> Data {
     do {
-      switch self {
-      case let .tree(outcome): return try JSONEncoder().encode(outcome)
-      case let .hitTest(outcome): return try JSONEncoder().encode(outcome)
-      case let .write(outcome): return try JSONEncoder().encode(outcome)
-      case let .setting(outcome): return try JSONEncoder().encode(outcome)
-      case let .displays(outcome): return try JSONEncoder().encode(outcome)
-      case let .failure(failure): return try failure.encodedOutcome()
-      }
+      return try JSONEncoder().encode(self)
     } catch {
       NSLog("[AccessibilityService] could not encode an answer, sending a failure instead: %@", error as NSError)
       return Data(#"{"error":"response serialization failed","ok":false}"#.utf8)
     }
   }
-}
 
-extension BridgeAXOutcome {
-  var succeeded: Bool {
-    guard case .success = self else { return false }
-    return true
-  }
-}
-
-extension BridgeAXFailure {
-  /// The failure as a frame, which reads the same whichever verb's outcome carries it.
-  func encodedOutcome() throws -> Data {
-    try JSONEncoder().encode(BridgeAXOutcome<BridgeAXSettingResponse>.failure(self))
+  /// The answer an outcome makes, its success wrapped as `success` says.
+  init<Success>(_ outcome: BridgeAXOutcome<Success>, _ success: (Success) -> BridgeAXAnswer) {
+    switch outcome {
+    case let .success(answer): self = success(answer)
+    case let .failure(failure): self = .failure(failure)
+    }
   }
 }

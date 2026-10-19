@@ -82,11 +82,11 @@ private final class AbandonedBehindTransportDouble: AXTranslationTransport {
 private actor SilentGuestTransportDouble: AXBridgeTransport {
   private(set) var receiveTimeouts: [TimeInterval] = []
 
-  func send(_ request: AXBridgeRequest) async throws -> Data {
+  func send(_ request: AXBridgeRequest) async throws -> AXBridgeReply {
     throw AXBridgeError.guestFailure("the double only answers bounded round trips")
   }
 
-  func send(_ request: AXBridgeRequest, receiveTimeout: TimeInterval) async throws -> Data {
+  func send(_ request: AXBridgeRequest, receiveTimeout: TimeInterval) async throws -> AXBridgeReply {
     receiveTimeouts.append(receiveTimeout)
     throw AXBridgeError.guestNotAnswering(after: receiveTimeout)
   }

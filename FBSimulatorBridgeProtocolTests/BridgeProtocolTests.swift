@@ -92,23 +92,45 @@ struct BridgeProtocolTests {
     #expect(try PropertyListSerialization.propertyList(from: propertyList, options: [], format: nil) as? NSDictionary == value as NSDictionary)
   }
 
-  // The guest encodes an accessibility answer once, as a `BridgeAXOutcome`, and the host decodes those bytes with the
-  // type its request's verb answers with; nothing in between parses them.
+  // An accessibility answer travels as an object in the frame, shaped as its model encodes it, with nothing saying which
+  // verb it answers: the request says that, so a frame decodes typed only against the request it answers.
   @Test
-  func anAccessibilityAnswerTravelsAsTheBytesTheGuestEncoded() throws {
-    let envelope = Data(#"{"ok":true,"pid":3,"tree":{},"truncated":false}"#.utf8)
-    let request = BridgeRequest(command: .accessibility(.displays), id: "fixture")
-    let result = BridgeResult(exitCode: 0, accessibility: envelope)
-    let decoded = try BridgeResponse.decode(BridgeResponse(request: request, result: result).encoded(), for: request).result
-    #expect(decoded == result)
-    #expect(decoded.accessibility == envelope)
-    #expect(decoded.values == [])
-    #expect(try BridgeResponse.decode(BridgeResponse(request: request, result: BridgeResult(exitCode: 0)).encoded(), for: request).result.accessibility == nil)
+  func anAccessibilityAnswerTravelsAsItsOwnShape() throws {
+    let request = BridgeRequest(command: .accessibility(.read(pid: 3, options: BridgeAXReadOptions(
+      maxDepth: 1, maxNodes: 1, attributes: nil, explainUnreachable: false, traversal: .viewHierarchy, automationMode: nil,
+      clientType: .noClient))), id: "fixture")
+    var node = BridgeAXNode()
+    node.label = .string("Settings")
+    let result = BridgeResult(exitCode: 0, accessibility: .tree(BridgeAXTreeResponse(tree: node, pid: 3, truncated: false)))
+    let frame = try BridgeResponse(request: request, result: result).encoded()
+
+    let wire = try #require(try JSONSerialization.jsonObject(with: frame) as? [String: Any])
+    let answer = try #require((wire["result"] as? [String: Any])?["accessibility"] as? NSDictionary)
+    #expect(answer == ["ok": true, "pid": 3, "truncated": false, "tree": ["XC_kAXXCAttributeLabel": "Settings"]])
+    #expect(try BridgeResponse.decode(frame, for: request).result == result)
+    #expect(throws: (any Error).self, "without its request the answer's type is unknown") {
+      try JSONDecoder().decode(BridgeResponse.self, from: frame)
+    }
   }
 
-  // Version 4 carries accessibility answers as envelope bytes rather than as values.
+  // A connection checks a response is the one it is waiting for without decoding the answer, which the caller decodes.
   @Test
-  func theProtocolIsAtTheVersionThatCarriesAccessibilityAnswersAsBytes() {
+  func aResponseIsCheckedAgainstItsRequestWithoutDecodingItsAnswer() throws {
+    let request = BridgeRequest(command: .accessibility(.displays), id: "fixture")
+    let frame = Data(#"{"version":4,"id":"fixture","result":{"exitCode":0,"values":[],"accessibility":{"ok":true,"displays":"not an inventory"}}}"#.utf8)
+    try BridgeResponse.validate(frame, for: request)
+    #expect(throws: (any Error).self, "the answer itself does not decode") { try BridgeResponse.decode(frame, for: request) }
+    #expect(throws: BridgeProtocolError.mismatchedResponse) {
+      try BridgeResponse.validate(frame, for: BridgeRequest(command: .accessibility(.displays), id: "other"))
+    }
+    #expect(throws: BridgeProtocolError.unsupportedVersion(5)) {
+      try BridgeResponse.validate(Data(#"{"version":5,"id":"fixture","result":{}}"#.utf8), for: request)
+    }
+  }
+
+  // Version 4 carries accessibility answers as typed objects rather than as values.
+  @Test
+  func theProtocolIsAtTheVersionThatCarriesTypedAccessibilityAnswers() {
     #expect(BridgeRequest.currentVersion == 4)
   }
 

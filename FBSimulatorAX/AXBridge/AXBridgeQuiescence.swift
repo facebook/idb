@@ -12,7 +12,7 @@ import Foundation
 
 extension QuiescenceEvent {
   /// Decodes one frame of a `quiet` stream. A failure throws the guest's typed failure.
-  init(axBridgeFrame frame: Data, pid requestedPid: pid_t?) throws {
+  init(axBridgeFrame frame: BridgeAXAnswer, pid requestedPid: pid_t?) throws {
     switch try AXBridgeResponse.decode(frame, as: BridgeAXQuiescenceEvent.self, context: "quiescence", pid: requestedPid) {
     case let .state(state, signals, pid):
       self = .state(Self.state(state, busySignals: signals), pid: pid)

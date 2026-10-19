@@ -7,6 +7,7 @@
 
 @testable import FBSimulatorControl
 @testable import FBSimulatorServices
+import FBSimulatorBridgeProtocol
 import Foundation
 import Testing
 
@@ -47,7 +48,7 @@ struct SimulatorSettingsPublisherTests {
         "increase-contrast": ["ok": true, "enabled": false],
       ],
     ])
-    let event = try SimulatorSettingsPublisher.event(from: frame)
+    let event = try SimulatorSettingsPublisher.event(from: answer(frame))
     #expect(
       event
         == .snapshot(
@@ -63,21 +64,21 @@ struct SimulatorSettingsPublisherTests {
       "ok": true, "event": "snapshot", "setting": "state-settings", "enabled": false,
       "settings": [:],
     ])
-    #expect(throws: (any Error).self) { try SimulatorSettingsPublisher.event(from: frame) }
+    #expect(throws: (any Error).self) { try SimulatorSettingsPublisher.event(from: answer(frame)) }
   }
 
   @Test("Duplicate guest values are suppressed and clean source completion is explicit")
   func deduplicates() async throws {
-    let (frames, continuation) = AsyncThrowingStream<Data, Error>.makeStream()
+    let (frames, continuation) = AsyncThrowingStream<BridgeAXAnswer, Error>.makeStream()
     let publisher = SimulatorSettingsPublisher { frames }
     var iterator = publisher.events().makeAsyncIterator()
 
-    continuation.yield(try snapshot(enabled: false))
+    continuation.yield(try answer(snapshot(enabled: false)))
     let first = await iterator.next()
     #expect(first == .snapshot(SimulatorSettingsSnapshot(reduceMotionEnabled: false)))
 
-    continuation.yield(try snapshot(enabled: false))
-    continuation.yield(try snapshot(enabled: true))
+    continuation.yield(try answer(snapshot(enabled: false)))
+    continuation.yield(try answer(snapshot(enabled: true)))
     let changed = await iterator.next()
     #expect(changed == .snapshot(SimulatorSettingsSnapshot(reduceMotionEnabled: true)))
 
@@ -178,15 +179,25 @@ struct SimulatorSettingsPublisherTests {
       Issue.record("expected a typed failed availability")
       return
     }
-    #expect(reason.contains("not a JSON object"))
+    #expect(reason.contains("unparseable guest response"))
     #expect(result.count == 1)
+  }
+
+  /// A settings frame as the transport hands it on: decoded as the answer to a settings stream.
+  private func answer(_ frame: Data) throws -> BridgeAXAnswer {
+    try AXBridgeReply(answer: frame, for: .deviceSettingChanges("state-settings")).answer
   }
 
   private func events(frames: [Data]) async -> [SimulatorSettingsEvent] {
     let publisher = SimulatorSettingsPublisher {
       AsyncThrowingStream { continuation in
         for frame in frames {
-          continuation.yield(frame)
+          do {
+            continuation.yield(try answer(frame))
+          } catch {
+            continuation.finish(throwing: error)
+            return
+          }
         }
         continuation.finish()
       }

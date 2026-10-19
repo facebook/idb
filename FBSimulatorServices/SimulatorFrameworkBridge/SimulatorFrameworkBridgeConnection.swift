@@ -83,7 +83,8 @@ final class SimulatorFrameworkBridgeConnection: BridgeConnection, @unchecked Sen
         try SimulatorFrameworkBridgeConnection.writeFrame(fileDescriptor, requestData)
         let responseData = try SimulatorFrameworkBridgeConnection.readFrame(
           fileDescriptor, guest: ownership.process, receiveTimeout: receiveTimeout)
-        _ = try BridgeResponse.decode(responseData, for: request)
+        // The caller decodes the answer; checking the frame is this request's is all that is needed here.
+        try BridgeResponse.validate(responseData, for: request)
         if receiveTimeout != nil {
           do {
             try setReceiveWindow(TimeInterval(Self.receiveTimeoutSeconds))

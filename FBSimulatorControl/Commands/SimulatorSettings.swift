@@ -55,7 +55,7 @@ public enum SimulatorSettingsEvent: Equatable, Sendable {
 }
 
 package struct SimulatorSettingsPublisher: Sendable {
-  package typealias Source = @Sendable () async throws -> AsyncThrowingStream<Data, Error>
+  package typealias Source = @Sendable () async throws -> AsyncThrowingStream<BridgeAXAnswer, Error>
 
   private let source: Source
 
@@ -70,9 +70,9 @@ package struct SimulatorSettingsPublisher: Sendable {
         var reportedTerminalState = false
         do {
           let frames = try await source()
-          for try await frame in frames {
+          for try await answer in frames {
             guard !Task.isCancelled else { break }
-            guard let event = try Self.event(from: frame) else { continue }
+            guard let event = try Self.event(from: answer) else { continue }
             switch event {
             case let .snapshot(snapshot):
               guard snapshot != lastSnapshot else { continue }
@@ -100,9 +100,9 @@ package struct SimulatorSettingsPublisher: Sendable {
     }
   }
 
-  static func event(from data: Data) throws -> SimulatorSettingsEvent? {
+  static func event(from answer: BridgeAXAnswer) throws -> SimulatorSettingsEvent? {
     let snapshot: BridgeAXSettingSnapshot
-    switch try Self.outcome(data) {
+    switch try AXBridgeResponse.outcome(answer, as: BridgeAXSettingSnapshot.self, context: "simulator settings") {
     case let .success(answer):
       snapshot = answer
     case let .failure(failure):
@@ -124,16 +124,6 @@ package struct SimulatorSettingsPublisher: Sendable {
         reduceTransparency: try reading(snapshot.otherSettings["reduce-transparency"]),
         buttonShapes: try reading(snapshot.otherSettings["button-shapes"]),
         increaseContrast: try reading(snapshot.otherSettings["increase-contrast"])))
-  }
-
-  private static func outcome(_ data: Data) throws -> BridgeAXOutcome<BridgeAXSettingSnapshot> {
-    do {
-      return try JSONDecoder().decode(BridgeAXOutcome<BridgeAXSettingSnapshot>.self, from: data)
-    } catch let DecodingError.typeMismatch(_, context) where context.codingPath.isEmpty {
-      throw AXBridgeError.guestFailure("simulator settings response was not a JSON object")
-    } catch {
-      throw AXBridgeError.guestFailure("simulator settings response was not a settings snapshot: \(error)")
-    }
   }
 
   private static func reading(_ outcome: BridgeAXOutcome<BridgeAXSettingResponse>?) throws -> SimulatorSettingsReading {

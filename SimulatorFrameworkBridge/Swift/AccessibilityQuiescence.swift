@@ -102,7 +102,7 @@ public struct QuiescenceTracker: Sendable {
 ///
 /// Everything after `run` starts happens on the serving thread's run loop, which is also where the
 /// monitor delivers, so no state here is shared between threads except the cancellation flag.
-final class QuiescenceStream: BridgeResponseStream {
+final class QuiescenceStream: AccessibilityAnswerStream {
   enum Target {
     case pid(pid_t)
     case frontmost
@@ -123,7 +123,7 @@ final class QuiescenceStream: BridgeResponseStream {
   private var cancelled = false
   private var runLoop: CFRunLoop?
 
-  private var emit: ((Data) -> Bool)?
+  private var emit: ((BridgeAXAnswer) -> Bool)?
   private var client: FBAXClient?
   private var monitor: FBAXQuiescenceMonitorClient?
   private var pid: pid_t = 0
@@ -141,7 +141,7 @@ final class QuiescenceStream: BridgeResponseStream {
     tracker = QuiescenceTracker(busyThreshold: busyThreshold, quietWindow: quietWindow)
   }
 
-  func run(emit: @escaping (Data) -> Bool) {
+  func run(emit: @escaping (BridgeAXAnswer) -> Bool) {
     lock.lock()
     runLoop = CFRunLoopGetCurrent()
     lock.unlock()
@@ -254,7 +254,7 @@ final class QuiescenceStream: BridgeResponseStream {
       }
     case .touchesCompleted:
       if pid == self.pid {
-        write(.success(.touchesCompleted(pid: pid)))
+        write(.quiescence(.touchesCompleted(pid: pid)))
       }
     case .runLoopIdle, .animationsInactive:
       guard pid == self.pid else { return }
@@ -314,7 +314,7 @@ final class QuiescenceStream: BridgeResponseStream {
     generation += 1
     tracker.reset()
     lastState = nil
-    write(.success(.targetChanged(pid: outcome.processIdentifier)))
+    write(.quiescence(.targetChanged(pid: outcome.processIdentifier)))
     try arm(outcome.processIdentifier)
   }
 
@@ -324,7 +324,7 @@ final class QuiescenceStream: BridgeResponseStream {
     application = nil
     tracker.reset()
     guard case .pid = target, !Self.isAlive(pid) else { return }
-    write(.success(.targetExited(pid: pid)))
+    write(.quiescence(.targetExited(pid: pid)))
     finish()
   }
 
@@ -337,7 +337,7 @@ final class QuiescenceStream: BridgeResponseStream {
     let now = Self.now
     if let state = tracker.state(at: now), state != lastState {
       lastState = state
-      write(.success(Self.event(for: state, pid: pid)))
+      write(.quiescence(Self.event(for: state, pid: pid)))
     }
     deadlineTimer?.invalidate()
     deadlineTimer = nil
@@ -379,10 +379,9 @@ final class QuiescenceStream: BridgeResponseStream {
     finish()
   }
 
-  private func write(_ frame: BridgeAXOutcome<BridgeAXQuiescenceEvent>) {
+  private func write(_ answer: BridgeAXAnswer) {
     guard !isCancelled, let emit else { return }
-    let data = (try? JSONEncoder().encode(frame)) ?? AccessibilityAnswer.failure(BridgeAXFailure(message: "response serialization failed")).encoded()
-    if !emit(data) {
+    if !emit(answer) {
       finish()
     }
   }

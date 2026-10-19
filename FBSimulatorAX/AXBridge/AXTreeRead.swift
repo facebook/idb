@@ -69,17 +69,17 @@ extension AXTreeRead {
     phases = (answer.phases?.traverseMilliseconds.map { $0 / 1000 }, answer.phases?.machRoundTrips)
   }
 
-  init(wholeTreeResponse data: Data, pid: pid_t) throws {
-    let answer = try AXBridgeResponse.decode(data, as: BridgeAXTreeResponse.self, context: "pid \(pid)", pid: pid)
+  init(wholeTreeResponse response: BridgeAXAnswer, pid: pid_t) throws {
+    let answer = try AXBridgeResponse.decode(response, as: BridgeAXTreeResponse.self, context: "pid \(pid)", pid: pid)
     self.init(answer: answer, pid: pid)
   }
 
   /// The pid rides back in the answer because the guest resolved it. A failure is classified by the guest's
   /// failure kind, so a resolved app with no accessibility server reads the same as via `--pid`; `method` is
   /// named only when the strategy itself could not answer.
-  init(frontmostResponse data: Data, method: AXBridgeFrontmostMethod) throws {
+  init(frontmostResponse response: BridgeAXAnswer, method: AXBridgeFrontmostMethod) throws {
     let answer = try AXBridgeResponse.decode(
-      data, as: BridgeAXTreeResponse.self, context: "fused frontmost describe", frontmostMethod: method)
+      response, as: BridgeAXTreeResponse.self, context: "fused frontmost describe", frontmostMethod: method)
     guard answer.pid > 0 else {
       throw AXBridgeError.guestFailure("fused frontmost describe response without a resolved pid")
     }
@@ -88,8 +88,8 @@ extension AXTreeRead {
 
   /// `nil` when the guest reports no element at the point — a valid empty result. A failure throws,
   /// classified by the guest's kind. A hit carries no truncation flag or modal.
-  init?(hitTestResponse data: Data) throws {
-    switch try AXBridgeResponse.decode(data, as: BridgeAXHitTestResponse.self, context: "hit-test") {
+  init?(hitTestResponse response: BridgeAXAnswer) throws {
+    switch try AXBridgeResponse.decode(response, as: BridgeAXHitTestResponse.self, context: "hit-test") {
     case .empty:
       return nil
     case let .element(node, pid):
@@ -102,14 +102,14 @@ extension AXTreeRead {
 
   /// Whether a `perform`/`setvalue` landed. `empty` is a value, not a failure: only the caller can say
   /// an unoccupied point is wrong.
-  static func writeLanded(fromResponse data: Data) throws -> Bool {
-    try AXBridgeResponse.decode(data, as: BridgeAXWriteResponse.self, context: "write") != .empty
+  static func writeLanded(fromResponse response: BridgeAXAnswer) throws -> Bool {
+    try AXBridgeResponse.decode(response, as: BridgeAXWriteResponse.self, context: "write") != .empty
   }
 
   /// Whether a failed write's answer says nothing reached the application. A refused assertion never
   /// sends; otherwise an absent `effect` means the write may have been sent.
-  static func writeSentNothing(fromResponse data: Data) -> Bool {
-    guard case let .failure(failure)? = try? AXBridgeResponse.outcome(data, as: BridgeAXWriteResponse.self, context: "write") else {
+  static func writeSentNothing(fromResponse response: BridgeAXAnswer) -> Bool {
+    guard case let .failure(failure) = response else {
       return false
     }
     return failure.kind == .assertionFailed || failure.effect == AXWire.Effect.none

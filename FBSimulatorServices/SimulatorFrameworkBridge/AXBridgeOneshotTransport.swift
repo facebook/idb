@@ -23,9 +23,12 @@ package struct AXBridgeOneshotTransport: AXBridgeTransport, Sendable {
 
   /// A missing guest binary is raised as the persistent transport raises it, so a write that never left the
   /// host is not mistaken for one that was sent.
-  package func send(_ request: AXBridgeRequest) async throws -> Data {
+  package func send(_ request: AXBridgeRequest) async throws -> AXBridgeReply {
     do {
-      return try await transport.send(BridgeRequest(command: request.command)).accessibilityData()
+      let response = try await transport.exchange(BridgeRequest(command: request.command))
+      return AXBridgeReply(answer: try response.result.accessibilityAnswer(), frameBytes: response.frameBytes)
+    } catch let error as DecodingError {
+      throw AXBridgeReply.unparseable(error, answering: request)
     } catch SimulatorFrameworkBridgeError.binaryMissing {
       throw AXBridgeError.bridgeUnavailable
     }

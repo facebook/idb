@@ -100,14 +100,15 @@ actor InventoryTransport: AXBridgeTransport {
     self.scopedInteractions = scopedInteractions
   }
 
-  func send(_ request: AXBridgeRequest) async throws -> Data {
+  func send(_ request: AXBridgeRequest) async throws -> AXBridgeReply {
     sends += 1
     let displays = inventory.map { ["uniqueID": $0.uniqueID, "displayID": $0.displayID] as [String: Any] }
-    return try JSONSerialization.data(
-      withJSONObject: ["ok": true, "displayScopedInteractions": scopedInteractions, "displays": displays])
+    return try AXBridgeReply(
+      answer: JSONSerialization.data(withJSONObject: ["ok": true, "displayScopedInteractions": scopedInteractions, "displays": displays]),
+      for: request)
   }
 
-  func send(_ request: AXBridgeRequest, receiveTimeout: TimeInterval) async throws -> Data {
+  func send(_ request: AXBridgeRequest, receiveTimeout: TimeInterval) async throws -> AXBridgeReply {
     receiveTimeouts.append(receiveTimeout)
     return try await send(request)
   }

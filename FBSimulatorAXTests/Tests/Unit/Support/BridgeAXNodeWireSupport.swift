@@ -58,3 +58,45 @@ extension AXTreeRead {
     self.init(tree: BridgeAXNode(wire: tree, file: file, line: line), pid: pid, truncated: truncated, modal: modal)
   }
 }
+
+// The read tests spell a guest's answer as the envelope it writes. These decode it as the transport does, for the
+// request it would answer, so an envelope the guest could not have sent fails as the transport fails it.
+
+private let anyReadOptions = BridgeAXReadOptions(
+  maxDepth: 1, maxNodes: 1, attributes: nil, explainUnreachable: false, traversal: .viewHierarchy, automationMode: nil, clientType: .noClient)
+
+extension AXTreeRead {
+  init(wholeTreeResponse data: Data, pid: pid_t) throws {
+    try self.init(wholeTreeResponse: AXBridgeReply(answer: data, for: .read(pid: pid, options: anyReadOptions)).answer, pid: pid)
+  }
+
+  init(frontmostResponse data: Data, method: AXBridgeFrontmostMethod) throws {
+    try self.init(
+      frontmostResponse: AXBridgeReply(answer: data, for: .readFrontmost(x: 0, y: 0, method: method, options: anyReadOptions)).answer,
+      method: method)
+  }
+
+  init?(hitTestResponse data: Data) throws {
+    try self.init(hitTestResponse: AXBridgeReply(answer: data, for: .hitTest(x: 0, y: 0, attributes: nil, clientType: .noClient)).answer)
+  }
+
+  static func writeLanded(fromResponse data: Data) throws -> Bool {
+    try writeLanded(fromResponse: AXBridgeReply(answer: data, for: anyWrite).answer)
+  }
+
+  static func writeSentNothing(fromResponse data: Data) -> Bool {
+    guard let answer = try? AXBridgeReply(answer: data, for: anyWrite).answer else { return false }
+    return writeSentNothing(fromResponse: answer)
+  }
+
+  private static var anyWrite: AXBridgeRequest {
+    .write(AXBridgeWriteRequest(kind: .perform(.press), x: 0, y: 0, pid: nil, assertion: nil))
+  }
+}
+
+extension QuiescenceEvent {
+  init(axBridgeFrame data: Data, pid: pid_t?) throws {
+    try self.init(
+      axBridgeFrame: AXBridgeReply(answer: data, for: .quiescence(pid: pid, busyThresholdMs: nil, quietWindowMs: nil)).answer, pid: pid)
+  }
+}

@@ -166,3 +166,10 @@ struct SimulatorDisplayInteractionTests {
     #expect(try AXBridgeDisplayInventory.decode(scopedGuest, requiring: .scopedTrees).count == 1)
   }
 }
+
+// The inventory tests spell the guest's answer as the envelope it writes; this decodes it as the transport does.
+extension AXBridgeDisplayInventory {
+  fileprivate static func decode(_ data: Data, requiring capabilities: AXBridgeDisplayCapabilities = []) throws -> [SimulatorAccessibilityDisplay] {
+    try decode(AXBridgeReply(answer: data, for: .displays).answer, requiring: capabilities)
+  }
+}

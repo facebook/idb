@@ -139,27 +139,15 @@ public enum BridgeServices {
     }
   }
 
-  /// The answer goes on the wire as the bytes it encoded to, so nothing parses it before the host does.
-  private static func accessibility(_ answer: AccessibilityAnswer, output: BridgeOutput) -> Int32 {
-    output.write(accessibility: answer.encoded())
+  /// The answer goes in the frame as it is, so nothing encodes or parses it twice.
+  private static func accessibility(_ answer: BridgeAXAnswer, output: BridgeOutput) -> Int32 {
+    output.write(accessibility: answer)
     return answer.succeeded ? 0 : 1
   }
 
-  fileprivate static func accessibilityResult(_ answer: AccessibilityAnswer) -> BridgeResult {
+  fileprivate static func accessibilityResult(_ answer: BridgeAXAnswer) -> BridgeResult {
     let output = BridgeOutput()
     return output.finish(status: accessibility(answer, output: output))
-  }
-
-  /// A streamed frame arrives already serialized; only its `ok` is read back, to set the exit status.
-  fileprivate static func accessibilityResult(_ data: Data) -> BridgeResult {
-    let output = BridgeOutput()
-    output.write(accessibility: data)
-    let ok = (try? JSONDecoder().decode(StreamedFrameStatus.self, from: data))?.ok == true
-    return output.finish(status: ok ? 0 : 1)
-  }
-
-  private struct StreamedFrameStatus: Decodable {
-    let ok: Bool
   }
 
   private static func unavailable(_ subject: String, output: BridgeOutput) -> Int32 {
@@ -168,9 +156,9 @@ public enum BridgeServices {
 }
 
 private final class AccessibilityResultStream: BridgeResultStream {
-  private let events: BridgeResponseStream
+  private let events: any AccessibilityAnswerStream
 
-  init(events: BridgeResponseStream) {
+  init(events: any AccessibilityAnswerStream) {
     self.events = events
   }
 

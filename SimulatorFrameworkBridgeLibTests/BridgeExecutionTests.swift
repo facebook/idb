@@ -132,10 +132,11 @@ final class BridgeExecutionTests: XCTestCase {
     XCTAssertEqual(BridgeOutput().finish(status: 0), BridgeResult(exitCode: 0))
   }
 
-  // The answer is the guest's own serialization, so neither adapter parses or re-encodes it.
-  func testAnAccessibilityAnswerTravelsAsItsBytesInBothAdapters() throws {
+  // Both adapters carry the answer in the frame as it is.
+  func testAnAccessibilityAnswerTravelsTheSameInBothAdapters() throws {
     let request = BridgeRequest(command: .accessibility(.displays), id: "answer")
-    let answer = Data(#"{"ok":true,"displays":[]}"#.utf8)
+    let answer = BridgeAXAnswer.displays(
+      BridgeAXDisplayInventory(displayScopedInteractions: true, displayScopedTrees: true, displayScopedQuiescence: true, displays: []))
     let output = BridgeOutput()
     output.write(accessibility: answer)
     let result = output.finish(status: 0)
@@ -344,9 +345,7 @@ final class BridgeExecutionTests: XCTestCase {
       XCTAssertEqual(response.id, "malformed")
       XCTAssertEqual(response.result.exitCode, 1)
       XCTAssertEqual(response.result.values, [])
-      XCTAssertEqual(
-        try JSONDecoder().decode(BridgeAXOutcome<BridgeAXHitTestResponse>.self, from: XCTUnwrap(response.result.accessibility)),
-        .failure(BridgeAXFailure(message: "hittest requires numeric x and y", kind: .badRequest)))
+      XCTAssertEqual(response.result.accessibility, .failure(BridgeAXFailure(message: "hittest requires numeric x and y", kind: .badRequest)))
     }
   }
 
