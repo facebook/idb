@@ -160,6 +160,9 @@ targets:
         excludes:
           - "**/*-Info.plist"
           - "**/*.xcconfig"
+          - "Fixtures/**"
+      - path: FBSimulatorBridgeProtocolTests/Fixtures/ax-describe-settings.json
+        buildPhase: resources
     settings:
       base:
         MACOSX_DEPLOYMENT_TARGET: "15.0"
