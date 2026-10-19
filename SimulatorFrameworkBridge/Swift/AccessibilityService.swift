@@ -465,7 +465,8 @@ private final class AccessibilityRequest {
       return nil
     }
     var explanation = [String: Any]()
-    for key in attributes.keys {
+    // An explanation is the one element that answered; like a node of the walk, it carries no children.
+    for key in attributes.keys where key != axChildren {
       explanation[key] = try FBAXBridgeJSONSafeValue(
         client: client,
         value: attributes[key],

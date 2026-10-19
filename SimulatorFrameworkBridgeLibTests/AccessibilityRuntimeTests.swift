@@ -1985,7 +1985,7 @@ final class AccessibilityRuntimeTests: XCTestCase {
     let response = AccessibilityService.handleRequest(explanationRequest())
 
     let explanation = axValue(axValue(response, "tree"), "FBExplainedBy")
-    assertEqualObjects(explanation, [kAXElementType: "Overlay", kAXLabel: "Overlay", kAXChildren: ([] as NSArray).description])
+    assertEqualObjects(explanation, [kAXElementType: "Overlay", kAXLabel: "Overlay"])
     XCTAssertEqual(runtime.lastHitTestProcessIdentifier, 0)
     XCTAssertEqual(runtime.lastHitTestPoint, CGPoint(x: 12, y: 34))
     assertEqualObjects(runtime.lastReadAttributes, [kAXElementType, kAXLabel, "XC_kAXXCAttributeIdentifier", kAXFrame, "XC_kAXXCAttributeAutomationType"])
