@@ -35,3 +35,6 @@ IDB_INTERPOSE(IDBAudioObjectGetPropertyDataSize, AudioObjectGetPropertyDataSize)
 IDB_INTERPOSE(IDBAudioObjectHasProperty, AudioObjectHasProperty);
 IDB_INTERPOSE(IDBAudioObjectAddPropertyListener, AudioObjectAddPropertyListener);
 IDB_INTERPOSE(IDBAudioObjectAddPropertyListenerBlock, AudioObjectAddPropertyListenerBlock);
+IDB_INTERPOSE(IDBAudioComponentInstanceNew, AudioComponentInstanceNew);
+IDB_INTERPOSE(IDBAudioComponentInstantiate, AudioComponentInstantiate);
+IDB_INTERPOSE(IDBAudioComponentInstanceDispose, AudioComponentInstanceDispose);

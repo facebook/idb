@@ -31,6 +31,16 @@ typedef OSStatus (*IDBAudioDeviceIOProc)(
   const AudioTimeStamp *outputTime,
   void *clientData);
 
+/// `AudioComponentDescription`. Components and their instances are opaque pointers here, so this header
+/// never needs AudioToolbox's declarations of them.
+typedef struct {
+  UInt32 type;
+  UInt32 subType;
+  UInt32 manufacturer;
+  UInt32 flags;
+  UInt32 flagsMask;
+} IDBAudioComponentDescription;
+
 /// Lock-free counters for the audio thread, which may not take a lock or allocate.
 static inline uint64_t IDBAtomicLoad(uint64_t *value)
 {
@@ -85,6 +95,11 @@ extern OSStatus AudioObjectAddPropertyListenerBlock(
   void *queue,
   void *listener);
 
+extern OSStatus AudioComponentGetDescription(void *component, IDBAudioComponentDescription *outDescription);
+extern OSStatus AudioComponentInstanceNew(void *component, void **outInstance);
+extern void AudioComponentInstantiate(void *component, UInt32 options, void (^completionHandler)(void *instance, OSStatus status));
+extern OSStatus AudioComponentInstanceDispose(void *instance);
+
 /// Whether this process's simulator was armed for injection when the shim loaded. Unarmed, every
 /// replacement below only calls the original.
 bool IDBAudioInjectionIsArmed(void);
@@ -120,5 +135,8 @@ OSStatus IDBAudioObjectAddPropertyListenerBlock(
   const IDBAudioObjectPropertyAddress *address,
   void *queue,
   void *listener);
+OSStatus IDBAudioComponentInstanceNew(void *component, void **outInstance);
+void IDBAudioComponentInstantiate(void *component, UInt32 options, void (^completionHandler)(void *instance, OSStatus status));
+OSStatus IDBAudioComponentInstanceDispose(void *instance);
 
 #endif

@@ -131,3 +131,43 @@ func IDBAudioObjectAddPropertyListenerBlock(
 ) -> OSStatus {
   AudioInjectionHAL.addPropertyListenerBlock(realHAL, object: object, address: address, queue: queue, listener: listener)
 }
+
+private func componentDescription(_ component: UnsafeMutableRawPointer?) -> IDBAudioComponentDescription? {
+  var description = IDBAudioComponentDescription()
+  guard realHAL.armed, let component, AudioComponentGetDescription(component, &description) == noErr else {
+    return nil
+  }
+  return description
+}
+
+// patternlint-disable-next-line cdecl-unsupported
+@_cdecl("IDBAudioComponentInstanceNew")
+func IDBAudioComponentInstanceNew(
+  _ component: UnsafeMutableRawPointer?, _ outInstance: UnsafeMutablePointer<UnsafeMutableRawPointer?>?
+) -> OSStatus {
+  let counted = AudioInjectionHAL.willCreateComponentInstance(realHAL, description: componentDescription(component))
+  let status = AudioComponentInstanceNew(component, outInstance)
+  AudioInjectionHAL.didCreateComponentInstance(counted: counted, instance: outInstance?.pointee, status: status)
+  return status
+}
+
+// patternlint-disable-next-line cdecl-unsupported
+@_cdecl("IDBAudioComponentInstantiate")
+func IDBAudioComponentInstantiate(
+  _ component: UnsafeMutableRawPointer?, _ options: UInt32,
+  _ completionHandler: @escaping @convention(block) (UnsafeMutableRawPointer?, OSStatus) -> Void
+) {
+  let counted = AudioInjectionHAL.willCreateComponentInstance(realHAL, description: componentDescription(component))
+  AudioComponentInstantiate(component, options) { instance, status in
+    AudioInjectionHAL.didCreateComponentInstance(counted: counted, instance: instance, status: status)
+    completionHandler(instance, status)
+  }
+}
+
+// patternlint-disable-next-line cdecl-unsupported
+@_cdecl("IDBAudioComponentInstanceDispose")
+func IDBAudioComponentInstanceDispose(_ instance: UnsafeMutableRawPointer?) -> OSStatus {
+  AudioInjectionHAL.disposeComponentInstance(realHAL, instance: instance) {
+    AudioComponentInstanceDispose(instance)
+  }
+}

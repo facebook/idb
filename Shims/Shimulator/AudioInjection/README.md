@@ -13,7 +13,7 @@ arms the simulator itself.
 | App launch preparation, injecting, waiting | `SimulatorAudioCommands.appLaunchEnvironment(_:)`, `inject(from:)` |
 | The RPC | `inject_audio` in `//xplat/idb:idb.proto`, `InjectAudioMethodHandler` |
 
-The shared Swift `ShimulatorProtocol` target owns the versioned messages, the per-capability socket path and the client that serves it. `AudioInjectionController` contributes the capability name, the typed handler and WAV decoding. `AudioInjectionHAL.swift` owns the IO-proc lifecycle, the synthetic input and the realtime sample copy. The only C is the boundary Swift cannot express: `include/IDBAudioInjectionPrivate.h` declares the private HAL symbols and the audio thread's lock-free counters, and `IDBAudioInjectionInterpose.c` holds the dyld interpose records pointing at the Swift replacements in `AudioInjectionBootstrap.swift`.
+The shared Swift `ShimulatorProtocol` target owns the versioned messages, the per-capability socket path and the client that serves it. `AudioInjectionController` contributes the capability name, the typed handler and WAV decoding. `AudioInjectionHAL.swift` owns the IO-proc lifecycle, the synthetic input and the realtime sample copy. The only C is the boundary Swift cannot express: `include/IDBAudioInjectionPrivate.h` declares the private HAL symbols, the `AudioToolbox` component calls the shim watches, and the audio thread's lock-free counters, and `IDBAudioInjectionInterpose.c` holds the dyld interpose records pointing at the Swift replacements in `AudioInjectionBootstrap.swift`.
 
 It is **not** a guest service, and there is no `audio` verb on
 `SimulatorFrameworkBridge`. A separate guest process cannot change what another
@@ -51,6 +51,21 @@ rate, and hands the IO proc a buffer for it. A host with a microphone is left
 alone, and injection replaces what it captures only while a file plays. Only an
 IO proc whose client asked the stream's latency -- which a recorder does and a
 player does not -- is filled or counted as having heard the injection.
+
+The synthetic input exists only inside the process; the host's audio server
+never has it. That is invisible to recorders, but not to a voice-processing unit
+(`kAudioUnitSubType_VoiceProcessingIO`, which WebRTC and other calling stacks
+use): it has the server aggregate the default input and output devices, the
+server builds that aggregate with no input, and the unit's input-scope property
+set then never returns, so CoreAudio aborts the app ("SetProperty: RPC timeout.
+Apparently deadlocked."). So while a voice-processing unit exists in the process
+the shim reports the host's own topology. It counts the units an app creates
+through `AudioComponentInstanceNew` or `AudioComponentInstantiate` and disposes
+of through `AudioComponentInstanceDispose`; a unit `AudioToolbox` creates inside
+itself, where interposing does not reach, is not seen. A
+voice-processing app on a host without a microphone therefore records nothing
+and hears no injected audio, as without the shim; on a host with a microphone it
+hears injected audio as before.
 
 ## Rules for the shim
 

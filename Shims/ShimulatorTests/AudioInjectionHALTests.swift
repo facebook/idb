@@ -557,6 +557,94 @@ struct AudioInjectionHALTests {
       AudioInjectionHAL.addPropertyListenerBlock(hal, object: defaultOutputDevice, address: &rate, queue: nil, listener: nil) == 32)
   }
 
+  private func component(_ subType: String) -> IDBAudioComponentDescription {
+    IDBAudioComponentDescription(
+      type: fourCC("auou"), subType: fourCC(subType), manufacturer: fourCC("appl"), flags: 0, flagsMask: 0)
+  }
+
+  private func createUnit(
+    _ subType: String?, at address: UInt, status: OSStatus = noErr, using shim: AudioHAL = hal
+  ) -> UnsafeMutableRawPointer? {
+    let counted = AudioInjectionHAL.willCreateComponentInstance(shim, description: subType.map(component))
+    let instance = UnsafeMutableRawPointer(bitPattern: address)
+    AudioInjectionHAL.didCreateComponentInstance(
+      counted: counted, instance: status == noErr ? instance : nil, status: status)
+    return instance
+  }
+
+  private func disposeUnit(_ instance: UnsafeMutableRawPointer?, status: OSStatus = noErr) -> OSStatus {
+    AudioInjectionHAL.disposeComponentInstance(hal, instance: instance) { status }
+  }
+
+  private func offersSyntheticInput() -> Bool {
+    var device: IDBAudioObjectID = 0
+    var stream: IDBAudioObjectID = 0
+    return property(1, address("dIn "), &device) && property(defaultOutputDevice, address("stm#", "inpt"), &stream)
+  }
+
+  @Test
+  func voiceProcessingUnitKeepsTheHostTopologyWhileItExists() {
+    let first = createUnit("vpio", at: 0xA1)
+    let second = createUnit("vpio", at: 0xA2)
+    var answer: IDBAudioObjectID = 0
+    #expect(!property(1, address("dIn "), &answer))
+    #expect(!property(defaultOutputDevice, address("stm#", "inpt"), &answer))
+
+    withFake { $0.calls = [] }
+    let (_, handle) = create(110, capturingProc)
+    #expect(withFake { $0.calls } == ["create"])
+    // No input buffer is made up for the app: it records from the host as it would without the shim.
+    #expect(invoke(110) == -1)
+    #expect(destroy(110, handle) == noErr)
+
+    #expect(disposeUnit(first) == noErr)
+    #expect(!offersSyntheticInput())
+    #expect(disposeUnit(second) == noErr)
+    #expect(offersSyntheticInput())
+  }
+
+  @Test
+  func voiceProcessingUnitBeingCreatedAlreadyKeepsTheHostTopology() {
+    let counted = AudioInjectionHAL.willCreateComponentInstance(hal, description: component("vpio"))
+    #expect(!offersSyntheticInput())
+
+    AudioInjectionHAL.didCreateComponentInstance(counted: counted, instance: nil, status: -7)
+    #expect(offersSyntheticInput())
+  }
+
+  @Test
+  func failedVoiceProcessingUnitDisposalKeepsTheHostTopology() {
+    let unit = createUnit("vpio", at: 0xA3)
+
+    #expect(disposeUnit(unit, status: -7) == -7)
+    #expect(!offersSyntheticInput())
+
+    #expect(disposeUnit(unit) == noErr)
+    #expect(offersSyntheticInput())
+  }
+
+  @Test
+  func disposingAnUncountedUnitKeepsTheCountedOne() {
+    let counted = createUnit("vpio", at: 0xA4)
+
+    // Created where the shim could not see it, or before it counted anything.
+    #expect(disposeUnit(UnsafeMutableRawPointer(bitPattern: 0xB4)) == noErr)
+    #expect(!offersSyntheticInput())
+
+    #expect(disposeUnit(counted) == noErr)
+    #expect(offersSyntheticInput())
+  }
+
+  @Test
+  func otherAudioUnitsKeepTheSyntheticInput() {
+    let remoteIO = createUnit("rioc", at: 0xA5)
+    _ = createUnit(nil, at: 0xA6)
+
+    #expect(offersSyntheticInput())
+    #expect(disposeUnit(remoteIO) == noErr)
+    #expect(offersSyntheticInput())
+  }
+
   // The shim is loaded into every iOS test process idb runs, armed or not.
 
   private var unarmed: AudioHAL {
@@ -588,6 +676,21 @@ struct AudioInjectionHALTests {
 
     #expect(AudioInjectionHAL.destroyIOProcID(unarmed, device: 8, ioProcID: handle) == noErr)
     #expect(withFake { $0.calls } == ["create", "destroy"])
+  }
+
+  @Test
+  func unarmedVoiceProcessingUnitIsNotCounted() {
+    #expect(!AudioInjectionHAL.willCreateComponentInstance(unarmed, description: component("vpio")))
+    _ = createUnit("vpio", at: 0xA7, using: unarmed)
+
+    #expect(offersSyntheticInput())
+    var disposed = 0
+    #expect(
+      AudioInjectionHAL.disposeComponentInstance(unarmed, instance: UnsafeMutableRawPointer(bitPattern: 0xA7)) {
+        disposed += 1
+        return noErr
+      } == noErr)
+    #expect(disposed == 1)
   }
 
   @Test

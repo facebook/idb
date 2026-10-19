@@ -88,6 +88,11 @@ private enum Property {
   static let inputScope = fourCC("inpt")
 }
 
+private enum Component {
+  static let output = fourCC("auou")
+  static let voiceProcessing = fourCC("vpio")
+}
+
 private let systemObject: IDBAudioObjectID = 1
 private let syntheticCapacityFrames: UInt32 = 4096
 private let defaultSyntheticFrames: UInt32 = 512
@@ -143,6 +148,12 @@ private struct State {
   /// buffer, but claims nothing, so it is never filled or counted as having heard the injection.
   let listening = UnsafeMutablePointer<UInt64>.allocate(capacity: listeningSlots)
   var listeningNext: UInt64 = 0
+  /// Voice-processing units alive or being created in the process. Atomic.
+  var voiceProcessingUnits: UInt64 = 0
+  /// Guards `voiceProcessingInstances`. Never taken on the audio thread.
+  var componentLock = pthread_mutex_t()
+  /// The created units `voiceProcessingUnits` counts, so only their disposal releases a count.
+  var voiceProcessingInstances: [UInt] = []
 }
 
 private let listeningSlots = 64
@@ -154,6 +165,7 @@ private nonisolated(unsafe) let state: UnsafeMutablePointer<State> = {
   state.initialize(to: State())
   pthread_mutex_init(&state.pointee.injectionLock, nil)
   pthread_mutex_init(&state.pointee.ioProcLock, nil)
+  pthread_mutex_init(&state.pointee.componentLock, nil)
   state.pointee.listening.initialize(repeating: 0, count: listeningSlots)
   return state
 }()
@@ -201,7 +213,9 @@ public enum AudioInjectionHAL {
         return false
       }
     }
-    if object == systemObject, selector == Property.defaultInput, defaultDevice(hal, Property.defaultInput) == 0 {
+    if object == systemObject, selector == Property.defaultInput, syntheticInputAllowed,
+      defaultDevice(hal, Property.defaultInput) == 0
+    {
       guard let output = defaultDevice(hal, Property.defaultOutput), output != 0 else {
         return false
       }
@@ -390,6 +404,63 @@ public enum AudioInjectionHAL {
     return isSyntheticStream(object) ? noErr : hal.addPropertyListenerBlock(object, address, queue, listener)
   }
 
+  /// Called before an audio component instance is created. Returns whether it is a voice-processing
+  /// unit, counted from now on: creating one can already read the default devices.
+  public static func willCreateComponentInstance(_ hal: AudioHAL, description: IDBAudioComponentDescription?) -> Bool {
+    guard hal.armed, let description, isVoiceProcessing(description) else {
+      return false
+    }
+    _ = IDBAtomicAdd(&state.pointee.voiceProcessingUnits, 1)
+    return true
+  }
+
+  /// Called once the creation `willCreateComponentInstance` was told of has finished.
+  public static func didCreateComponentInstance(counted: Bool, instance: UnsafeMutableRawPointer?, status: OSStatus) {
+    guard counted else {
+      return
+    }
+    guard status == noErr, let instance else {
+      _ = IDBAtomicAdd(&state.pointee.voiceProcessingUnits, -1)
+      return
+    }
+    pthread_mutex_lock(&state.pointee.componentLock)
+    state.pointee.voiceProcessingInstances.append(UInt(bitPattern: instance))
+    pthread_mutex_unlock(&state.pointee.componentLock)
+  }
+
+  /// Disposes of an audio component instance through `dispose`, releasing its count if it has one.
+  public static func disposeComponentInstance(
+    _ hal: AudioHAL, instance: UnsafeMutableRawPointer?, dispose: () -> OSStatus
+  ) -> OSStatus {
+    guard hal.armed, let instance else {
+      return dispose()
+    }
+    let status = dispose()
+    guard status == noErr else {
+      return status
+    }
+    // A unit created at the same address meanwhile adds its own entry, so removing either keeps the count.
+    pthread_mutex_lock(&state.pointee.componentLock)
+    if let index = state.pointee.voiceProcessingInstances.firstIndex(of: UInt(bitPattern: instance)) {
+      state.pointee.voiceProcessingInstances.remove(at: index)
+      _ = IDBAtomicAdd(&state.pointee.voiceProcessingUnits, -1)
+    }
+    pthread_mutex_unlock(&state.pointee.componentLock)
+    return status
+  }
+
+  private static func isVoiceProcessing(_ description: IDBAudioComponentDescription) -> Bool {
+    description.type == Component.output && description.subType == Component.voiceProcessing
+  }
+
+  /// A voice-processing unit has the audio server aggregate the default input and output devices.
+  /// The server builds that aggregate without the synthetic input this process sees, and an
+  /// input-scope property set on it then never returns, so CoreAudio aborts the process. While such
+  /// a unit exists the host's own topology is reported instead.
+  private static var syntheticInputAllowed: Bool {
+    IDBAtomicLoad(&state.pointee.voiceProcessingUnits) == 0
+  }
+
   private static func release(_ context: UnsafeMutablePointer<IOProcContext>) {
     context.pointee.syntheticSamples.deallocate()
     context.pointee.syntheticList.deallocate()
@@ -413,7 +484,7 @@ public enum AudioInjectionHAL {
   }
 
   private static func needsSyntheticInput(_ hal: AudioHAL, _ device: IDBAudioObjectID) -> Bool {
-    guard device != systemObject, !isSyntheticStream(device), defaultDevice(hal, Property.defaultInput) == 0 else {
+    guard syntheticInputAllowed, device != systemObject, !isSyntheticStream(device), defaultDevice(hal, Property.defaultInput) == 0 else {
       return false
     }
     var address = IDBAudioObjectPropertyAddress(selector: Property.streams, scope: Property.inputScope, element: 0)

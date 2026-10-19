@@ -76,6 +76,7 @@ targets:
         SDKROOT: iphonesimulator
         HEADER_SEARCH_PATHS: $(SRCROOT)/AudioInjection/include
     dependencies:
+      - sdk: AudioToolbox.framework
       - sdk: CoreAudio.framework
 
   ShimulatorAudioInjectionBootstrap:
@@ -94,6 +95,7 @@ targets:
       - target: ShimulatorAudioInjectionCore
       - target: ShimulatorAudioInjectionHAL
       - target: ShimulatorProtocol-iOS
+      - sdk: AudioToolbox.framework
       - sdk: Foundation.framework
 
   ShimulatorVideoInjectionCore:
@@ -184,6 +186,7 @@ targets:
         target: SimulatorIPC-iOS
       - link: true
         target: ReplRuntimeProbe-iOS
+      - sdk: AudioToolbox.framework
       - sdk: CoreAudio.framework
       - sdk: Foundation.framework
       - sdk: UIKit.framework
