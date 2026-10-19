@@ -447,7 +447,7 @@ public struct SimulatorApplicationCommands: ApplicationCommands {
         key: ApplicationInstallInfoKey.bundleName.rawValue,
         info: String(describing: appInfo))
     }
-    guard let _ = appInfo[ApplicationInstallInfoKey.bundleIdentifier.rawValue] as? String else {
+    guard appInfo[ApplicationInstallInfoKey.bundleIdentifier.rawValue] as? String != nil else {
       throw SimulatorApplicationLookupError.installInfoFieldNotAString(
         field: "Bundle Identifier",
         value: String(describing: appInfo[ApplicationInstallInfoKey.bundleIdentifier.rawValue] ?? "nil"),
