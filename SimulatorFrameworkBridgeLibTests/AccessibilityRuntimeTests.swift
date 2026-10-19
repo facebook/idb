@@ -875,7 +875,7 @@ final class AccessibilityRuntimeTests: XCTestCase {
     runtime.applicationElements[NSNumber(value: kAppPid)] = FBAXTestsNode([kAXFrame: "not a frame"], [])
 
     let frame = axValue(axValue(AccessibilityService.handleRequest(FBAXTestsSnapshotRequest([:])), "tree"), kAXFrame)
-    assertEqualObjects(frame, NSNull())
+    XCTAssertNil(frame, "no frame rather than one at the origin")
   }
 
   func testAnUnrecognisedPointValueIsEmittedAsNull() {
@@ -888,7 +888,7 @@ final class AccessibilityRuntimeTests: XCTestCase {
             ["attributes": [kAXVisiblePoint]]
           )
         ), "tree"), kAXVisiblePoint)
-    assertEqualObjects(point, NSNull())
+    XCTAssertNil(point, "no point rather than one a tap could land on")
   }
 
   // MARK: - A snapshot the application did not answer
@@ -1726,7 +1726,8 @@ final class AccessibilityRuntimeTests: XCTestCase {
     runtime.applicationElements[NSNumber(value: kAppPid)] = root
 
     let tree = axValue(AccessibilityService.handleRequest(["verb": "describe", "traversal": "view-hierarchy", "clientType": 0, "pid": NSNumber(value: kAppPid)]), "tree")
-    assertEqualObjects(axValue(tree, kAXLabel), NSNull(), "a failure is not the attribute's value")
+    // Left out, which the host reads the same as null: a failure is not the attribute's value.
+    XCTAssertNil(axValue(tree, kAXLabel), "a failure is not the attribute's value")
     assertEqualObjects(axValue(axValue(tree, "FBAttributeReadFailures"), kAXLabel), "kAXErrorCannotComplete", "the failed key is named with its reason rather than silently reading as no value")
   }
 
@@ -2040,13 +2041,14 @@ final class AccessibilityRuntimeTests: XCTestCase {
     XCTAssertEqual(runtime.hitTestCount, 1)
   }
 
+  // Each value is read once, when its node is built, so a coordinate that raises fails the read before anything is
+  // hit-tested.
   func testCentreCoordinateExceptionAbortsBeforeHitTestingAndNextRequestRecovers() {
     let coordinate = FBAXFakeVisibilityValue()
-    let visibility = FBAXFakeVisibilityValue()
-    visibility.coordinateToInvalidate = coordinate
-    let root = unreachableRoot(visibility)
+    coordinate.raisesOnNumericRead = true
+    let root = unreachableRoot(false)
     let centre: [String: Any] = ["X": coordinate, "Y": 34]
-    root.attributes = ["XC_kAXXCAttributeIsVisible": visibility, "XC_kAXXCAttributeCenterPoint": centre]
+    root.attributes = ["XC_kAXXCAttributeIsVisible": false, "XC_kAXXCAttributeCenterPoint": centre]
     runtime.hitTestOutcome = FBAXHitTestOutcome.hit(FBAXFakeElement.readable("Overlay"), owningProcessIdentifier: 9000)
 
     assertEqualObjects(AccessibilityService.handleRequest(explanationRequest()), ["ok": false, "error": "the reader raised while answering: geometry coordinate failed"])
@@ -2080,11 +2082,12 @@ final class AccessibilityRuntimeTests: XCTestCase {
       root.attributes = [key: value]
       let response = AccessibilityService.handleRequest(["verb": "describe", "traversal": "view-hierarchy", "clientType": 0, "pid": kAppPid])
       assertEqualObjects(axValue(response, "ok"), true)
-      assertEqualObjects(axValue(axValue(response, "tree"), key), NSNull())
+      XCTAssertNil(axValue(axValue(response, "tree"), key), "\(key) as \(value)")
     }
   }
 
-  func testGeometryDictionariesPreserveAdditionalFields() {
+  // The typed node carries a frame's and a point's coordinates; anything else in the dictionary is not part of it.
+  func testGeometryDictionariesCarryTheirCoordinates() {
     let root = FBAXFakeElement.readable("UIApplication")
     let frame = ["X": 1, "Y": 2, "Width": 3, "Height": 4, "extra": 5]
     let point = ["X": 1, "Y": 2, "extra": 3]
@@ -2093,8 +2096,8 @@ final class AccessibilityRuntimeTests: XCTestCase {
 
     let tree = axValue(AccessibilityService.handleRequest(["verb": "describe", "traversal": "view-hierarchy", "clientType": 0, "pid": kAppPid]), "tree")
 
-    assertEqualObjects(axValue(tree, kAXFrame), frame)
-    assertEqualObjects(axValue(tree, kAXVisiblePoint), point)
+    assertEqualObjects(axValue(tree, kAXFrame), ["X": 1, "Y": 2, "Width": 3, "Height": 4])
+    assertEqualObjects(axValue(tree, kAXVisiblePoint), ["X": 1, "Y": 2])
   }
 
   func testOpaqueValuesUseTheirDescriptionAndContainDescriptionExceptions() {
@@ -2155,12 +2158,11 @@ final class AccessibilityRuntimeTests: XCTestCase {
       root.attributes = ["XC_kAXXCAttributeIsVisible": false, key: value]
       let hitTestsBefore = runtime.hitTestCount
 
-      let response = AccessibilityService.handleRequest(explanationRequest())
-      let serialized = AccessibilityService.serializeResponse(response)
-      let decoded = try XCTUnwrap(JSONSerialization.jsonObject(with: serialized) as? [String: Any])
+      // As the host decodes it off the wire.
+      let decoded = AccessibilityService.handleRequest(explanationRequest())
 
       assertEqualObjects(decoded["ok"], true)
-      let expected = ["X": 1, "Y": 2, "Width": 3, "Height": 4]
+      let expected = key == kAXFrame ? ["X": 1, "Y": 2, "Width": 3, "Height": 4] : ["X": 1, "Y": 2]
       assertEqualObjects(axValue(axValue(decoded, "tree"), key), expected)
       XCTAssertEqual(value.lookups, value.maximumSuccessfulLookups)
       XCTAssertEqual(runtime.hitTestCount, hitTestsBefore + (key == centerKey ? 1 : 0))
@@ -2184,8 +2186,7 @@ final class AccessibilityRuntimeTests: XCTestCase {
     attributes.raises = false
     attributes.lookups = 0
     attributes.maximumSuccessfulLookups = UInt(attributes.count)
-    let response = AccessibilityService.handleRequest(request)
-    let decoded = try XCTUnwrap(JSONSerialization.jsonObject(with: AccessibilityService.serializeResponse(response)) as? [String: Any])
+    let decoded = AccessibilityService.handleRequest(request)
     assertEqualObjects(decoded["ok"], true)
     assertEqualObjects(axValue(decoded["tree"], kAXElementType), "UIApplication")
     assertEqualObjects(axValue(decoded["tree"], kAXLabel), "label")

@@ -6,6 +6,7 @@
  */
 
 import CoreGraphics
+import FBSimulatorBridgeProtocol
 import Foundation
 @_implementationOnly import SimulatorFrameworkBridgeSupport
 import Testing
@@ -13,52 +14,39 @@ import Testing
 @Suite
 struct AccessibilityServiceTests {
 
-  private static func FBAXTestsFrameResponse(rect: CGRect) -> [String: Any] {
-    let frame = rect.dictionaryRepresentation as NSDictionary
-    return ["ok": true, "tree": ["XC_kAXXCAttributeLabel": "icon", "XC_kAXXCAttributeFrame": frame]]
-  }
-
   private static func FBAXTestsParse(data: Data) -> NSDictionary? {
     (try? JSONSerialization.jsonObject(with: data)) as? NSDictionary
   }
 
-  // `NSJSONSerialization` raises on a non-finite number rather than returning an error, which would abort
-  // the reader mid-read.
+  private static func FBAXTestsTree(_ node: BridgeAXNode) -> AccessibilityAnswer {
+    .tree(.success(BridgeAXTreeResponse(tree: node, pid: 1, truncated: false)))
+  }
+
+  // A non-finite coordinate has no JSON form; the answer still encodes, with that edge as null.
   @Test
   func infiniteFrameValueSerializesAsNull() {
-    let data = AccessibilityService.serializeResponse(Self.FBAXTestsFrameResponse(rect: CGRect(x: Double.infinity, y: 0, width: 10, height: 20)))
-    let parsed = Self.FBAXTestsParse(data: data)
-    #expect(parsed != nil, "a non-finite frame must still produce parseable JSON")
+    var node = BridgeAXNode()
+    node.label = .string("icon")
+    node.frame = BridgeAXRect(x: .infinity, y: 0, width: 10, height: 20)
+    let parsed = Self.FBAXTestsParse(data: Self.FBAXTestsTree(node).encoded())
     #expect(parsed?["ok"] as? NSNumber == NSNumber(value: true))
-
-    let frame = (parsed?["tree"] as? NSDictionary)?["XC_kAXXCAttributeFrame"] as? NSDictionary
+    let tree = parsed?["tree"] as? NSDictionary
+    let frame = tree?["XC_kAXXCAttributeFrame"] as? NSDictionary
     #expect(frame?["X"] as? NSNull == NSNull(), "the non-finite member must be null")
     #expect(frame?["Height"] as? NSNumber == 20, "finite members must be preserved")
-    #expect(
-      (parsed?["tree"] as? NSDictionary)?["XC_kAXXCAttributeLabel"] as? String == "icon",
-      "the rest of the node must survive"
-    )
+    #expect(tree?["XC_kAXXCAttributeLabel"] as? String == "icon", "the rest of the node must survive")
   }
 
+  // An answer that cannot be encoded must still reach the host as a failure it can read, never abort the guest
+  // and sever the connection.
   @Test
-  func finiteResponseIsUnchanged() {
-    let data = AccessibilityService.serializeResponse(Self.FBAXTestsFrameResponse(rect: CGRect(x: 16, y: 293, width: 370, height: 52)))
-    let frame = (Self.FBAXTestsParse(data: data)?["tree"] as? NSDictionary)?["XC_kAXXCAttributeFrame"] as? NSDictionary
-    #expect(frame?["X"] as? NSNumber == 16)
-    #expect(frame?["Y"] as? NSNumber == 293)
-    #expect(frame?["Width"] as? NSNumber == 370)
-    #expect(frame?["Height"] as? NSNumber == 52)
-  }
-
-  @Test
-  func unserializableValueYieldsAnErrorFrameRatherThanRaising() {
-    let response: [String: Any] = ["ok": true, "tree": Date()]
-    let parsed = Self.FBAXTestsParse(data: AccessibilityService.serializeResponse(response))
+  func unencodableAnswerYieldsAnErrorFrameRatherThanRaising() {
+    var node = BridgeAXNode()
+    node.value = .number(.nan)
+    let parsed = Self.FBAXTestsParse(data: Self.FBAXTestsTree(node).encoded())
     #expect(parsed?["ok"] as? NSNumber == NSNumber(value: false))
     #expect(parsed?["error"] != nil)
   }
-
-  // MARK: - Request validation
 
   @Test
   func nonStringVerbIsRejectedWithAnErrorFrame() {
@@ -117,40 +105,39 @@ struct AccessibilityServiceTests {
 
   // MARK: - Modal detection
 
+  private func node(_ elementType: String, label: String? = nil, children: [BridgeAXNode] = []) -> BridgeAXNode {
+    var node = BridgeAXNode()
+    node.elementType = .string(elementType)
+    node.label = label.map(BridgeAXScalar.string)
+    node.children = children
+    return node
+  }
+
   @Test
   func modalDescriptorReportsSystemAlertWindowAsSystemKind() {
-    let tree: [String: Any] = ["XC_kAXXCAttributeLabel": "root", "XC_kAXXCAttributeChildren": [["XC_kAXXCAttributeElementType": "SBAlertItemWindow"]]]
-    let modal = AccessibilityService.modalDescriptor(tree)
-    #expect(modal?["kind"] as? String == "system")
-    #expect(modal?["elementType"] as? String == "SBAlertItemWindow")
-    #expect(modal?["label"] as? String == nil, "a system-only alert carries no captured label")
+    let tree = node("UIApplication", label: "root", children: [node("SBAlertItemWindow")])
+    #expect(AccessibilityService.modal(in: tree) == BridgeAXModal(kind: .system, elementType: "SBAlertItemWindow", label: nil))
   }
 
   // `_UIAlertController*` is matched by prefix; the concrete class varies.
   @Test
   func modalDescriptorReportsAlertControllerAsAppKindWithElementTypeAndLabel() {
-    let tree: [String: Any] = ["XC_kAXXCAttributeLabel": "root", "XC_kAXXCAttributeChildren": [["XC_kAXXCAttributeElementType": "_UIAlertControllerView", "XC_kAXXCAttributeLabel": "Delete this item?"]]]
-    let modal = AccessibilityService.modalDescriptor(tree)
-    #expect(modal?["kind"] as? String == "app")
-    #expect(modal?["elementType"] as? String == "_UIAlertControllerView")
-    #expect(modal?["label"] as? String == "Delete this item?")
+    let tree = node("UIApplication", label: "root", children: [node("_UIAlertControllerView", label: "Delete this item?")])
+    #expect(AccessibilityService.modal(in: tree) == BridgeAXModal(kind: .app, elementType: "_UIAlertControllerView", label: "Delete this item?"))
   }
 
   @Test
   func modalDescriptorPrefersSystemKindWhenBothAlertsPresent() {
-    let tree: [String: Any] = ["XC_kAXXCAttributeLabel": "root", "XC_kAXXCAttributeChildren": [["XC_kAXXCAttributeElementType": "SBAlertItemWindow"], ["XC_kAXXCAttributeElementType": "_UIAlertControllerView", "XC_kAXXCAttributeLabel": "Allow"]]]
-    let modal = AccessibilityService.modalDescriptor(tree)
-    #expect(modal?["kind"] as? String == "system", "a system alert window wins over an app alert")
+    let tree = node(
+      "UIApplication", label: "root", children: [node("SBAlertItemWindow"), node("_UIAlertControllerView", label: "Allow")])
     #expect(
-      modal?["elementType"] as? String == "_UIAlertControllerView",
-      "the captured alert-controller class is still reported"
-    )
-    #expect(modal?["label"] as? String == "Allow")
+      AccessibilityService.modal(in: tree) == BridgeAXModal(kind: .system, elementType: "_UIAlertControllerView", label: "Allow"),
+      "a system alert window wins over an app alert, and the captured alert-controller class is still reported")
   }
 
   @Test
   func modalDescriptorReturnsNilWhenNoAlertPresent() {
-    let tree: [String: Any] = ["XC_kAXXCAttributeLabel": "root", "XC_kAXXCAttributeChildren": [["XC_kAXXCAttributeElementType": "XCUIElementTypeButton", "XC_kAXXCAttributeLabel": "OK"]]]
-    #expect(AccessibilityService.modalDescriptor(tree) == nil)
+    let tree = node("UIApplication", label: "root", children: [node("XCUIElementTypeButton", label: "OK")])
+    #expect(AccessibilityService.modal(in: tree) == nil)
   }
 }

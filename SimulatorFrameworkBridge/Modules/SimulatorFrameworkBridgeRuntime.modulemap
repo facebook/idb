@@ -2,7 +2,6 @@
 framework module SimulatorFrameworkBridgeRuntime {
   header "AccessibilityClient.h"
   header "AccessibilityClientProvider.h"
-  header "AccessibilityResponseEncoder.h"
   header "AccessibilityRuntime.h"
   header "AccessibilitySnapshotClient.h"
   header "AccessibilityWireValue.h"

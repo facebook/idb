@@ -202,60 +202,29 @@ private typealias FrontmostMethod = BridgeAXFrontmostMethod
 
 private enum AccessibilityFailure {
   case plain(message: String)
-  case tagged(message: String, kind: String, pid: NSNumber?)
-  case runtime(message: String, axError: NSNumber?, pid: NSNumber?)
-  case notResponding(message: String, pid: NSNumber?)
+  case tagged(message: String, kind: BridgeAXWire.ErrorKind, pid: pid_t?)
+  case runtime(message: String, axError: NSNumber?, pid: pid_t?)
+  case notResponding(message: String, pid: pid_t?)
   case outstanding(pid: pid_t)
 
-  var dictionary: [String: Any] {
+  var failure: BridgeAXFailure {
     switch self {
     case let .plain(message):
-      return [responseOk: false, responseError: message]
+      return BridgeAXFailure(message: message)
     case let .tagged(message, kind, pid):
-      var response: [String: Any] = [responseOk: false, responseError: message, responseErrorKind: kind]
-      if let pid {
-        response[responsePid] = pid
-      }
-      return response
+      return BridgeAXFailure(message: message, kind: kind, pid: pid)
     case let .runtime(message, axError, pid):
-      var response = AccessibilityFailure.tagged(message: message, kind: errorKindRuntimeFailed, pid: pid).dictionary
-      if let axError {
-        response[responseAXError] = axError
-      }
-      return response
+      return BridgeAXFailure(message: message, kind: .runtimeFailed, pid: pid, axError: axError?.int32Value)
     case let .notResponding(message, pid):
-      var response = AccessibilityFailure.tagged(message: message, kind: errorKindApplicationNotResponding, pid: pid).dictionary
-      response[responseTimeoutSeconds] = NSNumber(value: FBAXMessagingTimeoutSeconds)
-      return response
+      return BridgeAXFailure(message: message, kind: .applicationNotResponding, pid: pid, timeoutSeconds: Double(FBAXMessagingTimeoutSeconds))
     case let .outstanding(pid):
-      var response = AccessibilityFailure.notResponding(
+      var failure = AccessibilityFailure.notResponding(
         message: "pid \(pid) is still working on an earlier read it did not respond to before it timed out; nothing larger was sent to it",
-        pid: pid as NSNumber
-      ).dictionary
-      response[responseOutstanding] = true
-      return response
+        pid: pid
+      ).failure
+      failure.outstanding = true
+      return failure
     }
-  }
-}
-
-private struct AccessibilityDescriptionResponse {
-  let tree: [String: Any]
-  let truncated: Bool
-  let pid: pid_t
-  let automationEnabled: Bool
-  let automationAsserted: Bool
-  let traverseDuration: CFAbsoluteTime
-  let roundTrips: Int64
-  let frontmostMethod: String?
-
-  var dictionary: [String: Any] {
-    var response: [String: Any] = [responseOk: true, responseTree: tree, responseTruncated: truncated as NSNumber, responsePid: pid as NSNumber]
-    response[responseAutomation] = [kAutomationEnabled: automationEnabled as NSNumber, kAutomationAsserted: automationAsserted as NSNumber]
-    response[responsePhases] = [phaseTraverse: (traverseDuration * 1000) as NSNumber, phaseMachRoundTrips: roundTrips as NSNumber]
-    if let frontmostMethod {
-      response[responseMethod] = frontmostMethod
-    }
-    return response
   }
 }
 
@@ -281,6 +250,86 @@ private struct TraversalContext {
   // container and again directly under the table), in both the per-element and the snapshot walk. The first
   // parent reached depth-first is the view parent.
   var emitted: Set<NSObject> = []
+}
+
+/// A node the walk read, or the runtime's outcome for one it could not.
+private enum AccessibilityNodeRead {
+  case read(BridgeAXNode)
+  case unread(FBAXReadOutcome)
+
+  var status: FBAXReadStatus {
+    switch self {
+    case .read: FBAXReadStatus.read
+    case let .unread(outcome): outcome.status
+    }
+  }
+
+  var node: BridgeAXNode? {
+    guard case let .read(node) = self else { return nil }
+    return node
+  }
+
+  var error: Error? {
+    guard case let .unread(outcome) = self else { return nil }
+    return outcome.error
+  }
+
+  var axError: NSNumber? {
+    guard case let .unread(outcome) = self else { return nil }
+    return outcome.axError
+  }
+}
+
+// MARK: - Plain values to typed fields
+
+// A string or number; null and a non-finite number, which JSON cannot carry, are no value.
+private func FBAXBridgeScalar(_ value: Any?) -> BridgeAXScalar? {
+  switch value {
+  case let string as String:
+    return .string(string)
+  case let number as NSNumber:
+    if CFGetTypeID(number) == CFBooleanGetTypeID() {
+      return .bool(number.boolValue)
+    }
+    if CFNumberIsFloatType(number) {
+      return number.doubleValue.isFinite ? .number(number.doubleValue) : nil
+    }
+    return .integer(number.int64Value)
+  default:
+    return nil
+  }
+}
+
+// An integral number, booleans excluded: a flag is not an identity or a bitmask.
+private func FBAXBridgeInteger(_ value: Any?) -> Int64? {
+  guard let number = value as? NSNumber, CFGetTypeID(number) != CFBooleanGetTypeID() else { return nil }
+  if CFNumberIsFloatType(number) {
+    return Int64(exactly: number.doubleValue)
+  }
+  return number.int64Value
+}
+
+// A boolean, as the runtime answers it: a boolean or a number.
+private func FBAXBridgeFlag(_ value: Any?) -> Bool? {
+  (value as? NSNumber)?.boolValue
+}
+
+private func FBAXBridgeCoordinate(_ value: Any?) -> Double? {
+  guard let number = value as? NSNumber, CFGetTypeID(number) != CFBooleanGetTypeID() else { return nil }
+  return number.doubleValue
+}
+
+// A `CGRect` dictionary representation; a non-finite edge is nil, which the model sends as null.
+private func FBAXBridgeRect(_ value: Any?) -> BridgeAXRect? {
+  guard let rect = value as? [String: Any] else { return nil }
+  return BridgeAXRect(
+    x: FBAXBridgeCoordinate(rect["X"]), y: FBAXBridgeCoordinate(rect["Y"]), width: FBAXBridgeCoordinate(rect["Width"]),
+    height: FBAXBridgeCoordinate(rect["Height"]))
+}
+
+private func FBAXBridgePoint(_ value: Any?) -> BridgeAXPoint? {
+  guard let point = value as? [String: Any] else { return nil }
+  return BridgeAXPoint(x: FBAXBridgeCoordinate(point["X"]), y: FBAXBridgeCoordinate(point["Y"]))
 }
 
 private final class AccessibilityRequest {
@@ -311,23 +360,18 @@ private final class AccessibilityRequest {
     return attributes
   }
 
-  private func treeOnDisplay(_ tree: [String: Any], displayID: UInt32, isRoot: Bool = true) throws -> [String: Any]? {
-    let number = tree[axWindowDisplayID] as? NSNumber
-    let identity = number.flatMap { value -> UInt32? in
-      guard CFGetTypeID(value) != CFBooleanGetTypeID() else { return nil }
-      return UInt32(exactly: value.doubleValue)
-    }
+  private func treeOnDisplay(_ tree: BridgeAXNode, displayID: UInt32, isRoot: Bool = true) throws -> BridgeAXNode? {
+    let identity = tree.windowDisplayID
     if let identity, identity > 0 {
       guard identity == displayID else { return nil }
     } else if !isRoot {
       throw AXDisplayScopeError.missingWindowIdentity
     }
     var scoped = tree
-    if let children = tree[axChildren] as? [[String: Any]] {
-      let selected = try children.compactMap { try treeOnDisplay($0, displayID: displayID, isRoot: false) }
-      scoped[axChildren] = selected
+    if let children = tree.children {
+      scoped.children = try children.compactMap { try treeOnDisplay($0, displayID: displayID, isRoot: false) }
     }
-    if isRoot, identity == nil || identity == 0, (scoped[axChildren] as? [Any])?.isEmpty != false { return nil }
+    if isRoot, identity == nil || identity == 0, scoped.children?.isEmpty != false { return nil }
     return scoped
   }
 
@@ -433,15 +477,44 @@ private final class AccessibilityRequest {
     return NSNull()
   }
 
+  // MARK: - Typed nodes
+
+  // Sets the node's field for `key` from an attribute value `FBAXBridgeJSONSafeValue` has already coerced: a string, a
+  // number, a geometry dictionary or null. The value is copied out under the runtime guard first, so a value that
+  // raises when read fails the request rather than the guest. A key the shared model does not name is not carried, and
+  // the children, explanation and read failures are set by the walk itself.
+  fileprivate func FBAXBridgeAssign(_ value: Any?, forKey key: String, to node: inout BridgeAXNode) throws {
+    guard let value, let field = BridgeAXWire.Node(rawValue: key) else { return }
+    let plain = try FBAXWireValue.plainValue(of: value)
+    switch field {
+    case .elementType: node.elementType = FBAXBridgeScalar(plain)
+    case .elementBaseType: node.elementBaseType = FBAXBridgeScalar(plain)
+    case .label: node.label = FBAXBridgeScalar(plain)
+    case .value: node.value = FBAXBridgeScalar(plain)
+    case .identifier: node.identifier = FBAXBridgeScalar(plain)
+    case .automationType: node.automationType = FBAXBridgeScalar(plain)
+    case .frame: node.frame = FBAXBridgeRect(plain)
+    case .visiblePoint: node.visiblePoint = FBAXBridgePoint(plain)
+    case .centerPoint: node.centerPoint = FBAXBridgePoint(plain)
+    case .xcTraits: node.xcTraits = FBAXBridgeInteger(plain).flatMap { UInt64(exactly: $0) }
+    case .traits: node.traits = FBAXBridgeInteger(plain).flatMap { UInt64(exactly: $0) }
+    case .elementIdentity: node.elementIdentity = FBAXBridgeInteger(plain).flatMap { UInt64(exactly: $0) }
+    case .windowDisplayID: node.windowDisplayID = FBAXBridgeInteger(plain).flatMap { UInt32(exactly: $0) }
+    case .translatorRole: node.translatorRole = FBAXBridgeInteger(plain).flatMap { Int(exactly: $0) }
+    case .translatorSubrole: node.translatorSubrole = FBAXBridgeInteger(plain).flatMap { Int(exactly: $0) }
+    case .isVisible: node.isVisible = FBAXBridgeFlag(plain)
+    case .userInteractionEnabled: node.userInteractionEnabled = FBAXBridgeFlag(plain)
+    case .isEnabled: node.isEnabled = FBAXBridgeFlag(plain)
+    case .children, .explainedBy, .attributeReadFailures: return
+    }
+  }
+
   // MARK: - Tree walk
 
   // Whether the accessibility server said this node is reachable. Absent or non-boolean counts as
   // reachable, so an explanation is never attempted for a node the caller did not ask visibility about.
-  fileprivate func FBAXBridgeNodeIsUnreachable(node: [String: Any]) throws -> Bool {
-    guard let visible = node[axisVisible] as? NSNumber else {
-      return false
-    }
-    return try !FBAXWireValue.boolean(from: visible).boolValue
+  fileprivate func FBAXBridgeNodeIsUnreachable(node: BridgeAXNode) -> Bool {
+    node.isVisible == false
   }
 
   // The element a display-wide hit-test finds at `point`, described by the explanation fetch list, or nil.
@@ -449,7 +522,7 @@ private final class AccessibilityRequest {
   fileprivate func FBAXBridgeExplanationAtPoint(
     client: FBAXClient,
     point: CGPoint
-  ) throws -> [String: Any]? {
+  ) throws -> BridgeAXNode? {
     FBAXBridgeCountRoundTrip()
     let hit = try client.hitTest(at: point, processIdentifier: 0)
     if hit.status != FBAXHitTestStatus.hit {
@@ -464,30 +537,21 @@ private final class AccessibilityRequest {
     guard read.status == FBAXReadStatus.read, let attributes = read.attributes else {
       return nil
     }
-    var explanation = [String: Any]()
+    var explanation = BridgeAXNode()
     // An explanation is the one element that answered; like a node of the walk, it carries no children.
     for key in attributes.keys where key != axChildren {
-      explanation[key] = try FBAXBridgeJSONSafeValue(
-        client: client,
-        value: attributes[key],
-        key: key
-      )
+      try FBAXBridgeAssign(FBAXBridgeJSONSafeValue(client: client, value: attributes[key], key: key), forKey: key, to: &explanation)
     }
     return explanation
   }
 
   // Read from the node rather than derived from the frame, so it matches what the server measured
   // reachability against.
-  fileprivate func FBAXBridgeNodeCentre(client: FBAXClient, node: [String: Any], point: inout CGPoint) throws -> Bool {
-    let centre = node[axCenterPoint]
-    guard let centre = centre as? NSDictionary else {
-      return false
+  fileprivate func FBAXBridgeNodeCentre(node: BridgeAXNode) -> CGPoint? {
+    guard let x = node.centerPoint?.x, let y = node.centerPoint?.y else {
+      return nil
     }
-    guard let geometry = try client.point(fromValue: centre).value else {
-      return false
-    }
-    geometry.getValue(&point, size: MemoryLayout.size(ofValue: point))
-    return true
+    return CGPoint(x: x, y: y)
   }
 
   // One mach round-trip per node: read the element's attributes, coerce them to JSON, then recurse into
@@ -505,32 +569,32 @@ private final class AccessibilityRequest {
     explainUnreachable: Bool,
     depth: Int,
     maxDepth: Int
-  ) throws -> FBAXReadOutcome {
+  ) throws -> AccessibilityNodeRead {
     FBAXBridgeCountRoundTrip()
     let outcome = try client.readAttributes(fetchList, of: element)
     switch outcome.status {
     case FBAXReadStatus.applicationUnavailable:
-      return FBAXReadOutcome.applicationUnavailable()
+      return .unread(FBAXReadOutcome.applicationUnavailable())
     case FBAXReadStatus.applicationNotResponding:
       let owner = depth > 0 ? try client.owningProcessIdentifier(of: element).int32Value : 0
       guard owner != 0, traversal.processIdentifier != 0, owner != traversal.processIdentifier else {
-        return FBAXReadOutcome.applicationNotResponding()
+        return .unread(FBAXReadOutcome.applicationNotResponding())
       }
       traversal.unansweredProcesses.insert(owner)
-      return FBAXReadOutcome.failed(outcome.error)
+      return .unread(FBAXReadOutcome.failed(outcome.error))
     case FBAXReadStatus.read:
       break
     case FBAXReadStatus.failed:
       fallthrough
     @unknown default:
-      return FBAXReadOutcome.failed(outcome.error)
+      return .unread(FBAXReadOutcome.failed(outcome.error))
     }
     let attributes = outcome.attributes
     guard let attributes else {
-      return FBAXReadOutcome.failed(FBAXBridgeInvariantError(description: "a read reported success but returned no attributes"))
+      return .unread(FBAXReadOutcome.failed(FBAXBridgeInvariantError(description: "a read reported success but returned no attributes")))
     }
 
-    var node = [String: Any]()
+    var node = BridgeAXNode()
     var readFailures: [String: String]?
     for key in attributes.keys {
       if key == axChildren {
@@ -547,13 +611,11 @@ private final class AccessibilityRequest {
         }
         readFailures?[key] = description.value as String?
       }
-      node[key] = try FBAXBridgeJSONSafeValue(client: client, value: value, key: key)
+      try FBAXBridgeAssign(FBAXBridgeJSONSafeValue(client: client, value: value, key: key), forKey: key, to: &node)
     }
-    if let readFailures {
-      node[nodeAttributeReadFailures] = readFailures
-    }
+    node.attributeReadFailures = readFailures
 
-    var children: [[String: Any]] = []
+    var children: [BridgeAXNode] = []
     let childElements = try outcome.children()
     if depth < maxDepth {
       for child in childElements {
@@ -581,26 +643,19 @@ private final class AccessibilityRequest {
         if childOutcome.status == FBAXReadStatus.applicationNotResponding {
           return childOutcome
         }
-        if childOutcome.status == FBAXReadStatus.read, let attributes = childOutcome.attributes {
-          children.append(attributes)
+        if let child = childOutcome.node {
+          children.append(child)
         }
       }
     } else if !childElements.isEmpty {
       traversal.truncated = true
     }
-    node[axChildren] = children
+    node.children = children
 
-    var centre: CGPoint = .zero
-    if explainUnreachable,
-      try FBAXBridgeNodeIsUnreachable(node: node),
-      try FBAXBridgeNodeCentre(client: client, node: node, point: &centre)
-    {
-      let explanation = try FBAXBridgeExplanationAtPoint(client: client, point: centre)
-      if let explanation {
-        node[nodeExplainedBy] = explanation
-      }
+    if explainUnreachable, FBAXBridgeNodeIsUnreachable(node: node), let centre = FBAXBridgeNodeCentre(node: node) {
+      node.explainedBy = try FBAXBridgeExplanationAtPoint(client: client, point: centre)
     }
-    return FBAXReadOutcome.read(node)
+    return .read(node)
   }
 
   // MARK: - Translator vocabulary
@@ -620,7 +675,7 @@ private final class AccessibilityRequest {
     displayID: UInt32?,
     depth: Int,
     maxDepth: Int
-  ) throws -> [String: Any]? {
+  ) throws -> BridgeAXNode? {
     if traversal.remainingNodes <= 0 {
       traversal.truncated = true
       return nil
@@ -638,62 +693,65 @@ private final class AccessibilityRequest {
     guard let values = BridgeAXTranslatorAnswer(resultData: read.value) else {
       return nil
     }
-    var node = [String: Any]()
+    var node = BridgeAXNode()
     if displayID != nil {
       FBAXBridgeCountRoundTrip()
       let identity = try client.readAttributes([axWindowDisplayID], of: element)
-      node[axWindowDisplayID] = identity.attributes?[axWindowDisplayID]
+      try FBAXBridgeAssign(identity.attributes?[axWindowDisplayID], forKey: axWindowDisplayID, to: &node)
     }
     if values[.label] != nil {
-      node[axLabel] = values[.label]
+      try FBAXBridgeAssign(values[.label], forKey: axLabel, to: &node)
     }
     if values[.identifier] != nil {
-      node[axIdentifier] = values[.identifier]
+      try FBAXBridgeAssign(values[.identifier], forKey: axIdentifier, to: &node)
     }
     if values[.value] != nil {
-      node[axValue] = try FBAXBridgeJSONSafeValue(
-        client: client,
-        value: values[.value],
-        key: axValue
-      )
+      try FBAXBridgeAssign(
+        FBAXBridgeJSONSafeValue(
+          client: client,
+          value: values[.value],
+          key: axValue
+        ), forKey: axValue, to: &node)
     }
     if values[.frame] != nil {
-      node[axFrame] = try FBAXBridgeJSONSafeValue(
-        client: client,
-        value: values[.frame],
-        key: axFrame
-      )
+      try FBAXBridgeAssign(
+        FBAXBridgeJSONSafeValue(
+          client: client,
+          value: values[.frame],
+          key: axFrame
+        ), forKey: axFrame, to: &node)
     }
     if values[.isVisible] != nil {
-      node[axisVisible] = values[.isVisible]
+      try FBAXBridgeAssign(values[.isVisible], forKey: axisVisible, to: &node)
     }
     if values[.isEnabled] != nil {
-      node[nodeIsEnabled] = values[.isEnabled]
+      try FBAXBridgeAssign(values[.isEnabled], forKey: nodeIsEnabled, to: &node)
     }
     if values[.role] != nil {
-      node[nodeTranslatorRole] = values[.role]
+      try FBAXBridgeAssign(values[.role], forKey: nodeTranslatorRole, to: &node)
     }
     if values[.subrole] != nil {
-      node[nodeTranslatorSubrole] = values[.subrole]
+      try FBAXBridgeAssign(values[.subrole], forKey: nodeTranslatorSubrole, to: &node)
     }
     if values[.traits] != nil {
-      node[nodeTraits] = values[.traits]
+      try FBAXBridgeAssign(values[.traits], forKey: nodeTraits, to: &node)
     }
     if values[.memoryAddress] != nil {
-      node[nodeElementIdentity] = values[.memoryAddress]
+      try FBAXBridgeAssign(values[.memoryAddress], forKey: nodeElementIdentity, to: &node)
     }
     // Keyed as XCTest names it, because the host derives `interactable` from that key and the two answer
     // the same question. Without it the derivation has hittability and no point, which is the shape it
     // reports as no verdict at all.
     if values[.visiblePoint] != nil {
-      node[axVisiblePoint] = try FBAXBridgeJSONSafeValue(
-        client: client,
-        value: values[.visiblePoint],
-        key: axVisiblePoint
-      )
+      try FBAXBridgeAssign(
+        FBAXBridgeJSONSafeValue(
+          client: client,
+          value: values[.visiblePoint],
+          key: axVisiblePoint
+        ), forKey: axVisiblePoint, to: &node)
     }
 
-    var children: [Any] = []
+    var children: [BridgeAXNode] = []
     // Children are a separate request (the handler special-cases the attribute out of the batch). Asked even
     // at the depth cap, because `truncated` needs to know whether this node has children.
     FBAXBridgeCountRoundTrip()
@@ -718,50 +776,41 @@ private final class AccessibilityRequest {
     } else if !childElements.isEmpty {
       traversal.truncated = true
     }
-    node[axChildren] = children
+    node.children = children
     return node
   }
 
   // MARK: - Modal detection
 
   // Recursively scans a built node for the concrete alert classes. `SBAlertItemWindow` (a SpringBoard
-  // system alert window) sets `*hasSystemAlertWindow`; the first `_UIAlertController*` view captures the
-  // alert's element type and label (its title). Reads the same keys the tree carries on the wire.
+  // system alert window) sets `hasSystemAlertWindow`; the first `_UIAlertController*` view captures the
+  // alert's element type and label (its title). Reads the same fields the tree carries on the wire.
   fileprivate func FBAXBridgeScanForAlert(
-    node: [String: Any],
+    node: BridgeAXNode,
     hasSystemAlertWindow: inout Bool,
     alertElementType: inout String?,
     alertLabel: inout String?
   ) {
-    if let elementType = node[axElementType] as? String {
+    if case let .string(elementType)? = node.elementType {
       if elementType == systemAlertWindowClass {
         hasSystemAlertWindow = true
       }
       if alertElementType == nil && elementType.hasPrefix(alertControllerClassPrefix) {
         alertElementType = elementType
-        if let label = node[axLabel] as? String, !label.isEmpty {
+        if case let .string(label)? = node.label, !label.isEmpty {
           alertLabel = label
         }
       }
     }
-    if let children = node[axChildren] as? [Any] {
-      for child in children {
-        if let child = child as? [String: Any] {
-          FBAXBridgeScanForAlert(
-            node: child,
-            hasSystemAlertWindow: &hasSystemAlertWindow,
-            alertElementType: &alertElementType,
-            alertLabel: &alertLabel
-          )
-        }
-      }
+    for child in node.children ?? [] {
+      FBAXBridgeScanForAlert(node: child, hasSystemAlertWindow: &hasSystemAlertWindow, alertElementType: &alertElementType, alertLabel: &alertLabel)
     }
   }
 
   // A fullscreen-modal descriptor for a built tree, or nil when none is present. `kind` is `system` when
   // a SpringBoard alert window is present (a system/permission alert), otherwise `app` (an in-app UIKit
   // alert). Host-facing enrichment: the host reads this to detect a modal without geometry.
-  fileprivate func FBAXBridgeModalDescriptor(tree: [String: Any]) -> [String: String]? {
+  fileprivate func FBAXBridgeModalDescriptor(tree: BridgeAXNode) -> BridgeAXModal? {
     var hasSystemAlertWindow = false
     var alertElementType: String?
     var alertLabel: String?
@@ -778,7 +827,7 @@ private final class AccessibilityRequest {
       kind: hasSystemAlertWindow ? .system : .app,
       elementType: alertElementType ?? systemAlertWindowClass,
       label: alertLabel
-    ).payload
+    )
   }
 
   // MARK: - Frontmost resolution
@@ -890,8 +939,8 @@ private final class AccessibilityRequest {
 
   // MARK: - Request handling
 
-  fileprivate func FBAXBridgeErrorResponse(message: String) -> [String: Any] {
-    AccessibilityFailure.plain(message: message).dictionary
+  fileprivate func FBAXBridgeErrorResponse(message: String) -> BridgeAXFailure {
+    AccessibilityFailure.plain(message: message).failure
   }
 
   // A failure the host can act on: the message says what happened, the kind says what class of thing it
@@ -899,22 +948,22 @@ private final class AccessibilityRequest {
   // answers has no pid to name, so it is optional rather than a sentinel the host has to know to ignore.
   fileprivate func FBAXBridgeTaggedErrorResponse(
     message: String,
-    kind: String,
-    pid: NSNumber?
-  ) -> [String: Any] {
-    AccessibilityFailure.tagged(message: message, kind: kind, pid: pid).dictionary
+    kind: BridgeAXWire.ErrorKind,
+    pid: pid_t?
+  ) -> BridgeAXFailure {
+    AccessibilityFailure.tagged(message: message, kind: kind, pid: pid).failure
   }
 
   fileprivate func FBAXBridgeRuntimeFailureResponse(
     message: String,
     axError: NSNumber?,
-    pid: NSNumber?
-  ) -> [String: Any] {
-    AccessibilityFailure.runtime(message: message, axError: axError, pid: pid).dictionary
+    pid: pid_t?
+  ) -> BridgeAXFailure {
+    AccessibilityFailure.runtime(message: message, axError: axError, pid: pid).failure
   }
 
-  fileprivate func FBAXBridgeNotRespondingResponse(message: String, pid: NSNumber?) -> [String: Any] {
-    AccessibilityFailure.notResponding(message: message, pid: pid).dictionary
+  fileprivate func FBAXBridgeNotRespondingResponse(message: String, pid: pid_t?) -> BridgeAXFailure {
+    AccessibilityFailure.notResponding(message: message, pid: pid).failure
   }
 
   // The response a failed read answers with, or nil when it succeeded. Only the XCTest read produces these
@@ -925,20 +974,20 @@ private final class AccessibilityRequest {
     readError: Error?,
     axError: NSNumber?,
     pid: pid_t
-  ) throws -> [String: Any]? {
+  ) throws -> BridgeAXFailure? {
     switch status {
     case FBAXReadStatus.read:
       return nil
     case FBAXReadStatus.applicationUnavailable:
       return FBAXBridgeTaggedErrorResponse(
         message: "pid \(pid) has no accessibility server",
-        kind: errorKindApplicationUnavailable,
-        pid: pid as NSNumber
+        kind: .applicationUnavailable,
+        pid: pid
       )
     case FBAXReadStatus.applicationNotResponding:
       return FBAXBridgeNotRespondingResponse(
         message: "pid \(pid) did not respond to the read of its element tree before it timed out",
-        pid: pid as NSNumber
+        pid: pid
       )
     case FBAXReadStatus.failed:
       fallthrough
@@ -947,7 +996,7 @@ private final class AccessibilityRequest {
       return FBAXBridgeRuntimeFailureResponse(
         message: "failed to read the element tree for pid \(pid): \(description.value ?? "the accessibility runtime reported no error")",
         axError: axError,
-        pid: pid as NSNumber
+        pid: pid
       )
     }
   }
@@ -961,7 +1010,7 @@ private final class AccessibilityRequest {
     ownerPid: pid_t,
     depth: Int,
     maxDepth: Int
-  ) throws -> [String: Any]? {
+  ) throws -> BridgeAXNode? {
     let valid = try snapshotNode.valid()
     guard valid.boolValue else {
       return nil
@@ -1002,13 +1051,10 @@ private final class AccessibilityRequest {
     traversal.remainingNodes -= 1
 
     let attributes = try snapshotNode.attributes()
-    var node = [String: Any]()
+    var node = BridgeAXNode()
     for attribute in attributes {
-      node[attribute.name] = try FBAXBridgeJSONSafeValue(
-        client: client,
-        value: attribute.value,
-        key: attribute.name
-      )
+      try FBAXBridgeAssign(
+        FBAXBridgeJSONSafeValue(client: client, value: attribute.value, key: attribute.name), forKey: attribute.name, to: &node)
     }
 
     if depth >= maxDepth {
@@ -1018,7 +1064,7 @@ private final class AccessibilityRequest {
       return node
     }
 
-    var children: [Any] = []
+    var children: [BridgeAXNode] = []
     for child in nesting {
       if !traversal.emitted.insert(child).inserted {
         continue
@@ -1035,7 +1081,7 @@ private final class AccessibilityRequest {
         children.append(built)
       }
     }
-    node[axChildren] = children
+    node.children = children
     return node
   }
 
@@ -1048,8 +1094,7 @@ private final class AccessibilityRequest {
     attributes: [String]?,
     displayID: UInt32?,
     clientType: BridgeAXClientType
-  ) throws -> [String: Any] {
-    let pidNumber = pid.map { $0 as NSNumber }
+  ) throws -> BridgeAXOutcome<BridgeAXHitTestResponse> {
 
     FBAXBridgeCountRoundTrip()
 
@@ -1058,29 +1103,29 @@ private final class AccessibilityRequest {
     case FBAXHitTestStatus.hit:
       break
     case FBAXHitTestStatus.applicationUnavailable:
-      return FBAXBridgeTaggedErrorResponse(
-        message: pidNumber != nil ? "pid \((pidNumber?.int32Value ?? 0)) has no accessibility server to hit-test" : "no accessibility server responded to the system-wide hit-test",
-        kind: errorKindApplicationUnavailable,
-        pid: pidNumber
-      )
+      return .failure(FBAXBridgeTaggedErrorResponse(
+        message: pid != nil ? "pid \(pid ?? 0) has no accessibility server to hit-test" : "no accessibility server responded to the system-wide hit-test",
+        kind: .applicationUnavailable,
+        pid: pid
+      ))
     case FBAXHitTestStatus.applicationNotResponding:
-      return FBAXBridgeNotRespondingResponse(
-        message: pidNumber != nil ? "pid \((pidNumber?.int32Value ?? 0)) did not respond to the hit-test before it timed out" : "the application at the hit-test point did not respond before it timed out",
-        pid: pidNumber
-      )
+      return .failure(FBAXBridgeNotRespondingResponse(
+        message: pid != nil ? "pid \(pid ?? 0) did not respond to the hit-test before it timed out" : "the application at the hit-test point did not respond before it timed out",
+        pid: pid
+      ))
     case FBAXHitTestStatus.empty:
-      return [responseOk: true, responseEmpty: true]
+      return .success(.empty)
     case FBAXHitTestStatus.failed:
       fallthrough
     @unknown default:
-      return FBAXBridgeRuntimeFailureResponse(message: outcome.failureReason ?? "the hit-test failed", axError: outcome.axError, pid: pidNumber)
+      return .failure(FBAXBridgeRuntimeFailureResponse(message: outcome.failureReason ?? "the hit-test failed", axError: outcome.axError, pid: pid))
     }
 
     traversal.remainingNodes = 1
     traversal.truncated = false
     // maxDepth 0 reads just the hit element's own attributes (no child recursion).
     guard let reported = outcome.element else {
-      return FBAXBridgeErrorResponse(message: "the hit-test reported an element but returned none")
+      return .failure(FBAXBridgeErrorResponse(message: "the hit-test reported an element but returned none"))
     }
     let hitElement = FBAXBridgeDescendHit(client: client, from: reported, at: point)
     let read = try FBAXBridgeBuildNode(
@@ -1095,26 +1140,26 @@ private final class AccessibilityRequest {
     case FBAXReadStatus.read:
       break
     case FBAXReadStatus.applicationUnavailable:
-      return FBAXBridgeTaggedErrorResponse(
+      return .failure(FBAXBridgeTaggedErrorResponse(
         message: "pid \(outcome.owningProcessIdentifier) has no accessibility server",
-        kind: errorKindApplicationUnavailable,
-        pid: outcome.owningProcessIdentifier as NSNumber
-      )
+        kind: .applicationUnavailable,
+        pid: outcome.owningProcessIdentifier
+      ))
     case FBAXReadStatus.applicationNotResponding:
-      return FBAXBridgeNotRespondingResponse(
+      return .failure(FBAXBridgeNotRespondingResponse(
         message: "pid \(outcome.owningProcessIdentifier) did not respond to the read of the hit element before it timed out",
-        pid: outcome.owningProcessIdentifier as NSNumber
-      )
+        pid: outcome.owningProcessIdentifier
+      ))
     case FBAXReadStatus.failed:
       fallthrough
     @unknown default:
-      return FBAXBridgeRuntimeFailureResponse(message: "failed to read the hit element", axError: read.axError, pid: outcome.owningProcessIdentifier as NSNumber)
+      return .failure(FBAXBridgeRuntimeFailureResponse(message: "failed to read the hit element", axError: read.axError, pid: outcome.owningProcessIdentifier))
     }
-    let node = read.attributes
+    let node = read.node
     guard let node else {
-      return FBAXBridgeErrorResponse(message: "the hit element read reported success but returned no attributes")
+      return .failure(FBAXBridgeErrorResponse(message: "the hit element read reported success but returned no attributes"))
     }
-    return [responseOk: true, responseTree: node, responsePid: outcome.owningProcessIdentifier as NSNumber]
+    return .success(.element(node, pid: outcome.owningProcessIdentifier))
   }
 
   // MARK: - Writes
@@ -1128,7 +1173,7 @@ private final class AccessibilityRequest {
     try client.matches(actual, expected: expected).boolValue
   }
 
-  fileprivate func FBAXBridgeWriteArgumentError(request: BridgeAXWriteRequest) -> [String: Any]? {
+  fileprivate func FBAXBridgeWriteArgumentError(request: BridgeAXWriteRequest) -> BridgeAXFailure? {
     // Only a fetched attribute can be asserted on: the host built the assertion from a node it read, so a
     // key this request does not fetch cannot have come from there.
     guard let assertKey = request.assertion?.key.rawValue,
@@ -1139,8 +1184,8 @@ private final class AccessibilityRequest {
     return FBAXBridgeUnassertableKeyResponse(assertKey)
   }
 
-  fileprivate func FBAXBridgeUnassertableKeyResponse(_ key: String) -> [String: Any] {
-    FBAXBridgeTaggedErrorResponse(message: "\(key) is not an attribute a write can assert on", kind: errorKindBadRequest, pid: nil)
+  fileprivate func FBAXBridgeUnassertableKeyResponse(_ key: String) -> BridgeAXFailure {
+    FBAXBridgeTaggedErrorResponse(message: "\(key) is not an attribute a write can assert on", kind: .badRequest, pid: nil)
   }
 
   // Between the host's read and this hit-test the element under the point can have changed (occlusion, a
@@ -1218,37 +1263,38 @@ private final class AccessibilityRequest {
 
   // The envelope a write outcome is reported in. Total over the status, so every way a write can end has one
   // answer decided in one place rather than per verb.
-  fileprivate func FBAXBridgeWriteResponse(outcome: FBAXWriteOutcome, pid: pid_t, sent: Bool) -> [String: Any] {
-    var response = FBAXBridgeWriteOutcomeResponse(outcome: outcome, pid: pid)
-    if response[responseOk] as? Bool == false {
-      response[responseEffect] = sent ? effectUnknown : effectNone
+  fileprivate func FBAXBridgeWriteResponse(outcome: FBAXWriteOutcome, pid: pid_t, sent: Bool) -> BridgeAXOutcome<BridgeAXWriteResponse> {
+    let response = FBAXBridgeWriteOutcomeResponse(outcome: outcome, pid: pid)
+    guard case var .failure(failure) = response else {
+      return response
     }
-    return response
+    failure.effect = sent ? .unknown : BridgeAXWire.Effect.none
+    return .failure(failure)
   }
 
-  fileprivate func FBAXBridgeWriteOutcomeResponse(outcome: FBAXWriteOutcome, pid: pid_t) -> [String: Any] {
+  fileprivate func FBAXBridgeWriteOutcomeResponse(outcome: FBAXWriteOutcome, pid: pid_t) -> BridgeAXOutcome<BridgeAXWriteResponse> {
     switch outcome.status {
     case FBAXWriteStatus.written:
-      return [responseOk: true, responsePid: pid as NSNumber]
+      return .success(.written(pid: pid))
     case FBAXWriteStatus.empty:
-      return [responseOk: true, responseEmpty: true]
+      return .success(.empty)
     case FBAXWriteStatus.assertionFailed:
-      return [responseOk: false, responseError: outcome.failureReason ?? "the element at the point is not the one named", responseErrorKind: errorKindAssertionFailed]
+      return .failure(BridgeAXFailure(message: outcome.failureReason ?? "the element at the point is not the one named", kind: .assertionFailed))
     case FBAXWriteStatus.applicationUnavailable:
-      return FBAXBridgeTaggedErrorResponse(
+      return .failure(FBAXBridgeTaggedErrorResponse(
         message: pid > 0 ? "pid \(pid) has no accessibility server to accept the write" : "no accessibility server responded to the write",
-        kind: errorKindApplicationUnavailable,
-        pid: pid > 0 ? pid as NSNumber : nil
-      )
+        kind: .applicationUnavailable,
+        pid: pid > 0 ? pid : nil
+      ))
     case FBAXWriteStatus.applicationNotResponding:
-      return FBAXBridgeNotRespondingResponse(
+      return .failure(FBAXBridgeNotRespondingResponse(
         message: pid > 0 ? "pid \(pid) did not respond to the write before it timed out" : "the application did not respond to the write before it timed out",
-        pid: pid > 0 ? pid as NSNumber : nil
-      )
+        pid: pid > 0 ? pid : nil
+      ))
     case FBAXWriteStatus.failed:
       fallthrough
     @unknown default:
-      return FBAXBridgeRuntimeFailureResponse(message: outcome.failureReason ?? "the write failed", axError: outcome.axError, pid: pid > 0 ? pid as NSNumber : nil)
+      return .failure(FBAXBridgeRuntimeFailureResponse(message: outcome.failureReason ?? "the write failed", axError: outcome.axError, pid: pid > 0 ? pid : nil))
     }
   }
 
@@ -1258,12 +1304,12 @@ private final class AccessibilityRequest {
     client: FBAXClient,
     request: BridgeAXWriteRequest,
     action requested: AccessibilityAction
-  ) throws -> [String: Any] {
+  ) throws -> BridgeAXOutcome<BridgeAXWriteResponse> {
     let name = requested.rawValue
     let action = requested.runtimeValue
     let argumentError = FBAXBridgeWriteArgumentError(request: request)
     if let argumentError {
-      return argumentError
+      return .failure(argumentError)
     }
 
     var element: FBAXElement?
@@ -1295,10 +1341,10 @@ private final class AccessibilityRequest {
     client: FBAXClient,
     request: BridgeAXWriteRequest,
     value requestedValue: String
-  ) throws -> [String: Any] {
+  ) throws -> BridgeAXOutcome<BridgeAXWriteResponse> {
     let argumentError = FBAXBridgeWriteArgumentError(request: request)
     if let argumentError {
-      return argumentError
+      return .failure(argumentError)
     }
 
     var element: FBAXElement?
@@ -1354,39 +1400,39 @@ private final class AccessibilityRequest {
     client: FBAXClient,
     name requestedName: String,
     enabled: Bool?
-  ) throws -> [String: Any] {
+  ) throws -> BridgeAXOutcome<BridgeAXSettingResponse> {
     guard let setting = AccessibilityDeviceSetting(rawValue: requestedName)?.runtimeValue else {
-      return FBAXBridgeTaggedErrorResponse(
+      return .failure(FBAXBridgeTaggedErrorResponse(
         message: "unsupported device setting: \(requestedName)",
-        kind: errorKindBadRequest,
+        kind: .badRequest,
         pid: nil
-      )
+      ))
     }
     let outcome = try enabled.map { try client.setEnabled($0, for: setting) } ?? client.enabledState(for: setting)
     switch outcome.status {
     case FBAXDeviceSettingStatus.resolved:
-      return [responseOk: true, responseEnabled: outcome.isEnabled as NSNumber]
+      return .success(BridgeAXSettingResponse(enabled: outcome.isEnabled))
     case FBAXDeviceSettingStatus.unavailable:
-      return FBAXBridgeTaggedErrorResponse(
+      return .failure(FBAXBridgeTaggedErrorResponse(
         message: outcome.failureReason ?? "device setting \(requestedName) is unavailable",
-        kind: BridgeAXWire.ErrorKind.capabilityUnavailable.rawValue,
+        kind: .capabilityUnavailable,
         pid: nil
-      )
+      ))
     case FBAXDeviceSettingStatus.failed:
       fallthrough
     @unknown default:
-      return FBAXBridgeTaggedErrorResponse(
+      return .failure(FBAXBridgeTaggedErrorResponse(
         message: outcome.failureReason ?? "device setting \(requestedName) failed",
-        kind: errorKindReaderUnavailable,
+        kind: .readerUnavailable,
         pid: nil
-      )
+      ))
     }
   }
 
   // A request that did not decode, answered in the words and kinds every other failure uses.
-  fileprivate func FBAXBridgeDecodeFailureResponse(_ error: BridgeAXRequestError) -> [String: Any] {
-    func badRequest(_ message: String) -> [String: Any] {
-      FBAXBridgeTaggedErrorResponse(message: message, kind: errorKindBadRequest, pid: nil)
+  fileprivate func FBAXBridgeDecodeFailureResponse(_ error: BridgeAXRequestError) -> BridgeAXFailure {
+    func badRequest(_ message: String) -> BridgeAXFailure {
+      FBAXBridgeTaggedErrorResponse(message: message, kind: .badRequest, pid: nil)
     }
     // The frame is JSON from the client, so an unrecognised verb or action can be of any type.
     func describe(_ value: BridgeJSONValue?) -> String {
@@ -1397,7 +1443,7 @@ private final class AccessibilityRequest {
     case let .unsupportedVerb(value):
       return badRequest("unsupported verb: \(describe(value))")
     case let .nonPositivePid(pid):
-      return FBAXBridgeTaggedErrorResponse(message: "pid \(pid) names no application", kind: errorKindApplicationUnavailable, pid: pid as NSNumber)
+      return FBAXBridgeTaggedErrorResponse(message: "pid \(pid) names no application", kind: .applicationUnavailable, pid: pid)
     case .invalidDisplayID:
       return badRequest("displayID must be a positive 32-bit integer")
     case .missingPoint(.describe):
@@ -1419,7 +1465,7 @@ private final class AccessibilityRequest {
     case .missingEnabled:
       return badRequest("settings-set requires a boolean enabled value")
     case let .unsupportedFrontmostMethod(method):
-      return FBAXBridgeTaggedErrorResponse(message: "unsupported frontmost method: \(method)", kind: errorKindFrontmostUnresolved, pid: nil)
+      return FBAXBridgeTaggedErrorResponse(message: "unsupported frontmost method: \(method)", kind: .frontmostUnresolved, pid: nil)
     case let .negativeTunable(key, value):
       return badRequest("\(key.key) must not be negative, got \(value)")
     case let .malformedFlag(key):
@@ -1440,24 +1486,24 @@ private final class AccessibilityRequest {
     }
   }
 
-  fileprivate func FBAXBridgeDispatchRequest(request: BridgeAXRequest) throws -> [String: Any] {
+  fileprivate func FBAXBridgeDispatchRequest(request: BridgeAXRequest) throws -> AccessibilityAnswer {
     if request.verb == .quiet || request.verb == .settingsObserve {
-      return FBAXBridgeTaggedErrorResponse(
+      return .failure(FBAXBridgeTaggedErrorResponse(
         message: "\(request.verb.rawValue) streams its answer, so it is only served over a serve connection or the one-shot CLI",
-        kind: errorKindBadRequest,
+        kind: .badRequest,
         pid: nil
-      )
+      ))
     }
 
     let client: FBAXClient
     do {
       client = try FBAXClientProvider.client()
     } catch {
-      return FBAXBridgeTaggedErrorResponse(
+      return .failure(FBAXBridgeTaggedErrorResponse(
         message: error.localizedDescription,
-        kind: errorKindReaderUnavailable,
+        kind: .readerUnavailable,
         pid: nil
-      )
+      ))
     }
 
     switch request {
@@ -1473,43 +1519,43 @@ private final class AccessibilityRequest {
           displayScopedQuiescence: true,
           displays: outcome.displays.map { BridgeAXDisplayInventory.Display(uniqueID: $0.uniqueID, displayID: $0.displayID) }
         )
-        return inventory.payload.merging([responseOk: true]) { _, ok in ok }
+        return .displays(.success(inventory))
       case .unavailable:
-        return FBAXBridgeTaggedErrorResponse(
+        return .displays(.failure(FBAXBridgeTaggedErrorResponse(
           message: outcome.failureReason ?? "Accessibility display inventory is unavailable",
-          kind: errorKindCapabilityUnavailable, pid: nil)
+          kind: .capabilityUnavailable, pid: nil)))
       case .failed:
-        return FBAXBridgeTaggedErrorResponse(
+        return .displays(.failure(FBAXBridgeTaggedErrorResponse(
           message: outcome.failureReason ?? "Accessibility display inventory failed",
-          kind: errorKindReaderUnavailable, pid: nil)
+          kind: .readerUnavailable, pid: nil)))
       @unknown default:
-        return FBAXBridgeTaggedErrorResponse(
+        return .displays(.failure(FBAXBridgeTaggedErrorResponse(
           message: "Unknown accessibility display inventory outcome",
-          kind: errorKindReaderUnavailable, pid: nil)
+          kind: .readerUnavailable, pid: nil)))
       }
 
     case let .deviceSettingRead(name):
-      return try FBAXBridgeDeviceSetting(client: client, name: name, enabled: nil)
+      return .setting(try FBAXBridgeDeviceSetting(client: client, name: name, enabled: nil))
     case let .deviceSettingWrite(name, enabled):
-      return try FBAXBridgeDeviceSetting(client: client, name: name, enabled: enabled)
+      return .setting(try FBAXBridgeDeviceSetting(client: client, name: name, enabled: enabled))
     // `hittest` is self-contained: with a pid it hit-tests that app; with no pid it hit-tests display-wide
     // — the app owning the point, resolved in-guest, with no frontmost pid query.
     case let .hitTest(x, y, attributes, clientType, displayID, pid):
-      return try FBAXBridgeHitTest(
-        client: client, point: CGPoint(x: x, y: y), pid: pid, attributes: attributes, displayID: displayID, clientType: clientType)
+      return .hitTest(try FBAXBridgeHitTest(
+        client: client, point: CGPoint(x: x, y: y), pid: pid, attributes: attributes, displayID: displayID, clientType: clientType))
     // Writes are point-addressed: a one-shot guest exits between requests, so an element handle cannot
     // survive one.
     case let .write(write):
       switch write.kind {
       case let .perform(action):
-        return try FBAXBridgePerform(client: client, request: write, action: action)
+        return .write(try FBAXBridgePerform(client: client, request: write, action: action))
       case let .setValue(value):
-        return try FBAXBridgeSetValue(client: client, request: write, value: value)
+        return .write(try FBAXBridgeSetValue(client: client, request: write, value: value))
       }
     case let .read(pid, options, displayID):
-      return try FBAXBridgeDescribe(client: client, pid: pid, frontmost: nil, options: options, displayID: displayID)
+      return .tree(try FBAXBridgeDescribe(client: client, pid: pid, frontmost: nil, options: options, displayID: displayID))
     case let .readFrontmost(x, y, method, options, displayID):
-      return try FBAXBridgeDescribe(client: client, pid: 0, frontmost: (method, CGPoint(x: x, y: y)), options: options, displayID: displayID)
+      return .tree(try FBAXBridgeDescribe(client: client, pid: 0, frontmost: (method, CGPoint(x: x, y: y)), options: options, displayID: displayID))
     }
   }
 
@@ -1522,7 +1568,7 @@ private final class AccessibilityRequest {
     frontmost: (method: FrontmostMethod, anchor: CGPoint)?,
     options: BridgeAXReadOptions,
     displayID: UInt32?
-  ) throws -> [String: Any] {
+  ) throws -> BridgeAXOutcome<BridgeAXTreeResponse> {
     var pid = requestedPid
     // Automation mode determines the structure visible to both frontmost discovery and traversal.
     var automationAsserted = false
@@ -1550,24 +1596,24 @@ private final class AccessibilityRequest {
       case FBAXFrontmostStatus.resolved:
         break
       case FBAXFrontmostStatus.applicationUnavailable:
-        return FBAXBridgeTaggedErrorResponse(
+        return .failure(FBAXBridgeTaggedErrorResponse(
           message: resolved.failureReason ?? "nothing frontmost has an accessibility server",
-          kind: errorKindApplicationUnavailable,
+          kind: .applicationUnavailable,
           pid: nil
-        )
+        ))
       case FBAXFrontmostStatus.applicationNotResponding:
-        return FBAXBridgeNotRespondingResponse(
+        return .failure(FBAXBridgeNotRespondingResponse(
           message: resolved.failureReason ?? "the frontmost application did not respond before it timed out",
           pid: nil
-        )
+        ))
       case FBAXFrontmostStatus.unresolved:
         fallthrough
       @unknown default:
-        return FBAXBridgeTaggedErrorResponse(
+        return .failure(FBAXBridgeTaggedErrorResponse(
           message: resolved.failureReason ?? "could not resolve the frontmost application pid",
-          kind: errorKindFrontmostUnresolved,
+          kind: .frontmostUnresolved,
           pid: nil
-        )
+        ))
       }
       pid = resolved.processIdentifier
     }
@@ -1575,7 +1621,7 @@ private final class AccessibilityRequest {
     let application = try client.applicationElement(forProcessIdentifier: pid)
     let root = application.value
     guard let root else {
-      return FBAXBridgeErrorResponse(message: "no application element for pid \(pid)")
+      return .failure(FBAXBridgeErrorResponse(message: "no application element for pid \(pid)"))
     }
     // A tree read the application did not answer is still running there, and another sent now would queue
     // behind it: every caller that retries on a timeout adds a whole serialization to a main thread already
@@ -1584,7 +1630,7 @@ private final class AccessibilityRequest {
     if FBAXClientProvider.hasUnansweredRead(forProcessIdentifier: pid) {
       let probe = try client.readAttributes([axElementType], of: root)
       if probe.status == FBAXReadStatus.applicationNotResponding {
-        return AccessibilityFailure.outstanding(pid: pid).dictionary
+        return .failure(AccessibilityFailure.outstanding(pid: pid).failure)
       }
       FBAXClientProvider.setHasUnansweredRead(false, forProcessIdentifier: pid)
     }
@@ -1592,7 +1638,7 @@ private final class AccessibilityRequest {
     let maxDepth = options.maxDepth
     let nodeBudget = options.maxNodes
 
-    var tree: [String: Any]?
+    var tree: BridgeAXNode?
     traversal = TraversalContext(remainingNodes: nodeBudget, processIdentifier: pid, clientType: options.clientType)
     let traverseStarted = CFAbsoluteTimeGetCurrent()
     if options.traversal == .singleFetch {
@@ -1603,10 +1649,10 @@ private final class AccessibilityRequest {
         // wrong guess costs the next read one attribute probe.
         FBAXClientProvider.setHasUnansweredRead(true, forProcessIdentifier: pid)
         let description = try client.localizedDescription(ofError: snapshot.error)
-        return FBAXBridgeNotRespondingResponse(
+        return .failure(FBAXBridgeNotRespondingResponse(
           message: (description.value as String?) ?? "the single-fetch read returned no tree",
-          pid: pid as NSNumber
-        )
+          pid: pid
+        ))
       }
       // One fetch for the whole tree, counted up-front so the boundary continuations the mapper fetches
       // land on top of it.
@@ -1625,7 +1671,7 @@ private final class AccessibilityRequest {
         maxDepth: maxDepth
       )
       if tree == nil {
-        return FBAXBridgeErrorResponse(message: "the single-fetch read returned a shape with no root node")
+        return .failure(FBAXBridgeErrorResponse(message: "the single-fetch read returned a shape with no root node"))
       }
     } else if options.traversal == .semantic {
       // Whether the application is there at all is a question only the XCTest read answers. The runtime
@@ -1644,7 +1690,7 @@ private final class AccessibilityRequest {
         pid: pid
       )
       if let unavailable {
-        return unavailable
+        return .failure(unavailable)
       }
       tree = try FBAXBridgeBuildTranslatorNode(
         client: client,
@@ -1654,7 +1700,7 @@ private final class AccessibilityRequest {
         maxDepth: maxDepth
       )
       if tree == nil {
-        return FBAXBridgeErrorResponse(message: "the translator vocabulary returned no attributes for this element")
+        return .failure(FBAXBridgeErrorResponse(message: "the translator vocabulary returned no attributes for this element"))
       }
     } else {
       let read = try FBAXBridgeBuildNode(
@@ -1676,11 +1722,11 @@ private final class AccessibilityRequest {
         pid: pid
       )
       if let failure {
-        return failure
+        return .failure(failure)
       }
-      tree = read.attributes
+      tree = read.node
       if tree == nil {
-        return FBAXBridgeErrorResponse(message: "the tree read reported success but returned no attributes")
+        return .failure(FBAXBridgeErrorResponse(message: "the tree read reported success but returned no attributes"))
       }
     }
     // Closed before the response is assembled, so it measures the walk and not the bookkeeping after it.
@@ -1693,28 +1739,21 @@ private final class AccessibilityRequest {
     }
     if let displayID {
       guard let scoped = try treeOnDisplay(tree, displayID: displayID) else {
-        return FBAXBridgeTaggedErrorResponse(
-          message: "Application has no window on the requested display", kind: errorKindApplicationUnavailable, pid: pid as NSNumber)
+        return .failure(FBAXBridgeTaggedErrorResponse(
+          message: "Application has no window on the requested display", kind: .applicationUnavailable, pid: pid))
       }
       tree = scoped
     }
-    var response = AccessibilityDescriptionResponse(
-      tree: tree,
-      truncated: traversal.truncated,
-      pid: pid,
-      automationEnabled: automationEnabled,
-      automationAsserted: automationAsserted,
-      traverseDuration: traverseDuration,
-      roundTrips: traversal.roundTrips,
-      frontmostMethod: frontmost?.method.rawValue
-    ).dictionary
-    // Enrich the wire with a fullscreen-modal descriptor when one is present in the tree (host-facing;
-    // not emitted in the serialized CLI output).
-    let modal = FBAXBridgeModalDescriptor(tree: tree)
-    if let modal {
-      response[responseModal] = modal
-    }
-    return response
+    return .success(
+      BridgeAXTreeResponse(
+        tree: tree,
+        pid: pid,
+        truncated: traversal.truncated,
+        automation: BridgeAXAutomationState(enabled: automationEnabled, asserted: automationAsserted),
+        phases: BridgeAXGuestPhases(traverseMilliseconds: traverseDuration * 1000, machRoundTrips: traversal.roundTrips),
+        method: frontmost?.method,
+        // A fullscreen-modal descriptor when one is present in the tree, so the host can detect it without geometry.
+        modal: FBAXBridgeModalDescriptor(tree: tree)))
   }
 
   // MARK: - Quiescence
@@ -1755,26 +1794,29 @@ private final class AccessibilityRequest {
 // Answer those errors on the shared dispatcher path so the serve connection can handle later requests.
 public enum AccessibilityService {
 
+  /// The answer to `payload` as the host reads it off the wire, decoded as plain JSON, for a caller that looks at it
+  /// field by field.
   public static func handleRequest(_ payload: [String: Any]) -> [String: Any] {
-    handleRequest(parameters: parameters(payload))
+    let answer = handleRequest(parameters: parameters(payload)).encoded()
+    return ((try? JSONSerialization.jsonObject(with: answer)) as? [String: Any]) ?? [:]
   }
 
   /// Decodes `parameters` into a request and answers it.
-  static func handleRequest(parameters: [String: BridgeJSONValue]) -> [String: Any] {
+  public static func handleRequest(parameters: [String: BridgeJSONValue]) -> AccessibilityAnswer {
     do {
       return handleRequest(try BridgeAXRequest(payload: parameters))
     } catch {
-      return AccessibilityRequest().FBAXBridgeDecodeFailureResponse(error)
+      return .failure(AccessibilityRequest().FBAXBridgeDecodeFailureResponse(error))
     }
   }
 
-  static func handleRequest(_ request: BridgeAXRequest) -> [String: Any] {
+  public static func handleRequest(_ request: BridgeAXRequest) -> AccessibilityAnswer {
     do {
       return try AccessibilityRequest().FBAXBridgeDispatchRequest(request: request)
     } catch AXDisplayScopeError.missingWindowIdentity {
-      return [responseOk: false, responseError: "Cannot scope accessibility: a window has no valid display identity", responseErrorKind: errorKindCapabilityUnavailable]
+      return .failure(BridgeAXFailure(message: "Cannot scope accessibility: a window has no valid display identity", kind: .capabilityUnavailable))
     } catch {
-      return [responseOk: false, responseError: "the reader raised while answering: \(error.localizedDescription)"]
+      return .failure(BridgeAXFailure(message: "the reader raised while answering: \(error.localizedDescription)"))
     }
   }
 
@@ -1805,32 +1847,13 @@ public enum AccessibilityService {
     payload.compactMapValues { try? BridgeJSONValue(foundationValue: $0) }
   }
 
-  public static func modalDescriptor(_ tree: [String: Any]) -> [String: String]? {
+  /// The fullscreen modal in `tree`, as a frontmost read reports it.
+  public static func modal(in tree: BridgeAXNode) -> BridgeAXModal? {
     AccessibilityRequest().FBAXBridgeModalDescriptor(tree: tree)
   }
 
   public static func wireConstantsForTesting() -> [String: String] {
     AccessibilityRequest().FBAXBridgeWireConstantsForTesting()
-  }
-
-  public static func serializeResponse(_ response: [String: Any]) -> Data {
-    struct StaticVars {
-      static let fallback = "{\"ok\":false,\"error\":\"response serialization failed\"}"
-    }
-    // Sanitize first (non-finite numbers would otherwise raise), then still guard the call: an
-    // unforeseen unserializable value must degrade to an error frame the client can read, never abort
-    // the process and sever the connection.
-    let sanitized = AXBridgeWire.sanitized(response)
-    var data: Data?
-    if JSONSerialization.isValidJSONObject(sanitized) {
-      data = FBAXResponseEncoder.data(for: sanitized)
-    } else {
-      NSLog("[AccessibilityService] response is not a valid JSON object; emitting an error frame")
-    }
-    if let data {
-      return data
-    }
-    return Data(StaticVars.fallback.utf8)
   }
 
   public static func handleAction(_ action: String, arguments: [String], writeResponse: (Data) -> Bool) -> Int32 {
@@ -1847,14 +1870,14 @@ public enum AccessibilityService {
           }
         }
         return stream.failed || lostOutput ? 1 : 0
-      case let .failure(response):
-        _ = writeResponse(serializeResponse(response))
+      case let .failure(failure):
+        _ = writeResponse(AccessibilityAnswer.failure(failure).encoded())
         return 1
       }
     }
-    let response = handleRequest(parameters: request)
-    _ = writeResponse(serializeResponse(response))
-    return (response[responseOk] as? NSNumber)?.boolValue == true ? 0 : 1
+    let answer = handleRequest(parameters: request)
+    _ = writeResponse(answer.encoded())
+    return answer.succeeded ? 0 : 1
   }
 }
 

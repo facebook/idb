@@ -7,7 +7,6 @@
 
 #import "Runtime/AccessibilityClient.h"
 #import "Runtime/AccessibilityClientProvider.h"
-#import "Runtime/AccessibilityResponseEncoder.h"
 #import "Runtime/AccessibilityWireValue.h"
 #import "Runtime/ContactsStoreClient.h"
 #import "Runtime/DeliveredNotificationsClient.h"

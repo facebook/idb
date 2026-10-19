@@ -254,7 +254,7 @@ final class QuiescenceStream: BridgeResponseStream {
       }
     case .touchesCompleted:
       if pid == self.pid {
-        write([BridgeAXWire.Envelope.ok.rawValue: true, Wire.Key.event.rawValue: Wire.Event.touchesCompleted.rawValue, BridgeAXWire.Envelope.pid.rawValue: pid])
+        write(.success(.touchesCompleted(pid: pid)))
       }
     case .runLoopIdle, .animationsInactive:
       guard pid == self.pid else { return }
@@ -314,7 +314,7 @@ final class QuiescenceStream: BridgeResponseStream {
     generation += 1
     tracker.reset()
     lastState = nil
-    write([BridgeAXWire.Envelope.ok.rawValue: true, Wire.Key.event.rawValue: Wire.Event.targetChanged.rawValue, BridgeAXWire.Envelope.pid.rawValue: outcome.processIdentifier])
+    write(.success(.targetChanged(pid: outcome.processIdentifier)))
     try arm(outcome.processIdentifier)
   }
 
@@ -324,7 +324,7 @@ final class QuiescenceStream: BridgeResponseStream {
     application = nil
     tracker.reset()
     guard case .pid = target, !Self.isAlive(pid) else { return }
-    write([BridgeAXWire.Envelope.ok.rawValue: true, Wire.Key.event.rawValue: Wire.Event.targetExited.rawValue, BridgeAXWire.Envelope.pid.rawValue: pid])
+    write(.success(.targetExited(pid: pid)))
     finish()
   }
 
@@ -337,7 +337,7 @@ final class QuiescenceStream: BridgeResponseStream {
     let now = Self.now
     if let state = tracker.state(at: now), state != lastState {
       lastState = state
-      write(Self.envelope(for: state, pid: pid))
+      write(.success(Self.event(for: state, pid: pid)))
     }
     deadlineTimer?.invalidate()
     deadlineTimer = nil
@@ -347,18 +347,12 @@ final class QuiescenceStream: BridgeResponseStream {
     deadlineTimer = timer
   }
 
-  private static func envelope(for state: QuiescenceTracker.State, pid: pid_t) -> [String: Any] {
-    var envelope: [String: Any] = [BridgeAXWire.Envelope.ok.rawValue: true, Wire.Key.event.rawValue: Wire.Event.state.rawValue, BridgeAXWire.Envelope.pid.rawValue: pid]
+  private static func event(for state: QuiescenceTracker.State, pid: pid_t) -> BridgeAXQuiescenceEvent {
     switch state {
-    case let .busy(signals):
-      envelope[Wire.Key.state.rawValue] = Wire.State.busy.rawValue
-      envelope[Wire.Key.signals.rawValue] = signals.map(\.rawValue).sorted()
-    case .settling:
-      envelope[Wire.Key.state.rawValue] = Wire.State.settling.rawValue
-    case .quiet:
-      envelope[Wire.Key.state.rawValue] = Wire.State.quiet.rawValue
+    case let .busy(signals): .state(.busy, busySignals: signals.sorted { $0.rawValue < $1.rawValue }, pid: pid)
+    case .settling: .state(.settling, busySignals: [], pid: pid)
+    case .quiet: .state(.quiet, busySignals: [], pid: pid)
     }
-    return envelope
   }
 
   private static func errorKind(for status: FBAXFrontmostStatus) -> BridgeAXWire.ErrorKind {
@@ -381,13 +375,14 @@ final class QuiescenceStream: BridgeResponseStream {
 
   private func fail(_ message: String, kind: BridgeAXWire.ErrorKind) {
     failed = true
-    write([BridgeAXWire.Envelope.ok.rawValue: false, BridgeAXWire.Envelope.error.rawValue: message, BridgeAXWire.Envelope.errorKind.rawValue: kind.rawValue])
+    write(.failure(BridgeAXFailure(message: message, kind: kind)))
     finish()
   }
 
-  private func write(_ envelope: [String: Any]) {
+  private func write(_ frame: BridgeAXOutcome<BridgeAXQuiescenceEvent>) {
     guard !isCancelled, let emit else { return }
-    if !emit(AccessibilityService.serializeResponse(envelope)) {
+    let data = (try? JSONEncoder().encode(frame)) ?? AccessibilityAnswer.failure(BridgeAXFailure(message: "response serialization failed")).encoded()
+    if !emit(data) {
       finish()
     }
   }

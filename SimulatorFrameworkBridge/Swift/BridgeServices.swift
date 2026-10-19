@@ -135,19 +135,19 @@ public enum BridgeServices {
     case let .stream(events):
       return .stream(AccessibilityResultStream(events: events))
     case let .failure(response):
-      return .result(accessibilityResult(response))
+      return .result(accessibilityResult(.failure(response)))
     }
   }
 
-  /// The answer goes on the wire as the bytes `serializeResponse` wrote, so nothing parses it before the host does.
-  private static func accessibility(_ response: [String: Any], output: BridgeOutput) -> Int32 {
-    output.write(accessibility: AccessibilityService.serializeResponse(response))
-    return (response[BridgeAXWire.Envelope.ok.rawValue] as? NSNumber)?.boolValue == true ? 0 : 1
+  /// The answer goes on the wire as the bytes it encoded to, so nothing parses it before the host does.
+  private static func accessibility(_ answer: AccessibilityAnswer, output: BridgeOutput) -> Int32 {
+    output.write(accessibility: answer.encoded())
+    return answer.succeeded ? 0 : 1
   }
 
-  fileprivate static func accessibilityResult(_ response: [String: Any]) -> BridgeResult {
+  fileprivate static func accessibilityResult(_ answer: AccessibilityAnswer) -> BridgeResult {
     let output = BridgeOutput()
-    return output.finish(status: accessibility(response, output: output))
+    return output.finish(status: accessibility(answer, output: output))
   }
 
   /// A streamed frame arrives already serialized; only its `ok` is read back, to set the exit status.

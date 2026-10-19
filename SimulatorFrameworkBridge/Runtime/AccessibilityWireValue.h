@@ -14,6 +14,10 @@ NS_ASSUME_NONNULL_BEGIN
 + (nullable NSNumber *)booleanFromValue:(nullable id)value error:(NSError **)error NS_SWIFT_NAME(boolean(from:));
 + (nullable NSString *)formattedDescriptionOfValue:(nullable id)value error:(NSError **)error NS_SWIFT_NAME(formattedDescription(of:));
 + (nullable NSNumber *)matchesStringValue:(nullable id)value expected:(NSString *)expected error:(NSError **)error NS_SWIFT_NAME(matchesString(_:expected:));
+/// A copy of `value` made only of plain Foundation values: strings, numbers of the kind the runtime answered with,
+/// dictionaries, arrays and null. Read under the runtime guard, so a value that raises when read fails the copy rather
+/// than the process.
++ (nullable id)plainValueOf:(nullable id)value error:(NSError **)error NS_SWIFT_NAME(plainValue(of:));
 @end
 
 NS_ASSUME_NONNULL_END

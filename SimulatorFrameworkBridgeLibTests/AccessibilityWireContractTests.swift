@@ -238,6 +238,41 @@ final class AccessibilityWireContractTests: XCTestCase {
     XCTAssertEqual(try success(answer(press(), as: BridgeAXWriteResponse.self)), .empty)
   }
 
+  // MARK: - The typed answer
+
+  // The guest builds each verb's answer as the shared type the host decodes it as; the frame is that value encoded.
+  func testEachVerbIsAnsweredWithItsOwnTypedOutcome() throws {
+    let root = FBAXFakeElement.readable("UIApplication")
+    runtime.applicationElements[NSNumber(value: kAppPid)] = root
+    guard case let .tree(.success(read)) = AccessibilityService.handleRequest(.read(pid: kAppPid, options: options())) else {
+      return XCTFail("a read is answered with a tree")
+    }
+    XCTAssertEqual(read.tree.elementType, .string("UIApplication"))
+    XCTAssertEqual(read.pid, kAppPid)
+
+    runtime.hitTestOutcome = FBAXHitTestOutcome.empty()
+    XCTAssertEqual(
+      AccessibilityService.handleRequest(.hitTest(x: 1, y: 2, attributes: nil, clientType: .noClient, pid: kAppPid)), .hitTest(.success(.empty)))
+    XCTAssertEqual(AccessibilityService.handleRequest(press()), .write(.success(.empty)))
+
+    runtime.deviceSettings[NSNumber(value: FBAXDeviceSetting.reduceMotion.rawValue)] = NSNumber(value: true)
+    XCTAssertEqual(
+      AccessibilityService.handleRequest(.deviceSettingRead("reduce-motion")), .setting(.success(BridgeAXSettingResponse(enabled: true))))
+
+    runtime.displayInventoryOutcome = .available([FBAXDisplayIdentity(uniqueID: "main", displayID: 1)])
+    XCTAssertEqual(
+      AccessibilityService.handleRequest(.displays),
+      .displays(
+        .success(
+          BridgeAXDisplayInventory(
+            displayScopedInteractions: true, displayScopedTrees: true, displayScopedQuiescence: true,
+            displays: [.init(uniqueID: "main", displayID: 1)]))))
+
+    XCTAssertEqual(
+      AccessibilityService.handleRequest(parameters: ["verb": .string("hittest"), "clientType": .integer(0), "x": .string("left"), "y": .integer(2)]),
+      .failure(BridgeAXFailure(message: "hittest requires numeric x and y", kind: .badRequest)))
+  }
+
   // MARK: - Settings and displays
 
   func testADeviceSettingAnswersWithItsState() throws {
