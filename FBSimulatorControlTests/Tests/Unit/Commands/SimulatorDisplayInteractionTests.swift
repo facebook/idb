@@ -146,7 +146,7 @@ struct SimulatorDisplayInteractionTests {
       })
     if case AXBridgeError.readerUnavailable = unavailable {} else { Issue.record("\(unavailable)") }
     #expect(AXBridgeRequest.displays.command == .accessibility(.displays))
-    #expect(AXBridgeRequest.displays.payload as NSDictionary == ["verb": "displays"])
+    #expect(try wireAction(.displays) == #"{"displays":{}}"#)
     #expect(AXBridgeRequest.displays.mayRetry)
   }
 

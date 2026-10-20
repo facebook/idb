@@ -749,9 +749,10 @@ final class AXBridgeReadsTests: XCTestCase {
       let response = try await reader.describe(.point(CGPoint(x: 80, y: 180)), options: AccessibilityRequestOptions())
       let requests = await transport.requests
       XCTAssertEqual(requests.count, 1)
-      XCTAssertEqual(requests[0].payload["x"] as? Double, 180)
-      XCTAssertEqual(requests[0].payload["y"] as? Double, 320)
-      XCTAssertEqual(requests[0].payload["displayID"] as? UInt32, legacy ? nil : 82)
+      guard case let .hitTest(x, y, _, _, displayID, _) = requests[0] else { return XCTFail("\(requests[0])") }
+      XCTAssertEqual(x, 180)
+      XCTAssertEqual(y, 320)
+      XCTAssertEqual(displayID, legacy ? nil : 82)
       XCTAssertEqual(response.screen?.width, 400)
       XCTAssertEqual(response.screen?.height, 600)
       XCTAssertEqual(response.screen?.display?.uniqueID, legacy ? nil : "inner")
@@ -770,7 +771,7 @@ final class AXBridgeReadsTests: XCTestCase {
       let response = try await reader.describe(.point(CGPoint(x: 80, y: 180)), options: AccessibilityRequestOptions())
       XCTAssertEqual(response.screen?.display?.uniqueID, "inner", "\(selection)")
       let requests = await transport.requests
-      XCTAssertEqual(requests.first?.payload["displayID"] as? UInt32, 82, "\(selection)")
+      XCTAssertEqual(requests.first?.displayID, 82, "\(selection)")
     }
   }
 
@@ -820,12 +821,13 @@ final class AXBridgeReadsTests: XCTestCase {
     XCTAssertEqual(displays.reads, 3)
     let requests = await transport.requests
     XCTAssertEqual(requests.count, 2)
-    XCTAssertEqual(requests[0].payload["displayID"] as? UInt32, 82)
-    XCTAssertEqual(requests[1].payload["displayID"] as? UInt32, 82)
-    XCTAssertEqual(requests[1].payload["x"] as? Double, 180)
-    XCTAssertEqual(requests[1].payload["y"] as? Double, 320)
-    XCTAssertEqual(requests[1].payload["assertValue"] as? String, "target")
-    XCTAssertEqual(requests[1].payload["pid"] as? Int, 42)
+    XCTAssertEqual(requests[0].displayID, 82)
+    guard case let .write(write) = requests[1] else { return XCTFail("\(requests[1])") }
+    XCTAssertEqual(write.displayID, 82)
+    XCTAssertEqual(write.x, 180)
+    XCTAssertEqual(write.y, 320)
+    XCTAssertEqual(write.assertion?.value, "target")
+    XCTAssertEqual(write.pid, 42)
   }
 
   func testTreeScreenUsesPinnedGeometryWithoutRewritingElementFrames() async throws {
@@ -2927,23 +2929,20 @@ final class AXAutoTraversalTests: XCTestCase {
   func testADefaultGuestReadAsksTheGuestForASnapshot() throws {
     let traversal = AXBridgeUIAutomation.autoTraversal(for: AccessibilityRequestOptions())
     let request = Self.readRequest(traversal: traversal)
-    XCTAssertEqual(try decodedBridgeAXArguments(request)["traversal"] as? String, "single-fetch")
-    XCTAssertEqual(request.payload["traversal"] as? String, "single-fetch")
+    XCTAssertTrue(try wireAction(request).contains(#""traversal":"single-fetch""#))
   }
 
   // The same wire pin for a reachability read: it resolves to the walk, and says so.
   func testAReachabilityReadAsksTheGuestForNoSnapshot() throws {
     let traversal = AXBridgeUIAutomation.autoTraversal(for: AccessibilityRequestOptions(keys: [.interactable]))
     let request = Self.readRequest(traversal: traversal)
-    XCTAssertEqual(try decodedBridgeAXArguments(request)["traversal"] as? String, "view-hierarchy")
-    XCTAssertEqual(request.payload["traversal"] as? String, "view-hierarchy")
+    XCTAssertTrue(try wireAction(request).contains(#""traversal":"view-hierarchy""#))
   }
 
   // Pinned in its own right, not only as the current default.
   func testTheSingleFetchAsksTheGuestForASnapshot() throws {
     let request = Self.readRequest(traversal: .singleFetch)
-    XCTAssertEqual(try decodedBridgeAXArguments(request)["traversal"] as? String, "single-fetch")
-    XCTAssertEqual(request.payload["traversal"] as? String, "single-fetch")
+    XCTAssertTrue(try wireAction(request).contains(#""traversal":"single-fetch""#))
   }
 
   func testANamedTraversalOverridesTheBackendDefault() {

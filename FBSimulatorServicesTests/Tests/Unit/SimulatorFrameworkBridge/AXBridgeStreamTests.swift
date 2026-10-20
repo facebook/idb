@@ -168,8 +168,7 @@ final class AXBridgeStreamTests {
   @Test
   func aQuiescenceRequestCarriesItsTunables() throws {
     let request = AXBridgeRequest.quiescence(pid: 42, busyThresholdMs: 5, quietWindowMs: 7)
-    #expect(
-      request.payload as NSDictionary == ["verb": "quiet", "pid": 42, "busyThresholdMs": 5, "quietWindowMs": 7])
+    #expect(try requestJSON(request) == #"{"quiescence":{"busyThresholdMs":5,"method":"window-server","pid":42,"quietWindowMs":7,"x":0,"y":0}}"#)
     #expect(!request.mayRetry)
   }
 
@@ -177,7 +176,7 @@ final class AXBridgeStreamTests {
   @Test
   func aQuiescenceRequestFollowingTheFrontmostOmitsWhatWasNotGiven() throws {
     let request = AXBridgeRequest.quiescence(pid: nil, busyThresholdMs: nil, quietWindowMs: nil)
-    #expect(request.payload as NSDictionary == ["verb": "quiet"])
+    #expect(try requestJSON(request) == #"{"quiescence":{"method":"window-server","x":0,"y":0}}"#)
   }
 }
 
@@ -192,4 +191,11 @@ private struct StreamOnlyConnector: BridgeConnector {
   func streamConnection() async throws -> SimulatorFrameworkBridgeConnection {
     stream
   }
+}
+
+/// The request as JSON text with sorted keys, as a frame carries it.
+private func requestJSON(_ request: AXBridgeRequest) throws -> String {
+  let encoder = JSONEncoder()
+  encoder.outputFormatting = .sortedKeys
+  return String(decoding: try encoder.encode(request), as: UTF8.self)
 }

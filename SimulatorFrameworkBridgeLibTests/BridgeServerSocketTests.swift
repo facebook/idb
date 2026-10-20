@@ -108,15 +108,9 @@ final class BridgeServerSocketTests: XCTestCase {
     return frame
   }
 
-  /// An accessibility request with these parameters, sent as they are whether or not they decode.
+  /// The accessibility request these flat parameters spell, sent as a host sends it.
   func frame(accessibility parameters: [String: Any]) throws -> Data {
-    let request: [String: Any] = [
-      "version": BridgeRequest.currentVersion, "id": UUID().uuidString, "command": ["accessibility": ["action": parameters]],
-    ]
-    let bytes = try JSONSerialization.data(withJSONObject: request)
-    var frame = try IPCFrame.header(forSize: bytes.count)
-    frame.append(bytes)
-    return frame
+    try frame(command: .accessibility(AccessibilityParameters.request(parameters)))
   }
 
   func exitCode(of response: NSDictionary?) -> Int? {

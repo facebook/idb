@@ -1494,6 +1494,8 @@ private final class AccessibilityRequest {
         return badRequest("a read or hit-test requires a client type: an integer from 0 to \(BridgeAXClientType.allCases.count - 1)")
       }
       return badRequest("unsupported client type: \(describe(value)); expected an integer from 0 to \(BridgeAXClientType.allCases.count - 1)")
+    case let .undecodable(reason):
+      return badRequest("the request does not decode: \(reason)")
     case let .unsupportedTraversal(value):
       let traversals = BridgeAXTraversal.allCases.map(\.rawValue).joined(separator: ", ")
       guard let value else {
@@ -1822,18 +1824,24 @@ private final class AccessibilityRequest {
 // Answer those errors on the shared dispatcher path so the serve connection can handle later requests.
 public enum AccessibilityService {
 
-  /// The answer to `payload` as the host reads it off the wire, decoded as plain JSON, for a caller that looks at it
-  /// field by field.
+  /// The answer to the request `payload` spells as flat parameters, as the host reads it off the wire, decoded as
+  /// plain JSON for a caller that looks at it field by field.
   public static func handleRequest(_ payload: [String: Any]) -> [String: Any] {
-    let answer = handleRequest(parameters: parameters(payload)).encoded()
-    return ((try? JSONSerialization.jsonObject(with: answer)) as? [String: Any]) ?? [:]
+    let answer: BridgeAXAnswer
+    do {
+      answer = handleRequest(try request(payload))
+    } catch {
+      answer = .failure(failure(error))
+    }
+    return ((try? JSONSerialization.jsonObject(with: answer.encoded())) as? [String: Any]) ?? [:]
   }
 
-  /// Decodes a request from the JSON object `parameters` and answers it.
+  /// Reads a request from the flat parameters the JSON object `parameters` spells, and answers it.
   public static func handleRequest(parameters: Data) -> BridgeAXAnswer {
-    switch request(parameters) {
-    case let .request(request): handleRequest(request)
-    case let .failure(failure): .failure(failure)
+    do {
+      return handleRequest(try AccessibilityParameters.request(json: parameters))
+    } catch {
+      return .failure(failure(error))
     }
   }
 
@@ -1842,7 +1850,13 @@ public enum AccessibilityService {
     AccessibilityRequest().FBAXBridgeDecodeFailureResponse(error)
   }
 
+  /// Answers `request`, refusing one that means nothing however it arrived.
   public static func handleRequest(_ request: BridgeAXRequest) -> BridgeAXAnswer {
+    do {
+      try request.validate()
+    } catch {
+      return .failure(failure(error))
+    }
     do {
       return try AccessibilityRequest().FBAXBridgeDispatchRequest(request: request)
     } catch AXDisplayScopeError.missingWindowIdentity {
@@ -1854,7 +1868,13 @@ public enum AccessibilityService {
 
   /// The accessibility stream named by `request`, or nil for a unary verb.
   static func stream(_ request: BridgeAXRequest) -> AccessibilityStreamStart? {
-    quiescence(request) ?? settings(request)
+    guard request.verb == .quiet || request.verb == .settingsObserve else { return nil }
+    do {
+      try request.validate()
+    } catch {
+      return .failure(failure(error))
+    }
+    return quiescence(request) ?? settings(request)
   }
 
   private static func quiescence(_ request: BridgeAXRequest) -> AccessibilityStreamStart? {
@@ -1865,27 +1885,10 @@ public enum AccessibilityService {
         anchor: CGPoint(x: x, y: y)))
   }
 
-  /// A payload built in process is JSON by construction; a value that is not reaches the decoder as no field at all.
-  private static func parameters(_ payload: [String: Any]) -> Data {
-    let fields = payload.filter { JSONSerialization.isValidJSONObject([$0.value]) }
-    return (try? JSONSerialization.data(withJSONObject: fields)) ?? Data("{}".utf8)
-  }
-
-  private enum DecodedRequest {
-    case request(BridgeAXRequest)
-    case failure(BridgeAXFailure)
-  }
-
-  /// The request `parameters` decodes to, or the failure that answers it when it does not.
-  private static func request(_ parameters: Data) -> DecodedRequest {
-    do {
-      return .request(try JSONDecoder().decode(BridgeAXRequest.self, from: parameters))
-    } catch {
-      if case let DecodingError.dataCorrupted(context) = error, let error = context.underlyingError as? BridgeAXRequestError {
-        return .failure(failure(error))
-      }
-      return .failure(BridgeAXFailure(message: "the request is not a JSON object: \(error.localizedDescription)", kind: .badRequest))
-    }
+  /// The request flat parameters built in process spell. They are JSON by construction; a value that is not reaches
+  /// the reader as no field at all.
+  private static func request(_ payload: [String: Any]) throws(BridgeAXRequestError) -> BridgeAXRequest {
+    try AccessibilityParameters.request(payload.filter { JSONSerialization.isValidJSONObject([$0.value]) })
   }
 
   /// The fullscreen modal in `tree`, as a frontmost read reports it.
@@ -1899,11 +1902,10 @@ public enum AccessibilityService {
 
   public static func handleAction(_ action: String, arguments: [String], writeResponse: (Data) -> Bool) -> Int32 {
     let request: BridgeAXRequest
-    switch Self.request(parameters(AXBridgeArguments.request(action: action, arguments: arguments))) {
-    case let .request(decoded):
-      request = decoded
-    case let .failure(failure):
-      _ = writeResponse(BridgeAXAnswer.failure(failure).encoded())
+    do {
+      request = try Self.request(AXBridgeArguments.request(action: action, arguments: arguments))
+    } catch {
+      _ = writeResponse(BridgeAXAnswer.failure(failure(error)).encoded())
       return 1
     }
     // A streaming action writes one event per line until its source ends or the process is killed.

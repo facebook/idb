@@ -10,9 +10,9 @@ import FBSimulatorBridgeProtocol
 import Foundation
 import XCTest
 
-/// The parameters an accessibility request carries on the wire, read back from the arguments a
+/// The accessibility action a request is sent as, as JSON text with sorted keys, read back from the arguments a
 /// one-shot guest is spawned with.
-func decodedBridgeAXArguments(_ request: AXBridgeRequest) throws -> [String: Any] {
+func wireAction(_ request: AXBridgeRequest) throws -> String {
   let arguments = try request.arguments
   XCTAssertEqual(arguments.count, 2)
   XCTAssertEqual(arguments.first, "rpc")
@@ -21,5 +21,6 @@ func decodedBridgeAXArguments(_ request: AXBridgeRequest) throws -> [String: Any
   let object = try XCTUnwrap(JSONSerialization.jsonObject(with: frame) as? [String: Any])
   let command = try XCTUnwrap(object["command"] as? [String: Any])
   let accessibility = try XCTUnwrap(command["accessibility"] as? [String: Any])
-  return try XCTUnwrap(accessibility["action"] as? [String: Any])
+  let action = try XCTUnwrap(accessibility["action"])
+  return String(decoding: try JSONSerialization.data(withJSONObject: action, options: .sortedKeys), as: UTF8.self)
 }

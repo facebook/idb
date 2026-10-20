@@ -185,8 +185,8 @@ struct BridgeProtocolTests {
       (#"{"health":{"action":{"clear":{"bundleID":"app"}}}}"#, .health(.clear(bundleID: "app"))),
       (#"{"health":{"action":{"approve":{"bundleID":"app","typeIDs":["step"]}}}}"#, .health(.approve(bundleID: "app", typeIDs: ["step"]))),
       (#"{"health":{"action":{"revoke":{"bundleID":"app","typeIDs":[]}}}}"#, .health(.revoke(bundleID: "app", typeIDs: []))),
-      (#"{"accessibility":{"action":{"clientType":0,"maxDepth":5,"maxNodes":10,"pid":42,"traversal":"view-hierarchy","verb":"describe"}}}"#, .accessibility(.read(pid: 42, options: Self.readOptions(maxDepth: 5, maxNodes: 10)))),
-      (#"{"accessibility":{"action":{"clientType":0,"verb":"hittest","x":1.5,"y":2}}}"#, .accessibility(.hitTest(x: 1.5, y: 2, attributes: nil, clientType: .noClient))),
+      (#"{"accessibility":{"action":{"read":{"options":{"clientType":0,"explainUnreachable":false,"maxDepth":5,"maxNodes":10,"traversal":"view-hierarchy"},"pid":42}}}}"#, .accessibility(.read(pid: 42, options: Self.readOptions(maxDepth: 5, maxNodes: 10)))),
+      (#"{"accessibility":{"action":{"hitTest":{"clientType":0,"x":1.5,"y":2}}}}"#, .accessibility(.hitTest(x: 1.5, y: 2, attributes: nil, clientType: .noClient))),
       (#"{"ping":{}}"#, .ping),
       (#"{"shutdown":{}}"#, .shutdown),
     ]

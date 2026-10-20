@@ -8,7 +8,6 @@
 import Foundation
 
 extension BridgeAXWire.Envelope: CodingKey {}
-extension BridgeAXFrontmostMethod: Codable {}
 
 /// Every accessibility answer the guest writes: `ok` beside either the verb's own fields or a failure's. The
 /// verb decides `Success`, so the host decodes a response as the type of the request it sent.

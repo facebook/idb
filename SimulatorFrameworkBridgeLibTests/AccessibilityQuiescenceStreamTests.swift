@@ -31,6 +31,15 @@ extension BridgeServerSocketTests {
     return client
   }
 
+  /// Opens a stream with a request the flat parameters could not spell, as a host could still send one.
+  private func openStream(_ runtime: FBAXFakeRuntime, _ request: BridgeAXRequest) throws -> Int32 {
+    useRuntime(runtime)
+    startServerExclusive(exclusive: true)
+    let client = connectClient()
+    sendData(data: try frame(command: .accessibility(request)), to: client)
+    return client
+  }
+
   /// The accessibility envelope a streamed frame carries.
   private func readEvent(fd: Int32) -> NSDictionary? {
     (readResponse(fd: fd)?["result"] as? NSDictionary)?["accessibility"] as? NSDictionary
@@ -205,7 +214,7 @@ extension BridgeServerSocketTests {
   }
 
   func testAMalformedDisplayIsRefusedWithoutStreaming() throws {
-    let client = try openQuietStream(runtimeWithApplications([]), ["displayID": 0])
+    let client = try openStream(runtimeWithApplications([]), .quiescence(pid: nil, busyThresholdMs: nil, quietWindowMs: nil, displayID: 0))
     defer { closeQuietStream(client) }
     XCTAssertEqual(readEvent(fd: client), ["ok": false, "error": "displayID must be a positive 32-bit integer", "error_kind": "bad_request"])
   }
@@ -255,7 +264,7 @@ extension BridgeServerSocketTests {
   }
 
   func testANegativeTunableIsRefusedWithoutStreaming() throws {
-    let client = try openQuietStream(runtimeWithApplications([]), ["quietWindowMs": -1])
+    let client = try openStream(runtimeWithApplications([]), .quiescence(pid: nil, busyThresholdMs: nil, quietWindowMs: -1))
     defer { closeQuietStream(client) }
     let response = try XCTUnwrap(readEvent(fd: client))
     XCTAssertEqual(response["error_kind"] as? String, "bad_request")

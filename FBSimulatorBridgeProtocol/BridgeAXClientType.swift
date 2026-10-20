@@ -18,7 +18,7 @@ import Foundation
 /// it exposes.
 ///
 /// The mapping is the same on every runtime from iOS 26.4 to iOS 27.0.
-@frozen public enum BridgeAXClientType: UInt64, Sendable, CaseIterable {
+@frozen public enum BridgeAXClientType: UInt64, Codable, Sendable, CaseIterable {
   /// No AX request is being serviced. What idb's host translator sends.
   case noClient = 0
   /// An AX request from a client the translator could not identify.

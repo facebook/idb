@@ -68,16 +68,14 @@ final class AXBridgeQuiescenceTests: XCTestCase {
     _ = try await events(
       automation(transport).quiescence(.application(pid: 7), parameters: QuiescenceParameters(busyThreshold: 0.05, quietWindow: 1.5)))
     let request = await transport.requests.first
-    let payload = try XCTUnwrap(request?.payload as? [String: AnyHashable])
-    XCTAssertEqual(payload, ["verb": "quiet", "pid": 7, "busyThresholdMs": 50, "quietWindowMs": 1500])
+    XCTAssertEqual(request, .quiescence(pid: 7, busyThresholdMs: 50, quietWindowMs: 1500))
   }
 
   func testTheFrontmostRequestLeavesThePidAndDefaultsToTheGuest() async throws {
     let transport = StubAXBridgeStreamingTransport(frames: [])
     _ = try await events(automation(transport).quiescence(.frontmost, parameters: QuiescenceParameters()))
     let request = await transport.requests.first
-    let payload = try XCTUnwrap(request?.payload as? [String: AnyHashable])
-    XCTAssertEqual(payload, ["verb": "quiet"])
+    XCTAssertEqual(request, .quiescence(pid: nil, busyThresholdMs: nil, quietWindowMs: nil))
   }
 
   func testAnApplicationFailureIsTranslated() async throws {
@@ -287,7 +285,7 @@ final class AXBridgeQuiescenceTests: XCTestCase {
     let events = try await events(stream, count: 1)
     XCTAssertEqual(events, [.state(.quiet, pid: 42)])
     let requests = await transport.streamRequests
-    XCTAssertEqual(requests.map { $0.payload["displayID"] as? UInt32 }, [82])
+    XCTAssertEqual(requests.map(\.displayID), [82])
   }
 
   func testASwitchToAnotherDisplayReopensTheStreamThereAndReportsTheNewTarget() async throws {
@@ -297,7 +295,7 @@ final class AXBridgeQuiescenceTests: XCTestCase {
     let events = try await events(stream, count: 3)
     XCTAssertEqual(events, [.state(.quiet, pid: 42), .targetChanged(pid: 43), .state(.busy([.runLoopIdle]), pid: 43)])
     let requests = await transport.streamRequests
-    XCTAssertEqual(requests.map { $0.payload["displayID"] as? UInt32 }, [82, 83])
+    XCTAssertEqual(requests.map(\.displayID), [82, 83])
     try await transport.waitUntilTerminated(streams: 1)
   }
 
@@ -313,7 +311,7 @@ final class AXBridgeQuiescenceTests: XCTestCase {
     } catch { guard case SimulatorDisplayError.changed = error else { return XCTFail("\(error)") } }
     XCTAssertEqual(events, [.state(.quiet, pid: 42)])
     let requests = await transport.streamRequests
-    XCTAssertEqual(requests.map { $0.payload["displayID"] as? UInt32 }, [82])
+    XCTAssertEqual(requests.map(\.displayID), [82])
   }
 
   func testSelectingAnInactiveDisplayOpensNoStream() async throws {
@@ -359,7 +357,7 @@ final class AXBridgeQuiescenceTests: XCTestCase {
     consumer.cancel()
     _ = await consumer.result
     let requests = await transport.streamRequests
-    XCTAssertEqual(requests.map { $0.payload["displayID"] as? UInt32 }, [82])
+    XCTAssertEqual(requests.map(\.displayID), [82])
   }
 
   // A read mid-transition can fail, and a rotation changes only the geometry; neither moves the stream.
@@ -399,7 +397,7 @@ final class AXBridgeQuiescenceTests: XCTestCase {
       _ = try await events(automation(transport, displays: displays).quiescence(query, parameters: QuiescenceParameters()))
       let requests = await transport.streamRequests
       XCTAssertEqual(requests.count, 1)
-      XCTAssertNil(requests.first?.payload["displayID"], "\(query)")
+      XCTAssertNil(requests.first?.displayID, "\(query)")
       XCTAssertEqual(displays.reads, query == .frontmost ? 1 : 0)
     }
   }

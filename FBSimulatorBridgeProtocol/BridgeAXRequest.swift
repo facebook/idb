@@ -13,7 +13,7 @@ import Foundation
 /// fetched once per drawing process rather than once per node. The strategies read different child
 /// relations, so neither's element count is a baseline for the other, and a reachability verdict covers
 /// only what the strategy returned, not everything on screen.
-@frozen public enum BridgeAXTraversal: String, Sendable, CaseIterable {
+@frozen public enum BridgeAXTraversal: String, Codable, Sendable, CaseIterable {
   case viewHierarchy = "view-hierarchy"
   case semantic = "semantic"
   /// One fetch for the application plus one per subtree another process draws (a web view, picker or
@@ -22,13 +22,13 @@ import Foundation
 }
 
 /// Selects how an in-guest frontmost read resolves the foreground application.
-@frozen public enum BridgeAXFrontmostMethod: String, Sendable, CaseIterable {
+@frozen public enum BridgeAXFrontmostMethod: String, Codable, Sendable, CaseIterable {
   case centerPoint = "center-point"
   case windowServer = "window-server"
   case runningBoard = "runningboard"
 }
 
-public struct BridgeAXWriteAssertion: Sendable, Equatable {
+public struct BridgeAXWriteAssertion: Codable, Sendable, Equatable {
   public let key: BridgeAXWire.Node
   public let value: String
 
@@ -38,10 +38,13 @@ public struct BridgeAXWriteAssertion: Sendable, Equatable {
   }
 }
 
-public struct BridgeAXWriteRequest: Sendable, Equatable {
-  @frozen public enum Kind: Sendable, Equatable {
+public struct BridgeAXWriteRequest: Codable, Sendable, Equatable {
+  @frozen public enum Kind: Codable, Sendable, Equatable {
     case perform(BridgeAXWire.Action)
     case setValue(String)
+
+    private enum PerformCodingKeys: String, CodingKey { case _0 = "action" }
+    private enum SetValueCodingKeys: String, CodingKey { case _0 = "value" }
   }
 
   public let kind: Kind
@@ -79,7 +82,7 @@ public struct BridgeAXWriteRequest: Sendable, Equatable {
   }
 }
 
-public struct BridgeAXReadOptions: Sendable, Equatable {
+public struct BridgeAXReadOptions: Codable, Sendable, Equatable {
   /// The bounds a request that names none is read with.
   public static let defaultMaxDepth = 100
   public static let defaultMaxNodes = 5000
@@ -106,7 +109,8 @@ public struct BridgeAXReadOptions: Sendable, Equatable {
   }
 }
 
-@frozen public enum BridgeAXRequest: Sendable, Equatable {
+/// Travels as its case's name keyed to its fields: `{"read":{"pid":42,"options":{…}}}`.
+@frozen public enum BridgeAXRequest: Codable, Sendable, Equatable {
   case read(pid: Int32, options: BridgeAXReadOptions, displayID: UInt32? = nil)
   case readFrontmost(x: Double, y: Double, method: BridgeAXFrontmostMethod, options: BridgeAXReadOptions, displayID: UInt32? = nil)
   /// Display-wide when `pid` is nil: the guest names the application that owns the point.
@@ -121,6 +125,12 @@ public struct BridgeAXReadOptions: Sendable, Equatable {
     pid: Int32?, busyThresholdMs: Int?, quietWindowMs: Int?, displayID: UInt32? = nil,
     method: BridgeAXFrontmostMethod = .windowServer, x: Double = 0, y: Double = 0)
   case displays
+
+  // Swift names an unlabelled payload `_0`; these name it for what it holds.
+  private enum WriteCodingKeys: String, CodingKey { case _0 = "request" }
+  private enum DeviceSettingReadCodingKeys: String, CodingKey { case _0 = "setting" }
+  private enum DeviceSettingWriteCodingKeys: String, CodingKey { case _0 = "setting", enabled }
+  private enum DeviceSettingChangesCodingKeys: String, CodingKey { case _0 = "setting" }
 
   public var command: BridgeCommand { .accessibility(self) }
 

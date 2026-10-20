@@ -342,21 +342,27 @@ final class BridgeExecutionTests: XCTestCase {
     XCTAssertEqual(source.delivered, [false])
   }
 
-  func testAnAccessibilityRequestThatDoesNotDecodeIsAnsweredAsABadRequest() throws {
-    // A streaming verb too: one that does not decode never starts its stream, and is answered in one frame.
-    let cases = [
-      (#"{"verb":"hittest","x":"left","y":2}"#, "hittest requires numeric x and y"),
-      (#"{"verb":"quiet","quietWindowMs":-1}"#, "quietWindowMs must not be negative, got -1"),
-      (#"{"verb":"settings-observe"}"#, "device settings require a setting name"),
+  func testAnAccessibilityRequestThatCannotBeAnsweredIsABadRequest() throws {
+    // A streaming verb too: one that cannot be answered never starts its stream, and is answered in one frame.
+    let cases: [(String, (String) -> Bool)] = [
+      (#"{"quiescence":{"method":"window-server","quietWindowMs":-1,"x":0,"y":0}}"#, { $0 == "quietWindowMs must not be negative, got -1" }),
+      (
+        #"{"read":{"displayID":0,"options":{"clientType":0,"explainUnreachable":false,"maxDepth":1,"maxNodes":1,"traversal":"semantic"},"pid":3}}"#,
+        { $0 == "displayID must be a positive 32-bit integer" }
+      ),
+      (#"{"dance":{}}"#, { $0.hasPrefix("the request does not decode: ") }),
+      (#"{"deviceSettingChanges":{}}"#, { $0.hasPrefix("the request does not decode: ") }),
     ]
-    for (parameters, message) in cases {
-      let frame = Data(#"{"command":{"accessibility":{"action":\#(parameters)}},"id":"malformed","version":\#(BridgeRequest.currentVersion)}"#.utf8)
-      for data in [BridgeRPC.process(frame).data, try XCTUnwrap(BridgeRPC.handle(frame).frame, parameters).data] {
+    for (action, expected) in cases {
+      let frame = Data(#"{"command":{"accessibility":{"action":\#(action)}},"id":"unanswerable","version":\#(BridgeRequest.currentVersion)}"#.utf8)
+      for data in [BridgeRPC.process(frame).data, try XCTUnwrap(BridgeRPC.handle(frame).frame, action).data] {
         let response = try JSONDecoder().decode(BridgeResponse.self, from: data)
-        XCTAssertEqual(response.id, "malformed")
+        XCTAssertEqual(response.id, "unanswerable")
         XCTAssertEqual(response.result.exitCode, 1)
         XCTAssertEqual(response.result.answers, [])
-        XCTAssertEqual(response.result.accessibility, .failure(BridgeAXFailure(message: message, kind: .badRequest)), parameters)
+        guard case let .failure(failure)? = response.result.accessibility else { return XCTFail("expected a failure for \(action)") }
+        XCTAssertEqual(failure.kind, .badRequest, action)
+        XCTAssertTrue(expected(failure.message ?? ""), "\(action): \(failure.message ?? "")")
       }
     }
   }

@@ -78,7 +78,7 @@ class ServiceTests(IdbEndToEndTestCase):
             (
                 {
                     "accessibility": {
-                        "action": {"verb": "settings-get", "setting": "reduce-motion"}
+                        "action": {"deviceSettingRead": {"setting": "reduce-motion"}}
                     }
                 },
                 ("accessibility", "settings-get", "--setting", "reduce-motion"),

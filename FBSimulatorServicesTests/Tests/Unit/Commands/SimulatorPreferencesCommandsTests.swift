@@ -34,7 +34,7 @@ struct SimulatorSettingsPublisherTests {
   @Test("The host requests the exclusive current-value-plus-changes source")
   func request() throws {
     let request = AXBridgeRequest.deviceSettingChanges("reduce-motion")
-    #expect(request.payload as NSDictionary == ["verb": "settings-observe", "setting": "reduce-motion"])
+    #expect(try requestJSON(request) == #"{"deviceSettingChanges":{"setting":"reduce-motion"}}"#)
     #expect(!request.mayRetry)
   }
 
@@ -233,4 +233,11 @@ private enum SettingsSourceFailure: LocalizedError, SimulatorFailureClassifying 
 
   var errorDescription: String? { "settings source is not ready" }
   var failureKind: SimulatorFailureKind { .notReady }
+}
+
+/// The request as JSON text with sorted keys, as a frame carries it.
+private func requestJSON(_ request: AXBridgeRequest) throws -> String {
+  let encoder = JSONEncoder()
+  encoder.outputFormatting = .sortedKeys
+  return String(decoding: try encoder.encode(request), as: UTF8.self)
 }

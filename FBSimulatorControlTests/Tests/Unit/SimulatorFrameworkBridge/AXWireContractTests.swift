@@ -218,13 +218,8 @@ struct AXWireContractTests {
     )
     let transportRequest = AXBridgeRequest.write(request)
     #expect(
-      try decodedBridgeAXArguments(transportRequest) as NSDictionary == ["verb": "perform", "x": 201.0, "y": 406.0, "pid": 4321, "action": "press", "assertKey": "XC_kAXXCAttributeLabel", "assertValue": "General"] as NSDictionary
-    )
-    #expect(
-      transportRequest.payload as NSDictionary == [
-        "verb": "perform", "x": 201.0, "y": 406.0, "pid": 4321,
-        "action": "press", "assertKey": "XC_kAXXCAttributeLabel", "assertValue": "General",
-      ] as NSDictionary
+      try wireAction(transportRequest)
+        == #"{"write":{"request":{"assertion":{"key":"XC_kAXXCAttributeLabel","value":"General"},"kind":{"perform":{"action":"press"}},"pid":4321,"x":201,"y":406}}}"#
     )
   }
 
@@ -240,8 +235,8 @@ struct AXWireContractTests {
       .write(AXBridgeWriteRequest(kind: .perform(.press), x: 10, y: 20, pid: nil, assertion: nil, displayID: 82)),
     ]
     for request in requests {
-      #expect(request.payload["displayID"] as? UInt32 == 82)
-      #expect(try decodedBridgeAXArguments(request)["displayID"] as? Int == 82)
+      #expect(request.displayID == 82)
+      #expect(try wireAction(request).contains(#""displayID":82"#))
     }
   }
 
@@ -250,22 +245,14 @@ struct AXWireContractTests {
     let request = AXBridgeWriteRequest(kind: .setValue("hello"), x: 1, y: 2, pid: nil, assertion: nil)
     #expect(request.verb == .setValue)
     let transportRequest = AXBridgeRequest.write(request)
-    #expect(try decodedBridgeAXArguments(transportRequest) as NSDictionary == ["verb": "setvalue", "x": 1.0, "y": 2.0, "value": "hello"] as NSDictionary)
-    #expect(
-      transportRequest.payload as NSDictionary == ["verb": "setvalue", "x": 1.0, "y": 2.0, "value": "hello"] as NSDictionary
-    )
+    #expect(try wireAction(transportRequest) == #"{"write":{"request":{"kind":{"setValue":{"value":"hello"}},"x":1,"y":2}}}"#)
   }
 
   @Test
   func absentOptionsAreOmittedRatherThanSentEmpty() throws {
     let request = AXBridgeWriteRequest(kind: .perform(.scrollDown), x: 10, y: 20, pid: nil, assertion: nil)
     let transportRequest = AXBridgeRequest.write(request)
-    #expect(try decodedBridgeAXArguments(transportRequest) as NSDictionary == ["verb": "perform", "x": 10.0, "y": 20.0, "action": "scroll-down"] as NSDictionary)
-    #expect(try decodedBridgeAXArguments(transportRequest)["pid"] == nil)
-    #expect(try decodedBridgeAXArguments(transportRequest)["assertKey"] == nil)
-    #expect(transportRequest.payload["pid"] == nil)
-    #expect(transportRequest.payload["assertKey"] == nil)
-    #expect(transportRequest.payload["assertValue"] == nil)
+    #expect(try wireAction(transportRequest) == #"{"write":{"request":{"kind":{"perform":{"action":"scroll-down"}},"x":10,"y":20}}}"#)
     #expect(try transportRequest.arguments.count == 2, "rpc takes one encoded request")
     #expect(!transportRequest.mayRetry, "writes must not be resent after a dropped response")
   }
@@ -273,16 +260,11 @@ struct AXWireContractTests {
   @Test
   func deviceSettingRequestsRenderTheSameFieldsForBothTransports() throws {
     let read = AXBridgeRequest.deviceSettingRead("button-shapes")
-    #expect(try decodedBridgeAXArguments(read) as NSDictionary == ["verb": "settings-get", "setting": "button-shapes"] as NSDictionary)
-    #expect(
-      read.payload as NSDictionary == ["verb": "settings-get", "setting": "button-shapes"] as NSDictionary)
+    #expect(try wireAction(read) == #"{"deviceSettingRead":{"setting":"button-shapes"}}"#)
     #expect(read.mayRetry)
 
     let write = AXBridgeRequest.deviceSettingWrite("reduce-motion", enabled: true)
-    #expect(
-      try decodedBridgeAXArguments(write) as NSDictionary == ["verb": "settings-set", "setting": "reduce-motion", "enabled": true] as NSDictionary)
-    #expect(
-      write.payload as NSDictionary == ["verb": "settings-set", "setting": "reduce-motion", "enabled": true] as NSDictionary)
+    #expect(try wireAction(write) == #"{"deviceSettingWrite":{"enabled":true,"setting":"reduce-motion"}}"#)
     #expect(!write.mayRetry)
   }
 
