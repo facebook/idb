@@ -166,14 +166,24 @@ struct BridgeProtocolTests {
       (#"{"clearPhotos":{}}"#, .clearPhotos),
       (#"{"dns":{"_0":{"list":{}}}}"#, .dns(.list)),
       (#"{"dns":{"_0":{"set":{"servers":["::1"]}}}}"#, .dns(.set(servers: ["::1"]))),
+      (#"{"dns":{"_0":{"clear":{}}}}"#, .dns(.clear)),
       (#"{"dynamicStore":{"_0":{"snapshot":{"key":"k"}}}}"#, .dynamicStore(.snapshot(key: "k"))),
       // `Data` travels as base64, which the Python harness encodes itself.
       (#"{"dynamicStore":{"_0":{"restore":{"key":"k","snapshot":"AP8="}}}}"#, .dynamicStore(.restore(key: "k", snapshot: Data([0, 255])))),
+      (#"{"proxy":{"_0":{"list":{}}}}"#, .proxy(.list)),
       (#"{"proxy":{"_0":{"set":{"host":"::1","kind":"socks","port":1080}}}}"#, .proxy(.set(host: "::1", port: 1080, kind: .socks))),
+      (#"{"proxy":{"_0":{"set":{"host":"proxy.example","kind":"http","port":8080}}}}"#, .proxy(.set(host: "proxy.example", port: 8080, kind: .http))),
+      (#"{"proxy":{"_0":{"clear":{}}}}"#, .proxy(.clear)),
       (#"{"notifications":{"_0":{"list":{}}}}"#, .notifications(.list(bundleID: nil))),
+      (#"{"notifications":{"_0":{"list":{"bundleID":"app"}}}}"#, .notifications(.list(bundleID: "app"))),
+      (#"{"notifications":{"_0":{"approve":{"bundleID":"app"}}}}"#, .notifications(.approve(bundleID: "app"))),
+      (#"{"notifications":{"_0":{"revoke":{"bundleID":"app"}}}}"#, .notifications(.revoke(bundleID: "app"))),
       (#"{"notifications":{"_0":{"delivered":{"bundleID":"app"}}}}"#, .notifications(.delivered(bundleID: "app"))),
       (#"{"notifications":{"_0":{"clearDelivered":{"bundleID":"app"}}}}"#, .notifications(.clearDelivered(bundleID: "app"))),
+      (#"{"health":{"_0":{"list":{"bundleID":"app"}}}}"#, .health(.list(bundleID: "app"))),
+      (#"{"health":{"_0":{"clear":{"bundleID":"app"}}}}"#, .health(.clear(bundleID: "app"))),
       (#"{"health":{"_0":{"approve":{"bundleID":"app","typeIDs":["step"]}}}}"#, .health(.approve(bundleID: "app", typeIDs: ["step"]))),
+      (#"{"health":{"_0":{"revoke":{"bundleID":"app","typeIDs":[]}}}}"#, .health(.revoke(bundleID: "app", typeIDs: []))),
       (#"{"accessibility":{"_0":{"clientType":0,"maxDepth":5,"maxNodes":10,"pid":42,"traversal":"view-hierarchy","verb":"describe"}}}"#, .accessibility(.read(pid: 42, options: Self.readOptions(maxDepth: 5, maxNodes: 10)))),
       (#"{"accessibility":{"_0":{"clientType":0,"verb":"hittest","x":1.5,"y":2}}}"#, .accessibility(.hitTest(x: 1.5, y: 2, attributes: nil, clientType: .noClient))),
       (#"{"ping":{}}"#, .ping),
@@ -183,6 +193,55 @@ struct BridgeProtocolTests {
       let literal = #"{"command":"# + text + #","id":"fixture","version":5}"#
       #expect(try BridgeRequest.decode(Data(literal.utf8)).command == command, "\(text)")
       #expect(String(decoding: try BridgeRequest(command: command, id: "fixture").encoded(), as: UTF8.self) == literal, "\(text)")
+    }
+  }
+
+  // Each kind of result, as a frame carries it. A change here is a change to what every host reads.
+  @Test
+  func literalWireFixturesPinEveryKindOfResult() throws {
+    var setting = BridgeAXNode()
+    setting.label = .string("General")
+    let fixtures: [(BridgeCommand, String, BridgeResult)] = [
+      (.clearPhotos, #"{"answers":[],"exitCode":0}"#, BridgeResult(exitCode: 0)),
+      (.clearPhotos, #"{"answers":[],"error":"it failed","exitCode":1}"#, BridgeResult(exitCode: 1, error: "it failed")),
+      (
+        .accessibility(.deviceSettingRead("reduce-motion")), #"{"accessibility":{"enabled":true,"ok":true},"answers":[],"exitCode":0}"#,
+        BridgeResult(exitCode: 0, accessibility: .setting(BridgeAXSettingResponse(enabled: true)))
+      ),
+      (
+        .accessibility(.read(pid: 3, options: Self.readOptions(maxDepth: 1, maxNodes: 1))),
+        #"{"accessibility":{"error":"pid 3 has no accessibility server","error_kind":"application_unavailable","ok":false,"pid":3},"answers":[],"exitCode":1}"#,
+        BridgeResult(
+          exitCode: 1,
+          accessibility: .failure(BridgeAXFailure(message: "pid 3 has no accessibility server", kind: .applicationUnavailable, pid: 3)))
+      ),
+      (
+        .health(.clear(bundleID: "app")), #"{"answers":[{"health":{"_0":{"action":"clear","bundleID":"app","error":null,"ok":true}}}],"exitCode":0}"#,
+        BridgeResult(exitCode: 0, answers: [.health(.clear(bundleID: "app", ok: true, error: nil))])
+      ),
+      (
+        .notifications(.list(bundleID: nil)),
+        #"{"answers":[{"notificationSettings":{"_0":{"bundleID":"a","found":false}}},{"notificationSettings":{"_0":{"bundleID":"b","found":false}}}],"exitCode":0}"#,
+        BridgeResult(
+          exitCode: 0,
+          answers: [
+            .notificationSettings(BridgeNotificationSettings(bundleID: "a", settings: nil)), .notificationSettings(BridgeNotificationSettings(bundleID: "b", settings: nil)),
+          ])
+      ),
+      (
+        .dns(.list), #"{"answers":[{"networkConfiguration":{"_0":"YnBsaXN0MDDQCAAAAAAAAAEBAAAAAAAAAAEAAAAAAAAAAAAAAAAAAAAJ"}}],"exitCode":0}"#,
+        BridgeResult(exitCode: 0, answers: [.networkConfiguration(try BridgeNetworkConfiguration([String: Any]()))])
+      ),
+      (
+        .dynamicStore(.snapshot(key: "k")), #"{"answers":[],"exitCode":0,"propertyList":"AP8="}"#,
+        BridgeResult(exitCode: 0, propertyList: Data([0, 255]))
+      ),
+    ]
+    for (command, text, result) in fixtures {
+      let request = BridgeRequest(command: command, id: "fixture")
+      let literal = #"{"id":"fixture","result":"# + text + #","version":\#(BridgeRequest.currentVersion)}"#
+      #expect(String(decoding: try BridgeResponse(request: request, result: result).encoded(), as: UTF8.self) == literal, "\(command)")
+      #expect(try BridgeResponse.decode(Data(literal.utf8), for: request).result == result, "\(command)")
     }
   }
 
