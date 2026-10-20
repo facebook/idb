@@ -140,4 +140,25 @@ struct AccessibilityServiceTests {
     let tree = node("UIApplication", label: "root", children: [node("XCUIElementTypeButton", label: "OK")])
     #expect(AccessibilityService.modal(in: tree) == nil)
   }
+
+  // The one-shot command line builds its request from flags. One that does not decode prints the failure, as one sent
+  // over a socket is answered, and exits non-zero, for a unary verb and a streaming one alike.
+  @Test
+  func aCommandLineRequestThatDoesNotDecodePrintsItsFailure() throws {
+    let cases: [(String, [String], String)] = [
+      ("hittest", ["--x", "1", "--y", "2"], "a read or hit-test requires a client type: an integer from 0 to 11"),
+      ("perform", ["--x", "1", "--y", "2", "--action", "tap"], "unsupported action: tap"),
+      ("settings-set", ["--setting", "voiceover", "--enabled", "maybe"], "settings-set requires a boolean enabled value"),
+      ("quiet", ["--busy-threshold-ms", "-1"], "busyThresholdMs must not be negative, got -1"),
+      ("settings-observe", [], "device settings require a setting name"),
+    ]
+    for (action, arguments, message) in cases {
+      var written: [Data] = []
+      let status = AccessibilityService.handleAction(action, arguments: arguments) { written.append($0); return true }
+      #expect(status == 1, "\(action)")
+      #expect(written.count == 1, "\(action)")
+      let answer = try #require(written.first.flatMap(Self.FBAXTestsParse(data:)), "\(action)")
+      #expect(answer == ["ok": false, "error_kind": "bad_request", "error": message] as NSDictionary, "\(action)")
+    }
+  }
 }

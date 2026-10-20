@@ -339,13 +339,21 @@ final class BridgeExecutionTests: XCTestCase {
   }
 
   func testAnAccessibilityRequestThatDoesNotDecodeIsAnsweredAsABadRequest() throws {
-    let frame = Data(#"{"command":{"accessibility":{"_0":{"verb":"hittest","x":"left","y":2}}},"id":"malformed","version":4}"#.utf8)
-    for data in [BridgeRPC.process(frame).data, try XCTUnwrap(BridgeRPC.handle(frame).frame).data] {
-      let response = try JSONDecoder().decode(BridgeResponse.self, from: data)
-      XCTAssertEqual(response.id, "malformed")
-      XCTAssertEqual(response.result.exitCode, 1)
-      XCTAssertEqual(response.result.values, [])
-      XCTAssertEqual(response.result.accessibility, .failure(BridgeAXFailure(message: "hittest requires numeric x and y", kind: .badRequest)))
+    // A streaming verb too: one that does not decode never starts its stream, and is answered in one frame.
+    let cases = [
+      (#"{"verb":"hittest","x":"left","y":2}"#, "hittest requires numeric x and y"),
+      (#"{"verb":"quiet","quietWindowMs":-1}"#, "quietWindowMs must not be negative, got -1"),
+      (#"{"verb":"settings-observe"}"#, "device settings require a setting name"),
+    ]
+    for (parameters, message) in cases {
+      let frame = Data(#"{"command":{"accessibility":{"_0":\#(parameters)}},"id":"malformed","version":\#(BridgeRequest.currentVersion)}"#.utf8)
+      for data in [BridgeRPC.process(frame).data, try XCTUnwrap(BridgeRPC.handle(frame).frame, parameters).data] {
+        let response = try JSONDecoder().decode(BridgeResponse.self, from: data)
+        XCTAssertEqual(response.id, "malformed")
+        XCTAssertEqual(response.result.exitCode, 1)
+        XCTAssertEqual(response.result.values, [])
+        XCTAssertEqual(response.result.accessibility, .failure(BridgeAXFailure(message: message, kind: .badRequest)), parameters)
+      }
     }
   }
 
