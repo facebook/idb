@@ -21,5 +21,5 @@ func decodedBridgeAXArguments(_ request: AXBridgeRequest) throws -> [String: Any
   let object = try XCTUnwrap(JSONSerialization.jsonObject(with: frame) as? [String: Any])
   let command = try XCTUnwrap(object["command"] as? [String: Any])
   let accessibility = try XCTUnwrap(command["accessibility"] as? [String: Any])
-  return try XCTUnwrap(accessibility["_0"] as? [String: Any])
+  return try XCTUnwrap(accessibility["action"] as? [String: Any])
 }

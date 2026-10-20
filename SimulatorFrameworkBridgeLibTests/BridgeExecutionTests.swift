@@ -350,7 +350,7 @@ final class BridgeExecutionTests: XCTestCase {
       (#"{"verb":"settings-observe"}"#, "device settings require a setting name"),
     ]
     for (parameters, message) in cases {
-      let frame = Data(#"{"command":{"accessibility":{"_0":\#(parameters)}},"id":"malformed","version":\#(BridgeRequest.currentVersion)}"#.utf8)
+      let frame = Data(#"{"command":{"accessibility":{"action":\#(parameters)}},"id":"malformed","version":\#(BridgeRequest.currentVersion)}"#.utf8)
       for data in [BridgeRPC.process(frame).data, try XCTUnwrap(BridgeRPC.handle(frame).frame, parameters).data] {
         let response = try JSONDecoder().decode(BridgeResponse.self, from: data)
         XCTAssertEqual(response.id, "malformed")

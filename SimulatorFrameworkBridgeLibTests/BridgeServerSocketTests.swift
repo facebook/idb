@@ -111,7 +111,7 @@ final class BridgeServerSocketTests: XCTestCase {
   /// An accessibility request with these parameters, sent as they are whether or not they decode.
   func frame(accessibility parameters: [String: Any]) throws -> Data {
     let request: [String: Any] = [
-      "version": BridgeRequest.currentVersion, "id": UUID().uuidString, "command": ["accessibility": ["_0": parameters]],
+      "version": BridgeRequest.currentVersion, "id": UUID().uuidString, "command": ["accessibility": ["action": parameters]],
     ]
     let bytes = try JSONSerialization.data(withJSONObject: request)
     var frame = try IPCFrame.header(forSize: bytes.count)

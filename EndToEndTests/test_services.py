@@ -70,15 +70,15 @@ class ServiceTests(IdbEndToEndTestCase):
         bundle_id = await self.install_fixture_app()
         cases = [
             (
-                {"health": {"_0": {"list": {"bundleID": bundle_id}}}},
+                {"health": {"action": {"list": {"bundleID": bundle_id}}}},
                 ("health", "list", bundle_id),
             ),
-            ({"dns": {"_0": {"list": {}}}}, ("dns", "list")),
-            ({"proxy": {"_0": {"list": {}}}}, ("proxy", "list")),
+            ({"dns": {"action": {"list": {}}}}, ("dns", "list")),
+            ({"proxy": {"action": {"list": {}}}}, ("proxy", "list")),
             (
                 {
                     "accessibility": {
-                        "_0": {"verb": "settings-get", "setting": "reduce-motion"}
+                        "action": {"verb": "settings-get", "setting": "reduce-motion"}
                     }
                 },
                 ("accessibility", "settings-get", "--setting", "reduce-motion"),
@@ -114,20 +114,20 @@ class ServiceTests(IdbEndToEndTestCase):
                 async with GuestRPC(self, persistent=persistent) as rpc:
                     self.assertEqual(
                         await rpc.send(
-                            {"dns": {"_0": {"set": {"servers": ["192.0.2.10"]}}}}
+                            {"dns": {"action": {"set": {"servers": ["192.0.2.10"]}}}}
                         ),
                         [],
                     )
                     await self.assert_network(
                         "dns", {"ServerAddresses": ["192.0.2.10"]}
                     )
-                    self.assertEqual(await rpc.send({"dns": {"_0": {"clear": {}}}}), [])
+                    self.assertEqual(await rpc.send({"dns": {"action": {"clear": {}}}}), [])
                     await self.assert_network("dns", {})
                     self.assertEqual(
                         await rpc.send(
                             {
                                 "proxy": {
-                                    "_0": {
+                                    "action": {
                                         "set": {
                                             "host": "192.0.2.11",
                                             "port": 1080,
@@ -150,7 +150,7 @@ class ServiceTests(IdbEndToEndTestCase):
                         },
                     )
                     self.assertEqual(
-                        await rpc.send({"proxy": {"_0": {"clear": {}}}}), []
+                        await rpc.send({"proxy": {"action": {"clear": {}}}}), []
                     )
                     await self.assert_network("proxy", {"FTPPassive": 1})
                     for action, enabled, status in (
@@ -161,7 +161,7 @@ class ServiceTests(IdbEndToEndTestCase):
                             await rpc.send(
                                 {
                                     "notifications": {
-                                        "_0": {action: {"bundleID": bundle_id}}
+                                        "action": {action: {"bundleID": bundle_id}}
                                     }
                                 }
                             ),
@@ -191,7 +191,7 @@ class ServiceTests(IdbEndToEndTestCase):
                         ]
                         for command in commands:
                             result = await rpc.send_result(
-                                {"dynamicStore": {"_0": command}}
+                                {"dynamicStore": {"action": command}}
                             )
                             self.assertEqual(result["answers"], [])
                             encoded = base64.b64decode(

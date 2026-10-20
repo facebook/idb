@@ -69,7 +69,7 @@ struct BridgeAXRequestTests {
       let frame = try BridgeRequest(command: request.command, id: "pinned").encoded()
       #expect(
         String(decoding: frame, as: UTF8.self)
-          == #"{"command":{"accessibility":{"_0":"# + parameters + #"}},"id":"pinned","version":\#(BridgeRequest.currentVersion)}"#)
+          == #"{"command":{"accessibility":{"action":"# + parameters + #"}},"id":"pinned","version":\#(BridgeRequest.currentVersion)}"#)
     }
   }
 
@@ -245,18 +245,18 @@ struct BridgeAXRequestTests {
   // The guest answers a request that does not decode with what is wrong with it, rather than failing the frame.
   @Test
   func anUndecodableRequestFailsTheFrameButSaysWhy() throws {
-    let frame = Data(#"{"command":{"accessibility":{"_0":{"verb":"quiet","quietWindowMs":-1}}},"id":"bad","version":5}"#.utf8)
+    let frame = Data(#"{"command":{"accessibility":{"action":{"verb":"quiet","quietWindowMs":-1}}},"id":"bad","version":6}"#.utf8)
     #expect(throws: (any Error).self) { try BridgeRequest.decode(frame) }
     #expect(BridgeRequest.identity(of: frame) == "bad")
     #expect(BridgeRequest.accessibilityRequestError(of: frame) == .negativeTunable(.quietWindowMs, -1))
     #expect(BridgeRequest.accessibilityRequestError(of: try BridgeRequest(command: .ping).encoded()) == nil)
     #expect(BridgeRequest.accessibilityRequestError(of: try BridgeRequest(command: .accessibility(.displays)).encoded()) == nil)
-    #expect(BridgeRequest.accessibilityRequestError(of: Data(#"{"command":{"accessibility":{"_0":[]}},"id":"bad","version":5}"#.utf8)) == nil)
+    #expect(BridgeRequest.accessibilityRequestError(of: Data(#"{"command":{"accessibility":{"action":[]}},"id":"bad","version":6}"#.utf8)) == nil)
   }
 
   /// The request a frame carrying `parameters` decodes to, or the reason it does not.
   private static func request(_ parameters: String) throws -> BridgeAXRequest {
-    let frame = Data(#"{"command":{"accessibility":{"_0":\#(parameters)}},"id":"test","version":\#(BridgeRequest.currentVersion)}"#.utf8)
+    let frame = Data(#"{"command":{"accessibility":{"action":\#(parameters)}},"id":"test","version":\#(BridgeRequest.currentVersion)}"#.utf8)
     do {
       guard case let .accessibility(request) = try BridgeRequest.decode(frame).command else { throw NotAccessibility() }
       return request

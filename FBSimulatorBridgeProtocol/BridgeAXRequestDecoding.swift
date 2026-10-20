@@ -207,7 +207,7 @@ extension BridgeRequest {
   private struct AccessibilityCommand: Decodable {
     struct Command: Decodable {
       struct Parameters: Decodable {
-        let _0: BridgeAXRequest
+        let action: BridgeAXRequest
       }
       let accessibility: Parameters
     }

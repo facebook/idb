@@ -132,7 +132,8 @@ struct BridgeProtocolTests {
     }
   }
 
-  // Version 4 carried accessibility answers as typed objects; version 5 carries every other service's answers typed.
+  // Version 4 carried accessibility answers as typed objects; version 5 carries every other service's answers typed
+  // and names each command's action rather than `_0`.
   @Test
   func theProtocolIsAtTheVersionThatCarriesTypedAccessibilityAnswers() {
     #expect(BridgeRequest.currentVersion == 5)
@@ -164,28 +165,28 @@ struct BridgeProtocolTests {
     let fixtures: [(String, BridgeCommand)] = [
       (#"{"clearContacts":{}}"#, .clearContacts),
       (#"{"clearPhotos":{}}"#, .clearPhotos),
-      (#"{"dns":{"_0":{"list":{}}}}"#, .dns(.list)),
-      (#"{"dns":{"_0":{"set":{"servers":["::1"]}}}}"#, .dns(.set(servers: ["::1"]))),
-      (#"{"dns":{"_0":{"clear":{}}}}"#, .dns(.clear)),
-      (#"{"dynamicStore":{"_0":{"snapshot":{"key":"k"}}}}"#, .dynamicStore(.snapshot(key: "k"))),
+      (#"{"dns":{"action":{"list":{}}}}"#, .dns(.list)),
+      (#"{"dns":{"action":{"set":{"servers":["::1"]}}}}"#, .dns(.set(servers: ["::1"]))),
+      (#"{"dns":{"action":{"clear":{}}}}"#, .dns(.clear)),
+      (#"{"dynamicStore":{"action":{"snapshot":{"key":"k"}}}}"#, .dynamicStore(.snapshot(key: "k"))),
       // `Data` travels as base64, which the Python harness encodes itself.
-      (#"{"dynamicStore":{"_0":{"restore":{"key":"k","snapshot":"AP8="}}}}"#, .dynamicStore(.restore(key: "k", snapshot: Data([0, 255])))),
-      (#"{"proxy":{"_0":{"list":{}}}}"#, .proxy(.list)),
-      (#"{"proxy":{"_0":{"set":{"host":"::1","kind":"socks","port":1080}}}}"#, .proxy(.set(host: "::1", port: 1080, kind: .socks))),
-      (#"{"proxy":{"_0":{"set":{"host":"proxy.example","kind":"http","port":8080}}}}"#, .proxy(.set(host: "proxy.example", port: 8080, kind: .http))),
-      (#"{"proxy":{"_0":{"clear":{}}}}"#, .proxy(.clear)),
-      (#"{"notifications":{"_0":{"list":{}}}}"#, .notifications(.list(bundleID: nil))),
-      (#"{"notifications":{"_0":{"list":{"bundleID":"app"}}}}"#, .notifications(.list(bundleID: "app"))),
-      (#"{"notifications":{"_0":{"approve":{"bundleID":"app"}}}}"#, .notifications(.approve(bundleID: "app"))),
-      (#"{"notifications":{"_0":{"revoke":{"bundleID":"app"}}}}"#, .notifications(.revoke(bundleID: "app"))),
-      (#"{"notifications":{"_0":{"delivered":{"bundleID":"app"}}}}"#, .notifications(.delivered(bundleID: "app"))),
-      (#"{"notifications":{"_0":{"clearDelivered":{"bundleID":"app"}}}}"#, .notifications(.clearDelivered(bundleID: "app"))),
-      (#"{"health":{"_0":{"list":{"bundleID":"app"}}}}"#, .health(.list(bundleID: "app"))),
-      (#"{"health":{"_0":{"clear":{"bundleID":"app"}}}}"#, .health(.clear(bundleID: "app"))),
-      (#"{"health":{"_0":{"approve":{"bundleID":"app","typeIDs":["step"]}}}}"#, .health(.approve(bundleID: "app", typeIDs: ["step"]))),
-      (#"{"health":{"_0":{"revoke":{"bundleID":"app","typeIDs":[]}}}}"#, .health(.revoke(bundleID: "app", typeIDs: []))),
-      (#"{"accessibility":{"_0":{"clientType":0,"maxDepth":5,"maxNodes":10,"pid":42,"traversal":"view-hierarchy","verb":"describe"}}}"#, .accessibility(.read(pid: 42, options: Self.readOptions(maxDepth: 5, maxNodes: 10)))),
-      (#"{"accessibility":{"_0":{"clientType":0,"verb":"hittest","x":1.5,"y":2}}}"#, .accessibility(.hitTest(x: 1.5, y: 2, attributes: nil, clientType: .noClient))),
+      (#"{"dynamicStore":{"action":{"restore":{"key":"k","snapshot":"AP8="}}}}"#, .dynamicStore(.restore(key: "k", snapshot: Data([0, 255])))),
+      (#"{"proxy":{"action":{"list":{}}}}"#, .proxy(.list)),
+      (#"{"proxy":{"action":{"set":{"host":"::1","kind":"socks","port":1080}}}}"#, .proxy(.set(host: "::1", port: 1080, kind: .socks))),
+      (#"{"proxy":{"action":{"set":{"host":"proxy.example","kind":"http","port":8080}}}}"#, .proxy(.set(host: "proxy.example", port: 8080, kind: .http))),
+      (#"{"proxy":{"action":{"clear":{}}}}"#, .proxy(.clear)),
+      (#"{"notifications":{"action":{"list":{}}}}"#, .notifications(.list(bundleID: nil))),
+      (#"{"notifications":{"action":{"list":{"bundleID":"app"}}}}"#, .notifications(.list(bundleID: "app"))),
+      (#"{"notifications":{"action":{"approve":{"bundleID":"app"}}}}"#, .notifications(.approve(bundleID: "app"))),
+      (#"{"notifications":{"action":{"revoke":{"bundleID":"app"}}}}"#, .notifications(.revoke(bundleID: "app"))),
+      (#"{"notifications":{"action":{"delivered":{"bundleID":"app"}}}}"#, .notifications(.delivered(bundleID: "app"))),
+      (#"{"notifications":{"action":{"clearDelivered":{"bundleID":"app"}}}}"#, .notifications(.clearDelivered(bundleID: "app"))),
+      (#"{"health":{"action":{"list":{"bundleID":"app"}}}}"#, .health(.list(bundleID: "app"))),
+      (#"{"health":{"action":{"clear":{"bundleID":"app"}}}}"#, .health(.clear(bundleID: "app"))),
+      (#"{"health":{"action":{"approve":{"bundleID":"app","typeIDs":["step"]}}}}"#, .health(.approve(bundleID: "app", typeIDs: ["step"]))),
+      (#"{"health":{"action":{"revoke":{"bundleID":"app","typeIDs":[]}}}}"#, .health(.revoke(bundleID: "app", typeIDs: []))),
+      (#"{"accessibility":{"action":{"clientType":0,"maxDepth":5,"maxNodes":10,"pid":42,"traversal":"view-hierarchy","verb":"describe"}}}"#, .accessibility(.read(pid: 42, options: Self.readOptions(maxDepth: 5, maxNodes: 10)))),
+      (#"{"accessibility":{"action":{"clientType":0,"verb":"hittest","x":1.5,"y":2}}}"#, .accessibility(.hitTest(x: 1.5, y: 2, attributes: nil, clientType: .noClient))),
       (#"{"ping":{}}"#, .ping),
       (#"{"shutdown":{}}"#, .shutdown),
     ]
@@ -247,7 +248,7 @@ struct BridgeProtocolTests {
 
   @Test
   func literalWireFixturesAndResponseVersionBoundary() throws {
-    let request = try BridgeRequest.decode(Data(#"{"version":5,"id":"fixture","command":{"dns":{"_0":{"set":{"servers":["::1","1.1.1.1"]}}}}}"#.utf8))
+    let request = try BridgeRequest.decode(Data(#"{"version":5,"id":"fixture","command":{"dns":{"action":{"set":{"servers":["::1","1.1.1.1"]}}}}}"#.utf8))
     #expect(request.command == .dns(.set(servers: ["::1", "1.1.1.1"])))
     let success = Data(
       #"{"version":5,"id":"fixture","result":{"exitCode":0,"answers":[{"health":{"_0":{"action":"clear","bundleID":"app","error":null,"ok":true}}}]}}"#.utf8)
