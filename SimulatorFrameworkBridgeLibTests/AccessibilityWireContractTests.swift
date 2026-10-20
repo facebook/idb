@@ -348,12 +348,12 @@ final class AccessibilityWireContractTests: XCTestCase {
       userInfo: [FBAXAccessibilityErrorKey: NSNumber(value: FBAXError.ipcTimeout.rawValue), NSLocalizedDescriptionKey: "runtime said no"])
     let request = BridgeAXRequest.read(pid: kAppPid, options: options(traversal: .singleFetch))
 
-    XCTAssertFalse(try failure(answer(request, as: BridgeAXTreeResponse.self)).outstanding)
+    XCTAssertNil(try failure(answer(request, as: BridgeAXTreeResponse.self)).outstanding)
     let refused = try failure(answer(request, as: BridgeAXTreeResponse.self))
 
     XCTAssertEqual(refused.kind, .applicationNotResponding)
     XCTAssertEqual(refused.pid, kAppPid)
-    XCTAssertTrue(refused.outstanding)
+    XCTAssertEqual(refused.outstanding, true)
     XCTAssertNotNil(refused.timeoutSeconds)
   }
 

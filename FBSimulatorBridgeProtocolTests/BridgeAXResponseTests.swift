@@ -36,14 +36,6 @@ struct BridgeAXResponseTests {
   }
 
   @Test
-  func aCapabilityTheInventoryDoesNotMentionIsNotAdvertised() throws {
-    let data = Data(#"{"displays":[{"uniqueID":"main","displayID":1}]}"#.utf8)
-    let inventory = try JSONDecoder().decode(BridgeAXDisplayInventory.self, from: data)
-    #expect(!(inventory.displayScopedInteractions || inventory.displayScopedTrees || inventory.displayScopedQuiescence))
-    #expect(inventory.displays == [.init(uniqueID: "main", displayID: 1)])
-  }
-
-  @Test
   func aModalDecodesFromThePayloadTheGuestSends() {
     for modal in [
       BridgeAXModal(kind: .system, elementType: "SBAlertItemWindow", label: nil),

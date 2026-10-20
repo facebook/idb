@@ -145,13 +145,10 @@ struct SimulatorSettingsPublisherTests {
     }
   }
 
-  @Test("Unknown, missing, and malformed guest error kinds fail safely")
-  func unknownErrorKinds() async throws {
-    let kinds: [Any?] = ["future_error_kind", nil, 42]
-    for kind in kinds {
-      let result = await events(frames: [try failure(kind: kind, message: "guest failed")])
-      #expect(result == [.unavailable(.failed(reason: "guest failed"))])
-    }
+  @Test("A failure without a kind fails safely")
+  func missingErrorKind() async throws {
+    let result = await events(frames: [try failure(kind: nil, message: "guest failed")])
+    #expect(result == [.unavailable(.failed(reason: "guest failed"))])
   }
 
   @Test("A transient source startup failure is typed as not ready")

@@ -30,6 +30,8 @@ public struct BridgeAXNode: Codable, Equatable, Sendable {
   public var visiblePoint: BridgeAXPoint?
   public var centerPoint: BridgeAXPoint?
   public var userInteractionEnabled: Bool?
+  /// What a display-wide hit-test at this unreachable element's centre found.
+  @BridgeAXIndirect public var explainedBy: BridgeAXNode? = nil
   public var isEnabled: Bool?
   public var translatorRole: Int?
   public var translatorSubrole: Int?
@@ -39,72 +41,53 @@ public struct BridgeAXNode: Codable, Equatable, Sendable {
   /// The attributes that failed to read, mapped to why.
   public var attributeReadFailures: [String: String]?
 
-  // A struct cannot hold an optional of itself; the indirection is kept out of the public shape.
-  private indirect enum Explanation: Equatable, Sendable {
-    case node(BridgeAXNode)
-  }
-
-  private var explanation: Explanation?
-
-  /// What a display-wide hit-test at this unreachable element's centre found.
-  public var explainedBy: BridgeAXNode? {
-    get {
-      guard case let .node(node) = explanation else { return nil }
-      return node
-    }
-    set { explanation = newValue.map(Explanation.node) }
-  }
+  /// The wire spells each attribute as the accessibility server names it.
+  public typealias CodingKeys = BridgeAXWire.Node
 
   public init() {}
+}
+
+/// Stores a value out of line, so a node can hold an optional node of its own type. It is coded as the value itself.
+@propertyWrapper
+public struct BridgeAXIndirect<Value: Codable & Equatable & Sendable>: Codable, Equatable, Sendable {
+  private indirect enum Storage: Equatable, Sendable {
+    case value(Value)
+  }
+
+  private var storage: Storage
+
+  public init(wrappedValue: Value) {
+    storage = .value(wrappedValue)
+  }
+
+  public var wrappedValue: Value {
+    get {
+      switch storage {
+      case let .value(value): value
+      }
+    }
+    set { storage = .value(newValue) }
+  }
 
   public init(from decoder: Decoder) throws {
-    let node = try decoder.container(keyedBy: BridgeAXWire.Node.self)
-    elementType = try node.decodeIfPresent(BridgeAXScalar.self, forKey: .elementType)
-    elementBaseType = try node.decodeIfPresent(BridgeAXScalar.self, forKey: .elementBaseType)
-    label = try node.decodeIfPresent(BridgeAXScalar.self, forKey: .label)
-    value = try node.decodeIfPresent(BridgeAXScalar.self, forKey: .value)
-    identifier = try node.decodeIfPresent(BridgeAXScalar.self, forKey: .identifier)
-    frame = try node.decodeIfPresent(BridgeAXRect.self, forKey: .frame)
-    automationType = try node.decodeIfPresent(BridgeAXScalar.self, forKey: .automationType)
-    xcTraits = try node.decodeIfPresent(UInt64.self, forKey: .xcTraits)
-    children = try node.decodeIfPresent([BridgeAXNode].self, forKey: .children)
-    windowDisplayID = try node.decodeIfPresent(UInt32.self, forKey: .windowDisplayID)
-    isVisible = try node.decodeFlagIfPresent(forKey: .isVisible)
-    visiblePoint = try node.decodeIfPresent(BridgeAXPoint.self, forKey: .visiblePoint)
-    centerPoint = try node.decodeIfPresent(BridgeAXPoint.self, forKey: .centerPoint)
-    userInteractionEnabled = try node.decodeFlagIfPresent(forKey: .userInteractionEnabled)
-    explainedBy = try node.decodeIfPresent(BridgeAXNode.self, forKey: .explainedBy)
-    isEnabled = try node.decodeFlagIfPresent(forKey: .isEnabled)
-    translatorRole = try node.decodeIfPresent(Int.self, forKey: .translatorRole)
-    translatorSubrole = try node.decodeIfPresent(Int.self, forKey: .translatorSubrole)
-    traits = try node.decodeIfPresent(UInt64.self, forKey: .traits)
-    elementIdentity = try node.decodeIfPresent(UInt64.self, forKey: .elementIdentity)
-    attributeReadFailures = try node.decodeIfPresent([String: String].self, forKey: .attributeReadFailures)
+    self.init(wrappedValue: try Value(from: decoder))
   }
 
   public func encode(to encoder: Encoder) throws {
-    var node = encoder.container(keyedBy: BridgeAXWire.Node.self)
-    try node.encodeIfPresent(elementType, forKey: .elementType)
-    try node.encodeIfPresent(elementBaseType, forKey: .elementBaseType)
-    try node.encodeIfPresent(label, forKey: .label)
-    try node.encodeIfPresent(value, forKey: .value)
-    try node.encodeIfPresent(identifier, forKey: .identifier)
-    try node.encodeIfPresent(frame, forKey: .frame)
-    try node.encodeIfPresent(automationType, forKey: .automationType)
-    try node.encodeIfPresent(xcTraits, forKey: .xcTraits)
-    try node.encodeIfPresent(children, forKey: .children)
-    try node.encodeIfPresent(windowDisplayID, forKey: .windowDisplayID)
-    try node.encodeIfPresent(isVisible, forKey: .isVisible)
-    try node.encodeIfPresent(visiblePoint, forKey: .visiblePoint)
-    try node.encodeIfPresent(centerPoint, forKey: .centerPoint)
-    try node.encodeIfPresent(userInteractionEnabled, forKey: .userInteractionEnabled)
-    try node.encodeIfPresent(explainedBy, forKey: .explainedBy)
-    try node.encodeIfPresent(isEnabled, forKey: .isEnabled)
-    try node.encodeIfPresent(translatorRole, forKey: .translatorRole)
-    try node.encodeIfPresent(translatorSubrole, forKey: .translatorSubrole)
-    try node.encodeIfPresent(traits, forKey: .traits)
-    try node.encodeIfPresent(elementIdentity, forKey: .elementIdentity)
-    try node.encodeIfPresent(attributeReadFailures, forKey: .attributeReadFailures)
+    try wrappedValue.encode(to: encoder)
+  }
+}
+
+// An optional indirect value is coded as an optional field: absent when nil.
+extension KeyedDecodingContainer {
+  public func decode<Value>(_ type: BridgeAXIndirect<Value?>.Type, forKey key: Key) throws -> BridgeAXIndirect<Value?> {
+    BridgeAXIndirect(wrappedValue: try decodeIfPresent(Value.self, forKey: key))
+  }
+}
+
+extension KeyedEncodingContainer {
+  public mutating func encode<Value>(_ value: BridgeAXIndirect<Value?>, forKey key: Key) throws {
+    try encodeIfPresent(value.wrappedValue, forKey: key)
   }
 }
 
@@ -143,7 +126,7 @@ public struct BridgeAXNode: Codable, Equatable, Sendable {
 }
 
 /// A `CGRect` dictionary representation. JSON has no infinity or NaN, so a non-finite coordinate (routine for an
-/// off-screen or still-laying-out element) travels as null and decodes as nil.
+/// off-screen or still-laying-out element) is held as nil, and left out of the frame.
 public struct BridgeAXRect: Codable, Equatable, Sendable {
   @frozen public enum CodingKeys: String, CodingKey {
     case x = "X"
@@ -158,31 +141,15 @@ public struct BridgeAXRect: Codable, Equatable, Sendable {
   public var height: Double?
 
   public init(x: Double?, y: Double?, width: Double?, height: Double?) {
-    self.x = x
-    self.y = y
-    self.width = width
-    self.height = height
+    self.x = x.finite
+    self.y = y.finite
+    self.width = width.finite
+    self.height = height.finite
   }
 
-  public init(from decoder: Decoder) throws {
-    let rect = try decoder.container(keyedBy: CodingKeys.self)
-    x = try rect.decodeIfPresent(Double.self, forKey: .x)
-    y = try rect.decodeIfPresent(Double.self, forKey: .y)
-    width = try rect.decodeIfPresent(Double.self, forKey: .width)
-    height = try rect.decodeIfPresent(Double.self, forKey: .height)
-  }
-
-  /// A non-finite coordinate is written as null rather than left out, so every rect has all four keys.
-  public func encode(to encoder: Encoder) throws {
-    var rect = encoder.container(keyedBy: CodingKeys.self)
-    try rect.encodeFinite(x, forKey: .x)
-    try rect.encodeFinite(y, forKey: .y)
-    try rect.encodeFinite(width, forKey: .width)
-    try rect.encodeFinite(height, forKey: .height)
-  }
 }
 
-/// A `CGPoint` dictionary representation, with non-finite coordinates as `BridgeAXRect` carries them.
+/// A `CGPoint` dictionary representation, with non-finite coordinates as `BridgeAXRect` holds them.
 public struct BridgeAXPoint: Codable, Equatable, Sendable {
   @frozen public enum CodingKeys: String, CodingKey {
     case x = "X"
@@ -193,40 +160,15 @@ public struct BridgeAXPoint: Codable, Equatable, Sendable {
   public var y: Double?
 
   public init(x: Double?, y: Double?) {
-    self.x = x
-    self.y = y
+    self.x = x.finite
+    self.y = y.finite
   }
 
-  public init(from decoder: Decoder) throws {
-    let point = try decoder.container(keyedBy: CodingKeys.self)
-    x = try point.decodeIfPresent(Double.self, forKey: .x)
-    y = try point.decodeIfPresent(Double.self, forKey: .y)
-  }
-
-  public func encode(to encoder: Encoder) throws {
-    var point = encoder.container(keyedBy: CodingKeys.self)
-    try point.encodeFinite(x, forKey: .x)
-    try point.encodeFinite(y, forKey: .y)
-  }
 }
 
-extension KeyedDecodingContainer {
-  /// A boolean the accessibility server may answer as `true`/`false` or as `1`/`0`.
-  func decodeFlagIfPresent(forKey key: Key) throws -> Bool? {
-    guard contains(key), try !decodeNil(forKey: key) else { return nil }
-    if let flag = try? decode(Bool.self, forKey: key) {
-      return flag
-    }
-    return try decode(Int64.self, forKey: key) != 0
-  }
-}
-
-extension KeyedEncodingContainer {
-  fileprivate mutating func encodeFinite(_ value: Double?, forKey key: Key) throws {
-    guard let value, value.isFinite else {
-      try encodeNil(forKey: key)
-      return
-    }
-    try encode(value, forKey: key)
+extension Optional where Wrapped == Double {
+  /// Nil for a value JSON cannot carry.
+  fileprivate var finite: Double? {
+    flatMap { $0.isFinite ? $0 : nil }
   }
 }

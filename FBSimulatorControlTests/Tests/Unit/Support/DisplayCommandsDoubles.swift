@@ -104,7 +104,7 @@ actor InventoryTransport: AXBridgeTransport {
     sends += 1
     let displays = inventory.map { ["uniqueID": $0.uniqueID, "displayID": $0.displayID] as [String: Any] }
     return try AXBridgeReply(
-      answer: JSONSerialization.data(withJSONObject: ["ok": true, "displayScopedInteractions": scopedInteractions, "displays": displays]),
+      answer: JSONSerialization.data(withJSONObject: ["ok": true, "displayScopedInteractions": scopedInteractions, "displayScopedTrees": false, "displayScopedQuiescence": false, "displays": displays]),
       for: request)
   }
 

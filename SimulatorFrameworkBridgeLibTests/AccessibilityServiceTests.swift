@@ -22,9 +22,9 @@ struct AccessibilityServiceTests {
     .tree(BridgeAXTreeResponse(tree: node, pid: 1, truncated: false))
   }
 
-  // A non-finite coordinate has no JSON form; the answer still encodes, with that edge as null.
+  // A non-finite coordinate has no JSON form; the answer still encodes, without that edge.
   @Test
-  func infiniteFrameValueSerializesAsNull() {
+  func infiniteFrameValueIsLeftOut() {
     var node = BridgeAXNode()
     node.label = .string("icon")
     node.frame = BridgeAXRect(x: .infinity, y: 0, width: 10, height: 20)
@@ -32,7 +32,7 @@ struct AccessibilityServiceTests {
     #expect(parsed?["ok"] as? NSNumber == NSNumber(value: true))
     let tree = parsed?["tree"] as? NSDictionary
     let frame = tree?["XC_kAXXCAttributeFrame"] as? NSDictionary
-    #expect(frame?["X"] as? NSNull == NSNull(), "the non-finite member must be null")
+    #expect(frame?["X"] == nil, "the non-finite member must be left out")
     #expect(frame?["Height"] as? NSNumber == 20, "finite members must be preserved")
     #expect(tree?["XC_kAXXCAttributeLabel"] as? String == "icon", "the rest of the node must survive")
   }

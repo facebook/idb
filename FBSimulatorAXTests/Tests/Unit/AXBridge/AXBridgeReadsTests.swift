@@ -17,7 +17,7 @@ import XCTest
 final class AXBridgeReadsTests: XCTestCase {
 
   private func envelope(_ object: [String: Any]) throws -> Data {
-    try JSONSerialization.data(withJSONObject: object)
+    try guestFrame(object)
   }
 
   // MARK: - AXTreeRead envelope parsing
@@ -60,15 +60,6 @@ final class AXBridgeReadsTests: XCTestCase {
     let data = try envelope(["ok": true, "tree": tree, "pid": 42])
     let parsed = try AXTreeRead(wholeTreeResponse: data, pid: 42)
     XCTAssertNil(parsed.automation, "an absent automation object must not read as automation mode being off")
-  }
-
-  // `asserted` absent is the state before anything asserts, and false is the truthful answer for it.
-  func testAutomationAssertedDefaultsToFalseWhenOmitted() throws {
-    let tree: [String: Any] = [AXWire.Node.label.rawValue: "root"]
-    let data = try envelope(["ok": true, "tree": tree, "pid": 42, "automation": ["enabled": true]])
-    let parsed = try AXTreeRead(wholeTreeResponse: data, pid: 42)
-    XCTAssertEqual(parsed.automation?.enabled, true)
-    XCTAssertEqual(parsed.automation?.asserted, false)
   }
 
   func testSurfacesGuestErrorMessage() throws {
@@ -180,32 +171,23 @@ final class AXBridgeReadsTests: XCTestCase {
     }
   }
 
-  // The reported pid is JSON off the wire; the non-failable `pid_t` conversion traps, which would make a bad
-  // response crash the host at parse time.
-  func testAnOutOfRangeReportedPidDegradesRatherThanTrapping() throws {
-    let data = try envelope([
-      "ok": false,
-      "error": "pid 8865 has no accessibility server",
-      "error_kind": "application_unavailable",
-      "pid": 99_999_999_999,
-    ])
-    XCTAssertThrowsError(try AXTreeRead(wholeTreeResponse: data, pid: 42)) { error in
-      guard case let AXBridgeError.applicationUnavailable(pid) = error else {
-        return XCTFail("expected applicationUnavailable, got: \(error)")
+  // A host only ever reads its own revision's guest, which writes every answer whole, so an answer it could not have
+  // written is refused as unparseable rather than read as something else.
+  func testAnAnswerThisRevisionsGuestCannotWriteIsRefused() throws {
+    let tree: [String: Any] = [AXWire.Node.label.rawValue: "root"]
+    let answers: [[String: Any]] = [
+      ["ok": false, "error": "gone", "error_kind": "application_unavailable", "pid": 99_999_999_999],
+      ["ok": false, "error": "something new went wrong", "error_kind": "some_future_kind"],
+      ["ok": true, "tree": tree, "pid": 42, "truncated": false, "automation": ["enabled": true]],
+      ["ok": true, "tree": tree, "pid": 42, "truncated": false, "modal": ["kind": "bogus", "elementType": "X"]],
+    ]
+    for answer in answers {
+      XCTAssertThrowsError(try AXTreeRead(wholeTreeResponse: envelope(answer), pid: 42), "\(answer)") { error in
+        guard case let AXBridgeError.guestFailure(message) = error else {
+          return XCTFail("expected guestFailure, got: \(error)")
+        }
+        XCTAssertTrue(message.contains("unparseable guest response"), message)
       }
-      XCTAssertEqual(pid, 42, "an unusable reported pid falls back to the one the caller named")
-    }
-  }
-
-  // A kind this host has never heard of has to degrade to what an untagged failure already does, so a
-  // guest running ahead of its host costs precision and nothing else.
-  func testAnUnknownFailureKindDegradesToAnOpaqueFailureCarryingTheMessage() throws {
-    let data = try envelope(["ok": false, "error": "something new went wrong", "error_kind": "some_future_kind"])
-    XCTAssertThrowsError(try AXTreeRead(frontmostResponse: data, method: .centerPoint)) { error in
-      guard case AXBridgeError.guestFailure = error else {
-        return XCTFail("expected guestFailure, got: \(error)")
-      }
-      XCTAssertTrue("\(error)".contains("something new went wrong"), "the message must survive: \(error)")
     }
   }
 
@@ -1623,10 +1605,8 @@ final class AXBridgeReadsTests: XCTestCase {
     XCTAssertNil(modal?.label)
   }
 
-  func testModalAbsentOrMalformedIsNil() throws {
+  func testModalAbsentIsNil() throws {
     XCTAssertNil(try modal(in: ["ok": true]), "no modal key -> nil")
-    XCTAssertNil(try modal(in: ["ok": true, "modal": ["elementType": "X"]]), "missing kind -> nil")
-    XCTAssertNil(try modal(in: ["ok": true, "modal": ["kind": "bogus", "elementType": "X"]]), "unknown kind -> nil")
   }
 
   func testFrontmostTreeCarriesModalDescriptor() throws {
@@ -2865,8 +2845,17 @@ final class AXBridgeReadsTests: XCTestCase {
   }
 
   private static func json(_ object: [String: Any]) throws -> Data {
-    try JSONSerialization.data(withJSONObject: object)
+    try guestFrame(object)
   }
+}
+
+/// An answer as the guest writes it, which always says whether a tree it sends was truncated.
+private func guestFrame(_ object: [String: Any]) throws -> Data {
+  var object = object
+  if object["ok"] as? Bool == true, object["tree"] != nil, object["truncated"] == nil {
+    object["truncated"] = false
+  }
+  return try JSONSerialization.data(withJSONObject: object)
 }
 
 /// Choosing a traversal per read.

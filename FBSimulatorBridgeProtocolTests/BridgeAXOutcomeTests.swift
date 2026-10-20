@@ -65,15 +65,6 @@ struct BridgeAXOutcomeTests {
   // MARK: - Nodes
 
   @Test
-  func aFlagReadsFromEitherSpellingTheServerAnswersWith() throws {
-    let node = try decode(
-      BridgeAXNode.self, #"{"XC_kAXXCAttributeIsVisible":0,"XC_kAXXCAttributeIsUserInteractionEnabled":1,"FBIsEnabled":true}"#)
-    #expect(node.isVisible == false)
-    #expect(node.userInteractionEnabled == true)
-    #expect(node.isEnabled == true)
-  }
-
-  @Test
   func anAttributeTheServerCouldNotAnswerReadsAsAbsent() throws {
     let node = try decode(BridgeAXNode.self, #"{"XC_kAXXCAttributeLabel":null,"XC_kAXXCAttributeFrame":null}"#)
     #expect(node == BridgeAXNode())
@@ -121,39 +112,13 @@ struct BridgeAXOutcomeTests {
   }
 
   @Test
-  func aNonFiniteCoordinateTravelsAsNull() throws {
+  func aNonFiniteCoordinateIsLeftOut() throws {
     let rect = BridgeAXRect(x: .infinity, y: 0, width: .nan, height: nil)
-    #expect(try jsonObject(JSONEncoder().encode(rect)) == ["X": NSNull(), "Y": 0, "Width": NSNull(), "Height": NSNull()])
+    #expect(try jsonObject(JSONEncoder().encode(rect)) == ["Y": 0])
     #expect(try roundTrip(rect) == BridgeAXRect(x: nil, y: 0, width: nil, height: nil))
   }
 
   // MARK: - Outcomes
-
-  @Test
-  func aKindThisRevisionDoesNotKnowDegradesToNone() throws {
-    let outcome = try decode(BridgeAXOutcome<BridgeAXSettingResponse>.self, #"{"ok":false,"error":"new","error_kind":"from_the_future"}"#)
-    #expect(outcome == .failure(BridgeAXFailure(message: "new")))
-  }
-
-  @Test
-  func aFailurePidThatNamesNoProcessReadsAsNone() throws {
-    let outcome = try decode(
-      BridgeAXOutcome<BridgeAXTreeResponse>.self, #"{"ok":false,"error":"gone","error_kind":"application_unavailable","pid":99999999999}"#)
-    #expect(outcome == .failure(BridgeAXFailure(message: "gone", kind: .applicationUnavailable)))
-  }
-
-  @Test
-  func anAutomationStateThatAssertedNothingSaysSo() throws {
-    let read = try decode(BridgeAXTreeResponse.self, #"{"tree":{},"pid":3,"automation":{"enabled":true}}"#)
-    #expect(read.automation == BridgeAXAutomationState(enabled: true, asserted: false))
-  }
-
-  @Test
-  func aModalThisRevisionCannotReadIsNone() throws {
-    let read = try decode(BridgeAXTreeResponse.self, #"{"tree":{},"pid":3,"modal":{"kind":"bogus","elementType":"X"}}"#)
-    #expect(read.modal == nil)
-    #expect(read.pid == 3)
-  }
 
   @Test
   func aFailureDecodesWhateverTheVerbWouldHaveAnswered() throws {
@@ -257,4 +222,16 @@ struct BridgeAXOutcomeTests {
 }
 
 /// Locates the test bundle, which carries the fixtures.
-private final class BundleFinder {}
+private final class BundleFinder {
+  // Generated coders spell these keys themselves; they must be the vocabulary's spelling.
+  @Test
+  func generatedKeysSpellTheWireVocabulary() {
+    #expect(Set(BridgeAXFailure.CodingKeys.allCases.map(\.stringValue)).isSubset(of: Set(["error", "error_kind", "pid", "ax_error", "timeout_seconds", "outstanding", "effect"])))
+    for key in BridgeAXFailure.CodingKeys.allCases {
+      #expect(BridgeAXWire.Envelope(rawValue: key.stringValue) != nil, "\(key)")
+    }
+    for key in BridgeAXGuestPhases.CodingKeys.allCases {
+      #expect(BridgeAXWire.Phase(rawValue: key.stringValue) != nil, "\(key)")
+    }
+  }
+}

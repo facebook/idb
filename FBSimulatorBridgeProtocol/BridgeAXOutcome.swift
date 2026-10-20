@@ -8,8 +8,6 @@
 import Foundation
 
 extension BridgeAXWire.Envelope: CodingKey {}
-extension BridgeAXWire.Phase: CodingKey {}
-extension BridgeAXWire.Automation: CodingKey {}
 extension BridgeAXFrontmostMethod: Codable {}
 
 /// Every accessibility answer the guest writes: `ok` beside either the verb's own fields or a failure's. The
@@ -43,22 +41,33 @@ extension BridgeAXFrontmostMethod: Codable {}
 /// Why the guest could not answer. The kind decides what the host raises; the message carries the detail.
 public struct BridgeAXFailure: Codable, Equatable, Sendable {
   public var message: String?
-  /// Nil when the guest named no kind, or one this revision does not know: both degrade to a generic failure.
+  /// Nil when the guest named no kind: a generic failure.
   public var kind: BridgeAXWire.ErrorKind?
   public var pid: Int32?
   /// The AXError of a `runtimeFailed` failure, when the runtime gave one.
   public var axError: Int32?
   /// How long an `applicationNotResponding` read waited.
   public var timeoutSeconds: Double?
-  /// On `applicationNotResponding`: the application was still working on an earlier read, so this one was
-  /// refused without being sent.
-  public var outstanding: Bool
+  /// True on `applicationNotResponding` when the application was still working on an earlier read, so this one was
+  /// refused without being sent; otherwise nil.
+  public var outstanding: Bool?
   /// What a failed write did to the application.
   public var effect: BridgeAXWire.Effect?
 
+  /// Spelled as `BridgeAXWire.Envelope` spells them.
+  @frozen public enum CodingKeys: String, CodingKey, CaseIterable {
+    case message = "error"
+    case kind = "error_kind"
+    case pid
+    case axError = "ax_error"
+    case timeoutSeconds = "timeout_seconds"
+    case outstanding
+    case effect
+  }
+
   public init(
     message: String?, kind: BridgeAXWire.ErrorKind? = nil, pid: Int32? = nil, axError: Int32? = nil, timeoutSeconds: Double? = nil,
-    outstanding: Bool = false, effect: BridgeAXWire.Effect? = nil
+    outstanding: Bool? = nil, effect: BridgeAXWire.Effect? = nil
   ) {
     self.message = message
     self.kind = kind
@@ -67,32 +76,6 @@ public struct BridgeAXFailure: Codable, Equatable, Sendable {
     self.timeoutSeconds = timeoutSeconds
     self.outstanding = outstanding
     self.effect = effect
-  }
-
-  public init(from decoder: Decoder) throws {
-    let envelope = try decoder.container(keyedBy: BridgeAXWire.Envelope.self)
-    message = try envelope.decodeIfPresent(String.self, forKey: .error)
-    // A kind that is not one of this revision's names, or not a name at all, degrades to a generic failure.
-    kind = ((try? envelope.decodeIfPresent(String.self, forKey: .errorKind)) ?? nil).flatMap(BridgeAXWire.ErrorKind.init(rawValue:))
-    // A pid that does not fit a `pid_t` names no process, so it reads as no pid rather than failing the answer.
-    pid = try envelope.decodeIfPresent(Int64.self, forKey: .pid).flatMap { Int32(exactly: $0) }
-    axError = try envelope.decodeIfPresent(Int32.self, forKey: .axError)
-    timeoutSeconds = try envelope.decodeIfPresent(Double.self, forKey: .timeoutSeconds)
-    outstanding = try envelope.decodeIfPresent(Bool.self, forKey: .outstanding) ?? false
-    effect = ((try? envelope.decodeIfPresent(String.self, forKey: .effect)) ?? nil).flatMap(BridgeAXWire.Effect.init(rawValue:))
-  }
-
-  public func encode(to encoder: Encoder) throws {
-    var envelope = encoder.container(keyedBy: BridgeAXWire.Envelope.self)
-    try envelope.encodeIfPresent(message, forKey: .error)
-    try envelope.encodeIfPresent(kind, forKey: .errorKind)
-    try envelope.encodeIfPresent(pid, forKey: .pid)
-    try envelope.encodeIfPresent(axError, forKey: .axError)
-    try envelope.encodeIfPresent(timeoutSeconds, forKey: .timeoutSeconds)
-    if outstanding {
-      try envelope.encode(true, forKey: .outstanding)
-    }
-    try envelope.encodeIfPresent(effect, forKey: .effect)
   }
 }
 
@@ -123,29 +106,6 @@ public struct BridgeAXTreeResponse: Codable, Equatable, Sendable {
     self.method = method
     self.modal = modal
   }
-
-  public init(from decoder: Decoder) throws {
-    let envelope = try decoder.container(keyedBy: BridgeAXWire.Envelope.self)
-    tree = try envelope.decode(BridgeAXNode.self, forKey: .tree)
-    pid = try envelope.decode(Int32.self, forKey: .pid)
-    truncated = try envelope.decodeIfPresent(Bool.self, forKey: .truncated) ?? false
-    automation = try envelope.decodeIfPresent(BridgeAXAutomationState.self, forKey: .automation)
-    phases = try envelope.decodeIfPresent(BridgeAXGuestPhases.self, forKey: .phases)
-    method = try envelope.decodeIfPresent(BridgeAXFrontmostMethod.self, forKey: .method)
-    // A modal this revision cannot read is reported as none rather than costing the whole tree.
-    modal = (try? envelope.decodeIfPresent(BridgeAXModal.self, forKey: .modal)) ?? nil
-  }
-
-  public func encode(to encoder: Encoder) throws {
-    var envelope = encoder.container(keyedBy: BridgeAXWire.Envelope.self)
-    try envelope.encode(tree, forKey: .tree)
-    try envelope.encode(pid, forKey: .pid)
-    try envelope.encode(truncated, forKey: .truncated)
-    try envelope.encodeIfPresent(automation, forKey: .automation)
-    try envelope.encodeIfPresent(phases, forKey: .phases)
-    try envelope.encodeIfPresent(method, forKey: .method)
-    try envelope.encodeIfPresent(modal, forKey: .modal)
-  }
 }
 
 /// The device's accessibility automation mode as it stood for a read, and whether the read changed it.
@@ -157,19 +117,6 @@ public struct BridgeAXAutomationState: Codable, Equatable, Sendable {
     self.enabled = enabled
     self.asserted = asserted
   }
-
-  public init(from decoder: Decoder) throws {
-    let automation = try decoder.container(keyedBy: BridgeAXWire.Automation.self)
-    enabled = try automation.decode(Bool.self, forKey: .enabled)
-    // Absent is the state before anything asserts the mode, and false is the truthful answer for it.
-    asserted = try automation.decodeIfPresent(Bool.self, forKey: .asserted) ?? false
-  }
-
-  public func encode(to encoder: Encoder) throws {
-    var automation = encoder.container(keyedBy: BridgeAXWire.Automation.self)
-    try automation.encode(enabled, forKey: .enabled)
-    try automation.encode(asserted, forKey: .asserted)
-  }
 }
 
 /// What the guest measured of its own work on a read.
@@ -177,21 +124,15 @@ public struct BridgeAXGuestPhases: Codable, Equatable, Sendable {
   public var traverseMilliseconds: Double?
   public var machRoundTrips: Int64?
 
+  /// Spelled as `BridgeAXWire.Phase` spells them.
+  @frozen public enum CodingKeys: String, CodingKey, CaseIterable {
+    case traverseMilliseconds = "traverse_ms"
+    case machRoundTrips = "mach_round_trips"
+  }
+
   public init(traverseMilliseconds: Double?, machRoundTrips: Int64?) {
     self.traverseMilliseconds = traverseMilliseconds
     self.machRoundTrips = machRoundTrips
-  }
-
-  public init(from decoder: Decoder) throws {
-    let phases = try decoder.container(keyedBy: BridgeAXWire.Phase.self)
-    traverseMilliseconds = try phases.decodeIfPresent(Double.self, forKey: .traverse)
-    machRoundTrips = try phases.decodeIfPresent(Int64.self, forKey: .machRoundTrips)
-  }
-
-  public func encode(to encoder: Encoder) throws {
-    var phases = encoder.container(keyedBy: BridgeAXWire.Phase.self)
-    try phases.encodeIfPresent(traverseMilliseconds, forKey: .traverse)
-    try phases.encodeIfPresent(machRoundTrips, forKey: .machRoundTrips)
   }
 }
 
@@ -250,15 +191,6 @@ public struct BridgeAXSettingResponse: Codable, Equatable, Sendable {
 
   public init(enabled: Bool) {
     self.enabled = enabled
-  }
-
-  public init(from decoder: Decoder) throws {
-    enabled = try decoder.container(keyedBy: BridgeAXWire.Envelope.self).decode(Bool.self, forKey: .enabled)
-  }
-
-  public func encode(to encoder: Encoder) throws {
-    var envelope = encoder.container(keyedBy: BridgeAXWire.Envelope.self)
-    try envelope.encode(enabled, forKey: .enabled)
   }
 }
 
