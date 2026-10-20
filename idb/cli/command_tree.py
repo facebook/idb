@@ -26,10 +26,12 @@ from __future__ import annotations
 
 import argparse
 import os
+import re
 import shutil
 import sys
 from collections.abc import Callable
 from dataclasses import dataclass
+from typing import Any
 
 from idb.cli.commands.accessibility import (
     AccessibilityDescribeMarkerCommand,
@@ -154,7 +156,20 @@ DESCRIPTION = "idb: a versatile tool to communicate with iOS Simulators and Devi
 EPILOG = "See Also: https://www.fbidb.io/docs/guided-tour"
 ROOT_COMMAND_NAME = "root_command"
 
+_PYTHON_312_NEGATIVE_NUMBER_PATTERN = re.compile(r"^-\d+$|^-\d*\.\d+$")
+
 ExtensionLoader = Callable[[], list[Command]]
+
+
+class IDBArgumentParser(argparse.ArgumentParser):
+    """An argument parser whose behavior stays stable across Python upgrades."""
+
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
+        if sys.version_info >= (3, 14):
+            kwargs.setdefault("color", False)
+            kwargs.setdefault("suggest_on_error", False)
+        super().__init__(*args, **kwargs)
+        self._negative_number_matcher = _PYTHON_312_NEGATIVE_NUMBER_PATTERN
 
 
 # Prefer the bundled binary over the conventional wrapper at
@@ -418,7 +433,7 @@ def build_builtin_commands(shell_command: ShellCommand) -> list[Command]:
 
 def build_command_graph(
     extension_loader: ExtensionLoader | None = None,
-    parser_class: type[argparse.ArgumentParser] = argparse.ArgumentParser,
+    parser_class: type[argparse.ArgumentParser] = IDBArgumentParser,
 ) -> CommandGraph:
     """Build the parser and command tree for one idb invocation.
 

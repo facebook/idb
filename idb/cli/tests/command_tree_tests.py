@@ -265,6 +265,21 @@ class CommandTreeTest(unittest.TestCase):
         self.maxDiff = None
         self.graph = build_command_graph()
 
+    def test_negative_value_classification_is_stable(self) -> None:
+        for value in ("-1.", "-1e2"):
+            with (
+                self.subTest(value=value),
+                contextlib.redirect_stderr(io.StringIO()),
+                self.assertRaises(SystemExit) as caught,
+            ):
+                self.graph.parser.parse_args(["set-location", value, "2"])
+            self.assertEqual(caught.exception.code, 2)
+
+    def test_help_is_colorless_when_python_colors_are_forced(self) -> None:
+        with mock.patch.dict(os.environ, {"PYTHON_COLORS": "1"}):
+            help_text = build_command_graph().parser.format_help()
+        self.assertNotIn("\x1b[", help_text)
+
     def test_root_entries(self) -> None:
         self.assertEqual(
             tuple(command.name for command in self.graph.root_command.subcommands),
