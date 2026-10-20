@@ -42,7 +42,8 @@ extension BridgeServerSocketTests {
 
   /// The accessibility envelope a streamed frame carries.
   private func readEvent(fd: Int32) -> NSDictionary? {
-    (readResponse(fd: fd)?["result"] as? NSDictionary)?["accessibility"] as? NSDictionary
+    let answers = (readResponse(fd: fd)?["result"] as? NSDictionary)?["answers"] as? [NSDictionary]
+    return (answers?.first?["accessibility"] as? NSDictionary)?["answer"] as? NSDictionary
   }
 
   // The exclusive server exits once the client hangs up, and must be waited for inside the test body.

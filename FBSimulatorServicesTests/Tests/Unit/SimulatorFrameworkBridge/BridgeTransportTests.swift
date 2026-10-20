@@ -181,8 +181,8 @@ final class BridgeTransportTests: XCTestCase {
   func testAnAccessibilityAnswerIsHandedOnAsTheGuestGaveIt() throws {
     let answer = BridgeAXAnswer.displays(
       BridgeAXDisplayInventory(displayScopedInteractions: true, displayScopedTrees: true, displayScopedQuiescence: true, displays: []))
-    XCTAssertEqual(try BridgeResult(exitCode: 0, accessibility: answer).accessibilityAnswer(), answer)
-    XCTAssertEqual(try BridgeResult(exitCode: 1, error: "partial", accessibility: answer).accessibilityAnswer(), answer)
+    XCTAssertEqual(try BridgeResult(exitCode: 0, answers: [.accessibility(answer)]).accessibilityAnswer(), answer)
+    XCTAssertEqual(try BridgeResult(exitCode: 1, error: "partial", answers: [.accessibility(answer)]).accessibilityAnswer(), answer)
   }
 
   func testMutationIsNeverReplayedAfterAnAmbiguousFailure() async throws {

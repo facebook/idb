@@ -82,7 +82,7 @@ final class BridgeExecutionTests: XCTestCase {
       BridgeResult(
         exitCode: 0,
         answers: [.deliveredNotification(BridgeDeliveredNotification(bundleID: "a", identifier: "b", title: "", subtitle: "", body: "", threadIdentifier: "", date: .infinity))]),
-      BridgeResult(exitCode: 0, propertyList: try PropertyListSerialization.data(fromPropertyList: ["value": Data(repeating: 0, count: 13 * 1024 * 1024)], format: .binary, options: 0)),
+      BridgeResult(exitCode: 0, answers: [.dynamicStoreSnapshot(try PropertyListSerialization.data(fromPropertyList: ["value": Data(repeating: 0, count: 13 * 1024 * 1024)], format: .binary, options: 0))]),
     ]
     for result in results {
       let execute: (BridgeCommand) -> BridgeResult = { _ in result }
@@ -144,7 +144,7 @@ final class BridgeExecutionTests: XCTestCase {
     let output = BridgeOutput()
     output.write(accessibility: answer)
     let result = output.finish(status: 0)
-    XCTAssertEqual(result, BridgeResult(exitCode: 0, accessibility: answer))
+    XCTAssertEqual(result, BridgeResult(exitCode: 0, answers: [.accessibility(answer)]))
     let cli = BridgeRPC.process(try request.encoded()) { _ in result }
     let socket = BridgeRPC.handle(try request.encoded()) { _ in result }
     XCTAssertEqual(cli.data, socket.frame?.data)
@@ -212,7 +212,9 @@ final class BridgeExecutionTests: XCTestCase {
       }
       let result = BridgeServices.execute(command)
       XCTAssertEqual(result.exitCode, 1, stage)
-      guard case let .health(.timedOut(_, _, error))? = result.answers.first else { return XCTFail("missing timeout response") }
+      guard case let .health(health)? = result.answers.first, health.completionStatus == .timedOut, let error = health.error else {
+        return XCTFail("missing timeout response")
+      }
       let timeouts = ["seed": "Health seed timed out", "set": "Health authorization write timed out", "clear": "Health clear timed out", "list": "Health list timed out"]
       XCTAssertEqual(result.error, timeouts[stage], stage)
       XCTAssertEqual(error, timeouts[stage], stage)
@@ -270,7 +272,7 @@ final class BridgeExecutionTests: XCTestCase {
         let result = try BridgeResponse.decode(response, for: request).result
         XCTAssertEqual(printed, "")
         XCTAssertEqual(result.exitCode, 0)
-        XCTAssertEqual(result.answers, [])
+        XCTAssertEqual(result.answers.count, 1)
         XCTAssertNil(result.error)
         let snapshot = try XCTUnwrap(result.propertyList)
         XCTAssertTrue(snapshot.starts(with: Data("bplist00".utf8)))
@@ -359,7 +361,7 @@ final class BridgeExecutionTests: XCTestCase {
         let response = try JSONDecoder().decode(BridgeResponse.self, from: data)
         XCTAssertEqual(response.id, "unanswerable")
         XCTAssertEqual(response.result.exitCode, 1)
-        XCTAssertEqual(response.result.answers, [])
+        XCTAssertEqual(response.result.answers.count, 1)
         guard case let .failure(failure)? = response.result.accessibility else { return XCTFail("expected a failure for \(action)") }
         XCTAssertEqual(failure.kind, .badRequest, action)
         XCTAssertTrue(expected(failure.message ?? ""), "\(action): \(failure.message ?? "")")

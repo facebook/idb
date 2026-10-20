@@ -32,7 +32,7 @@ private func printHealthJSON(_ answer: BridgeHealthAnswer, output: BridgeOutput?
     output.write(.health(answer))
     return
   }
-  let json = (try? BridgeServiceAnswer.health(answer).jsonLine()) ?? "(null)"
+  let json = (try? BridgeAnswer.health(answer).jsonLine()) ?? "(null)"
   // The existing C writer stops at the first NUL.
   // patternlint-disable-next-line avoid-print-to-prevent-production-overhead
   print(String(json.prefix { $0 != "\0" }))

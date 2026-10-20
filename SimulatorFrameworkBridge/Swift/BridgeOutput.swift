@@ -9,9 +9,7 @@ import FBSimulatorBridgeProtocol
 import Foundation
 
 public final class BridgeOutput {
-  public private(set) var answers: [BridgeServiceAnswer] = []
-  public private(set) var propertyList: Data?
-  public private(set) var accessibility: BridgeAXAnswer?
+  public private(set) var answers: [BridgeAnswer] = []
   public private(set) var failed = false
   public private(set) var error: String?
 
@@ -19,7 +17,7 @@ public final class BridgeOutput {
 
   /// One of the command's answers. One the host could not report is refused, and fails the command.
   @discardableResult
-  public func write(_ answer: BridgeServiceAnswer) -> Bool {
+  public func write(_ answer: BridgeAnswer) -> Bool {
     do {
       _ = try answer.jsonLine()
       answers.append(answer)
@@ -33,13 +31,14 @@ public final class BridgeOutput {
 
   /// An accessibility command's answer, which the frame carries in its own shape.
   public func write(accessibility answer: BridgeAXAnswer) {
-    accessibility = answer
+    answers.append(.accessibility(answer))
   }
 
+  /// A dynamic-store snapshot, carried as the binary property list it is.
   @discardableResult
   public func write(propertyList object: Any) -> Bool {
     do {
-      propertyList = try PropertyListSerialization.data(fromPropertyList: object, format: .binary, options: 0)
+      answers.append(.dynamicStoreSnapshot(try PropertyListSerialization.data(fromPropertyList: object, format: .binary, options: 0)))
       return true
     } catch {
       failure("Could not encode property-list output: \(error.localizedDescription)")
@@ -55,6 +54,11 @@ public final class BridgeOutput {
   }
 
   public func finish(status: Int32) -> BridgeResult {
-    BridgeResult(exitCode: failed ? 1 : status, error: error, answers: answers, propertyList: propertyList, accessibility: accessibility)
+    BridgeResult(exitCode: failed ? 1 : status, error: error, answers: answers)
+  }
+
+  /// The snapshot the command wrote, if it wrote one.
+  public var propertyList: Data? {
+    finish(status: 0).propertyList
   }
 }

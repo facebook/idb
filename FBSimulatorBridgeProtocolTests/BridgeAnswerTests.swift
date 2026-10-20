@@ -10,9 +10,9 @@ import Foundation
 import Testing
 
 @Suite
-struct BridgeServiceAnswerTests {
+struct BridgeAnswerTests {
   /// Each answer beside the line the host reports for it. The host hands the line on unparsed, so it is pinned.
-  private static let reported: [(BridgeServiceAnswer, String)] = [
+  private static let reported: [(BridgeAnswer, String)] = [
     (
       .notificationSettings(
         BridgeNotificationSettings(
@@ -25,7 +25,7 @@ struct BridgeServiceAnswerTests {
         BridgeNotificationSettings(
           bundleID: "com.example.flagless",
           settings: .init(allowsNotifications: false, authorizationStatus: 0, showsInNotificationCenter: nil, showsInLockScreen: nil))),
-      #"{"allowsNotifications":false,"authorizationStatus":0,"bundleID":"com.example.flagless","found":true,"showsInLockScreen":null,"showsInNotificationCenter":null}"#
+      #"{"allowsNotifications":false,"authorizationStatus":0,"bundleID":"com.example.flagless","found":true}"#
     ),
     (.notificationSettings(BridgeNotificationSettings(bundleID: "com.example.missing", settings: nil)), #"{"bundleID":"com.example.missing","found":false}"#),
     (
@@ -42,7 +42,7 @@ struct BridgeServiceAnswerTests {
     ),
     (
       .health(.write(action: .approve, bundleID: "app", ok: true, resolvedTypes: ["step"], unresolvedTypes: ["unknown"], seedError: nil, setError: nil)),
-      #"{"action":"approve","bundleID":"app","ok":true,"resolvedTypes":["step"],"seedError":null,"setError":null,"unresolvedTypes":["unknown"]}"#
+      #"{"action":"approve","bundleID":"app","ok":true,"resolvedTypes":["step"],"unresolvedTypes":["unknown"]}"#
     ),
     (
       .health(.write(action: .revoke, bundleID: "app", ok: false, resolvedTypes: ["step"], unresolvedTypes: [], seedError: "seed failed", setError: "seed warning")),
@@ -56,7 +56,7 @@ struct BridgeServiceAnswerTests {
       .health(.noAuthorizationSpelling(action: .revoke, bundleID: "app", resolvedTypes: ["step"], unresolvedTypes: [])),
       #"{"action":"revoke","bundleID":"app","error":"HKAuthorizationStore declares no known setAuthorizationStatuses: spelling","ok":false,"resolvedTypes":["step"],"unresolvedTypes":[]}"#
     ),
-    (.health(.clear(bundleID: "app", ok: true, error: nil)), #"{"action":"clear","bundleID":"app","error":null,"ok":true}"#),
+    (.health(.clear(bundleID: "app", ok: true, error: nil)), #"{"action":"clear","bundleID":"app","ok":true}"#),
     (.health(.clear(bundleID: "app", ok: false, error: "clear failed")), #"{"action":"clear","bundleID":"app","error":"clear failed","ok":false}"#),
     (
       .health(
@@ -105,7 +105,7 @@ struct BridgeServiceAnswerTests {
       (["first", 42] as [Any], #"["first",42]"#),
     ]
     for (configuration, line) in cases {
-      let answer = BridgeServiceAnswer.networkConfiguration(try BridgeNetworkConfiguration(configuration))
+      let answer = BridgeAnswer.networkConfiguration(try BridgeNetworkConfiguration(configuration))
       #expect(try answer.jsonLine() == line)
       let request = BridgeRequest(command: .dns(.list), id: "network")
       let frame = try BridgeResponse(request: request, result: BridgeResult(exitCode: 0, answers: [answer])).encoded()
@@ -122,13 +122,13 @@ struct BridgeServiceAnswerTests {
   @Test
   func anAnswerJSONCannotRepresentDoesNotEncode() {
     let notification = BridgeDeliveredNotification(bundleID: "a", identifier: "b", title: "", subtitle: "", body: "", threadIdentifier: "", date: .infinity)
-    #expect(throws: (any Error).self) { try BridgeServiceAnswer.deliveredNotification(notification).jsonLine() }
+    #expect(throws: (any Error).self) { try BridgeAnswer.deliveredNotification(notification).jsonLine() }
   }
 
   @Test
   func aResultIsReportedAsItsErrorThenALineForEachAnswer() throws {
-    let answer = BridgeServiceAnswer.health(.clear(bundleID: "a/b", ok: true, error: nil))
-    let line = #"{"action":"clear","bundleID":"a\/b","error":null,"ok":true}"#
+    let answer = BridgeAnswer.health(.clear(bundleID: "a/b", ok: true, error: nil))
+    let line = #"{"action":"clear","bundleID":"a\/b","ok":true}"#
     #expect(try BridgeResult(exitCode: 0).reportedOutput == "")
     #expect(try BridgeResult(exitCode: 0, answers: [answer, answer]).reportedOutput == line + "\n" + line + "\n")
     #expect(try BridgeResult(exitCode: 1, error: "it failed", answers: [answer]).reportedOutput == "it failed\n" + line + "\n")

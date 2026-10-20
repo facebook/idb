@@ -48,7 +48,7 @@ final class AXBridgeStreamTests {
   }
 
   private func event(_ name: String) -> BridgeResult {
-    BridgeResult(exitCode: 0, accessibility: .quiescence(.touchesCompleted(pid: name == "one" ? 1 : 2)))
+    BridgeResult(exitCode: 0, answers: [.accessibility(.quiescence(.touchesCompleted(pid: name == "one" ? 1 : 2)))])
   }
 
   private func closeGuest() {

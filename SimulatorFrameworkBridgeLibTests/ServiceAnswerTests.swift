@@ -75,8 +75,8 @@ final class ServiceAnswerTests: XCTestCase {
 
   func testHealthWritesAnswerWithWhatTheyResolvedAndHowEachStageEnded() throws {
     let cases: [(Bool, Bool, String?, String?, String, String?)] = [
-      (true, true, nil, nil, #""ok":true,"resolvedTypes":["step"],"seedError":null,"setError":null"#, nil),
-      (true, false, nil, "set failed", #""ok":false,"resolvedTypes":["step"],"seedError":null,"setError":"set failed""#, "set failed"),
+      (true, true, nil, nil, #""ok":true,"resolvedTypes":["step"]"#, nil),
+      (true, false, nil, "set failed", #""ok":false,"resolvedTypes":["step"],"setError":"set failed""#, "set failed"),
       (false, true, "seed failed", "seed warning", #""ok":false,"resolvedTypes":["step"],"seedError":"seed failed","setError":"seed warning""#, "seed warning"),
     ]
     for (seedOK, setOK, seedError, setError, fields, error) in cases {
@@ -126,7 +126,7 @@ final class ServiceAnswerTests: XCTestCase {
       let clear = try answer(.health(.clear(bundleID: "app")))
       XCTAssertEqual(
         try clear.jsonLines,
-        (fails ? #"{"action":"clear","bundleID":"app","error":"clear failed","ok":false}"# : #"{"action":"clear","bundleID":"app","error":null,"ok":true}"#) + "\n")
+        (fails ? #"{"action":"clear","bundleID":"app","error":"clear failed","ok":false}"# : #"{"action":"clear","bundleID":"app","ok":true}"#) + "\n")
       XCTAssertEqual(clear.error, fails ? "clear failed" : nil)
       let list = try answer(.health(.list(bundleID: "app")))
       let records = #""records":[{"identifier":"step","readingAuthorizationAllowed":false,"sharingAuthorizationAllowed":true},{"identifier":"opaque-value"},{}]"#
@@ -134,7 +134,7 @@ final class ServiceAnswerTests: XCTestCase {
         try list.jsonLines,
         (fails
           ? #"{"action":"list","bundleID":"app","error":"fetch failed","ok":false,\#(records)}"#
-          : #"{"action":"list","bundleID":"app","error":null,"ok":true,\#(records)}"#) + "\n")
+          : #"{"action":"list","bundleID":"app","ok":true,\#(records)}"#) + "\n")
       XCTAssertEqual(list.error, fails ? "fetch failed" : nil)
     }
   }
@@ -184,7 +184,7 @@ final class ServiceAnswerTests: XCTestCase {
       ),
       (
         "com.example.flagless",
-        #"{"allowsNotifications":false,"authorizationStatus":0,"bundleID":"com.example.flagless","found":true,"showsInLockScreen":null,"showsInNotificationCenter":null}"#
+        #"{"allowsNotifications":false,"authorizationStatus":0,"bundleID":"com.example.flagless","found":true}"#
       ),
       ("com.example.missing", #"{"bundleID":"com.example.missing","found":false}"#),
     ]

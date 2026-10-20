@@ -63,20 +63,29 @@ public struct BridgeRequest: Codable, Equatable, Sendable {
 public struct BridgeResult: Codable, Equatable, Sendable {
   public let exitCode: Int32
   public let error: String?
-  /// Every other service's answers, in the order the command gave them.
-  public let answers: [BridgeServiceAnswer]
-  public let propertyList: Data?
-  /// An accessibility command's answer, carried in the frame in its own shape.
-  public let accessibility: BridgeAXAnswer?
+  /// The command's answers, in the order it gave them.
+  public let answers: [BridgeAnswer]
 
-  public init(
-    exitCode: Int32, error: String? = nil, answers: [BridgeServiceAnswer] = [], propertyList: Data? = nil, accessibility: BridgeAXAnswer? = nil
-  ) {
+  public init(exitCode: Int32, error: String? = nil, answers: [BridgeAnswer] = []) {
     self.exitCode = exitCode
     self.error = error
     self.answers = answers
-    self.propertyList = propertyList
-    self.accessibility = accessibility
+  }
+
+  /// An accessibility command's answer.
+  public var accessibility: BridgeAXAnswer? {
+    answers.lazy.compactMap { answer -> BridgeAXAnswer? in
+      guard case let .accessibility(accessibility) = answer else { return nil }
+      return accessibility
+    }.first
+  }
+
+  /// A dynamic-store snapshot's property list.
+  public var propertyList: Data? {
+    answers.lazy.compactMap { answer -> Data? in
+      guard case let .dynamicStoreSnapshot(propertyList) = answer else { return nil }
+      return propertyList
+    }.first
   }
 }
 

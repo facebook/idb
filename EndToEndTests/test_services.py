@@ -18,6 +18,7 @@ from .harness import (
     IdbEndToEndTestCase,
     NotReady,
     reported_answers,
+    tagged_answers,
     run,
     wait_until,
 )
@@ -60,7 +61,6 @@ class ServiceTests(IdbEndToEndTestCase):
                 "action": "list",
                 "bundleID": bundle_id,
                 "ok": True,
-                "error": None,
                 "records": [],
             },
         )
@@ -94,7 +94,7 @@ class ServiceTests(IdbEndToEndTestCase):
                             # An accessibility answer has a field of its own; every
                             # other service answers in `answers`.
                             if "accessibility" in command:
-                                answer = result.get("accessibility")
+                                answer = reported_answers(result)[0]
                             else:
                                 answer, expected = reported_answers(result), [expected]
                             # Compared as JSON, where `1` and `true` differ.
@@ -193,10 +193,9 @@ class ServiceTests(IdbEndToEndTestCase):
                             result = await rpc.send_result(
                                 {"dynamicStore": {"action": command}}
                             )
-                            self.assertEqual(result["answers"], [])
-                            encoded = base64.b64decode(
-                                result["propertyList"], validate=True
-                            )
+                            ((kind, encoded_snapshot),) = tagged_answers(result)
+                            self.assertEqual(kind, "dynamicStoreSnapshot")
+                            encoded = base64.b64decode(encoded_snapshot, validate=True)
                             self.assertTrue(encoded.startswith(b"bplist00"))
                             self.assertEqual(plistlib.loads(encoded), snapshot)
                             self.assertEqual(
