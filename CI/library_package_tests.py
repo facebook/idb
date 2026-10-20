@@ -23,7 +23,7 @@ MANIFEST = {
             "archives": ["libSwifty.a", "libCish.a"],
             "frameworks": ["Foundation.framework"],
             "linker_flags": [],
-            "resources": ["libShim-iOS.dylib", "Guest.app"],
+            "resources": ["libShim-iOS.dylib", "Guest.app", "Guest-watchOS"],
             "search_paths": ["PrivateHeaders"],
         },
         "Cish": {
@@ -91,6 +91,9 @@ class LibraryPackageTest(unittest.TestCase):
         (simulator / "libShim-iOS.dylib").write_bytes(b"shim")
         (simulator / "Guest.app").mkdir()
         (simulator / "Guest.app" / "Guest").write_bytes(b"guest")
+        watch = self.build / "Products" / "Release-watchsimulator"
+        watch.mkdir()
+        (watch / "Guest-watchOS").write_bytes(b"watch guest")
         self.output = self.root / "Package"
         self.xcodebuild = FakeXcodebuild()
         patches = (
@@ -128,6 +131,7 @@ class LibraryPackageTest(unittest.TestCase):
         )
         self.assertTrue((self.output / "Resources/libShim-iOS.dylib").is_file())
         self.assertTrue((self.output / "Resources/Guest.app/Guest").is_file())
+        self.assertTrue((self.output / "Resources/Guest-watchOS").is_file())
         self.assertEqual(
             json.loads((self.output / "manifest.json").read_text()), MANIFEST
         )

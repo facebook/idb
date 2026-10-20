@@ -43,7 +43,14 @@ from pathlib import Path
 SOURCE_ROOT = Path(__file__).resolve().parent.parent
 MANIFEST = SOURCE_ROOT / "LibraryPackage.json"
 # Where each SDK's Release products land under the build directory's Products/.
-PRODUCT_DIRECTORIES = ("Release", "Release-iphonesimulator", "Release-appletvsimulator")
+# `Release` comes first, so a library built for macOS and a simulator alike comes
+# from macOS.
+PRODUCT_DIRECTORIES = (
+    "Release",
+    "Release-iphonesimulator",
+    "Release-appletvsimulator",
+    "Release-watchsimulator",
+)
 
 Runner = Callable[[Sequence[str]], None]
 
