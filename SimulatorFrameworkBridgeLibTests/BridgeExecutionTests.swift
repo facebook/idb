@@ -19,7 +19,7 @@ final class BridgeExecutionTests: XCTestCase {
       .notifications(.delivered(bundleID: "app")), .notifications(.clearDelivered(bundleID: "app")),
       .accessibility(.displays), .ping,
     ]
-    let expected = BridgeResult(exitCode: 23, values: [.object(["identifier": .string("first")]), .object(["identifier": .string("second")])], error: "The remaining records could not be read")
+    let expected = BridgeResult(exitCode: 23, error: "The remaining records could not be read", answers: [.health(.clear(bundleID: "first", ok: true, error: nil)), .health(.clear(bundleID: "second", ok: true, error: nil))])
     var received: [BridgeCommand] = []
     for command in commands {
       let request = BridgeRequest(command: command, id: "test")
@@ -78,8 +78,10 @@ final class BridgeExecutionTests: XCTestCase {
   func testOversizedAndInvalidOutputBecomesAMatchingFailureInBothAdapters() throws {
     let request = BridgeRequest(command: .dns(.list), id: "bounded")
     let results = [
-      BridgeResult(exitCode: 0, values: [.string(String(repeating: "x", count: IPCFrame.maximumSize))]),
-      BridgeResult(exitCode: 0, values: [.number(.infinity)]),
+      BridgeResult(exitCode: 0, answers: [.health(.clear(bundleID: String(repeating: "x", count: IPCFrame.maximumSize), ok: true, error: nil))]),
+      BridgeResult(
+        exitCode: 0,
+        answers: [.deliveredNotification(BridgeDeliveredNotification(bundleID: "a", identifier: "b", title: "", subtitle: "", body: "", threadIdentifier: "", date: .infinity))]),
       BridgeResult(exitCode: 0, propertyList: try PropertyListSerialization.data(fromPropertyList: ["value": Data(repeating: 0, count: 13 * 1024 * 1024)], format: .binary, options: 0)),
     ]
     for result in results {
@@ -98,7 +100,7 @@ final class BridgeExecutionTests: XCTestCase {
   }
 
   private func failureMessage(_ result: BridgeResult) -> String? {
-    guard result.values.isEmpty else { return nil }
+    guard result.answers.isEmpty else { return nil }
     return result.error
   }
 
@@ -122,12 +124,14 @@ final class BridgeExecutionTests: XCTestCase {
 
   func testOutputIsRequestLocalRetainsOrderAndReportsEncodingFailures() {
     let first = BridgeOutput()
-    XCTAssertTrue(first.write(["id": "first"]))
-    XCTAssertFalse(first.write(["date": Double.infinity]))
-    XCTAssertTrue(first.write(["id": "second"]))
+    XCTAssertTrue(first.write(.health(.clear(bundleID: "first", ok: true, error: nil))))
+    XCTAssertFalse(
+      first.write(
+        .deliveredNotification(BridgeDeliveredNotification(bundleID: "a", identifier: "b", title: "", subtitle: "", body: "", threadIdentifier: "", date: .infinity))))
+    XCTAssertTrue(first.write(.health(.clear(bundleID: "second", ok: true, error: nil))))
     let result = first.finish(status: 0)
     XCTAssertEqual(result.exitCode, 1)
-    XCTAssertEqual(result.values, [.object(["id": .string("first")]), .object(["id": .string("second")])])
+    XCTAssertEqual(result.answers, [.health(.clear(bundleID: "first", ok: true, error: nil)), .health(.clear(bundleID: "second", ok: true, error: nil))])
     XCTAssertTrue(result.error?.hasPrefix("Could not encode command output:") == true)
     XCTAssertEqual(BridgeOutput().finish(status: 0), BridgeResult(exitCode: 0))
   }
@@ -266,7 +270,7 @@ final class BridgeExecutionTests: XCTestCase {
         let result = try BridgeResponse.decode(response, for: request).result
         XCTAssertEqual(printed, "")
         XCTAssertEqual(result.exitCode, 0)
-        XCTAssertEqual(result.values, [])
+        XCTAssertEqual(result.answers, [])
         XCTAssertNil(result.error)
         let snapshot = try XCTUnwrap(result.propertyList)
         XCTAssertTrue(snapshot.starts(with: Data("bplist00".utf8)))
@@ -287,7 +291,7 @@ final class BridgeExecutionTests: XCTestCase {
       XCTAssertEqual(result.exitCode, 1)
       XCTAssertNotNil(result.error)
       XCTAssertNil(result.propertyList)
-      XCTAssertEqual(result.values, [])
+      XCTAssertEqual(result.answers, [])
       XCTAssertFalse(runtime.operations.contains("write"))
       let recovered = BridgeServices.execute(.dynamicStore(.snapshot(key: "dns")))
       XCTAssertEqual(recovered.exitCode, 0)
@@ -299,7 +303,7 @@ final class BridgeExecutionTests: XCTestCase {
 
   func testAStreamingCommandAnswersEveryResultAsAResponseToItsRequest() throws {
     let request = BridgeRequest(command: .accessibility(.quiescence(pid: nil, busyThresholdMs: nil, quietWindowMs: nil)), id: "stream")
-    let results = [BridgeResult(exitCode: 0, values: [.object(["quiet": .bool(false)])]), BridgeResult(exitCode: 1, error: "gone")]
+    let results = [BridgeResult(exitCode: 0, answers: [.health(.clear(bundleID: "quiet", ok: true, error: nil))]), BridgeResult(exitCode: 1, error: "gone")]
     let source = ScriptedResultStream(results: results)
     var executed = 0
     let response = BridgeRPC.handle(
@@ -351,7 +355,7 @@ final class BridgeExecutionTests: XCTestCase {
         let response = try JSONDecoder().decode(BridgeResponse.self, from: data)
         XCTAssertEqual(response.id, "malformed")
         XCTAssertEqual(response.result.exitCode, 1)
-        XCTAssertEqual(response.result.values, [])
+        XCTAssertEqual(response.result.answers, [])
         XCTAssertEqual(response.result.accessibility, .failure(BridgeAXFailure(message: message, kind: .badRequest)), parameters)
       }
     }
@@ -359,7 +363,7 @@ final class BridgeExecutionTests: XCTestCase {
 
   func testAStreamThatCannotStartAnswersWithOneFrame() throws {
     let request = BridgeRequest(command: .accessibility(.quiescence(pid: nil, busyThresholdMs: nil, quietWindowMs: nil)), id: "refused")
-    let refusal = BridgeResult(exitCode: 1, values: [.object(["ok": .bool(false)])])
+    let refusal = BridgeResult(exitCode: 1, answers: [.health(.clear(bundleID: "refused", ok: false, error: nil))])
     let response = BridgeRPC.handle(try request.encoded(), execute: { _ in BridgeResult(exitCode: 0) }) { _ in .result(refusal) }
     let frame = try XCTUnwrap(response.frame)
     XCTAssertFalse(frame.shutdown)

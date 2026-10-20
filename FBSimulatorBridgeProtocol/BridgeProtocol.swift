@@ -62,7 +62,6 @@ public struct BridgeRequest: Codable, Equatable, Sendable {
 
 public struct BridgeResult: Codable, Equatable, Sendable {
   public let exitCode: Int32
-  public let values: [BridgeJSONValue]
   public let error: String?
   /// Every other service's answers, in the order the command gave them.
   public let answers: [BridgeServiceAnswer]
@@ -71,11 +70,9 @@ public struct BridgeResult: Codable, Equatable, Sendable {
   public let accessibility: BridgeAXAnswer?
 
   public init(
-    exitCode: Int32, values: [BridgeJSONValue] = [], error: String? = nil, answers: [BridgeServiceAnswer] = [], propertyList: Data? = nil,
-    accessibility: BridgeAXAnswer? = nil
+    exitCode: Int32, error: String? = nil, answers: [BridgeServiceAnswer] = [], propertyList: Data? = nil, accessibility: BridgeAXAnswer? = nil
   ) {
     self.exitCode = exitCode
-    self.values = values
     self.error = error
     self.answers = answers
     self.propertyList = propertyList
@@ -84,13 +81,10 @@ public struct BridgeResult: Codable, Equatable, Sendable {
 }
 
 extension BridgeResult {
-  /// The command's output as the host reports it: each value a line of JSON, its keys sorted.
+  /// The command's output as the host reports it: each answer a line of JSON, its keys sorted.
   public var jsonLines: String {
     get throws {
-      let encoder = JSONEncoder()
-      encoder.outputFormatting = .sortedKeys
-      let values = try values.map { String(decoding: try encoder.encode($0), as: UTF8.self) + "\n" }
-      return try (values + answers.map { try $0.jsonLine() + "\n" }).joined()
+      try answers.map { try $0.jsonLine() + "\n" }.joined()
     }
   }
 

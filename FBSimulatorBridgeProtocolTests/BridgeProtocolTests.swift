@@ -74,7 +74,7 @@ struct BridgeProtocolTests {
   @Test
   func responseKeepsFailureOutputAndRequiresMatchingIdentity() throws {
     let request = BridgeRequest(command: .clearPhotos, id: "first")
-    let result = BridgeResult(exitCode: 1, values: [.object(["partial": .bool(true)])])
+    let result = BridgeResult(exitCode: 1, answers: [.health(.clear(bundleID: "partial", ok: false, error: nil))])
     let data = try BridgeResponse(request: request, result: result).encoded()
     #expect(try BridgeResponse.decode(data, for: request).result == result)
     let other = BridgeRequest(command: .clearPhotos, id: "second")
@@ -121,7 +121,7 @@ struct BridgeProtocolTests {
   @Test
   func aResponseIsCheckedAgainstItsRequestWithoutDecodingItsAnswer() throws {
     let request = BridgeRequest(command: .accessibility(.displays), id: "fixture")
-    let frame = Data(#"{"version":5,"id":"fixture","result":{"exitCode":0,"answers":[],"values":[],"accessibility":{"ok":true,"displays":"not an inventory"}}}"#.utf8)
+    let frame = Data(#"{"version":5,"id":"fixture","result":{"exitCode":0,"answers":[],"accessibility":{"ok":true,"displays":"not an inventory"}}}"#.utf8)
     try BridgeResponse.validate(frame, for: request)
     #expect(throws: (any Error).self, "the answer itself does not decode") { try BridgeResponse.decode(frame, for: request) }
     #expect(throws: BridgeProtocolError.mismatchedResponse) {
@@ -187,73 +187,16 @@ struct BridgeProtocolTests {
   }
 
   @Test
-  func integersAndBooleansSurviveJSONWithoutLosingPrecision() throws {
-    let value = BridgeJSONValue.object([
-      "signed": .integer(Int64.min), "unsigned": .unsignedInteger(UInt64.max),
-      "aboveDoublePrecision": .integer(9_007_199_254_740_993),
-      "bool": .bool(true), "number": .integer(1), "fraction": .number(1.25),
-      "nested": .array([.null, .string("quotes\" newline\n NUL\0")]),
-    ])
-    let data = try JSONEncoder().encode(value)
-    #expect(try JSONDecoder().decode(BridgeJSONValue.self, from: data) == value)
-    #expect(try BridgeJSONValue(foundationValue: value.foundationValue) == value)
-    #expect(try BridgeJSONValue(foundationValue: NSNumber(value: true)) == .bool(true))
-    #expect(try BridgeJSONValue(foundationValue: NSNumber(value: 1)) == .integer(1))
-    #expect(throws: (any Error).self) { try BridgeJSONValue(foundationValue: NSNumber(value: Double.nan)) }
-    #expect(throws: (any Error).self) { try BridgeJSONValue(foundationValue: Date()) }
-  }
-
-  @Test
-  func foundationJSONPreservesLargeIntegerAndExponentValues() throws {
-    let object: [String: Any] = [
-      "large": NSNumber(value: Int64(9_007_199_254_740_993)),
-      "signedMax": NSNumber(value: Int64.max),
-      "unsignedMax": NSNumber(value: UInt64.max),
-      "twoTo63": NSNumber(value: Double(9_223_372_036_854_775_808)),
-      "twoTo64": NSNumber(value: Double(18_446_744_073_709_551_616)),
-    ]
-    let bytes = try JSONSerialization.data(withJSONObject: object)
-    #expect(try BridgeJSONValue(foundationValue: JSONSerialization.jsonObject(with: bytes)) == BridgeJSONValue(foundationValue: object))
-    let value = try JSONDecoder().decode(BridgeJSONValue.self, from: Data("[1e3,1.25e-2,-0.0,9007199254740993]".utf8))
-    #expect(value == .array([.integer(1000), .number(0.0125), .integer(0), .integer(9_007_199_254_740_993)]))
-  }
-
-  @Test
-  func numericRepresentationsHaveJSONEqualityWithoutRoundingLargeIntegers() throws {
-    for value: BridgeJSONValue in [.unsignedInteger(1), .number(1), .number(-0.0), .unsignedInteger(UInt64.max)] {
-      #expect(try JSONDecoder().decode(BridgeJSONValue.self, from: JSONEncoder().encode(value)) == value)
-    }
-    #expect(BridgeJSONValue.integer(1) == .number(1))
-    #expect(BridgeJSONValue.integer(0) == .number(-0.0))
-    #expect(BridgeJSONValue.integer(1) != .bool(true))
-    #expect(BridgeJSONValue.integer(9_007_199_254_740_993) != .number(9_007_199_254_740_992))
-    #expect(BridgeJSONValue.unsignedInteger(UInt64.max) != .unsignedInteger(UInt64.max - 1))
-    for value in [Double.nan, Double.infinity, -Double.infinity] {
-      #expect(throws: (any Error).self) { try JSONEncoder().encode(BridgeJSONValue.number(value)) }
-    }
-  }
-
-  @Test
   func literalWireFixturesAndResponseVersionBoundary() throws {
     let request = try BridgeRequest.decode(Data(#"{"version":5,"id":"fixture","command":{"dns":{"_0":{"set":{"servers":["::1","1.1.1.1"]}}}}}"#.utf8))
     #expect(request.command == .dns(.set(servers: ["::1", "1.1.1.1"])))
-    let success = Data(#"{"version":5,"id":"fixture","result":{"exitCode":0,"answers":[],"values":[{"ok":true},null,42]}}"#.utf8)
-    #expect(try BridgeResponse.decode(success, for: request).result == BridgeResult(exitCode: 0, values: [.object(["ok": .bool(true)]), .null, .integer(42)]))
-    let future = Data(#"{"version":6,"id":"fixture","result":{"exitCode":0,"answers":[],"values":[]}}"#.utf8)
+    let success = Data(
+      #"{"version":5,"id":"fixture","result":{"exitCode":0,"answers":[{"health":{"_0":{"action":"clear","bundleID":"app","error":null,"ok":true}}}]}}"#.utf8)
+    #expect(try BridgeResponse.decode(success, for: request).result == BridgeResult(exitCode: 0, answers: [.health(.clear(bundleID: "app", ok: true, error: nil))]))
+    let future = Data(#"{"version":6,"id":"fixture","result":{"exitCode":0,"answers":[]}}"#.utf8)
     #expect(throws: BridgeProtocolError.unsupportedVersion(6)) { try BridgeResponse.decode(future, for: request) }
-    for text in [#"{"version":5,"result":{"exitCode":0,"answers":[],"values":[]}}"#, #"{"version":5,"id":"different","result":{"exitCode":0,"answers":[],"values":[]}}"#] {
+    for text in [#"{"version":5,"result":{"exitCode":0,"answers":[]}}"#, #"{"version":5,"id":"different","result":{"exitCode":0,"answers":[]}}"#] {
       #expect(throws: BridgeProtocolError.mismatchedResponse) { try BridgeResponse.decode(Data(text.utf8), for: request) }
     }
-  }
-
-  // The host hands this text on unparsed, as a service's `list` output and in a failure's message.
-  @Test
-  func aResultIsReportedAsItsErrorThenALineForEachValue() throws {
-    let answer = BridgeJSONValue.object(["ok": .integer(1), "path": .string("a/b"), "error": .null])
-    #expect(try BridgeResult(exitCode: 0).reportedOutput == "")
-    #expect(try BridgeResult(exitCode: 0, values: [answer, .array([])]).reportedOutput == #"{"error":null,"ok":1,"path":"a\/b"}"# + "\n[]\n")
-    #expect(try BridgeResult(exitCode: 1, values: [answer], error: "it failed").reportedOutput == "it failed\n" + #"{"error":null,"ok":1,"path":"a\/b"}"# + "\n")
-    #expect(try BridgeResult(exitCode: 1, error: "it failed").reportedOutput == "it failed")
-    #expect(try BridgeResult(exitCode: 1, error: "").reportedOutput == "")
   }
 }

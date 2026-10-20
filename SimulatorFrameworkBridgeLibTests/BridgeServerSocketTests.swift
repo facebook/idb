@@ -200,7 +200,7 @@ final class BridgeServerSocketTests: XCTestCase {
       XCTAssertEqual(
         BridgeServer.serve(socketPath: path, idleTimeoutSeconds: 5, exitOnDisconnect: true, prepareRuntime: {}) { data in
           BridgeRPC.handle(data) { command in
-            BridgeResult(exitCode: command == .shutdown ? 0 : 23, values: [.string("first"), .string("second")])
+            BridgeResult(exitCode: command == .shutdown ? 0 : 23, answers: [.health(.clear(bundleID: "first", ok: true, error: nil)), .health(.clear(bundleID: "second", ok: true, error: nil))])
           }
         }, 0)
       finished.fulfill()
@@ -217,7 +217,7 @@ final class BridgeServerSocketTests: XCTestCase {
       sendData(data: bytes, to: client)
       let object = try XCTUnwrap(readResponse(fd: client))
       let response = try BridgeResponse.decode(JSONSerialization.data(withJSONObject: object), for: request)
-      XCTAssertEqual(response.result, BridgeResult(exitCode: command == .shutdown ? 0 : 23, values: [.string("first"), .string("second")]))
+      XCTAssertEqual(response.result, BridgeResult(exitCode: command == .shutdown ? 0 : 23, answers: [.health(.clear(bundleID: "first", ok: true, error: nil)), .health(.clear(bundleID: "second", ok: true, error: nil))]))
     }
     assertEOF(fd: client)
     finishServer()

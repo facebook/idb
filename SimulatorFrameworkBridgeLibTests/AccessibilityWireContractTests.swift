@@ -23,7 +23,7 @@ private enum GuestFrame<Success: Codable & Equatable & Sendable> {
     in frame: Data, for request: BridgeRequest, file: StaticString = #filePath, line: UInt = #line
   ) throws -> BridgeAXOutcome<Success> {
     let result = try BridgeResponse.decode(frame, for: request).result
-    XCTAssertEqual(result.values, [], "an accessibility answer is not carried as values", file: file, line: line)
+    XCTAssertEqual(result.answers, [], "an accessibility answer is not carried as a service answer", file: file, line: line)
     let answer = try XCTUnwrap(result.accessibility, "the frame carries no accessibility answer", file: file, line: line)
     return try outcome(of: answer)
   }

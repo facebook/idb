@@ -80,7 +80,7 @@ final class BridgeTransportTests: XCTestCase {
     let cases: [(Data, BridgeProtocolError?)] = [
       (Data("{".utf8), nil),
       (
-        Data(#"{"version":\#(BridgeRequest.currentVersion + 1),"id":"first","result":{"exitCode":0,"answers":[],"values":[]}}"#.utf8),
+        Data(#"{"version":\#(BridgeRequest.currentVersion + 1),"id":"first","result":{"exitCode":0,"answers":[]}}"#.utf8),
         .unsupportedVersion(BridgeRequest.currentVersion + 1)
       ),
       (try BridgeResponse(id: "wrong", result: BridgeResult(exitCode: 0)).encoded(), .mismatchedResponse),
@@ -128,7 +128,7 @@ final class BridgeTransportTests: XCTestCase {
       BridgeRequest(command: .clearContacts, id: "next"),
     ]
     let results = [
-      BridgeResult(exitCode: 23, values: [.string("partial")]),
+      BridgeResult(exitCode: 23, answers: [.health(.clear(bundleID: "partial", ok: true, error: nil))]),
       BridgeResult(exitCode: 0),
     ]
     for (request, result) in zip(requests, results) {
@@ -141,7 +141,7 @@ final class BridgeTransportTests: XCTestCase {
 
   func testOneshotUsesTypedArgumentsAndPreservesPartialFailure() async throws {
     let request = BridgeRequest(command: .notifications(.delivered(bundleID: "app")), id: "oneshot")
-    let result = BridgeResult(exitCode: 23, values: [.object(["id": .string("one")])])
+    let result = BridgeResult(exitCode: 23, answers: [.health(.clear(bundleID: "one", ok: true, error: nil))])
     let transport = SimulatorFrameworkBridgeOneshotTransport(
       launcher: CannedGuestLauncher(
         expectedArguments: try request.arguments,
@@ -245,7 +245,7 @@ final class BridgeTransportTests: XCTestCase {
     let connections = await factory.count
     XCTAssertEqual(connections, 2)
 
-    let failure = BridgeResult(exitCode: 23, values: [.string("partial")])
+    let failure = BridgeResult(exitCode: 23, answers: [.health(.clear(bundleID: "partial", ok: true, error: nil))])
     let reported = RecordingBridgeConnection(failures: 0, result: failure)
     let responseTransport = SimulatorFrameworkBridgePersistentTransport(connector: RecordingBridgeFactory([reported]))
     let response = try await responseTransport.send(BridgeRequest(command: .dns(.list)))
