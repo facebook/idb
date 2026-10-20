@@ -369,12 +369,14 @@ public enum DeliveredNotificationsService {
     return handle(client: client, bundleID: bundleID, directory: directory, timeout: timeout, output: output)
   }
 
-  public static func handleActionWithCenter(_ action: String?, bundleID: String?, center: Any?, directory: String?, timeout: TimeInterval) -> Int32 {
+  public static func handleActionWithCenter(
+    _ action: String?, bundleID: String?, center: Any?, directory: String?, timeout: TimeInterval, output: BridgeOutput? = nil
+  ) -> Int32 {
     guard action == "delivered" else {
       NSLog("[DeliveredNotifications] Unknown action: %@. Use delivered.", action ?? "(null)")
       return 1
     }
-    return handle(client: FBDeliveredNotificationsClient(center: center), bundleID: bundleID ?? "", directory: directory, timeout: timeout, output: nil)
+    return handle(client: FBDeliveredNotificationsClient(center: center), bundleID: bundleID ?? "", directory: directory, timeout: timeout, output: output)
   }
 
   public static func clear(bundleID: String?, remover: Any?, directory: String?, timeout: TimeInterval) -> Int32 {

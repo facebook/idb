@@ -245,4 +245,15 @@ struct BridgeProtocolTests {
       #expect(throws: BridgeProtocolError.mismatchedResponse) { try BridgeResponse.decode(Data(text.utf8), for: request) }
     }
   }
+
+  // The host hands this text on unparsed, as a service's `list` output and in a failure's message.
+  @Test
+  func aResultIsReportedAsItsErrorThenALineForEachValue() throws {
+    let answer = BridgeJSONValue.object(["ok": .integer(1), "path": .string("a/b"), "error": .null])
+    #expect(try BridgeResult(exitCode: 0).reportedOutput == "")
+    #expect(try BridgeResult(exitCode: 0, values: [answer, .array([])]).reportedOutput == #"{"error":null,"ok":1,"path":"a\/b"}"# + "\n[]\n")
+    #expect(try BridgeResult(exitCode: 1, values: [answer], error: "it failed").reportedOutput == "it failed\n" + #"{"error":null,"ok":1,"path":"a\/b"}"# + "\n")
+    #expect(try BridgeResult(exitCode: 1, error: "it failed").reportedOutput == "it failed")
+    #expect(try BridgeResult(exitCode: 1, error: "").reportedOutput == "")
+  }
 }

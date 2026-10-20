@@ -192,13 +192,6 @@ extension BridgeResult {
     return accessibility
   }
 
-  var jsonLines: String {
-    get throws {
-      let encoder = JSONEncoder()
-      encoder.outputFormatting = .sortedKeys
-      return try values.map { String(decoding: try encoder.encode($0), as: UTF8.self) + "\n" }.joined()
-    }
-  }
 }
 
 extension Simulator {
@@ -230,7 +223,7 @@ extension Simulator {
   @discardableResult
   func runSimulatorFrameworkBridge(_ command: BridgeCommand) async throws -> String {
     let result = try await frameworkBridge(command)
-    let output = try [result.error, result.jsonLines].compactMap { $0 }.filter { !$0.isEmpty }.joined(separator: "\n")
+    let output = try result.reportedOutput
     guard result.exitCode == 0 else {
       throw SimulatorFrameworkBridgeError.commandFailed(command: command.serviceAndAction, exitCode: result.exitCode, output: output)
     }

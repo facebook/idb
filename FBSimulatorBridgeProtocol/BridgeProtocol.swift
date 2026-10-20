@@ -79,6 +79,24 @@ public struct BridgeResult: Codable, Equatable, Sendable {
   }
 }
 
+extension BridgeResult {
+  /// The command's output as the host reports it: each value a line of JSON, its keys sorted.
+  public var jsonLines: String {
+    get throws {
+      let encoder = JSONEncoder()
+      encoder.outputFormatting = .sortedKeys
+      return try values.map { String(decoding: try encoder.encode($0), as: UTF8.self) + "\n" }.joined()
+    }
+  }
+
+  /// What the host reports for the command, whether it succeeded or failed: its error, then its output.
+  public var reportedOutput: String {
+    get throws {
+      try [error, jsonLines].compactMap { $0 }.filter { !$0.isEmpty }.joined(separator: "\n")
+    }
+  }
+}
+
 public struct BridgeResponse: Codable, Equatable, Sendable {
   public let version: Int
   public let id: String?

@@ -60,8 +60,8 @@ public enum NotificationSettingsService {
     return handleNotificationSettingsActionWithClient(action: action, bundleID: bundleID, client: client, output: output)
   }
 
-  public static func handleNotificationSettingsActionWithGateway(action: String?, bundleID: String?, gateway: Any) -> Int {
-    handleNotificationSettingsActionWithClient(action: action, bundleID: bundleID, client: FBNotificationSettingsClient(gateway: gateway), output: nil)
+  public static func handleNotificationSettingsActionWithGateway(action: String?, bundleID: String?, gateway: Any, output: BridgeOutput? = nil) -> Int {
+    handleNotificationSettingsActionWithClient(action: action, bundleID: bundleID, client: FBNotificationSettingsClient(gateway: gateway), output: output)
   }
 }
 
