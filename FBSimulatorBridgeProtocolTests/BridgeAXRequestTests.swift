@@ -245,13 +245,13 @@ struct BridgeAXRequestTests {
   // The guest answers a request that does not decode with what is wrong with it, rather than failing the frame.
   @Test
   func anUndecodableRequestFailsTheFrameButSaysWhy() throws {
-    let frame = Data(#"{"command":{"accessibility":{"_0":{"verb":"quiet","quietWindowMs":-1}}},"id":"bad","version":4}"#.utf8)
+    let frame = Data(#"{"command":{"accessibility":{"_0":{"verb":"quiet","quietWindowMs":-1}}},"id":"bad","version":5}"#.utf8)
     #expect(throws: (any Error).self) { try BridgeRequest.decode(frame) }
     #expect(BridgeRequest.identity(of: frame) == "bad")
     #expect(BridgeRequest.accessibilityRequestError(of: frame) == .negativeTunable(.quietWindowMs, -1))
     #expect(BridgeRequest.accessibilityRequestError(of: try BridgeRequest(command: .ping).encoded()) == nil)
     #expect(BridgeRequest.accessibilityRequestError(of: try BridgeRequest(command: .accessibility(.displays)).encoded()) == nil)
-    #expect(BridgeRequest.accessibilityRequestError(of: Data(#"{"command":{"accessibility":{"_0":[]}},"id":"bad","version":4}"#.utf8)) == nil)
+    #expect(BridgeRequest.accessibilityRequestError(of: Data(#"{"command":{"accessibility":{"_0":[]}},"id":"bad","version":5}"#.utf8)) == nil)
   }
 
   /// The request a frame carrying `parameters` decodes to, or the reason it does not.

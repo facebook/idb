@@ -14,7 +14,7 @@ import Foundation
 }
 
 public struct BridgeRequest: Codable, Equatable, Sendable {
-  public static let currentVersion = 4
+  public static let currentVersion = 5
   public let version: Int
   public let id: String
   public let command: BridgeCommand
@@ -64,16 +64,20 @@ public struct BridgeResult: Codable, Equatable, Sendable {
   public let exitCode: Int32
   public let values: [BridgeJSONValue]
   public let error: String?
+  /// Every other service's answers, in the order the command gave them.
+  public let answers: [BridgeServiceAnswer]
   public let propertyList: Data?
   /// An accessibility command's answer, carried in the frame in its own shape.
   public let accessibility: BridgeAXAnswer?
 
   public init(
-    exitCode: Int32, values: [BridgeJSONValue] = [], error: String? = nil, propertyList: Data? = nil, accessibility: BridgeAXAnswer? = nil
+    exitCode: Int32, values: [BridgeJSONValue] = [], error: String? = nil, answers: [BridgeServiceAnswer] = [], propertyList: Data? = nil,
+    accessibility: BridgeAXAnswer? = nil
   ) {
     self.exitCode = exitCode
     self.values = values
     self.error = error
+    self.answers = answers
     self.propertyList = propertyList
     self.accessibility = accessibility
   }
@@ -85,7 +89,8 @@ extension BridgeResult {
     get throws {
       let encoder = JSONEncoder()
       encoder.outputFormatting = .sortedKeys
-      return try values.map { String(decoding: try encoder.encode($0), as: UTF8.self) + "\n" }.joined()
+      let values = try values.map { String(decoding: try encoder.encode($0), as: UTF8.self) + "\n" }
+      return try (values + answers.map { try $0.jsonLine() + "\n" }).joined()
     }
   }
 

@@ -79,7 +79,10 @@ final class BridgeTransportTests: XCTestCase {
     let secondData = try secondRequest.encoded()
     let cases: [(Data, BridgeProtocolError?)] = [
       (Data("{".utf8), nil),
-      (Data(#"{"version":5,"id":"first","result":{"exitCode":0,"values":[]}}"#.utf8), .unsupportedVersion(5)),
+      (
+        Data(#"{"version":\#(BridgeRequest.currentVersion + 1),"id":"first","result":{"exitCode":0,"answers":[],"values":[]}}"#.utf8),
+        .unsupportedVersion(BridgeRequest.currentVersion + 1)
+      ),
       (try BridgeResponse(id: "wrong", result: BridgeResult(exitCode: 0)).encoded(), .mismatchedResponse),
     ]
     for (payload, expectedError) in cases {

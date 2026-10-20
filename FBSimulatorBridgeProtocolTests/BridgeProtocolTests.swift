@@ -121,21 +121,21 @@ struct BridgeProtocolTests {
   @Test
   func aResponseIsCheckedAgainstItsRequestWithoutDecodingItsAnswer() throws {
     let request = BridgeRequest(command: .accessibility(.displays), id: "fixture")
-    let frame = Data(#"{"version":4,"id":"fixture","result":{"exitCode":0,"values":[],"accessibility":{"ok":true,"displays":"not an inventory"}}}"#.utf8)
+    let frame = Data(#"{"version":5,"id":"fixture","result":{"exitCode":0,"answers":[],"values":[],"accessibility":{"ok":true,"displays":"not an inventory"}}}"#.utf8)
     try BridgeResponse.validate(frame, for: request)
     #expect(throws: (any Error).self, "the answer itself does not decode") { try BridgeResponse.decode(frame, for: request) }
     #expect(throws: BridgeProtocolError.mismatchedResponse) {
       try BridgeResponse.validate(frame, for: BridgeRequest(command: .accessibility(.displays), id: "other"))
     }
-    #expect(throws: BridgeProtocolError.unsupportedVersion(5)) {
-      try BridgeResponse.validate(Data(#"{"version":5,"id":"fixture","result":{}}"#.utf8), for: request)
+    #expect(throws: BridgeProtocolError.unsupportedVersion(6)) {
+      try BridgeResponse.validate(Data(#"{"version":6,"id":"fixture","result":{}}"#.utf8), for: request)
     }
   }
 
-  // Version 4 carries accessibility answers as typed objects rather than as values.
+  // Version 4 carried accessibility answers as typed objects; version 5 carries every other service's answers typed.
   @Test
   func theProtocolIsAtTheVersionThatCarriesTypedAccessibilityAnswers() {
-    #expect(BridgeRequest.currentVersion == 4)
+    #expect(BridgeRequest.currentVersion == 5)
   }
 
   @Test
@@ -151,10 +151,10 @@ struct BridgeProtocolTests {
       #expect(BridgeRequest.identity(of: Data(text.utf8)) == nil, "\(text)")
     }
     // A newer peer's command shape is a version gap, not a malformed request.
-    #expect(throws: BridgeProtocolError.unsupportedVersion(5)) { try BridgeRequest.decode(Data(#"{"version":5,"id":"x","command":{"future":{}}}"#.utf8)) }
+    #expect(throws: BridgeProtocolError.unsupportedVersion(6)) { try BridgeRequest.decode(Data(#"{"version":6,"id":"x","command":{"future":{}}}"#.utf8)) }
     #expect(BridgeRequest.identity(of: Data(#"{"version":5,"id":"x","command":{"future":{}}}"#.utf8)) == "x")
-    #expect(BridgeRequest.identity(of: Data(#"{"version":4,"id":"x"}"#.utf8)) == "x")
-    #expect(BridgeRequest.identity(of: Data(#"{"version":4,"id":7,"command":{"ping":{}}}"#.utf8)) == nil)
+    #expect(BridgeRequest.identity(of: Data(#"{"version":5,"id":"x"}"#.utf8)) == "x")
+    #expect(BridgeRequest.identity(of: Data(#"{"version":5,"id":7,"command":{"ping":{}}}"#.utf8)) == nil)
   }
 
   @Test
@@ -180,7 +180,7 @@ struct BridgeProtocolTests {
       (#"{"shutdown":{}}"#, .shutdown),
     ]
     for (text, command) in fixtures {
-      let literal = #"{"command":"# + text + #","id":"fixture","version":4}"#
+      let literal = #"{"command":"# + text + #","id":"fixture","version":5}"#
       #expect(try BridgeRequest.decode(Data(literal.utf8)).command == command, "\(text)")
       #expect(String(decoding: try BridgeRequest(command: command, id: "fixture").encoded(), as: UTF8.self) == literal, "\(text)")
     }
@@ -235,13 +235,13 @@ struct BridgeProtocolTests {
 
   @Test
   func literalWireFixturesAndResponseVersionBoundary() throws {
-    let request = try BridgeRequest.decode(Data(#"{"version":4,"id":"fixture","command":{"dns":{"_0":{"set":{"servers":["::1","1.1.1.1"]}}}}}"#.utf8))
+    let request = try BridgeRequest.decode(Data(#"{"version":5,"id":"fixture","command":{"dns":{"_0":{"set":{"servers":["::1","1.1.1.1"]}}}}}"#.utf8))
     #expect(request.command == .dns(.set(servers: ["::1", "1.1.1.1"])))
-    let success = Data(#"{"version":4,"id":"fixture","result":{"exitCode":0,"values":[{"ok":true},null,42]}}"#.utf8)
+    let success = Data(#"{"version":5,"id":"fixture","result":{"exitCode":0,"answers":[],"values":[{"ok":true},null,42]}}"#.utf8)
     #expect(try BridgeResponse.decode(success, for: request).result == BridgeResult(exitCode: 0, values: [.object(["ok": .bool(true)]), .null, .integer(42)]))
-    let future = Data(#"{"version":5,"id":"fixture","result":{"exitCode":0,"values":[]}}"#.utf8)
-    #expect(throws: BridgeProtocolError.unsupportedVersion(5)) { try BridgeResponse.decode(future, for: request) }
-    for text in [#"{"version":4,"result":{"exitCode":0,"values":[]}}"#, #"{"version":4,"id":"different","result":{"exitCode":0,"values":[]}}"#] {
+    let future = Data(#"{"version":6,"id":"fixture","result":{"exitCode":0,"answers":[],"values":[]}}"#.utf8)
+    #expect(throws: BridgeProtocolError.unsupportedVersion(6)) { try BridgeResponse.decode(future, for: request) }
+    for text in [#"{"version":5,"result":{"exitCode":0,"answers":[],"values":[]}}"#, #"{"version":5,"id":"different","result":{"exitCode":0,"answers":[],"values":[]}}"#] {
       #expect(throws: BridgeProtocolError.mismatchedResponse) { try BridgeResponse.decode(Data(text.utf8), for: request) }
     }
   }
