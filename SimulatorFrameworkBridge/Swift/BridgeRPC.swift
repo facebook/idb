@@ -42,8 +42,8 @@ public enum BridgeRPC {
       request = try BridgeRequest.decode(data)
     } catch {
       let id = BridgeRequest.identity(of: data)
-      if let parameters = BridgeRequest.accessibilityParameters(of: data) {
-        return reply(id: id, result: BridgeServices.undecodedAccessibility(parameters))
+      if let error = BridgeRequest.accessibilityRequestError(of: data) {
+        return reply(id: id, result: BridgeServices.undecodedAccessibility(error))
       }
       return failure(id: id, message: String(describing: error))
     }

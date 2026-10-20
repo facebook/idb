@@ -2664,8 +2664,9 @@ final class AccessibilityRuntimeTests: XCTestCase {
     XCTAssertEqual(runtime.hitTestCount, 0)
   }
 
-  func testUnsupportedVerbPreservesFoundationValueDescriptions() {
-    let cases: [(Any, String)] = [(123, "123"), (NSNull(), "<null>"), (["describe"], "(\n    describe\n)"), (["a": 1], "{\n    a = 1;\n}")]
+  // A value of the wrong type is named as JSON names it; a list or an object by its kind, not its contents.
+  func testUnsupportedVerbNamesWhatWasSent() {
+    let cases: [(Any, String)] = [(123, "123"), (1.5, "1.5"), (true, "true"), (NSNull(), "null"), (["describe"], "an array"), (["a": 1], "an object")]
     for (value, description) in cases {
       let response = AccessibilityService.handleRequest(["verb": value])
 
@@ -2674,8 +2675,9 @@ final class AccessibilityRuntimeTests: XCTestCase {
     assertEqualObjects(runtime.operations, [])
   }
 
-  func testUnsupportedActionPreservesFoundationValueDescriptions() {
-    let cases: [(Any, String)] = [(123, "123"), (NSNull(), "<null>"), (["press"], "(\n    press\n)"), (["a": 1], "{\n    a = 1;\n}")]
+  // A value of the wrong type is named as JSON names it; a list or an object by its kind, not its contents.
+  func testUnsupportedActionNamesWhatWasSent() {
+    let cases: [(Any, String)] = [(123, "123"), (1.5, "1.5"), (true, "true"), (NSNull(), "null"), (["press"], "an array"), (["a": 1], "an object")]
     for (value, description) in cases {
       let response = AccessibilityService.handleRequest(["verb": "perform", "action": value, "x": 1, "y": 2])
 

@@ -18,5 +18,8 @@ func decodedBridgeAXArguments(_ request: AXBridgeRequest) throws -> [String: Any
   XCTAssertEqual(arguments.first, "rpc")
   let frame = Data(arguments[1].utf8)
   XCTAssertEqual(try BridgeRequest.decode(frame).command, .accessibility(request))
-  return try XCTUnwrap(BridgeRequest.accessibilityParameters(of: frame)).mapValues(\.foundationValue)
+  let object = try XCTUnwrap(JSONSerialization.jsonObject(with: frame) as? [String: Any])
+  let command = try XCTUnwrap(object["command"] as? [String: Any])
+  let accessibility = try XCTUnwrap(command["accessibility"] as? [String: Any])
+  return try XCTUnwrap(accessibility["_0"] as? [String: Any])
 }

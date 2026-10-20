@@ -21,12 +21,12 @@ extension BridgeServerSocketTests {
     addTeardownBlock { FBAXClientProvider.setRuntimeForTesting(nil) }
   }
 
-  private func openQuietStream(_ runtime: FBAXFakeRuntime, _ request: [String: BridgeJSONValue]) throws -> Int32 {
+  private func openQuietStream(_ runtime: FBAXFakeRuntime, _ request: [String: Any]) throws -> Int32 {
     useRuntime(runtime)
     startServerExclusive(exclusive: true)
     let client = connectClient()
     var payload = request
-    payload["verb"] = .string("quiet")
+    payload["verb"] = "quiet"
     sendData(data: try frame(accessibility: payload), to: client)
     return client
   }
@@ -81,7 +81,7 @@ extension BridgeServerSocketTests {
   func testANamedApplicationGoesQuietOnceBothSignalsAnswer() throws {
     let pid = getpid()
     let runtime = runtimeWithApplications([pid])
-    let client = try openQuietStream(runtime, ["pid": .integer(Int64(pid)), "busyThresholdMs": .integer(5000), "quietWindowMs": .integer(0)])
+    let client = try openQuietStream(runtime, ["pid": pid, "busyThresholdMs": 5000, "quietWindowMs": 0])
 
     let monitor = try monitor(of: runtime, requests: 2)
     let requests = try XCTUnwrap(monitor.requests.copy() as? [[String: Any]])
@@ -102,7 +102,7 @@ extension BridgeServerSocketTests {
   func testASignalUnansweredPastTheThresholdIsBusyUntilItAnswers() throws {
     let pid = getpid()
     let runtime = runtimeWithApplications([pid])
-    let client = try openQuietStream(runtime, ["pid": .integer(Int64(pid)), "busyThresholdMs": .integer(20), "quietWindowMs": .integer(0)])
+    let client = try openQuietStream(runtime, ["pid": pid, "busyThresholdMs": 20, "quietWindowMs": 0])
     defer { closeQuietStream(client) }
 
     let monitor = try monitor(of: runtime, requests: 2)
@@ -117,7 +117,7 @@ extension BridgeServerSocketTests {
   func testAnAnswerToAnotherClientsRequestIsNotReArmed() throws {
     let pid = getpid()
     let runtime = runtimeWithApplications([pid])
-    let client = try openQuietStream(runtime, ["pid": .integer(Int64(pid)), "busyThresholdMs": .integer(5000), "quietWindowMs": .integer(0)])
+    let client = try openQuietStream(runtime, ["pid": pid, "busyThresholdMs": 5000, "quietWindowMs": 0])
     defer { closeQuietStream(client) }
 
     let monitor = try monitor(of: runtime, requests: 2)
@@ -133,7 +133,7 @@ extension BridgeServerSocketTests {
   func testAutomationModeTurnedOffMidStreamIsTurnedBackOnAndTheUnansweredSignalsAskedAgain() throws {
     let pid = getpid()
     let runtime = runtimeWithApplications([pid])
-    let client = try openQuietStream(runtime, ["pid": .integer(Int64(pid)), "busyThresholdMs": .integer(5000), "quietWindowMs": .integer(0)])
+    let client = try openQuietStream(runtime, ["pid": pid, "busyThresholdMs": 5000, "quietWindowMs": 0])
     defer { closeQuietStream(client) }
 
     _ = try monitor(of: runtime, requests: 2)
@@ -146,7 +146,7 @@ extension BridgeServerSocketTests {
   func testASignalUnansweredForAHeartbeatIsAskedAgainThoughAutomationModeLooksOn() throws {
     let pid = getpid()
     let runtime = runtimeWithApplications([pid])
-    let client = try openQuietStream(runtime, ["pid": .integer(Int64(pid)), "busyThresholdMs": .integer(5000), "quietWindowMs": .integer(0)])
+    let client = try openQuietStream(runtime, ["pid": pid, "busyThresholdMs": 5000, "quietWindowMs": 0])
     defer { closeQuietStream(client) }
 
     _ = try monitor(of: runtime, requests: 4)
@@ -156,7 +156,7 @@ extension BridgeServerSocketTests {
   func testTheDefaultWindowSettlesBeforeGoingQuiet() throws {
     let pid = getpid()
     let runtime = runtimeWithApplications([pid])
-    let client = try openQuietStream(runtime, ["pid": .integer(Int64(pid)), "busyThresholdMs": .integer(5000)])
+    let client = try openQuietStream(runtime, ["pid": pid, "busyThresholdMs": 5000])
     defer { closeQuietStream(client) }
 
     let monitor = try monitor(of: runtime, requests: 2)
@@ -170,7 +170,7 @@ extension BridgeServerSocketTests {
     let (first, second) = (getpid(), getppid())
     let runtime = runtimeWithApplications([first, second])
     runtime.windowServerOutcome = .resolved(first)
-    let client = try openQuietStream(runtime, ["busyThresholdMs": .integer(5000), "quietWindowMs": .integer(0)])
+    let client = try openQuietStream(runtime, ["busyThresholdMs": 5000, "quietWindowMs": 0])
     defer { closeQuietStream(client) }
 
     let monitor = try monitor(of: runtime, requests: 2)
@@ -192,7 +192,7 @@ extension BridgeServerSocketTests {
     let (first, second) = (getpid(), getppid())
     let runtime = runtimeWithApplications([first, second])
     runtime.windowServerOutcome = .resolved(first)
-    let client = try openQuietStream(runtime, ["displayID": .integer(42), "busyThresholdMs": .integer(5000), "quietWindowMs": .integer(0)])
+    let client = try openQuietStream(runtime, ["displayID": 42, "busyThresholdMs": 5000, "quietWindowMs": 0])
     defer { closeQuietStream(client) }
 
     let monitor = try monitor(of: runtime, requests: 2)
@@ -205,14 +205,14 @@ extension BridgeServerSocketTests {
   }
 
   func testAMalformedDisplayIsRefusedWithoutStreaming() throws {
-    let client = try openQuietStream(runtimeWithApplications([]), ["displayID": .integer(0)])
+    let client = try openQuietStream(runtimeWithApplications([]), ["displayID": 0])
     defer { closeQuietStream(client) }
     XCTAssertEqual(readEvent(fd: client), ["ok": false, "error": "displayID must be a positive 32-bit integer", "error_kind": "bad_request"])
   }
 
   func testANamedApplicationThatHasExitedEndsTheStream() throws {
     let pid = Self.exitedPid
-    let client = try openQuietStream(runtimeWithApplications([]), ["pid": .integer(Int64(pid))])
+    let client = try openQuietStream(runtimeWithApplications([]), ["pid": pid])
     defer { closeQuietStream(client) }
     XCTAssertEqual(readEvent(fd: client), ["ok": true, "event": "target_exited", "pid": pid])
     assertEOF(fd: client)
@@ -221,7 +221,7 @@ extension BridgeServerSocketTests {
   func testARunningApplicationWithoutAnElementYetIsArmedOnceItHasOne() throws {
     let pid = getpid()
     let runtime = runtimeWithApplications([])
-    let client = try openQuietStream(runtime, ["pid": .integer(Int64(pid)), "busyThresholdMs": .integer(5000), "quietWindowMs": .integer(0)])
+    let client = try openQuietStream(runtime, ["pid": pid, "busyThresholdMs": 5000, "quietWindowMs": 0])
     defer { closeQuietStream(client) }
 
     _ = try eventually("the monitor") { runtime.quiescenceMonitors.lastObject as? FBAXFakeQuiescenceMonitor }
@@ -236,7 +236,7 @@ extension BridgeServerSocketTests {
     let runtime = runtimeWithApplications([getpid()])
     runtime.automationMode = false
     runtime.automationModeWriteFails = true
-    let client = try openQuietStream(runtime, ["pid": .integer(Int64(getpid()))])
+    let client = try openQuietStream(runtime, ["pid": getpid()])
     defer { closeQuietStream(client) }
     let response = try XCTUnwrap(readEvent(fd: client))
     XCTAssertEqual(response["ok"] as? Bool, false)
@@ -248,14 +248,14 @@ extension BridgeServerSocketTests {
   func testAMonitorThatCannotBindIsAnError() throws {
     let runtime = runtimeWithApplications([getpid()])
     runtime.quiescenceMonitorError = "AXObserverCreate failed (-25200)"
-    let client = try openQuietStream(runtime, ["pid": .integer(Int64(getpid()))])
+    let client = try openQuietStream(runtime, ["pid": getpid()])
     defer { closeQuietStream(client) }
     XCTAssertEqual(readEvent(fd: client), ["ok": false, "error": "AXObserverCreate failed (-25200)", "error_kind": "reader_unavailable"])
     assertEOF(fd: client)
   }
 
   func testANegativeTunableIsRefusedWithoutStreaming() throws {
-    let client = try openQuietStream(runtimeWithApplications([]), ["quietWindowMs": .integer(-1)])
+    let client = try openQuietStream(runtimeWithApplications([]), ["quietWindowMs": -1])
     defer { closeQuietStream(client) }
     let response = try XCTUnwrap(readEvent(fd: client))
     XCTAssertEqual(response["error_kind"] as? String, "bad_request")

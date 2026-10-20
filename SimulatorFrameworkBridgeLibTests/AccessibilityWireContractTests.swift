@@ -291,7 +291,7 @@ final class AccessibilityWireContractTests: XCTestCase {
           displays: [.init(uniqueID: "main", displayID: 1)])))
 
     XCTAssertEqual(
-      AccessibilityService.handleRequest(parameters: ["verb": .string("hittest"), "clientType": .integer(0), "x": .string("left"), "y": .integer(2)]),
+      AccessibilityService.handleRequest(parameters: Data(#"{"verb":"hittest","clientType":0,"x":"left","y":2}"#.utf8)),
       .failure(BridgeAXFailure(message: "hittest requires numeric x and y", kind: .badRequest)))
   }
 
@@ -399,7 +399,7 @@ final class AccessibilityWireContractTests: XCTestCase {
   }
 
   func testAFrameThatIsNotARequestIsABadRequest() throws {
-    let result = BridgeServices.undecodedAccessibility(["verb": .string("hittest"), "clientType": .integer(0), "x": .string("left"), "y": .integer(2)])
+    let result = BridgeServices.undecodedAccessibility(.missingPoint(.hitTest))
     let request = BridgeRequest(command: .accessibility(.hitTest(x: 0, y: 0, attributes: nil, clientType: .noClient)), id: "undecoded")
     let frame = try BridgeResponse(request: request, result: result).encoded()
 

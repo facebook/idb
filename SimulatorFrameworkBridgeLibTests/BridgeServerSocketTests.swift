@@ -109,12 +109,11 @@ final class BridgeServerSocketTests: XCTestCase {
   }
 
   /// An accessibility request with these parameters, sent as they are whether or not they decode.
-  func frame(accessibility parameters: [String: BridgeJSONValue]) throws -> Data {
-    let request = BridgeJSONValue.object([
-      "version": .integer(Int64(BridgeRequest.currentVersion)), "id": .string(UUID().uuidString),
-      "command": .object(["accessibility": .object(["_0": .object(parameters)])]),
-    ])
-    let bytes = try JSONEncoder().encode(request)
+  func frame(accessibility parameters: [String: Any]) throws -> Data {
+    let request: [String: Any] = [
+      "version": BridgeRequest.currentVersion, "id": UUID().uuidString, "command": ["accessibility": ["_0": parameters]],
+    ]
+    let bytes = try JSONSerialization.data(withJSONObject: request)
     var frame = try IPCFrame.header(forSize: bytes.count)
     frame.append(bytes)
     return frame
