@@ -136,6 +136,106 @@ struct SimulatorFramebufferCommandsTests {
     #expect(screens.main.registeredTokens.count == 1)
   }
 
+  @Test(.timeLimit(.minutes(1)))
+  func anActiveCaptureStartedOnTheMainScreenFollowsALaterPosture() async throws {
+    let initialReports: [SimulatorDisplayReport] = [
+      .failed(.unavailable("display service starting")),
+      .transitioning(incoming: nil),
+      .displays([]),
+      .reporting(.sole(.identified(Self.display("cover")))),
+    ]
+    for initial in initialReports {
+      let (pushes, push) = AsyncThrowingStream<SimulatorDisplayReport, any Error>.makeStream()
+      let displays = DisplayCommandsDouble([.success(initial)], pushes: pushes)
+      let screens = FramebufferScreensDouble("cover", "inner")
+      screens.screens["inner"]?.immediateSurface = makeTestIOSurface(width: 20, height: 30)
+      let attachment = try await framebuffer(.active, displays: displays, screens: screens)
+      defer {
+        attachment.cancel()
+        push.finish()
+      }
+
+      #expect(screens.main.registeredTokens.count == 1)
+      push.yield(.reporting(.selected(Self.display("inner"))))
+      var announcedInner = false
+      for await event in attachment.events {
+        if case let .configurationChanged(configuration) = event {
+          announcedInner = configuration.active == .identified(Self.display("inner"))
+        }
+        if case let .surfaceChanged(surface) = event {
+          #expect(announcedInner, "The new display configuration must precede its frame")
+          #expect(surface === screens.screens["inner"]?.immediateSurface)
+          break
+        }
+      }
+      #expect(screens.requested == ["inner"])
+      #expect(screens.main.unregisteredTokens.count == 1)
+      #expect(screens.screens["inner"]?.registeredTokens.count == 1)
+    }
+  }
+
+  @Test(.timeLimit(.minutes(1)))
+  func aSoleActiveDisplayWithTheSameIdentityDoesNotRebind() async throws {
+    let (pushes, push) = AsyncThrowingStream<SimulatorDisplayReport, any Error>.makeStream()
+    let cover = Self.display("cover")
+    let displays = DisplayCommandsDouble([.success(.reporting(.sole(.identified(cover))))], pushes: pushes)
+    let screens = FramebufferScreensDouble("cover")
+    let attachment = try await framebuffer(.active, displays: displays, screens: screens)
+    defer {
+      attachment.cancel()
+      push.finish()
+    }
+    _ = await firstConfiguration(of: attachment)
+
+    let sameIdentity = SimulatorDisplay(
+      uniqueID: cover.uniqueID, name: cover.name, activity: .active, isPrimary: true, isIntegrated: true,
+      bounds: cover.bounds, scale: 3, rotation: .upright)
+    push.yield(.reporting(.sole(.identified(sameIdentity))))
+    var surfaceChanges = 0
+    for await event in attachment.events {
+      if case .surfaceChanged = event { surfaceChanges += 1 }
+      if case let .configurationChanged(configuration) = event,
+        configuration.active == .identified(sameIdentity)
+      {
+        break
+      }
+    }
+    #expect(screens.requested.isEmpty)
+    #expect(surfaceChanges == 0)
+    #expect(screens.main.unregisteredTokens.isEmpty)
+  }
+
+  @Test(.timeLimit(.minutes(1)))
+  func aFallbackThatIdentifiesTheSameSurfaceDoesNotReportASurfaceSwap() async throws {
+    let (pushes, push) = AsyncThrowingStream<SimulatorDisplayReport, any Error>.makeStream()
+    let displays = DisplayCommandsDouble([.success(.failed(.unavailable("starting")))], pushes: pushes)
+    let screens = FramebufferScreensDouble("lcd")
+    let surface = makeTestIOSurface(width: 20, height: 30)
+    screens.main.immediateSurface = surface
+    screens.screens["lcd"]?.immediateSurface = surface
+    let attachment = try await framebuffer(.active, displays: displays, screens: screens)
+    defer {
+      attachment.cancel()
+      push.finish()
+    }
+
+    let lcd = Self.display("lcd")
+    push.yield(.reporting(.sole(.identified(lcd))))
+    _ = await firstConfiguration(of: attachment)
+    let later = SimulatorDisplay(
+      uniqueID: lcd.uniqueID, name: lcd.name, activity: .active, isPrimary: true, isIntegrated: true,
+      bounds: lcd.bounds, scale: 3, rotation: .upright)
+    push.yield(.reporting(.sole(.identified(later))))
+    var surfaceChanges = 0
+    for await event in attachment.events {
+      if case .surfaceChanged = event { surfaceChanges += 1 }
+      if case let .configurationChanged(configuration) = event, configuration.active == .identified(later) { break }
+    }
+    #expect(screens.requested == ["lcd"])
+    #expect(screens.main.unregisteredTokens.count == 1)
+    #expect(surfaceChanges == 0, "Identifying the mounted IOSurface must not trigger a video remount")
+  }
+
   @Test
   func aConfigurationCapturesItsActiveDisplay() async throws {
     let screens = FramebufferScreensDouble("cover", "inner")

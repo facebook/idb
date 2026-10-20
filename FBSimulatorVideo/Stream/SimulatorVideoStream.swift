@@ -527,12 +527,13 @@ public actor SimulatorVideoStream: VideoStreamOperation {
   /// A new surface and a rotation of the interface both differ from what is mounted, and so does a mount that
   /// failed: the stream keeps its working pipeline, and the next display event tries again. A first mount that
   /// fails fails the start instead.
-  private func reconcileMount() {
+  func reconcileMount() {
     guard let latestSurface else {
       return
     }
     if let pixelBuffer, let mountedSource, let mountedSurface = CVPixelBufferGetIOSurface(pixelBuffer)?.takeUnretainedValue(),
       IOSurfaceGetID(mountedSurface) == IOSurfaceGetID(latestSurface),
+      compositor.rotation == interfaceRotation(of: pixelBuffer),
       VideoFrameSource(pixelBuffer).rotated(interfaceRotation(of: pixelBuffer)) == mountedSource
     {
       return

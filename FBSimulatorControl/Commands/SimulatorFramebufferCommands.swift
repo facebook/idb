@@ -47,8 +47,8 @@ public struct SimulatorFramebufferCommands: Sendable {
     try await Self.framebuffer(display: display, displays: simulator.displays, screens: SimulatorFramebufferScreens(simulator: simulator), logger: simulator.logger)
   }
 
-  /// As for screenshots, the active display improves on the main screen but is never required. A sole
-  /// display is the main screen, so only a simulator with several integrated displays follows one. A named
+  /// As for screenshots, the active display improves on the main screen but is never required. Its
+  /// framebuffer follows later identified displays even when it starts on a sole or fallback main screen. A named
   /// display is required: capturing another in its place would capture something the caller did not ask for.
   /// A configuration is required too, and its framebuffer ends once the configuration is replaced. Every
   /// framebuffer but the main screen's follows the display configuration, to report it.
@@ -81,7 +81,7 @@ public struct SimulatorFramebufferCommands: Sendable {
           configurations: { displays.followConfigurations() }, locate: { try await screens.screen(uniqueID: $0) }, logger: logger)
       case let .target(.sole(display)):
         return FollowingFramebufferSurface(
-          displayUniqueID: display.uniqueID, surface: try screens.mainScreen(), movement: .fixed,
+          displayUniqueID: display.uniqueID, surface: try screens.mainScreen(), movement: .followsActiveDisplay,
           configurations: { displays.followConfigurations() }, locate: { try await screens.screen(uniqueID: $0) }, logger: logger)
       case let resolution:
         logger.log("Capturing the main screen, as no active display is identified: \(resolution)")
@@ -91,6 +91,8 @@ public struct SimulatorFramebufferCommands: Sendable {
     } catch {
       logger.log("Capturing the main screen, as the active display could not be captured: \(error)")
     }
-    return try screens.mainScreen()
+    return FollowingFramebufferSurface(
+      displayUniqueID: nil, surface: try screens.mainScreen(), movement: .followsActiveDisplay,
+      configurations: { displays.followConfigurations() }, locate: { try await screens.screen(uniqueID: $0) }, logger: logger)
   }
 }

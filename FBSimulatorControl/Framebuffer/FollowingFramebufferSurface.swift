@@ -37,7 +37,7 @@ final class FollowingFramebufferSurface: FramebufferSurface, @unchecked Sendable
   /// A screen being followed. Its gate closes when the screen is left, so a callback it delivers
   /// afterwards cannot report its surface over the new screen's.
   private struct Screen {
-    /// Nil for a sole display that the runtime does not identify.
+    /// Nil until the captured main screen is identified, including startup fallback and legacy runtimes.
     let uniqueID: String?
     let surface: any FramebufferSurface
     let gate = OSAllocatedUnfairLock(initialState: true)
