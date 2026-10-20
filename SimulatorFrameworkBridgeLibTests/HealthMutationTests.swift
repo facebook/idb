@@ -51,7 +51,8 @@ final class HealthMutationTests: XCTestCase {
     XCTAssertEqual(listOutput, ["action": "list", "bundleID": bundleID, "ok": true, "error": NSNull(), "records": []] as NSDictionary)
   }
 
-  func testSetAndListStatusRemainJSONNumbers() throws {
+  // Every health answer reports whether it succeeded as a boolean, as clears and failures always have.
+  func testSetAndListStatusAreJSONBooleans() throws {
     for action in ["approve", "revoke", "list"] {
       for success in [true, false] {
         let runtime = runtimeWithType()
@@ -60,8 +61,8 @@ final class HealthMutationTests: XCTestCase {
         let (status, output) = try run(runtime, action: action, types: ["step"])
         let ok = try XCTUnwrap(output["ok"] as? NSNumber)
         XCTAssertEqual(status, success ? 0 : 1)
-        XCTAssertEqual(ok.intValue, success ? 1 : 0)
-        XCTAssertNotEqual(CFGetTypeID(ok), CFBooleanGetTypeID(), action)
+        XCTAssertEqual(ok.boolValue, success)
+        XCTAssertEqual(CFGetTypeID(ok), CFBooleanGetTypeID(), action)
       }
     }
   }

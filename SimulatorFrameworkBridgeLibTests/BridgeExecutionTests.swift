@@ -155,18 +155,18 @@ final class BridgeExecutionTests: XCTestCase {
     var result = BridgeResult(exitCode: 1)
     let printed = FBStdoutWhileRunning { result = BridgeServices.execute(.dns(.list)) }
     XCTAssertEqual(printed, "")
-    XCTAssertEqual(result, BridgeResult(exitCode: 0, values: [.object(["ServerAddresses": .array([.string("::1"), .string("1.1.1.1")])])]))
+    XCTAssertEqual(result, BridgeResult(exitCode: 0, answers: [.networkConfiguration(try BridgeNetworkConfiguration(["ServerAddresses": ["::1", "1.1.1.1"]]))]))
     XCTAssertEqual(BridgeServices.execute(.dns(.set(servers: ["8.8.8.8"]))).exitCode, 0)
     XCTAssertEqual(runtime.writes as NSArray, [["ServerAddresses": ["8.8.8.8"]]] as NSArray)
     XCTAssertEqual(Array(runtime.operations.suffix(2)) as NSArray, ["write", "notify"] as NSArray)
     runtime.configuration = ["unsupported": Date()]
     XCTAssertEqual(BridgeServices.execute(.dns(.list)).exitCode, 1)
     runtime.configuration = ["SOCKSProxy": "localhost"]
-    XCTAssertEqual(BridgeServices.execute(.proxy(.list)), BridgeResult(exitCode: 0, values: [.object(["SOCKSProxy": .string("localhost")])]))
+    XCTAssertEqual(BridgeServices.execute(.proxy(.list)), BridgeResult(exitCode: 0, answers: [.networkConfiguration(try BridgeNetworkConfiguration(["SOCKSProxy": "localhost"]))]))
     XCTAssertEqual(BridgeServices.execute(.proxy(.set(host: "::1", port: 1080, kind: .socks))).exitCode, 0)
     XCTAssertEqual((runtime.writes.lastObject as? [String: Any])?["SOCKSPort"] as? Int, 1080)
     runtime.configuration = ["first", 42] as [Any]
-    let array = BridgeResult(exitCode: 0, values: [.array([.string("first"), .integer(42)])])
+    let array = BridgeResult(exitCode: 0, answers: [.networkConfiguration(try BridgeNetworkConfiguration(["first", 42] as [Any]))])
     XCTAssertEqual(BridgeServices.execute(.dns(.list)), array)
     XCTAssertEqual(BridgeServices.execute(.proxy(.list)), array)
   }
@@ -208,13 +208,13 @@ final class BridgeExecutionTests: XCTestCase {
       }
       let result = BridgeServices.execute(command)
       XCTAssertEqual(result.exitCode, 1, stage)
-      guard case let .object(value)? = result.values.first else { return XCTFail("missing timeout response") }
-      XCTAssertEqual(value["completionStatus"], .string("timedOut"))
-      XCTAssertEqual(value["ok"], .bool(false))
+      guard case let .health(.timedOut(_, _, error))? = result.answers.first else { return XCTFail("missing timeout response") }
       let timeouts = ["seed": "Health seed timed out", "set": "Health authorization write timed out", "clear": "Health clear timed out", "list": "Health list timed out"]
       XCTAssertEqual(result.error, timeouts[stage], stage)
+      XCTAssertEqual(error, timeouts[stage], stage)
+      let answer = result.answers.first
       runtime.completePendingCallbacks()
-      XCTAssertEqual(result.values.first, .object(value))
+      XCTAssertEqual(result.answers.first, answer)
       runtime.deferredCompletion = ""
       XCTAssertEqual(BridgeServices.execute(command).exitCode, 0)
     }

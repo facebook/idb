@@ -15,12 +15,14 @@ from __future__ import annotations
 
 import asyncio
 import atexit
+import base64
 import enum
 import hashlib
 import http.server
 import json
 import logging
 import os
+import plistlib
 import re
 import select
 import shlex
@@ -63,6 +65,22 @@ EXPECTED_IMPLEMENTATION_ENV = "IDB_E2E_EXPECTED_IMPLEMENTATION"
 CLAIM_KIND_ENV = "IDB_E2E_CLAIM_KIND"
 # The bridge protocol version a guest speaks: `BridgeRequest.currentVersion`. A guest refuses any other.
 GUEST_PROTOCOL_VERSION = 5
+
+
+def reported_answers(result: dict[str, Any]) -> list[Any]:
+    """A result's service answers, each as the JSON object the host reports.
+
+    An answer is tagged with its kind; a network store's contents travel as
+    the base64 of the property list the store holds.
+    """
+    answers = []
+    for answer in result["answers"]:
+        ((kind, payload),) = answer.items()
+        value = payload["_0"]
+        if kind == "networkConfiguration":
+            value = plistlib.loads(base64.b64decode(value, validate=True))
+        answers.append(value)
+    return answers
 
 T = TypeVar("T")
 
@@ -3208,7 +3226,7 @@ class GuestRPC:
         return f"stdout: {self._stdout.read()!r}; stderr: {self._stderr.read()!r}"
 
     async def send(self, command: dict[str, Any]) -> list[Any]:
-        return (await self.send_result(command))["values"]
+        return reported_answers(await self.send_result(command))
 
     async def send_result(self, command: dict[str, Any]) -> dict[str, Any]:
         self._sequence += 1

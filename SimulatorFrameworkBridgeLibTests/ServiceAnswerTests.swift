@@ -13,7 +13,8 @@ import UserNotifications
 import XCTest
 
 /// Every answer a service other than accessibility sends the host, as the text the host reports for it. The host
-/// hands that text on unparsed, as `list` output and in a failure's message, so it is pinned exactly.
+/// hands that text on unparsed, as `list` output and in a failure's message, so it is pinned exactly. Health reports
+/// whether something succeeded or is allowed as a boolean.
 final class ServiceAnswerTests: XCTestCase {
   /// The result `command` answers with, through the frame the host reads it from.
   private func answer(_ command: BridgeCommand, file: StaticString = #filePath, line: UInt = #line) throws -> BridgeResult {
@@ -74,9 +75,9 @@ final class ServiceAnswerTests: XCTestCase {
 
   func testHealthWritesAnswerWithWhatTheyResolvedAndHowEachStageEnded() throws {
     let cases: [(Bool, Bool, String?, String?, String, String?)] = [
-      (true, true, nil, nil, #""ok":1,"resolvedTypes":["step"],"seedError":null,"setError":null"#, nil),
-      (true, false, nil, "set failed", #""ok":0,"resolvedTypes":["step"],"seedError":null,"setError":"set failed""#, "set failed"),
-      (false, true, "seed failed", "seed warning", #""ok":0,"resolvedTypes":["step"],"seedError":"seed failed","setError":"seed warning""#, "seed warning"),
+      (true, true, nil, nil, #""ok":true,"resolvedTypes":["step"],"seedError":null,"setError":null"#, nil),
+      (true, false, nil, "set failed", #""ok":false,"resolvedTypes":["step"],"seedError":null,"setError":"set failed""#, "set failed"),
+      (false, true, "seed failed", "seed warning", #""ok":false,"resolvedTypes":["step"],"seedError":"seed failed","setError":"seed warning""#, "seed warning"),
     ]
     for (seedOK, setOK, seedError, setError, fields, error) in cases {
       let runtime = healthRuntime()
@@ -128,12 +129,12 @@ final class ServiceAnswerTests: XCTestCase {
         (fails ? #"{"action":"clear","bundleID":"app","error":"clear failed","ok":false}"# : #"{"action":"clear","bundleID":"app","error":null,"ok":true}"#) + "\n")
       XCTAssertEqual(clear.error, fails ? "clear failed" : nil)
       let list = try answer(.health(.list(bundleID: "app")))
-      let records = #""records":[{"identifier":"step","readingAuthorizationAllowed":0,"sharingAuthorizationAllowed":true},{"identifier":"opaque-value"},{}]"#
+      let records = #""records":[{"identifier":"step","readingAuthorizationAllowed":false,"sharingAuthorizationAllowed":true},{"identifier":"opaque-value"},{}]"#
       XCTAssertEqual(
         try list.jsonLines,
         (fails
-          ? #"{"action":"list","bundleID":"app","error":"fetch failed","ok":0,\#(records)}"#
-          : #"{"action":"list","bundleID":"app","error":null,"ok":1,\#(records)}"#) + "\n")
+          ? #"{"action":"list","bundleID":"app","error":"fetch failed","ok":false,\#(records)}"#
+          : #"{"action":"list","bundleID":"app","error":null,"ok":true,\#(records)}"#) + "\n")
       XCTAssertEqual(list.error, fails ? "fetch failed" : nil)
     }
   }

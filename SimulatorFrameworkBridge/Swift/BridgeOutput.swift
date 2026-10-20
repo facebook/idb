@@ -10,6 +10,7 @@ import Foundation
 
 public final class BridgeOutput {
   public private(set) var values: [BridgeJSONValue] = []
+  public private(set) var answers: [BridgeServiceAnswer] = []
   public private(set) var propertyList: Data?
   public private(set) var accessibility: BridgeAXAnswer?
   public private(set) var failed = false
@@ -21,6 +22,20 @@ public final class BridgeOutput {
   public func write(_ object: Any) -> Bool {
     do {
       values.append(try BridgeJSONValue(foundationValue: object))
+      return true
+    } catch {
+      NSLog("[SimulatorFrameworkBridge] Could not encode command output: %@", error as NSError)
+      failure("Could not encode command output: \(error.localizedDescription)")
+      return false
+    }
+  }
+
+  /// One of the command's answers. One the host could not report is refused, and fails the command.
+  @discardableResult
+  public func write(_ answer: BridgeServiceAnswer) -> Bool {
+    do {
+      _ = try answer.jsonLine()
+      answers.append(answer)
       return true
     } catch {
       NSLog("[SimulatorFrameworkBridge] Could not encode command output: %@", error as NSError)
@@ -53,6 +68,6 @@ public final class BridgeOutput {
   }
 
   public func finish(status: Int32) -> BridgeResult {
-    BridgeResult(exitCode: failed ? 1 : status, values: values, error: error, propertyList: propertyList, accessibility: accessibility)
+    BridgeResult(exitCode: failed ? 1 : status, values: values, error: error, answers: answers, propertyList: propertyList, accessibility: accessibility)
   }
 }

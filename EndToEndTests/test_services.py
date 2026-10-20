@@ -13,7 +13,14 @@ import plistlib
 import uuid
 from typing import Any
 
-from .harness import GuestRPC, IdbEndToEndTestCase, NotReady, run, wait_until
+from .harness import (
+    GuestRPC,
+    IdbEndToEndTestCase,
+    NotReady,
+    reported_answers,
+    run,
+    wait_until,
+)
 
 NEWS_BUNDLE_ID = "com.apple.news"
 NOTIFICATION_TITLE = "Breaking"
@@ -52,12 +59,12 @@ class ServiceTests(IdbEndToEndTestCase):
             {
                 "action": "list",
                 "bundleID": bundle_id,
-                "ok": 1,
+                "ok": True,
                 "error": None,
                 "records": [],
             },
         )
-        self.assertIs(type(listed["ok"]), int)
+        self.assertIs(type(listed["ok"]), bool)
 
     async def test_guest_rpc_answers_reads_as_the_verbs_do(self) -> None:
         bundle_id = await self.install_fixture_app()
@@ -85,11 +92,11 @@ class ServiceTests(IdbEndToEndTestCase):
                             expected = json.loads((await self.guest(*arguments)).stdout)
                             result = await rpc.send_result(command)
                             # An accessibility answer has a field of its own; every
-                            # other service answers in `values`.
+                            # other service answers in `answers`.
                             if "accessibility" in command:
                                 answer = result.get("accessibility")
                             else:
-                                answer, expected = result["values"], [expected]
+                                answer, expected = reported_answers(result), [expected]
                             # Compared as JSON, where `1` and `true` differ.
                             self.assertEqual(
                                 json.dumps(answer, sort_keys=True),
@@ -186,7 +193,7 @@ class ServiceTests(IdbEndToEndTestCase):
                             result = await rpc.send_result(
                                 {"dynamicStore": {"_0": command}}
                             )
-                            self.assertEqual(result["values"], [])
+                            self.assertEqual(result["answers"], [])
                             encoded = base64.b64decode(
                                 result["propertyList"], validate=True
                             )

@@ -5,6 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+import FBSimulatorBridgeProtocol
 import Foundation
 
 #if canImport(SimulatorFrameworkBridgeRuntime)
@@ -15,20 +16,19 @@ private let UNAuthorizationStatusAuthorized: UInt = 2
 
 private func printSectionJSON(bundleID: String, section: FBNotificationSection, output: BridgeOutput?) -> Bool {
   if let output {
-    guard section.isFound else { return output.write(["bundleID": bundleID, "found": false]) }
+    guard section.isFound else { return output.write(.notificationSettings(BridgeNotificationSettings(bundleID: bundleID, settings: nil))) }
     let values: FBNotificationSectionValues
     do { values = try section.readValues() } catch {
       output.failure("Could not read notification settings: \(error.localizedDescription)")
       return false
     }
-    return output.write([
-      "bundleID": bundleID,
-      "found": true,
-      "allowsNotifications": values.allowsNotifications,
-      "authorizationStatus": values.authorizationStatus,
-      "showsInNotificationCenter": values.showsInNotificationCenter.map { $0 as Any } ?? NSNull(),
-      "showsInLockScreen": values.showsInLockScreen.map { $0 as Any } ?? NSNull(),
-    ])
+    return output.write(
+      .notificationSettings(
+        BridgeNotificationSettings(
+          bundleID: bundleID,
+          settings: .init(
+            allowsNotifications: values.allowsNotifications, authorizationStatus: UInt(values.authorizationStatus),
+            showsInNotificationCenter: values.showsInNotificationCenter?.boolValue, showsInLockScreen: values.showsInLockScreen?.boolValue))))
   }
   // The existing C output stops the bundle identifier at its first NUL.
   let printedBundleID = String(bundleID.prefix { $0 != "\0" })
