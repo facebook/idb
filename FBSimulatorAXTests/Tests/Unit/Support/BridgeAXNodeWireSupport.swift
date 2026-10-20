@@ -100,3 +100,38 @@ extension QuiescenceEvent {
       axBridgeFrame: AXBridgeReply(answer: data, for: .quiescence(pid: pid, busyThresholdMs: nil, quietWindowMs: nil)).answer, pid: pid)
   }
 }
+
+// The guest's answers, as a frame carries them, for the doubles to return. Trees are spelled as the guest writes them
+// on the wire; everything around them is the typed answer.
+
+func answerData(_ answer: BridgeAXAnswer) throws -> Data {
+  try JSONEncoder().encode(answer)
+}
+
+func treeAnswer(
+  _ tree: [String: Any], pid: Int32, truncated: Bool = false, automation: BridgeAXAutomationState? = nil, method: BridgeAXFrontmostMethod? = nil,
+  modal: BridgeAXModal? = nil
+) throws -> Data {
+  try answerData(
+    .tree(BridgeAXTreeResponse(tree: BridgeAXNode(wire: tree), pid: pid, truncated: truncated, automation: automation, method: method, modal: modal)))
+}
+
+func hitAnswer(_ tree: [String: Any], pid: Int32) throws -> Data {
+  try answerData(.hitTest(.element(BridgeAXNode(wire: tree), pid: pid)))
+}
+
+func emptyHitAnswer() throws -> Data {
+  try answerData(.hitTest(.empty))
+}
+
+func writtenAnswer(pid: Int32) throws -> Data {
+  try answerData(.write(.written(pid: pid)))
+}
+
+func emptyWriteAnswer() throws -> Data {
+  try answerData(.write(.empty))
+}
+
+func failureAnswer(_ message: String?, kind: String? = nil, pid: Int32? = nil) throws -> Data {
+  try answerData(.failure(BridgeAXFailure(message: message, kind: kind.flatMap(BridgeAXWire.ErrorKind.init(rawValue:)), pid: pid)))
+}

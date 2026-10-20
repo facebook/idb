@@ -23,14 +23,16 @@ final class AXBridgeQuiescenceTests: XCTestCase {
   }
 
   // An unencodable fixture yields an empty frame, which fails the test as unparseable.
-  private static func frame(_ object: [String: Any]) -> Data {
-    (try? JSONSerialization.data(withJSONObject: object)) ?? Data()
+  private static func frame(_ answer: BridgeAXAnswer) -> Data {
+    (try? answerData(answer)) ?? Data()
   }
 
-  private static func state(_ state: String, pid: pid_t = 42, signals: [String]? = nil) -> Data {
-    var object: [String: Any] = ["ok": true, "event": "state", "state": state, "pid": Int(pid)]
-    object["signals"] = signals
-    return frame(object)
+  private static func event(_ event: BridgeAXQuiescenceEvent) -> Data {
+    frame(.quiescence(event))
+  }
+
+  private static func state(_ state: BridgeAXQuiescenceEvent.State, pid: pid_t = 42, signals: [BridgeAXQuiescenceEvent.Signal] = []) -> Data {
+    event(.state(state, busySignals: signals, pid: pid))
   }
 
   private func events(_ stream: AsyncThrowingStream<QuiescenceEvent, Error>) async throws -> [QuiescenceEvent] {
@@ -43,12 +45,12 @@ final class AXBridgeQuiescenceTests: XCTestCase {
 
   func testEveryEventDecodes() async throws {
     let transport = StubAXBridgeStreamingTransport(frames: [
-      Self.state("busy", signals: ["animations_inactive", "run_loop_idle"]),
-      Self.state("settling"),
-      Self.state("quiet"),
-      Self.frame(["ok": true, "event": "touches_completed", "pid": 42]),
-      Self.frame(["ok": true, "event": "target_changed", "pid": 43]),
-      Self.frame(["ok": true, "event": "target_exited", "pid": 43]),
+      Self.state(.busy, signals: [.animationsInactive, .runLoopIdle]),
+      Self.state(.settling),
+      Self.state(.quiet),
+      Self.event(.touchesCompleted(pid: 42)),
+      Self.event(.targetChanged(pid: 43)),
+      Self.event(.targetExited(pid: 43)),
     ])
     let events = try await events(automation(transport).quiescence(.frontmost, parameters: QuiescenceParameters()))
     XCTAssertEqual(
@@ -80,7 +82,7 @@ final class AXBridgeQuiescenceTests: XCTestCase {
 
   func testAnApplicationFailureIsTranslated() async throws {
     let transport = StubAXBridgeStreamingTransport(frames: [
-      Self.frame(["ok": false, "error": "gone", "error_kind": "application_unavailable", "pid": 7])
+      Self.frame(.failure(BridgeAXFailure(message: "gone", kind: .applicationUnavailable, pid: 7)))
     ])
     do {
       _ = try await events(automation(transport).quiescence(.application(pid: 7), parameters: QuiescenceParameters()))
@@ -112,10 +114,10 @@ final class AXBridgeQuiescenceTests: XCTestCase {
 
   func testTheCurrentStateSkipsSettling() async throws {
     let transport = StubAXBridgeStreamingTransport(frames: [
-      Self.frame(["ok": true, "event": "touches_completed", "pid": 42]),
-      Self.state("settling"),
-      Self.state("busy", signals: ["run_loop_idle"]),
-      Self.state("quiet"),
+      Self.event(.touchesCompleted(pid: 42)),
+      Self.state(.settling),
+      Self.state(.busy, signals: [.runLoopIdle]),
+      Self.state(.quiet),
     ])
     var seen: [QuiescenceEvent] = []
     let current = try await automation(transport).quiescenceState(.frontmost) { seen.append($0) }
@@ -125,7 +127,7 @@ final class AXBridgeQuiescenceTests: XCTestCase {
   }
 
   func testWaitingReturnsOnceQuietAndClosesTheStream() async throws {
-    let transport = StubAXBridgeStreamingTransport(frames: [Self.state("busy", signals: ["run_loop_idle"]), Self.state("quiet")], holdsOpen: true)
+    let transport = StubAXBridgeStreamingTransport(frames: [Self.state(.busy, signals: [.runLoopIdle]), Self.state(.quiet)], holdsOpen: true)
     let seen = SeenQuiescenceEvents()
     let pid = try await automation(transport).waitForQuiet(.frontmost, timeout: 30) { seen.append($0) }
     XCTAssertEqual(pid, 42)
@@ -134,7 +136,7 @@ final class AXBridgeQuiescenceTests: XCTestCase {
   }
 
   func testWaitingTimesOutWithTheLastState() async throws {
-    let transport = StubAXBridgeStreamingTransport(frames: [Self.state("busy", signals: ["animations_inactive"])], holdsOpen: true)
+    let transport = StubAXBridgeStreamingTransport(frames: [Self.state(.busy, signals: [.animationsInactive])], holdsOpen: true)
     do {
       _ = try await automation(transport).waitForQuiet(.frontmost, timeout: 0.1)
       XCTFail("expected a timeout")
@@ -148,7 +150,7 @@ final class AXBridgeQuiescenceTests: XCTestCase {
   // The last state was the previous target's, so it says nothing about the one now followed.
   func testWaitingThatTimesOutAfterTheTargetChangesHasNoLastState() async throws {
     let transport = StubAXBridgeStreamingTransport(
-      frames: [Self.state("busy", signals: ["run_loop_idle"]), Self.frame(["ok": true, "event": "target_changed", "pid": 43])],
+      frames: [Self.state(.busy, signals: [.runLoopIdle]), Self.event(.targetChanged(pid: 43))],
       holdsOpen: true)
     do {
       _ = try await automation(transport).waitForQuiet(.frontmost, timeout: 0.1)
@@ -160,7 +162,7 @@ final class AXBridgeQuiescenceTests: XCTestCase {
   }
 
   func testWaitingWithoutATimeoutReturnsOnceQuiet() async throws {
-    let transport = StubAXBridgeStreamingTransport(frames: [Self.state("settling"), Self.state("quiet")], holdsOpen: true)
+    let transport = StubAXBridgeStreamingTransport(frames: [Self.state(.settling), Self.state(.quiet)], holdsOpen: true)
     let pid = try await automation(transport).waitForQuiet(.frontmost, timeout: nil)
     XCTAssertEqual(pid, 42)
     try await transport.waitUntilTerminated()
@@ -168,7 +170,7 @@ final class AXBridgeQuiescenceTests: XCTestCase {
 
   // A caller that goes away, as a cancelled RPC does, closes the stream rather than holding the guest.
   func testCancellingAWaitWithoutATimeoutClosesTheStream() async throws {
-    let transport = StubAXBridgeStreamingTransport(frames: [Self.state("busy", signals: ["run_loop_idle"])], holdsOpen: true)
+    let transport = StubAXBridgeStreamingTransport(frames: [Self.state(.busy, signals: [.runLoopIdle])], holdsOpen: true)
     let automation = automation(transport)
     let (busy, sawBusy) = AsyncStream<Void>.makeStream()
     let wait = Task { try await automation.waitForQuiet(.frontmost, timeout: nil) { _ in sawBusy.yield() } }
@@ -182,7 +184,7 @@ final class AXBridgeQuiescenceTests: XCTestCase {
   }
 
   func testCancellingTheConsumerOfTheEventsClosesTheStream() async throws {
-    let transport = StubAXBridgeStreamingTransport(frames: [Self.state("settling")], holdsOpen: true)
+    let transport = StubAXBridgeStreamingTransport(frames: [Self.state(.settling)], holdsOpen: true)
     let events = try await automation(transport).quiescence(.frontmost, parameters: QuiescenceParameters())
     let (settling, sawSettling) = AsyncStream<Void>.makeStream()
     let consumer = Task {
@@ -195,7 +197,7 @@ final class AXBridgeQuiescenceTests: XCTestCase {
   }
 
   func testWatchingReportsEveryEventPastQuietAndReturnsTheLastState() async throws {
-    let transport = StubAXBridgeStreamingTransport(frames: [Self.state("quiet"), Self.state("busy", signals: ["run_loop_idle"])], holdsOpen: true)
+    let transport = StubAXBridgeStreamingTransport(frames: [Self.state(.quiet), Self.state(.busy, signals: [.runLoopIdle])], holdsOpen: true)
     let seen = SeenQuiescenceEvents()
     let last = try await automation(transport).watchQuiescence(.frontmost, duration: 0.1) { seen.append($0) }
     XCTAssertEqual(last, .busy([.runLoopIdle]))
@@ -205,7 +207,7 @@ final class AXBridgeQuiescenceTests: XCTestCase {
 
   func testWatchingThatEndsAfterTheTargetChangesHasNoLastState() async throws {
     let transport = StubAXBridgeStreamingTransport(
-      frames: [Self.state("quiet"), Self.frame(["ok": true, "event": "target_changed", "pid": 43])],
+      frames: [Self.state(.quiet), Self.event(.targetChanged(pid: 43))],
       holdsOpen: true)
     let last = try await automation(transport).watchQuiescence(.frontmost, duration: 0.1) { _ in }
     XCTAssertNil(last)
@@ -213,7 +215,7 @@ final class AXBridgeQuiescenceTests: XCTestCase {
   }
 
   func testWatchingWithoutADurationRunsUntilCancelled() async throws {
-    let transport = StubAXBridgeStreamingTransport(frames: [Self.state("quiet")], holdsOpen: true)
+    let transport = StubAXBridgeStreamingTransport(frames: [Self.state(.quiet)], holdsOpen: true)
     let automation = automation(transport)
     let (quiet, sawQuiet) = AsyncStream<Void>.makeStream()
     let watch = Task { try await automation.watchQuiescence(.frontmost, duration: nil) { _ in sawQuiet.yield() } }
@@ -227,7 +229,7 @@ final class AXBridgeQuiescenceTests: XCTestCase {
   }
 
   func testWatchingAnApplicationThatExitsFails() async throws {
-    let transport = StubAXBridgeStreamingTransport(frames: [Self.state("quiet", pid: 7), Self.frame(["ok": true, "event": "target_exited", "pid": 7])])
+    let transport = StubAXBridgeStreamingTransport(frames: [Self.state(.quiet, pid: 7), Self.event(.targetExited(pid: 7))])
     do {
       _ = try await automation(transport).watchQuiescence(.application(pid: 7), duration: 30) { _ in }
       XCTFail("expected a failure")
@@ -237,7 +239,7 @@ final class AXBridgeQuiescenceTests: XCTestCase {
   }
 
   func testWaitingForAnApplicationThatExitsFails() async throws {
-    let transport = StubAXBridgeStreamingTransport(frames: [Self.frame(["ok": true, "event": "target_exited", "pid": 7])])
+    let transport = StubAXBridgeStreamingTransport(frames: [Self.event(.targetExited(pid: 7))])
     do {
       _ = try await automation(transport).waitForQuiet(.application(pid: 7), timeout: 30)
       XCTFail("expected a failure")
@@ -279,7 +281,7 @@ final class AXBridgeQuiescenceTests: XCTestCase {
   }
 
   func testFollowingTheFrontmostNamesTheActiveDisplay() async throws {
-    let transport = FollowingTransport(inventory: Self.inventory, streams: [[Self.state("quiet")]])
+    let transport = FollowingTransport(inventory: Self.inventory, streams: [[Self.state(.quiet)]])
     let stream = try await automation(transport, displays: DisplayCommandsDouble(Self.display("inner")))
       .quiescence(.frontmost, parameters: QuiescenceParameters())
     let events = try await events(stream, count: 1)
@@ -289,7 +291,7 @@ final class AXBridgeQuiescenceTests: XCTestCase {
   }
 
   func testASwitchToAnotherDisplayReopensTheStreamThereAndReportsTheNewTarget() async throws {
-    let transport = FollowingTransport(inventory: Self.inventory, streams: [[Self.state("quiet")], [Self.state("busy", pid: 43, signals: ["run_loop_idle"])]])
+    let transport = FollowingTransport(inventory: Self.inventory, streams: [[Self.state(.quiet)], [Self.state(.busy, pid: 43, signals: [.runLoopIdle])]])
     let displays = DisplayCommandsDouble(Self.display("inner"), Self.display("inner"), Self.display("cover"))
     let stream = try await automation(transport, displays: displays).quiescence(.frontmost, parameters: QuiescenceParameters())
     let events = try await events(stream, count: 3)
@@ -300,7 +302,7 @@ final class AXBridgeQuiescenceTests: XCTestCase {
   }
 
   func testASwitchAwayFromASelectedDisplayEndsTheStream() async throws {
-    let transport = FollowingTransport(inventory: Self.inventory, streams: [[Self.state("quiet")], [Self.state("busy", pid: 43)]])
+    let transport = FollowingTransport(inventory: Self.inventory, streams: [[Self.state(.quiet)], [Self.state(.busy, pid: 43)]])
     let displays = DisplayCommandsDouble(Self.display("inner"), Self.display("inner"), Self.display("cover"))
     let stream = try await automation(transport, displays: displays, selection: .display(uniqueID: "inner"))
       .quiescence(.frontmost, parameters: QuiescenceParameters())
@@ -315,7 +317,7 @@ final class AXBridgeQuiescenceTests: XCTestCase {
   }
 
   func testSelectingAnInactiveDisplayOpensNoStream() async throws {
-    let transport = FollowingTransport(inventory: Self.inventory, streams: [[Self.state("quiet")]])
+    let transport = FollowingTransport(inventory: Self.inventory, streams: [[Self.state(.quiet)]])
     do {
       _ = try await automation(transport, displays: DisplayCommandsDouble(Self.display("inner")), selection: .display(uniqueID: "cover"))
         .quiescence(.frontmost, parameters: QuiescenceParameters())
@@ -326,7 +328,7 @@ final class AXBridgeQuiescenceTests: XCTestCase {
   }
 
   func testASwitchThatKeepsTheSameApplicationDoesNotReportATargetChange() async throws {
-    let transport = FollowingTransport(inventory: Self.inventory, streams: [[Self.state("quiet")], [Self.state("settling")]])
+    let transport = FollowingTransport(inventory: Self.inventory, streams: [[Self.state(.quiet)], [Self.state(.settling)]])
     let displays = DisplayCommandsDouble(Self.display("inner"), Self.display("inner"), Self.display("cover"))
     let stream = try await automation(transport, displays: displays).quiescence(.frontmost, parameters: QuiescenceParameters())
     let events = try await events(stream, count: 2)
@@ -336,7 +338,7 @@ final class AXBridgeQuiescenceTests: XCTestCase {
   // The new display's application is reported as it arrives, not announced as a target it already left.
   func testASwitchThatOpensOnAnExitedApplicationDoesNotAnnounceIt() async throws {
     let transport = FollowingTransport(
-      inventory: Self.inventory, streams: [[Self.state("quiet")], [Self.frame(["ok": true, "event": "target_exited", "pid": 43])]])
+      inventory: Self.inventory, streams: [[Self.state(.quiet)], [Self.event(.targetExited(pid: 43))]])
     let displays = DisplayCommandsDouble(Self.display("inner"), Self.display("inner"), Self.display("cover"))
     let stream = try await automation(transport, displays: displays).quiescence(.frontmost, parameters: QuiescenceParameters())
     let events = try await events(stream, count: 2)
@@ -346,7 +348,7 @@ final class AXBridgeQuiescenceTests: XCTestCase {
   // A switch the confirming read does not bear out as another named display leaves the stream scoped
   // where it is rather than reopening it unscoped.
   func testASwitchWithoutAnAccessibilityIdentityKeepsTheStreamWhereItIs() async throws {
-    let transport = FollowingTransport(inventory: Self.inventory, streams: [[Self.state("quiet")]])
+    let transport = FollowingTransport(inventory: Self.inventory, streams: [[Self.state(.quiet)]])
     guard case let .selected(cover) = Self.display("cover") else { return XCTFail("expected a selected display") }
     let displays = DisplayCommandsDouble(Self.display("inner"), Self.display("inner"), Self.display("cover"), .sole(.identified(cover)))
     let stream = try await automation(transport, displays: displays).quiescence(.frontmost, parameters: QuiescenceParameters())
@@ -362,7 +364,7 @@ final class AXBridgeQuiescenceTests: XCTestCase {
 
   // A read mid-transition can fail, and a rotation changes only the geometry; neither moves the stream.
   func testAFailedReadOrARotationKeepsTheStreamWhereItIs() async throws {
-    let transport = FollowingTransport(inventory: Self.inventory, streams: [[Self.state("quiet")]])
+    let transport = FollowingTransport(inventory: Self.inventory, streams: [[Self.state(.quiet)]])
     let displays = DisplayCommandsDouble([
       .success(.reporting(Self.display("inner"))), .success(.reporting(Self.display("inner"))), .failure(SimulatorDisplayError.changed),
       .success(.reporting(Self.display("inner", rotation: .clockwise))),
@@ -403,7 +405,7 @@ final class AXBridgeQuiescenceTests: XCTestCase {
   }
 
   func testWaitingOnAStreamThatEndsSilentlyFails() async throws {
-    let transport = StubAXBridgeStreamingTransport(frames: [Self.state("settling")])
+    let transport = StubAXBridgeStreamingTransport(frames: [Self.state(.settling)])
     do {
       _ = try await automation(transport).waitForQuiet(.frontmost, timeout: 30)
       XCTFail("expected a failure")
@@ -498,12 +500,10 @@ private actor FollowingTransport: AXBridgeStreamingTransport {
   }
 
   func send(_ request: AXBridgeRequest) async throws -> AXBridgeReply {
-    let displays = inventory.map { ["uniqueID": $0.uniqueID, "displayID": $0.displayID] as [String: Any] }
-    return try AXBridgeReply(
-      answer: JSONSerialization.data(withJSONObject: [
-        "ok": true, "displayScopedInteractions": true, "displayScopedTrees": true, "displayScopedQuiescence": scopedQuiescence,
-        "displays": displays,
-      ]), for: request)
+    let inventory = BridgeAXDisplayInventory(
+      displayScopedInteractions: true, displayScopedTrees: true, displayScopedQuiescence: scopedQuiescence,
+      displays: inventory.map { BridgeAXDisplayInventory.Display(uniqueID: $0.uniqueID, displayID: $0.displayID) })
+    return try AXBridgeReply(answer: answerData(.displays(inventory)), for: request)
   }
 
   func stream(_ request: AXBridgeRequest) async throws -> AsyncThrowingStream<BridgeAXAnswer, Error> {

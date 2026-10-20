@@ -7,34 +7,15 @@
 
 import Foundation
 
-extension BridgeAXWire.Envelope: CodingKey {}
 
-/// Every accessibility answer the guest writes: `ok` beside either the verb's own fields or a failure's. The
-/// verb decides `Success`, so the host decodes a response as the type of the request it sent.
+/// An answer that either succeeded with `Success` or failed, as a stream reports each setting beside the one it
+/// observes.
 @frozen public enum BridgeAXOutcome<Success: Codable & Equatable & Sendable>: Codable, Equatable, Sendable {
   case success(Success)
   case failure(BridgeAXFailure)
 
-  public init(from decoder: Decoder) throws {
-    let envelope = try decoder.container(keyedBy: BridgeAXWire.Envelope.self)
-    if try envelope.decode(Bool.self, forKey: .ok) {
-      self = .success(try Success(from: decoder))
-    } else {
-      self = .failure(try BridgeAXFailure(from: decoder))
-    }
-  }
-
-  public func encode(to encoder: Encoder) throws {
-    var envelope = encoder.container(keyedBy: BridgeAXWire.Envelope.self)
-    switch self {
-    case let .success(success):
-      try envelope.encode(true, forKey: .ok)
-      try success.encode(to: encoder)
-    case let .failure(failure):
-      try envelope.encode(false, forKey: .ok)
-      try failure.encode(to: encoder)
-    }
-  }
+  private enum SuccessCodingKeys: String, CodingKey { case _0 = "value" }
+  private enum FailureCodingKeys: String, CodingKey { case _0 = "reason" }
 }
 
 /// Why the guest could not answer. The kind decides what the host raises; the message carries the detail.
@@ -140,48 +121,13 @@ public struct BridgeAXGuestPhases: Codable, Equatable, Sendable {
   case element(BridgeAXNode, pid: Int32)
   case empty
 
-  public init(from decoder: Decoder) throws {
-    let envelope = try decoder.container(keyedBy: BridgeAXWire.Envelope.self)
-    if try envelope.decodeIfPresent(Bool.self, forKey: .empty) == true {
-      self = .empty
-    } else {
-      self = .element(try envelope.decode(BridgeAXNode.self, forKey: .tree), pid: try envelope.decode(Int32.self, forKey: .pid))
-    }
-  }
-
-  public func encode(to encoder: Encoder) throws {
-    var envelope = encoder.container(keyedBy: BridgeAXWire.Envelope.self)
-    switch self {
-    case let .element(node, pid):
-      try envelope.encode(node, forKey: .tree)
-      try envelope.encode(pid, forKey: .pid)
-    case .empty:
-      try envelope.encode(true, forKey: .empty)
-    }
-  }
+  private enum ElementCodingKeys: String, CodingKey { case _0 = "tree", pid }
 }
 
 /// The answer to a `perform` or `setvalue` that went ahead: the application written to, or nothing at the point.
 @frozen public enum BridgeAXWriteResponse: Codable, Equatable, Sendable {
   case written(pid: Int32)
   case empty
-
-  public init(from decoder: Decoder) throws {
-    let envelope = try decoder.container(keyedBy: BridgeAXWire.Envelope.self)
-    if try envelope.decodeIfPresent(Bool.self, forKey: .empty) == true {
-      self = .empty
-    } else {
-      self = .written(pid: try envelope.decode(Int32.self, forKey: .pid))
-    }
-  }
-
-  public func encode(to encoder: Encoder) throws {
-    var envelope = encoder.container(keyedBy: BridgeAXWire.Envelope.self)
-    switch self {
-    case let .written(pid): try envelope.encode(pid, forKey: .pid)
-    case .empty: try envelope.encode(true, forKey: .empty)
-    }
-  }
 }
 
 /// The answer to a `settings-get` or `settings-set`: the setting's state afterwards.
@@ -198,16 +144,8 @@ public struct BridgeAXSettingResponse: Codable, Equatable, Sendable {
 /// One frame of a `settings-observe` stream: the observed setting's state, and the state of every other setting
 /// the stream reports beside it.
 public struct BridgeAXSettingSnapshot: Codable, Equatable, Sendable {
-  private enum CodingKeys {
-    static let event = BridgeAXWireKey(BridgeAXWire.Settings.Key.event)
-    static let setting = BridgeAXWireKey(BridgeAXWire.Request.setting)
-    static let enabled = BridgeAXWireKey(BridgeAXWire.Envelope.enabled)
-    static let settings = BridgeAXWireKey(BridgeAXWire.Settings.Key.settings)
-  }
-
   public var setting: String
-  /// Nil when the frame's value is not a boolean: a setting newer than this revision may carry anything, and its
-  /// snapshot must not fail the stream it arrives on.
+  /// Nil when the setting's value is not a boolean.
   public var enabled: Bool?
   public var otherSettings: [String: BridgeAXOutcome<BridgeAXSettingResponse>]
 
@@ -215,24 +153,6 @@ public struct BridgeAXSettingSnapshot: Codable, Equatable, Sendable {
     self.setting = setting
     self.enabled = enabled
     self.otherSettings = otherSettings
-  }
-
-  public init(from decoder: Decoder) throws {
-    let snapshot = try decoder.container(keyedBy: BridgeAXWireKey.self)
-    _ = try snapshot.decode(BridgeAXWire.Settings.Event.self, forKey: CodingKeys.event)
-    setting = try snapshot.decode(String.self, forKey: CodingKeys.setting)
-    enabled = (try? snapshot.decodeIfPresent(Bool.self, forKey: CodingKeys.enabled)) ?? nil
-    otherSettings = try snapshot.decodeIfPresent([String: BridgeAXOutcome<BridgeAXSettingResponse>].self, forKey: CodingKeys.settings) ?? [:]
-  }
-
-  public func encode(to encoder: Encoder) throws {
-    var snapshot = encoder.container(keyedBy: BridgeAXWireKey.self)
-    try snapshot.encode(BridgeAXWire.Settings.Event.snapshot, forKey: CodingKeys.event)
-    try snapshot.encode(setting, forKey: CodingKeys.setting)
-    try snapshot.encodeIfPresent(enabled, forKey: CodingKeys.enabled)
-    if !otherSettings.isEmpty {
-      try snapshot.encode(otherSettings, forKey: CodingKeys.settings)
-    }
   }
 }
 
@@ -248,64 +168,5 @@ public struct BridgeAXSettingSnapshot: Codable, Equatable, Sendable {
   case targetChanged(pid: Int32)
   case targetExited(pid: Int32)
 
-  private enum CodingKeys {
-    static let event = BridgeAXWireKey(BridgeAXWire.Quiescence.Key.event)
-    static let state = BridgeAXWireKey(BridgeAXWire.Quiescence.Key.state)
-    static let signals = BridgeAXWireKey(BridgeAXWire.Quiescence.Key.signals)
-    static let pid = BridgeAXWireKey(BridgeAXWire.Envelope.pid)
-  }
-
-  public init(from decoder: Decoder) throws {
-    let event = try decoder.container(keyedBy: BridgeAXWireKey.self)
-    let pid = try event.decode(Int32.self, forKey: CodingKeys.pid)
-    switch try event.decode(BridgeAXWire.Quiescence.Event.self, forKey: CodingKeys.event) {
-    case .state:
-      self = .state(
-        try event.decode(State.self, forKey: CodingKeys.state), busySignals: try event.decodeIfPresent([Signal].self, forKey: CodingKeys.signals) ?? [], pid: pid)
-    case .touchesCompleted: self = .touchesCompleted(pid: pid)
-    case .targetChanged: self = .targetChanged(pid: pid)
-    case .targetExited: self = .targetExited(pid: pid)
-    }
-  }
-
-  public func encode(to encoder: Encoder) throws {
-    var event = encoder.container(keyedBy: BridgeAXWireKey.self)
-    switch self {
-    case let .state(state, signals, pid):
-      try event.encode(BridgeAXWire.Quiescence.Event.state, forKey: CodingKeys.event)
-      try event.encode(state, forKey: CodingKeys.state)
-      if state == .busy {
-        try event.encode(signals.sorted { $0.rawValue < $1.rawValue }, forKey: CodingKeys.signals)
-      }
-      try event.encode(pid, forKey: CodingKeys.pid)
-    case let .touchesCompleted(pid):
-      try event.encode(BridgeAXWire.Quiescence.Event.touchesCompleted, forKey: CodingKeys.event)
-      try event.encode(pid, forKey: CodingKeys.pid)
-    case let .targetChanged(pid):
-      try event.encode(BridgeAXWire.Quiescence.Event.targetChanged, forKey: CodingKeys.event)
-      try event.encode(pid, forKey: CodingKeys.pid)
-    case let .targetExited(pid):
-      try event.encode(BridgeAXWire.Quiescence.Event.targetExited, forKey: CodingKeys.event)
-      try event.encode(pid, forKey: CodingKeys.pid)
-    }
-  }
-}
-
-/// A coding key spelled by one of the `BridgeAXWire` vocabularies, for a frame whose keys come from several.
-struct BridgeAXWireKey: CodingKey {
-  let stringValue: String
-
-  init<Vocabulary: RawRepresentable>(_ key: Vocabulary) where Vocabulary.RawValue == String {
-    stringValue = key.rawValue
-  }
-
-  init?(stringValue: String) {
-    self.stringValue = stringValue
-  }
-
-  var intValue: Int? { nil }
-
-  init?(intValue: Int) {
-    nil
-  }
+  private enum StateCodingKeys: String, CodingKey { case _0 = "state", busySignals, pid }
 }

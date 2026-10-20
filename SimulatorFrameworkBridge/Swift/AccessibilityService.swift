@@ -1824,16 +1824,13 @@ private final class AccessibilityRequest {
 // Answer those errors on the shared dispatcher path so the serve connection can handle later requests.
 public enum AccessibilityService {
 
-  /// The answer to the request `payload` spells as flat parameters, as the host reads it off the wire, decoded as
-  /// plain JSON for a caller that looks at it field by field.
-  public static func handleRequest(_ payload: [String: Any]) -> [String: Any] {
-    let answer: BridgeAXAnswer
+  /// The answer to the request `payload` spells as flat parameters.
+  public static func answer(_ payload: [String: Any]) -> BridgeAXAnswer {
     do {
-      answer = handleRequest(try request(payload))
+      return handleRequest(try request(payload))
     } catch {
-      answer = .failure(failure(error))
+      return .failure(failure(error))
     }
-    return ((try? JSONSerialization.jsonObject(with: answer.encoded())) as? [String: Any]) ?? [:]
   }
 
   /// Reads a request from the flat parameters the JSON object `parameters` spells, and answers it.

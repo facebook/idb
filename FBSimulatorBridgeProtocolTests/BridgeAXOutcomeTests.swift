@@ -41,9 +41,9 @@ struct BridgeAXOutcomeTests {
 
   @Test
   func aSettingsReadDecodesIntoATypedTree() throws {
-    let outcome = try JSONDecoder().decode(BridgeAXOutcome<BridgeAXTreeResponse>.self, from: Self.settingsRead())
-    guard case let .success(read) = outcome else {
-      Issue.record("expected a tree, got \(outcome)")
+    let answer = try JSONDecoder().decode(BridgeAXAnswer.self, from: Self.settingsRead())
+    guard case let .tree(read) = answer else {
+      Issue.record("expected a tree, got \(answer)")
       return
     }
     #expect(read.pid == 69447)
@@ -58,8 +58,8 @@ struct BridgeAXOutcomeTests {
   @Test
   func aSettingsReadReencodesAsTheFrameTheGuestSent() throws {
     let data = try Self.settingsRead()
-    let outcome = try JSONDecoder().decode(BridgeAXOutcome<BridgeAXTreeResponse>.self, from: data)
-    #expect(try jsonObject(JSONEncoder().encode(outcome)) == jsonObject(data))
+    let answer = try JSONDecoder().decode(BridgeAXAnswer.self, from: data)
+    #expect(try jsonObject(JSONEncoder().encode(answer)) == jsonObject(data))
   }
 
   // MARK: - Nodes
@@ -120,58 +120,40 @@ struct BridgeAXOutcomeTests {
 
   // MARK: - Outcomes
 
-  @Test
-  func aFailureDecodesWhateverTheVerbWouldHaveAnswered() throws {
-    let json = #"{"ok":false,"error":"no reader","error_kind":"reader_unavailable"}"#
-    let failure = BridgeAXFailure(message: "no reader", kind: .readerUnavailable)
-    #expect(try decode(BridgeAXOutcome<BridgeAXTreeResponse>.self, json) == .failure(failure))
-    #expect(try decode(BridgeAXOutcome<BridgeAXHitTestResponse>.self, json) == .failure(failure))
-    #expect(try decode(BridgeAXOutcome<BridgeAXDisplayInventory>.self, json) == .failure(failure))
-    #expect(try decode(BridgeAXOutcome<BridgeAXQuiescenceEvent>.self, json) == .failure(failure))
-  }
-
   // MARK: - Answers
 
   @Test
-  func anAnswerDecodesAsTheKindItsRequestAnswersWith() throws {
-    #expect(try BridgeAXAnswer.decode(Data(#"{"ok":true,"enabled":true}"#.utf8), as: .setting) == .setting(BridgeAXSettingResponse(enabled: true)))
-    #expect(try BridgeAXAnswer.decode(Data(#"{"ok":true,"empty":true}"#.utf8), as: .hitTest) == .hitTest(.empty))
-    #expect(try BridgeAXAnswer.decode(Data(#"{"ok":true,"empty":true}"#.utf8), as: .write) == .write(.empty))
-    #expect(
-      try BridgeAXAnswer.decode(Data(#"{"ok":true,"event":"target_exited","pid":4}"#.utf8), as: .quiescence) == .quiescence(.targetExited(pid: 4)))
-  }
-
-  @Test
-  func aFailureReadsTheSameWhateverTheRequest() throws {
-    let failure = Data(#"{"ok":false,"error":"no reader","error_kind":"reader_unavailable"}"#.utf8)
-    for kind in [BridgeAXAnswer.Kind.tree, .hitTest, .write, .setting, .displays, .settingSnapshot, .quiescence] {
-      #expect(try BridgeAXAnswer.decode(failure, as: kind) == .failure(BridgeAXFailure(message: "no reader", kind: .readerUnavailable)))
+  func everyAnswerEncodesAsItsCase() throws {
+    func text(_ answer: BridgeAXAnswer) throws -> String {
+      let encoder = JSONEncoder()
+      encoder.outputFormatting = .sortedKeys
+      return String(decoding: try encoder.encode(answer), as: UTF8.self)
     }
-  }
-
-  @Test
-  func everyRequestNamesTheKindOfAnswerItGets() {
-    let options = BridgeAXReadOptions(
-      maxDepth: 1, maxNodes: 1, attributes: nil, explainUnreachable: false, traversal: .viewHierarchy, automationMode: nil, clientType: .noClient)
-    let write = BridgeAXWriteRequest(kind: .perform(.press), x: 1, y: 2, pid: nil, assertion: nil)
-    let kinds: [(BridgeAXRequest, BridgeAXAnswer.Kind)] = [
-      (.read(pid: 1, options: options), .tree), (.readFrontmost(x: 1, y: 2, method: .windowServer, options: options), .tree),
-      (.hitTest(x: 1, y: 2, attributes: nil, clientType: .noClient), .hitTest), (.write(write), .write),
-      (.deviceSettingRead("voiceover"), .setting), (.deviceSettingWrite("voiceover", enabled: true), .setting),
-      (.deviceSettingChanges("reduce-motion"), .settingSnapshot), (.quiescence(pid: 1, busyThresholdMs: nil, quietWindowMs: nil), .quiescence),
-      (.displays, .displays),
+    var node = BridgeAXNode()
+    node.label = .string("OK")
+    let cases: [(BridgeAXAnswer, String)] = [
+      (.tree(BridgeAXTreeResponse(tree: node, pid: 3, truncated: false)), #"{"tree":{"response":{"pid":3,"tree":{"XC_kAXXCAttributeLabel":"OK"},"truncated":false}}}"#),
+      (.hitTest(.element(node, pid: 3)), #"{"hitTest":{"response":{"element":{"pid":3,"tree":{"XC_kAXXCAttributeLabel":"OK"}}}}}"#),
+      (.hitTest(.empty), #"{"hitTest":{"response":{"empty":{}}}}"#),
+      (.write(.written(pid: 3)), #"{"write":{"response":{"written":{"pid":3}}}}"#),
+      (.write(.empty), #"{"write":{"response":{"empty":{}}}}"#),
+      (.setting(BridgeAXSettingResponse(enabled: false)), #"{"setting":{"response":{"enabled":false}}}"#),
+      (
+        .displays(BridgeAXDisplayInventory(displayScopedInteractions: true, displayScopedTrees: false, displayScopedQuiescence: false, displays: [.init(uniqueID: "main", displayID: 1)])),
+        #"{"displays":{"inventory":{"displayScopedInteractions":true,"displayScopedQuiescence":false,"displayScopedTrees":false,"displays":[{"displayID":1,"uniqueID":"main"}]}}}"#
+      ),
+      (
+        .settingSnapshot(BridgeAXSettingSnapshot(setting: "reduce-motion", enabled: true, otherSettings: ["zoom": .failure(BridgeAXFailure(message: "no", kind: .capabilityUnavailable))])),
+        #"{"settingSnapshot":{"snapshot":{"enabled":true,"otherSettings":{"zoom":{"failure":{"reason":{"error":"no","error_kind":"capability_unavailable"}}}},"setting":"reduce-motion"}}}"#
+      ),
+      (.quiescence(.state(.busy, busySignals: [.animationsInactive], pid: 5)), #"{"quiescence":{"event":{"state":{"busySignals":["animations_inactive"],"pid":5,"state":"busy"}}}}"#),
+      (.quiescence(.targetExited(pid: 6)), #"{"quiescence":{"event":{"targetExited":{"pid":6}}}}"#),
+      (.failure(BridgeAXFailure(message: "no", kind: .badRequest)), #"{"failure":{"reason":{"error":"no","error_kind":"bad_request"}}}"#),
     ]
-    for (request, kind) in kinds {
-      #expect(request.answerKind == kind, "\(request)")
+    for (answer, json) in cases {
+      #expect(try text(answer) == json, "\(answer)")
+      #expect(try JSONDecoder().decode(BridgeAXAnswer.self, from: Data(json.utf8)) == answer, "\(json)")
     }
-  }
-
-  @Test
-  func everyAnswerEncodesAsItsOutcome() throws {
-    let answer = BridgeAXAnswer.setting(BridgeAXSettingResponse(enabled: false))
-    #expect(try jsonObject(JSONEncoder().encode(answer)) == ["ok": true, "enabled": false])
-    let failure = BridgeAXAnswer.failure(BridgeAXFailure(message: "no", kind: .badRequest))
-    #expect(try jsonObject(JSONEncoder().encode(failure)) == ["ok": false, "error": "no", "error_kind": "bad_request"])
   }
 
   // The guest will encode these types itself, so what they write must decode back to the same answer.
@@ -208,12 +190,7 @@ struct BridgeAXOutcomeTests {
       BridgeAXQuiescenceEvent.state(.busy, busySignals: [.runLoopIdle, .animationsInactive], pid: 5), .state(.quiet, busySignals: [], pid: 5),
       .touchesCompleted(pid: 5), .targetChanged(pid: 6), .targetExited(pid: 6),
     ] {
-      let decoded = try roundTrip(BridgeAXOutcome.success(event))
-      if case .state(.busy, _, _) = event {
-        #expect(decoded == .success(.state(.busy, busySignals: [.animationsInactive, .runLoopIdle], pid: 5)), "signals are written sorted")
-      } else {
-        #expect(decoded == .success(event))
-      }
+      #expect(try roundTrip(BridgeAXOutcome.success(event)) == .success(event))
     }
     let failure = BridgeAXFailure(
       message: "busy", kind: .applicationNotResponding, pid: 42, axError: -25204, timeoutSeconds: 1.5, outstanding: true, effect: .unknown)

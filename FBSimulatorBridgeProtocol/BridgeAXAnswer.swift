@@ -7,18 +7,8 @@
 
 import Foundation
 
-extension CodingUserInfoKey {
-  /// The kind of answer a decoder is reading, which the request it answers decides.
-  // A constant key: `init(rawValue:)` fails for no string.
-  // swiftlint:disable:next force_unwrapping
-  public static let bridgeAXAnswerKind = CodingUserInfoKey(rawValue: "BridgeAXAnswer.Kind")!
-}
-
-/// The guest's answer to an accessibility request: what the request's verb answers with, or why it could not.
-///
-/// It encodes as its outcome alone, `ok` beside the answer's own fields, with nothing naming the verb: the request
-/// already does. So it decodes only where the request is known, through `BridgeResponse.decode(_:for:)` or
-/// `decode(_:as:)`.
+/// The guest's answer to an accessibility request: what the request's verb answers with, or why it could not. It
+/// travels as its case keyed to what it holds: `{"tree":{"response":{…}}}`, `{"failure":{"reason":{…}}}`.
 @frozen public enum BridgeAXAnswer: Codable, Equatable, Sendable {
   case tree(BridgeAXTreeResponse)
   case hitTest(BridgeAXHitTestResponse)
@@ -30,77 +20,18 @@ extension CodingUserInfoKey {
   /// Why the request could not be answered, which reads the same whatever it asked.
   case failure(BridgeAXFailure)
 
-  /// Which answer a request gets when it succeeds.
-  @frozen public enum Kind: String, Sendable, CaseIterable {
-    case tree
-    case hitTest
-    case write
-    case setting
-    case displays
-    case settingSnapshot
-    case quiescence
-  }
+  // Swift names an unlabelled payload `_0`; these name it for what it holds.
+  private enum TreeCodingKeys: String, CodingKey { case _0 = "response" }
+  private enum HitTestCodingKeys: String, CodingKey { case _0 = "response" }
+  private enum WriteCodingKeys: String, CodingKey { case _0 = "response" }
+  private enum SettingCodingKeys: String, CodingKey { case _0 = "response" }
+  private enum DisplaysCodingKeys: String, CodingKey { case _0 = "inventory" }
+  private enum SettingSnapshotCodingKeys: String, CodingKey { case _0 = "snapshot" }
+  private enum QuiescenceCodingKeys: String, CodingKey { case _0 = "event" }
+  private enum FailureCodingKeys: String, CodingKey { case _0 = "reason" }
 
   public var succeeded: Bool {
     guard case .failure = self else { return true }
     return false
-  }
-
-  /// An answer as a guest wrote it on its own, for a request answered with `kind`.
-  public static func decode(_ data: Data, as kind: Kind) throws -> BridgeAXAnswer {
-    let decoder = JSONDecoder()
-    decoder.userInfo[.bridgeAXAnswerKind] = kind
-    return try decoder.decode(Self.self, from: data)
-  }
-
-  public init(from decoder: Decoder) throws {
-    let envelope = try decoder.container(keyedBy: BridgeAXWire.Envelope.self)
-    guard try envelope.decode(Bool.self, forKey: .ok) else {
-      self = .failure(try BridgeAXFailure(from: decoder))
-      return
-    }
-    guard let kind = decoder.userInfo[.bridgeAXAnswerKind] as? Kind else {
-      throw DecodingError.dataCorrupted(
-        DecodingError.Context(codingPath: decoder.codingPath, debugDescription: "an accessibility answer decodes only against the request it answers"))
-    }
-    switch kind {
-    case .tree: self = .tree(try BridgeAXTreeResponse(from: decoder))
-    case .hitTest: self = .hitTest(try BridgeAXHitTestResponse(from: decoder))
-    case .write: self = .write(try BridgeAXWriteResponse(from: decoder))
-    case .setting: self = .setting(try BridgeAXSettingResponse(from: decoder))
-    case .displays: self = .displays(try BridgeAXDisplayInventory(from: decoder))
-    case .settingSnapshot: self = .settingSnapshot(try BridgeAXSettingSnapshot(from: decoder))
-    case .quiescence: self = .quiescence(try BridgeAXQuiescenceEvent(from: decoder))
-    }
-  }
-
-  public func encode(to encoder: Encoder) throws {
-    var envelope = encoder.container(keyedBy: BridgeAXWire.Envelope.self)
-    try envelope.encode(succeeded, forKey: .ok)
-    switch self {
-    case let .tree(answer): try answer.encode(to: encoder)
-    case let .hitTest(answer): try answer.encode(to: encoder)
-    case let .write(answer): try answer.encode(to: encoder)
-    case let .setting(answer): try answer.encode(to: encoder)
-    case let .displays(answer): try answer.encode(to: encoder)
-    case let .settingSnapshot(answer): try answer.encode(to: encoder)
-    case let .quiescence(answer): try answer.encode(to: encoder)
-    case let .failure(failure): try failure.encode(to: encoder)
-    }
-  }
-}
-
-extension BridgeAXRequest {
-  /// The answer this request gets when it succeeds.
-  public var answerKind: BridgeAXAnswer.Kind {
-    switch self {
-    case .read, .readFrontmost: .tree
-    case .hitTest: .hitTest
-    case .write: .write
-    case .deviceSettingRead, .deviceSettingWrite: .setting
-    case .deviceSettingChanges: .settingSnapshot
-    case .quiescence: .quiescence
-    case .displays: .displays
-    }
   }
 }

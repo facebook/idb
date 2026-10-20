@@ -14,8 +14,9 @@ import Testing
 @Suite
 struct AccessibilityServiceTests {
 
+  /// The fields of the answer `data` encodes.
   private static func FBAXTestsParse(data: Data) -> NSDictionary? {
-    (try? JSONSerialization.jsonObject(with: data)) as? NSDictionary
+    (try? JSONDecoder().decode(BridgeAXAnswer.self, from: data)).map { answerFields($0) as NSDictionary }
   }
 
   private static func FBAXTestsTree(_ node: BridgeAXNode) -> BridgeAXAnswer {

@@ -92,10 +92,9 @@ struct BridgeProtocolTests {
     #expect(try PropertyListSerialization.propertyList(from: propertyList, options: [], format: nil) as? NSDictionary == value as NSDictionary)
   }
 
-  // An accessibility answer travels as an object in the frame, shaped as its model encodes it, with nothing saying which
-  // verb it answers: the request says that, so a frame decodes typed only against the request it answers.
+  // An accessibility answer travels in the frame as its case keyed to what it holds, so it reads on its own.
   @Test
-  func anAccessibilityAnswerTravelsAsItsOwnShape() throws {
+  func anAccessibilityAnswerTravelsAsItsCase() throws {
     let request = BridgeRequest(
       command: .accessibility(
         .read(
@@ -111,11 +110,9 @@ struct BridgeProtocolTests {
     let wire = try #require(try JSONSerialization.jsonObject(with: frame) as? [String: Any])
     let answers = try #require((wire["result"] as? [String: Any])?["answers"] as? [[String: Any]])
     let answer = try #require((answers.first?["accessibility"] as? [String: Any])?["answer"] as? NSDictionary)
-    #expect(answer == ["ok": true, "pid": 3, "truncated": false, "tree": ["XC_kAXXCAttributeLabel": "Settings"]])
+    #expect(answer == ["tree": ["response": ["pid": 3, "truncated": false, "tree": ["XC_kAXXCAttributeLabel": "Settings"]]]])
     #expect(try BridgeResponse.decode(frame, for: request).result == result)
-    #expect(throws: (any Error).self, "without its request the answer's type is unknown") {
-      try JSONDecoder().decode(BridgeResponse.self, from: frame)
-    }
+    #expect(try JSONDecoder().decode(BridgeResponse.self, from: frame).result == result, "an answer names its own kind")
   }
 
   // A connection checks a response is the one it is waiting for without decoding the answer, which the caller decodes.
@@ -207,12 +204,12 @@ struct BridgeProtocolTests {
       (.clearPhotos, #"{"answers":[],"exitCode":0}"#, BridgeResult(exitCode: 0)),
       (.clearPhotos, #"{"answers":[],"error":"it failed","exitCode":1}"#, BridgeResult(exitCode: 1, error: "it failed")),
       (
-        .accessibility(.deviceSettingRead("reduce-motion")), #"{"answers":[{"accessibility":{"answer":{"enabled":true,"ok":true}}}],"exitCode":0}"#,
+        .accessibility(.deviceSettingRead("reduce-motion")), #"{"answers":[{"accessibility":{"answer":{"setting":{"response":{"enabled":true}}}}}],"exitCode":0}"#,
         BridgeResult(exitCode: 0, answers: [.accessibility(.setting(BridgeAXSettingResponse(enabled: true)))])
       ),
       (
         .accessibility(.read(pid: 3, options: Self.readOptions(maxDepth: 1, maxNodes: 1))),
-        #"{"answers":[{"accessibility":{"answer":{"error":"pid 3 has no accessibility server","error_kind":"application_unavailable","ok":false,"pid":3}}}],"exitCode":1}"#,
+        #"{"answers":[{"accessibility":{"answer":{"failure":{"reason":{"error":"pid 3 has no accessibility server","error_kind":"application_unavailable","pid":3}}}}}],"exitCode":1}"#,
         BridgeResult(
           exitCode: 1,
           answers: [.accessibility(.failure(BridgeAXFailure(message: "pid 3 has no accessibility server", kind: .applicationUnavailable, pid: 3)))])

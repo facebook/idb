@@ -126,13 +126,9 @@ public struct BridgeResponse: Codable, Equatable, Sendable {
     return try encoder.encode(self)
   }
 
-  /// Decodes the response to `request`; an accessibility answer decodes as the kind the request's verb answers with.
+  /// Decodes the response to `request`, refusing one at another version or for another request.
   public static func decode(_ data: Data, for request: BridgeRequest) throws -> Self {
-    let decoder = JSONDecoder()
-    if case let .accessibility(accessibility) = request.command {
-      decoder.userInfo[.bridgeAXAnswerKind] = accessibility.answerKind
-    }
-    let response = try decoder.decode(Self.self, from: data)
+    let response = try JSONDecoder().decode(Self.self, from: data)
     try check(version: response.version, id: response.id, for: request)
     return response
   }

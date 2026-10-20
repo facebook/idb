@@ -270,10 +270,10 @@ struct AXWireContractTests {
 
   @Test
   func deviceSettingResponsePreservesTypedGuestFailures() throws {
-    let success = Data(#"{"ok":true,"enabled":true}"#.utf8)
+    let success = Data(#"{"setting":{"response":{"enabled":true}}}"#.utf8)
     #expect(try AXDeviceSettingResponse(answer: AXBridgeReply(answer: success, for: .deviceSettingRead("button-shapes")).answer).enabled)
 
-    let failure = Data(#"{"ok":false,"error":"Button Shapes is unavailable","error_kind":"reader_unavailable"}"#.utf8)
+    let failure = Data(#"{"failure":{"reason":{"error":"Button Shapes is unavailable","error_kind":"reader_unavailable"}}}"#.utf8)
     let error = try #require(#expect(throws: (any Error).self) { try AXDeviceSettingResponse(answer: AXBridgeReply(answer: failure, for: .deviceSettingRead("button-shapes")).answer) })
     guard let bridgeError = error as? AXBridgeError,
       case let .readerUnavailable(message) = bridgeError

@@ -121,28 +121,28 @@ struct SimulatorDisplayInteractionTests {
 
   @Test
   func inventoryRejectsInvalidIDsAndPreservesUnsupportedFailure() throws {
-    let valid = Data(#"{"ok":true,"displayScopedInteractions":false,"displayScopedQuiescence":false,"displayScopedTrees":false,"displays":[{"uniqueID":"inner","displayID":82}]}"#.utf8)
+    let valid = Data(#"{"displays":{"inventory":{"displayScopedInteractions":false,"displayScopedQuiescence":false,"displayScopedTrees":false,"displays":[{"uniqueID":"inner","displayID":82}]}}}"#.utf8)
     #expect(try AXBridgeDisplayInventory.decode(valid) == [SimulatorAccessibilityDisplay(uniqueID: "inner", displayID: 82)])
     for id in ["0", "-1", "4294967296", "true", "1.5", #""82""#] {
-      let data = Data("{\"ok\":true,\"displayScopedInteractions\":false,\"displayScopedQuiescence\":false,\"displayScopedTrees\":false,\"displays\":[{\"uniqueID\":\"inner\",\"displayID\":\(id)}]}".utf8)
+      let data = Data("{\"displays\":{\"inventory\":{\"displayScopedInteractions\":false,\"displayScopedQuiescence\":false,\"displayScopedTrees\":false,\"displays\":[{\"uniqueID\":\"inner\",\"displayID\":\(id)}]}}}".utf8)
       #expect(throws: (any Error).self) { try AXBridgeDisplayInventory.decode(data) }
     }
     for json in [
-      #"{"ok":true}"#,
-      #"{"ok":true,"displayScopedInteractions":false,"displayScopedQuiescence":false,"displayScopedTrees":false,"displays":[{"uniqueID":"","displayID":82}]}"#,
-      #"{"ok":true,"displayScopedInteractions":false,"displayScopedQuiescence":false,"displayScopedTrees":false,"displays":[{"uniqueID":"a","displayID":82},{"uniqueID":"b","displayID":82}]}"#,
-      #"{"ok":true,"displayScopedInteractions":false,"displayScopedQuiescence":false,"displayScopedTrees":false,"displays":[{"uniqueID":"a","displayID":82},{"uniqueID":"a","displayID":29}]}"#,
+      #"{"displays":{"inventory":{}}}"#,
+      #"{"displays":{"inventory":{"displayScopedInteractions":false,"displayScopedQuiescence":false,"displayScopedTrees":false,"displays":[{"uniqueID":"","displayID":82}]}}}"#,
+      #"{"displays":{"inventory":{"displayScopedInteractions":false,"displayScopedQuiescence":false,"displayScopedTrees":false,"displays":[{"uniqueID":"a","displayID":82},{"uniqueID":"b","displayID":82}]}}}"#,
+      #"{"displays":{"inventory":{"displayScopedInteractions":false,"displayScopedQuiescence":false,"displayScopedTrees":false,"displays":[{"uniqueID":"a","displayID":82},{"uniqueID":"a","displayID":29}]}}}"#,
     ] {
       #expect(throws: (any Error).self) { try AXBridgeDisplayInventory.decode(Data(json.utf8)) }
     }
     let unsupported = try #require(
       #expect(throws: (any Error).self) {
-        try AXBridgeDisplayInventory.decode(Data(#"{"ok":false,"error_kind":"capability_unavailable"}"#.utf8))
+        try AXBridgeDisplayInventory.decode(Data(#"{"failure":{"reason":{"error_kind":"capability_unavailable"}}}"#.utf8))
       })
     if case SimulatorDisplayInteractionError.unsupportedCapability = unsupported {} else { Issue.record("\(unsupported)") }
     let unavailable = try #require(
       #expect(throws: (any Error).self) {
-        try AXBridgeDisplayInventory.decode(Data(#"{"ok":false,"error_kind":"reader_unavailable","error":"failed"}"#.utf8))
+        try AXBridgeDisplayInventory.decode(Data(#"{"failure":{"reason":{"error_kind":"reader_unavailable","error":"failed"}}}"#.utf8))
       })
     if case AXBridgeError.readerUnavailable = unavailable {} else { Issue.record("\(unavailable)") }
     #expect(AXBridgeRequest.displays.command == .accessibility(.displays))
@@ -152,17 +152,17 @@ struct SimulatorDisplayInteractionTests {
 
   @Test
   func scopedInteractionsRequireGuestAdvertisement() throws {
-    let unadvertising = Data(#"{"ok":true,"displayScopedInteractions":false,"displayScopedQuiescence":false,"displayScopedTrees":false,"displays":[{"uniqueID":"inner","displayID":82}]}"#.utf8)
+    let unadvertising = Data(#"{"displays":{"inventory":{"displayScopedInteractions":false,"displayScopedQuiescence":false,"displayScopedTrees":false,"displays":[{"uniqueID":"inner","displayID":82}]}}}"#.utf8)
     #expect(try AXBridgeDisplayInventory.decode(unadvertising).count == 1)
     let unadvertised = try #require(
       #expect(throws: (any Error).self) {
         try AXBridgeDisplayInventory.decode(unadvertising, requiring: .scopedInteractions)
       })
     if case SimulatorDisplayInteractionError.unsupportedCapability = unadvertised {} else { Issue.record("\(unadvertised)") }
-    let currentGuest = Data(#"{"ok":true,"displayScopedInteractions":true,"displayScopedQuiescence":false,"displayScopedTrees":false,"displays":[{"uniqueID":"inner","displayID":82}]}"#.utf8)
+    let currentGuest = Data(#"{"displays":{"inventory":{"displayScopedInteractions":true,"displayScopedQuiescence":false,"displayScopedTrees":false,"displays":[{"uniqueID":"inner","displayID":82}]}}}"#.utf8)
     #expect(try AXBridgeDisplayInventory.decode(currentGuest, requiring: .scopedInteractions).count == 1)
     #expect(throws: (any Error).self) { try AXBridgeDisplayInventory.decode(currentGuest, requiring: .scopedTrees) }
-    let scopedGuest = Data(#"{"ok":true,"displayScopedInteractions":false,"displayScopedQuiescence":false,"displayScopedTrees":true,"displays":[{"uniqueID":"inner","displayID":82}]}"#.utf8)
+    let scopedGuest = Data(#"{"displays":{"inventory":{"displayScopedInteractions":false,"displayScopedQuiescence":false,"displayScopedTrees":true,"displays":[{"uniqueID":"inner","displayID":82}]}}}"#.utf8)
     #expect(try AXBridgeDisplayInventory.decode(scopedGuest, requiring: .scopedTrees).count == 1)
   }
 }
