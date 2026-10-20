@@ -22,14 +22,18 @@ private enum BridgeService: String {
 }
 
 public protocol CommandLineServiceHandling {
-  #if !os(tvOS)
+  #if !os(tvOS) && !os(watchOS)
   func contacts(_ action: String) -> Int32
+  #endif
+  #if !os(tvOS)
   func health(_ action: String, bundleID: String?, typeIDs: [String]) -> Int32
   func deliveredNotifications(_ action: String, bundleID: String?) -> Int32
   #endif
   func dns(_ action: String, arguments: [String]) -> Int32
   func dynamicStore(_ action: String, arguments: [String]) -> Int32
+  #if !os(watchOS)
   func photos(_ action: String) -> Int32
+  #endif
   func notifications(_ action: String, bundleID: String?) -> Int32
   func privacy(_ action: String, arguments: [String]) -> Int32
   func proxy(_ action: String, arguments: [String]) -> Int32
@@ -49,11 +53,13 @@ public struct CommandLineServices: CommandLineServiceHandling {
     self.deliveredNotificationsTimeout = deliveredNotificationsTimeout
   }
 
-  #if !os(tvOS)
+  #if !os(tvOS) && !os(watchOS)
   public func contacts(_ action: String) -> Int32 {
     Int32(ContactsService.handleContactsAction(action: action))
   }
+  #endif
 
+  #if !os(tvOS)
   public func health(_ action: String, bundleID: String?, typeIDs: [String]) -> Int32 {
     Int32(HealthSettingsService.handleHealthSettingsAction(action: action, bundleID: bundleID, typeIdentifiers: typeIDs))
   }
@@ -71,9 +77,11 @@ public struct CommandLineServices: CommandLineServiceHandling {
     Int32(DynamicStoreService.handleDynamicStoreAction(action: action, arguments: arguments))
   }
 
+  #if !os(watchOS)
   public func photos(_ action: String) -> Int32 {
     Int32(PhotoLibraryService.handlePhotoLibraryAction(action: action))
   }
+  #endif
 
   public func notifications(_ action: String, bundleID: String?) -> Int32 {
     Int32(NotificationSettingsService.handleNotificationSettingsAction(action: action, bundleID: bundleID))
@@ -143,25 +151,35 @@ public enum BridgeCommandLine {
   public static func dispatch(service: String, action: String, arguments: [String], services: CommandLineServiceHandling = CommandLineServices()) -> Int32 {
     let selectedService = BridgeService(rawValue: service)
     switch selectedService {
-    case .contacts, .health:
-      #if os(tvOS)
-      NSLog("The %@ service is not available in a tvOS guest", service)
+    case .contacts:
+      #if os(tvOS) || os(watchOS)
+      NSLog("The %@ service is not available in a %@ guest", service, guestPlatformName)
       return 1
       #else
-      if selectedService == .contacts {
-        return services.contacts(action)
-      }
+      return services.contacts(action)
+      #endif
+    case .health:
+      #if os(tvOS)
+      NSLog("The %@ service is not available in a %@ guest", service, guestPlatformName)
+      return 1
+      #else
       return services.health(action, bundleID: arguments.first, typeIDs: Array(arguments.dropFirst()))
       #endif
     case .dns: return services.dns(action, arguments: arguments)
     case .dynamicStore: return services.dynamicStore(action, arguments: arguments)
-    case .photos: return services.photos(action)
+    case .photos:
+      #if os(watchOS)
+      NSLog("The %@ service is not available in a %@ guest", service, guestPlatformName)
+      return 1
+      #else
+      return services.photos(action)
+      #endif
     case .notifications:
       // `list` on this service means "list the apps' settings", so the delivered notifications of one app
       // are read and cleared with their own verbs.
       if action == "delivered" || action == "clear-delivered" {
         #if os(tvOS)
-        NSLog("The notifications %@ action is not available in a tvOS guest", action)
+        NSLog("The notifications %@ action is not available in a %@ guest", action, guestPlatformName)
         return 1
         #else
         return services.deliveredNotifications(action, bundleID: arguments.first)
@@ -189,3 +207,14 @@ public enum BridgeCommandLine {
     }
   }
 }
+
+/// Names the platform this guest was built for in the messages that refuse a service its SDK lacks.
+let guestPlatformName: String = {
+  #if os(tvOS)
+  return "tvOS"
+  #elseif os(watchOS)
+  return "watchOS"
+  #else
+  return "iOS"
+  #endif
+}()

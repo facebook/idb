@@ -49,10 +49,10 @@ targetTemplates:
         OTHER_CFLAGS: $(inherited) -Wno-deprecated-declarations
     dependencies:
       # Everything else the bridge reaches (BulletinBoard, SystemConfiguration, the accessibility
-      # private frameworks) is dlopen-ed at runtime, so it is intentionally not linked here.
+      # private frameworks) is dlopen-ed at runtime, so it is intentionally not linked here. PhotoKit
+      # is absent from the watchOS SDK, so only the iOS and tvOS targets link it.
       - sdk: Foundation.framework
       - sdk: CoreGraphics.framework
-      - sdk: Photos.framework
       - sdk: CoreData.framework
       - sdk: UIKit.framework
   Support:
@@ -84,7 +84,6 @@ targetTemplates:
     dependencies:
       - sdk: Foundation.framework
       - sdk: CoreGraphics.framework
-      - sdk: Photos.framework
       - sdk: CoreData.framework
       - sdk: UIKit.framework
 
@@ -113,18 +112,43 @@ targets:
     settings:
       base:
         SDKROOT: appletvsimulator
+  FBSimulatorBridgeProtocol-watchOS:
+    templates: [Protocol]
+    platform: watchOS
+    deploymentTarget: "10.0"
+    settings:
+      base:
+        SDKROOT: watchsimulator
+  SimulatorIPC-watchOS:
+    templates: [IPC]
+    platform: watchOS
+    deploymentTarget: "10.0"
+    settings:
+      base:
+        SDKROOT: watchsimulator
   SimulatorFrameworkBridgeRuntime-iOS:
     templates: [Runtime]
     platform: iOS
     settings:
       base:
         SDKROOT: iphonesimulator
+    dependencies:
+      - sdk: Photos.framework
   SimulatorFrameworkBridgeRuntime-tvOS:
     templates: [Runtime]
     platform: tvOS
     settings:
       base:
         SDKROOT: appletvsimulator
+    dependencies:
+      - sdk: Photos.framework
+  SimulatorFrameworkBridgeRuntime-watchOS:
+    templates: [Runtime]
+    platform: watchOS
+    deploymentTarget: "10.0"
+    settings:
+      base:
+        SDKROOT: watchsimulator
   SimulatorFrameworkBridgeSupport-iOS:
     templates: [Support]
     platform: iOS
@@ -147,6 +171,18 @@ targets:
       - target: FBSimulatorBridgeProtocol-tvOS
       - target: SimulatorIPC-tvOS
       - target: SimulatorFrameworkBridgeRuntime-tvOS
+  SimulatorFrameworkBridgeSupport-watchOS:
+    templates: [Support]
+    platform: watchOS
+    deploymentTarget: "10.0"
+    settings:
+      base:
+        SDKROOT: watchsimulator
+    dependencies:
+      - target: FBSimulatorBridgeProtocol-watchOS
+      - target: SimulatorIPC-watchOS
+      - target: SimulatorFrameworkBridgeRuntime-watchOS
+      - sdk: UserNotifications.framework
   # A command-line executable spawned inside the simulator runtime by idb_companion (from the bundled
   # `Resources/SimulatorFrameworkBridge-<platform>`) to drive privacy/services state, read the
   # accessibility tree and serve the REPL socket. Mirrors the Buck targets of the same names.
@@ -164,6 +200,7 @@ targets:
       - target: FBSimulatorBridgeProtocol-iOS
       - target: SimulatorIPC-iOS
       - sdk: Contacts.framework
+      - sdk: Photos.framework
       - sdk: UserNotifications.framework
 
   SimulatorFrameworkBridge-tvOS:
@@ -179,6 +216,24 @@ targets:
       - target: SimulatorFrameworkBridgeRuntime-tvOS
       - target: FBSimulatorBridgeProtocol-tvOS
       - target: SimulatorIPC-tvOS
+      - sdk: Photos.framework
+
+  # Contacts save requests are absent from the watchOS SDK too, so it is not linked either.
+  SimulatorFrameworkBridge-watchOS:
+    templates: [Guest]
+    platform: watchOS
+    deploymentTarget: "10.0"
+    settings:
+      base:
+        SDKROOT: watchsimulator
+        WATCHOS_DEPLOYMENT_TARGET: "10.0"
+        PRODUCT_NAME: SimulatorFrameworkBridge-watchOS
+    dependencies:
+      - target: SimulatorFrameworkBridgeSupport-watchOS
+      - target: SimulatorFrameworkBridgeRuntime-watchOS
+      - target: FBSimulatorBridgeProtocol-watchOS
+      - target: SimulatorIPC-watchOS
+      - sdk: UserNotifications.framework
 
   # The guest's unit tests, run in an iOS simulator against the fake runtimes they carry, so they need no
   # host application and no booted simulator of their own.

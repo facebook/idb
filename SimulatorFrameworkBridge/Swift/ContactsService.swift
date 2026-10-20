@@ -5,7 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#if !os(tvOS)
+#if !os(tvOS) && !os(watchOS)
 import Contacts
 import Foundation
 

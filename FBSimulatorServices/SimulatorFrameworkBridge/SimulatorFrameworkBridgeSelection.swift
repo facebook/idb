@@ -19,8 +19,9 @@ enum SimulatorFrameworkBridgeSelection {
     switch productFamily {
     case .appleTV:
       return "SimulatorFrameworkBridge-tvOS"
-    // Only Apple TV has a guest of its own; every other family runs the iOS binary.
-    case .iPhone, .iPad, .appleWatch, .mac, .unknown:
+    case .appleWatch:
+      return "SimulatorFrameworkBridge-watchOS"
+    case .iPhone, .iPad, .mac, .unknown:
       return "SimulatorFrameworkBridge-iOS"
     }
   }

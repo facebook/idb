@@ -358,9 +358,15 @@ final class AXBridgeSocketTests: XCTestCase {
       "SimulatorFrameworkBridge-tvOS")
   }
 
-  func testEveryNonTVFamilyGetsTheIOSGuest() {
+  func testAnAppleWatchTargetGetsTheWatchOSGuest() {
+    XCTAssertEqual(
+      SimulatorFrameworkBridgeSelection.resourceName(for: .appleWatch),
+      "SimulatorFrameworkBridge-watchOS")
+  }
+
+  func testEveryOtherFamilyGetsTheIOSGuest() {
     let families: [ProductFamily] = [
-      .iPhone, .iPad, .appleWatch, .mac, .unknown,
+      .iPhone, .iPad, .mac, .unknown,
     ]
     for family in families {
       XCTAssertEqual(

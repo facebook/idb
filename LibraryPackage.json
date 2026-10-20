@@ -117,7 +117,8 @@
       ],
       "resources": [
         "SimulatorFrameworkBridge-tvOS",
-        "SimulatorFrameworkBridge-iOS"
+        "SimulatorFrameworkBridge-iOS",
+        "SimulatorFrameworkBridge-watchOS"
       ],
       "search_paths": [
         "PrivateHeaders"
@@ -166,6 +167,7 @@
         "SimulatorFrameworkBridge-tvOS",
         "SimulatorFrameworkBridge-iOS",
         "libShimulator-iOS.dylib",
+        "SimulatorFrameworkBridge-watchOS",
         "libShimulator-macOS.dylib"
       ],
       "search_paths": [
@@ -250,7 +252,8 @@
       ],
       "resources": [
         "SimulatorFrameworkBridge-tvOS",
-        "SimulatorFrameworkBridge-iOS"
+        "SimulatorFrameworkBridge-iOS",
+        "SimulatorFrameworkBridge-watchOS"
       ],
       "search_paths": [
         "PrivateHeaders"

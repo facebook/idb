@@ -778,6 +778,7 @@ function build_fbsimulatorcontrol_resources() {
   build_shims
   build_simulator_framework_bridge iOS iphonesimulator
   build_simulator_framework_bridge tvOS appletvsimulator
+  build_simulator_framework_bridge watchOS watchsimulator
 }
 
 function build_simulator_framework_bridge() {
@@ -918,6 +919,7 @@ function build_staging_bench() {
 #       libReplIDB-macOS.dylib
 #       SimulatorFrameworkBridge-iOS
 #       SimulatorFrameworkBridge-tvOS
+#       SimulatorFrameworkBridge-watchOS
 #       ReplHost.app
 #       IDBAPI.swiftinterface
 #
@@ -925,6 +927,7 @@ function build_distribution() {
   local release="$BUILD_DIRECTORY/Products/Release"
   local sim="$BUILD_DIRECTORY/Products/Release-iphonesimulator"
   local tvsim="$BUILD_DIRECTORY/Products/Release-appletvsimulator"
+  local watchsim="$BUILD_DIRECTORY/Products/Release-watchsimulator"
   local dist="$BUILD_DIRECTORY/Distribution"
 
   echo "Assembling distribution into $dist"
@@ -940,6 +943,7 @@ function build_distribution() {
     "$release/libReplIDB-macOS.dylib"
     "$sim/SimulatorFrameworkBridge-iOS"
     "$tvsim/SimulatorFrameworkBridge-tvOS"
+    "$watchsim/SimulatorFrameworkBridge-watchOS"
     "$sim/ReplHost.app"
   )
   local path
@@ -973,6 +977,7 @@ function build_distribution() {
   cp "$release/libReplIDB-macOS.dylib" "$dist/Resources/"
   cp "$sim/SimulatorFrameworkBridge-iOS" "$dist/Resources/"
   cp "$tvsim/SimulatorFrameworkBridge-tvOS" "$dist/Resources/"
+  cp "$watchsim/SimulatorFrameworkBridge-watchOS" "$dist/Resources/"
 
   # ReplHost.app: the default host app for `idb-repl app`, installed on demand
   # by the companion. Already ad-hoc signed at build time (CODE_SIGN_IDENTITY in
@@ -1085,6 +1090,8 @@ function build() {
         build_simulator_framework_bridge iOS iphonesimulator;;
       SimulatorFrameworkBridge-tvOS)
         build_simulator_framework_bridge tvOS appletvsimulator;;
+      SimulatorFrameworkBridge-watchOS)
+        build_simulator_framework_bridge watchOS watchsimulator;;
       ReplHost)
         build_repl_host;;
       idb_companion)
@@ -1103,7 +1110,7 @@ function build() {
         build_target "$target";;
       *)
         echo "Unknown target: $target"
-        echo "Valid targets: all, simscope, libraries, shims, fixtures, idb_companion, idb-repl, sim-video, FBControlCore, FBXCTestCore, FBSimulatorControl, FBSimulatorXCTest, FBDeviceControl, Shimulator-iOS, Shimulator-macOS, ReplHost, SimulatorFrameworkBridge-iOS, SimulatorFrameworkBridge-tvOS, distribution"
+        echo "Valid targets: all, simscope, libraries, shims, fixtures, idb_companion, idb-repl, sim-video, FBControlCore, FBXCTestCore, FBSimulatorControl, FBSimulatorXCTest, FBDeviceControl, Shimulator-iOS, Shimulator-macOS, ReplHost, SimulatorFrameworkBridge-iOS, SimulatorFrameworkBridge-tvOS, SimulatorFrameworkBridge-watchOS, distribution"
         exit 1;;
     esac
   fi
@@ -1253,6 +1260,7 @@ Commands:
       Shimulator-macOS Build Shimulator-macOS dylib (macOS)
       SimulatorFrameworkBridge-iOS Build the iOS-simulator guest executable
       SimulatorFrameworkBridge-tvOS Build the tvOS-simulator guest executable
+      SimulatorFrameworkBridge-watchOS Build the watchOS-simulator guest executable
       FBXCTestCore Build FBXCTestCore framework
 
   test [<target>]

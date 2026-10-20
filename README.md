@@ -119,6 +119,7 @@ Build/Distribution/
     libReplIDB-macOS.dylib
     SimulatorFrameworkBridge-iOS
     SimulatorFrameworkBridge-tvOS
+    SimulatorFrameworkBridge-watchOS
     ReplHost.app
     IDBAPI.swiftinterface
 ```

@@ -19,13 +19,17 @@ public enum BridgeServices {
     case .ping, .shutdown:
       return 0
     case .clearContacts:
-      #if os(tvOS)
+      #if os(tvOS) || os(watchOS)
       return unavailable("The contacts service", output: output)
       #else
       return Int32(ContactsService.handleContactsAction(action: "clear", output: output))
       #endif
     case .clearPhotos:
+      #if os(watchOS)
+      return unavailable("The photos service", output: output)
+      #else
       return Int32(PhotoLibraryService.handlePhotoLibraryAction(action: "clear", output: output))
+      #endif
     case let .dns(command):
       let action: String
       let arguments: [String]
@@ -151,7 +155,7 @@ public enum BridgeServices {
   }
 
   private static func unavailable(_ subject: String, output: BridgeOutput) -> Int32 {
-    Int32(output.failure("\(subject) is not available in a tvOS guest"))
+    Int32(output.failure("\(subject) is not available in a \(guestPlatformName) guest"))
   }
 }
 

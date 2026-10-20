@@ -9,7 +9,7 @@
 
 #import <Foundation/Foundation.h>
 
-#if !TARGET_OS_TV
+#if !TARGET_OS_TV && !TARGET_OS_WATCH
  #import <Contacts/Contacts.h>
 
 NS_ASSUME_NONNULL_BEGIN

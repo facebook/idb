@@ -5,8 +5,11 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#import <Foundation/Foundation.h>
-#import <Photos/Photos.h>
+#import <TargetConditionals.h>
+
+#if !TARGET_OS_WATCH
+ #import <Foundation/Foundation.h>
+ #import <Photos/Photos.h>
 
 NS_ASSUME_NONNULL_BEGIN
 
@@ -24,3 +27,4 @@ NS_ASSUME_NONNULL_BEGIN
 @end
 
 NS_ASSUME_NONNULL_END
+#endif

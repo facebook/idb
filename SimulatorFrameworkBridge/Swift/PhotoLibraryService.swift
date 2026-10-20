@@ -5,6 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+#if !os(watchOS)
 import Foundation
 import Photos
 
@@ -51,3 +52,4 @@ public enum PhotoLibraryService {
     return clearPhotoLibrary(client: client)
   }
 }
+#endif

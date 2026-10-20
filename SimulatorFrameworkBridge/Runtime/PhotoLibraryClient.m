@@ -5,9 +5,12 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#import "PhotoLibraryClient.h"
+#import <TargetConditionals.h>
 
-#import "Private/PhotosPrivate.h"
+#if !TARGET_OS_WATCH
+ #import "PhotoLibraryClient.h"
+
+ #import "Private/PhotosPrivate.h"
 
 static PLPhotoLibrary *getPLPhotoLibrary(PHPhotoLibrary *photoLibrary)
 {
@@ -132,3 +135,4 @@ static BOOL saveManagedObjectContext(NSManagedObjectContext *moc, NSError **outE
 }
 
 @end
+#endif

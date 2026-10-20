@@ -23,7 +23,7 @@ enum SimScopeMain {
   static func main() throws {
     if ProcessInfo.processInfo.arguments.contains("--check-installation") {
       for resource in [
-        "SimulatorFrameworkBridge-iOS", "SimulatorFrameworkBridge-tvOS",
+        "SimulatorFrameworkBridge-iOS", "SimulatorFrameworkBridge-tvOS", "SimulatorFrameworkBridge-watchOS",
         "libShimulator-iOS.dylib", "libShimulator-macOS.dylib",
         "ReplHost.app", "IDBAPI.swiftinterface",
       ] {
