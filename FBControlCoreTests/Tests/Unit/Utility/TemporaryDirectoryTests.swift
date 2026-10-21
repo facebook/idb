@@ -54,6 +54,16 @@ struct TemporaryDirectoryTests {
     #expect(!exists(url))
   }
 
+  /// A private directory of the caller's own, so it is safe to use as `TMPDIR`.
+  @Test
+  func userDirectoryPath_IsADirectoryOnlyTheCallerCanUse() throws {
+    let path = try #require(TemporaryDirectory.userDirectoryPath())
+    let attributes = try FileManager.default.attributesOfItem(atPath: path)
+    #expect(attributes[.type] as? FileAttributeType == .typeDirectory)
+    #expect((attributes[.ownerAccountID] as? NSNumber)?.uint32Value == getuid())
+    #expect((attributes[.posixPermissions] as? NSNumber)?.intValue == 0o700)
+  }
+
   /// The plain form of the subdirectory walk: the unique file inside each immediate subdirectory.
   @Test
   func filesInSubdirectoriesOf_ReturnsTheUniqueFileInEachSubdirectory() throws {

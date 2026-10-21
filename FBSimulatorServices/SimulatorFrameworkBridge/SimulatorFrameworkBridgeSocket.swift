@@ -5,7 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-import Darwin
+import FBControlCore
 import FBSimulatorBridgeProtocol
 import FBSimulatorControl
 import Foundation
@@ -23,25 +23,11 @@ enum SimulatorFrameworkBridgeSocket {
   /// Private rather than `/tmp` because a socket name anyone can predict is only safe if nobody else
   /// can bind it first.
   static let directory: String = {
-    let base = userTemporaryDirectory()
+    // From `confstr`, not `$TMPDIR`, which a harness may set to anything: it can overrun `sun_path`, be
+    // world-writable, or differ between two host processes so each spawns its own guest instead of sharing one.
+    let base = TemporaryDirectory.userDirectoryPath() ?? "/tmp"
     return "\(base.hasSuffix("/") ? String(base.dropLast()) : base)/idb-sfb-v\(BridgeRequest.currentVersion)"
   }()
-
-  /// From `confstr`, not `$TMPDIR`: `NSTemporaryDirectory()` honours an environment variable a harness
-  /// may set to anything — it can overrun `sun_path`, be world-writable, or differ between two host
-  /// processes so each spawns its own guest instead of sharing one. `confstr` answers from the uid.
-  private static func userTemporaryDirectory() -> String {
-    let size = confstr(_CS_DARWIN_USER_TEMP_DIR, nil, 0)
-    guard size > 0 else {
-      return "/tmp"
-    }
-    var buffer = [CChar](repeating: 0, count: size)
-    guard confstr(_CS_DARWIN_USER_TEMP_DIR, &buffer, size) == size else {
-      return "/tmp"
-    }
-    // `confstr` reports a size that includes the terminator, which has to come off before decoding.
-    return String(decoding: buffer.prefix { $0 != 0 }.map { UInt8(bitPattern: $0) }, as: UTF8.self)
-  }
 
   /// Called before a spawn because `bind` does not create intermediate directories. The mode is set
   /// explicitly every time: `createDirectory` honours `attributes` only when it creates, and on the

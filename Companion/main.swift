@@ -14,6 +14,14 @@ import Foundation
 import IDBConcurrency
 import IDBTelemetry
 
+// A companion can outlive its launcher's `TMPDIR`, so it uses the user's own temporary directory unless the launcher
+// names one in `IDB_COMPANION_TMPDIR`. Set before anything reads `TMPDIR`.
+if let temporaryDirectory = ProcessInfo.processInfo.environment["IDB_COMPANION_TMPDIR"].flatMap({ $0.isEmpty ? nil : $0 })
+  ?? TemporaryDirectory.userDirectoryPath()
+{
+  setenv("TMPDIR", temporaryDirectory, 1)
+}
+
 // @oss-disable
   // @oss-disable
 // @oss-disable

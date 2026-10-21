@@ -41,6 +41,8 @@ The `idb_companion` is a `gRPC` server, written in Swift, that runs on macOS. It
 
 When the `idb_companion` acts as `gRPC` server, it does so for a *single* iOS target (a device or simulator).
 
+A companion can outlive whatever started it, so it does not keep an inherited `TMPDIR`: it stages temporary files in the user's own temporary directory (`getconf DARWIN_USER_TEMP_DIR`), or in the directory named by the `IDB_COMPANION_TMPDIR` environment variable if that is set.
+
 Additionally, the `idb_companion` has some commands that are deliberately unavailable from the python CLI, these operations are related to iOS Device management or operations on the lifecycle of a Simulator.
 
 ## Connections

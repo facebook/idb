@@ -39,6 +39,21 @@ public struct TemporaryDirectory: Sendable {
     self.init(rootDirectory: temporaryDirectory, logger: logger)
   }
 
+  /// The user's own temporary directory, which depends only on the uid, not on `TMPDIR`. `nil` if the system does not
+  /// report one.
+  public static func userDirectoryPath() -> String? {
+    let size = confstr(_CS_DARWIN_USER_TEMP_DIR, nil, 0)
+    guard size > 0 else {
+      return nil
+    }
+    var buffer = [CChar](repeating: 0, count: size)
+    guard confstr(_CS_DARWIN_USER_TEMP_DIR, &buffer, size) == size else {
+      return nil
+    }
+    // `confstr` reports a size that includes the terminator, which has to come off before decoding.
+    return String(decoding: buffer.prefix { $0 != 0 }.map { UInt8(bitPattern: $0) }, as: UTF8.self)
+  }
+
   private static func uniqueTemporaryDirectoryURL() -> URL {
     let base = ProcessInfo.processInfo.environment["TMPDIR"] ?? NSTemporaryDirectory()
     return URL(fileURLWithPath: base)
