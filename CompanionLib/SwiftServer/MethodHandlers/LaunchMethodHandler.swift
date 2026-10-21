@@ -5,21 +5,25 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-import FBControlCore
+@preconcurrency import FBControlCore
+import FBDeviceControl
 import Foundation
 import GRPCCore
 import IDBConcurrency
 import IDBGRPCSwift
 
+/// Launches an application and, for a waiting client, streams its output until the app exits,
+/// ending the response after the client sends Stop or the exit is observed.
 struct LaunchMethodHandler: @unchecked Sendable {
 
   let target: CompanionTarget
   let commandExecutor: IDBCommandExecutor
 
   func handle(requestStream: RequestStreamReader<Idb_LaunchRequest>, responseStream: RPCWriter<Idb_LaunchResponse>, context: ServerContext) async throws {
-    var consumers: [any DataConsumerLifecycle] = []
+    var consumers: [ResponseForwardingConsumer] = []
+    defer { consumers.forEach { $0.stopForwarding() } }
 
-    var request = try await requestStream.requiredNext()
+    let request = try await requestStream.requiredNext()
     guard case let .start(start) = request.control else {
       throw RPCError(code: .failedPrecondition, message: "Application not started yet")
     }
@@ -70,20 +74,70 @@ struct LaunchMethodHandler: @unchecked Sendable {
 
     guard start.waitFor else { return }
 
-    request = try await requestStream.requiredNext()
-    guard case .stop = request.control else {
-      throw RPCError(code: .failedPrecondition, message: "Application has already started")
-    }
+    try await Self.waitForCompletion(
+      application: launchedApp,
+      requestStream: requestStream,
+      consumers: consumers,
+      cancellation: context.cancellation)
+  }
 
-    try await launchedApp.terminate()
-
-    try await withThrowingTaskGroup(of: Void.self) { group in
-      for consumer in consumers {
+  static func waitForCompletion(
+    application: any LaunchedApplication,
+    requestStream: RequestStreamReader<Idb_LaunchRequest>,
+    consumers: [any DataConsumerLifecycle],
+    cancellation: ServerContext.RPCCancellationHandle
+  ) async throws {
+    try await withRPCCancellation(cancellation) {
+      let completion = try await withThrowingTaskGroup(of: Completion.self) { group in
         group.addTask {
-          try await consumer.awaitFinishedConsuming()
+          let request = try await requestStream.requiredNext()
+          guard case .stop = request.control else {
+            throw RPCError(code: .failedPrecondition, message: "Application has already started")
+          }
+          return .stopped
         }
+        group.addTask {
+          do {
+            try await application.waitForTermination()
+            return .exited
+          } catch DeviceApplicationError.awaitingTerminationUnsupported {
+            return .observerUnsupported
+          } catch is CancellationError {
+            // Only this handler calls `application.terminate()`, after this group finishes, so
+            // while the loop below waits, this is RPC cancellation; a `terminate()` during the wait
+            // would also land here and leave the handler waiting for Stop. RPC cancellation can
+            // arrive together with a Stop the client already sent, so the request stream decides
+            // whether the app must be stopped.
+            return .observerCancelled
+          }
+        }
+        defer { group.cancelAll() }
+        while let completion = try await group.next() {
+          switch completion {
+          case .stopped, .exited:
+            return completion
+          case .observerUnsupported, .observerCancelled:
+            continue
+          }
+        }
+        throw RPCError(code: .internalError, message: "Application launch ended without Stop or exit")
       }
-      try await group.waitForAll()
+      // Terminate the app on Stop before honouring cancellation, since a client can disconnect
+      // right after sending Stop
+      if case .stopped = completion {
+        try await application.terminate()
+      }
+      try Task.checkCancellation()
+
+      try await withThrowingTaskGroup(of: Void.self) { group in
+        for consumer in consumers {
+          group.addTask {
+            try await consumer.awaitFinishedConsuming()
+          }
+        }
+        try await group.waitForAll()
+      }
+      try Task.checkCancellation()
     }
   }
 
@@ -122,7 +176,7 @@ struct LaunchMethodHandler: @unchecked Sendable {
     return interpolatedEnvironment
   }
 
-  static func pipeOutput(interface: Idb_ProcessOutput.Interface, send: @escaping (Idb_LaunchResponse) throws -> Void) -> (DataConsumer & DataConsumerLifecycle) {
+  static func pipeOutput(interface: Idb_ProcessOutput.Interface, send: @escaping (Idb_LaunchResponse) throws -> Void) -> ResponseForwardingConsumer {
     return ResponseForwardingConsumer { data in
       let response = Idb_LaunchResponse.with {
         $0.output.data = data
@@ -130,5 +184,12 @@ struct LaunchMethodHandler: @unchecked Sendable {
       }
       try send(response)
     }
+  }
+
+  private enum Completion: Sendable {
+    case stopped
+    case exited
+    case observerUnsupported
+    case observerCancelled
   }
 }

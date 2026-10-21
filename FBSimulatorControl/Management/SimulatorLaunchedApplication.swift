@@ -87,6 +87,7 @@ public final class SimulatorLaunchedApplication: LaunchedApplication, CustomStri
   private let terminator: ProcessTerminator
   private let state: TerminationState
   private let terminationTask: Task<Void, Never>
+  private let terminationFinished: AsyncEvent<Void>
 
   // MARK: - LaunchedApplication Protocol
 
@@ -94,8 +95,13 @@ public final class SimulatorLaunchedApplication: LaunchedApplication, CustomStri
     configuration.bundleID
   }
 
+  /// Waits for the process to exit and its output to drain. Cancelling a wait throws
+  /// `CancellationError`, even after the exit, and leaves the exit observer and output drain
+  /// running for other waiters.
   public func waitForTermination() async throws {
-    await terminationTask.value
+    try Task.checkCancellation()
+    try await terminationFinished.wait()
+    try Task.checkCancellation()
     // An explicit `terminate()` is reported as a cancellation rather than as an observed exit.
     if state.wasExplicitlyTerminated {
       throw CancellationError()
@@ -125,9 +131,11 @@ public final class SimulatorLaunchedApplication: LaunchedApplication, CustomStri
     processIdentifier: pid_t
   ) {
     let state = TerminationState()
+    let terminationFinished = AsyncEvent<Void>()
     self.configuration = configuration
     self.processIdentifier = processIdentifier
     self.state = state
+    self.terminationFinished = terminationFinished
     self.terminator = ProcessTerminator(
       processFetcher: ProcessFetcher(),
       workQueue: simulator.workQueue,
@@ -140,6 +148,7 @@ public final class SimulatorLaunchedApplication: LaunchedApplication, CustomStri
       for output in outputs {
         await output.finish()
       }
+      terminationFinished.happen()
     }
   }
 

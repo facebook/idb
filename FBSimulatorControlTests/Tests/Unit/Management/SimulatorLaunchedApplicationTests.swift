@@ -83,6 +83,86 @@ final class SimulatorLaunchedApplicationTests: XCTestCase {
     XCTAssertTrue(output.finishedConsuming.hasHappened)
   }
 
+  func testCancellingOneWaitLeavesTheProcessAndAnotherWaitRunning() async throws {
+    let process = try spawnBlockedProcess()
+    let application = try await launchedApplication(forProcess: process)
+    let otherWait = Task { try await application.waitForTermination() }
+    let cancelledWait = Task { try await application.waitForTermination() }
+    defer {
+      otherWait.cancel()
+      cancelledWait.cancel()
+    }
+
+    cancelledWait.cancel()
+    try await expectFinish("The cancelled exit wait", state: { Self.describe(application, process) }) {
+      do {
+        try await cancelledWait.value
+        XCTFail("Expected the cancelled wait to fail")
+      } catch {
+        XCTAssertTrue(error is CancellationError, "Expected a CancellationError, got \(error)")
+      }
+    }
+    XCTAssertTrue(process.isRunning)
+    XCTAssertFalse(output.finishedConsuming.hasHappened)
+
+    process.terminate()
+    try await otherWait.value
+    XCTAssertTrue(output.finishedConsuming.hasHappened)
+  }
+
+  func testACancelledWaitDoesNotSucceedAfterTheProcessExits() async throws {
+    let process = try spawnBlockedProcess()
+    let application = try await launchedApplication(forProcess: process)
+    process.terminate()
+    try await application.waitForTermination()
+
+    let cancelledWait = Task {
+      withUnsafeCurrentTask { $0?.cancel() }
+      try await application.waitForTermination()
+    }
+    do {
+      try await cancelledWait.value
+      XCTFail("Expected the cancelled wait to fail even after exit")
+    } catch {
+      XCTAssertTrue(error is CancellationError, "Expected a CancellationError, got \(error)")
+    }
+  }
+
+  func testObservedExitDeliversTheLastOutputBytes() async throws {
+    let applicationOutput = try FileBackedOutput.fifo(draining: output)
+    let writer = try XCTUnwrap(FileHandle(forWritingAtPath: applicationOutput.path))
+    defer { try? writer.close() }
+    let input = Pipe()
+    let process = Process()
+    process.executableURL = URL(fileURLWithPath: "/bin/cat")
+    process.standardInput = input
+    process.standardOutput = writer
+    process.standardError = FileHandle.nullDevice
+    try process.run()
+    spawned.append(process)
+
+    let application = SimulatorLaunchedApplication(
+      simulator: simulator,
+      configuration: ApplicationLaunchConfiguration(
+        bundleID: "com.facebook.test.launched",
+        bundleName: nil,
+        arguments: [],
+        environment: [:],
+        waitForDebugger: false,
+        launchMode: .failIfRunning),
+      outputs: [applicationOutput],
+      processIdentifier: process.processIdentifier)
+    try writer.close()
+
+    let bytes = Data("final app output\n".utf8)
+    try input.fileHandleForWriting.write(contentsOf: bytes)
+    try input.fileHandleForWriting.close()
+    try await application.waitForTermination()
+
+    XCTAssertTrue(output.finishedConsuming.hasHappened)
+    XCTAssertEqual(output.data(), bytes)
+  }
+
   /// Fails the test, with `state()`, if `operation` is still running after `seconds`, rather than
   /// letting it run into the bundle's time allowance, which restarts the bundle and says nothing about
   /// what hung. An operation that overruns is left running.
