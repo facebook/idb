@@ -9,6 +9,7 @@ import json
 import os
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
+from dataclasses import replace
 from unittest import mock
 
 from idb.common.companion import (
@@ -85,6 +86,30 @@ class CompanionTests(TestCase):
             )
             self.assertEqual(port, 1234)
             self.assertIsNone(swift_port)
+
+    async def test_spawn_tcp_server_with_tmp_path(self) -> None:
+        async with self._mock_all_the_things(
+            {"hostname": "myHost", "grpc_port": 1234}
+        ) as exec_mock:
+            await self.spawner.spawn_tcp_server(
+                config=replace(self.companion_server_config, tmp_path="/some/tmp"),
+                port=1234,
+            )
+            exec_mock.assert_called_once_with(
+                "idb_path",
+                "--udid",
+                self.udid,
+                "--grpc-port",
+                "1234",
+                "--only",
+                "simulator",
+                env={
+                    **os.environ,
+                    "IDB_COMPANION_TMPDIR": "/some/tmp",
+                    "TMPDIR": "/some/tmp",
+                },
+                **self.exec_mock_common_args,
+            )
 
     async def test_spawn_tcp_server_auto_bind(self) -> None:
         async with self._mock_all_the_things(

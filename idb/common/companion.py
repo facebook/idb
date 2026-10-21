@@ -277,6 +277,9 @@ class Companion(CompanionBase):
 
         env = dict(os.environ)
         if config.tmp_path:
+            # Companions ignore an inherited TMPDIR in favour of IDB_COMPANION_TMPDIR;
+            # older ones read only TMPDIR.
+            env["IDB_COMPANION_TMPDIR"] = config.tmp_path
             env["TMPDIR"] = config.tmp_path
         if port_env_variables:
             env.update(port_env_variables)
