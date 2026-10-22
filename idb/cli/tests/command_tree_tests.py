@@ -522,10 +522,20 @@ class DefaultCompanionPathTest(unittest.TestCase):
     """
 
     def _companion_path(
-        self, *, platform: str, bundled: bool, on_path: str | None
+        self,
+        *,
+        platform: str,
+        bundled: bool,
+        on_path: str | None,
+        override: str | None = None,
     ) -> str | None:
         with (
             mock.patch.object(sys, "platform", platform),
+            mock.patch.dict(
+                os.environ,
+                {"IDB_COMPANION_PATH": override} if override is not None else {},
+                clear=True,
+            ),
             mock.patch.object(
                 os.path,
                 "isfile",
@@ -538,6 +548,44 @@ class DefaultCompanionPathTest(unittest.TestCase):
             ),
         ):
             return get_default_companion_path()
+
+    def test_environment_override_wins_over_bundled_and_path_companions(self) -> None:
+        self.assertEqual(
+            self._companion_path(
+                platform="darwin",
+                bundled=True,
+                on_path="/opt/homebrew/bin/idb_companion",
+                override="/custom/idb_companion",
+            ),
+            "/custom/idb_companion",
+        )
+
+    def test_empty_environment_override_keeps_the_host_default(self) -> None:
+        self.assertEqual(
+            self._companion_path(
+                platform="darwin", bundled=True, on_path=None, override=""
+            ),
+            BUNDLED_COMPANION_PATH,
+        )
+
+    def test_explicit_flag_wins_over_environment_override(self) -> None:
+        with (
+            mock.patch.object(sys, "platform", "darwin"),
+            mock.patch.dict(
+                os.environ, {"IDB_COMPANION_PATH": "/custom/idb_companion"}
+            ),
+        ):
+            graph = build_command_graph()
+            self.assertEqual(
+                graph.parser.parse_args(["list-targets"]).companion_path,
+                "/custom/idb_companion",
+            )
+            self.assertEqual(
+                graph.parser.parse_args(
+                    ["--companion-path", "/explicit/idb_companion", "list-targets"]
+                ).companion_path,
+                "/explicit/idb_companion",
+            )
 
     def test_a_bundled_companion_wins_over_one_on_the_path(self) -> None:
         self.assertEqual(
@@ -573,6 +621,7 @@ class DefaultCompanionPathTest(unittest.TestCase):
                         platform=platform,
                         bundled=True,
                         on_path="/anywhere/idb_companion",
+                        override="/custom/idb_companion",
                     )
                 )
 

@@ -183,6 +183,8 @@ CONVENTIONAL_COMPANION_PATH = "/usr/local/bin/idb_companion"
 def get_default_companion_path() -> str | None:
     if sys.platform != "darwin":
         return None
+    if companion_path := os.environ.get("IDB_COMPANION_PATH"):
+        return companion_path
     if os.path.isfile(BUNDLED_COMPANION_PATH):
         return BUNDLED_COMPANION_PATH
     return shutil.which(COMPANION_BINARY_NAME) or CONVENTIONAL_COMPANION_PATH
@@ -225,7 +227,8 @@ def add_root_arguments(parser: argparse.ArgumentParser) -> None:
         "--companion-path",
         type=str,
         default=get_default_companion_path(),
-        help="The path to the idb companion binary. This is only valid when running on macOS platforms",
+        help="The path to the idb companion binary. This is only valid when running on macOS platforms. "
+        "Can also be set with the IDB_COMPANION_PATH environment variable",
     )
     parser.add_argument(
         "--companion-tls",
