@@ -34,7 +34,7 @@ import tempfile
 import threading
 import time
 import unittest
-from collections.abc import AsyncIterator, Mapping, Sequence
+from collections.abc import AsyncIterator, Collection, Mapping, Sequence
 from contextlib import AbstractAsyncContextManager, asynccontextmanager, ExitStack
 from dataclasses import dataclass, replace
 from pathlib import Path
@@ -1567,11 +1567,13 @@ def _center(element: dict[str, Any]) -> tuple[int, int]:
     )
 
 
-def _permission_prompt_deny_button(document: Any) -> dict[str, Any] | None:
+def _permission_prompt_button(
+    document: Any, labels: Collection[str]
+) -> dict[str, Any] | None:
     for element in _elements(document):
         if (
             element.get("role") == "AXButton"
-            and _label(element) in PERMISSION_PROMPT_DENY_LABELS
+            and _label(element) in labels
             and _has_area(element)
         ):
             return element
@@ -2126,29 +2128,48 @@ class IdbEndToEndTestCase(unittest.IsolatedAsyncioTestCase):
         anything else that used the simulator before -- covers everything a
         later test reads. Denying grants nothing.
         """
+        await self._setup_press_prompt_until_gone(
+            PERMISSION_PROMPT_DENY_LABELS,
+            "permission_prompt_denied",
+            "A permission prompt was not dismissed",
+        )
+
+    async def setup_answer_permission_prompt(self, answer: str) -> None:
+        """Press `answer` on the permission prompt until the prompt is gone.
+
+        SpringBoard does not take every tap on a prompt: it can stay up after
+        one, covering what the test reads next.
+        """
+        await self._setup_press_prompt_until_gone(
+            frozenset({answer}),
+            "permission_prompt_answered",
+            f"The permission prompt stayed up after pressing {answer!r}",
+        )
+
+    async def _setup_press_prompt_until_gone(
+        self, labels: Collection[str], event: str, failure: str
+    ) -> None:
         args = ("ui", "describe-all", "--json")
 
-        async def deny() -> None:
+        async def press() -> None:
             completed = await self.setup_idb(*args, check=False)
             if completed.returncode != 0:
                 if worth_repeating(args, completed):
                     raise NotReady(completed.error_text.strip())
                 self.fail_or_skip_for("setup: " + " ".join(args), completed)
             document = json.loads(completed.text)
-            button = _permission_prompt_deny_button(document)
+            button = _permission_prompt_button(document, labels)
             if button is None:
                 return
-            labels = [_label(element) for element in _elements(document)]
-            labels = [label for label in labels if label]
+            shown = [_label(element) for element in _elements(document)]
+            shown = [label for label in shown if label]
             if self.recording is not None:
-                self.recording.event("permission_prompt_denied", labels=labels)
+                self.recording.event(event, labels=shown)
             x, y = _center(button)
             await self.setup_idb("ui", "tap", str(x), str(y))
-            raise NotReady(f"a permission prompt showed {labels}")
+            raise NotReady(f"a permission prompt showed {shown}")
 
-        await self.wait_or_fail(
-            "A permission prompt was not dismissed", UI_UPDATE_TIMEOUT_SECONDS, deny
-        )
+        await self.wait_or_fail(failure, UI_UPDATE_TIMEOUT_SECONDS, press)
 
     async def setup_web_origin(
         self,

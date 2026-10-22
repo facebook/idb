@@ -2128,10 +2128,19 @@ PHOTOS_PROMPT = screen(
     ("AXButton", "Don’t Allow", 630),
 )
 
+LOCATION_PROMPT = screen(
+    ("AXStaticText", "Allow “ReplHost” to use your location?", 265),
+    ("AXButton", "Allow Once", 534),
+    ("AXButton", "Allow While Using App", 582),
+    ("AXButton", "Don’t Allow", 630),
+)
+
 
 class PromptCaseStub(CommandTestCaseStub):
     setup_idb = IdbEndToEndTestCase.setup_idb
     setup_deny_permission_prompts = IdbEndToEndTestCase.setup_deny_permission_prompts
+    setup_answer_permission_prompt = IdbEndToEndTestCase.setup_answer_permission_prompt
+    _setup_press_prompt_until_gone = IdbEndToEndTestCase._setup_press_prompt_until_gone
 
     def __init__(self) -> None:
         super().__init__()
@@ -2142,6 +2151,15 @@ class PermissionPromptTests(unittest.IsolatedAsyncioTestCase):
     async def deny(
         self, answers: Sequence[Completed]
     ) -> tuple[list[list[str]], mock.Mock]:
+        return await self.press(
+            answers, lambda case: case.setup_deny_permission_prompts()
+        )
+
+    async def press(
+        self,
+        answers: Sequence[Completed],
+        action: Callable[[PromptCaseStub], Awaitable[None]],
+    ) -> tuple[list[list[str]], mock.Mock]:
         case = PromptCaseStub()
         recording = mock.Mock(spec=Recording)
         case.recording = recording
@@ -2150,7 +2168,7 @@ class PermissionPromptTests(unittest.IsolatedAsyncioTestCase):
             mock.patch.object(harness, "run", new=run),
             mock.patch.object(harness, "POLL_INTERVAL_SECONDS", new=0),
         ):
-            await case.setup_deny_permission_prompts()
+            await action(case)
         commands = [
             call.args[0][call.args[0].index("ui") :] for call in run.await_args_list
         ]
@@ -2190,6 +2208,39 @@ class PermissionPromptTests(unittest.IsolatedAsyncioTestCase):
         )
 
         self.assertEqual(commands[1], ["ui", "tap", "207", "654"])
+
+    async def test_an_answer_is_pressed_again_while_the_prompt_stays_up(
+        self,
+    ) -> None:
+        tapped = Completed(0, b"", b"")
+        commands, recording = await self.press(
+            [LOCATION_PROMPT, tapped, LOCATION_PROMPT, tapped, FIXTURE_SCREEN],
+            lambda case: case.setup_answer_permission_prompt("Allow While Using App"),
+        )
+
+        self.assertEqual(
+            commands,
+            [
+                ["ui", "describe-all", "--json"],
+                ["ui", "tap", "207", "606"],
+                ["ui", "describe-all", "--json"],
+                ["ui", "tap", "207", "606"],
+                ["ui", "describe-all", "--json"],
+            ],
+        )
+        self.assertEqual(
+            [call.args[0] for call in recording.event.call_args_list],
+            ["permission_prompt_answered", "permission_prompt_answered"],
+        )
+
+    async def test_an_answered_prompt_is_not_pressed_again(self) -> None:
+        commands, recording = await self.press(
+            [FIXTURE_SCREEN],
+            lambda case: case.setup_answer_permission_prompt("Allow While Using App"),
+        )
+
+        self.assertEqual(commands, [["ui", "describe-all", "--json"]])
+        recording.event.assert_not_called()
 
 
 class CompanionLifecycleTests(unittest.TestCase):

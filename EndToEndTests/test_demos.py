@@ -1145,6 +1145,9 @@ class SeededLibraryDemos(InjectedSwiftCase):
     )
     async def test_seed_photos_and_a_location(self) -> None:
         photos = self.write_photos()
+        # SpringBoard holds the location prompt across the app's termination, so
+        # one this test leaves up would cover every later demo.
+        self.addAsyncCleanup(self.setup_deny_permission_prompts)
         # The library and location are cleared rather than restored: no test
         # relies on the simulator's sample photos or where it is.
         self.addAsyncCleanup(self.setup_idb, "photos", "clear")
@@ -1197,6 +1200,7 @@ class SeededLibraryDemos(InjectedSwiftCase):
 
         await self.wait_for_label(ALLOW_LOCATION)
         await self.idb("ui", "tap", ALLOW_LOCATION, step="Answer the location prompt")
+        await self.setup_answer_permission_prompt(ALLOW_LOCATION)
         self.note(
             "The app asked to use the location, and idb pressed the button on "
             "the system's prompt by its label."
