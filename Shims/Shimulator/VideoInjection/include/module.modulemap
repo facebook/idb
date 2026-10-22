@@ -1,0 +1,4 @@
+module ShimulatorVideoInjectionAVFoundation {
+  header "../ShimulatorVideoInjectionAVFoundation.h"
+  export *
+}

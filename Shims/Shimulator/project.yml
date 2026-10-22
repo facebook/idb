@@ -139,6 +139,25 @@ targets:
         MACOSX_DEPLOYMENT_TARGET: "15.0"
         PRODUCT_MODULE_NAME: ReplRuntimeProbe
 
+  ShimulatorVideoInjectionAVFoundation:
+    type: library.static
+    platform: iOS
+    deploymentTarget: "17.0"
+    sources:
+      - path: VideoInjection/ShimulatorVideoInjectionAVFoundation.m
+      - path: VideoInjection/ShimulatorVideoInjectionAVFoundation.h
+        headerVisibility: public
+    settings:
+      base:
+        SDKROOT: iphonesimulator
+        PRODUCT_MODULE_NAME: ShimulatorVideoInjectionAVFoundation
+        DEFINES_MODULE: "YES"
+        CLANG_ENABLE_OBJC_ARC: YES
+    dependencies:
+      - sdk: AVFoundation.framework
+      - sdk: CoreMedia.framework
+      - sdk: Foundation.framework
+
   Shimulator-iOS:
     type: library.dynamic
     platform: iOS
