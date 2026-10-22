@@ -158,6 +158,33 @@ targets:
       - sdk: CoreMedia.framework
       - sdk: Foundation.framework
 
+  ShimulatorVideoInjectionCamera:
+    type: library.static
+    platform: iOS
+    deploymentTarget: "17.0"
+    sources:
+      - path: VideoInjection/CaptureSwizzles.swift
+      - path: VideoInjection/VideoInjectionBootstrap.swift
+      - path: VideoInjection/VirtualCamera.swift
+    settings:
+      base:
+        SDKROOT: iphonesimulator
+        PRODUCT_MODULE_NAME: ShimulatorVideoInjectionCamera
+        SWIFT_VERSION: "5.0"
+        SWIFT_INCLUDE_PATHS: $(SRCROOT)/VideoInjection/include
+    dependencies:
+      - target: ShimulatorProtocol-iOS
+      - target: ShimulatorVideoInjectionAVFoundation
+      - target: ShimulatorVideoInjectionCore
+      - sdk: Accelerate.framework
+      - sdk: AVFoundation.framework
+      - sdk: CoreImage.framework
+      - sdk: CoreMedia.framework
+      - sdk: CoreVideo.framework
+      - sdk: Foundation.framework
+      - sdk: Metal.framework
+      - sdk: QuartzCore.framework
+
   Shimulator-iOS:
     type: library.dynamic
     platform: iOS

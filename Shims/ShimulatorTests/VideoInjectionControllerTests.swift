@@ -16,6 +16,7 @@ final class VideoInjectionControllerTests: XCTestCase {
     struct Played: Equatable {
       let bytes: Data
       let path: String
+      let frontPath: String?
       let loops: Bool
       let generation: Int64
     }
@@ -46,7 +47,7 @@ final class VideoInjectionControllerTests: XCTestCase {
       }
     }
 
-    func play(fileURL: URL, loops: Bool, generation: Int64) throws {
+    func play(fileURL: URL, frontFileURL: URL?, loops: Bool, generation: Int64) throws {
       let bytes = try Data(contentsOf: fileURL)
       try state.withLock { state in
         if state.rejectPlay {
@@ -54,7 +55,7 @@ final class VideoInjectionControllerTests: XCTestCase {
           throw CocoaError(.fileReadCorruptFile)
         }
         state.played.append(
-          Played(bytes: bytes, path: fileURL.path, loops: loops, generation: generation))
+          Played(bytes: bytes, path: fileURL.path, frontPath: frontFileURL?.path, loops: loops, generation: generation))
         state.progress = VideoInjectionProgress(
           generation: generation, started: false, finished: false, failed: false)
       }
@@ -82,6 +83,20 @@ final class VideoInjectionControllerTests: XCTestCase {
     XCTAssertEqual(played.bytes, Data("frames".utf8))
     XCTAssertTrue(played.loops)
     XCTAssertEqual(played.generation, 0)
+  }
+
+  func testStartPassesTheFrontVideo() throws {
+    let engine = FakeEngine()
+    let back = try parameters(Data("back".utf8))
+    _ = try VideoInjectionController(engine: engine).start(
+      VideoInjectionParameters(path: back.path, frontPath: "/tmp/front.mov", loop: false))
+    XCTAssertEqual(engine.played.map(\.frontPath), ["/tmp/front.mov"])
+  }
+
+  func testFrontPathIsOptionalOnTheWire() throws {
+    let decoded = try JSONDecoder().decode(VideoInjectionParameters.self, from: Data(#"{"path":"/a.mov","loop":true}"#.utf8))
+    XCTAssertEqual(decoded, VideoInjectionParameters(path: "/a.mov", loop: true))
+    XCTAssertNil(decoded.frontPath)
   }
 
   func testPollReportsTheCameraForItsOwnGeneration() throws {

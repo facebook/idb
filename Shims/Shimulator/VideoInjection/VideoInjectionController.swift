@@ -24,8 +24,9 @@ public struct VideoInjectionProgress: Equatable, Sendable {
 
 /// The virtual camera the controller drives; the shim's is `VirtualCamera`.
 public protocol VideoInjectionEngine {
-  /// Throws when the file holds no playable video.
-  func play(fileURL: URL, loops: Bool, generation: Int64) throws
+  /// Plays `fileURL` on the back camera, and on the front one unless `frontFileURL` is given.
+  /// Throws when a file holds no playable video.
+  func play(fileURL: URL, frontFileURL: URL?, loops: Bool, generation: Int64) throws
   /// Returns the camera to its idle pattern.
   func clear()
   func pollProgress() -> VideoInjectionProgress
@@ -47,7 +48,9 @@ public final class VideoInjectionController: ShimulatorMethodHandler {
   public func start(_ parameters: VideoInjectionParameters) throws -> Admission {
     let generation = nextGeneration
     nextGeneration += 1
-    try engine.play(fileURL: URL(fileURLWithPath: parameters.path), loops: parameters.loop, generation: generation)
+    try engine.play(
+      fileURL: URL(fileURLWithPath: parameters.path), frontFileURL: parameters.frontPath.map { URL(fileURLWithPath: $0) },
+      loops: parameters.loop, generation: generation)
     activeGeneration = generation
     return Admission(generation: generation)
   }
