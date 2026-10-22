@@ -119,6 +119,8 @@ class PermissionTests(IdbEndToEndTestCase):
         follows overturn a recorded denial rather than an undecided service.
         """
         await self.idb("ui", "tap", DENY_BUTTON, "--match-key", "AXLabel")
+        # SpringBoard can drop a tap on a prompt that has only just appeared.
+        await self.setup_deny_permission_prompts()
 
     async def request(self, service: str) -> None:
         await self.idb("ui", "tap", f"request-{service}", "--match-key", "AXUniqueId")
