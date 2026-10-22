@@ -774,7 +774,7 @@ final class DeliveredNotificationsServiceTests: XCTestCase {
   }
 }
 
-private final class DeliveredNotificationFixture: NSObject {
+final class DeliveredNotificationFixture: NSObject {
   @objc let request: UNNotificationRequest
   @objc let date: Date?
 

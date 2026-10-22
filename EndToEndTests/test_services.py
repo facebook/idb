@@ -13,7 +13,15 @@ import plistlib
 import uuid
 from typing import Any
 
-from .harness import GuestRPC, IdbEndToEndTestCase, NotReady, run, wait_until
+from .harness import (
+    GuestRPC,
+    IdbEndToEndTestCase,
+    NotReady,
+    reported_answers,
+    run,
+    tagged_answers,
+    wait_until,
+)
 
 NEWS_BUNDLE_ID = "com.apple.news"
 NOTIFICATION_TITLE = "Breaking"
@@ -52,26 +60,25 @@ class ServiceTests(IdbEndToEndTestCase):
             {
                 "action": "list",
                 "bundleID": bundle_id,
-                "ok": 1,
-                "error": None,
+                "ok": True,
                 "records": [],
             },
         )
-        self.assertIs(type(listed["ok"]), int)
+        self.assertIs(type(listed["ok"]), bool)
 
     async def test_guest_rpc_answers_reads_as_the_verbs_do(self) -> None:
         bundle_id = await self.install_fixture_app()
         cases = [
             (
-                {"health": {"_0": {"list": {"bundleID": bundle_id}}}},
+                {"health": {"action": {"list": {"bundleID": bundle_id}}}},
                 ("health", "list", bundle_id),
             ),
-            ({"dns": {"_0": {"list": {}}}}, ("dns", "list")),
-            ({"proxy": {"_0": {"list": {}}}}, ("proxy", "list")),
+            ({"dns": {"action": {"list": {}}}}, ("dns", "list")),
+            ({"proxy": {"action": {"list": {}}}}, ("proxy", "list")),
             (
                 {
                     "accessibility": {
-                        "_0": {"verb": "settings-get", "setting": "reduce-motion"}
+                        "action": {"deviceSettingRead": {"setting": "reduce-motion"}}
                     }
                 },
                 ("accessibility", "settings-get", "--setting", "reduce-motion"),
@@ -85,11 +92,11 @@ class ServiceTests(IdbEndToEndTestCase):
                             expected = json.loads((await self.guest(*arguments)).stdout)
                             result = await rpc.send_result(command)
                             # An accessibility answer has a field of its own; every
-                            # other service answers in `values`.
+                            # other service answers in `answers`.
                             if "accessibility" in command:
-                                answer = result.get("accessibility")
+                                answer = reported_answers(result)[0]
                             else:
-                                answer, expected = result["values"], [expected]
+                                answer, expected = reported_answers(result), [expected]
                             # Compared as JSON, where `1` and `true` differ.
                             self.assertEqual(
                                 json.dumps(answer, sort_keys=True),
@@ -107,20 +114,22 @@ class ServiceTests(IdbEndToEndTestCase):
                 async with GuestRPC(self, persistent=persistent) as rpc:
                     self.assertEqual(
                         await rpc.send(
-                            {"dns": {"_0": {"set": {"servers": ["192.0.2.10"]}}}}
+                            {"dns": {"action": {"set": {"servers": ["192.0.2.10"]}}}}
                         ),
                         [],
                     )
                     await self.assert_network(
                         "dns", {"ServerAddresses": ["192.0.2.10"]}
                     )
-                    self.assertEqual(await rpc.send({"dns": {"_0": {"clear": {}}}}), [])
+                    self.assertEqual(
+                        await rpc.send({"dns": {"action": {"clear": {}}}}), []
+                    )
                     await self.assert_network("dns", {})
                     self.assertEqual(
                         await rpc.send(
                             {
                                 "proxy": {
-                                    "_0": {
+                                    "action": {
                                         "set": {
                                             "host": "192.0.2.11",
                                             "port": 1080,
@@ -143,7 +152,7 @@ class ServiceTests(IdbEndToEndTestCase):
                         },
                     )
                     self.assertEqual(
-                        await rpc.send({"proxy": {"_0": {"clear": {}}}}), []
+                        await rpc.send({"proxy": {"action": {"clear": {}}}}), []
                     )
                     await self.assert_network("proxy", {"FTPPassive": 1})
                     for action, enabled, status in (
@@ -154,7 +163,7 @@ class ServiceTests(IdbEndToEndTestCase):
                             await rpc.send(
                                 {
                                     "notifications": {
-                                        "_0": {action: {"bundleID": bundle_id}}
+                                        "action": {action: {"bundleID": bundle_id}}
                                     }
                                 }
                             ),
@@ -184,12 +193,11 @@ class ServiceTests(IdbEndToEndTestCase):
                         ]
                         for command in commands:
                             result = await rpc.send_result(
-                                {"dynamicStore": {"_0": command}}
+                                {"dynamicStore": {"action": command}}
                             )
-                            self.assertEqual(result["values"], [])
-                            encoded = base64.b64decode(
-                                result["propertyList"], validate=True
-                            )
+                            ((kind, encoded_snapshot),) = tagged_answers(result)
+                            self.assertEqual(kind, "dynamicStoreSnapshot")
+                            encoded = base64.b64decode(encoded_snapshot, validate=True)
                             self.assertTrue(encoded.startswith(b"bplist00"))
                             self.assertEqual(plistlib.loads(encoded), snapshot)
                             self.assertEqual(
@@ -334,10 +342,11 @@ class ServiceTests(IdbEndToEndTestCase):
 
     async def test_guest_accessibility_settings_set_reads_back(self) -> None:
         arguments = ("--setting", "reduce-motion")
-        before = json.loads(
+        read = json.loads(
             (await self.guest("accessibility", "settings-get", *arguments)).text
         )
-        self.assertEqual(before.get("ok"), True)
+        self.assertEqual(list(read), ["setting"])
+        before = read["setting"]["response"]
         self.assertIs(type(before.get("enabled")), bool)
         self.addAsyncCleanup(
             self.guest,
@@ -361,7 +370,7 @@ class ServiceTests(IdbEndToEndTestCase):
             ).text
         )
 
-        self.assertEqual(changed, {"ok": True, "enabled": wanted})
+        self.assertEqual(changed, {"setting": {"response": {"enabled": wanted}}})
         self.assertEqual(
             json.loads(
                 (await self.guest("accessibility", "settings-get", *arguments)).text

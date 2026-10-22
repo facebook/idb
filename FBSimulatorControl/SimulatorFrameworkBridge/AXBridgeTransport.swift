@@ -20,10 +20,10 @@ package struct AXBridgeReply: Sendable, Equatable {
     self.frameBytes = frameBytes
   }
 
-  /// The answer a guest wrote on its own for `request`. One that does not decode is the guest's failure, as the
+  /// The answer a guest wrote on its own to `request`. One that does not decode is the guest's failure, as the
   /// transports raise it.
   package init(answer data: Data, for request: AXBridgeRequest) throws {
-    self.init(answer: try Self.decoding(request) { try BridgeAXAnswer.decode(data, as: request.answerKind) }, frameBytes: data.count)
+    self.init(answer: try Self.decoding(request) { try JSONDecoder().decode(BridgeAXAnswer.self, from: data) }, frameBytes: data.count)
   }
 
   /// Runs `decode`, raising an answer that does not decode as the guest's failure to answer `request`.

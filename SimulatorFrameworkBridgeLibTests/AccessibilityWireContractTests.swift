@@ -23,7 +23,7 @@ private enum GuestFrame<Success: Codable & Equatable & Sendable> {
     in frame: Data, for request: BridgeRequest, file: StaticString = #filePath, line: UInt = #line
   ) throws -> BridgeAXOutcome<Success> {
     let result = try BridgeResponse.decode(frame, for: request).result
-    XCTAssertEqual(result.values, [], "an accessibility answer is not carried as values", file: file, line: line)
+    XCTAssertEqual(result.answers.count, 1, "an accessibility request has one answer", file: file, line: line)
     let answer = try XCTUnwrap(result.accessibility, "the frame carries no accessibility answer", file: file, line: line)
     return try outcome(of: answer)
   }
@@ -291,7 +291,7 @@ final class AccessibilityWireContractTests: XCTestCase {
           displays: [.init(uniqueID: "main", displayID: 1)])))
 
     XCTAssertEqual(
-      AccessibilityService.handleRequest(parameters: ["verb": .string("hittest"), "clientType": .integer(0), "x": .string("left"), "y": .integer(2)]),
+      AccessibilityService.handleRequest(parameters: Data(#"{"verb":"hittest","clientType":0,"x":"left","y":2}"#.utf8)),
       .failure(BridgeAXFailure(message: "hittest requires numeric x and y", kind: .badRequest)))
   }
 
@@ -348,12 +348,12 @@ final class AccessibilityWireContractTests: XCTestCase {
       userInfo: [FBAXAccessibilityErrorKey: NSNumber(value: FBAXError.ipcTimeout.rawValue), NSLocalizedDescriptionKey: "runtime said no"])
     let request = BridgeAXRequest.read(pid: kAppPid, options: options(traversal: .singleFetch))
 
-    XCTAssertFalse(try failure(answer(request, as: BridgeAXTreeResponse.self)).outstanding)
+    XCTAssertNil(try failure(answer(request, as: BridgeAXTreeResponse.self)).outstanding)
     let refused = try failure(answer(request, as: BridgeAXTreeResponse.self))
 
     XCTAssertEqual(refused.kind, .applicationNotResponding)
     XCTAssertEqual(refused.pid, kAppPid)
-    XCTAssertTrue(refused.outstanding)
+    XCTAssertEqual(refused.outstanding, true)
     XCTAssertNotNil(refused.timeoutSeconds)
   }
 
@@ -399,7 +399,7 @@ final class AccessibilityWireContractTests: XCTestCase {
   }
 
   func testAFrameThatIsNotARequestIsABadRequest() throws {
-    let result = BridgeServices.undecodedAccessibility(["verb": .string("hittest"), "clientType": .integer(0), "x": .string("left"), "y": .integer(2)])
+    let result = BridgeServices.undecodedAccessibility(.missingPoint(.hitTest))
     let request = BridgeRequest(command: .accessibility(.hitTest(x: 0, y: 0, attributes: nil, clientType: .noClient)), id: "undecoded")
     let frame = try BridgeResponse(request: request, result: result).encoded()
 

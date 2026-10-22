@@ -34,20 +34,21 @@ struct SimulatorSettingsPublisherTests {
   @Test("The host requests the exclusive current-value-plus-changes source")
   func request() throws {
     let request = AXBridgeRequest.deviceSettingChanges("reduce-motion")
-    #expect(request.payload as NSDictionary == ["verb": "settings-observe", "setting": "reduce-motion"])
+    #expect(try requestJSON(request) == #"{"deviceSettingChanges":{"setting":"reduce-motion"}}"#)
     #expect(!request.mayRetry)
   }
 
   @Test("A combined snapshot preserves values and per-setting unavailability")
   func combinedSettings() throws {
-    let frame = try JSONSerialization.data(withJSONObject: [
-      "ok": true, "event": "snapshot", "setting": "state-settings", "enabled": false,
-      "settings": [
-        "button-shapes": ["ok": true, "enabled": true],
-        "reduce-transparency": ["ok": false, "error": "missing getter", "error_kind": "capability_unavailable"],
-        "increase-contrast": ["ok": true, "enabled": false],
-      ],
-    ])
+    let frame = try JSONEncoder().encode(
+      BridgeAXAnswer.settingSnapshot(
+        BridgeAXSettingSnapshot(
+          setting: "state-settings", enabled: false,
+          otherSettings: [
+            "button-shapes": .success(BridgeAXSettingResponse(enabled: true)),
+            "reduce-transparency": .failure(BridgeAXFailure(message: "missing getter", kind: .capabilityUnavailable)),
+            "increase-contrast": .success(BridgeAXSettingResponse(enabled: false)),
+          ])))
     let event = try SimulatorSettingsPublisher.event(from: answer(frame))
     #expect(
       event
@@ -60,10 +61,7 @@ struct SimulatorSettingsPublisherTests {
 
   @Test("A combined snapshot cannot silently omit an observed field")
   func incompleteCombinedSnapshot() throws {
-    let frame = try JSONSerialization.data(withJSONObject: [
-      "ok": true, "event": "snapshot", "setting": "state-settings", "enabled": false,
-      "settings": [:],
-    ])
+    let frame = try JSONEncoder().encode(BridgeAXAnswer.settingSnapshot(BridgeAXSettingSnapshot(setting: "state-settings", enabled: false)))
     #expect(throws: (any Error).self) { try SimulatorSettingsPublisher.event(from: answer(frame)) }
   }
 
@@ -91,7 +89,7 @@ struct SimulatorSettingsPublisherTests {
   @Test("An unknown setting before Reduce Motion does not terminate the stream")
   func unknownBeforeValid() async throws {
     let result = await events(frames: [
-      try snapshot(setting: "future-setting", enabled: "future-payload"),
+      try snapshot(setting: "future-setting", enabled: nil),
       try snapshot(enabled: false),
     ])
 
@@ -105,9 +103,9 @@ struct SimulatorSettingsPublisherTests {
   @Test("Repeated unknown settings remain non-terminal")
   func repeatedUnknownSettings() async throws {
     let result = await events(frames: [
-      try snapshot(setting: "future-setting", enabled: 1),
-      try snapshot(setting: "another-setting", enabled: ["value": true]),
-      try snapshot(setting: "future-setting", enabled: NSNull()),
+      try snapshot(setting: "future-setting", enabled: true),
+      try snapshot(setting: "another-setting", enabled: nil),
+      try snapshot(setting: "future-setting", enabled: nil),
       try snapshot(enabled: true),
     ])
 
@@ -120,7 +118,7 @@ struct SimulatorSettingsPublisherTests {
 
   @Test("A malformed known setting is a typed terminal failure")
   func malformedKnownSetting() async throws {
-    let result = await events(frames: [try snapshot(setting: "reduce-motion", enabled: "not-a-boolean")])
+    let result = await events(frames: [try snapshot(setting: "reduce-motion", enabled: nil)])
     guard case let .unavailable(.failed(reason)) = result.first else {
       Issue.record("expected a typed failed availability")
       return
@@ -145,13 +143,10 @@ struct SimulatorSettingsPublisherTests {
     }
   }
 
-  @Test("Unknown, missing, and malformed guest error kinds fail safely")
-  func unknownErrorKinds() async throws {
-    let kinds: [Any?] = ["future_error_kind", nil, 42]
-    for kind in kinds {
-      let result = await events(frames: [try failure(kind: kind, message: "guest failed")])
-      #expect(result == [.unavailable(.failed(reason: "guest failed"))])
-    }
+  @Test("A failure without a kind fails safely")
+  func missingErrorKind() async throws {
+    let result = await events(frames: [try failure(kind: nil, message: "guest failed")])
+    #expect(result == [.unavailable(.failed(reason: "guest failed"))])
   }
 
   @Test("A transient source startup failure is typed as not ready")
@@ -213,21 +208,12 @@ struct SimulatorSettingsPublisherTests {
     return events
   }
 
-  private func snapshot(setting: String = "reduce-motion", enabled: Any) throws -> Data {
-    try JSONSerialization.data(withJSONObject: [
-      "ok": true,
-      "event": "snapshot",
-      "setting": setting,
-      "enabled": enabled,
-    ])
+  private func snapshot(setting: String = "reduce-motion", enabled: Bool?) throws -> Data {
+    try JSONEncoder().encode(BridgeAXAnswer.settingSnapshot(BridgeAXSettingSnapshot(setting: setting, enabled: enabled)))
   }
 
-  private func failure(kind: Any?, message: String) throws -> Data {
-    var response: [String: Any] = ["ok": false, "error": message]
-    if let kind {
-      response["error_kind"] = kind
-    }
-    return try JSONSerialization.data(withJSONObject: response)
+  private func failure(kind: String?, message: String) throws -> Data {
+    try JSONEncoder().encode(BridgeAXAnswer.failure(BridgeAXFailure(message: message, kind: kind.flatMap(BridgeAXWire.ErrorKind.init(rawValue:)))))
   }
 }
 
@@ -236,4 +222,11 @@ private enum SettingsSourceFailure: LocalizedError, SimulatorFailureClassifying 
 
   var errorDescription: String? { "settings source is not ready" }
   var failureKind: SimulatorFailureKind { .notReady }
+}
+
+/// The request as JSON text with sorted keys, as a frame carries it.
+private func requestJSON(_ request: AXBridgeRequest) throws -> String {
+  let encoder = JSONEncoder()
+  encoder.outputFormatting = .sortedKeys
+  return String(decoding: try encoder.encode(request), as: UTF8.self)
 }

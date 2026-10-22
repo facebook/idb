@@ -6,6 +6,7 @@
  */
 
 #if !os(tvOS)
+import FBSimulatorBridgeProtocol
 import Foundation
 
 #if canImport(SimulatorFrameworkBridgeRuntime)
@@ -25,38 +26,31 @@ private func defaultApproveTypeIdentifiers() -> [String] {
 
 // MARK: - JSON output helpers
 
-private func jsonStringFromObject(obj: Any) -> String {
-  do {
-    let data = try JSONSerialization.data(withJSONObject: obj, options: [])
-    return String(data: data, encoding: .utf8) ?? "(null)"
-  } catch {
-    return "\"<json-error: \(error.localizedDescription)>\""
-  }
-}
-
-private func printHealthJSON(_ object: [String: Any], output: BridgeOutput?) {
+/// Answers in the frame, or prints the answer's line for the one-shot command, so both report the same.
+private func printHealthJSON(_ answer: BridgeHealthAnswer, output: BridgeOutput?) {
   if let output {
-    output.write(object)
+    output.write(.health(answer))
     return
   }
-  let json = jsonStringFromObject(obj: object)
+  let json = (try? BridgeAnswer.health(answer).jsonLine()) ?? "(null)"
   // The existing C writer stops at the first NUL.
   // patternlint-disable-next-line avoid-print-to-prevent-production-overhead
   print(String(json.prefix { $0 != "\0" }))
 }
 
-private func recordToDictionary(record: FBHealthAuthorizationRecord) -> [String: Any] {
-  var out = [String: Any]()
-  if let value = record.identifier {
-    out["identifier"] = value
+/// The runtime reads each of a record's values as a string or a number.
+private func record(_ record: FBHealthAuthorizationRecord) -> BridgeHealthRecord {
+  func flag(_ value: Any?) -> Bool? {
+    (value as? NSNumber)?.boolValue
   }
-  if let value = record.sharingAuthorizationAllowed {
-    out["sharingAuthorizationAllowed"] = value
-  }
-  if let value = record.readingAuthorizationAllowed {
-    out["readingAuthorizationAllowed"] = value
-  }
-  return out
+  let identifier = record.identifier.flatMap { ($0 as? String) ?? ($0 as? NSNumber)?.stringValue }
+  return BridgeHealthRecord(
+    identifier: identifier, sharingAuthorizationAllowed: flag(record.sharingAuthorizationAllowed),
+    readingAuthorizationAllowed: flag(record.readingAuthorizationAllowed))
+}
+
+private func writeAction(_ name: String) -> BridgeHealthAnswer.WriteAction {
+  name == "revoke" ? .revoke : .approve
 }
 
 // MARK: - Verb implementations
@@ -84,34 +78,36 @@ private func handleSetAction(
     }
   }
   if selection.isEmpty {
-    let output: [String: Any] = ["action": actionName, "bundleID": bundleID, "ok": false, "error": "no resolvable HK types in request", "unresolvedTypes": unresolvedIdentifiers]
-    printHealthJSON(output, output: sink)
-    return sink?.failure("no resolvable HK types in request") ?? 1
+    printHealthJSON(.nothingResolved(action: writeAction(actionName), bundleID: bundleID, unresolvedTypes: unresolvedIdentifiers), output: sink)
+    return sink?.failure(BridgeHealthAnswer.nothingResolvedError) ?? 1
   }
   // Seed first: the daemon drops status writes for unseen bundle/type pairs.
   let seed = try client.seedAuthorization(forBundleIdentifier: bundleID, selection: selection)
 
   if let sink, seed.status == .timedOut {
-    sink.write(["action": actionName, "bundleID": bundleID, "ok": false, "error": "Health seed timed out", "completionStatus": "timedOut"])
+    sink.write(.health(.timedOut(action: actionName == "revoke" ? .revoke : .approve, bundleID: bundleID, error: "Health seed timed out")))
     return sink.failure("Health seed timed out")
   }
   let write = try client.setAuthorizationForBundleIdentifier(bundleID, selection: selection, status: statusCode)
   guard let set = write.operation else {
-    let output: [String: Any] = ["action": actionName, "bundleID": bundleID, "ok": false, "error": "HKAuthorizationStore declares no known setAuthorizationStatuses: spelling", "resolvedTypes": resolvedIdentifiers, "unresolvedTypes": unresolvedIdentifiers]
-    printHealthJSON(output, output: sink)
-    return sink?.failure("HKAuthorizationStore declares no known setAuthorizationStatuses: spelling") ?? 1
+    printHealthJSON(
+      .noAuthorizationSpelling(action: writeAction(actionName), bundleID: bundleID, resolvedTypes: resolvedIdentifiers, unresolvedTypes: unresolvedIdentifiers),
+      output: sink)
+    return sink?.failure(BridgeHealthAnswer.noAuthorizationSpellingError) ?? 1
   }
   if let sink, set.status == .timedOut {
-    sink.write(["action": actionName, "bundleID": bundleID, "ok": false, "error": "Health authorization write timed out", "completionStatus": "timedOut"])
+    sink.write(.health(.timedOut(action: actionName == "revoke" ? .revoke : .approve, bundleID: bundleID, error: "Health authorization write timed out")))
     return sink.failure("Health authorization write timed out")
   }
-  let ok = NSNumber(value: seed.success && set.success ? 1 : 0)
-  let seedError = try seed.readErrorValue()
-  let setError = try set.readErrorValue()
-  let output: [String: Any] = ["action": actionName, "bundleID": bundleID, "ok": ok, "resolvedTypes": resolvedIdentifiers, "unresolvedTypes": unresolvedIdentifiers, "seedError": seedError, "setError": setError]
-  printHealthJSON(output, output: sink)
+  let seedError = try seed.readErrorValue() as? String
+  let setError = try set.readErrorValue() as? String
+  printHealthJSON(
+    .write(
+      action: writeAction(actionName), bundleID: bundleID, ok: seed.success && set.success, resolvedTypes: resolvedIdentifiers,
+      unresolvedTypes: unresolvedIdentifiers, seedError: seedError, setError: setError),
+    output: sink)
   guard seed.success && set.success else {
-    return sink?.failure((setError as? String) ?? (seedError as? String) ?? "Health \(actionName) failed") ?? 1
+    return sink?.failure(setError ?? seedError ?? "Health \(actionName) failed") ?? 1
   }
   return 0
 }
@@ -119,16 +115,13 @@ private func handleSetAction(
 private func handleClearAction(client: FBHealthSettingsClient, bundleID: String, sink: BridgeOutput?) throws -> Int {
   let result = try client.clearAuthorization(forBundleIdentifier: bundleID)
   if let sink, result.status == .timedOut {
-    sink.write(["action": "clear", "bundleID": bundleID, "ok": false, "error": "Health clear timed out", "completionStatus": "timedOut"])
+    sink.write(.health(.timedOut(action: .clear, bundleID: bundleID, error: "Health clear timed out")))
     return sink.failure("Health clear timed out")
   }
-  let ok = NSNumber(value: result.success)
-  let clearError = try result.readErrorValue()
-
-  let output: [String: Any] = ["action": "clear", "bundleID": bundleID, "ok": ok, "error": clearError]
-  printHealthJSON(output, output: sink)
+  let clearError = try result.readErrorValue() as? String
+  printHealthJSON(.clear(bundleID: bundleID, ok: result.success, error: clearError), output: sink)
   guard result.success else {
-    return sink?.failure((clearError as? String) ?? "Health clear failed") ?? 1
+    return sink?.failure(clearError ?? "Health clear failed") ?? 1
   }
   return 0
 }
@@ -136,21 +129,14 @@ private func handleClearAction(client: FBHealthSettingsClient, bundleID: String,
 private func handleListAction(client: FBHealthSettingsClient, bundleID: String, sink: BridgeOutput?) throws -> Int {
   let result = try client.fetchRecords(forBundleIdentifier: bundleID)
   if let sink, result.status == .timedOut {
-    sink.write(["action": "list", "bundleID": bundleID, "ok": false, "error": "Health list timed out", "completionStatus": "timedOut"])
+    sink.write(.health(.timedOut(action: .list, bundleID: bundleID, error: "Health list timed out")))
     return sink.failure("Health list timed out")
   }
-  let records = try result.readRecords()
-
-  var recordDicts: [Any] = []
-  for record in records {
-    recordDicts.append(recordToDictionary(record: record))
-  }
-  let ok = NSNumber(value: result.hasError ? 0 : 1)
-  let fetchError = try result.readErrorValue()
-  let output: [String: Any] = ["action": "list", "bundleID": bundleID, "ok": ok, "error": fetchError, "records": recordDicts]
-  printHealthJSON(output, output: sink)
+  let records = try result.readRecords().map(record)
+  let fetchError = try result.readErrorValue() as? String
+  printHealthJSON(.list(bundleID: bundleID, ok: !result.hasError, error: fetchError, records: records), output: sink)
   guard !result.hasError else {
-    return sink?.failure((fetchError as? String) ?? "Health list failed") ?? 1
+    return sink?.failure(fetchError ?? "Health list failed") ?? 1
   }
   return 0
 }

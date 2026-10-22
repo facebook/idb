@@ -21,19 +21,42 @@ extension BridgeServerSocketTests {
     addTeardownBlock { FBAXClientProvider.setRuntimeForTesting(nil) }
   }
 
-  private func openQuietStream(_ runtime: FBAXFakeRuntime, _ request: [String: BridgeJSONValue]) throws -> Int32 {
+  private func openQuietStream(_ runtime: FBAXFakeRuntime, _ request: [String: Any]) throws -> Int32 {
     useRuntime(runtime)
     startServerExclusive(exclusive: true)
     let client = connectClient()
     var payload = request
-    payload["verb"] = .string("quiet")
+    payload["verb"] = "quiet"
     sendData(data: try frame(accessibility: payload), to: client)
     return client
   }
 
+  /// Opens a stream with a request the flat parameters could not spell, as a host could still send one.
+  private func openStream(_ runtime: FBAXFakeRuntime, _ request: BridgeAXRequest) throws -> Int32 {
+    useRuntime(runtime)
+    startServerExclusive(exclusive: true)
+    let client = connectClient()
+    sendData(data: try frame(command: .accessibility(request)), to: client)
+    return client
+  }
+
   /// The accessibility envelope a streamed frame carries.
-  private func readEvent(fd: Int32) -> NSDictionary? {
-    (readResponse(fd: fd)?["result"] as? NSDictionary)?["accessibility"] as? NSDictionary
+  private func readEvent(fd: Int32) -> BridgeAXAnswer? {
+    let answers = (readResponse(fd: fd)?["result"] as? NSDictionary)?["answers"] as? [NSDictionary]
+    guard let answer = (answers?.first?["accessibility"] as? NSDictionary)?["answer"], let data = try? JSONSerialization.data(withJSONObject: answer) else {
+      return nil
+    }
+    return try? JSONDecoder().decode(BridgeAXAnswer.self, from: data)
+  }
+
+  private func snapshot(_ answer: BridgeAXAnswer?) -> BridgeAXSettingSnapshot? {
+    guard case let .settingSnapshot(snapshot)? = answer else { return nil }
+    return snapshot
+  }
+
+  private func failure(_ answer: BridgeAXAnswer?) -> BridgeAXFailure? {
+    guard case let .failure(failure)? = answer else { return nil }
+    return failure
   }
 
   // The exclusive server exits once the client hangs up, and must be waited for inside the test body.
@@ -72,16 +95,14 @@ extension BridgeServerSocketTests {
   // Above the kernel's highest pid, so certain not to be running.
   private static let exitedPid: pid_t = 99999
 
-  private func state(_ state: String, pid: pid_t, signals: [String]? = nil) -> NSDictionary {
-    var event: [String: Any] = ["ok": true, "event": "state", "state": state, "pid": pid]
-    event["signals"] = signals
-    return event as NSDictionary
+  private func state(_ state: BridgeAXQuiescenceEvent.State, pid: pid_t, signals: [BridgeAXQuiescenceEvent.Signal] = []) -> BridgeAXAnswer {
+    .quiescence(.state(state, busySignals: signals, pid: pid))
   }
 
   func testANamedApplicationGoesQuietOnceBothSignalsAnswer() throws {
     let pid = getpid()
     let runtime = runtimeWithApplications([pid])
-    let client = try openQuietStream(runtime, ["pid": .integer(Int64(pid)), "busyThresholdMs": .integer(5000), "quietWindowMs": .integer(0)])
+    let client = try openQuietStream(runtime, ["pid": pid, "busyThresholdMs": 5000, "quietWindowMs": 0])
 
     let monitor = try monitor(of: runtime, requests: 2)
     let requests = try XCTUnwrap(monitor.requests.copy() as? [[String: Any]])
@@ -90,11 +111,11 @@ extension BridgeServerSocketTests {
     XCTAssertTrue(requests.allSatisfy { ($0["element"] as AnyObject) === application })
     monitor.deliver(.runLoopIdle, pid: pid)
     monitor.deliver(.animationsInactive, pid: pid)
-    XCTAssertEqual(readEvent(fd: client), state("quiet", pid: pid))
+    XCTAssertEqual(readEvent(fd: client), state(.quiet, pid: pid))
 
     _ = try self.monitor(of: runtime, requests: 4)
     monitor.deliver(.touchesCompleted, pid: pid)
-    XCTAssertEqual(readEvent(fd: client), ["ok": true, "event": "touches_completed", "pid": pid])
+    XCTAssertEqual(readEvent(fd: client), .quiescence(.touchesCompleted(pid: pid)))
     closeQuietStream(client)
     XCTAssertTrue(monitor.isInvalidated)
   }
@@ -102,22 +123,22 @@ extension BridgeServerSocketTests {
   func testASignalUnansweredPastTheThresholdIsBusyUntilItAnswers() throws {
     let pid = getpid()
     let runtime = runtimeWithApplications([pid])
-    let client = try openQuietStream(runtime, ["pid": .integer(Int64(pid)), "busyThresholdMs": .integer(20), "quietWindowMs": .integer(0)])
+    let client = try openQuietStream(runtime, ["pid": pid, "busyThresholdMs": 20, "quietWindowMs": 0])
     defer { closeQuietStream(client) }
 
     let monitor = try monitor(of: runtime, requests: 2)
     monitor.deliver(.animationsInactive, pid: pid + 1)
     monitor.deliver(.runLoopIdle, pid: pid)
-    XCTAssertEqual(readEvent(fd: client), state("busy", pid: pid, signals: ["animations_inactive"]), "an answer for another application is not this one's")
+    XCTAssertEqual(readEvent(fd: client), state(.busy, pid: pid, signals: [.animationsInactive]), "an answer for another application is not this one's")
     monitor.deliver(.animationsInactive, pid: pid)
-    XCTAssertEqual(readEvent(fd: client), state("quiet", pid: pid))
+    XCTAssertEqual(readEvent(fd: client), state(.quiet, pid: pid))
   }
 
   // Every client's monitor hears every answer, so a second answer here stands in for another client's.
   func testAnAnswerToAnotherClientsRequestIsNotReArmed() throws {
     let pid = getpid()
     let runtime = runtimeWithApplications([pid])
-    let client = try openQuietStream(runtime, ["pid": .integer(Int64(pid)), "busyThresholdMs": .integer(5000), "quietWindowMs": .integer(0)])
+    let client = try openQuietStream(runtime, ["pid": pid, "busyThresholdMs": 5000, "quietWindowMs": 0])
     defer { closeQuietStream(client) }
 
     let monitor = try monitor(of: runtime, requests: 2)
@@ -133,7 +154,7 @@ extension BridgeServerSocketTests {
   func testAutomationModeTurnedOffMidStreamIsTurnedBackOnAndTheUnansweredSignalsAskedAgain() throws {
     let pid = getpid()
     let runtime = runtimeWithApplications([pid])
-    let client = try openQuietStream(runtime, ["pid": .integer(Int64(pid)), "busyThresholdMs": .integer(5000), "quietWindowMs": .integer(0)])
+    let client = try openQuietStream(runtime, ["pid": pid, "busyThresholdMs": 5000, "quietWindowMs": 0])
     defer { closeQuietStream(client) }
 
     _ = try monitor(of: runtime, requests: 2)
@@ -146,7 +167,7 @@ extension BridgeServerSocketTests {
   func testASignalUnansweredForAHeartbeatIsAskedAgainThoughAutomationModeLooksOn() throws {
     let pid = getpid()
     let runtime = runtimeWithApplications([pid])
-    let client = try openQuietStream(runtime, ["pid": .integer(Int64(pid)), "busyThresholdMs": .integer(5000), "quietWindowMs": .integer(0)])
+    let client = try openQuietStream(runtime, ["pid": pid, "busyThresholdMs": 5000, "quietWindowMs": 0])
     defer { closeQuietStream(client) }
 
     _ = try monitor(of: runtime, requests: 4)
@@ -156,43 +177,43 @@ extension BridgeServerSocketTests {
   func testTheDefaultWindowSettlesBeforeGoingQuiet() throws {
     let pid = getpid()
     let runtime = runtimeWithApplications([pid])
-    let client = try openQuietStream(runtime, ["pid": .integer(Int64(pid)), "busyThresholdMs": .integer(5000)])
+    let client = try openQuietStream(runtime, ["pid": pid, "busyThresholdMs": 5000])
     defer { closeQuietStream(client) }
 
     let monitor = try monitor(of: runtime, requests: 2)
     monitor.deliver(.runLoopIdle, pid: pid)
     monitor.deliver(.animationsInactive, pid: pid)
-    XCTAssertEqual(readEvent(fd: client), state("settling", pid: pid))
-    XCTAssertEqual(readEvent(fd: client), state("quiet", pid: pid))
+    XCTAssertEqual(readEvent(fd: client), state(.settling, pid: pid))
+    XCTAssertEqual(readEvent(fd: client), state(.quiet, pid: pid))
   }
 
   func testFollowingTheFrontmostApplicationMovesToTheNextOne() throws {
     let (first, second) = (getpid(), getppid())
     let runtime = runtimeWithApplications([first, second])
     runtime.windowServerOutcome = .resolved(first)
-    let client = try openQuietStream(runtime, ["busyThresholdMs": .integer(5000), "quietWindowMs": .integer(0)])
+    let client = try openQuietStream(runtime, ["busyThresholdMs": 5000, "quietWindowMs": 0])
     defer { closeQuietStream(client) }
 
     let monitor = try monitor(of: runtime, requests: 2)
     monitor.deliver(.runLoopIdle, pid: first)
     monitor.deliver(.animationsInactive, pid: first)
-    XCTAssertEqual(readEvent(fd: client), state("quiet", pid: first))
+    XCTAssertEqual(readEvent(fd: client), state(.quiet, pid: first))
 
     runtime.windowServerOutcome = .resolved(second)
     let before = monitor.requests.count
     monitor.deliver(.applicationStateChanged, pid: second)
-    XCTAssertEqual(readEvent(fd: client), ["ok": true, "event": "target_changed", "pid": second])
+    XCTAssertEqual(readEvent(fd: client), .quiescence(.targetChanged(pid: second)))
     _ = try self.monitor(of: runtime, requests: before + 2)
     monitor.deliver(.runLoopIdle, pid: second)
     monitor.deliver(.animationsInactive, pid: second)
-    XCTAssertEqual(readEvent(fd: client), state("quiet", pid: second))
+    XCTAssertEqual(readEvent(fd: client), state(.quiet, pid: second))
   }
 
   func testFollowingTheFrontmostApplicationOnANamedDisplayAsksThatDisplay() throws {
     let (first, second) = (getpid(), getppid())
     let runtime = runtimeWithApplications([first, second])
     runtime.windowServerOutcome = .resolved(first)
-    let client = try openQuietStream(runtime, ["displayID": .integer(42), "busyThresholdMs": .integer(5000), "quietWindowMs": .integer(0)])
+    let client = try openQuietStream(runtime, ["displayID": 42, "busyThresholdMs": 5000, "quietWindowMs": 0])
     defer { closeQuietStream(client) }
 
     let monitor = try monitor(of: runtime, requests: 2)
@@ -200,28 +221,28 @@ extension BridgeServerSocketTests {
 
     runtime.windowServerOutcome = .resolved(second)
     monitor.deliver(.applicationStateChanged, pid: second)
-    XCTAssertEqual(readEvent(fd: client), ["ok": true, "event": "target_changed", "pid": second])
+    XCTAssertEqual(readEvent(fd: client), .quiescence(.targetChanged(pid: second)))
     XCTAssertEqual(runtime.lastFrontmostDisplayIdentifier, NSNumber(value: 42), "retargeting stays on the named display")
   }
 
   func testAMalformedDisplayIsRefusedWithoutStreaming() throws {
-    let client = try openQuietStream(runtimeWithApplications([]), ["displayID": .integer(0)])
+    let client = try openStream(runtimeWithApplications([]), .quiescence(pid: nil, busyThresholdMs: nil, quietWindowMs: nil, displayID: 0))
     defer { closeQuietStream(client) }
-    XCTAssertEqual(readEvent(fd: client), ["ok": false, "error": "displayID must be a positive 32-bit integer", "error_kind": "bad_request"])
+    XCTAssertEqual(readEvent(fd: client), .failure(BridgeAXFailure(message: "displayID must be a positive 32-bit integer", kind: .badRequest)))
   }
 
   func testANamedApplicationThatHasExitedEndsTheStream() throws {
     let pid = Self.exitedPid
-    let client = try openQuietStream(runtimeWithApplications([]), ["pid": .integer(Int64(pid))])
+    let client = try openQuietStream(runtimeWithApplications([]), ["pid": pid])
     defer { closeQuietStream(client) }
-    XCTAssertEqual(readEvent(fd: client), ["ok": true, "event": "target_exited", "pid": pid])
+    XCTAssertEqual(readEvent(fd: client), .quiescence(.targetExited(pid: pid)))
     assertEOF(fd: client)
   }
 
   func testARunningApplicationWithoutAnElementYetIsArmedOnceItHasOne() throws {
     let pid = getpid()
     let runtime = runtimeWithApplications([])
-    let client = try openQuietStream(runtime, ["pid": .integer(Int64(pid)), "busyThresholdMs": .integer(5000), "quietWindowMs": .integer(0)])
+    let client = try openQuietStream(runtime, ["pid": pid, "busyThresholdMs": 5000, "quietWindowMs": 0])
     defer { closeQuietStream(client) }
 
     _ = try eventually("the monitor") { runtime.quiescenceMonitors.lastObject as? FBAXFakeQuiescenceMonitor }
@@ -229,18 +250,16 @@ extension BridgeServerSocketTests {
     let monitor = try monitor(of: runtime, requests: 2)
     monitor.deliver(.runLoopIdle, pid: pid)
     monitor.deliver(.animationsInactive, pid: pid)
-    XCTAssertEqual(readEvent(fd: client), state("quiet", pid: pid))
+    XCTAssertEqual(readEvent(fd: client), state(.quiet, pid: pid))
   }
 
   func testAutomationModeIsTurnedOnAndAFailureToIsAnError() throws {
     let runtime = runtimeWithApplications([getpid()])
     runtime.automationMode = false
     runtime.automationModeWriteFails = true
-    let client = try openQuietStream(runtime, ["pid": .integer(Int64(getpid()))])
+    let client = try openQuietStream(runtime, ["pid": getpid()])
     defer { closeQuietStream(client) }
-    let response = try XCTUnwrap(readEvent(fd: client))
-    XCTAssertEqual(response["ok"] as? Bool, false)
-    XCTAssertEqual(response["error_kind"] as? String, "reader_unavailable")
+    XCTAssertEqual(failure(readEvent(fd: client))?.kind, .readerUnavailable)
     assertEOF(fd: client)
     XCTAssertEqual(runtime.automationModeWrites, [true])
   }
@@ -248,30 +267,29 @@ extension BridgeServerSocketTests {
   func testAMonitorThatCannotBindIsAnError() throws {
     let runtime = runtimeWithApplications([getpid()])
     runtime.quiescenceMonitorError = "AXObserverCreate failed (-25200)"
-    let client = try openQuietStream(runtime, ["pid": .integer(Int64(getpid()))])
+    let client = try openQuietStream(runtime, ["pid": getpid()])
     defer { closeQuietStream(client) }
-    XCTAssertEqual(readEvent(fd: client), ["ok": false, "error": "AXObserverCreate failed (-25200)", "error_kind": "reader_unavailable"])
+    XCTAssertEqual(readEvent(fd: client), .failure(BridgeAXFailure(message: "AXObserverCreate failed (-25200)", kind: .readerUnavailable)))
     assertEOF(fd: client)
   }
 
   func testANegativeTunableIsRefusedWithoutStreaming() throws {
-    let client = try openQuietStream(runtimeWithApplications([]), ["quietWindowMs": .integer(-1)])
+    let client = try openStream(runtimeWithApplications([]), .quiescence(pid: nil, busyThresholdMs: nil, quietWindowMs: -1))
     defer { closeQuietStream(client) }
-    let response = try XCTUnwrap(readEvent(fd: client))
-    XCTAssertEqual(response["error_kind"] as? String, "bad_request")
+    XCTAssertEqual(failure(readEvent(fd: client))?.kind, .badRequest)
     sendData(data: try frame(command: .ping), to: client)
     XCTAssertEqual(exitCode(of: readResponse(fd: client)), 0, "a refused stream leaves the connection serving")
   }
 
   func testTheOneShotCommandStreamsUntilTheStreamEnds() throws {
     useRuntime(runtimeWithApplications([]))
-    var lines: [NSDictionary] = []
+    var lines: [BridgeAXAnswer?] = []
     let status = AccessibilityService.handleAction("quiet", arguments: ["--pid", String(Self.exitedPid)]) { data in
-      lines.append((try? JSONSerialization.jsonObject(with: data)) as? NSDictionary ?? [:])
+      lines.append(try? JSONDecoder().decode(BridgeAXAnswer.self, from: data))
       return true
     }
     XCTAssertEqual(status, 0)
-    XCTAssertEqual(lines, [["ok": true, "event": "target_exited", "pid": Self.exitedPid]])
+    XCTAssertEqual(lines, [.quiescence(.targetExited(pid: Self.exitedPid))])
 
     let lostOutputStatus = AccessibilityService.handleAction("quiet", arguments: ["--pid", String(Self.exitedPid)]) { _ in false }
     XCTAssertEqual(lostOutputStatus, 1, "output that could not be written fails the command")
@@ -303,8 +321,8 @@ extension BridgeServerSocketTests {
     let client = try openSettingsStream(runtime)
     defer { closeQuietStream(client) }
 
-    XCTAssertEqual(readEvent(fd: client), ["ok": true, "event": "snapshot", "setting": "reduce-motion", "enabled": false])
-    XCTAssertEqual(readEvent(fd: client), ["ok": true, "event": "snapshot", "setting": "reduce-motion", "enabled": true])
+    XCTAssertEqual(readEvent(fd: client), .settingSnapshot(BridgeAXSettingSnapshot(setting: "reduce-motion", enabled: false)))
+    XCTAssertEqual(readEvent(fd: client), .settingSnapshot(BridgeAXSettingSnapshot(setting: "reduce-motion", enabled: true)))
     XCTAssertEqual(runtime.operations.compactMap { $0 as? String }.filter { $0 == "settingRead" }.count, 2)
   }
 
@@ -314,13 +332,13 @@ extension BridgeServerSocketTests {
     runtime.deviceSettings[setting] = false
     let client = try openSettingsStream(runtime)
     defer { closeQuietStream(client) }
-    XCTAssertEqual(readEvent(fd: client)?["enabled"] as? Bool, false)
+    XCTAssertEqual(snapshot(readEvent(fd: client))?.enabled, false)
 
     runtime.deviceSettings[setting] = true
     for _ in 0..<3 {
       runtime.deviceSettingMonitor?.deliver()
     }
-    XCTAssertEqual(readEvent(fd: client)?["enabled"] as? Bool, true)
+    XCTAssertEqual(snapshot(readEvent(fd: client))?.enabled, true)
     XCTAssertEqual(runtime.operations.compactMap { $0 as? String }.filter { $0 == "settingRead" }.count, 2)
   }
 
@@ -329,14 +347,14 @@ extension BridgeServerSocketTests {
     defer { closeQuietStream(client) }
     XCTAssertEqual(
       readEvent(fd: client),
-      ["ok": false, "error": "setting unavailable", "error_kind": "capability_unavailable"])
+      .failure(BridgeAXFailure(message: "setting unavailable", kind: .capabilityUnavailable)))
     assertEOF(fd: client)
   }
 
   func testOnlyReduceMotionPublishesChanges() throws {
     let client = try openSettingsStream(FBAXFakeRuntime(), setting: "reduce-transparency")
     defer { closeQuietStream(client) }
-    XCTAssertEqual(readEvent(fd: client)?["error_kind"] as? String, "capability_unavailable")
+    XCTAssertEqual(failure(readEvent(fd: client))?.kind, .capabilityUnavailable)
     sendData(data: try frame(command: .ping), to: client)
     XCTAssertEqual(exitCode(of: readResponse(fd: client)), 0, "a refused stream leaves the connection serving")
   }
@@ -346,7 +364,7 @@ extension BridgeServerSocketTests {
     runtime.deviceSettingMonitorOutcome = .unavailable("notification unavailable")
     let client = try openSettingsStream(runtime)
     defer { closeQuietStream(client) }
-    XCTAssertEqual(readEvent(fd: client), ["ok": false, "error": "notification unavailable", "error_kind": "capability_unavailable"])
+    XCTAssertEqual(readEvent(fd: client), .failure(BridgeAXFailure(message: "notification unavailable", kind: .capabilityUnavailable)))
     assertEOF(fd: client)
     XCTAssertFalse(runtime.operations.contains { ($0 as? String) == "settingRead" })
   }
@@ -367,22 +385,22 @@ extension BridgeServerSocketTests {
     }
     let client = try openSettingsStream(runtime, setting: "state-settings")
     defer { closeQuietStream(client) }
-    let initial = try XCTUnwrap(readEvent(fd: client))
+    let initial = try XCTUnwrap(snapshot(readEvent(fd: client)))
     XCTAssertEqual(
       Set(runtime.deviceSettingMonitoredSettings ?? []),
       Set(
         [
           FBAXDeviceSetting.reduceMotion, .reduceTransparency, .buttonShapes, .increaseContrast,
         ].map { NSNumber(value: $0.rawValue) }))
-    XCTAssertEqual(initial["enabled"] as? Bool, false)
-    let initialSettings = try XCTUnwrap(initial["settings"] as? [String: NSDictionary])
+    XCTAssertEqual(initial.enabled, false)
+    let initialSettings = initial.otherSettings
     XCTAssertEqual(Set(initialSettings.keys), ["button-shapes", "reduce-transparency", "increase-contrast"])
-    XCTAssertTrue(initialSettings.values.allSatisfy { ($0["enabled"] as? Bool) == false })
+    XCTAssertTrue(initialSettings.values.allSatisfy { $0 == .success(BridgeAXSettingResponse(enabled: false)) })
     runtime.deviceSettings[NSNumber(value: FBAXDeviceSetting.buttonShapes.rawValue)] = true
     (runtime.deviceSettingMonitors[NSNumber(value: FBAXDeviceSetting.buttonShapes.rawValue)] as? FBAXFakeDeviceSettingMonitor)?.deliver()
-    let changed = try XCTUnwrap(readEvent(fd: client)?["settings"] as? [String: NSDictionary])
-    XCTAssertEqual(changed["button-shapes"]?["enabled"] as? Bool, true)
-    XCTAssertEqual(changed["reduce-transparency"]?["enabled"] as? Bool, false)
+    let changed = try XCTUnwrap(snapshot(readEvent(fd: client))?.otherSettings)
+    XCTAssertEqual(changed["button-shapes"]?.enabled, true)
+    XCTAssertEqual(changed["reduce-transparency"]?.enabled, false)
   }
 
   func testCombinedSettingsPreservePerSettingReadFailure() throws {
@@ -390,18 +408,18 @@ extension BridgeServerSocketTests {
     runtime.deviceSettings[NSNumber(value: FBAXDeviceSetting.reduceMotion.rawValue)] = false
     let client = try openSettingsStream(runtime, setting: "state-settings")
     defer { closeQuietStream(client) }
-    let settings = try XCTUnwrap(readEvent(fd: client)?["settings"] as? [String: NSDictionary])
-    XCTAssertEqual(settings["button-shapes"]?["error_kind"] as? String, "capability_unavailable")
+    let settings = try XCTUnwrap(snapshot(readEvent(fd: client))?.otherSettings)
+    XCTAssertEqual(settings["button-shapes"]?.failure?.kind, .capabilityUnavailable)
     runtime.deviceSettings[NSNumber(value: FBAXDeviceSetting.buttonShapes.rawValue)] = true
     runtime.deviceSettingMonitor?.deliver()
-    let recovered = try XCTUnwrap(readEvent(fd: client)?["settings"] as? [String: NSDictionary])
-    XCTAssertEqual(recovered["button-shapes"]?["enabled"] as? Bool, true)
+    let recovered = try XCTUnwrap(snapshot(readEvent(fd: client))?.otherSettings)
+    XCTAssertEqual(recovered["button-shapes"]?.enabled, true)
   }
 
   func testCombinedSettingsPreservePartialObservationFailures() throws {
     for (outcome, kind) in [
-      (FBAXDeviceSettingMonitorOutcome.unavailable("notification missing"), "capability_unavailable"),
-      (FBAXDeviceSettingMonitorOutcome.failed("registration failed"), "reader_unavailable"),
+      (FBAXDeviceSettingMonitorOutcome.unavailable("notification missing"), BridgeAXWire.ErrorKind.capabilityUnavailable),
+      (FBAXDeviceSettingMonitorOutcome.failed("registration failed"), .readerUnavailable),
     ] {
       let runtime = FBAXFakeRuntime()
       let motion = NSNumber(value: FBAXDeviceSetting.reduceMotion.rawValue)
@@ -428,23 +446,23 @@ extension BridgeServerSocketTests {
         closeQuietStream(client)
         XCTAssertTrue(runtime.deviceSettingMonitors.allValues.compactMap { $0 as? FBAXFakeDeviceSettingMonitor }.allSatisfy { $0.isInvalidated })
       }
-      let initial = try XCTUnwrap(readEvent(fd: client))
-      XCTAssertEqual(initial["enabled"] as? Bool, false)
-      let settings = try XCTUnwrap(initial["settings"] as? [String: NSDictionary])
+      let initial = try XCTUnwrap(snapshot(readEvent(fd: client)))
+      XCTAssertEqual(initial.enabled, false)
+      let settings = initial.otherSettings
       XCTAssertEqual(Set(settings.keys), ["reduce-transparency", "button-shapes", "increase-contrast"])
-      XCTAssertEqual(settings["increase-contrast"]?["error_kind"] as? String, kind)
-      XCTAssertEqual(settings["increase-contrast"]?["error"] as? String, outcome.failureReason)
-      XCTAssertNil(settings["increase-contrast"]?["enabled"])
-      XCTAssertEqual(settings["button-shapes"]?["enabled"] as? Bool, false)
-      XCTAssertEqual(settings["reduce-transparency"]?["enabled"] as? Bool, false)
+      XCTAssertEqual(settings["increase-contrast"]?.failure?.kind, kind)
+      XCTAssertEqual(settings["increase-contrast"]?.failure?.message, outcome.failureReason)
+      XCTAssertNil(settings["increase-contrast"]?.enabled)
+      XCTAssertEqual(settings["button-shapes"]?.enabled, false)
+      XCTAssertEqual(settings["reduce-transparency"]?.enabled, false)
       XCTAssertEqual(runtime.deviceSettingMonitors.count, 3)
 
-      let changed = try XCTUnwrap(readEvent(fd: client))
-      XCTAssertEqual(changed["enabled"] as? Bool, true)
-      let changedSettings = try XCTUnwrap(changed["settings"] as? [String: NSDictionary])
-      XCTAssertEqual(changedSettings["button-shapes"]?["enabled"] as? Bool, true)
-      XCTAssertEqual(changedSettings["increase-contrast"]?["error_kind"] as? String, kind)
-      XCTAssertNil(changedSettings["increase-contrast"]?["enabled"])
+      let changed = try XCTUnwrap(snapshot(readEvent(fd: client)))
+      XCTAssertEqual(changed.enabled, true)
+      let changedSettings = changed.otherSettings
+      XCTAssertEqual(changedSettings["button-shapes"]?.enabled, true)
+      XCTAssertEqual(changedSettings["increase-contrast"]?.failure?.kind, kind)
+      XCTAssertNil(changedSettings["increase-contrast"]?.enabled)
       let operations = runtime.operations.compactMap { $0 as? String }.filter { $0 == "settingMonitor" || $0 == "settingRead" }
       XCTAssertEqual(Array(operations.prefix(4)), Array(repeating: "settingMonitor", count: 4))
       XCTAssertEqual(operations.filter { $0 == "settingRead" }.count, 6)
@@ -453,17 +471,15 @@ extension BridgeServerSocketTests {
 
   func testCombinedSettingsRequireReduceMotionObservation() throws {
     for (outcome, kind) in [
-      (FBAXDeviceSettingMonitorOutcome.unavailable("notification missing"), "capability_unavailable"),
-      (FBAXDeviceSettingMonitorOutcome.failed("registration failed"), "reader_unavailable"),
+      (FBAXDeviceSettingMonitorOutcome.unavailable("notification missing"), BridgeAXWire.ErrorKind.capabilityUnavailable),
+      (FBAXDeviceSettingMonitorOutcome.failed("registration failed"), .readerUnavailable),
     ] {
       let runtime = FBAXFakeRuntime()
       let motion = NSNumber(value: FBAXDeviceSetting.reduceMotion.rawValue)
       runtime.deviceSettingMonitorOutcomes[motion] = outcome
       let client = try openSettingsStream(runtime, setting: "state-settings")
       defer { closeQuietStream(client) }
-      let failure = try XCTUnwrap(readEvent(fd: client))
-      XCTAssertEqual(failure["ok"] as? Bool, false)
-      XCTAssertEqual(failure["error_kind"] as? String, kind)
+      XCTAssertEqual(failure(readEvent(fd: client))?.kind, kind)
       assertEOF(fd: client)
       XCTAssertEqual(runtime.deviceSettingMonitoredSettings, [motion])
       XCTAssertEqual(runtime.deviceSettingMonitors.count, 0)
@@ -500,9 +516,9 @@ extension BridgeServerSocketTests {
       let runtime = FBAXFakeRuntime()
       runtime.deviceSettingReadOutcome = outcome
       useRuntime(runtime)
-      var lines: [NSDictionary] = []
+      var lines: [[String: Any]] = []
       let status = AccessibilityService.handleAction("settings-observe", arguments: ["--setting", "reduce-motion"]) { data in
-        if let line = try? JSONSerialization.jsonObject(with: data) as? NSDictionary { lines.append(line) }
+        if let answer = try? JSONDecoder().decode(BridgeAXAnswer.self, from: data) { lines.append(answerFields(answer)) }
         return true
       }
       XCTAssertEqual(status, 1, "the stream's failed state must reach the CLI exit status")
@@ -522,5 +538,18 @@ extension BridgeServerSocketTests {
   func testTheTunablesParseFromArgv() {
     let request = AXBridgeArguments.request(action: "quiet", arguments: ["--busy-threshold-ms", "5", "--quiet-window-ms", "7", "--pid", "9"])
     XCTAssertEqual(request as NSDictionary, ["verb": "quiet", "busyThresholdMs": 5, "quietWindowMs": 7, "pid": 9])
+  }
+}
+
+extension BridgeAXOutcome<BridgeAXSettingResponse> {
+  /// The setting's state, when it was read.
+  fileprivate var enabled: Bool? {
+    guard case let .success(response) = self else { return nil }
+    return response.enabled
+  }
+
+  fileprivate var failure: BridgeAXFailure? {
+    guard case let .failure(failure) = self else { return nil }
+    return failure
   }
 }

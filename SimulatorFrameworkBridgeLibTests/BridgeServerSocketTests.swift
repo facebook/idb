@@ -108,16 +108,9 @@ final class BridgeServerSocketTests: XCTestCase {
     return frame
   }
 
-  /// An accessibility request with these parameters, sent as they are whether or not they decode.
-  func frame(accessibility parameters: [String: BridgeJSONValue]) throws -> Data {
-    let request = BridgeJSONValue.object([
-      "version": .integer(Int64(BridgeRequest.currentVersion)), "id": .string(UUID().uuidString),
-      "command": .object(["accessibility": .object(["_0": .object(parameters)])]),
-    ])
-    let bytes = try JSONEncoder().encode(request)
-    var frame = try IPCFrame.header(forSize: bytes.count)
-    frame.append(bytes)
-    return frame
+  /// The accessibility request these flat parameters spell, sent as a host sends it.
+  func frame(accessibility parameters: [String: Any]) throws -> Data {
+    try frame(command: .accessibility(AccessibilityParameters.request(parameters)))
   }
 
   func exitCode(of response: NSDictionary?) -> Int? {
@@ -201,7 +194,7 @@ final class BridgeServerSocketTests: XCTestCase {
       XCTAssertEqual(
         BridgeServer.serve(socketPath: path, idleTimeoutSeconds: 5, exitOnDisconnect: true, prepareRuntime: {}) { data in
           BridgeRPC.handle(data) { command in
-            BridgeResult(exitCode: command == .shutdown ? 0 : 23, values: [.string("first"), .string("second")])
+            BridgeResult(exitCode: command == .shutdown ? 0 : 23, answers: [.health(.clear(bundleID: "first", ok: true, error: nil)), .health(.clear(bundleID: "second", ok: true, error: nil))])
           }
         }, 0)
       finished.fulfill()
@@ -218,7 +211,7 @@ final class BridgeServerSocketTests: XCTestCase {
       sendData(data: bytes, to: client)
       let object = try XCTUnwrap(readResponse(fd: client))
       let response = try BridgeResponse.decode(JSONSerialization.data(withJSONObject: object), for: request)
-      XCTAssertEqual(response.result, BridgeResult(exitCode: command == .shutdown ? 0 : 23, values: [.string("first"), .string("second")]))
+      XCTAssertEqual(response.result, BridgeResult(exitCode: command == .shutdown ? 0 : 23, answers: [.health(.clear(bundleID: "first", ok: true, error: nil)), .health(.clear(bundleID: "second", ok: true, error: nil))]))
     }
     assertEOF(fd: client)
     finishServer()

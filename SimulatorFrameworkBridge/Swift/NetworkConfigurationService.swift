@@ -5,6 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+import FBSimulatorBridgeProtocol
 import Foundation
 
 #if canImport(SimulatorFrameworkBridgeRuntime)
@@ -34,7 +35,11 @@ struct NetworkConfigurationService {
         return output?.failure("Could not read \(name) configuration") ?? 1
       }
       if let output {
-        return output.write(read.configuration ?? [:]) ? 0 : 1
+        do {
+          return output.write(.networkConfiguration(try BridgeNetworkConfiguration(read.configuration ?? [String: Any]()))) ? 0 : 1
+        } catch {
+          return output.failure("Could not encode command output: \(error.localizedDescription)")
+        }
       }
       if let configuration = read.configuration {
         if let json = try? JSONSerialization.data(withJSONObject: configuration, options: .prettyPrinted),

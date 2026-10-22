@@ -7,6 +7,7 @@
 
 #if !os(tvOS)
 import Darwin
+import FBSimulatorBridgeProtocol
 import Foundation
 #if canImport(SimulatorFrameworkBridgeRuntime)
 @_implementationOnly import SimulatorFrameworkBridgeRuntime
@@ -20,6 +21,11 @@ private struct DeliveredNotification {
   let body: String
   let threadIdentifier: String
   let date: Double?
+
+  var answer: BridgeDeliveredNotification {
+    BridgeDeliveredNotification(
+      bundleID: bundleID, identifier: identifier, title: title, subtitle: subtitle, body: body, threadIdentifier: threadIdentifier, date: date)
+  }
 
   var jsonObject: [String: Any] {
     var object: [String: Any] = [
@@ -170,7 +176,7 @@ private func isMissingFile(_ error: NSError) -> Bool {
 
 private enum DeliveredNotificationOutput {
   static func write(_ notification: DeliveredNotification, output: BridgeOutput?) -> Bool {
-    if let output { return output.write(notification.jsonObject) }
+    if let output { return output.write(.deliveredNotification(notification.answer)) }
     let object = notification.jsonObject
     guard JSONSerialization.isValidJSONObject(object) else {
       NSLog("[DeliveredNotifications] Notification %@ holds a value JSON cannot represent, such as a non-finite date", notification.identifier)
@@ -369,12 +375,14 @@ public enum DeliveredNotificationsService {
     return handle(client: client, bundleID: bundleID, directory: directory, timeout: timeout, output: output)
   }
 
-  public static func handleActionWithCenter(_ action: String?, bundleID: String?, center: Any?, directory: String?, timeout: TimeInterval) -> Int32 {
+  public static func handleActionWithCenter(
+    _ action: String?, bundleID: String?, center: Any?, directory: String?, timeout: TimeInterval, output: BridgeOutput? = nil
+  ) -> Int32 {
     guard action == "delivered" else {
       NSLog("[DeliveredNotifications] Unknown action: %@. Use delivered.", action ?? "(null)")
       return 1
     }
-    return handle(client: FBDeliveredNotificationsClient(center: center), bundleID: bundleID ?? "", directory: directory, timeout: timeout, output: nil)
+    return handle(client: FBDeliveredNotificationsClient(center: center), bundleID: bundleID ?? "", directory: directory, timeout: timeout, output: output)
   }
 
   public static func clear(bundleID: String?, remover: Any?, directory: String?, timeout: TimeInterval) -> Int32 {

@@ -27,7 +27,7 @@ extension BridgeAXAnswer {
       return try JSONEncoder().encode(self)
     } catch {
       NSLog("[AccessibilityService] could not encode an answer, sending a failure instead: %@", error as NSError)
-      return Data(#"{"error":"response serialization failed","ok":false}"#.utf8)
+      return Data(#"{"failure":{"reason":{"error":"response serialization failed"}}}"#.utf8)
     }
   }
 

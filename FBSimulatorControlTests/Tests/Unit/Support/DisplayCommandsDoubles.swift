@@ -102,10 +102,10 @@ actor InventoryTransport: AXBridgeTransport {
 
   func send(_ request: AXBridgeRequest) async throws -> AXBridgeReply {
     sends += 1
-    let displays = inventory.map { ["uniqueID": $0.uniqueID, "displayID": $0.displayID] as [String: Any] }
-    return try AXBridgeReply(
-      answer: JSONSerialization.data(withJSONObject: ["ok": true, "displayScopedInteractions": scopedInteractions, "displays": displays]),
-      for: request)
+    let inventory = BridgeAXDisplayInventory(
+      displayScopedInteractions: scopedInteractions, displayScopedTrees: false, displayScopedQuiescence: false,
+      displays: inventory.map { BridgeAXDisplayInventory.Display(uniqueID: $0.uniqueID, displayID: $0.displayID) })
+    return try AXBridgeReply(answer: JSONEncoder().encode(BridgeAXAnswer.displays(inventory)), for: request)
   }
 
   func send(_ request: AXBridgeRequest, receiveTimeout: TimeInterval) async throws -> AXBridgeReply {

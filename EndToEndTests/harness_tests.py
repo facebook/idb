@@ -2896,7 +2896,7 @@ class GuestRPCLifecycleTests(unittest.IsolatedAsyncioTestCase):
             {
                 "version": GUEST_PROTOCOL_VERSION,
                 "id": "test-1",
-                "result": {"exitCode": 0, "values": []},
+                "result": {"exitCode": 0, "answers": []},
             }
         ).encode()
         reader.feed_data(len(payload).to_bytes(4, "big") + payload)

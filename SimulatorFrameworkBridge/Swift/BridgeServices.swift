@@ -128,8 +128,8 @@ public enum BridgeServices {
 
   /// The answer to an accessibility frame whose parameters are not a request, in the response a malformed request has
   /// always had.
-  public static func undecodedAccessibility(_ parameters: [String: BridgeJSONValue]) -> BridgeResult {
-    accessibilityResult(AccessibilityService.handleRequest(parameters: parameters))
+  public static func undecodedAccessibility(_ error: BridgeAXRequestError) -> BridgeResult {
+    accessibilityResult(.failure(AccessibilityService.failure(error)))
   }
 
   /// Commands that answer with a stream of results rather than one; nil for every other command.

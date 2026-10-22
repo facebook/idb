@@ -44,14 +44,15 @@ final class HealthMutationTests: XCTestCase {
     runtime.clearError = nil
     let (clearStatus, clearOutput) = try run(runtime, action: "clear")
     XCTAssertEqual(clearStatus, 0)
-    XCTAssertEqual(clearOutput, ["action": "clear", "bundleID": bundleID, "ok": true, "error": NSNull()] as NSDictionary)
+    XCTAssertEqual(clearOutput, ["action": "clear", "bundleID": bundleID, "ok": true] as NSDictionary)
 
     let (listStatus, listOutput) = try run(runtime, action: "list")
     XCTAssertEqual(listStatus, 0)
-    XCTAssertEqual(listOutput, ["action": "list", "bundleID": bundleID, "ok": true, "error": NSNull(), "records": []] as NSDictionary)
+    XCTAssertEqual(listOutput, ["action": "list", "bundleID": bundleID, "ok": true, "records": []] as NSDictionary)
   }
 
-  func testSetAndListStatusRemainJSONNumbers() throws {
+  // Every health answer reports whether it succeeded as a boolean, as clears and failures always have.
+  func testSetAndListStatusAreJSONBooleans() throws {
     for action in ["approve", "revoke", "list"] {
       for success in [true, false] {
         let runtime = runtimeWithType()
@@ -60,8 +61,8 @@ final class HealthMutationTests: XCTestCase {
         let (status, output) = try run(runtime, action: action, types: ["step"])
         let ok = try XCTUnwrap(output["ok"] as? NSNumber)
         XCTAssertEqual(status, success ? 0 : 1)
-        XCTAssertEqual(ok.intValue, success ? 1 : 0)
-        XCTAssertNotEqual(CFGetTypeID(ok), CFBooleanGetTypeID(), action)
+        XCTAssertEqual(ok.boolValue, success)
+        XCTAssertEqual(CFGetTypeID(ok), CFBooleanGetTypeID(), action)
       }
     }
   }
@@ -100,7 +101,7 @@ final class HealthMutationTests: XCTestCase {
           output,
           [
             "action": action, "bundleID": bundleID, "ok": true, "resolvedTypes": defaults,
-            "unresolvedTypes": [], "seedError": NSNull(), "setError": NSNull(),
+            "unresolvedTypes": [],
           ] as NSDictionary)
         XCTAssertEqual(
           runtime.operations as NSArray,
@@ -137,7 +138,7 @@ final class HealthMutationTests: XCTestCase {
       output,
       [
         "action": "approve", "bundleID": bundleID, "ok": true, "resolvedTypes": resolved,
-        "unresolvedTypes": ["unknown"], "seedError": NSNull(), "setError": NSNull(),
+        "unresolvedTypes": ["unknown"],
       ] as NSDictionary)
     XCTAssertEqual(runtime.arguments["shareTypes"] as? Set<String>, Set(resolved))
     XCTAssertEqual(runtime.arguments["readTypes"] as? Set<String>, Set(resolved))
@@ -223,7 +224,7 @@ final class HealthMutationTests: XCTestCase {
           "action": "approve", "bundleID": bundleID, "ok": seedOK && setOK,
           "resolvedTypes": ["step"], "unresolvedTypes": [],
           "seedError": seedError as Any? ?? NSNull(), "setError": setError as Any? ?? NSNull(),
-        ] as NSDictionary)
+        ].withoutNulls)
       XCTAssertEqual(runtime.operations as NSArray, ["healthStore", "authorizationStore", "seed", "setModern"] as NSArray)
     }
   }
@@ -240,7 +241,7 @@ final class HealthMutationTests: XCTestCase {
           output,
           [
             "action": "clear", "bundleID": bundleID, "ok": ok, "error": error as Any? ?? NSNull(),
-          ] as NSDictionary)
+          ].withoutNulls)
         XCTAssertEqual(runtime.operations as NSArray, ["healthStore", "authorizationStore", "clear"] as NSArray)
         XCTAssertEqual(runtime.arguments["clearBundle"] as? String, bundleID)
       }
@@ -267,7 +268,7 @@ final class HealthMutationTests: XCTestCase {
             ["identifier": "step", "sharingAuthorizationAllowed": true, "readingAuthorizationAllowed": 0],
             ["identifier": "opaque-value"], [:],
           ],
-        ] as NSDictionary)
+        ].withoutNulls)
       XCTAssertEqual(runtime.operations as NSArray, ["healthStore", "authorizationStore", "list"] as NSArray)
       XCTAssertEqual(runtime.arguments["listBundle"] as? String, bundleID)
     }
@@ -285,13 +286,13 @@ final class HealthMutationTests: XCTestCase {
           output,
           [
             "action": "approve", "bundleID": bundleID, "ok": false,
-            "resolvedTypes": ["step"], "unresolvedTypes": [], "seedError": NSNull(), "setError": NSNull(),
+            "resolvedTypes": ["step"], "unresolvedTypes": [],
           ] as NSDictionary)
         XCTAssertEqual(runtime.operations as NSArray, ["healthStore", "authorizationStore", "seed", "setModern"] as NSArray)
       } else if action == "clear" {
-        XCTAssertEqual(output, ["action": "clear", "bundleID": bundleID, "ok": false, "error": NSNull()] as NSDictionary)
+        XCTAssertEqual(output, ["action": "clear", "bundleID": bundleID, "ok": false] as NSDictionary)
       } else {
-        XCTAssertEqual(output, ["action": "list", "bundleID": bundleID, "ok": true, "error": NSNull(), "records": []] as NSDictionary)
+        XCTAssertEqual(output, ["action": "list", "bundleID": bundleID, "ok": true, "records": []] as NSDictionary)
       }
     }
   }
@@ -387,5 +388,12 @@ final class HealthMutationTests: XCTestCase {
         XCTAssertEqual(output["records"] as? NSArray, [["identifier": "step"]] as NSArray)
       }
     }
+  }
+}
+
+extension Dictionary where Key == String, Value == Any {
+  /// The fields that hold something: an answer leaves out what it does not have.
+  fileprivate var withoutNulls: NSDictionary {
+    filter { !($0.value is NSNull) } as NSDictionary
   }
 }

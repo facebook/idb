@@ -14,7 +14,7 @@ import Foundation
 }
 
 public struct BridgeRequest: Codable, Equatable, Sendable {
-  public static let currentVersion = 4
+  public static let currentVersion = 5
   public let version: Int
   public let id: String
   public let command: BridgeCommand
@@ -50,12 +50,6 @@ public struct BridgeRequest: Codable, Equatable, Sendable {
     (try? JSONDecoder().decode(Identity.self, from: data))?.id
   }
 
-  /// The parameters of an accessibility request as sent, without decoding them into a `BridgeAXRequest`, so the guest
-  /// can say what is wrong with a malformed one in an accessibility response rather than failing the frame.
-  public static func accessibilityParameters(of data: Data) -> [String: BridgeJSONValue]? {
-    (try? JSONDecoder().decode(UndecodedAccessibility.self, from: data))?.command.accessibility._0
-  }
-
   private struct Envelope: Decodable {
     let version: Int
     let id: String
@@ -64,34 +58,50 @@ public struct BridgeRequest: Codable, Equatable, Sendable {
   private struct Identity: Decodable {
     let id: String?
   }
-
-  private struct UndecodedAccessibility: Decodable {
-    struct Command: Decodable {
-      struct Parameters: Decodable {
-        let _0: [String: BridgeJSONValue]
-      }
-      let accessibility: Parameters
-    }
-    let command: Command
-  }
 }
 
 public struct BridgeResult: Codable, Equatable, Sendable {
   public let exitCode: Int32
-  public let values: [BridgeJSONValue]
   public let error: String?
-  public let propertyList: Data?
-  /// An accessibility command's answer, carried in the frame in its own shape.
-  public let accessibility: BridgeAXAnswer?
+  /// The command's answers, in the order it gave them.
+  public let answers: [BridgeAnswer]
 
-  public init(
-    exitCode: Int32, values: [BridgeJSONValue] = [], error: String? = nil, propertyList: Data? = nil, accessibility: BridgeAXAnswer? = nil
-  ) {
+  public init(exitCode: Int32, error: String? = nil, answers: [BridgeAnswer] = []) {
     self.exitCode = exitCode
-    self.values = values
     self.error = error
-    self.propertyList = propertyList
-    self.accessibility = accessibility
+    self.answers = answers
+  }
+
+  /// An accessibility command's answer.
+  public var accessibility: BridgeAXAnswer? {
+    answers.lazy.compactMap { answer -> BridgeAXAnswer? in
+      guard case let .accessibility(accessibility) = answer else { return nil }
+      return accessibility
+    }.first
+  }
+
+  /// A dynamic-store snapshot's property list.
+  public var propertyList: Data? {
+    answers.lazy.compactMap { answer -> Data? in
+      guard case let .dynamicStoreSnapshot(propertyList) = answer else { return nil }
+      return propertyList
+    }.first
+  }
+}
+
+extension BridgeResult {
+  /// The command's output as the host reports it: each answer a line of JSON, its keys sorted.
+  public var jsonLines: String {
+    get throws {
+      try answers.map { try $0.jsonLine() + "\n" }.joined()
+    }
+  }
+
+  /// What the host reports for the command, whether it succeeded or failed: its error, then its output.
+  public var reportedOutput: String {
+    get throws {
+      try [error, jsonLines].compactMap { $0 }.filter { !$0.isEmpty }.joined(separator: "\n")
+    }
   }
 }
 
@@ -116,13 +126,9 @@ public struct BridgeResponse: Codable, Equatable, Sendable {
     return try encoder.encode(self)
   }
 
-  /// Decodes the response to `request`; an accessibility answer decodes as the kind the request's verb answers with.
+  /// Decodes the response to `request`, refusing one at another version or for another request.
   public static func decode(_ data: Data, for request: BridgeRequest) throws -> Self {
-    let decoder = JSONDecoder()
-    if case let .accessibility(accessibility) = request.command {
-      decoder.userInfo[.bridgeAXAnswerKind] = accessibility.answerKind
-    }
-    let response = try decoder.decode(Self.self, from: data)
+    let response = try JSONDecoder().decode(Self.self, from: data)
     try check(version: response.version, id: response.id, for: request)
     return response
   }

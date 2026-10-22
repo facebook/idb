@@ -44,15 +44,6 @@ public struct BridgeAXDisplayInventory: Codable, Equatable, Sendable {
     self.displays = displays
   }
 
-  /// A capability the response does not mention is one the guest does not advertise.
-  public init(from decoder: Decoder) throws {
-    let container = try decoder.container(keyedBy: CodingKeys.self)
-    displayScopedInteractions = try container.decodeIfPresent(Bool.self, forKey: .displayScopedInteractions) ?? false
-    displayScopedTrees = try container.decodeIfPresent(Bool.self, forKey: .displayScopedTrees) ?? false
-    displayScopedQuiescence = try container.decodeIfPresent(Bool.self, forKey: .displayScopedQuiescence) ?? false
-    displays = try container.decode([Display].self, forKey: .displays)
-  }
-
   /// The fields of a successful response, for the guest to send beside `ok`.
   public var payload: [String: Any] {
     [

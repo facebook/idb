@@ -74,7 +74,7 @@ struct BridgeProtocolTests {
   @Test
   func responseKeepsFailureOutputAndRequiresMatchingIdentity() throws {
     let request = BridgeRequest(command: .clearPhotos, id: "first")
-    let result = BridgeResult(exitCode: 1, values: [.object(["partial": .bool(true)])])
+    let result = BridgeResult(exitCode: 1, answers: [.health(.clear(bundleID: "partial", ok: false, error: nil))])
     let data = try BridgeResponse(request: request, result: result).encoded()
     #expect(try BridgeResponse.decode(data, for: request).result == result)
     let other = BridgeRequest(command: .clearPhotos, id: "second")
@@ -86,16 +86,15 @@ struct BridgeProtocolTests {
     let value: [String: Any] = ["present": true, "value": [Data([0, 255]), Date(timeIntervalSince1970: 1234)]]
     let bytes = try PropertyListSerialization.data(fromPropertyList: value, format: .binary, options: 0)
     let request = BridgeRequest(command: .dynamicStore(.snapshot(key: "dns")))
-    let result = BridgeResult(exitCode: 0, propertyList: bytes)
+    let result = BridgeResult(exitCode: 0, answers: [.dynamicStoreSnapshot(bytes)])
     #expect(try BridgeResponse.decode(BridgeResponse(request: request, result: result).encoded(), for: request).result == result)
     let propertyList = try #require(result.propertyList)
     #expect(try PropertyListSerialization.propertyList(from: propertyList, options: [], format: nil) as? NSDictionary == value as NSDictionary)
   }
 
-  // An accessibility answer travels as an object in the frame, shaped as its model encodes it, with nothing saying which
-  // verb it answers: the request says that, so a frame decodes typed only against the request it answers.
+  // An accessibility answer travels in the frame as its case keyed to what it holds, so it reads on its own.
   @Test
-  func anAccessibilityAnswerTravelsAsItsOwnShape() throws {
+  func anAccessibilityAnswerTravelsAsItsCase() throws {
     let request = BridgeRequest(
       command: .accessibility(
         .read(
@@ -105,37 +104,37 @@ struct BridgeProtocolTests {
             clientType: .noClient))), id: "fixture")
     var node = BridgeAXNode()
     node.label = .string("Settings")
-    let result = BridgeResult(exitCode: 0, accessibility: .tree(BridgeAXTreeResponse(tree: node, pid: 3, truncated: false)))
+    let result = BridgeResult(exitCode: 0, answers: [.accessibility(.tree(BridgeAXTreeResponse(tree: node, pid: 3, truncated: false)))])
     let frame = try BridgeResponse(request: request, result: result).encoded()
 
     let wire = try #require(try JSONSerialization.jsonObject(with: frame) as? [String: Any])
-    let answer = try #require((wire["result"] as? [String: Any])?["accessibility"] as? NSDictionary)
-    #expect(answer == ["ok": true, "pid": 3, "truncated": false, "tree": ["XC_kAXXCAttributeLabel": "Settings"]])
+    let answers = try #require((wire["result"] as? [String: Any])?["answers"] as? [[String: Any]])
+    let answer = try #require((answers.first?["accessibility"] as? [String: Any])?["answer"] as? NSDictionary)
+    #expect(answer == ["tree": ["response": ["pid": 3, "truncated": false, "tree": ["XC_kAXXCAttributeLabel": "Settings"]]]])
     #expect(try BridgeResponse.decode(frame, for: request).result == result)
-    #expect(throws: (any Error).self, "without its request the answer's type is unknown") {
-      try JSONDecoder().decode(BridgeResponse.self, from: frame)
-    }
+    #expect(try JSONDecoder().decode(BridgeResponse.self, from: frame).result == result, "an answer names its own kind")
   }
 
   // A connection checks a response is the one it is waiting for without decoding the answer, which the caller decodes.
   @Test
   func aResponseIsCheckedAgainstItsRequestWithoutDecodingItsAnswer() throws {
     let request = BridgeRequest(command: .accessibility(.displays), id: "fixture")
-    let frame = Data(#"{"version":4,"id":"fixture","result":{"exitCode":0,"values":[],"accessibility":{"ok":true,"displays":"not an inventory"}}}"#.utf8)
+    let frame = Data(#"{"version":5,"id":"fixture","result":{"exitCode":0,"answers":[{"accessibility":{"answer":{"ok":true,"displays":"not an inventory"}}}]}}"#.utf8)
     try BridgeResponse.validate(frame, for: request)
     #expect(throws: (any Error).self, "the answer itself does not decode") { try BridgeResponse.decode(frame, for: request) }
     #expect(throws: BridgeProtocolError.mismatchedResponse) {
       try BridgeResponse.validate(frame, for: BridgeRequest(command: .accessibility(.displays), id: "other"))
     }
-    #expect(throws: BridgeProtocolError.unsupportedVersion(5)) {
-      try BridgeResponse.validate(Data(#"{"version":5,"id":"fixture","result":{}}"#.utf8), for: request)
+    #expect(throws: BridgeProtocolError.unsupportedVersion(6)) {
+      try BridgeResponse.validate(Data(#"{"version":6,"id":"fixture","result":{}}"#.utf8), for: request)
     }
   }
 
-  // Version 4 carries accessibility answers as typed objects rather than as values.
+  // Version 4 carried accessibility answers as typed objects; version 5 carries every other service's answers typed
+  // and names each command's action rather than `_0`.
   @Test
   func theProtocolIsAtTheVersionThatCarriesTypedAccessibilityAnswers() {
-    #expect(BridgeRequest.currentVersion == 4)
+    #expect(BridgeRequest.currentVersion == 5)
   }
 
   @Test
@@ -151,10 +150,10 @@ struct BridgeProtocolTests {
       #expect(BridgeRequest.identity(of: Data(text.utf8)) == nil, "\(text)")
     }
     // A newer peer's command shape is a version gap, not a malformed request.
-    #expect(throws: BridgeProtocolError.unsupportedVersion(5)) { try BridgeRequest.decode(Data(#"{"version":5,"id":"x","command":{"future":{}}}"#.utf8)) }
+    #expect(throws: BridgeProtocolError.unsupportedVersion(6)) { try BridgeRequest.decode(Data(#"{"version":6,"id":"x","command":{"future":{}}}"#.utf8)) }
     #expect(BridgeRequest.identity(of: Data(#"{"version":5,"id":"x","command":{"future":{}}}"#.utf8)) == "x")
-    #expect(BridgeRequest.identity(of: Data(#"{"version":4,"id":"x"}"#.utf8)) == "x")
-    #expect(BridgeRequest.identity(of: Data(#"{"version":4,"id":7,"command":{"ping":{}}}"#.utf8)) == nil)
+    #expect(BridgeRequest.identity(of: Data(#"{"version":5,"id":"x"}"#.utf8)) == "x")
+    #expect(BridgeRequest.identity(of: Data(#"{"version":5,"id":7,"command":{"ping":{}}}"#.utf8)) == nil)
   }
 
   @Test
@@ -164,84 +163,97 @@ struct BridgeProtocolTests {
     let fixtures: [(String, BridgeCommand)] = [
       (#"{"clearContacts":{}}"#, .clearContacts),
       (#"{"clearPhotos":{}}"#, .clearPhotos),
-      (#"{"dns":{"_0":{"list":{}}}}"#, .dns(.list)),
-      (#"{"dns":{"_0":{"set":{"servers":["::1"]}}}}"#, .dns(.set(servers: ["::1"]))),
-      (#"{"dynamicStore":{"_0":{"snapshot":{"key":"k"}}}}"#, .dynamicStore(.snapshot(key: "k"))),
+      (#"{"dns":{"action":{"list":{}}}}"#, .dns(.list)),
+      (#"{"dns":{"action":{"set":{"servers":["::1"]}}}}"#, .dns(.set(servers: ["::1"]))),
+      (#"{"dns":{"action":{"clear":{}}}}"#, .dns(.clear)),
+      (#"{"dynamicStore":{"action":{"snapshot":{"key":"k"}}}}"#, .dynamicStore(.snapshot(key: "k"))),
       // `Data` travels as base64, which the Python harness encodes itself.
-      (#"{"dynamicStore":{"_0":{"restore":{"key":"k","snapshot":"AP8="}}}}"#, .dynamicStore(.restore(key: "k", snapshot: Data([0, 255])))),
-      (#"{"proxy":{"_0":{"set":{"host":"::1","kind":"socks","port":1080}}}}"#, .proxy(.set(host: "::1", port: 1080, kind: .socks))),
-      (#"{"notifications":{"_0":{"list":{}}}}"#, .notifications(.list(bundleID: nil))),
-      (#"{"notifications":{"_0":{"delivered":{"bundleID":"app"}}}}"#, .notifications(.delivered(bundleID: "app"))),
-      (#"{"notifications":{"_0":{"clearDelivered":{"bundleID":"app"}}}}"#, .notifications(.clearDelivered(bundleID: "app"))),
-      (#"{"health":{"_0":{"approve":{"bundleID":"app","typeIDs":["step"]}}}}"#, .health(.approve(bundleID: "app", typeIDs: ["step"]))),
-      (#"{"accessibility":{"_0":{"clientType":0,"maxDepth":5,"maxNodes":10,"pid":42,"traversal":"view-hierarchy","verb":"describe"}}}"#, .accessibility(.read(pid: 42, options: Self.readOptions(maxDepth: 5, maxNodes: 10)))),
-      (#"{"accessibility":{"_0":{"clientType":0,"verb":"hittest","x":1.5,"y":2}}}"#, .accessibility(.hitTest(x: 1.5, y: 2, attributes: nil, clientType: .noClient))),
+      (#"{"dynamicStore":{"action":{"restore":{"key":"k","snapshot":"AP8="}}}}"#, .dynamicStore(.restore(key: "k", snapshot: Data([0, 255])))),
+      (#"{"proxy":{"action":{"list":{}}}}"#, .proxy(.list)),
+      (#"{"proxy":{"action":{"set":{"host":"::1","kind":"socks","port":1080}}}}"#, .proxy(.set(host: "::1", port: 1080, kind: .socks))),
+      (#"{"proxy":{"action":{"set":{"host":"proxy.example","kind":"http","port":8080}}}}"#, .proxy(.set(host: "proxy.example", port: 8080, kind: .http))),
+      (#"{"proxy":{"action":{"clear":{}}}}"#, .proxy(.clear)),
+      (#"{"notifications":{"action":{"list":{}}}}"#, .notifications(.list(bundleID: nil))),
+      (#"{"notifications":{"action":{"list":{"bundleID":"app"}}}}"#, .notifications(.list(bundleID: "app"))),
+      (#"{"notifications":{"action":{"approve":{"bundleID":"app"}}}}"#, .notifications(.approve(bundleID: "app"))),
+      (#"{"notifications":{"action":{"revoke":{"bundleID":"app"}}}}"#, .notifications(.revoke(bundleID: "app"))),
+      (#"{"notifications":{"action":{"delivered":{"bundleID":"app"}}}}"#, .notifications(.delivered(bundleID: "app"))),
+      (#"{"notifications":{"action":{"clearDelivered":{"bundleID":"app"}}}}"#, .notifications(.clearDelivered(bundleID: "app"))),
+      (#"{"health":{"action":{"list":{"bundleID":"app"}}}}"#, .health(.list(bundleID: "app"))),
+      (#"{"health":{"action":{"clear":{"bundleID":"app"}}}}"#, .health(.clear(bundleID: "app"))),
+      (#"{"health":{"action":{"approve":{"bundleID":"app","typeIDs":["step"]}}}}"#, .health(.approve(bundleID: "app", typeIDs: ["step"]))),
+      (#"{"health":{"action":{"revoke":{"bundleID":"app","typeIDs":[]}}}}"#, .health(.revoke(bundleID: "app", typeIDs: []))),
+      (#"{"accessibility":{"action":{"read":{"options":{"clientType":0,"explainUnreachable":false,"maxDepth":5,"maxNodes":10,"traversal":"view-hierarchy"},"pid":42}}}}"#, .accessibility(.read(pid: 42, options: Self.readOptions(maxDepth: 5, maxNodes: 10)))),
+      (#"{"accessibility":{"action":{"hitTest":{"clientType":0,"x":1.5,"y":2}}}}"#, .accessibility(.hitTest(x: 1.5, y: 2, attributes: nil, clientType: .noClient))),
       (#"{"ping":{}}"#, .ping),
       (#"{"shutdown":{}}"#, .shutdown),
     ]
     for (text, command) in fixtures {
-      let literal = #"{"command":"# + text + #","id":"fixture","version":4}"#
+      let literal = #"{"command":"# + text + #","id":"fixture","version":5}"#
       #expect(try BridgeRequest.decode(Data(literal.utf8)).command == command, "\(text)")
       #expect(String(decoding: try BridgeRequest(command: command, id: "fixture").encoded(), as: UTF8.self) == literal, "\(text)")
     }
   }
 
+  // Each kind of result, as a frame carries it. A change here is a change to what every host reads.
   @Test
-  func integersAndBooleansSurviveJSONWithoutLosingPrecision() throws {
-    let value = BridgeJSONValue.object([
-      "signed": .integer(Int64.min), "unsigned": .unsignedInteger(UInt64.max),
-      "aboveDoublePrecision": .integer(9_007_199_254_740_993),
-      "bool": .bool(true), "number": .integer(1), "fraction": .number(1.25),
-      "nested": .array([.null, .string("quotes\" newline\n NUL\0")]),
-    ])
-    let data = try JSONEncoder().encode(value)
-    #expect(try JSONDecoder().decode(BridgeJSONValue.self, from: data) == value)
-    #expect(try BridgeJSONValue(foundationValue: value.foundationValue) == value)
-    #expect(try BridgeJSONValue(foundationValue: NSNumber(value: true)) == .bool(true))
-    #expect(try BridgeJSONValue(foundationValue: NSNumber(value: 1)) == .integer(1))
-    #expect(throws: (any Error).self) { try BridgeJSONValue(foundationValue: NSNumber(value: Double.nan)) }
-    #expect(throws: (any Error).self) { try BridgeJSONValue(foundationValue: Date()) }
-  }
-
-  @Test
-  func foundationJSONPreservesLargeIntegerAndExponentValues() throws {
-    let object: [String: Any] = [
-      "large": NSNumber(value: Int64(9_007_199_254_740_993)),
-      "signedMax": NSNumber(value: Int64.max),
-      "unsignedMax": NSNumber(value: UInt64.max),
-      "twoTo63": NSNumber(value: Double(9_223_372_036_854_775_808)),
-      "twoTo64": NSNumber(value: Double(18_446_744_073_709_551_616)),
+  func literalWireFixturesPinEveryKindOfResult() throws {
+    var setting = BridgeAXNode()
+    setting.label = .string("General")
+    let fixtures: [(BridgeCommand, String, BridgeResult)] = [
+      (.clearPhotos, #"{"answers":[],"exitCode":0}"#, BridgeResult(exitCode: 0)),
+      (.clearPhotos, #"{"answers":[],"error":"it failed","exitCode":1}"#, BridgeResult(exitCode: 1, error: "it failed")),
+      (
+        .accessibility(.deviceSettingRead("reduce-motion")), #"{"answers":[{"accessibility":{"answer":{"setting":{"response":{"enabled":true}}}}}],"exitCode":0}"#,
+        BridgeResult(exitCode: 0, answers: [.accessibility(.setting(BridgeAXSettingResponse(enabled: true)))])
+      ),
+      (
+        .accessibility(.read(pid: 3, options: Self.readOptions(maxDepth: 1, maxNodes: 1))),
+        #"{"answers":[{"accessibility":{"answer":{"failure":{"reason":{"error":"pid 3 has no accessibility server","error_kind":"application_unavailable","pid":3}}}}}],"exitCode":1}"#,
+        BridgeResult(
+          exitCode: 1,
+          answers: [.accessibility(.failure(BridgeAXFailure(message: "pid 3 has no accessibility server", kind: .applicationUnavailable, pid: 3)))])
+      ),
+      (
+        .health(.clear(bundleID: "app")), #"{"answers":[{"health":{"answer":{"action":"clear","bundleID":"app","ok":true}}}],"exitCode":0}"#,
+        BridgeResult(exitCode: 0, answers: [.health(.clear(bundleID: "app", ok: true, error: nil))])
+      ),
+      (
+        .notifications(.list(bundleID: nil)),
+        #"{"answers":[{"notificationSettings":{"settings":{"bundleID":"a","found":false}}},{"notificationSettings":{"settings":{"bundleID":"b","found":false}}}],"exitCode":0}"#,
+        BridgeResult(
+          exitCode: 0,
+          answers: [
+            .notificationSettings(BridgeNotificationSettings(bundleID: "a", settings: nil)), .notificationSettings(BridgeNotificationSettings(bundleID: "b", settings: nil)),
+          ])
+      ),
+      (
+        .dns(.list), #"{"answers":[{"networkConfiguration":{"configuration":{"propertyList":"YnBsaXN0MDDQCAAAAAAAAAEBAAAAAAAAAAEAAAAAAAAAAAAAAAAAAAAJ"}}}],"exitCode":0}"#,
+        BridgeResult(exitCode: 0, answers: [.networkConfiguration(try BridgeNetworkConfiguration([String: Any]()))])
+      ),
+      (
+        .dynamicStore(.snapshot(key: "k")), #"{"answers":[{"dynamicStoreSnapshot":{"propertyList":"AP8="}}],"exitCode":0}"#,
+        BridgeResult(exitCode: 0, answers: [.dynamicStoreSnapshot(Data([0, 255]))])
+      ),
     ]
-    let bytes = try JSONSerialization.data(withJSONObject: object)
-    #expect(try BridgeJSONValue(foundationValue: JSONSerialization.jsonObject(with: bytes)) == BridgeJSONValue(foundationValue: object))
-    let value = try JSONDecoder().decode(BridgeJSONValue.self, from: Data("[1e3,1.25e-2,-0.0,9007199254740993]".utf8))
-    #expect(value == .array([.integer(1000), .number(0.0125), .integer(0), .integer(9_007_199_254_740_993)]))
-  }
-
-  @Test
-  func numericRepresentationsHaveJSONEqualityWithoutRoundingLargeIntegers() throws {
-    for value: BridgeJSONValue in [.unsignedInteger(1), .number(1), .number(-0.0), .unsignedInteger(UInt64.max)] {
-      #expect(try JSONDecoder().decode(BridgeJSONValue.self, from: JSONEncoder().encode(value)) == value)
-    }
-    #expect(BridgeJSONValue.integer(1) == .number(1))
-    #expect(BridgeJSONValue.integer(0) == .number(-0.0))
-    #expect(BridgeJSONValue.integer(1) != .bool(true))
-    #expect(BridgeJSONValue.integer(9_007_199_254_740_993) != .number(9_007_199_254_740_992))
-    #expect(BridgeJSONValue.unsignedInteger(UInt64.max) != .unsignedInteger(UInt64.max - 1))
-    for value in [Double.nan, Double.infinity, -Double.infinity] {
-      #expect(throws: (any Error).self) { try JSONEncoder().encode(BridgeJSONValue.number(value)) }
+    for (command, text, result) in fixtures {
+      let request = BridgeRequest(command: command, id: "fixture")
+      let literal = #"{"id":"fixture","result":"# + text + #","version":\#(BridgeRequest.currentVersion)}"#
+      #expect(String(decoding: try BridgeResponse(request: request, result: result).encoded(), as: UTF8.self) == literal, "\(command)")
+      #expect(try BridgeResponse.decode(Data(literal.utf8), for: request).result == result, "\(command)")
     }
   }
 
   @Test
   func literalWireFixturesAndResponseVersionBoundary() throws {
-    let request = try BridgeRequest.decode(Data(#"{"version":4,"id":"fixture","command":{"dns":{"_0":{"set":{"servers":["::1","1.1.1.1"]}}}}}"#.utf8))
+    let request = try BridgeRequest.decode(Data(#"{"version":5,"id":"fixture","command":{"dns":{"action":{"set":{"servers":["::1","1.1.1.1"]}}}}}"#.utf8))
     #expect(request.command == .dns(.set(servers: ["::1", "1.1.1.1"])))
-    let success = Data(#"{"version":4,"id":"fixture","result":{"exitCode":0,"values":[{"ok":true},null,42]}}"#.utf8)
-    #expect(try BridgeResponse.decode(success, for: request).result == BridgeResult(exitCode: 0, values: [.object(["ok": .bool(true)]), .null, .integer(42)]))
-    let future = Data(#"{"version":5,"id":"fixture","result":{"exitCode":0,"values":[]}}"#.utf8)
-    #expect(throws: BridgeProtocolError.unsupportedVersion(5)) { try BridgeResponse.decode(future, for: request) }
-    for text in [#"{"version":4,"result":{"exitCode":0,"values":[]}}"#, #"{"version":4,"id":"different","result":{"exitCode":0,"values":[]}}"#] {
+    let success = Data(
+      #"{"version":5,"id":"fixture","result":{"exitCode":0,"answers":[{"health":{"answer":{"action":"clear","bundleID":"app","ok":true}}}]}}"#.utf8)
+    #expect(try BridgeResponse.decode(success, for: request).result == BridgeResult(exitCode: 0, answers: [.health(.clear(bundleID: "app", ok: true, error: nil))]))
+    let future = Data(#"{"version":6,"id":"fixture","result":{"exitCode":0,"answers":[]}}"#.utf8)
+    #expect(throws: BridgeProtocolError.unsupportedVersion(6)) { try BridgeResponse.decode(future, for: request) }
+    for text in [#"{"version":5,"result":{"exitCode":0,"answers":[]}}"#, #"{"version":5,"id":"different","result":{"exitCode":0,"answers":[]}}"#] {
       #expect(throws: BridgeProtocolError.mismatchedResponse) { try BridgeResponse.decode(Data(text.utf8), for: request) }
     }
   }

@@ -53,6 +53,14 @@ import Foundation
   case ping
   case shutdown
 
+  // Each service's action is keyed `action`, not the `_0` Swift would name an unlabelled payload.
+  private enum DnsCodingKeys: String, CodingKey { case _0 = "action" }
+  private enum DynamicStoreCodingKeys: String, CodingKey { case _0 = "action" }
+  private enum ProxyCodingKeys: String, CodingKey { case _0 = "action" }
+  private enum NotificationsCodingKeys: String, CodingKey { case _0 = "action" }
+  private enum HealthCodingKeys: String, CodingKey { case _0 = "action" }
+  private enum AccessibilityCodingKeys: String, CodingKey { case _0 = "action" }
+
   /// Only reads can be replayed after a connection failure with an uncertain outcome.
   public var mayRetry: Bool {
     switch self {

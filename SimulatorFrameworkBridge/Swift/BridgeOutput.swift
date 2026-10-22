@@ -9,18 +9,18 @@ import FBSimulatorBridgeProtocol
 import Foundation
 
 public final class BridgeOutput {
-  public private(set) var values: [BridgeJSONValue] = []
-  public private(set) var propertyList: Data?
-  public private(set) var accessibility: BridgeAXAnswer?
+  public private(set) var answers: [BridgeAnswer] = []
   public private(set) var failed = false
   public private(set) var error: String?
 
   public init() {}
 
+  /// One of the command's answers. One the host could not report is refused, and fails the command.
   @discardableResult
-  public func write(_ object: Any) -> Bool {
+  public func write(_ answer: BridgeAnswer) -> Bool {
     do {
-      values.append(try BridgeJSONValue(foundationValue: object))
+      _ = try answer.jsonLine()
+      answers.append(answer)
       return true
     } catch {
       NSLog("[SimulatorFrameworkBridge] Could not encode command output: %@", error as NSError)
@@ -31,13 +31,14 @@ public final class BridgeOutput {
 
   /// An accessibility command's answer, which the frame carries in its own shape.
   public func write(accessibility answer: BridgeAXAnswer) {
-    accessibility = answer
+    answers.append(.accessibility(answer))
   }
 
+  /// A dynamic-store snapshot, carried as the binary property list it is.
   @discardableResult
   public func write(propertyList object: Any) -> Bool {
     do {
-      propertyList = try PropertyListSerialization.data(fromPropertyList: object, format: .binary, options: 0)
+      answers.append(.dynamicStoreSnapshot(try PropertyListSerialization.data(fromPropertyList: object, format: .binary, options: 0)))
       return true
     } catch {
       failure("Could not encode property-list output: \(error.localizedDescription)")
@@ -53,6 +54,11 @@ public final class BridgeOutput {
   }
 
   public func finish(status: Int32) -> BridgeResult {
-    BridgeResult(exitCode: failed ? 1 : status, values: values, error: error, propertyList: propertyList, accessibility: accessibility)
+    BridgeResult(exitCode: failed ? 1 : status, error: error, answers: answers)
+  }
+
+  /// The snapshot the command wrote, if it wrote one.
+  public var propertyList: Data? {
+    finish(status: 0).propertyList
   }
 }

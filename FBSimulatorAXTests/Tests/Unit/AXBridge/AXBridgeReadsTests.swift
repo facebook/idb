@@ -16,10 +16,6 @@ import XCTest
 /// Coverage for the axbridge read path that does not require a live simulator.
 final class AXBridgeReadsTests: XCTestCase {
 
-  private func envelope(_ object: [String: Any]) throws -> Data {
-    try JSONSerialization.data(withJSONObject: object)
-  }
-
   // MARK: - AXTreeRead envelope parsing
 
   func testParsesTreeFromOkEnvelope() throws {
@@ -27,7 +23,7 @@ final class AXBridgeReadsTests: XCTestCase {
       AXWire.Node.label.rawValue: "General",
       AXWire.Node.identifier.rawValue: "com.apple.settings.general",
     ]
-    let data = try envelope(["ok": true, "tree": tree, "pid": 42])
+    let data = try treeAnswer(tree, pid: 42)
     let parsed = try AXTreeRead(wholeTreeResponse: data, pid: 42)
     XCTAssertEqual(parsed.tree.label, BridgeAXScalar.string("General"))
     XCTAssertEqual(parsed.tree.identifier, BridgeAXScalar.string("com.apple.settings.general"))
@@ -38,16 +34,14 @@ final class AXBridgeReadsTests: XCTestCase {
     // A guest walk cut short by the depth or node bound tags its envelope `truncated: true`, so the
     // conformer can warn the tree is incomplete rather than pass it off as whole.
     let tree: [String: Any] = [AXWire.Node.label.rawValue: "root"]
-    let data = try envelope(["ok": true, "tree": tree, "pid": 42, "truncated": true])
+    let data = try treeAnswer(tree, pid: 42, truncated: true)
     let parsed = try AXTreeRead(wholeTreeResponse: data, pid: 42)
     XCTAssertTrue(parsed.truncated, "the guest's truncation flag must be surfaced to the caller")
   }
 
   func testParsesTheAutomationStateFromTheEnvelope() throws {
     let tree: [String: Any] = [AXWire.Node.label.rawValue: "root"]
-    let data = try envelope([
-      "ok": true, "tree": tree, "pid": 42, "automation": ["enabled": true, "asserted": false],
-    ])
+    let data = try treeAnswer(tree, pid: 42, automation: BridgeAXAutomationState(enabled: true, asserted: false))
     let parsed = try AXTreeRead(wholeTreeResponse: data, pid: 42)
     XCTAssertEqual(parsed.automation?.enabled, true)
     XCTAssertEqual(parsed.automation?.asserted, false)
@@ -57,24 +51,15 @@ final class AXBridgeReadsTests: XCTestCase {
   // different fact from saying it was off.
   func testAnEnvelopeWithoutAutomationReportsNothingRatherThanOff() throws {
     let tree: [String: Any] = [AXWire.Node.label.rawValue: "root"]
-    let data = try envelope(["ok": true, "tree": tree, "pid": 42])
+    let data = try treeAnswer(tree, pid: 42)
     let parsed = try AXTreeRead(wholeTreeResponse: data, pid: 42)
     XCTAssertNil(parsed.automation, "an absent automation object must not read as automation mode being off")
-  }
-
-  // `asserted` absent is the state before anything asserts, and false is the truthful answer for it.
-  func testAutomationAssertedDefaultsToFalseWhenOmitted() throws {
-    let tree: [String: Any] = [AXWire.Node.label.rawValue: "root"]
-    let data = try envelope(["ok": true, "tree": tree, "pid": 42, "automation": ["enabled": true]])
-    let parsed = try AXTreeRead(wholeTreeResponse: data, pid: 42)
-    XCTAssertEqual(parsed.automation?.enabled, true)
-    XCTAssertEqual(parsed.automation?.asserted, false)
   }
 
   func testSurfacesGuestErrorMessage() throws {
     // An untagged failure (no `error_kind`) is an opaque `guestFailure` carrying the guest's own
     // message, so callers see the real cause.
-    let data = try envelope(["ok": false, "error": "the accessibility server is not responding"])
+    let data = try failureAnswer("the accessibility server is not responding")
     XCTAssertThrowsError(try AXTreeRead(wholeTreeResponse: data, pid: 7)) { error in
       guard case AXBridgeError.guestFailure = error else {
         return XCTFail("an untagged failure should be a guestFailure, got: \(error)")
@@ -85,7 +70,7 @@ final class AXBridgeReadsTests: XCTestCase {
 
   func testApplicationUnavailableErrorKindThrowsTypedCase() throws {
     // The guest error becomes the backend-neutral error shared with the accessibility backend.
-    let data = try envelope(["ok": false, "error": "no application element for pid 7", "error_kind": "application_unavailable"])
+    let data = try failureAnswer("no application element for pid 7", kind: "application_unavailable")
     XCTAssertThrowsError(try AXTreeRead(wholeTreeResponse: data, pid: 7)) { error in
       guard case let AXBridgeError.applicationUnavailable(pid) = error else {
         return XCTFail("a tagged failure should be applicationUnavailable, got: \(error)")
@@ -99,11 +84,7 @@ final class AXBridgeReadsTests: XCTestCase {
   func testFusedFrontmostRaisesTheGuestsKindAndCarriesItsReason() throws {
     // The reader's binding failure text is the most actionable message the guest produces; it reaches the caller
     // intact and as its own case.
-    let data = try envelope([
-      "ok": false,
-      "error": "XCTAccessibilityFramework unavailable — is XCTAutomationSupport loaded?",
-      "error_kind": "reader_unavailable",
-    ])
+    let data = try failureAnswer("XCTAccessibilityFramework unavailable — is XCTAutomationSupport loaded?", kind: "reader_unavailable")
     XCTAssertThrowsError(try AXTreeRead(frontmostResponse: data, method: .centerPoint)) { error in
       guard case let AXBridgeError.readerUnavailable(reason) = error else {
         return XCTFail("expected readerUnavailable, got: \(error)")
@@ -115,11 +96,7 @@ final class AXBridgeReadsTests: XCTestCase {
 
   func testFusedFrontmostApplicationUnavailableKindThrowsApplicationUnavailable() throws {
     // `application_unavailable` means the same on a frontmost read as on `--pid`; no pid because nothing resolved.
-    let data = try envelope([
-      "ok": false,
-      "error": "no accessibility server answered the system-wide hit-test at (201.0, 437.0)",
-      "error_kind": "application_unavailable",
-    ])
+    let data = try failureAnswer("no accessibility server answered the system-wide hit-test at (201.0, 437.0)", kind: "application_unavailable")
     XCTAssertThrowsError(try AXTreeRead(frontmostResponse: data, method: .centerPoint)) { error in
       guard case let AXBridgeError.applicationUnavailable(pid) = error else {
         return XCTFail("expected applicationUnavailable, got: \(error)")
@@ -131,11 +108,7 @@ final class AXBridgeReadsTests: XCTestCase {
   // `frontmostUnresolved` names the strategy the caller selected — the other two may well answer, so which one
   // was asked for is the actionable half.
   func testFusedFrontmostNamesTheStrategyThatCouldNotAnswer() throws {
-    let data = try envelope([
-      "ok": false,
-      "error": "AXPTranslator unavailable — is AccessibilityPlatformTranslation loaded?",
-      "error_kind": "frontmost_unresolved",
-    ])
+    let data = try failureAnswer("AXPTranslator unavailable — is AccessibilityPlatformTranslation loaded?", kind: "frontmost_unresolved")
     XCTAssertThrowsError(try AXTreeRead(frontmostResponse: data, method: .windowServer)) { error in
       guard case let AXBridgeError.frontmostUnresolved(method, reason) = error else {
         return XCTFail("expected frontmostUnresolved, got: \(error)")
@@ -149,12 +122,7 @@ final class AXBridgeReadsTests: XCTestCase {
   func testHitTestRaisesTheGuestsFailureKind() throws {
     // All three parsers classify alike: a tagged hit-test failure is the typed case, not an opaque
     // one, and the pid the guest reported rides with it.
-    let data = try envelope([
-      "ok": false,
-      "error": "pid 8865 has no accessibility server to hit-test",
-      "error_kind": "application_unavailable",
-      "pid": 8865,
-    ])
+    let data = try failureAnswer("pid 8865 has no accessibility server to hit-test", kind: "application_unavailable", pid: 8865)
     XCTAssertThrowsError(try AXTreeRead(hitTestResponse: data)) { error in
       guard case let AXBridgeError.applicationUnavailable(pid) = error else {
         return XCTFail("expected applicationUnavailable, got: \(error)")
@@ -166,12 +134,7 @@ final class AXBridgeReadsTests: XCTestCase {
   func testAnApplicationThatDidNotAnswerIsItsOwnCase() throws {
     // A live app that did not answer is distinct from one that is gone — the reason the guest classifies
     // the AX timeout at all — so it must not land in the same bucket as a reader bug.
-    let data = try envelope([
-      "ok": false,
-      "error": "pid 8865 did not respond to the read of its element tree before it timed out",
-      "error_kind": "application_not_responding",
-      "pid": 8865,
-    ])
+    let data = try failureAnswer("pid 8865 did not respond to the read of its element tree before it timed out", kind: "application_not_responding", pid: 8865)
     XCTAssertThrowsError(try AXTreeRead(wholeTreeResponse: data, pid: 8865)) { error in
       guard case let AXBridgeError.applicationNotResponding(pid) = error else {
         return XCTFail("expected applicationNotResponding, got: \(error)")
@@ -180,32 +143,22 @@ final class AXBridgeReadsTests: XCTestCase {
     }
   }
 
-  // The reported pid is JSON off the wire; the non-failable `pid_t` conversion traps, which would make a bad
-  // response crash the host at parse time.
-  func testAnOutOfRangeReportedPidDegradesRatherThanTrapping() throws {
-    let data = try envelope([
-      "ok": false,
-      "error": "pid 8865 has no accessibility server",
-      "error_kind": "application_unavailable",
-      "pid": 99_999_999_999,
-    ])
-    XCTAssertThrowsError(try AXTreeRead(wholeTreeResponse: data, pid: 42)) { error in
-      guard case let AXBridgeError.applicationUnavailable(pid) = error else {
-        return XCTFail("expected applicationUnavailable, got: \(error)")
+  // A host only ever reads its own revision's guest, which writes every answer whole, so an answer it could not have
+  // written is refused as unparseable rather than read as something else.
+  func testAnAnswerThisRevisionsGuestCannotWriteIsRefused() throws {
+    let answers = [
+      #"{"failure":{"reason":{"error":"gone","error_kind":"application_unavailable","pid":99999999999}}}"#,
+      #"{"failure":{"reason":{"error":"something new went wrong","error_kind":"some_future_kind"}}}"#,
+      #"{"tree":{"response":{"automation":{"enabled":true},"pid":42,"tree":{},"truncated":false}}}"#,
+      #"{"tree":{"response":{"modal":{"elementType":"X","kind":"bogus"},"pid":42,"tree":{},"truncated":false}}}"#,
+    ]
+    for answer in answers {
+      XCTAssertThrowsError(try AXTreeRead(wholeTreeResponse: Data(answer.utf8), pid: 42), answer) { error in
+        guard case let AXBridgeError.guestFailure(message) = error else {
+          return XCTFail("expected guestFailure, got: \(error)")
+        }
+        XCTAssertTrue(message.contains("unparseable guest response"), message)
       }
-      XCTAssertEqual(pid, 42, "an unusable reported pid falls back to the one the caller named")
-    }
-  }
-
-  // A kind this host has never heard of has to degrade to what an untagged failure already does, so a
-  // guest running ahead of its host costs precision and nothing else.
-  func testAnUnknownFailureKindDegradesToAnOpaqueFailureCarryingTheMessage() throws {
-    let data = try envelope(["ok": false, "error": "something new went wrong", "error_kind": "some_future_kind"])
-    XCTAssertThrowsError(try AXTreeRead(frontmostResponse: data, method: .centerPoint)) { error in
-      guard case AXBridgeError.guestFailure = error else {
-        return XCTFail("expected guestFailure, got: \(error)")
-      }
-      XCTAssertTrue("\(error)".contains("something new went wrong"), "the message must survive: \(error)")
     }
   }
 
@@ -215,13 +168,13 @@ final class AXBridgeReadsTests: XCTestCase {
   }
 
   func testThrowsWhenOkButNoTree() throws {
-    let data = try envelope(["ok": true])
+    let data = Data(#"{"tree":{"response":{"pid":1,"truncated":false}}}"#.utf8)
     XCTAssertThrowsError(try AXTreeRead(wholeTreeResponse: data, pid: 1))
   }
 
   func testThrowsWhenNotOk() throws {
-    // `ok` missing/false with no `error` still fails rather than yielding an empty tree.
-    let data = try envelope(["tree": [AXWire.Node.label.rawValue: "x"]])
+    // A tree that is not wrapped as an answer's response is not an answer, rather than an empty tree.
+    let data = Data(#"{"tree":{"XC_kAXXCAttributeLabel":"x"}}"#.utf8)
     XCTAssertThrowsError(try AXTreeRead(wholeTreeResponse: data, pid: 1))
   }
 
@@ -757,9 +710,7 @@ final class AXBridgeReadsTests: XCTestCase {
   func testDisplayScopedPointReadKeepsInterfaceCoordinatesAndMetadata() async throws {
     for legacy in [false, true] {
       let transport = try StubAXBridgeWaitTransport(responses: [
-        envelope([
-          "ok": true, "pid": 42, "tree": [AXWire.Node.label.rawValue: "target"],
-        ])
+        hitAnswer([AXWire.Node.label.rawValue: "target"], pid: 42)
       ])
       let reader = AXBridgeUIAutomation(
         simulator: SimulatorTestSupport.testableSimulator(withDevice: AXBridgeWaitDevice()),
@@ -767,9 +718,10 @@ final class AXBridgeReadsTests: XCTestCase {
       let response = try await reader.describe(.point(CGPoint(x: 80, y: 180)), options: AccessibilityRequestOptions())
       let requests = await transport.requests
       XCTAssertEqual(requests.count, 1)
-      XCTAssertEqual(requests[0].payload["x"] as? Double, 180)
-      XCTAssertEqual(requests[0].payload["y"] as? Double, 320)
-      XCTAssertEqual(requests[0].payload["displayID"] as? UInt32, legacy ? nil : 82)
+      guard case let .hitTest(x, y, _, _, displayID, _) = requests[0] else { return XCTFail("\(requests[0])") }
+      XCTAssertEqual(x, 180)
+      XCTAssertEqual(y, 320)
+      XCTAssertEqual(displayID, legacy ? nil : 82)
       XCTAssertEqual(response.screen?.width, 400)
       XCTAssertEqual(response.screen?.height, 600)
       XCTAssertEqual(response.screen?.display?.uniqueID, legacy ? nil : "inner")
@@ -780,7 +732,7 @@ final class AXBridgeReadsTests: XCTestCase {
   func testSelectingTheActiveDisplayOrItsConfigurationReadsIt() async throws {
     for selection in [DisplaySelection.display(uniqueID: "inner"), .configuration(generation: 1)] {
       let transport = try StubAXBridgeWaitTransport(responses: [
-        envelope(["ok": true, "pid": 42, "tree": [AXWire.Node.label.rawValue: "target"]])
+        hitAnswer([AXWire.Node.label.rawValue: "target"], pid: 42)
       ])
       let reader = AXBridgeUIAutomation(
         simulator: SimulatorTestSupport.testableSimulator(withDevice: AXBridgeWaitDevice()),
@@ -788,7 +740,7 @@ final class AXBridgeReadsTests: XCTestCase {
       let response = try await reader.describe(.point(CGPoint(x: 80, y: 180)), options: AccessibilityRequestOptions())
       XCTAssertEqual(response.screen?.display?.uniqueID, "inner", "\(selection)")
       let requests = await transport.requests
-      XCTAssertEqual(requests.first?.payload["displayID"] as? UInt32, 82, "\(selection)")
+      XCTAssertEqual(requests.first?.displayID, 82, "\(selection)")
     }
   }
 
@@ -821,14 +773,12 @@ final class AXBridgeReadsTests: XCTestCase {
   func testMarkerWritePinsDisplayAcrossLookupAndWrite() async throws {
     let displays = displays()
     let transport = try StubAXBridgeWaitTransport(responses: [
-      envelope([
-        "ok": true, "pid": 42,
-        "tree": [
+      treeAnswer(
+        [
           AXWire.Node.label.rawValue: "target",
           AXWire.Node.frame.rawValue: CGRectCreateDictionaryRepresentation(CGRect(x: 60, y: 160, width: 40, height: 40)) as NSDictionary,
-        ],
-      ]),
-      envelope(["ok": true, "pid": 42]),
+        ], pid: 42),
+      writtenAnswer(pid: 42),
     ])
     let reader = AXBridgeUIAutomation(
       simulator: SimulatorTestSupport.testableSimulator(withDevice: AXBridgeWaitDevice()),
@@ -838,24 +788,23 @@ final class AXBridgeReadsTests: XCTestCase {
     XCTAssertEqual(displays.reads, 3)
     let requests = await transport.requests
     XCTAssertEqual(requests.count, 2)
-    XCTAssertEqual(requests[0].payload["displayID"] as? UInt32, 82)
-    XCTAssertEqual(requests[1].payload["displayID"] as? UInt32, 82)
-    XCTAssertEqual(requests[1].payload["x"] as? Double, 180)
-    XCTAssertEqual(requests[1].payload["y"] as? Double, 320)
-    XCTAssertEqual(requests[1].payload["assertValue"] as? String, "target")
-    XCTAssertEqual(requests[1].payload["pid"] as? Int, 42)
+    XCTAssertEqual(requests[0].displayID, 82)
+    guard case let .write(write) = requests[1] else { return XCTFail("\(requests[1])") }
+    XCTAssertEqual(write.displayID, 82)
+    XCTAssertEqual(write.x, 180)
+    XCTAssertEqual(write.y, 320)
+    XCTAssertEqual(write.assertion?.value, "target")
+    XCTAssertEqual(write.pid, 42)
   }
 
   func testTreeScreenUsesPinnedGeometryWithoutRewritingElementFrames() async throws {
     for query in [AccessibilityElementQuery.frontmost, .marker(value: "target", key: .label, depth: 10)] {
       let transport = try StubAXBridgeWaitTransport(responses: [
-        envelope([
-          "ok": true, "pid": 42,
-          "tree": [
+        treeAnswer(
+          [
             AXWire.Node.label.rawValue: "target",
             AXWire.Node.frame.rawValue: CGRectCreateDictionaryRepresentation(CGRect(x: 0, y: 0, width: 600, height: 400)) as NSDictionary,
-          ],
-        ])
+          ], pid: 42)
       ])
       let reader = AXBridgeUIAutomation(
         simulator: SimulatorTestSupport.testableSimulator(withDevice: AXBridgeWaitDevice()),
@@ -920,29 +869,24 @@ final class AXBridgeReadsTests: XCTestCase {
   }
 
   private func waitErrorEnvelope(_ kind: String) throws -> Data {
-    try envelope(["ok": false, "error_kind": kind, "error": "read failed", "pid": 42])
+    try failureAnswer("read failed", kind: kind, pid: 42)
   }
 
   private func waitMatchingEnvelope() throws -> Data {
-    try envelope([
-      "ok": true, "pid": 42,
-      "tree": [AXWire.Node.label.rawValue: "ready"],
-    ])
+    try treeAnswer([AXWire.Node.label.rawValue: "ready"], pid: 42)
   }
 
   private func tapMatchingEnvelope() throws -> Data {
-    try envelope([
-      "ok": true, "pid": 42,
-      "tree": [
+    try treeAnswer(
+      [
         AXWire.Node.label.rawValue: "General",
         AXWire.Node.frame.rawValue: CGRectCreateDictionaryRepresentation(CGRect(x: 10, y: 100, width: 100, height: 44)),
-      ],
-    ])
+      ], pid: 42)
   }
 
   func testMarkerTapRetriesATransientTargetReadTimeout() async throws {
     let (reader, transport) = try nativeWaitReader(responses: [
-      waitErrorEnvelope("application_not_responding"), tapMatchingEnvelope(), envelope(["ok": true, "pid": 42]),
+      waitErrorEnvelope("application_not_responding"), tapMatchingEnvelope(), writtenAnswer(pid: 42),
     ])
     try await reader.tap(.marker(value: "General", key: .label, depth: 10), options: TapOptions())
     let reads = await transport.readCount
@@ -954,7 +898,7 @@ final class AXBridgeReadsTests: XCTestCase {
   // Frontmost resolution can name an app that has since exited, such as one that is being relaunched.
   func testMarkerTapRereadsAFrontmostAppThatHasExited() async throws {
     let (reader, transport) = try nativeWaitReader(responses: [
-      waitErrorEnvelope("application_unavailable"), tapMatchingEnvelope(), envelope(["ok": true, "pid": 42]),
+      waitErrorEnvelope("application_unavailable"), tapMatchingEnvelope(), writtenAnswer(pid: 42),
     ])
     try await reader.tap(.marker(value: "General", key: .label, depth: 10), options: TapOptions())
     let reads = await transport.readCount
@@ -965,7 +909,7 @@ final class AXBridgeReadsTests: XCTestCase {
 
   func testMarkerTapDoesNotRepeatATimedOutWrite() async throws {
     let (reader, transport) = try nativeWaitReader(responses: [
-      tapMatchingEnvelope(), waitErrorEnvelope("application_not_responding"), envelope(["ok": true, "pid": 42]),
+      tapMatchingEnvelope(), waitErrorEnvelope("application_not_responding"), writtenAnswer(pid: 42),
     ])
     do {
       try await reader.tap(.marker(value: "General", key: .label, depth: 10), options: TapOptions())
@@ -984,9 +928,9 @@ final class AXBridgeReadsTests: XCTestCase {
 
   private func writeFailure(
     _ write: (AXBridgeUIAutomation) async throws -> Void,
-    guestResponse: [String: Any]
+    guestFailure: BridgeAXFailure
   ) async throws -> any Error {
-    let (reader, _) = try nativeWaitReader(responses: [tapMatchingEnvelope(), envelope(guestResponse)])
+    let (reader, _) = try nativeWaitReader(responses: [tapMatchingEnvelope(), answerData(.failure(guestFailure))])
     do {
       try await write(reader)
     } catch {
@@ -1008,10 +952,8 @@ final class AXBridgeReadsTests: XCTestCase {
     for write in [markerTap, markerSetValue] {
       let error = try await writeFailure(
         write,
-        guestResponse: [
-          "ok": false, "error": "pid 42 did not respond to the write before it timed out", "error_kind": "application_not_responding",
-          "pid": 42, "effect": "none",
-        ])
+        guestFailure: BridgeAXFailure(
+          message: "pid 42 did not respond to the write before it timed out", kind: .applicationNotResponding, pid: 42, effect: BridgeAXWire.Effect.none))
       guard case UIAutomationError.applicationNotResponding? = error as? UIAutomationError else {
         return XCTFail("expected applicationNotResponding, got \(error)")
       }
@@ -1132,10 +1074,7 @@ final class AXBridgeReadsTests: XCTestCase {
   func testASentPressThatWasNotConfirmedIsUnsafeToRetryWithItsMessageUnchanged() async throws {
     let error = try await writeFailure(
       markerTap,
-      guestResponse: [
-        "ok": false, "error": "pid 42 did not respond to the write before it timed out", "error_kind": "application_not_responding",
-        "pid": 42, "effect": "unknown",
-      ])
+      guestFailure: BridgeAXFailure(message: "pid 42 did not respond to the write before it timed out", kind: .applicationNotResponding, pid: 42, effect: .unknown))
     let retry = try XCTUnwrap(UIAutomationRetry(for: error))
     XCTAssertEqual(retry, .outcomeUnknown)
     XCTAssertEqual(retry.verdict, .unsafe)
@@ -1148,21 +1087,18 @@ final class AXBridgeReadsTests: XCTestCase {
   func testASentValueThatWasNotConfirmedIsSafeToRetryBecauseItIsIdempotent() async throws {
     let error = try await writeFailure(
       markerSetValue,
-      guestResponse: [
-        "ok": false, "error": "the accessibility runtime rejected the write with AX error -25200 (kAXErrorFailure)", "error_kind": "runtime_failed",
-        "ax_error": -25200, "pid": 42, "effect": "unknown",
-      ])
+      guestFailure: BridgeAXFailure(
+        message: "the accessibility runtime rejected the write with AX error -25200 (kAXErrorFailure)", kind: .runtimeFailed, pid: 42, axError: -25200,
+        effect: .unknown))
     XCTAssertEqual(UIAutomationRetry(for: error), .idempotent)
     XCTAssertEqual(error.localizedDescription, "The axbridge guest failed: the accessibility runtime rejected the write with AX error -25200 (kAXErrorFailure)")
   }
 
-  // An older guest sends no `effect`; that can only mean it may have sent the write.
+  // A failure that names no `effect` can only mean the write may have been sent.
   func testAWriteFailureWithNoEffectIsTreatedAsPossiblySent() async throws {
     let error = try await writeFailure(
       markerTap,
-      guestResponse: [
-        "ok": false, "error": "pid 42 did not respond to the write before it timed out", "error_kind": "application_not_responding", "pid": 42,
-      ])
+      guestFailure: BridgeAXFailure(message: "pid 42 did not respond to the write before it timed out", kind: .applicationNotResponding, pid: 42))
     XCTAssertEqual(UIAutomationRetry(for: error), .outcomeUnknown)
   }
 
@@ -1184,7 +1120,7 @@ final class AXBridgeReadsTests: XCTestCase {
   func testMarkerTapRetriesAMovedElement() async throws {
     let (reader, transport) = try nativeWaitReader(responses: [
       tapMatchingEnvelope(), waitErrorEnvelope("assertion_failed"),
-      tapMatchingEnvelope(), envelope(["ok": true, "pid": 42]),
+      tapMatchingEnvelope(), writtenAnswer(pid: 42),
     ])
     try await reader.tap(.marker(value: "General", key: .label, depth: 10), options: TapOptions())
     let reads = await transport.readCount
@@ -1212,7 +1148,7 @@ final class AXBridgeReadsTests: XCTestCase {
   func testMarkerSetValueRetriesAMovedElement() async throws {
     let (reader, transport) = try nativeWaitReader(responses: [
       tapMatchingEnvelope(), waitErrorEnvelope("assertion_failed"),
-      tapMatchingEnvelope(), envelope(["ok": true, "pid": 42]),
+      tapMatchingEnvelope(), writtenAnswer(pid: 42),
     ])
     try await reader.setValue("hello", for: .marker(value: "General", key: .label, depth: 10))
     let reads = await transport.readCount
@@ -1258,13 +1194,11 @@ final class AXBridgeReadsTests: XCTestCase {
   }
 
   func testNativeWaitReportsOnlyTheSearchedKeyWithoutAnotherRead() async throws {
-    let response = try envelope([
-      "ok": true, "pid": 42, "truncated": true,
-      "tree": [
+    let response = try treeAnswer(
+      [
         AXWire.Node.label.rawValue: "unrelated label",
         AXWire.Node.identifier.rawValue: "settings_id",
-      ],
-    ])
+      ], pid: 42, truncated: true)
     let (reader, transport) = nativeWaitReader(responses: [response])
     do {
       try await reader.wait(.marker(value: "missing", key: .uniqueID, depth: 10), timeout: 0, pollInterval: 0)
@@ -1488,7 +1422,7 @@ final class AXBridgeReadsTests: XCTestCase {
     // A system-wide hit-test resolves which app owns the point, so the response carries the owning pid
     // the host tags the element with.
     let node: [String: Any] = [AXWire.Node.identifier.rawValue: "com.apple.settings.general"]
-    let data = try envelope(["ok": true, "tree": node, "pid": 8865])
+    let data = try hitAnswer(node, pid: 8865)
     let parsed = try AXTreeRead(hitTestResponse: data)
     XCTAssertEqual(parsed?.tree.identifier, BridgeAXScalar.string("com.apple.settings.general"))
     XCTAssertEqual(parsed?.pid, 8865)
@@ -1497,26 +1431,26 @@ final class AXBridgeReadsTests: XCTestCase {
   func testHitTestReturnsNilForEmptyResult() throws {
     // `{ok:true, empty:true}` is "no element at the point" — a valid empty result, returned as nil,
     // not conflated with a reader failure.
-    let data = try envelope(["ok": true, "empty": true])
+    let data = try emptyHitAnswer()
     XCTAssertNil(try AXTreeRead(hitTestResponse: data))
   }
 
   func testHitTestThrowsOnFailure() throws {
     // A failure (`ok:false`) is distinct from an empty result and is surfaced with the guest message.
-    let data = try envelope(["ok": false, "error": "AXUIElementCopyElementAtPosition unavailable"])
+    let data = try failureAnswer("AXUIElementCopyElementAtPosition unavailable")
     XCTAssertThrowsError(try AXTreeRead(hitTestResponse: data)) { error in
       XCTAssertTrue("\(error)".contains("AXUIElementCopyElementAtPosition unavailable"), "unexpected error: \(error)")
     }
   }
 
   func testHitTestThrowsWhenOkButNoTreeOrEmpty() throws {
-    let data = try envelope(["ok": true])
+    let data = Data(#"{"hitTest":{"response":{}}}"#.utf8)
     XCTAssertThrowsError(try AXTreeRead(hitTestResponse: data))
   }
 
   func testHitTestThrowsWhenOwningPidMissing() throws {
     // A hit node with no owning pid is a protocol violation — the host cannot tag the element.
-    let data = try envelope(["ok": true, "tree": [AXWire.Node.identifier.rawValue: "x"]])
+    let data = Data(#"{"hitTest":{"response":{"element":{"tree":{"XC_kAXXCAttributeIdentifier":"x"}}}}}"#.utf8)
     XCTAssertThrowsError(try AXTreeRead(hitTestResponse: data)) { error in
       guard case AXBridgeError.guestFailure = error else {
         return XCTFail("a hit-test without an owning pid should be guestFailure, got: \(error)")
@@ -1530,7 +1464,7 @@ final class AXBridgeReadsTests: XCTestCase {
     // The fused read resolves the frontmost app AND reads its tree in one call, so the response carries
     // the resolved pid the host tags elements with — it did not know the pid in advance.
     let tree: [String: Any] = [AXWire.Node.label.rawValue: "Settings"]
-    let data = try envelope(["ok": true, "tree": tree, "pid": 8865, "method": "center-point", "truncated": false])
+    let data = try treeAnswer(tree, pid: 8865, method: .centerPoint)
     let parsed = try AXTreeRead(frontmostResponse: data, method: .centerPoint)
     XCTAssertEqual(parsed.pid, 8865)
     XCTAssertEqual(parsed.tree.label, BridgeAXScalar.string("Settings"))
@@ -1538,18 +1472,14 @@ final class AXBridgeReadsTests: XCTestCase {
   }
 
   func testFrontmostTreeSurfacesTruncation() throws {
-    let data = try envelope(["ok": true, "tree": [AXWire.Node.label.rawValue: "root"], "pid": 1, "truncated": true])
+    let data = try treeAnswer([AXWire.Node.label.rawValue: "root"], pid: 1, truncated: true)
     XCTAssertTrue(try AXTreeRead(frontmostResponse: data, method: .centerPoint).truncated)
   }
 
   func testFrontmostTreeThrowsFrontmostUnresolvedOnAnEmptyAnchor() throws {
     // Nothing at the anchor — an app mid-launch, or genuinely empty space. The strategy ran and named
     // nothing, so it is `frontmostUnresolved`, which the read poll retries.
-    let data = try envelope([
-      "ok": false,
-      "error": "system-wide hit-test at (201.0, 437.0) found no element",
-      "error_kind": "frontmost_unresolved",
-    ])
+    let data = try failureAnswer("system-wide hit-test at (201.0, 437.0) found no element", kind: "frontmost_unresolved")
     XCTAssertThrowsError(try AXTreeRead(frontmostResponse: data, method: .centerPoint)) { error in
       guard case let AXBridgeError.frontmostUnresolved(method, reason) = error else {
         return XCTFail("a strategy that named nothing should be frontmostUnresolved, got: \(error)")
@@ -1562,15 +1492,14 @@ final class AXBridgeReadsTests: XCTestCase {
   // A pid above `Int32.max` must be rejected as a guest failure rather than trapping in the
   // non-failable `Int32` conversion.
   func testAnOutOfRangeResolvedPidIsRejectedRatherThanTrapping() throws {
-    let tree: [String: Any] = [AXWire.Node.label.rawValue: "root"]
-    let frontmost = try envelope(["ok": true, "tree": tree, "pid": 99_999_999_999])
+    let frontmost = Data(#"{"tree":{"response":{"pid":99999999999,"tree":{},"truncated":false}}}"#.utf8)
     XCTAssertThrowsError(try AXTreeRead(frontmostResponse: frontmost, method: .centerPoint)) { error in
       guard case AXBridgeError.guestFailure = error else {
         return XCTFail("expected guestFailure, got: \(error)")
       }
     }
 
-    let hit = try envelope(["ok": true, "tree": tree, "pid": 99_999_999_999])
+    let hit = Data(#"{"hitTest":{"response":{"element":{"pid":99999999999,"tree":{}}}}}"#.utf8)
     XCTAssertThrowsError(try AXTreeRead(hitTestResponse: hit)) { error in
       guard case AXBridgeError.guestFailure = error else {
         return XCTFail("expected guestFailure, got: \(error)")
@@ -1580,7 +1509,7 @@ final class AXBridgeReadsTests: XCTestCase {
 
   func testFrontmostTreeThrowsWhenResolvedPidMissing() throws {
     // An ok response with a tree but no pid is a protocol violation — the host cannot tag the elements.
-    let data = try envelope(["ok": true, "tree": [AXWire.Node.label.rawValue: "x"]])
+    let data = Data(#"{"tree":{"response":{"tree":{"XC_kAXXCAttributeLabel":"x"},"truncated":false}}}"#.utf8)
     XCTAssertThrowsError(try AXTreeRead(frontmostResponse: data, method: .centerPoint)) { error in
       guard case AXBridgeError.guestFailure = error else {
         return XCTFail("a fused response without a pid should be guestFailure, got: \(error)")
@@ -1589,7 +1518,7 @@ final class AXBridgeReadsTests: XCTestCase {
   }
 
   func testFrontmostTreeThrowsWhenTreeMissing() throws {
-    let data = try envelope(["ok": true, "pid": 8865])
+    let data = Data(#"{"tree":{"response":{"pid":8865,"truncated":false}}}"#.utf8)
     XCTAssertThrowsError(try AXTreeRead(frontmostResponse: data, method: .centerPoint)) { error in
       guard case AXBridgeError.guestFailure = error else {
         return XCTFail("a fused response without a tree should be guestFailure, got: \(error)")
@@ -1600,38 +1529,31 @@ final class AXBridgeReadsTests: XCTestCase {
   // MARK: - Fullscreen-modal descriptor parsing + non-serialization
 
   /// The modal a frontmost read's answer carries beside an otherwise minimal tree.
-  private func modal(in response: [String: Any]) throws -> AccessibilityModalInfo? {
-    var answer = response
-    answer["tree"] = [String: Any]()
-    answer["pid"] = 1
-    return try AXTreeRead(frontmostResponse: envelope(answer), method: .windowServer).modal
+  private func modal(in modal: BridgeAXModal?) throws -> AccessibilityModalInfo? {
+    try AXTreeRead(frontmostResponse: treeAnswer([:], pid: 1, modal: modal), method: .windowServer).modal
   }
 
   func testModalParsesSystemAlert() throws {
-    let response: [String: Any] = ["ok": true, "modal": ["kind": "system", "elementType": "SBAlertItemWindow", "label": "Allow \u{201c}Maps\u{201d} to use your location?"]]
-    let modal = try modal(in: response)
+    let modal = try modal(in: BridgeAXModal(kind: .system, elementType: "SBAlertItemWindow", label: "Allow \u{201c}Maps\u{201d} to use your location?"))
     XCTAssertEqual(modal?.kind, .system)
     XCTAssertEqual(modal?.elementType, "SBAlertItemWindow")
     XCTAssertEqual(modal?.label, "Allow \u{201c}Maps\u{201d} to use your location?")
   }
 
   func testModalParsesAppAlertWithoutLabel() throws {
-    let response: [String: Any] = ["ok": true, "modal": ["kind": "app", "elementType": "_UIAlertControllerView"]]
-    let modal = try modal(in: response)
+    let modal = try modal(in: BridgeAXModal(kind: .app, elementType: "_UIAlertControllerView", label: nil))
     XCTAssertEqual(modal?.kind, .app)
     XCTAssertEqual(modal?.elementType, "_UIAlertControllerView")
     XCTAssertNil(modal?.label)
   }
 
-  func testModalAbsentOrMalformedIsNil() throws {
-    XCTAssertNil(try modal(in: ["ok": true]), "no modal key -> nil")
-    XCTAssertNil(try modal(in: ["ok": true, "modal": ["elementType": "X"]]), "missing kind -> nil")
-    XCTAssertNil(try modal(in: ["ok": true, "modal": ["kind": "bogus", "elementType": "X"]]), "unknown kind -> nil")
+  func testModalAbsentIsNil() throws {
+    XCTAssertNil(try modal(in: nil), "no modal -> nil")
   }
 
   func testFrontmostTreeCarriesModalDescriptor() throws {
     let tree: [String: Any] = [AXWire.Node.label.rawValue: "root"]
-    let data = try envelope(["ok": true, "tree": tree, "pid": 20475, "modal": ["kind": "system", "elementType": "SBAlertItemWindow", "label": "Allow"]])
+    let data = try treeAnswer(tree, pid: 20475, modal: BridgeAXModal(kind: .system, elementType: "SBAlertItemWindow", label: "Allow"))
     let parsed = try AXTreeRead(frontmostResponse: data, method: .centerPoint)
     XCTAssertEqual(parsed.pid, 20475)
     XCTAssertEqual(parsed.modal?.kind, .system)
@@ -1665,7 +1587,7 @@ final class AXBridgeReadsTests: XCTestCase {
         ] as [String: Any]
       ],
     ]
-    let data = try envelope(["ok": true, "tree": tree, "pid": 99])
+    let data = try treeAnswer(tree, pid: 99)
     let parsed = try AXTreeRead(wholeTreeResponse: data, pid: 99)
 
     let elements = AXTreeWalk.describeAllElements(
@@ -1742,7 +1664,7 @@ final class AXBridgeReadsTests: XCTestCase {
   func testAPointReadSendsTheNamedClientWithTheHitTestAndReportsIt() async throws {
     for clientType in [AXClientType?.none, .voiceOver] {
       let transport = try StubAXBridgeWaitTransport(responses: [
-        envelope(["ok": true, "pid": 42, "tree": [AXWire.Node.label.rawValue: "target"]])
+        hitAnswer([AXWire.Node.label.rawValue: "target"], pid: 42)
       ])
       let reader = AXBridgeUIAutomation(
         simulator: SimulatorTestSupport.testableSimulator(withDevice: AXBridgeWaitDevice()),
@@ -2795,9 +2717,9 @@ final class AXBridgeReadsTests: XCTestCase {
   // MARK: - Write envelope parsing
 
   func testAWriteEnvelopeReportsWhetherItLanded() throws {
-    XCTAssertTrue(try AXTreeRead.writeLanded(fromResponse: Self.json(["ok": true, "pid": 4321])))
+    XCTAssertTrue(try AXTreeRead.writeLanded(fromResponse: writtenAnswer(pid: 4321)))
     XCTAssertFalse(
-      try AXTreeRead.writeLanded(fromResponse: Self.json(["ok": true, "empty": true])),
+      try AXTreeRead.writeLanded(fromResponse: emptyWriteAnswer()),
       "writeLanded is false for an ok response carrying empty"
     )
   }
@@ -2807,10 +2729,7 @@ final class AXBridgeReadsTests: XCTestCase {
   func testARefusedAssertionParsesAsItsOwnFailure() throws {
     do {
       _ = try AXTreeRead.writeLanded(
-        fromResponse: Self.json([
-          "ok": false, "error": "the element at (1.0, 2.0) has XC_kAXXCAttributeLabel Wi-Fi, expected General",
-          "error_kind": "assertion_failed",
-        ])
+        fromResponse: failureAnswer("the element at (1.0, 2.0) has XC_kAXXCAttributeLabel Wi-Fi, expected General", kind: "assertion_failed")
       )
       XCTFail("a refused write must throw")
     } catch let error as AXBridgeError {
@@ -2831,7 +2750,7 @@ final class AXBridgeReadsTests: XCTestCase {
     for (kind, matches) in cases {
       do {
         _ = try AXTreeRead.writeLanded(
-          fromResponse: Self.json(["ok": false, "error": "no", "error_kind": kind, "pid": 4321])
+          fromResponse: failureAnswer("no", kind: kind, pid: 4321)
         )
         XCTFail("\(kind) must throw")
       } catch let error as AXBridgeError {
@@ -2864,9 +2783,6 @@ final class AXBridgeReadsTests: XCTestCase {
     )
   }
 
-  private static func json(_ object: [String: Any]) throws -> Data {
-    try JSONSerialization.data(withJSONObject: object)
-  }
 }
 
 /// Choosing a traversal per read.
@@ -2938,23 +2854,20 @@ final class AXAutoTraversalTests: XCTestCase {
   func testADefaultGuestReadAsksTheGuestForASnapshot() throws {
     let traversal = AXBridgeUIAutomation.autoTraversal(for: AccessibilityRequestOptions())
     let request = Self.readRequest(traversal: traversal)
-    XCTAssertEqual(try decodedBridgeAXArguments(request)["traversal"] as? String, "single-fetch")
-    XCTAssertEqual(request.payload["traversal"] as? String, "single-fetch")
+    XCTAssertTrue(try wireAction(request).contains(#""traversal":"single-fetch""#))
   }
 
   // The same wire pin for a reachability read: it resolves to the walk, and says so.
   func testAReachabilityReadAsksTheGuestForNoSnapshot() throws {
     let traversal = AXBridgeUIAutomation.autoTraversal(for: AccessibilityRequestOptions(keys: [.interactable]))
     let request = Self.readRequest(traversal: traversal)
-    XCTAssertEqual(try decodedBridgeAXArguments(request)["traversal"] as? String, "view-hierarchy")
-    XCTAssertEqual(request.payload["traversal"] as? String, "view-hierarchy")
+    XCTAssertTrue(try wireAction(request).contains(#""traversal":"view-hierarchy""#))
   }
 
   // Pinned in its own right, not only as the current default.
   func testTheSingleFetchAsksTheGuestForASnapshot() throws {
     let request = Self.readRequest(traversal: .singleFetch)
-    XCTAssertEqual(try decodedBridgeAXArguments(request)["traversal"] as? String, "single-fetch")
-    XCTAssertEqual(request.payload["traversal"] as? String, "single-fetch")
+    XCTAssertTrue(try wireAction(request).contains(#""traversal":"single-fetch""#))
   }
 
   func testANamedTraversalOverridesTheBackendDefault() {
