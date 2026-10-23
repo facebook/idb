@@ -163,12 +163,30 @@ struct AccessibilityInfoMethodHandlerTests {
         "ax_profile_acquire_ms": 4, "ax_springboard_check_ms": 2, "ax_acquire_round_trips": 2,
         "ax_slowest_request_ms": 31, "ax_requests_behind_abandoned": 3,
       ])
-    #expect(
-      call.normals == [
-        "ax_backend": "ax", "ax_transport": "bridge", "ax_read_outcome": "complete",
-        "ax_slowest_request_type": "frontmost",
-      ])
+    var normals = [
+      "ax_backend": "ax", "ax_transport": "bridge", "ax_read_outcome": "complete",
+      "ax_slowest_request_type": "frontmost",
+    ]
+    normals["ax_host"] = AccessibilityReadTelemetry.hostName
+    #expect(call.normals == normals)
     #expect(!response.json.contains("profile"), "the caller did not ask for a profile, so none is reported")
+  }
+
+  @Test
+  func everyReadRecordsItsHostEvenWhenItFails() async throws {
+    let hostName = try #require(AccessibilityReadTelemetry.hostName)
+    var request = Idb_AccessibilityInfoRequest()
+    request.marker = "OK"
+    request.match = "OK"
+    let call = CallTelemetry()
+
+    await #expect(throws: (any Error).self) {
+      try await CallTelemetry.$current.withValue(call) {
+        try await AccessibilityInfoMethodHandler.respond(to: request, using: RecordingAccessibilityExecutor(response: Self.translatorResponse))
+      }
+    }
+
+    #expect(call.normals["ax_host"] == hostName)
   }
 
   @Test

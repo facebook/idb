@@ -42,6 +42,7 @@ struct AccessibilityInfoMethodHandler {
     using commandExecutor: any AccessibilityDescribing,
     cancellation: ServerContext.RPCCancellationHandle? = nil
   ) async throws -> Idb_AccessibilityInfoResponse {
+    AccessibilityReadTelemetry.recordHost(into: CallTelemetry.current)
     do {
       guard let cancellation else {
         return try await read(request, using: commandExecutor)
@@ -92,6 +93,23 @@ struct AccessibilityInfoMethodHandler {
 /// The element count, durations and backend use the column names the CLI already logs from complete
 /// documents, so one query reads both. Translator-backed reads are the only ones that report metrics.
 enum AccessibilityReadTelemetry {
+  /// The host's own name (`kern.hostname`), so a read can be matched with the host's other metrics.
+  /// `ProcessInfo.hostName` resolves through the network, and on virtual machines is often empty or a
+  /// name every clone of the image shares.
+  static let hostName: String? = {
+    var buffer = [CChar](repeating: 0, count: Int(MAXHOSTNAMELEN) + 1)
+    guard gethostname(&buffer, buffer.count - 1) == 0 else {
+      return nil
+    }
+    let name = String(decoding: buffer.prefix { $0 != 0 }.map { UInt8(bitPattern: $0) }, as: UTF8.self)
+    return name.isEmpty ? nil : name
+  }()
+
+  static func recordHost(into call: CallTelemetry?) {
+    guard let call, let hostName else { return }
+    call.setNormal(hostName, forKey: "ax_host")
+  }
+
   /// A read that failed records how it ended, when the failure says.
   static func record(failure error: Error, into call: CallTelemetry?) {
     guard let call, let outcome = AccessibilityReadOutcome(failure: error) else { return }
