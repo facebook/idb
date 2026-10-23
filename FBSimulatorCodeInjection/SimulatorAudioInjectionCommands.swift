@@ -5,8 +5,10 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+@preconcurrency internal import CoreSimulator
 import Darwin
 import FBControlCore
+import FBControlCoreObjC
 @preconcurrency import FBSimulatorControl
 import Foundation
 internal import ShimulatorAudioInjectionCore
@@ -153,9 +155,44 @@ public struct SimulatorAudioInjectionCommands {
       if environment[Self.insertLibrariesVariable] != nil {
         ""
       } else {
-        try await launchctl("getenv", Self.insertLibrariesVariable)
+        try await launchdValue(Self.insertLibrariesVariable, reader: .selected(by: ProcessInfo.processInfo.environment))
       }
     return Self.appLaunchEnvironment(environment, shimPath: shimPath, inheritedLibraries: inherited)
+  }
+
+  /// How a launch reads what the Simulator's launchd would have the app inherit.
+  enum LaunchdEnvironmentReader: String {
+    /// The runtime's own `launchctl getenv`, run in the Simulator.
+    case launchctl
+    /// CoreSimulator's `getenv`, which starts no process in the Simulator.
+    case coreSimulator = "coresimulator"
+
+    /// Selects the reader by name in the companion's environment.
+    static let environmentVariable = "IDB_LAUNCHD_GETENV"
+
+    static func selected(by environment: [String: String]) -> Self {
+      environment[environmentVariable].flatMap(Self.init(rawValue:)) ?? .launchctl
+    }
+  }
+
+  /// The value of `name` in the Simulator launchd's environment, empty when it is unset.
+  private func launchdValue(_ name: String, reader: LaunchdEnvironmentReader) async throws -> String {
+    switch reader {
+    case .launchctl:
+      return try await launchctl("getenv", name)
+    case .coreSimulator:
+      do {
+        return try FBObjCExceptionGuard.guarded { try simulator.device.getenv(name) }
+      } catch let error as POSIXError where error.code == .ENOENT {
+        // CoreSimulator reports a variable launchd does not have as ENOENT.
+        return ""
+      } catch {
+        let underlying = error as NSError
+        throw AudioInjectionError.armingFailed(
+          udid: simulator.udid,
+          stderr: "CoreSimulator getenv \(name) failed (\(underlying.domain) \(underlying.code)): \(underlying.localizedDescription)")
+      }
+    }
   }
 
   static func appLaunchEnvironment(
