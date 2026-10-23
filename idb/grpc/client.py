@@ -141,6 +141,7 @@ from idb.grpc.idb_pb2 import (
     GetSettingRequest,
     HingeAngleRequest,
     InjectAudioRequest,
+    InjectVideoRequest,
     InstallRequest,
     LaunchRequest,
     ListAppsRequest,
@@ -328,6 +329,13 @@ def log_and_handle_exceptions(grpc_method_name: str):  # pyre-ignore
             return func_wrapper
 
     return decorating
+
+
+def _video_injection_file(path: str) -> str:
+    file_path = os.path.realpath(path)
+    if not os.path.isfile(file_path):
+        raise IdbException(f"Video injection input is not a regular file: {file_path}")
+    return file_path
 
 
 async def _read_audio_chunks(file_path: str) -> AsyncIterator[bytes]:
@@ -907,6 +915,39 @@ class Client(ClientBase):
             await drain_to_stream(
                 stream=stream, generator=generator, logger=self.logger
             )
+
+    @log_and_handle_exceptions("inject_video")
+    async def inject_video(
+        self,
+        back_path: str,
+        front_path: str | None,
+        loop: bool,
+        stop: asyncio.Event,
+    ) -> AsyncIterator[list[str]]:
+        if not self.is_local:
+            raise IdbException(
+                "Video injection needs a companion on this host, since the companion reads the video files"
+            )
+        start = InjectVideoRequest.Start(
+            back_path=_video_injection_file(back_path),
+            front_path=_video_injection_file(front_path) if front_path else "",
+            loop=loop,
+        )
+        async with self.stub.inject_video.open() as stream:
+            await stream.send_message(InjectVideoRequest(start=start))
+            async for response in stop_wrapper(stream=stream, stop=stop):
+                yield list(response.processes)
+            if not stop.is_set():
+                # The companion ended the injection. grpclib reads its status, and
+                # with it any error, only once this side has ended too.
+                await stream.end()
+                return
+            await stream.send_message(
+                InjectVideoRequest(stop=InjectVideoRequest.Stop())
+            )
+            await stream.end()
+            while await stream.recv_message() is not None:
+                pass
 
     @log_and_handle_exceptions("approve")
     async def approve(

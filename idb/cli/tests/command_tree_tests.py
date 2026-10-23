@@ -42,6 +42,7 @@ BUILT_IN_ROOT_ENTRIES: tuple[str, ...] = (
     "approve",
     "audio",
     "boot",
+    "camera",
     "clear-keychain",
     "clone",
     "companion",
@@ -97,6 +98,7 @@ BUILT_IN_ROOT_ENTRIES: tuple[str, ...] = (
 
 BUILT_IN_GROUP_CHILDREN: dict[str, tuple[str, ...]] = {
     "audio": ("inject",),
+    "camera": ("inject",),
     "companion": ("log",),
     "contacts": ("update", "clear"),
     "crash": ("list", "show", "delete"),
@@ -154,8 +156,8 @@ BUILT_IN_GROUP_CHILDREN: dict[str, tuple[str, ...]] = {
     "xctrace": ("record",),
 }
 
-BUILT_IN_TERMINAL_COUNT = 100
-BUILT_IN_NODE_COUNT = 118
+BUILT_IN_TERMINAL_COUNT = 101
+BUILT_IN_NODE_COUNT = 120
 
 BUILT_IN_ALIAS_PATHS: tuple[tuple[str, ...], ...] = (
     ("file", "mv"),

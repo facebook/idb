@@ -1456,6 +1456,17 @@ class Client(ABC):
         pass
 
     @abstractmethod
+    async def inject_video(
+        self,
+        back_path: str,
+        front_path: str | None,
+        loop: bool,
+        stop: asyncio.Event,
+    ) -> AsyncIterator[list[str]]:
+        # pyrefly: ignore [invalid-yield]
+        yield
+
+    @abstractmethod
     async def focus(self) -> None:
         pass
 

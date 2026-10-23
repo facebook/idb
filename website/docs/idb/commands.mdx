@@ -544,6 +544,24 @@ An app hears injected audio only while it is recording, and only if it was
 launched after the first injection into that simulator -- so an app that was
 already running when you injected for the first time has to be relaunched once.
 
+### Inject video into the cameras
+
+```
+idb camera inject back.mp4 --front front.mp4 --loop
+```
+
+Plays video files into the cameras of the apps the companion launches while the
+command runs, so an app under test sees the recording wherever it would have
+seen a camera. Back cameras show the first video and front cameras show the
+`--front` video, or the first video when `--front` is not given. An app already
+running when the command starts sees no video until it is relaunched.
+
+Each time the set of processes showing the video changes, the command prints
+it, as a `{"processes": [...]}` line with `--json`. Without `--loop` the command
+returns once a camera has shown the whole video; with it, the video repeats
+until you interrupt the command. The companion reads the files from its own
+host, so this needs a local companion.
+
 ### Clear the photo library
 
 ```

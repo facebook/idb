@@ -3181,6 +3181,55 @@ class TestParser(TestCase):
             audio_file_path=audio_file_path
         )
 
+    async def test_inject_camera(self) -> None:
+        self.client_mock.inject_video = MagicMock(
+            side_effect=lambda **_: AsyncGeneratorMock(([], ["Camera", "Recorder"]))
+        )
+        stop = asyncio.Event()
+        output = StringIO()
+        with (
+            patch("idb.cli.commands.media.signal_handler_event", return_value=stop),
+            redirect_stdout(output),
+        ):
+            await cli_main(cmd_input=["camera", "inject", "back.mp4"])
+            await cli_main(
+                cmd_input=[
+                    "camera",
+                    "inject",
+                    "back.mp4",
+                    "--front",
+                    "front.mp4",
+                    "--loop",
+                    "--json",
+                ]
+            )
+        self.assertEqual(
+            [call.kwargs for call in self.client_mock.inject_video.call_args_list],
+            [
+                {
+                    "back_path": "back.mp4",
+                    "front_path": None,
+                    "loop": False,
+                    "stop": stop,
+                },
+                {
+                    "back_path": "back.mp4",
+                    "front_path": "front.mp4",
+                    "loop": True,
+                    "stop": stop,
+                },
+            ],
+        )
+        self.assertEqual(
+            output.getvalue().splitlines(),
+            [
+                "No process is showing the video",
+                "Showing the video in: Camera, Recorder",
+                '{"processes": []}',
+                '{"processes": ["Camera", "Recorder"]}',
+            ],
+        )
+
     async def test_focus(self) -> None:
         self.client_mock.focus = AsyncMock(return_value=["aaa", "bbb"])
         await cli_main(cmd_input=["focus"])
