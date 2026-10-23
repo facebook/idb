@@ -42,4 +42,8 @@ extension Simulator {
   public var notification: SimulatorNotificationCommands {
     SimulatorNotificationCommands(simulator: self)
   }
+
+  public var lockScreen: SimulatorLockScreenCommands {
+    SimulatorLockScreenCommands(simulator: self)
+  }
 }

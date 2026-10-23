@@ -431,7 +431,7 @@ struct CompanionTelemetryTests {
     "focus", "hid", "open_url",
     "set_location", "send_notification", "delivered_notifications", "clear_delivered_notifications",
     "simulate_memory_warning", "approve", "revoke", "clear_keychain", "contacts_update",
-    "contacts_clear", "photos_clear", "setting", "get_setting", "list_settings", "launch",
+    "contacts_clear", "photos_clear", "lock_screen", "setting", "get_setting", "list_settings", "launch",
     "list_apps", "terminate", "uninstall", "add_media", "inject_audio", "inject_video", "record",
     "screenshot", "video_stream", "crash_delete", "crash_list", "crash_show", "xctest_list_bundles",
     "xctest_list_tests", "xctest_run", "repl", "ls", "mkdir", "mv", "rm", "pull", "push", "tail",

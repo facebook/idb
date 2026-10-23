@@ -53,6 +53,7 @@ service CompanionService {
   rpc contacts_update(ContactsUpdateRequest) returns (ContactsUpdateResponse) {}
   rpc contacts_clear(ContactsClearRequest) returns (ContactsClearResponse) {}
   rpc photos_clear(PhotosClearRequest) returns (PhotosClearResponse) {}
+  rpc lock_screen(LockScreenRequest) returns (LockScreenResponse) {}
   rpc setting(SettingRequest) returns (SettingResponse) {} // Sets settings
   rpc get_setting(GetSettingRequest) returns (GetSettingResponse) {
   } // Gets current setting
@@ -747,6 +748,23 @@ message ContactsClearResponse {}
 message PhotosClearRequest {}
 
 message PhotosClearResponse {}
+
+// Reads or changes the lock state of an iOS simulator through SpringBoard.
+// LOCK and UNLOCK are idempotent and answer once SpringBoard reports the new
+// state; UNLOCK fails on a device with a passcode.
+message LockScreenRequest {
+  enum Action {
+    STATE = 0;
+    LOCK = 1;
+    UNLOCK = 2;
+  }
+  Action action = 1;
+}
+
+// The lock state SpringBoard reports once the request is done.
+message LockScreenResponse {
+  bool locked = 1;
+}
 
 message TargetDescriptionRequest {
   bool fetch_diagnostics = 1;

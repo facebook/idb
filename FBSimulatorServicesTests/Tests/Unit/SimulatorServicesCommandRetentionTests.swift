@@ -19,6 +19,7 @@ enum SimulatorServicesCommandAccessor: CaseIterable, Sendable {
   case contacts
   case photos
   case notification
+  case lockScreen
 
   func resolve(on simulator: Simulator) {
     switch self {
@@ -38,6 +39,8 @@ enum SimulatorServicesCommandAccessor: CaseIterable, Sendable {
       _ = simulator.photos
     case .notification:
       _ = simulator.notification
+    case .lockScreen:
+      _ = simulator.lockScreen
     }
   }
 }

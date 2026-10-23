@@ -319,6 +319,20 @@ final class CompanionServiceProvider: Idb_CompanionService.SimpleServiceProtocol
     }
   }
 
+  func lock_screen(request: Idb_LockScreenRequest, context: ServerContext) async throws -> Idb_LockScreenResponse {
+    return try await trackedUnaryCall(context, request: request) {
+      let lockScreen = try target.simulator().lockScreen
+      let state =
+        switch request.action {
+        case .state: try await lockScreen.state()
+        case .lock: try await lockScreen.lock()
+        case .unlock: try await lockScreen.unlock()
+        case .UNRECOGNIZED: throw RPCError(code: .invalidArgument, message: "Unrecognized lock screen action")
+        }
+      return Idb_LockScreenResponse.with { $0.locked = state.locked }
+    }
+  }
+
   func setting(request: Idb_SettingRequest, context: ServerContext) async throws -> Idb_SettingResponse {
     return try await trackedUnaryCall(context, request: request) {
       try await SettingMethodHandler(target: target)
