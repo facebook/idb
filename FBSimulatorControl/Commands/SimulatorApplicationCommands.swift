@@ -357,22 +357,51 @@ public struct SimulatorApplicationCommands: ApplicationCommands {
   }
 
   private func confirmApplicationLaunchState(_ bundleID: String, launchMode: ApplicationLaunchMode, waitForDebugger: Bool) async throws {
-    if waitForDebugger && launchMode == .foregroundIfRunning {
-      throw SimulatorApplicationLaunchError.foregroundIfRunningIncompatibleWithWaitForDebugger
+    try await Self.confirmApplicationLaunchState(
+      bundleID: bundleID,
+      launchMode: launchMode,
+      waitForDebugger: waitForDebugger,
+      runningProcessIdentifier: { try await processID(forBundleID: bundleID) },
+      kill: { try await kill(bundleID: bundleID) })
+  }
+
+  /// Refuses or prepares a launch according to whether the app is already running.
+  ///
+  /// Asks whether the app is running only when the answer changes the launch: finding the pid runs
+  /// `launchctl` in the simulator, which takes a large part of a launch.
+  static func confirmApplicationLaunchState(
+    bundleID: String,
+    launchMode: ApplicationLaunchMode,
+    waitForDebugger: Bool,
+    runningProcessIdentifier: () async throws -> pid_t,
+    kill: () async throws -> Void
+  ) async throws {
+    let relaunch: Bool
+    switch launchMode {
+    case .foregroundIfRunning:
+      if waitForDebugger {
+        throw SimulatorApplicationLaunchError.foregroundIfRunningIncompatibleWithWaitForDebugger
+      }
+      // Launches whether or not the app is running.
+      return
+    case .failIfRunning:
+      relaunch = false
+    case .relaunchIfRunning:
+      relaunch = true
     }
 
     let pid: pid_t
     do {
-      pid = try await processID(forBundleID: bundleID)
+      pid = try await runningProcessIdentifier()
     } catch {
       // Process not running: treat as launchable.
       return
     }
 
-    if launchMode == .failIfRunning {
+    if relaunch {
+      try await kill()
+    } else {
       throw SimulatorApplicationLaunchError.applicationAlreadyRunning(bundleID: bundleID, processIdentifier: pid)
-    } else if launchMode == .relaunchIfRunning {
-      try await kill(bundleID: bundleID)
     }
   }
 
