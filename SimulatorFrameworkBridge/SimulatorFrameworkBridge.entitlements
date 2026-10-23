@@ -9,6 +9,8 @@
     </array>
     <key>com.apple.runningboard.process-state</key>
     <true/>
+    <key>com.apple.springboard.lockDevice</key>
+    <true/>
     <key>com.apple.bulletinboard.settings</key>
     <true/>
     <key>com.apple.developer.healthkit</key>

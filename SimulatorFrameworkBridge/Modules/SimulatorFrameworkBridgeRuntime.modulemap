@@ -11,6 +11,7 @@ framework module SimulatorFrameworkBridgeRuntime {
   header "DynamicStoreClient.h"
   header "HealthSettingsClient.h"
   header "KeyedArchiveReference.h"
+  header "LockScreenClient.h"
   header "NetworkConfigurationStore.h"
   header "NotificationSettingsClient.h"
   header "PhotoLibraryClient.h"

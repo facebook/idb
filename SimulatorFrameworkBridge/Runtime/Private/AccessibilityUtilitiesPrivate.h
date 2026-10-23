@@ -32,6 +32,17 @@ NS_ASSUME_NONNULL_BEGIN
 - (void)setReduceMotionEnabled:(BOOL)enabled;
 @end
 
+/**
+ * The accessibility client of SpringBoard's accessibility server. `unlockDevice` asks SpringBoard to unlock
+ * its UI (`unlockUIFromSource:` with the Accessibility source), which on a device without a passcode
+ * dismisses the lock screen and returns to whatever was in front before the lock. It answers nothing:
+ * the lock state shows whether it took.
+ */
+@interface AXSpringBoardServer : NSObject
++ (instancetype)server;
+- (void)unlockDevice;
+@end
+
 typedef BOOL (*FBAXAccessibilitySettingGetFn)(void);
 typedef void (*FBAXAccessibilitySettingSetFn)(BOOL enabled);
 
