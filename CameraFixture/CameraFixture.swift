@@ -16,6 +16,7 @@
  *   CameraFixture stream <frames> <timeout>
  *   CameraFixture watch <seconds>                -- one report a second
  *   CameraFixture output-first <frames>          -- the output is added before the camera input
+ *   CameraFixture preset-first <frames>          -- a preset is committed before the camera input; fails on a runtime error
  *   CameraFixture preset <name> <frames>
  *   CameraFixture nv12 <frames>
  *   CameraFixture rotate <angle> <frames>        -- clockwise, on the data output's connection
@@ -146,7 +147,7 @@ final class MovieObserver: NSObject, AVCaptureFileOutputRecordingDelegate {
   }
 }
 
-func makeSession(outputBeforeInput: AVCaptureOutput? = nil) -> AVCaptureSession? {
+func makeSession(outputBeforeInput: AVCaptureOutput? = nil, presetBeforeInput: AVCaptureSession.Preset? = nil) -> AVCaptureSession? {
   let discovery = AVCaptureDevice.DiscoverySession(deviceTypes: [.builtInWideAngleCamera], mediaType: .video, position: .unspecified)
   let device =
     ProcessInfo.processInfo.environment["CAMFIXTURE_FRONT"] == nil
@@ -162,6 +163,11 @@ func makeSession(outputBeforeInput: AVCaptureOutput? = nil) -> AVCaptureSession?
     return nil
   }
   let session = AVCaptureSession()
+  if let presetBeforeInput {
+    session.beginConfiguration()
+    session.sessionPreset = presetBeforeInput
+    session.commitConfiguration()
+  }
   session.beginConfiguration()
   if let outputBeforeInput, session.canAddOutput(outputBeforeInput) { session.addOutput(outputBeforeInput) }
   let added = session.canAddInput(input)
@@ -277,6 +283,24 @@ func run(_ arguments: [String]) -> Int32 {
     observer.wanted = argument.flatMap { Int($0) } ?? 2
     guard let session = makeSession(outputBeforeInput: makeDataOutput(kCVPixelFormatType_32BGRA, observer)) else { return 1 }
     return runFrames(mode, session, observer, 8)
+  }
+  if mode == "preset-first" {
+    observer.wanted = argument.flatMap { Int($0) } ?? 30
+    guard let session = makeSession(presetBeforeInput: .vga640x480) else { return 1 }
+    let output = makeDataOutput(kCVPixelFormatType_32BGRA, observer)
+    if session.canAddOutput(output) { session.addOutput(output) }
+    let errors = OSAllocatedUnfairLock(initialState: 0)
+    let token = NotificationCenter.default.addObserver(forName: AVCaptureSession.runtimeErrorNotification, object: session, queue: nil) { note in
+      errors.withLock { $0 += 1 }
+      report("runtime error \(note.userInfo?[AVCaptureSessionErrorKey].map { "\($0)" } ?? "(null)")")
+    }
+    defer { NotificationCenter.default.removeObserver(token) }
+    let status = runFrames(mode, session, observer, 8)
+    // AVCaptureSession posts runtime errors from the main run loop, which runFrames does not turn.
+    RunLoop.current.run(until: Date(timeIntervalSinceNow: 2))
+    let count = errors.withLock { $0 }
+    report("runtimeErrors=\(count)")
+    return count == 0 ? status : 10
   }
   guard let session = makeSession() else { return 1 }
   switch mode {

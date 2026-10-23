@@ -18,9 +18,14 @@ AVFoundation's Objective-C surface and **is** the camera.
 | `ShimulatorCaptureDeviceInput`, `ShimulatorCaptureInputPort`, `ShimulatorCaptureConnection` | the input and the connection an output reaches |
 | `ShimulatorCaptureDiscoverySession`, `ShimulatorCapturePhoto` | discovery and `AVCapturePhoto` |
 
-A session holding the virtual input is driven entirely by the shim; any other is
-passed through untouched. Frames are decoded at the file's own rate, stamped with
-the host clock, and shaped per output (format, preset, rotation) in one CoreImage pass.
+A session holding the virtual input is driven entirely by the shim, and so is
+one with no native input yet: the simulator has no capture server, so a native
+commit fails, and AVFoundation would later post its error as a runtime error on
+the session even once it holds the virtual camera. Its preset, configuration and
+outputs are kept until an input arrives, and replayed natively if that input is
+not the camera. Any other session is passed through untouched. Frames are
+decoded at the file's own rate, stamped with the host clock, and shaped per
+output (format, preset, rotation) in one CoreImage pass.
 
 ## Protocol
 

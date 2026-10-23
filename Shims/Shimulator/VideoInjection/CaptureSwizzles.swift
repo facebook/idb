@@ -9,7 +9,7 @@ import AVFoundation
 @_implementationOnly import ShimulatorVideoInjectionAVFoundation
 
 /// Each `shimulator_` method replaces the AVFoundation method named beside it; calling itself reaches the original.
-/// A session holding the virtual input is driven entirely by the shim; any other is passed through.
+/// A session holding the virtual input, or no native input yet, is driven by the shim; any other is passed through.
 func installSwizzles() {
   let device: AnyClass? = object_getClass(AVCaptureDevice.self)
   let session = AVCaptureSession.self
@@ -194,6 +194,16 @@ extension AVCaptureSession {
     }
   }
 
+  /// A native commit fails on the simulator and AVFoundation later posts that as a runtime error, so a
+  /// session commits nothing natively until it holds a native input; `handoffNativeGraph` replays it then.
+  private var holdsConfiguration: Bool {
+    sessionState(self) != nil || (!isNativeHandoff(self) && !shimulator_isRunning && shimulator_inputs.isEmpty)
+  }
+
+  private func heldState() -> SessionState? {
+    holdsConfiguration ? sessionState(self, create: true) : nil
+  }
+
   private func rejectNativeHandoff() {
     NSException(name: .invalidArgumentException, reason: "The retained camera graph is incompatible with the native session", userInfo: nil).raise()
   }
@@ -292,11 +302,11 @@ extension AVCaptureSession {
   }
 
   @objc dynamic func shimulator_canAddOutput(_ output: AVCaptureOutput) -> Bool {
-    (sessionState(self) != nil && isVirtual(output)) || withNativeView(self) { shimulator_canAddOutput(output) }
+    (isVirtual(output) && holdsConfiguration) || withNativeView(self) { shimulator_canAddOutput(output) }
   }
 
   @objc dynamic func shimulator_addOutput(_ output: AVCaptureOutput) {
-    guard sessionState(self) != nil, isVirtual(output) else { return withNativeView(self) { shimulator_addOutput(output) } }
+    guard isVirtual(output), heldState() != nil else { return withNativeView(self) { shimulator_addOutput(output) } }
     VirtualCamera.shared.session(self, added: output)
   }
 
@@ -319,13 +329,13 @@ extension AVCaptureSession {
   }
 
   @objc dynamic func shimulator_canSetSessionPreset(_ preset: Preset) -> Bool {
-    sessionState(self) != nil || withNativeView(self) { shimulator_canSetSessionPreset(preset) }
+    holdsConfiguration || withNativeView(self) { shimulator_canSetSessionPreset(preset) }
   }
 
   @objc dynamic var shimulator_sessionPreset: Preset {
     get { sessionState(self).map { state in synchronized(state) { state.preset } } ?? withNativeView(self) { self.shimulator_sessionPreset } }
     set {
-      guard let state = sessionState(self) else {
+      guard let state = heldState() else {
         withNativeView(self) { self.shimulator_sessionPreset = newValue }
         return
       }
@@ -383,7 +393,7 @@ extension AVCaptureSession {
 
   @objc dynamic func shimulator_beginConfiguration() {
     if isNativeHandoff(self) { return shimulator_beginConfiguration() }
-    let forward = sessionState(self) == nil
+    let forward = heldState() == nil
     synchronized(self) { configurations.add(forward) }
     if forward { withNativeView(self) { shimulator_beginConfiguration() } }
   }
