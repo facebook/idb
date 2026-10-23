@@ -391,3 +391,23 @@ struct AXHostActivity {
     uses.sorted { $0.cpuMilliseconds != $1.cpuMilliseconds ? $0.cpuMilliseconds > $1.cpuMilliseconds : $0.pid < $1.pid }
   }
 }
+
+/// Shares one recent read of the host's processes between the requests waiting at the same time, so several slow
+/// requests do not each read every process.
+enum AXHostSampler {
+  /// A read this recent, in nanoseconds, is shared rather than taken again.
+  static let freshness: UInt64 = 500_000_000
+  private static let latest = OSAllocatedUnfairLock<AXHostSnapshot?>(initialState: nil)
+
+  static func snapshot(shouldStop: () -> Bool) -> AXHostSnapshot? {
+    let now = clock_gettime_nsec_np(CLOCK_UPTIME_RAW)
+    if let latest = latest.withLock({ $0 }), now &- latest.uptimeNanoseconds < freshness {
+      return latest
+    }
+    guard let snapshot = AXHostSnapshot.read(shouldStop: shouldStop) else {
+      return nil
+    }
+    latest.withLock { $0 = snapshot }
+    return snapshot
+  }
+}

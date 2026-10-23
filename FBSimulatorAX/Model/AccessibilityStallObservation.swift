@@ -57,11 +57,27 @@ package struct AccessibilityStallObservation: Sendable {
   /// How long the probe held the request's thread: starting and stopping the watch, and reading the target and
   /// the host at the end. The request took `duration` plus this.
   package let probeInlineMicroseconds: Int
+  /// How long reading the host's processes took, on the watch's queue.
+  let sweepMicroseconds: Int
   /// Whether the process was read at the baseline. A request without a target, as for the frontmost
   /// application, is put down to the process its answer names, which could not be read beforehand.
   let probedBefore: Bool
   /// Whether the pid named a different process at the end of the request than at the baseline.
   let targetReplaced: Bool
+  /// What the host's processes did from the first time they were read during the wait to the latest; nil until
+  /// they had been read twice.
+  let hostActivity: AXHostActivity?
 
   package var mainThreadCPUMilliseconds: Int? { mainThread?.cpuMilliseconds }
+  /// Where the host's window falls: from the start of the request to its start, and how long it is.
+  package var hostWindowStartMilliseconds: Int? { hostActivity?.startMilliseconds }
+  package var hostWindowMilliseconds: Int? { hostActivity?.windowMilliseconds }
+  /// The host's busy share of its CPU over that window, which can differ from `hostBusyPercent`'s span.
+  package var hostWindowBusyPercent: Int? { hostActivity?.busyPercent }
+  /// The CPU the companion user's processes used in that window.
+  package var userCPUMilliseconds: Int? { hostActivity?.userCPUMilliseconds }
+  package var activeSimulators: Int? { hostActivity?.activeSimulators }
+  /// The request's own simulator's CPU in that window, and every other simulator's; nil when the own is unknown.
+  package var ownSimulatorCPUMilliseconds: Int? { hostActivity?.ownSimulatorCPUMilliseconds }
+  package var otherSimulatorsCPUMilliseconds: Int? { hostActivity?.otherSimulatorsCPUMilliseconds }
 }

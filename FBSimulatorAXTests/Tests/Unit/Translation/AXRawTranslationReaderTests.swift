@@ -284,6 +284,20 @@ final class AXRawTranslationReaderTests: XCTestCase {
     XCTAssertNil(collector.probeDuration)
   }
 
+  func testTheHostIsReadFromTheBaselineOnAndItsOwnSimulatorToldApart() throws {
+    let read = Self.readWhileHeld(simulatorUDID: FakeStallWatchHost.udid) { host in
+      host.runDue()
+      host.runDue()
+      host.runDue()
+    }
+
+    let observation = try XCTUnwrap(read.observations.first)
+    XCTAssertEqual(observation.hostWindowStartMilliseconds, 253)
+    XCTAssertEqual(observation.hostWindowMilliseconds, 1000)
+    XCTAssertEqual(observation.ownSimulatorCPUMilliseconds, 200)
+    XCTAssertEqual(observation.otherSimulatorsCPUMilliseconds, 0)
+  }
+
   func testARequestThatEndedBeforeItsBaselineIsObservedWithoutOne() throws {
     let read = Self.readWhileHeld { host in host.advance(by: 1_500_000_000) }
 
@@ -336,7 +350,7 @@ final class AXRawTranslationReaderTests: XCTestCase {
   /// go, and returns what the stall observer was told and the error the read threw, if any.
   private static func readWhileHeld(
     elements: [UInt64: [BridgeAXTranslatorAttribute: Any]] = oneElement, cancellation: AXReadCancellation? = nil,
-    whileHeld: @escaping @Sendable (FakeStallWatchHost) -> Void
+    simulatorUDID: String? = nil, whileHeld: @escaping @Sendable (FakeStallWatchHost) -> Void
   ) -> (observations: [AccessibilityStallObservation], error: (any Error)?) {
     let host = FakeStallWatchHost(readsProcesses: true)
     let hold = TransportHold()
@@ -346,6 +360,7 @@ final class AXRawTranslationReaderTests: XCTestCase {
       collector: AccessibilityProfilingCollector(), token: "token", cancellation: cancellation)
     reader.stallObserver = { observation in observations.withLock { $0.append(observation) } }
     reader.stallWatchEnvironment = host.environment
+    reader.stallSimulatorUDID = simulatorUDID
     let driven = DispatchSemaphore(value: 0)
     Thread {
       hold.waitUntilHolding()

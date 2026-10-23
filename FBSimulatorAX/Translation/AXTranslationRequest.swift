@@ -82,6 +82,8 @@ final class AXTranslationRequest {
   var stallObserver: (@Sendable (AccessibilityStallObservation) -> Void)?
   /// Where the reader describes requests that wait long enough to be watched.
   var stallLogger: (any ControlCoreLogger)?
+  /// The simulator the read is made to.
+  var stallSimulatorUDID: String?
   /// How the reader's watches read, keep time and schedule.
   var stallWatchEnvironment = AXStallWatch.Environment()
 
@@ -178,7 +180,7 @@ final class AXTranslationRequest {
     AXRawTranslationReader(
       transport: transport, clientType: clientType, timeout: timing.elementTimeout, collector: collector, token: token,
       queryTimeout: timing.queryTimeout, cancellation: cancellation, stallObserver: stallObserver, stallLogger: stallLogger,
-      stallWatchEnvironment: stallWatchEnvironment)
+      stallSimulatorUDID: stallSimulatorUDID, stallWatchEnvironment: stallWatchEnvironment)
   }
 
   // MARK: - A single named element

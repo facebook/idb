@@ -12,12 +12,16 @@ import os
 
 /// A stall watch's host whose clock moves only when the test moves it and whose scheduled work runs only when the
 /// test says. It counts the baselines read; with `readsProcesses` they carry the real counters of the pid asked
-/// for, otherwise none.
+/// for, otherwise none. Each sweep of its processes finds a simulator, `launchd_sim` 100 serving `udid`, whose
+/// app, process 102, has used 200 ms more CPU than at the sweep before.
 final class FakeStallWatchHost: Sendable {
   struct Reads: Equatable {
     var baselines = 0
     var pids: [pid_t] = []
+    var sweeps = 0
   }
+
+  static let udid = "0F3C2D1E-AAAA-4BBB-8CCC-123456789ABC"
 
   private struct Pending {
     let due: UInt64
@@ -29,6 +33,7 @@ final class FakeStallWatchHost: Sendable {
     var reads = Reads()
     var pending: [Pending] = []
     var duringNextRead: (@Sendable () -> Void)?
+    var duringNextSweep: (@Sendable () -> Void)?
   }
 
   /// How far the clock moves while a baseline is read.
@@ -71,6 +76,27 @@ final class FakeStallWatchHost: Sendable {
         state.pending.append(Pending(due: state.now + UInt64(delay * 1_000_000_000), work: work))
       }
     }
+    environment.scheduleSweep = environment.schedule
+    environment.sweep = { [self] shouldStop in
+      let (uptime, sweep, hook) = state.withLock { state in
+        state.reads.sweeps += 1
+        defer { state.duringNextSweep = nil }
+        return (state.now, state.reads.sweeps, state.duringNextSweep)
+      }
+      hook?()
+      guard !shouldStop() else {
+        return nil
+      }
+      return AXHostSnapshot(
+        processes: [
+          100: AXHostProcess(pid: 100, ppid: 1, name: "launchd_sim", startMicroseconds: 900, cpuNanoseconds: 0),
+          102: AXHostProcess(
+            pid: 102, ppid: 100, name: "MobileSafari", startMicroseconds: 1_000, cpuNanoseconds: UInt64(sweep) * 200_000_000),
+        ],
+        ticks: nil, uptimeNanoseconds: uptime, wallMicroseconds: 5_000_000, readNanoseconds: 0)
+    }
+    environment.udid = { $0.pid == 100 ? Self.udid : nil }
+    environment.cpuCount = 13
     return environment
   }
 
@@ -81,6 +107,11 @@ final class FakeStallWatchHost: Sendable {
   /// Runs `hook` in the middle of the next baseline read.
   func duringNextRead(_ hook: @escaping @Sendable () -> Void) {
     state.withLock { $0.duringNextRead = hook }
+  }
+
+  /// Runs `hook` in the middle of the next sweep, before it asks whether to stop.
+  func duringNextSweep(_ hook: @escaping @Sendable () -> Void) {
+    state.withLock { $0.duringNextSweep = hook }
   }
 
   /// Runs the work scheduled so far, soonest first, each with the clock moved on to when it is due.

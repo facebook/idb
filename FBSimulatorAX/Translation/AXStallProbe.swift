@@ -273,11 +273,13 @@ enum AXStallProbe {
   /// What `pid` did during a request that began at `requestStart` (on `CLOCK_UPTIME_RAW`) and took `duration`:
   /// the change in its counters and in the host's ticks from `baseline`, read while the request waited, to
   /// `end`, read once it ended. Counter changes are nil without a baseline, and when the pid names a different
-  /// process at the end than it did at the baseline. `baselineReadNanoseconds` is how long reading the baseline
-  /// took, and `inlineNanoseconds` how long the probe held the request's thread, reading `end` included.
+  /// process at the end than it did at the baseline. `host` is what the host's processes did in a window of the
+  /// wait. `baselineReadNanoseconds` and `sweepNanoseconds` are how long reading the baseline and the host took,
+  /// and `inlineNanoseconds` how long the probe held the request's thread, reading `end` included.
   static func observe(
     kind: String, pid: pid_t, requestStart: UInt64, duration: CFAbsoluteTime, outcome: AccessibilityStallOutcome,
-    baseline: AXStallReading?, end: AXStallEndReading, baselineReadNanoseconds: UInt64 = 0, inlineNanoseconds: UInt64 = 0
+    baseline: AXStallReading?, end: AXStallEndReading, host: AXHostActivity? = nil, baselineReadNanoseconds: UInt64 = 0,
+    sweepNanoseconds: UInt64 = 0, inlineNanoseconds: UInt64 = 0
   ) -> AccessibilityStallObservation {
     let before = baseline?.counters
     let after = end.reading.counters
@@ -310,7 +312,8 @@ enum AXStallProbe {
       host: .current, memory: end.memory,
       probeMicroseconds: Int(clamping: baselineReadNanoseconds / 1000),
       probeInlineMicroseconds: Int(clamping: inlineNanoseconds / 1000),
-      probedBefore: before != nil, targetReplaced: replaced)
+      sweepMicroseconds: Int(clamping: sweepNanoseconds / 1000),
+      probedBefore: before != nil, targetReplaced: replaced, hostActivity: host)
   }
 
   /// One log line for `observation`.
@@ -367,6 +370,10 @@ enum AXStallProbe {
     ]
     if let busy = observation.hostBusyPercent {
       fields.append("host_busy_pct=\(busy)")
+    }
+    fields.append("sweep_us=\(observation.sweepMicroseconds)")
+    if let activity = observation.hostActivity {
+      fields += activity.logFields
     }
     return "ax_stall_probe " + fields.joined(separator: " ")
   }

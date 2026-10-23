@@ -158,6 +158,13 @@ enum AccessibilityReadTelemetry {
       ("ax_stall_main_thread_cpu_ms", observation.mainThreadCPUMilliseconds),
       ("ax_stall_host_load_x10", observation.hostLoad.map { Int(($0 * 10).rounded()) }),
       ("ax_stall_host_busy_pct", observation.hostBusyPercent),
+      ("ax_stall_host_window_start_ms", observation.hostWindowStartMilliseconds),
+      ("ax_stall_host_window_ms", observation.hostWindowMilliseconds),
+      ("ax_stall_host_window_busy_pct", observation.hostWindowBusyPercent),
+      ("ax_stall_user_cpu_ms", observation.userCPUMilliseconds),
+      ("ax_stall_active_sims", observation.activeSimulators),
+      ("ax_stall_own_sim_cpu_ms", observation.ownSimulatorCPUMilliseconds),
+      ("ax_stall_other_sims_cpu_ms", observation.otherSimulatorsCPUMilliseconds),
     ]
     for case let (key, value?) in ints {
       call.setInt(value, forKey: key)

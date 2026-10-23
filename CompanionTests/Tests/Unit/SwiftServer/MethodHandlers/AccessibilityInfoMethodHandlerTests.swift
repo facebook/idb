@@ -315,6 +315,32 @@ struct AccessibilityInfoMethodHandlerTests {
   }
 
   @Test
+  func aStallRecordsWhatTheHostsSimulatorsDidInItsWindow() async throws {
+    func simulator(_ pid: pid_t, cpu: Int, own: Bool = false) -> AXHostActivity.Group {
+      AXHostActivity.Group(launchdPID: pid, udid: nil, cpuMilliseconds: cpu, processes: 4, busiest: [], isOwn: own)
+    }
+    let host = AXHostActivity(
+      startMilliseconds: 253, windowMilliseconds: 1000, userCPUMilliseconds: 4310, busyMilliseconds: 11900,
+      busyPercent: 92, processes: 640, busiest: [], names: [],
+      simulators: [simulator(100, cpu: 2950, own: true), simulator(200, cpu: 950), simulator(400, cpu: 0)],
+      outside: AXHostActivity.Group(launchdPID: nil, udid: nil, cpuMilliseconds: 410, processes: 3, busiest: [], isOwn: false))
+    let call = CallTelemetry()
+
+    _ = try await CallTelemetry.$current.withValue(call) {
+      try await AccessibilityInfoMethodHandler.respond(
+        to: Idb_AccessibilityInfoRequest(), using: StallingAccessibilityExecutor(stalls: [Self.stall(2.4, host: host)]))
+    }
+
+    #expect(call.ints["ax_stall_host_window_start_ms"] == 253)
+    #expect(call.ints["ax_stall_host_window_ms"] == 1000)
+    #expect(call.ints["ax_stall_host_window_busy_pct"] == 92)
+    #expect(call.ints["ax_stall_user_cpu_ms"] == 4310)
+    #expect(call.ints["ax_stall_active_sims"] == 2)
+    #expect(call.ints["ax_stall_own_sim_cpu_ms"] == 2950)
+    #expect(call.ints["ax_stall_other_sims_cpu_ms"] == 950)
+  }
+
+  @Test
   func aReadThatFailsStillRecordsItsSlowestStall() async throws {
     let call = CallTelemetry()
     let executor = StallingAccessibilityExecutor(
@@ -363,7 +389,7 @@ struct AccessibilityInfoMethodHandlerTests {
 
   private static func stall(
     _ duration: CFAbsoluteTime, kind: String = "multiple_attribute", outcome: AccessibilityStallOutcome = .answered,
-    baselineMilliseconds: Int? = nil, cpuMilliseconds: Int? = nil
+    baselineMilliseconds: Int? = nil, cpuMilliseconds: Int? = nil, host: AXHostActivity? = nil
   ) -> AccessibilityStallObservation {
     let main = cpuMilliseconds.map { _ in AXThreadUse(id: 0x10, name: "", cpuMilliseconds: 850, runState: TH_STATE_RUNNING, rank: 1) }
     return AccessibilityStallObservation(
@@ -374,6 +400,7 @@ struct AccessibilityInfoMethodHandlerTests {
       busiestThreads: main.map { [$0] }, mainThread: main, footprintMegabytes: nil, residentMegabytes: nil,
       host: AXHostFacts(name: "host", model: "VirtualMac2,1", cpu: "Apple M4 (Virtual)", cpuCount: 13, memoryGigabytes: 48),
       memory: AXMemoryState(pressure: nil, freePercent: nil, swapUsedMegabytes: nil), probeMicroseconds: 0,
-      probeInlineMicroseconds: 230, probedBefore: baselineMilliseconds != nil, targetReplaced: false)
+      probeInlineMicroseconds: 230, sweepMicroseconds: 0, probedBefore: baselineMilliseconds != nil, targetReplaced: false,
+      hostActivity: host)
   }
 }

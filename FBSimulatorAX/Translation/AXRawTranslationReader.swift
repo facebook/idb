@@ -40,6 +40,8 @@ struct AXRawTranslationReader {
   var stallObserver: (@Sendable (AccessibilityStallObservation) -> Void)?
   /// Receives one line for each observation `stallObserver` receives.
   var stallLogger: (any ControlCoreLogger)?
+  /// The simulator the read is made to, so a watch tells its CPU from its neighbours'.
+  var stallSimulatorUDID: String?
   /// How a request's watch reads, keeps time and schedules.
   var stallWatchEnvironment = AXStallWatch.Environment()
 
@@ -164,7 +166,7 @@ struct AXRawTranslationReader {
     let behindAbandoned = transport.abandonedRequests > 0
     let probedPid = translation?.pid ?? 0
     let watchBegin = clock_gettime_nsec_np(CLOCK_UPTIME_RAW)
-    let watch = AXStallProbe.isEnabled && stallObserver != nil ? AXStallWatch(pid: probedPid, environment: stallWatchEnvironment) : nil
+    let watch = AXStallProbe.isEnabled && stallObserver != nil ? AXStallWatch(pid: probedPid, ownUDID: stallSimulatorUDID, environment: stallWatchEnvironment) : nil
     watch?.start()
     let startCost = clock_gettime_nsec_np(CLOCK_UPTIME_RAW) &- watchBegin
     let start = CFAbsoluteTimeGetCurrent()
@@ -221,8 +223,8 @@ struct AXRawTranslationReader {
     let end = AXStallEndReading.read(target)
     let observation = AXStallProbe.observe(
       kind: kind, pid: target, requestStart: findings.requestStart, duration: findings.waited, outcome: outcome,
-      baseline: findings.baseline, end: end, baselineReadNanoseconds: findings.readNanoseconds,
-      inlineNanoseconds: startCost &+ (clock_gettime_nsec_np(CLOCK_UPTIME_RAW) &- begin))
+      baseline: findings.baseline, end: end, host: findings.activity, baselineReadNanoseconds: findings.readNanoseconds,
+      sweepNanoseconds: findings.sweepNanoseconds, inlineNanoseconds: startCost &+ (clock_gettime_nsec_np(CLOCK_UPTIME_RAW) &- begin))
     stallObserver(observation)
     if let stallLogger {
       AXStallProbe.logQueue.async { stallLogger.log(AXStallProbe.describe(observation)) }

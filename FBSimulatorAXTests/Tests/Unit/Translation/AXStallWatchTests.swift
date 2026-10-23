@@ -43,7 +43,67 @@ struct AXStallWatchTests {
     #expect(findings.readNanoseconds == FakeStallWatchHost.readNanoseconds)
     #expect(findings.waited == 1.253)
     #expect(host.reads == FakeStallWatchHost.Reads(baselines: 1, pids: [102]))
-    #expect(host.pendingDelays.isEmpty, "the baseline is the watch's only read")
+    #expect(host.pendingDelays == [0], "the first sweep of the host follows the baseline at once")
+  }
+
+  // MARK: - Sweeps
+
+  @Test func comparesTheLatestSweepOfTheHostWithTheFirst() throws {
+    let host = FakeStallWatchHost()
+    let watch = AXStallWatch(pid: 102, ownUDID: FakeStallWatchHost.udid, environment: host.environment)
+    watch.start()
+    host.runDue()
+    host.runDue()
+    #expect(host.pendingDelays == [AXStallWatch.sweepPeriod])
+    host.runDue()
+    host.runDue()
+
+    let findings = watch.finish()
+    let activity = try #require(findings.activity)
+    #expect(host.reads.sweeps == 3)
+    #expect(activity.startMilliseconds == 253, "the first sweep followed the 250 ms baseline and its 3 ms read")
+    #expect(activity.windowMilliseconds == 2000)
+    #expect(activity.ownSimulatorCPUMilliseconds == 400)
+    #expect(activity.otherSimulatorsCPUMilliseconds == 0)
+  }
+
+  @Test func reportsNoActivityFromASingleSweep() {
+    let host = FakeStallWatchHost()
+    let watch = AXStallWatch(pid: 102, environment: host.environment)
+    watch.start()
+    host.runDue()
+    host.runDue()
+
+    #expect(host.reads.sweeps == 1)
+    #expect(watch.finish().activity == nil)
+  }
+
+  @Test func stopsSweepingAtItsLimit() {
+    let host = FakeStallWatchHost()
+    let watch = AXStallWatch(pid: 102, environment: host.environment)
+    watch.start()
+    for _ in 0..<(AXStallWatch.maxSweeps + 5) {
+      host.runDue()
+    }
+
+    #expect(host.reads.sweeps == AXStallWatch.maxSweeps)
+    #expect(host.pendingDelays.isEmpty)
+    _ = watch.finish()
+  }
+
+  @Test func stopsASweepOnceTheRequestEnds() {
+    let host = FakeStallWatchHost()
+    let watch = AXStallWatch(pid: 102, environment: host.environment)
+    watch.start()
+    host.runDue()
+    host.runDue()
+    host.duringNextSweep { _ = watch.finish() }
+
+    host.runDue()
+
+    #expect(host.reads.sweeps == 2)
+    #expect(watch.finish().activity == nil, "the sweep stopped part way was not compared")
+    #expect(host.pendingDelays.isEmpty)
   }
 
   @Test func readsNothingOnceFinishedEvenIfScheduledWorkStillRuns() {

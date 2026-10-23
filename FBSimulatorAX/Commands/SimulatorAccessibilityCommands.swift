@@ -167,6 +167,7 @@ final class SimulatorAccessibilityCommands {
         kind: kind, display: display, clientType: clientType, transport: transport, timing: timing)
       request.stallObserver = stallObserver
       request.stallLogger = simulator.logger
+      request.stallSimulatorUDID = simulator.udid
       request.stallWatchEnvironment = stallWatchEnvironment
       return request
     }

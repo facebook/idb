@@ -91,7 +91,7 @@ struct AXStallProbeTests {
     #expect(observation.hostBusyPercent == 90)
     #expect(observation.probeMicroseconds == 180)
     #expect(line.contains(" baseline_ms=400 "))
-    #expect(line.hasSuffix(" host_busy_pct=90"))
+    #expect(line.hasSuffix(" host_busy_pct=90 sweep_us=0"), "no window: the host's processes were not read twice")
     #expect(!line.contains("process=gone"), "a request with no target read at the baseline is not reported gone")
   }
 
@@ -260,7 +260,7 @@ struct AXStallProbeTests {
       footprintMegabytes: 812, residentMegabytes: 640,
       host: AXHostFacts(name: "sim host", model: "VirtualMac2,1", cpu: "Apple M4 (Virtual)", cpuCount: 13, memoryGigabytes: 48),
       memory: AXMemoryState(pressure: "warn", freePercent: 12, swapUsedMegabytes: 2048), probeMicroseconds: 180,
-      probeInlineMicroseconds: 40, probedBefore: true, targetReplaced: false)
+      probeInlineMicroseconds: 40, sweepMicroseconds: 0, probedBefore: true, targetReplaced: false, hostActivity: nil)
 
     let expected: [String] = [
       "ax_stall_probe kind=multiple_attribute pid=4321 duration_ms=2500 outcome=answered baseline_ms=250 cpu_ms=2100",
@@ -268,9 +268,25 @@ struct AXStallProbeTests {
       "busy_threads=[main|0x10:1500] main_thread_cpu_ms=1500 main_thread_rank=1 main_thread_state=running",
       "footprint_mb=812 resident_mb=640 host_load=81.3 ax_host=sim_host hw_model=VirtualMac2,1",
       "cpu=Apple_M4_(Virtual) ncpu=13 mem_gb=48 memory_pressure=warn mem_free_pct=12 swap_used_mb=2048",
-      "probe_us=180 probe_inline_us=40 process_status=runnable host_busy_pct=97",
+      "probe_us=180 probe_inline_us=40 process_status=runnable host_busy_pct=97 sweep_us=0",
     ]
     #expect(AXStallProbe.describe(observation) == expected.joined(separator: " "))
+  }
+
+  @Test func endsTheLineWithWhatTheHostsProcessesDid() {
+    let activity = AXHostActivityTests.activity(ownUDID: AXHostActivityTests.udidA)
+    let observation = AXStallProbe.observe(
+      kind: "frontmost", pid: 4321, requestStart: 0, duration: 2.5, outcome: .answered, baseline: nil,
+      end: Self.end(nil), host: activity, sweepNanoseconds: 6_400_000)
+    let line = AXStallProbe.describe(observation)
+
+    #expect(line.hasSuffix(" sweep_us=6400 " + activity.logFields.joined(separator: " ")))
+    #expect(observation.hostWindowStartMilliseconds == 250)
+    #expect(observation.hostWindowBusyPercent == 92)
+    #expect(observation.userCPUMilliseconds == 4310)
+    #expect(observation.activeSimulators == 2)
+    #expect(observation.ownSimulatorCPUMilliseconds == 2950)
+    #expect(observation.otherSimulatorsCPUMilliseconds == 950)
   }
 
   // MARK: - Fixtures
