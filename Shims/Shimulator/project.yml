@@ -229,12 +229,26 @@ targets:
       - link: true
         target: ShimulatorProtocol-iOS
       - link: true
+        target: ShimulatorVideoInjectionAVFoundation
+      - link: true
+        target: ShimulatorVideoInjectionCamera
+      - link: true
+        target: ShimulatorVideoInjectionCore
+      - link: true
         target: SimulatorIPC-iOS
       - link: true
         target: ReplRuntimeProbe-iOS
+      - sdk: Accelerate.framework
       - sdk: AudioToolbox.framework
+      - sdk: AVFoundation.framework
       - sdk: CoreAudio.framework
+      - sdk: CoreGraphics.framework
+      - sdk: CoreImage.framework
+      - sdk: CoreMedia.framework
+      - sdk: CoreVideo.framework
       - sdk: Foundation.framework
+      - sdk: Metal.framework
+      - sdk: QuartzCore.framework
       - sdk: UIKit.framework
 
   Shimulator-macOS:
