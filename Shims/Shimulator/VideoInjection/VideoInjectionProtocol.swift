@@ -9,6 +9,8 @@ import Foundation
 
 public enum ShimulatorVideoInjection {
   public static let capability = "video"
+  /// Set to `1` in a process whose camera is to be replaced. The shim reads it once, at load.
+  public static let armedEnvironmentVariable = "IDB_VIDEO_INJECTION"
 }
 
 /// `path` plays on every camera that `frontPath` does not override.

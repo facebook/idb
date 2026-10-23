@@ -99,9 +99,11 @@ struct CodeInjectionHostLauncher {
       return CodeInjectionHost(socketPath: socketPath, host: .app)
     }
 
-    // `.relaunchIfRunning` so an app already running without the REPL dylib picks it up.
-    let environment = await simulator.audioInjection.appLaunchEnvironment(
-      try appLaunchEnvironment(bundleID: bundleID, shim: shim, additionalLibraries: additionalLibraries))
+    // `.relaunchIfRunning` so an app already running without the REPL dylib picks it up. Armed as
+    // an idb `launch` is: camera injection after microphone injection has added the shim.
+    let environment = simulator.videoInjection.appLaunchEnvironment(
+      await simulator.audioInjection.appLaunchEnvironment(
+        try appLaunchEnvironment(bundleID: bundleID, shim: shim, additionalLibraries: additionalLibraries)))
     let configuration = ApplicationLaunchConfiguration(
       bundleID: bundleID,
       bundleName: nil,

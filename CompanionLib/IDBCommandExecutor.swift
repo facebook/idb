@@ -180,6 +180,13 @@ public final class IDBCommandExecutor {
     return await simulator.audioInjection.appLaunchEnvironment(environment)
   }
 
+  public func videoInjectionAppLaunchEnvironment(_ environment: [String: String]) -> [String: String] {
+    guard let simulator = try? target.simulator() else {
+      return environment
+    }
+    return simulator.videoInjection.appLaunchEnvironment(environment)
+  }
+
   public func clearKeychain() async throws {
     try await target.simulator().keychain.clear()
   }

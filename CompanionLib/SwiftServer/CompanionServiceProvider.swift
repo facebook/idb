@@ -385,6 +385,14 @@ final class CompanionServiceProvider: Idb_CompanionService.SimpleServiceProtocol
     }
   }
 
+  func inject_video(request: RPCAsyncSequence<Idb_InjectVideoRequest, any Error>, response: RPCWriter<Idb_InjectVideoResponse>, context: ServerContext) async throws {
+    let reader = RequestStreamReader(request)
+    try await trackedBidiStreaming(context) {
+      try await InjectVideoMethodHandler(target: target)
+        .handle(requestStream: reader, responseStream: response, context: context)
+    }
+  }
+
   func record(request: RPCAsyncSequence<Idb_RecordRequest, any Error>, response: RPCWriter<Idb_RecordResponse>, context: ServerContext) async throws {
     let reader = RequestStreamReader(request)
     try await trackedBidiStreaming(context) {

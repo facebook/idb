@@ -51,6 +51,8 @@ targets:
         embed: false
       - framework: ../Build/Products/Release/libShimulatorProtocol.a
         embed: false
+      - framework: ../Build/Products/Release/libShimulatorVideoInjectionCore.a
+        embed: false
       - framework: ../Build/Products/Release/libSimulatorIPC.a
         embed: false
       - framework: ../Build/Products/Release/libZstdDecompress.a
@@ -125,6 +127,8 @@ targets:
         embed: false
       - framework: ../Build/Products/Release/libShimulatorProtocol.a
         embed: false
+      - framework: ../Build/Products/Release/libShimulatorVideoInjectionCore.a
+        embed: false
       - framework: ../Build/Products/Release/libSimulatorIPC.a
         embed: false
       - framework: ../Build/Products/Release/libZstdDecompress.a
@@ -168,6 +172,8 @@ targets:
       - framework: ../Build/Products/Release/libShimulatorAudioInjectionCore.a
         embed: false
       - framework: ../Build/Products/Release/libShimulatorProtocol.a
+        embed: false
+      - framework: ../Build/Products/Release/libShimulatorVideoInjectionCore.a
         embed: false
       - framework: ../Build/Products/Release/libSimulatorIPC.a
         embed: false

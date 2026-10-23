@@ -57,6 +57,7 @@ struct LaunchMethodHandler: @unchecked Sendable {
       launchMode = .relaunchIfRunning
     }
     environment = await commandExecutor.audioInjectionAppLaunchEnvironment(environment)
+    environment = commandExecutor.videoInjectionAppLaunchEnvironment(environment)
     let config = ApplicationLaunchConfiguration(
       bundleID: start.bundleID,
       bundleName: nil,

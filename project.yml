@@ -378,6 +378,34 @@ targets:
       - target: SimulatorIPC
         embed: false
       - sdk: Foundation.framework
+  ShimulatorVideoInjectionCore:
+    type: library.static
+    platform: macOS
+    deploymentTarget: "15.0"
+    scheme: {}
+    sources:
+      - path: Shims/Shimulator/VideoInjection/VideoInjectionController.swift
+      - path: Shims/Shimulator/VideoInjection/VideoInjectionProtocol.swift
+    settings:
+      base:
+        MACOSX_DEPLOYMENT_TARGET: "15.0"
+        PRODUCT_BUNDLE_IDENTIFIER: com.facebook.ShimulatorVideoInjectionCore
+        PRODUCT_NAME: ShimulatorVideoInjectionCore
+        DEFINES_MODULE: "YES"
+        MACH_O_TYPE: staticlib
+        SWIFT_VERSION: "6.0"
+        OTHER_SWIFT_FLAGS: $(inherited) $(IDB_ARCHIVE_SWIFT_FLAGS_$(CONFIGURATION))
+      configs:
+        Release:
+          DEBUG_INFORMATION_FORMAT: dwarf
+          STRIP_INSTALLED_PRODUCT: "NO"
+          CLANG_ENABLE_MODULE_DEBUGGING: "NO"
+    dependencies:
+      - target: ShimulatorProtocol
+        embed: false
+      - target: SimulatorIPC
+        embed: false
+      - sdk: Foundation.framework
   ZstdDecompress:
     type: library.static
     platform: macOS
@@ -1385,8 +1413,11 @@ targets:
         embed: false
       - target: ShimulatorProtocol
         embed: false
+      - target: ShimulatorVideoInjectionCore
+        embed: false
       - target: SimulatorIPC
         embed: false
+      - sdk: AVFoundation.framework
       - sdk: Foundation.framework
   FBSimulatorCodeInjectionTests:
     type: bundle.unit-test
@@ -1442,6 +1473,7 @@ targets:
       - target: FBXCTestCore
       - target: ShimulatorAudioInjectionCore
       - target: ShimulatorProtocol
+      - target: ShimulatorVideoInjectionCore
       - target: SimulatorIPC
       - sdk: XCTest.framework
   FBSimulatorCodeInjectionSmokeTests:
@@ -1499,6 +1531,7 @@ targets:
       - target: FBXCTestCore
       - target: ShimulatorAudioInjectionCore
       - target: ShimulatorProtocol
+      - target: ShimulatorVideoInjectionCore
       - target: SimulatorIPC
       - sdk: XCTest.framework
   FBSimulatorControlUnitTests:
@@ -1848,6 +1881,7 @@ schemes:
         FBSimulatorVideo: all
         ShimulatorProtocol: all
         ShimulatorAudioInjectionCore: all
+        ShimulatorVideoInjectionCore: all
         ZstdDecompress: all
         FBControlCoreObjC: all
         FBControlCore: all

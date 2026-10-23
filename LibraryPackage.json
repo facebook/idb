@@ -146,10 +146,12 @@
         "libFBSimulatorXCTest.a",
         "libFBXCTestCore.a",
         "libShimulatorAudioInjectionCore.a",
+        "libShimulatorVideoInjectionCore.a",
         "libFBControlCoreObjC.a",
         "libFBSimulatorBridgeProtocol.a"
       ],
       "frameworks": [
+        "AVFoundation.framework",
         "Cocoa.framework",
         "CoreGraphics.framework",
         "CoreImage.framework",
@@ -402,6 +404,19 @@
     },
     "ShimulatorProtocol": {
       "archives": [
+        "libShimulatorProtocol.a",
+        "libSimulatorIPC.a"
+      ],
+      "frameworks": [
+        "Foundation.framework"
+      ],
+      "linker_flags": [],
+      "resources": [],
+      "search_paths": []
+    },
+    "ShimulatorVideoInjectionCore": {
+      "archives": [
+        "libShimulatorVideoInjectionCore.a",
         "libShimulatorProtocol.a",
         "libSimulatorIPC.a"
       ],

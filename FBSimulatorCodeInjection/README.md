@@ -26,6 +26,10 @@ try await session.close()
 
 The library's second injection mechanism plays audio into a Simulator app's microphone input, through the same shim's audio interposer rather than its REPL. `simulator.audioInjection.appLaunchEnvironment(_:)` arms an app launch by inserting `libShimulator-iOS.dylib` into it, and `inject(from:)` then plays a 16-bit PCM WAV file into every armed app that is recording, returning when playback finishes. Failures are `AudioInjectionError`s. An app that is already running cannot be armed without a relaunch.
 
+## Camera injection
+
+The third plays a video into the cameras of Simulator apps, through the same shim's virtual camera. `simulator.videoInjection.inject(back:front:loop:onUpdate:)` serves the shim's `video` capability: it copies the videos beside the Simulator's socket, reports the processes whose cameras are showing them, and returns once one has shown the whole video, or runs until cancelled with `loop`. While it runs, `appLaunchEnvironment(_:)` arms an app launch that microphone injection has already given the shim, so apply it after `audioInjection`'s. Failures are `VideoInjectionError`s. Ending the injection returns every armed camera to its idle pattern.
+
 ## How it works
 
 The shim, `libShimulator` (the one idb injects for XCTest and audio injection too, each part inert unless armed), is this library's resource: a bundle that links the library carries it, and the library finds it there or in the `Resources/` directory beside a standalone binary. It is injected into the host with `DYLD_INSERT_LIBRARIES` for an app, loaded by the guest bridge for the Simulator, and injected by the logic-test runner for a test bundle, which is why this library depends on [`FBSimulatorXCTest`](../FBSimulatorXCTest/README.md).

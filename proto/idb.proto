@@ -66,6 +66,8 @@ service CompanionService {
   // Video/Audio
   rpc add_media(stream AddMediaRequest) returns (AddMediaResponse) {}
   rpc inject_audio(stream InjectAudioRequest) returns (InjectAudioResponse) {}
+  rpc inject_video(stream InjectVideoRequest)
+      returns (stream InjectVideoResponse) {}
   rpc record(stream RecordRequest) returns (stream RecordResponse) {}
   rpc screenshot(ScreenshotRequest) returns (ScreenshotResponse) {}
   rpc video_stream(stream VideoStreamRequest)
@@ -1038,6 +1040,32 @@ message InjectAudioRequest {
 }
 
 message InjectAudioResponse {}
+
+// Plays video files into the cameras of apps the companion launches while the
+// injection runs. The client sends `start` once, then `stop` (or closes its
+// stream) to end the injection.
+message InjectVideoRequest {
+  message Start {
+    // Files on the companion's host. When `front_path` is empty the front
+    // camera shows `back_path` too.
+    string back_path = 1;
+    string front_path = 2;
+    // Play until stopped, rather than ending once a camera has shown the
+    // whole video.
+    bool loop = 3;
+  }
+  message Stop {}
+  oneof control {
+    Start start = 1;
+    Stop stop = 2;
+  }
+}
+
+// Sent once the simulator is armed, then whenever the set of processes
+// showing the video changes.
+message InjectVideoResponse {
+  repeated string processes = 1;
+}
 
 message XctraceRecordRequest {
   message LauchProcess {

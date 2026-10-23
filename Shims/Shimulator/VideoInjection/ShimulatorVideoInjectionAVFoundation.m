@@ -522,6 +522,7 @@ static const CGFloat OrientationAngles[] = {0, 90, 270, 0, 180};
 @end
 
 // A swizzle installed after load would miss an app that opens its camera on launch.
+// Matches `ShimulatorVideoInjection.armedEnvironmentVariable`.
 // patternlint-disable-next-line static-initializer-constructor-attribute
 __attribute__((constructor)) static void ShimulatorVideoInjectionLoad(void)
 {

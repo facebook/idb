@@ -38,6 +38,16 @@ injection and returns the camera to its idle placeholder -- a dark frame labelle
 so an armed camera still looks live. A process connects only
 once it first enumerates a camera, and serves one injection at a time.
 
+The companion serves it for the `inject_video` RPC (`//xplat/idb:idb.proto`,
+`InjectVideoMethodHandler`, and `SimulatorVideoInjectionCommands` in
+`FBSimulatorCodeInjection`). While an
+injection runs, an app idb launches is given `IDB_VIDEO_INJECTION=1` provided
+the shim is already in its `DYLD_INSERT_LIBRARIES`, as microphone injection puts
+it there for every iPhone and iPad launch. The videos are copied beside the
+socket, as `<UDID>.video-back.<ext>` and `<UDID>.video-front.<ext>`, so apps read
+the copies and the client may delete its own files; the copies are deleted, and
+every connection closed, when the injection ends.
+
 ## Cost
 
 AVFoundation, CoreImage, CoreMedia, CoreVideo and Metal are load-time
