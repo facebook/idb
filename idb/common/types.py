@@ -226,6 +226,7 @@ class CompanionInfo:
     metadata: LoggingMetadata = field(default_factory=dict)
     supported_compressions: "frozenset[Compression]" = frozenset()
     zstd_zip_streams: bool = False
+    install_connect_to: bool = False
 
 
 @dataclass(frozen=True)
@@ -1072,6 +1073,7 @@ class Client(ABC):
         make_debuggable: bool | None = None,
         override_modification_time: bool | None = None,
         *,
+        connect_to: TCPAddress | None = None,
         on_upload_progress: Callable[[str], None] | None = None,
     ) -> AsyncIterator[InstalledArtifact]:
         # pyrefly: ignore [invalid-yield]

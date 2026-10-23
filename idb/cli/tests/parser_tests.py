@@ -319,6 +319,7 @@ class TestParser(TestCase):
             make_debuggable=None,
             compression=None,
             override_modification_time=None,
+            connect_to=None,
             on_upload_progress=print_upload_progress,
         )
 
@@ -332,6 +333,7 @@ class TestParser(TestCase):
             make_debuggable=None,
             compression=None,
             override_modification_time=None,
+            connect_to=None,
             on_upload_progress=print_upload_progress,
         )
 
@@ -374,6 +376,7 @@ class TestParser(TestCase):
             make_debuggable=None,
             compression=None,
             override_modification_time=None,
+            connect_to=None,
             on_upload_progress=print_upload_progress,
         )
 
@@ -400,8 +403,59 @@ class TestParser(TestCase):
             make_debuggable=None,
             compression=None,
             override_modification_time=True,
+            connect_to=None,
             on_upload_progress=print_upload_progress,
         )
+
+    async def test_install_with_connect_to(self) -> None:
+        url = "https://cdn.example.com/a.ipa"
+        for value, address in [
+            ("192.0.2.1:443", TCPAddress(host="192.0.2.1", port=443)),
+            ("[2001:db8::1]:8443", TCPAddress(host="2001:db8::1", port=8443)),
+            ("lb.example.net:443", TCPAddress(host="lb.example.net", port=443)),
+        ]:
+            self.client_mock.install = MagicMock(
+                return_value=AsyncGeneratorMock(
+                    (
+                        InstalledArtifact(
+                            name="com.example.app", uuid="app-uuid", progress=0.0
+                        ),
+                    )
+                )
+            )
+            with redirect_stdout(StringIO()):
+                self.assertEqual(
+                    await cli_main(cmd_input=["install", "--connect-to", value, url]),
+                    0,
+                )
+            self.client_mock.install.assert_called_once_with(
+                bundle=url,
+                make_debuggable=None,
+                compression=None,
+                override_modification_time=None,
+                connect_to=address,
+                on_upload_progress=print_upload_progress,
+            )
+
+    async def test_install_with_a_malformed_connect_to(self) -> None:
+        self.client_mock.install = MagicMock(return_value=AsyncGeneratorMock())
+        for value in [
+            "192.0.2.1",
+            "2001:db8::1:443",
+            "host:0",
+            "host:65536",
+            ":443",
+            "[:443",
+            "[host:443",
+            "host]:443",
+            "[a]b]:443",
+        ]:
+            with redirect_stderr(StringIO()):
+                exit_code = await cli_main(
+                    cmd_input=["install", "--connect-to", value, "https://a/b.ipa"]
+                )
+            self.assertEqual(exit_code, 1, value)
+        self.client_mock.install.assert_not_called()
 
     async def test_install_with_bad_compression(self) -> None:
         self.client_mock.install = MagicMock(return_value=AsyncGeneratorMock())
@@ -437,6 +491,7 @@ class TestParser(TestCase):
             make_debuggable=None,
             compression=Compression.ZSTD,
             override_modification_time=None,
+            connect_to=None,
             on_upload_progress=print_upload_progress,
         )
 

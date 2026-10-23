@@ -490,8 +490,10 @@ class Client(ClientBase):
         bundle_type: FileContainerType | None,
         override_modification_time: bool | None = None,
         skip_signing_bundles: bool | None = None,
+        connect_to: TCPAddress | None = None,
         on_upload_progress: Callable[[str], None] | None = None,
     ) -> AsyncIterator[InstalledArtifact]:
+        connect_to_frame = self._connect_to_frame(bundle, connect_to)
         async with self.stub.install.open() as stream:
             generator = None
             progress = None
@@ -604,6 +606,8 @@ class Client(ClientBase):
                     bundle_id=bundle_id, bundle_type=link_to_bundle_type
                 )
                 await stream.send_message(InstallRequest(link_dsym_to_bundle=message))
+            if connect_to_frame is not None:
+                await stream.send_message(connect_to_frame)
             if compression is not None:
                 await stream.send_message(
                     InstallRequest(
@@ -621,6 +625,25 @@ class Client(ClientBase):
                 yield InstalledArtifact(
                     name=response.name, uuid=response.uuid, progress=response.progress
                 )
+
+    def _connect_to_frame(
+        self, bundle: Bundle, connect_to: TCPAddress | None
+    ) -> InstallRequest | None:
+        """The frame asking the companion to connect to `connect_to`, refused before
+        anything is sent when the install can't honour it."""
+        if connect_to is None:
+            return None
+        if not (isinstance(bundle, str) and urllib.parse.urlparse(bundle).scheme):
+            raise IdbException("connect_to applies only to a URL")
+        if not self.companion.install_connect_to:
+            raise IdbException(
+                "This idb_companion does not accept connect_to; update it"
+            )
+        return InstallRequest(
+            connect_to=InstallRequest.ConnectTo(
+                host=connect_to.host, port=connect_to.port
+            )
+        )
 
     def _streams_zips_as_zstd(
         self, destination: Destination, compression: Compression
@@ -1091,6 +1114,7 @@ class Client(ClientBase):
                 is_local=self.is_local,
                 pid=None,
                 supported_compressions=self.companion.supported_compressions,
+                install_connect_to=self.companion.install_connect_to,
             ),
             # Extract the companion metadata from the response.
             metadata=response.companion.metadata,
@@ -1177,6 +1201,7 @@ class Client(ClientBase):
         make_debuggable: bool | None = None,
         override_modification_time: bool | None = None,
         *,
+        connect_to: TCPAddress | None = None,
         on_upload_progress: Callable[[str], None] | None = None,
     ) -> AsyncIterator[InstalledArtifact]:
         async for response in self._install_to_destination(
@@ -1187,6 +1212,7 @@ class Client(ClientBase):
             bundle_id=None,
             bundle_type=None,
             override_modification_time=override_modification_time,
+            connect_to=connect_to,
             on_upload_progress=on_upload_progress,
         ):
             yield response

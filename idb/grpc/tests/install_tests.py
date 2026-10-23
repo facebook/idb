@@ -18,7 +18,7 @@ import unittest
 import zipfile
 from unittest.mock import patch
 
-from idb.common.types import Compression, FileContainerType
+from idb.common.types import Compression, FileContainerType, IdbException, TCPAddress
 from idb.grpc.idb_pb2 import InstallRequest, InstallResponse, Payload
 from idb.grpc.install import (
     generate_binary_chunks,
@@ -248,6 +248,62 @@ class InstallFrameOrderTests(TestCase):
             frames,
             ["destination", "link_dsym_to_bundle", "compression:GZIP", "file_path"],
         )
+
+    async def test_a_url_with_where_to_connect(self) -> None:
+        stream = ScriptedStream(InstallResponse(name="installed"))
+        client, _ = make_client("install", stream, is_local=False)
+        client.companion = dataclasses.replace(
+            client.companion, install_connect_to=True
+        )
+        async for _ in client.install(
+            bundle="https://cdn.example.com/a.ipa",
+            override_modification_time=True,
+            compression=Compression.ZSTD,
+            connect_to=TCPAddress(host="2001:db8::1", port=443),
+        ):
+            pass
+        frames = [message for message, _ in stream.sent]
+        self.assertEqual(
+            [_frame(message) for message in frames],
+            [
+                "destination",
+                "override_modification_time",
+                "connect_to",
+                "compression:ZSTD",
+                "url",
+            ],
+        )
+        self.assertEqual(frames[2].connect_to.host, "2001:db8::1")
+        self.assertEqual(frames[2].connect_to.port, 443)
+
+    async def test_where_to_connect_is_refused_by_a_companion_without_it(
+        self,
+    ) -> None:
+        stream = ScriptedStream(InstallResponse(name="installed"))
+        client, _ = make_client("install", stream, is_local=False)
+        with self.assertRaisesRegex(IdbException, "does not accept connect_to"):
+            async for _ in client.install(
+                bundle="https://cdn.example.com/a.ipa",
+                connect_to=TCPAddress(host="192.0.2.1", port=443),
+            ):
+                pass
+        self.assertEqual(stream.sent, [])
+
+    async def test_where_to_connect_is_refused_for_anything_but_a_url(self) -> None:
+        stream = ScriptedStream(InstallResponse(name="installed"))
+        client, _ = make_client("install", stream, is_local=True)
+        client.companion = dataclasses.replace(
+            client.companion, install_connect_to=True
+        )
+        with tempfile.TemporaryDirectory() as directory:
+            app = os.path.join(directory, "Example.app")
+            os.mkdir(app)
+            with self.assertRaisesRegex(IdbException, "applies only to a URL"):
+                async for _ in client.install(
+                    bundle=app, connect_to=TCPAddress(host="192.0.2.1", port=443)
+                ):
+                    pass
+        self.assertEqual(stream.sent, [])
 
     async def test_a_local_app_with_options(self) -> None:
         with tempfile.TemporaryDirectory() as directory:

@@ -14,8 +14,35 @@ from idb.common.format import (
     human_format_installed_app_info,
     json_format_installed_app_info,
 )
-from idb.common.types import Client, Compression, InstalledArtifact
+from idb.common.types import (
+    Client,
+    Compression,
+    IdbException,
+    InstalledArtifact,
+    TCPAddress,
+)
 from idb.utils.typing import none_throws
+
+
+def parse_connect_to(value: str) -> TCPAddress:
+    """HOST:PORT, with an IPv6 address in brackets, as curl writes a connect-to target."""
+    host, separator, port = value.rpartition(":")
+    if host.startswith("[") and host.endswith("]"):
+        host = host[1:-1]
+    elif ":" in host:
+        raise IdbException(f"--connect-to: put an IPv6 address in brackets: {value}")
+    if (
+        not separator
+        or not host
+        or "[" in host
+        or "]" in host
+        or not (port.isascii() and port.isdigit())
+        or not 0 < int(port) < 65536
+    ):
+        raise IdbException(
+            f"--connect-to: expected HOST:PORT with a port from 1 to 65535: {value}"
+        )
+    return TCPAddress(host=host, port=int(port))
 
 
 class AppInstallCommand(ClientCommand):
@@ -43,6 +70,14 @@ class AppInstallCommand(ClientCommand):
             required=False,
         )
         parser.add_argument(
+            "--connect-to",
+            help="For a URL: open the download's connection to HOST:PORT instead of the address the URL's host resolves to, as curl's --connect-to does. The URL's host is still the name TLS verifies and the HTTP Host asked for. Put an IPv6 address in brackets: [2001:db8::1]:443.",
+            type=str,
+            default=None,
+            required=False,
+            metavar="HOST:PORT",
+        )
+        parser.add_argument(
             "bundle_path",
             help="Path to the .app/.ipa to install. Note that .app bundles will usually be faster to install than .ipa files.",
             type=str,
@@ -59,6 +94,11 @@ class AppInstallCommand(ClientCommand):
             make_debuggable=args.make_debuggable,
             compression=compression,
             override_modification_time=args.override_mtime,
+            connect_to=(
+                parse_connect_to(args.connect_to)
+                if args.connect_to is not None
+                else None
+            ),
             on_upload_progress=print_upload_progress,
         ):
             artifact = info

@@ -23,6 +23,7 @@ from idb.grpc.idb_pb2 import (
     FocusRequest,
     Payload,
     TargetDescription as GrpcTargetDescription,
+    TargetDescriptionResponse,
 )
 from idb.grpc.target import companion_to_py, merge_connected_targets, target_to_py
 from idb.utils.testing import TestCase
@@ -255,6 +256,20 @@ class CompanionToPyTests(unittest.TestCase):
             ).zstd_zip_streams
         )
 
+    def test_maps_install_connect_to(self) -> None:
+        address = TCPAddress(host="localhost", port=1)
+        self.assertTrue(
+            companion_to_py(
+                companion=GrpcCompanionInfo(udid="a", install_connect_to=True),
+                address=address,
+            ).install_connect_to
+        )
+        self.assertFalse(
+            companion_to_py(
+                companion=GrpcCompanionInfo(udid="a"), address=address
+            ).install_connect_to
+        )
+
     def test_omits_unknown_compressions(self) -> None:
         companion = companion_to_py(
             companion=GrpcCompanionInfo(udid="a", supported_compressions=[99]),
@@ -275,3 +290,40 @@ class FocusTests(TestCase):
         await self.client.focus()
 
         self.client.stub.focus.assert_awaited_once_with(FocusRequest())
+
+
+class DescribeTests(TestCase):
+    async def test_reports_whether_the_companion_takes_install_connect_to(
+        self,
+    ) -> None:
+        for advertised in (True, False):
+            with self.subTest(advertised=advertised):
+                client = Client.__new__(Client)
+                client.logger = MagicMock()
+                client.stub = MagicMock()
+                client.stub.describe = AsyncMock(
+                    return_value=TargetDescriptionResponse(
+                        target_description=GrpcTargetDescription(
+                            udid="a", target_type="simulator"
+                        ),
+                    )
+                )
+                client.companion = CompanionInfo(
+                    udid="a",
+                    is_local=False,
+                    pid=None,
+                    address=TCPAddress(host="localhost", port=1),
+                    install_connect_to=advertised,
+                )
+
+                description = await client.describe()
+
+                companion_info = description.companion_info
+                assert companion_info is not None
+                self.assertEqual(companion_info.install_connect_to, advertised)
+                self.assertEqual(
+                    json.loads(description.as_json)["companion_info"][
+                        "install_connect_to"
+                    ],
+                    advertised,
+                )
