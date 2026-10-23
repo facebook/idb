@@ -82,9 +82,11 @@ struct AXStallProbeTests {
       kind: "multiple_attribute", pid: 4321, requestStart: 10_000_000_000, duration: 2, outcome: .answered,
       baseline: Self.reading(at: 10_400_000_000, nil, ticks: AXHostCPUTicks(user: 1000, system: 500, idle: 8000, nice: 0)),
       end: Self.end(nil, ticks: AXHostCPUTicks(user: 1700, system: 700, idle: 8100, nice: 0)),
-      baselineReadNanoseconds: 180_000)
+      baselineReadNanoseconds: 180_000, inlineNanoseconds: 41_500)
     let line = AXStallProbe.describe(observation)
 
+    #expect(observation.probeInlineMicroseconds == 41)
+    #expect(line.contains(" probe_us=180 probe_inline_us=41 "))
     #expect(observation.baselineMilliseconds == 400)
     #expect(observation.hostBusyPercent == 90)
     #expect(observation.probeMicroseconds == 180)
@@ -258,7 +260,7 @@ struct AXStallProbeTests {
       footprintMegabytes: 812, residentMegabytes: 640,
       host: AXHostFacts(name: "sim host", model: "VirtualMac2,1", cpu: "Apple M4 (Virtual)", cpuCount: 13, memoryGigabytes: 48),
       memory: AXMemoryState(pressure: "warn", freePercent: 12, swapUsedMegabytes: 2048), probeMicroseconds: 180,
-      probedBefore: true, targetReplaced: false)
+      probeInlineMicroseconds: 40, probedBefore: true, targetReplaced: false)
 
     let expected: [String] = [
       "ax_stall_probe kind=multiple_attribute pid=4321 duration_ms=2500 outcome=answered baseline_ms=250 cpu_ms=2100",
@@ -266,7 +268,7 @@ struct AXStallProbeTests {
       "busy_threads=[main|0x10:1500] main_thread_cpu_ms=1500 main_thread_rank=1 main_thread_state=running",
       "footprint_mb=812 resident_mb=640 host_load=81.3 ax_host=sim_host hw_model=VirtualMac2,1",
       "cpu=Apple_M4_(Virtual) ncpu=13 mem_gb=48 memory_pressure=warn mem_free_pct=12 swap_used_mb=2048",
-      "probe_us=180 process_status=runnable host_busy_pct=97",
+      "probe_us=180 probe_inline_us=40 process_status=runnable host_busy_pct=97",
     ]
     #expect(AXStallProbe.describe(observation) == expected.joined(separator: " "))
   }

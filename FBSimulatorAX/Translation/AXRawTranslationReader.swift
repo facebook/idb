@@ -163,8 +163,10 @@ struct AXRawTranslationReader {
     let transport = self.transport
     let behindAbandoned = transport.abandonedRequests > 0
     let probedPid = translation?.pid ?? 0
+    let watchBegin = clock_gettime_nsec_np(CLOCK_UPTIME_RAW)
     let watch = AXStallProbe.isEnabled && stallObserver != nil ? AXStallWatch(pid: probedPid, environment: stallWatchEnvironment) : nil
     watch?.start()
+    let startCost = clock_gettime_nsec_np(CLOCK_UPTIME_RAW) &- watchBegin
     let start = CFAbsoluteTimeGetCurrent()
     let response: AXPTranslatorResponse?
     do {
@@ -174,9 +176,10 @@ struct AXRawTranslationReader {
     } catch {
       if let watch {
         if error is CancellationError {
-          reportStall(watch, kind: timing.kindName, pid: probedPid, response: nil, outcome: .cancelled)
+          reportStall(watch, kind: timing.kindName, pid: probedPid, response: nil, outcome: .cancelled, startCost: startCost)
         } else {
           _ = watch.finish()
+          collector.recordProbe(nanoseconds: startCost)
         }
       }
       throw error
@@ -186,7 +189,8 @@ struct AXRawTranslationReader {
       behindAbandoned: behindAbandoned)
     if let watch {
       reportStall(
-        watch, kind: timing.kindName, pid: probedPid, response: response, outcome: response == nil ? .unanswered : .answered)
+        watch, kind: timing.kindName, pid: probedPid, response: response, outcome: response == nil ? .unanswered : .answered,
+        startCost: startCost)
     }
     guard let response else {
       // Blamed on the query whenever it has run out, including when both ran out together.
@@ -200,19 +204,25 @@ struct AXRawTranslationReader {
   }
 
   /// Stops `watch` and, when the request waited `AXStallProbe.threshold` or longer, reads its target and the host
-  /// again and tells `stallObserver` what they did. The log line is written on another queue.
+  /// again and tells `stallObserver` what they did. The log line is written on another queue. Counts the time the
+  /// probe held the read's thread, `startCost` included, towards the read's probe duration.
   private func reportStall(
-    _ watch: AXStallWatch, kind: String, pid: pid_t, response: AXPTranslatorResponse?, outcome: AccessibilityStallOutcome
+    _ watch: AXStallWatch, kind: String, pid: pid_t, response: AXPTranslatorResponse?, outcome: AccessibilityStallOutcome,
+    startCost: UInt64
   ) {
+    let begin = clock_gettime_nsec_np(CLOCK_UPTIME_RAW)
+    defer { collector.recordProbe(nanoseconds: startCost &+ (clock_gettime_nsec_np(CLOCK_UPTIME_RAW) &- begin)) }
     let findings = watch.finish()
     guard findings.waited >= AXStallProbe.threshold, let stallObserver else {
       return
     }
     // A request without a target, as for the frontmost application, is put down to the process its answer names.
     let target = pid > 0 ? pid : (response?.resultData as? AXTranslationReference)?.pid ?? 0
+    let end = AXStallEndReading.read(target)
     let observation = AXStallProbe.observe(
       kind: kind, pid: target, requestStart: findings.requestStart, duration: findings.waited, outcome: outcome,
-      baseline: findings.baseline, end: AXStallEndReading.read(target), baselineReadNanoseconds: findings.readNanoseconds)
+      baseline: findings.baseline, end: end, baselineReadNanoseconds: findings.readNanoseconds,
+      inlineNanoseconds: startCost &+ (clock_gettime_nsec_np(CLOCK_UPTIME_RAW) &- begin))
     stallObserver(observation)
     if let stallLogger {
       AXStallProbe.logQueue.async { stallLogger.log(AXStallProbe.describe(observation)) }

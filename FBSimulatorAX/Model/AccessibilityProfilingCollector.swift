@@ -34,6 +34,8 @@ public final class AccessibilityProfilingCollector {
   private var _xpcDurationBeforeWalk: CFAbsoluteTime = 0
   private var _xpcCallsBeforeWalk: Int64 = 0
   private var _requestsBehindAbandoned: Int64 = 0
+  private var _watchedRequests = 0
+  private var _probeNanoseconds: UInt64 = 0
   private var _slowestRequest: AccessibilityTranslatorRequestTiming?
   private var _fetchedKeys = Set<String>()
 
@@ -92,6 +94,21 @@ public final class AccessibilityProfilingCollector {
     lock.lock()
     defer { lock.unlock() }
     return _xpcCallsBeforeWalk
+  }
+
+  /// Records the time the stall probe held the read's thread for one watched request.
+  func recordProbe(nanoseconds: UInt64) {
+    lock.lock()
+    defer { lock.unlock() }
+    _watchedRequests += 1
+    _probeNanoseconds += nanoseconds
+  }
+
+  /// The time the stall probe held the read's thread, over all of its requests; nil when none was watched.
+  public var probeDuration: CFAbsoluteTime? {
+    lock.lock()
+    defer { lock.unlock() }
+    return _watchedRequests > 0 ? CFAbsoluteTime(_probeNanoseconds) / 1_000_000_000 : nil
   }
 
   /// Requests sent while one abandoned earlier, by this read or another, was still unanswered: the service

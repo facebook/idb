@@ -274,10 +274,10 @@ enum AXStallProbe {
   /// the change in its counters and in the host's ticks from `baseline`, read while the request waited, to
   /// `end`, read once it ended. Counter changes are nil without a baseline, and when the pid names a different
   /// process at the end than it did at the baseline. `baselineReadNanoseconds` is how long reading the baseline
-  /// took.
+  /// took, and `inlineNanoseconds` how long the probe held the request's thread, reading `end` included.
   static func observe(
     kind: String, pid: pid_t, requestStart: UInt64, duration: CFAbsoluteTime, outcome: AccessibilityStallOutcome,
-    baseline: AXStallReading?, end: AXStallEndReading, baselineReadNanoseconds: UInt64 = 0
+    baseline: AXStallReading?, end: AXStallEndReading, baselineReadNanoseconds: UInt64 = 0, inlineNanoseconds: UInt64 = 0
   ) -> AccessibilityStallObservation {
     let before = baseline?.counters
     let after = end.reading.counters
@@ -309,6 +309,7 @@ enum AXStallProbe {
       residentMegabytes: after == nil ? nil : end.usage.map { Int(clamping: $0.ri_resident_size / 1_048_576) },
       host: .current, memory: end.memory,
       probeMicroseconds: Int(clamping: baselineReadNanoseconds / 1000),
+      probeInlineMicroseconds: Int(clamping: inlineNanoseconds / 1000),
       probedBefore: before != nil, targetReplaced: replaced)
   }
 
@@ -360,7 +361,10 @@ enum AXStallProbe {
     if let swap = observation.memory.swapUsedMegabytes {
       fields.append("swap_used_mb=\(swap)")
     }
-    fields += ["probe_us=\(observation.probeMicroseconds)", "process_status=\(observation.processStatus)"]
+    fields += [
+      "probe_us=\(observation.probeMicroseconds)", "probe_inline_us=\(observation.probeInlineMicroseconds)",
+      "process_status=\(observation.processStatus)",
+    ]
     if let busy = observation.hostBusyPercent {
       fields.append("host_busy_pct=\(busy)")
     }

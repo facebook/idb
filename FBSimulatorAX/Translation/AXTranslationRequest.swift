@@ -385,7 +385,8 @@ final class AXTranslationRequest {
       springBoardCheckDuration: collector.springBoardCheckDuration,
       acquireRoundTrips: collector.acquireRoundTrips,
       slowestRequest: collector.slowestRequest,
-      requestsBehindAbandoned: collector.requestsBehindAbandoned)
+      requestsBehindAbandoned: collector.requestsBehindAbandoned,
+      probeDuration: collector.probeDuration)
     return AccessibilityElementsResponse(
       elements: elements,
       profilingData: options.enableProfiling ? .translator(profile) : nil,

@@ -256,6 +256,32 @@ final class AXRawTranslationReaderTests: XCTestCase {
     XCTAssertEqual(observation.baselineMilliseconds, 250)
     XCTAssertTrue(observation.probedBefore)
     XCTAssertNotNil(observation.cpuMilliseconds, "this process was read at the baseline and at the end")
+    XCTAssertGreaterThan(observation.probeInlineMicroseconds, 0, "reading the target at the end held the read's thread")
+  }
+
+  func testTheProbesTimeOnTheReadsThreadIsCountedForEveryWatchedRequest() throws {
+    let collector = AccessibilityProfilingCollector()
+    var reader = Self.reader(
+      AXRawTranslationTransportDouble(elements: [
+        1: [.frame: NSValue(rect: .zero), .role: 1, .children: [Self.reference(2)]],
+        2: [.frame: NSValue(rect: .zero), .role: 2],
+      ]), collector: collector)
+    reader.stallObserver = { _ in }
+
+    _ = try reader.read(Self.reference(1), plan: Self.defaultPlan)
+
+    let probe = try XCTUnwrap(collector.probeDuration)
+    XCTAssertGreaterThan(probe, 0)
+    XCTAssertLessThan(probe, 0.01, "two quick requests cost a timer each")
+  }
+
+  func testAReadWithNoWatchedRequestHasNoProbeDuration() throws {
+    let collector = AccessibilityProfilingCollector()
+
+    _ = try Self.reader(AXRawTranslationTransportDouble(elements: Self.oneElement), collector: collector)
+      .read(Self.reference(1), plan: Self.defaultPlan)
+
+    XCTAssertNil(collector.probeDuration)
   }
 
   func testARequestThatEndedBeforeItsBaselineIsObservedWithoutOne() throws {

@@ -329,6 +329,9 @@ public struct AccessibilityTranslatorReadMetrics: Sendable, Equatable {
   public let slowestRequest: AccessibilityTranslatorRequestTiming?
   /// Requests sent while one abandoned earlier, by this read or another, was still unanswered.
   public let requestsBehindAbandoned: Int64
+  /// The time the stall probe held the read's thread: watching its requests, and reading the target and the host
+  /// when one was slow. Nil when no request was watched.
+  public let probeDuration: CFAbsoluteTime?
 
   public init(
     elementCount: Int64,
@@ -340,7 +343,8 @@ public struct AccessibilityTranslatorReadMetrics: Sendable, Equatable {
     springBoardCheckDuration: CFAbsoluteTime = 0,
     acquireRoundTrips: Int64 = 0,
     slowestRequest: AccessibilityTranslatorRequestTiming? = nil,
-    requestsBehindAbandoned: Int64 = 0
+    requestsBehindAbandoned: Int64 = 0,
+    probeDuration: CFAbsoluteTime? = nil
   ) {
     self.elementCount = elementCount
     self.roundTrips = roundTrips
@@ -352,6 +356,7 @@ public struct AccessibilityTranslatorReadMetrics: Sendable, Equatable {
     self.acquireRoundTrips = acquireRoundTrips
     self.slowestRequest = slowestRequest
     self.requestsBehindAbandoned = requestsBehindAbandoned
+    self.probeDuration = probeDuration
   }
 }
 

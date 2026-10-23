@@ -54,6 +54,9 @@ package struct AccessibilityStallObservation: Sendable {
   let memory: AXMemoryState
   /// How long reading the baseline took.
   let probeMicroseconds: Int
+  /// How long the probe held the request's thread: starting and stopping the watch, and reading the target and
+  /// the host at the end. The request took `duration` plus this.
+  package let probeInlineMicroseconds: Int
   /// Whether the process was read at the baseline. A request without a target, as for the frontmost
   /// application, is put down to the process its answer names, which could not be read beforehand.
   let probedBefore: Bool

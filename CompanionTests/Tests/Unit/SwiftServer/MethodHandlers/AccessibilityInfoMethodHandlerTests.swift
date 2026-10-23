@@ -304,7 +304,7 @@ struct AccessibilityInfoMethodHandlerTests {
 
     #expect(
       call.ints.filter { $0.key.hasPrefix("ax_stall_") } == [
-        "ax_stall_ms": 1250, "ax_stall_baseline_ms": 250, "ax_stall_target_cpu_ms": 900,
+        "ax_stall_ms": 1250, "ax_stall_probe_inline_us": 230, "ax_stall_baseline_ms": 250, "ax_stall_target_cpu_ms": 900,
         "ax_stall_target_context_switches": 30, "ax_stall_target_syscalls": 400, "ax_stall_target_running_threads": 2,
         "ax_stall_main_thread_cpu_ms": 850, "ax_stall_host_load_x10": 813, "ax_stall_host_busy_pct": 97,
       ])
@@ -332,6 +332,23 @@ struct AccessibilityInfoMethodHandlerTests {
     #expect(call.normals["ax_read_outcome"] == "aborted_unanswered")
   }
 
+  @Test(arguments: [nil, 0.0012] as [CFAbsoluteTime?])
+  func aCompleteReadRecordsTheProbesCostOnlyWhenItWatchedARequest(probeDuration: CFAbsoluteTime?) async throws {
+    let executor = RecordingAccessibilityExecutor(
+      response: AccessibilityElementsResponse(
+        elements: .single(AccessibilityDocumentElement()), backend: .ax,
+        translatorMetrics: AccessibilityTranslatorReadMetrics(
+          elementCount: 1, roundTrips: 1, readDuration: 0.01, totalDuration: 0.01, transport: .bridge,
+          probeDuration: probeDuration)))
+    let call = CallTelemetry()
+
+    _ = try await CallTelemetry.$current.withValue(call) {
+      try await AccessibilityInfoMethodHandler.respond(to: Idb_AccessibilityInfoRequest(), using: executor)
+    }
+
+    #expect(call.ints["ax_probe_overhead_us"] == probeDuration.map { Int($0 * 1_000_000) })
+  }
+
   @Test
   func aReadWithoutTelemetryWatchesNoRequests() async throws {
     let executor = RecordingAccessibilityExecutor()
@@ -357,6 +374,6 @@ struct AccessibilityInfoMethodHandlerTests {
       busiestThreads: main.map { [$0] }, mainThread: main, footprintMegabytes: nil, residentMegabytes: nil,
       host: AXHostFacts(name: "host", model: "VirtualMac2,1", cpu: "Apple M4 (Virtual)", cpuCount: 13, memoryGigabytes: 48),
       memory: AXMemoryState(pressure: nil, freePercent: nil, swapUsedMegabytes: nil), probeMicroseconds: 0,
-      probedBefore: baselineMilliseconds != nil, targetReplaced: false)
+      probeInlineMicroseconds: 230, probedBefore: baselineMilliseconds != nil, targetReplaced: false)
   }
 }

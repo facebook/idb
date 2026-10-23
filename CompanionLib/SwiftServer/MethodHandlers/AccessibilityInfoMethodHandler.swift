@@ -148,6 +148,7 @@ enum AccessibilityReadTelemetry {
     call.setNormal(observation.requestKind, forKey: "ax_stall_request_type")
     call.setNormal(observation.outcome.rawValue, forKey: "ax_stall_outcome")
     call.setNormal(observation.processStatus, forKey: "ax_stall_process_status")
+    call.setInt(observation.probeInlineMicroseconds, forKey: "ax_stall_probe_inline_us")
     let ints: [(String, Int?)] = [
       ("ax_stall_baseline_ms", observation.baselineMilliseconds),
       ("ax_stall_target_cpu_ms", observation.cpuMilliseconds),
@@ -188,6 +189,9 @@ enum AccessibilityReadTelemetry {
     call.setInt(Int(metrics.springBoardCheckDuration * 1000), forKey: "ax_springboard_check_ms")
     call.setInt(Int(metrics.acquireRoundTrips), forKey: "ax_acquire_round_trips")
     call.setInt(Int(metrics.requestsBehindAbandoned), forKey: "ax_requests_behind_abandoned")
+    if let probe = metrics.probeDuration {
+      call.setInt(Int(probe * 1_000_000), forKey: "ax_probe_overhead_us")
+    }
     if let slowest = metrics.slowestRequest {
       call.setInt(Int(slowest.duration * 1000), forKey: "ax_slowest_request_ms")
       call.setNormal(slowest.kindName, forKey: "ax_slowest_request_type")
