@@ -57,6 +57,7 @@ struct BridgeAnswerTests {
       #"{"action":"revoke","bundleID":"app","error":"HKAuthorizationStore declares no known setAuthorizationStatuses: spelling","ok":false,"resolvedTypes":["step"],"unresolvedTypes":[]}"#
     ),
     (.health(.clear(bundleID: "app", ok: true, error: nil)), #"{"action":"clear","bundleID":"app","ok":true}"#),
+    (.lockScreen(BridgeLockScreenState(locked: true)), #"{"locked":true}"#),
     (.health(.clear(bundleID: "app", ok: false, error: "clear failed")), #"{"action":"clear","bundleID":"app","error":"clear failed","ok":false}"#),
     (
       .health(

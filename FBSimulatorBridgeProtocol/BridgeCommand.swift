@@ -42,6 +42,12 @@ import Foundation
     case revoke(bundleID: String, typeIDs: [String])
   }
 
+  @frozen public enum LockScreen: Codable, Equatable, Sendable {
+    case state
+    case lock
+    case unlock
+  }
+
   case clearContacts
   case clearPhotos
   case dns(DNS)
@@ -49,6 +55,7 @@ import Foundation
   case proxy(Proxy)
   case notifications(Notifications)
   case health(Health)
+  case lockScreen(LockScreen)
   case accessibility(BridgeAXRequest)
   case ping
   case shutdown
@@ -59,6 +66,7 @@ import Foundation
   private enum ProxyCodingKeys: String, CodingKey { case _0 = "action" }
   private enum NotificationsCodingKeys: String, CodingKey { case _0 = "action" }
   private enum HealthCodingKeys: String, CodingKey { case _0 = "action" }
+  private enum LockScreenCodingKeys: String, CodingKey { case _0 = "action" }
   private enum AccessibilityCodingKeys: String, CodingKey { case _0 = "action" }
 
   /// Only reads can be replayed after a connection failure with an uncertain outcome.
@@ -89,6 +97,11 @@ import Foundation
       switch command {
       case .list: true
       case .clear, .approve, .revoke: false
+      }
+    case let .lockScreen(command):
+      switch command {
+      case .state: true
+      case .lock, .unlock: false
       }
     case let .accessibility(request): request.mayRetry
     case .ping: true

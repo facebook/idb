@@ -72,6 +72,12 @@ extension BridgeCommand {
       case .approve: "health approve"
       case .revoke: "health revoke"
       }
+    case let .lockScreen(command):
+      switch command {
+      case .state: "lock-screen state"
+      case .lock: "lock-screen lock"
+      case .unlock: "lock-screen unlock"
+      }
     case let .accessibility(request): "accessibility \(request.verb.rawValue)"
     case .ping: "ping"
     case .shutdown: "shutdown"

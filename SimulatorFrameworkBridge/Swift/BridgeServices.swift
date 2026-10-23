@@ -121,6 +121,12 @@ public enum BridgeServices {
       }
       return Int32(HealthSettingsService.handleHealthSettingsAction(action: action, bundleID: bundleID, typeIdentifiers: types, output: output))
       #endif
+    case let .lockScreen(command):
+      #if os(tvOS) || os(watchOS)
+      return unavailable("The lock screen service", output: output)
+      #else
+      return lockScreen(command, output: output)
+      #endif
     case let .accessibility(request):
       return accessibility(AccessibilityService.handleRequest(request), output: output)
     }
@@ -157,6 +163,23 @@ public enum BridgeServices {
   private static func unavailable(_ subject: String, output: BridgeOutput) -> Int32 {
     Int32(output.failure("\(subject) is not available in a \(guestPlatformName) guest"))
   }
+
+  #if !os(tvOS) && !os(watchOS)
+  private static func lockScreen(_ command: BridgeCommand.LockScreen, output: BridgeOutput) -> Int32 {
+    let result =
+      switch command {
+      case .state: LockScreenService.state()
+      case .lock: LockScreenService.lock()
+      case .unlock: LockScreenService.unlock()
+      }
+    switch result {
+    case let .success(status):
+      return output.write(.lockScreen(BridgeLockScreenState(locked: status.locked))) ? 0 : 1
+    case let .failure(error):
+      return Int32(output.failure(error.localizedDescription))
+    }
+  }
+  #endif
 }
 
 private final class AccessibilityResultStream: BridgeResultStream {
