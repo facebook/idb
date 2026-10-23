@@ -45,7 +45,7 @@ enum ConcatedJsonParser {
         characterEscaped = true
       }
       if c == "\"" {
-        inString = !inString
+        inString.toggle()
       }
 
       json.append(c)
