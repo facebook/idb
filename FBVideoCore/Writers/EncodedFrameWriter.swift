@@ -219,15 +219,16 @@ extension CMFormatDescription {
 }
 
 extension CMSampleBuffer {
-  /// Modern VideoToolbox marks a non-sync sample with `NotSync`; a sample without the attachment is a
-  /// keyframe.
+  /// A sample is a keyframe unless its `NotSync` attachment is true. VideoToolbox's hardware encoders and its software
+  /// H.264 encoder leave the attachment off a keyframe, but its software HEVC encoder sets it to false there, so
+  /// the attachment being present does not make a sample a delta frame.
   var isKeyFrame: Bool {
     guard let attachments = CMSampleBufferGetSampleAttachmentsArray(self, createIfNecessary: true) as? [[CFString: Any]],
       let attachment = attachments.first
     else {
       return false
     }
-    return attachment[kCMSampleAttachmentKey_NotSync] == nil
+    return (attachment[kCMSampleAttachmentKey_NotSync] as? Bool) != true
   }
 }
 
