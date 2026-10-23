@@ -11,6 +11,7 @@ import AppKit
 import FBSimulatorBridgeProtocol
 @testable import FBSimulatorControl
 import XCTest
+import os
 
 final class AXRawTranslationReaderTests: XCTestCase {
 
@@ -215,5 +216,124 @@ final class AXRawTranslationReaderTests: XCTestCase {
     let handle = try XCTUnwrap(snapshot.children.first?.handle)
     XCTAssertTrue(request.element(for: handle) as AnyObject === cached, "acting builds the translator's element")
     XCTAssertEqual(cached.translation.bridgeDelegateToken, request.token, "an action on the handle reaches this read")
+  }
+
+  // MARK: - Stalls
+
+  func testRequestsAreNotWatchedWithoutAnObserver() throws {
+    let host = FakeStallWatchHost()
+    var reader = Self.reader(AXRawTranslationTransportDouble(elements: Self.oneElement))
+    reader.stallWatchEnvironment = host.environment
+
+    _ = try reader.read(Self.reference(1), plan: Self.defaultPlan)
+
+    XCTAssertTrue(host.pendingDelays.isEmpty, "no watch was scheduled")
+  }
+
+  func testARequestAnsweredBeforeTheThresholdIsNotObserved() {
+    let read = Self.readWhileHeld { host in
+      host.runDue()
+      host.advance(by: 700_000_000)
+    }
+
+    XCTAssertNil(read.error)
+    XCTAssertTrue(read.observations.isEmpty)
+  }
+
+  func testASlowRequestIsObservedFromItsBaselineToItsEnd() throws {
+    let read = Self.readWhileHeld { host in
+      host.runDue()
+      host.advance(by: 1_200_000_000)
+    }
+
+    XCTAssertNil(read.error)
+    let observation = try XCTUnwrap(read.observations.first)
+    XCTAssertEqual(read.observations.count, 1)
+    XCTAssertEqual(observation.pid, getpid())
+    XCTAssertEqual(observation.requestKind, "multiple_attribute")
+    XCTAssertEqual(observation.outcome, .answered)
+    XCTAssertEqual(observation.duration, 1.453, accuracy: 0.000_001, "250 ms to the baseline, 3 ms reading it, then 1.2 s")
+    XCTAssertEqual(observation.baselineMilliseconds, 250)
+    XCTAssertTrue(observation.probedBefore)
+    XCTAssertNotNil(observation.cpuMilliseconds, "this process was read at the baseline and at the end")
+  }
+
+  func testARequestThatEndedBeforeItsBaselineIsObservedWithoutOne() throws {
+    let read = Self.readWhileHeld { host in host.advance(by: 1_500_000_000) }
+
+    let observation = try XCTUnwrap(read.observations.first)
+    XCTAssertEqual(observation.duration, 1.5, accuracy: 0.000_001)
+    XCTAssertNil(observation.baselineMilliseconds)
+    XCTAssertNil(observation.cpuMilliseconds)
+    XCTAssertFalse(observation.probedBefore)
+  }
+
+  func testAnUnansweredRequestIsObservedAsUnanswered() throws {
+    let read = Self.readWhileHeld(elements: [:]) { host in
+      host.runDue()
+      host.advance(by: 2_000_000_000)
+    }
+
+    guard case .serviceNotAnswering = read.error as? AccessibilityError else {
+      return XCTFail("the read fails when its request is not answered, not \(String(describing: read.error))")
+    }
+    XCTAssertEqual(try XCTUnwrap(read.observations.first).outcome, .unanswered)
+  }
+
+  func testAStallCutShortByCancellingTheReadIsObservedAsCancelled() throws {
+    let cancellation = AXReadCancellation()
+    let read = Self.readWhileHeld(cancellation: cancellation) { host in
+      host.runDue()
+      host.advance(by: 1_300_000_000)
+      cancellation.cancel()
+    }
+
+    XCTAssertTrue(read.error is CancellationError)
+    let observation = try XCTUnwrap(read.observations.first)
+    XCTAssertEqual(observation.outcome, .cancelled)
+    XCTAssertEqual(observation.duration, 1.553, accuracy: 0.000_001)
+    XCTAssertEqual(observation.baselineMilliseconds, 250)
+  }
+
+  func testTheProbeCanBeTurnedOffFromTheEnvironment() {
+    XCTAssertTrue(AXStallProbe.isEnabled(environmentValue: nil))
+    XCTAssertTrue(AXStallProbe.isEnabled(environmentValue: "1"))
+    XCTAssertTrue(AXStallProbe.isEnabled(environmentValue: ""))
+    for off in ["0", "false", "FALSE", "no", "Off"] {
+      XCTAssertFalse(AXStallProbe.isEnabled(environmentValue: off), off)
+    }
+  }
+
+  private static let oneElement: [UInt64: [BridgeAXTranslatorAttribute: Any]] = [1: [.frame: NSValue(rect: .zero), .role: 1]]
+
+  /// Reads element 1 of this process with its one request held, runs `whileHeld` on another thread before letting it
+  /// go, and returns what the stall observer was told and the error the read threw, if any.
+  private static func readWhileHeld(
+    elements: [UInt64: [BridgeAXTranslatorAttribute: Any]] = oneElement, cancellation: AXReadCancellation? = nil,
+    whileHeld: @escaping @Sendable (FakeStallWatchHost) -> Void
+  ) -> (observations: [AccessibilityStallObservation], error: (any Error)?) {
+    let host = FakeStallWatchHost(readsProcesses: true)
+    let hold = TransportHold()
+    let observations = OSAllocatedUnfairLock<[AccessibilityStallObservation]>(initialState: [])
+    var reader = AXRawTranslationReader(
+      transport: AXRawTranslationTransportDouble(elements: elements, hold: hold), clientType: .xctest, timeout: 5,
+      collector: AccessibilityProfilingCollector(), token: "token", cancellation: cancellation)
+    reader.stallObserver = { observation in observations.withLock { $0.append(observation) } }
+    reader.stallWatchEnvironment = host.environment
+    let driven = DispatchSemaphore(value: 0)
+    Thread {
+      hold.waitUntilHolding()
+      whileHeld(host)
+      hold.release()
+      driven.signal()
+    }.start()
+    var failure: (any Error)?
+    do {
+      _ = try reader.read(AXPTranslationObjectDouble(pid: getpid(), objectID: 1), plan: defaultPlan)
+    } catch {
+      failure = error
+    }
+    driven.wait()
+    return (observations.withLock { $0 }, failure)
   }
 }

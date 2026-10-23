@@ -11,6 +11,7 @@ import FBSimulatorControl
 import Foundation
 import GRPCCore
 import IDBGRPCSwift
+import Synchronization
 
 /// Seam over the two `CompanionAccessibility` reads this handler drives, so the request-to-options wiring
 /// can be tested against a double.
@@ -42,14 +43,23 @@ struct AccessibilityInfoMethodHandler {
     using commandExecutor: any AccessibilityDescribing,
     cancellation: ServerContext.RPCCancellationHandle? = nil
   ) async throws -> Idb_AccessibilityInfoResponse {
-    AccessibilityReadTelemetry.recordHost(into: CallTelemetry.current)
+    let call = CallTelemetry.current
+    AccessibilityReadTelemetry.recordHost(into: call)
+    let stalls = call.map { _ in SlowestStall() }
+    // Written once the read has ended, whether it completed or not, so every `ax_stall_*` column is the same
+    // request's.
+    defer {
+      if let call, let stall = stalls?.observation {
+        AccessibilityReadTelemetry.record(stall, into: call)
+      }
+    }
     do {
       guard let cancellation else {
-        return try await read(request, using: commandExecutor)
+        return try await read(request, using: commandExecutor, stalls: stalls)
       }
       // The read stops when the client goes away, rather than reading to the end for no one.
       return try await withRPCCancellation(cancellation) {
-        try await read(request, using: commandExecutor)
+        try await read(request, using: commandExecutor, stalls: stalls)
       }
     } catch {
       AccessibilityReadTelemetry.record(failure: error, into: CallTelemetry.current)
@@ -59,14 +69,18 @@ struct AccessibilityInfoMethodHandler {
 
   private static func read(
     _ request: Idb_AccessibilityInfoRequest,
-    using commandExecutor: any AccessibilityDescribing
+    using commandExecutor: any AccessibilityDescribing,
+    stalls: SlowestStall?
   ) async throws -> Idb_AccessibilityInfoResponse {
     try AccessibilityInfoRequestTranslation.validate(request)
     let format = AccessibilityInfoRequestTranslation.outputFormat(from: request.format)
     let backend = AccessibilityInfoRequestTranslation.backend(from: request.backend)
     // Built before the branch: both paths are reads of the same tree with the same options, so the
     // marker path honours the request's keys, profiling and frame coverage too.
-    let options = try AccessibilityInfoRequestTranslation.options(from: request, format: format)
+    var options = try AccessibilityInfoRequestTranslation.options(from: request, format: format)
+    if let stalls {
+      options.stallObserver = { stalls.keepIfSlowest($0) }
+    }
     // A marker selects a single element to describe; without one the request
     // describes the element at a point, or the whole frontmost app.
     if let query = AccessibilityInfoRequestTranslation.markerQuery(from: request) {
@@ -84,6 +98,23 @@ struct AccessibilityInfoMethodHandler {
     return .with {
       $0.json = String(data: jsonData, encoding: .utf8) ?? ""
     }
+  }
+}
+
+/// The longest request a read has reported as stalled, so its telemetry describes one request: the worst.
+final class SlowestStall: Sendable {
+  private let slowest = Mutex<AccessibilityStallObservation?>(nil)
+
+  func keepIfSlowest(_ observation: AccessibilityStallObservation) {
+    slowest.withLock { slowest in
+      if observation.duration > slowest?.duration ?? 0 {
+        slowest = observation
+      }
+    }
+  }
+
+  var observation: AccessibilityStallObservation? {
+    slowest.withLock { $0 }
   }
 }
 
@@ -108,6 +139,28 @@ enum AccessibilityReadTelemetry {
   static func recordHost(into call: CallTelemetry?) {
     guard let call, let hostName else { return }
     call.setNormal(hostName, forKey: "ax_host")
+  }
+
+  /// The slowest stalled request of a read: how long it waited and how it ended, and what its target process
+  /// and the host did from its baseline to its end. A column is absent when that request has no value for it.
+  static func record(_ observation: AccessibilityStallObservation, into call: CallTelemetry) {
+    call.setInt(Int(observation.duration * 1000), forKey: "ax_stall_ms")
+    call.setNormal(observation.requestKind, forKey: "ax_stall_request_type")
+    call.setNormal(observation.outcome.rawValue, forKey: "ax_stall_outcome")
+    call.setNormal(observation.processStatus, forKey: "ax_stall_process_status")
+    let ints: [(String, Int?)] = [
+      ("ax_stall_baseline_ms", observation.baselineMilliseconds),
+      ("ax_stall_target_cpu_ms", observation.cpuMilliseconds),
+      ("ax_stall_target_context_switches", observation.contextSwitches),
+      ("ax_stall_target_syscalls", observation.syscalls),
+      ("ax_stall_target_running_threads", observation.runningThreads),
+      ("ax_stall_main_thread_cpu_ms", observation.mainThreadCPUMilliseconds),
+      ("ax_stall_host_load_x10", observation.hostLoad.map { Int(($0 * 10).rounded()) }),
+      ("ax_stall_host_busy_pct", observation.hostBusyPercent),
+    ]
+    for case let (key, value?) in ints {
+      call.setInt(value, forKey: key)
+    }
   }
 
   /// A read that failed records how it ended, when the failure says.

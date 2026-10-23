@@ -13,6 +13,7 @@ import FBSimulatorBridgeProtocol
 @testable import FBSimulatorControl
 import Foundation
 import ObjectiveC
+import os
 
 // MARK: - AXPTranslationObject Double
 
@@ -264,6 +265,64 @@ final class AXTranslationTransportDouble: AXTranslationTransport, @unchecked Sen
   }
 }
 
+// MARK: - Holding requests
+
+/// Holds a transport's requests until the test lets each go, telling the test when one is waiting, so a test can
+/// act while a request is in flight without waiting on the clock.
+final class TransportHold: Sendable {
+  private let held = DispatchSemaphore(value: 0)
+  private let released = DispatchSemaphore(value: 0)
+
+  /// Called by the transport for each request it holds.
+  func wait() {
+    held.signal()
+    released.wait()
+  }
+
+  /// Returns once a request is being held.
+  func waitUntilHolding() {
+    held.wait()
+  }
+
+  /// Lets the held request go.
+  func release() {
+    released.signal()
+  }
+}
+
+/// Sends through `inner`, holding the first request of a type in `holding` on `hold` before it is sent.
+final class HoldingTransport: AXTranslationTransport, Sendable {
+  private let inner: any AXTranslationTransport
+  private let holding: Set<BridgeAXTranslatorRequestType>
+  private let hold: TransportHold
+  private let held = OSAllocatedUnfairLock(initialState: false)
+
+  init(_ inner: any AXTranslationTransport, holding: Set<BridgeAXTranslatorRequestType>, hold: TransportHold) {
+    self.inner = inner
+    self.holding = holding
+    self.hold = hold
+  }
+
+  var kind: AXTranslationTransportKind { inner.kind }
+  var abandonedRequests: Int { inner.abandonedRequests }
+
+  func send(_ request: AXPTranslatorRequest, timeout: TimeInterval) -> AXPTranslatorResponse? {
+    let type = BridgeAXTranslatorRequestType(rawValue: Int(request.requestType))
+    let first =
+      type.map { type in
+        holding.contains(type)
+          && held.withLock { held in
+            defer { held = true }
+            return !held
+          }
+      } ?? false
+    if first {
+      hold.wait()
+    }
+    return inner.send(request, timeout: timeout)
+  }
+}
+
 // MARK: - Raw translator transport Double
 
 /// Answers multiple-attribute requests as the accessibility service does: from a fixture of each element's
@@ -277,14 +336,19 @@ final class AXRawTranslationTransportDouble: AXTranslationTransport, @unchecked 
   private let elements: [UInt64: [BridgeAXTranslatorAttribute: Any]]
   private let waitsOutUnanswered: Bool
   private let delay: TimeInterval
+  private let hold: TransportHold?
 
   /// An object ID the fixture has no entry for is not answered, as a timed-out send is not; with
   /// `waitsOutUnanswered` it is reported only once the request's timeout has passed, as a real transport
-  /// reports it. `delay` is how long every answer takes.
-  init(elements: [UInt64: [BridgeAXTranslatorAttribute: Any]], waitsOutUnanswered: Bool = false, delay: TimeInterval = 0) {
+  /// reports it. `delay` is how long every answer takes. With `hold`, every request waits for it first.
+  init(
+    elements: [UInt64: [BridgeAXTranslatorAttribute: Any]], waitsOutUnanswered: Bool = false, delay: TimeInterval = 0,
+    hold: TransportHold? = nil
+  ) {
     self.elements = elements
     self.waitsOutUnanswered = waitsOutUnanswered
     self.delay = delay
+    self.hold = hold
   }
 
   var requests: [AXPTranslatorRequest] {
@@ -303,6 +367,7 @@ final class AXRawTranslationTransportDouble: AXTranslationTransport, @unchecked 
 
   func send(_ request: AXPTranslatorRequest, timeout: TimeInterval) -> AXPTranslatorResponse? {
     lock.withLock { _requests.append(request) }
+    hold?.wait()
     guard let translation = (request as NSObject).value(forKey: "translation") as? AXPTranslationObjectDouble,
       let values = elements[translation.objectID],
       let response = AXPTranslatorResponse.empty() as? AXPTranslatorResponse

@@ -230,6 +230,10 @@ public struct AccessibilityRequestOptions: Sendable {
   /// Which elements to include in a describe-all read. Default: `.all`.
   public var filter: AccessibilityElementFilter
 
+  /// Told about each request of a host read that waits a second or more, and what its target process and the
+  /// host did meanwhile; see "Slow requests" in the README. Not called for axbridge reads.
+  package var stallObserver: (@Sendable (AccessibilityStallObservation) -> Void)?
+
   /// A substring search narrowing which elements a describe-all read reports. `nil` (default) reports
   /// every element the filter kept.
   ///

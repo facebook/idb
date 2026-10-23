@@ -254,7 +254,21 @@ struct AXStallEndReading {
 }
 
 enum AXStallProbe {
+  /// A request that waits this long is described.
+  static let threshold: TimeInterval = 1
+  /// Whether requests may be watched at all: `IDB_AX_STALL_PROBE` set to `0`, `false`, `no` or `off` in the
+  /// process's environment turns watching off.
+  static let isEnabled = isEnabled(environmentValue: getenv("IDB_AX_STALL_PROBE").map { String(cString: $0) })
+  /// Writes `ax_stall_probe` lines off the request's thread.
+  static let logQueue = DispatchQueue(label: "com.facebook.FBSimulatorAX.AXStallProbe.log", qos: .utility)
   private static let busiestThreadCount = 3
+
+  static func isEnabled(environmentValue value: String?) -> Bool {
+    guard let value else {
+      return true
+    }
+    return !["0", "false", "no", "off"].contains(value.lowercased())
+  }
 
   /// What `pid` did during a request that began at `requestStart` (on `CLOCK_UPTIME_RAW`) and took `duration`:
   /// the change in its counters and in the host's ticks from `baseline`, read while the request waited, to

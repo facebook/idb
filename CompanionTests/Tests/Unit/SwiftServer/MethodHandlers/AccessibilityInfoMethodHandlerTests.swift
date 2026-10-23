@@ -7,7 +7,7 @@
 
 @testable import CompanionLib
 @preconcurrency import FBControlCore
-import FBSimulatorAX
+@testable import FBSimulatorAX
 import FBSimulatorControl
 import Foundation
 import GRPCCore
@@ -75,6 +75,34 @@ private actor SlowAccessibilityExecutor: AccessibilityDescribing {
     let delay = self.delay
     await Task { try? await Task.sleep(nanoseconds: delay) }.value
     finishedReads += 1
+    return AccessibilityElementsResponse(elements: .single(AccessibilityDocumentElement()))
+  }
+}
+
+/// Tells the read's stall observer about `stalls`, in order, then answers or throws `failure`.
+private struct StallingAccessibilityExecutor: AccessibilityDescribing {
+  let stalls: [AccessibilityStallObservation]
+  var failure: AccessibilityError?
+
+  func accessibilityDescribeResponse(
+    query: AccessibilityElementQuery, options: AccessibilityRequestOptions, backend: UIAutomationBackend
+  ) async throws -> AccessibilityElementsResponse {
+    try read(options)
+  }
+
+  func accessibilityInfoAtPoint(
+    _ value: NSValue?, options: AccessibilityRequestOptions, backend: UIAutomationBackend
+  ) async throws -> AccessibilityElementsResponse {
+    try read(options)
+  }
+
+  private func read(_ options: AccessibilityRequestOptions) throws -> AccessibilityElementsResponse {
+    for stall in stalls {
+      options.stallObserver?(stall)
+    }
+    if let failure {
+      throw failure
+    }
     return AccessibilityElementsResponse(elements: .single(AccessibilityDocumentElement()))
   }
 }
@@ -226,5 +254,109 @@ struct AccessibilityInfoMethodHandlerTests {
       AccessibilityElementsResponse(elements: .single(AccessibilityDocumentElement()), backend: .axBridgeExclusive), into: call)
     #expect(call.ints.isEmpty)
     #expect(call.normals == ["ax_backend": "axbridge-exclusive"])
+  }
+
+  // MARK: - Stalls
+
+  @Test
+  func theSlowestStallOfAReadHasItsColumnsToItself() async throws {
+    let call = CallTelemetry()
+    let executor = StallingAccessibilityExecutor(stalls: [
+      Self.stall(1.5, baselineMilliseconds: 250, cpuMilliseconds: 900),
+      Self.stall(2.4, kind: "frontmost", outcome: .unanswered),
+    ])
+
+    _ = try await CallTelemetry.$current.withValue(call) {
+      try await AccessibilityInfoMethodHandler.respond(to: Idb_AccessibilityInfoRequest(), using: executor)
+    }
+
+    #expect(call.ints["ax_stall_ms"] == 2400)
+    #expect(call.normals["ax_stall_request_type"] == "frontmost")
+    #expect(call.normals["ax_stall_outcome"] == "unanswered")
+    #expect(call.ints["ax_stall_target_cpu_ms"] == nil, "the faster stall's counters are not carried over")
+    #expect(call.ints["ax_stall_baseline_ms"] == nil)
+    #expect(call.ints["ax_stall_host_busy_pct"] == nil)
+  }
+
+  @Test
+  func aFasterStallAfterTheSlowestDoesNotReplaceIt() async throws {
+    let call = CallTelemetry()
+    let executor = StallingAccessibilityExecutor(stalls: [
+      Self.stall(2.4, baselineMilliseconds: 250, cpuMilliseconds: 900), Self.stall(1.1),
+    ])
+
+    _ = try await CallTelemetry.$current.withValue(call) {
+      try await AccessibilityInfoMethodHandler.respond(to: Idb_AccessibilityInfoRequest(), using: executor)
+    }
+
+    #expect(call.ints["ax_stall_ms"] == 2400)
+    #expect(call.ints["ax_stall_target_cpu_ms"] == 900)
+  }
+
+  @Test
+  func everyColumnOfAStallIsRecorded() async throws {
+    let call = CallTelemetry()
+    let executor = StallingAccessibilityExecutor(stalls: [Self.stall(1.25, baselineMilliseconds: 250, cpuMilliseconds: 900)])
+
+    _ = try await CallTelemetry.$current.withValue(call) {
+      try await AccessibilityInfoMethodHandler.respond(to: Idb_AccessibilityInfoRequest(), using: executor)
+    }
+
+    #expect(
+      call.ints.filter { $0.key.hasPrefix("ax_stall_") } == [
+        "ax_stall_ms": 1250, "ax_stall_baseline_ms": 250, "ax_stall_target_cpu_ms": 900,
+        "ax_stall_target_context_switches": 30, "ax_stall_target_syscalls": 400, "ax_stall_target_running_threads": 2,
+        "ax_stall_main_thread_cpu_ms": 850, "ax_stall_host_load_x10": 813, "ax_stall_host_busy_pct": 97,
+      ])
+    #expect(
+      call.normals.filter { $0.key.hasPrefix("ax_stall_") } == [
+        "ax_stall_request_type": "multiple_attribute", "ax_stall_outcome": "answered", "ax_stall_process_status": "runnable",
+      ])
+  }
+
+  @Test
+  func aReadThatFailsStillRecordsItsSlowestStall() async throws {
+    let call = CallTelemetry()
+    let executor = StallingAccessibilityExecutor(
+      stalls: [Self.stall(5.0, outcome: .unanswered)],
+      failure: .serviceNotAnswering(.request(kind: "multiple_attribute", timeout: 5), elapsed: 5, behindAbandoned: 0))
+
+    await #expect(throws: AccessibilityError.self) {
+      try await CallTelemetry.$current.withValue(call) {
+        try await AccessibilityInfoMethodHandler.respond(to: Idb_AccessibilityInfoRequest(), using: executor)
+      }
+    }
+
+    #expect(call.ints["ax_stall_ms"] == 5000)
+    #expect(call.normals["ax_stall_outcome"] == "unanswered")
+    #expect(call.normals["ax_read_outcome"] == "aborted_unanswered")
+  }
+
+  @Test
+  func aReadWithoutTelemetryWatchesNoRequests() async throws {
+    let executor = RecordingAccessibilityExecutor()
+    var request = Idb_AccessibilityInfoRequest()
+    request.marker = "OK"
+
+    _ = try await AccessibilityInfoMethodHandler.respond(to: request, using: executor)
+
+    #expect(executor.describeOptions != nil)
+    #expect(executor.describeOptions?.stallObserver == nil)
+  }
+
+  private static func stall(
+    _ duration: CFAbsoluteTime, kind: String = "multiple_attribute", outcome: AccessibilityStallOutcome = .answered,
+    baselineMilliseconds: Int? = nil, cpuMilliseconds: Int? = nil
+  ) -> AccessibilityStallObservation {
+    let main = cpuMilliseconds.map { _ in AXThreadUse(id: 0x10, name: "", cpuMilliseconds: 850, runState: TH_STATE_RUNNING, rank: 1) }
+    return AccessibilityStallObservation(
+      requestKind: kind, pid: 4321, duration: duration, outcome: outcome, baselineMilliseconds: baselineMilliseconds,
+      cpuMilliseconds: cpuMilliseconds, contextSwitches: cpuMilliseconds.map { _ in 30 },
+      syscalls: cpuMilliseconds.map { _ in 400 }, pageins: cpuMilliseconds.map { _ in 0 }, runningThreads: 2, threads: 10,
+      processStatus: "runnable", hostLoad: 81.34, hostBusyPercent: baselineMilliseconds.map { _ in 97 },
+      busiestThreads: main.map { [$0] }, mainThread: main, footprintMegabytes: nil, residentMegabytes: nil,
+      host: AXHostFacts(name: "host", model: "VirtualMac2,1", cpu: "Apple M4 (Virtual)", cpuCount: 13, memoryGigabytes: 48),
+      memory: AXMemoryState(pressure: nil, freePercent: nil, swapUsedMegabytes: nil), probeMicroseconds: 0,
+      probedBefore: baselineMilliseconds != nil, targetReplaced: false)
   }
 }

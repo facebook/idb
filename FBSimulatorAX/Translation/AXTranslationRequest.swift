@@ -78,6 +78,12 @@ final class AXTranslationRequest {
   /// Cancelled when the task awaiting this read is, which stops its requests.
   let cancellation = AXReadCancellation()
   var translator: AXPTranslator?
+  /// Set when the element is resolved, so the requests resolving it are watched as well as those reading it.
+  var stallObserver: (@Sendable (AccessibilityStallObservation) -> Void)?
+  /// Where the reader describes requests that wait long enough to be watched.
+  var stallLogger: (any ControlCoreLogger)?
+  /// How the reader's watches read, keep time and schedule.
+  var stallWatchEnvironment = AXStallWatch.Environment()
 
   /// How long this read may take, per element and for the whole query.
   let timing: SimulatorAccessibilityTiming
@@ -171,7 +177,8 @@ final class AXTranslationRequest {
   private var rawReader: AXRawTranslationReader {
     AXRawTranslationReader(
       transport: transport, clientType: clientType, timeout: timing.elementTimeout, collector: collector, token: token,
-      queryTimeout: timing.queryTimeout, cancellation: cancellation)
+      queryTimeout: timing.queryTimeout, cancellation: cancellation, stallObserver: stallObserver, stallLogger: stallLogger,
+      stallWatchEnvironment: stallWatchEnvironment)
   }
 
   // MARK: - A single named element

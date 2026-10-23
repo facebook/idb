@@ -7,6 +7,7 @@
 
 @preconcurrency internal import AccessibilityPlatformTranslation
 import AppKit
+import FBControlCore
 import FBSimulatorBridgeProtocol
 import FBSimulatorControl
 import Foundation
@@ -34,6 +35,13 @@ struct AXRawTranslationReader {
   var queryTimeout: TimeInterval = .infinity
   /// Stops the read when its task is cancelled.
   var cancellation: AXReadCancellation?
+  /// Receives each request that waits `AXStallProbe.threshold` or longer, with what its target and the host did
+  /// meanwhile, on the read's thread. Requests are watched only when this is set and `AXStallProbe.isEnabled`.
+  var stallObserver: (@Sendable (AccessibilityStallObservation) -> Void)?
+  /// Receives one line for each observation `stallObserver` receives.
+  var stallLogger: (any ControlCoreLogger)?
+  /// How a request's watch reads, keeps time and schedules.
+  var stallWatchEnvironment = AXStallWatch.Environment()
 
   /// Reads `root` and, as deep as `plan` asks, its descendants. An element listed among its own
   /// descendants — an application can answer with a cycle — is not read again below itself. An element
@@ -154,13 +162,32 @@ struct AXRawTranslationReader {
     let wait = min(timeout, remaining)
     let transport = self.transport
     let behindAbandoned = transport.abandonedRequests > 0
+    let probedPid = translation?.pid ?? 0
+    let watch = AXStallProbe.isEnabled && stallObserver != nil ? AXStallWatch(pid: probedPid, environment: stallWatchEnvironment) : nil
+    watch?.start()
     let start = CFAbsoluteTimeGetCurrent()
-    let response =
-      try cancellation.map { try $0.wait { transport.send(request, timeout: wait) } }
-      ?? transport.send(request, timeout: wait)
+    let response: AXPTranslatorResponse?
+    do {
+      response =
+        try cancellation.map { try $0.wait { transport.send(request, timeout: wait) } }
+        ?? transport.send(request, timeout: wait)
+    } catch {
+      if let watch {
+        if error is CancellationError {
+          reportStall(watch, kind: timing.kindName, pid: probedPid, response: nil, outcome: .cancelled)
+        } else {
+          _ = watch.finish()
+        }
+      }
+      throw error
+    }
     collector.recordRequest(
       type: request.requestType, duration: CFAbsoluteTimeGetCurrent() - start,
       behindAbandoned: behindAbandoned)
+    if let watch {
+      reportStall(
+        watch, kind: timing.kindName, pid: probedPid, response: response, outcome: response == nil ? .unanswered : .answered)
+    }
     guard let response else {
       // Blamed on the query whenever it has run out, including when both ran out together.
       let elapsed = collector.elapsed
@@ -170,6 +197,26 @@ struct AXRawTranslationReader {
         silence, elapsed: elapsed, behindAbandoned: collector.requestsBehindAbandoned)
     }
     return response
+  }
+
+  /// Stops `watch` and, when the request waited `AXStallProbe.threshold` or longer, reads its target and the host
+  /// again and tells `stallObserver` what they did. The log line is written on another queue.
+  private func reportStall(
+    _ watch: AXStallWatch, kind: String, pid: pid_t, response: AXPTranslatorResponse?, outcome: AccessibilityStallOutcome
+  ) {
+    let findings = watch.finish()
+    guard findings.waited >= AXStallProbe.threshold, let stallObserver else {
+      return
+    }
+    // A request without a target, as for the frontmost application, is put down to the process its answer names.
+    let target = pid > 0 ? pid : (response?.resultData as? AXTranslationReference)?.pid ?? 0
+    let observation = AXStallProbe.observe(
+      kind: kind, pid: target, requestStart: findings.requestStart, duration: findings.waited, outcome: outcome,
+      baseline: findings.baseline, end: AXStallEndReading.read(target), baselineReadNanoseconds: findings.readNanoseconds)
+    stallObserver(observation)
+    if let stallLogger {
+      AXStallProbe.logQueue.async { stallLogger.log(AXStallProbe.describe(observation)) }
+    }
   }
 
   /// The translator attributes a plan needs, in one list. Role and role description take the attributes

@@ -66,6 +66,9 @@ final class AccessibilityElement {
     let request = self.request
     let handle = self.handle
     let isMarkerMatch = self.isMarkerMatch
+    if let stallObserver = options.stallObserver {
+      request.stallObserver = stallObserver
+    }
     return try await dispatcher.performUnserialized(cancelling: request.cancellation) {
       try request.run(handle, options: options, isMarkerMatch: isMarkerMatch)
     }

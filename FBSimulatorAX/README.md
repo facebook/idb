@@ -177,6 +177,16 @@ Cancelling the task awaiting a read stops it. A host read abandons the request i
 
 A request whose timeout passed is not withdrawn: the service answers its requests one at a time, so whatever is sent next waits behind it. Each read counts the requests it sent while such a request was still outstanding, as `behindAbandoned` on a `serviceNotAnswering` failure and in the companion's `ax_requests_behind_abandoned` telemetry.
 
+### Slow requests
+
+A host read can describe each of its requests that waits a second or more, to tell an app that was busy from a host that was, or from a request that was lost. Requests are watched only for a read whose options carry a `stallObserver` (the companion sets one for every `accessibility_info` read), and only while `IDB_AX_STALL_PROBE` is not `0`, `false`, `no` or `off` in the process's environment. axbridge reads are not watched.
+
+- A request answered within 250 ms costs one timer. At 250 ms, off the request's thread, the watch reads the request's target process with `proc_pidinfo` (without attaching to it) and the host's CPU ticks: the baseline.
+- When a request that waited a second or more ends — answered, unanswered, or cut short by cancelling its read — the target and the host are read again, and the observer is called on the read's thread with an `AccessibilityStallObservation`: how long the request waited and how it ended; when the baseline was read; the target's CPU, context switches, syscalls and busiest threads from the baseline to the end; the host's busy share over the same span, its load average and memory pressure. A request that ended before its baseline has no counter changes, and a target that exited, or whose pid now names another process, is reported as such rather than compared with it.
+- Each observation is also logged as one `ax_stall_probe key=value …` line, off the read's thread.
+
+The companion records the slowest such request of each read on its `accessibility_info` telemetry as `ax_stall_*` columns, every column from that one request. Processes can be read only when they belong to the companion's own user, as a Simulator's do.
+
 ## Output formats
 
 `--format` selects the shape of the result, on the same three read commands.

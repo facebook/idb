@@ -11,6 +11,7 @@ import FBControlCore
 import FBSimulatorBridgeProtocol
 @testable import FBSimulatorControl
 import XCTest
+import os
 
 private final class AccessibilityCustomActionTarget: NSObject {
   private let result: Bool
@@ -492,7 +493,9 @@ final class SimulatorAccessibilityCommandsTests: XCTestCase {
     transport: (any AXTranslationTransport)? = nil,
     launchCtl: (any LaunchCtlCommands)? = nil,
     displays: any DisplayCommands = DisplayCommandsDouble([.success(.failed(.unsupported("displayinfo")))]),
-    processesStarted: [pid_t: Date] = [:]
+    processesStarted: [pid_t: Date] = [:],
+    stallWatchEnvironment: AXStallWatch.Environment = AXStallWatch.Environment(),
+    holding: (types: Set<BridgeAXTranslatorRequestType>, hold: TransportHold)? = nil
   ) throws {
     fixture = AccessibilityTestFixture.bootedSimulator()
     fixture!.rootElement = rootElement
@@ -503,10 +506,12 @@ final class SimulatorAccessibilityCommandsTests: XCTestCase {
     self.dispatcher = dispatcher
     // CoreSimulator's client over the device double, unless a test injects its own: the double vends no
     // services for the bridge transport to look up.
+    let sending = transport ?? CoreSimulatorAXTranslationTransport(device: sim.device)
     let commands = SimulatorAccessibilityCommands(
       simulator: sim, translationDispatcher: dispatcher,
-      transport: transport ?? CoreSimulatorAXTranslationTransport(device: sim.device), launchCtl: launchCtl, displays: displays,
-      processStartDate: { processesStarted[$0] })
+      transport: holding.map { HoldingTransport(sending, holding: $0.types, hold: $0.hold) } ?? sending, launchCtl: launchCtl,
+      displays: displays,
+      processStartDate: { processesStarted[$0] }, stallWatchEnvironment: stallWatchEnvironment)
     sim.commandCache.register(commands, as: SimulatorAccessibilityCommands.self)
 
     simulator = sim
@@ -575,6 +580,48 @@ final class SimulatorAccessibilityCommandsTests: XCTestCase {
 
     XCTAssertEqual(bridgeCallbackClientTypes(transport.requests), [AXClientType.xctest.rawValue, AXClientType.xctest.rawValue])
     XCTAssertEqual(fixture!.device.accessibilityRequests.count, 0, "nothing reaches CoreSimulator's client")
+  }
+
+  func testTheRequestThatResolvesAnElementIsWatched() async throws {
+    let observation = try await resolveWhileHeld(.application(pid: 12345), holding: [.application])
+
+    XCTAssertEqual(observation?.requestKind, "application")
+    XCTAssertEqual(observation?.baselineMilliseconds, 250)
+  }
+
+  func testTheRequestsThatSearchForAMarkerAreWatched() async throws {
+    let observation = try await resolveWhileHeld(
+      .marker(value: "OK", key: .label, depth: 10, ignoresCase: false), holding: [.multipleAttribute],
+      transport: nil, tree: defaultRoot(withChildren: [defaultTitleLabel, defaultOkButton, defaultCancelButton]))
+
+    XCTAssertEqual(observation?.requestKind, "multiple_attribute", "the search's first read was watched")
+  }
+
+  /// Resolves `query` with the first request of a type in `holding` held for 1.2 s past its baseline, and returns
+  /// what the stall observer was told about it.
+  private func resolveWhileHeld(
+    _ query: AccessibilityElementQuery, holding: Set<BridgeAXTranslatorRequestType>,
+    transport: (any AXTranslationTransport)? = AXTranslationTransportDouble(root: AXPTranslationObjectDouble(pid: 12345, objectID: 0)),
+    tree: AXPMacPlatformElementDouble? = nil
+  ) async throws -> AccessibilityStallObservation? {
+    let host = FakeStallWatchHost()
+    let hold = TransportHold()
+    try setUp(
+      withRootElement: tree ?? defaultElementTree, transport: transport, stallWatchEnvironment: host.environment,
+      holding: (holding, hold))
+    let observations = OSAllocatedUnfairLock<[AccessibilityStallObservation]>(initialState: [])
+    let accessibility = try XCTUnwrap(simulator).accessibility
+    let resolving = Task {
+      try await accessibility.resolveElement(
+        for: query, clientType: .noClient, stallObserver: { observation in observations.withLock { $0.append(observation) } })
+    }
+    await Task.detached { hold.waitUntilHolding() }.value
+    host.runDue()
+    host.advance(by: 1_200_000_000)
+    hold.release()
+    let element = try await resolving.value
+    element.close()
+    return observations.withLock { $0.first }
   }
 
   func testEveryReadCarriesItsMetricsWithoutAProfile() async throws {

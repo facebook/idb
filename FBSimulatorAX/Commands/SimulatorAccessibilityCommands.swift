@@ -58,6 +58,7 @@ final class SimulatorAccessibilityCommands {
   private let displays: (any DisplayCommands)?
   /// When a simulator process started, read from the host.
   private let processStartDate: (pid_t) -> Date?
+  private let stallWatchEnvironment: AXStallWatch.Environment
   private let transportLock = NSLock()
   private var bridgeTransport: CoreSimulatorBridgeAXTranslationTransport?
 
@@ -67,7 +68,8 @@ final class SimulatorAccessibilityCommands {
     transport: (any AXTranslationTransport)? = nil,
     launchCtl: (any LaunchCtlCommands)? = nil,
     displays: (any DisplayCommands)? = nil,
-    processStartDate: @escaping (pid_t) -> Date? = HostProcess.startDate(of:)
+    processStartDate: @escaping (pid_t) -> Date? = HostProcess.startDate(of:),
+    stallWatchEnvironment: AXStallWatch.Environment = AXStallWatch.Environment()
   ) {
     self.simulator = simulator
     self.translationDispatcher = translationDispatcher
@@ -75,6 +77,7 @@ final class SimulatorAccessibilityCommands {
     self.launchCtl = launchCtl
     self.displays = displays
     self.processStartDate = processStartDate
+    self.stallWatchEnvironment = stallWatchEnvironment
   }
 
   // MARK: - Translation Dispatcher
@@ -146,9 +149,11 @@ final class SimulatorAccessibilityCommands {
   /// Resolves a query to a concrete accessibility element via the point / matching / frontmost
   /// mechanism. `clientType` is carried by every translator request made for the element, from
   /// resolution through serialization, and `timing` bounds them; nil is the simulator's. Callers own the
-  /// returned element and must `close()` it.
+  /// returned element and must `close()` it. `stallObserver` is told about the requests that resolve the element, a
+  /// marker's search included, as well as those that later read it.
   func resolveElement(
-    for query: AccessibilityElementQuery, clientType: AXClientType, timing: SimulatorAccessibilityTiming? = nil
+    for query: AccessibilityElementQuery, clientType: AXClientType, timing: SimulatorAccessibilityTiming? = nil,
+    stallObserver: (@Sendable (AccessibilityStallObservation) -> Void)? = nil
   ) async throws -> AccessibilityElement {
     try validateAccessibility()
     guard let simulator else {
@@ -158,7 +163,12 @@ final class SimulatorAccessibilityCommands {
     let transport = resolvedTransport(simulator)
     let timing = timing ?? simulator.accessibilityTiming
     func request(_ kind: AXTranslationRequest.Kind) -> AXTranslationRequest {
-      AXTranslationRequest(kind: kind, display: display, clientType: clientType, transport: transport, timing: timing)
+      let request = AXTranslationRequest(
+        kind: kind, display: display, clientType: clientType, transport: transport, timing: timing)
+      request.stallObserver = stallObserver
+      request.stallLogger = simulator.logger
+      request.stallWatchEnvironment = stallWatchEnvironment
+      return request
     }
     switch query {
     case let .point(point):
