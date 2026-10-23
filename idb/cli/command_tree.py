@@ -96,6 +96,7 @@ from idb.cli.commands.keychain import KeychainClearCommand
 from idb.cli.commands.kill import KillCommand
 from idb.cli.commands.launch import LaunchCommand
 from idb.cli.commands.location import LocationSetCommand
+from idb.cli.commands.lock import LockCommand, UnlockCommand
 from idb.cli.commands.log import CompanionLogCommand, LogCommand
 from idb.cli.commands.media import (
     AudioInjectCommand,
@@ -371,6 +372,8 @@ def build_builtin_commands(shell_command: ShellCommand) -> list[Command]:
                 SwipeCommand(),
                 RotateCommand(),
                 ShakeCommand(),
+                LockCommand(),
+                UnlockCommand(),
             ],
         ),
         CommandGroup(

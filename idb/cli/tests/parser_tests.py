@@ -50,6 +50,7 @@ from idb.common.types import (
     HIDOrientationType,
     IdbException,
     InstalledArtifact,
+    LockState,
     LoggingMetadata,
     Permission,
     ProfileAllProcesses,
@@ -69,6 +70,7 @@ from idb.common.types import (
     ScreenshotFormat,
     ScreenshotOptions,
     ScreenshotUnit,
+    TargetType,
     TCPAddress,
     TraceProfile,
 )
@@ -2565,6 +2567,58 @@ class TestParser(TestCase):
         self.client_mock.photos_clear = AsyncMock(return_value=None)
         await cli_main(cmd_input=["photos", "clear"])
         self.client_mock.photos_clear.assert_called_once()
+
+    def _describe_as(self, target_type: TargetType) -> None:
+        target_description = MagicMock()
+        target_description.target_type = target_type
+        self.client_mock.describe = AsyncMock(return_value=target_description)
+
+    async def test_lock_prints_the_state_springboard_reports(self) -> None:
+        self._describe_as(TargetType.SIMULATOR)
+        self.client_mock.lock = AsyncMock(return_value=LockState(locked=True))
+        with redirect_stdout(StringIO()) as output:
+            self.assertEqual(await cli_main(cmd_input=["ui", "lock"]), 0)
+        self.assertEqual(output.getvalue().strip(), "locked")
+        self.client_mock.lock.assert_called_once_with()
+
+    async def test_unlock_json(self) -> None:
+        self._describe_as(TargetType.SIMULATOR)
+        self.client_mock.unlock = AsyncMock(return_value=LockState(locked=False))
+        with redirect_stdout(StringIO()) as output:
+            self.assertEqual(await cli_main(cmd_input=["ui", "unlock", "--json"]), 0)
+        self.assertEqual(
+            json.loads(output.getvalue()),
+            {"locked": False},
+        )
+        self.client_mock.unlock.assert_called_once_with()
+
+    async def test_lock_state_does_not_change_the_state(self) -> None:
+        self._describe_as(TargetType.SIMULATOR)
+        self.client_mock.lock_state = AsyncMock(return_value=LockState(locked=False))
+        self.client_mock.lock = AsyncMock()
+        self.client_mock.unlock = AsyncMock()
+        with redirect_stdout(StringIO()) as output:
+            self.assertEqual(await cli_main(cmd_input=["ui", "lock", "--status"]), 0)
+        self.assertEqual(output.getvalue().strip(), "unlocked")
+        self.client_mock.lock.assert_not_called()
+        self.client_mock.unlock.assert_not_called()
+
+    async def test_lock_commands_refuse_non_simulator_targets(self) -> None:
+        for target_type in [TargetType.DEVICE, TargetType.MAC]:
+            for command in [
+                ["ui", "lock"],
+                ["ui", "unlock"],
+                ["ui", "lock", "--status"],
+            ]:
+                with self.subTest(target_type=target_type, command=command):
+                    self._describe_as(target_type)
+                    self.client_mock.lock = AsyncMock()
+                    self.client_mock.unlock = AsyncMock()
+                    self.client_mock.lock_state = AsyncMock()
+                    self.assertNotEqual(await cli_main(cmd_input=command), 0)
+                    self.client_mock.lock.assert_not_called()
+                    self.client_mock.unlock.assert_not_called()
+                    self.client_mock.lock_state.assert_not_called()
 
     async def test_screenshot_defaults_to_the_historical_capture(self) -> None:
         # No flags has to keep meaning what it meant before the command had

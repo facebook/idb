@@ -88,6 +88,7 @@ from idb.common.types import (
     InstalledAppInfo,
     InstalledArtifact,
     InstalledTestInfo,
+    LockState,
     LoggingMetadata,
     OnlyFilter,
     Permission,
@@ -148,6 +149,7 @@ from idb.grpc.idb_pb2 import (
     ListSettingRequest,
     LOCALE as LocaleSetting,
     Location,
+    LockScreenRequest,
     LogRequest,
     LsRequest,
     MkdirRequest,
@@ -999,6 +1001,22 @@ class Client(ClientBase):
     @log_and_handle_exceptions("photos_clear")
     async def photos_clear(self) -> None:
         await self.stub.photos_clear(PhotosClearRequest())
+
+    async def _lock_screen(self, action: LockScreenRequest.Action) -> LockState:
+        response = await self.stub.lock_screen(LockScreenRequest(action=action))
+        return LockState(locked=response.locked)
+
+    @log_and_handle_exceptions("lock_screen")
+    async def lock_state(self) -> LockState:
+        return await self._lock_screen(LockScreenRequest.STATE)
+
+    @log_and_handle_exceptions("lock_screen")
+    async def lock(self) -> LockState:
+        return await self._lock_screen(LockScreenRequest.LOCK)
+
+    @log_and_handle_exceptions("lock_screen")
+    async def unlock(self) -> LockState:
+        return await self._lock_screen(LockScreenRequest.UNLOCK)
 
     @log_and_handle_exceptions("screenshot")
     async def screenshot(

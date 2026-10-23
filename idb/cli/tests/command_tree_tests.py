@@ -151,13 +151,15 @@ BUILT_IN_GROUP_CHILDREN: dict[str, tuple[str, ...]] = {
         "swipe",
         "rotate",
         "shake",
+        "lock",
+        "unlock",
     ),
     "xctest": ("install", "list", "list-bundle", "run"),
     "xctrace": ("record",),
 }
 
-BUILT_IN_TERMINAL_COUNT = 101
-BUILT_IN_NODE_COUNT = 120
+BUILT_IN_TERMINAL_COUNT = 103
+BUILT_IN_NODE_COUNT = 122
 
 BUILT_IN_ALIAS_PATHS: tuple[tuple[str, ...], ...] = (
     ("file", "mv"),

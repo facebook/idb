@@ -28,6 +28,13 @@ from typing import IO, Optional, Union
 LoggingMetadata = dict[str, Optional[Union[str, list[str], int, float]]]
 
 
+@dataclass(frozen=True)
+class LockState:
+    """SpringBoard's lock state once a lock screen request is done."""
+
+    locked: bool
+
+
 @dataclass
 class AccessibilitySearchDiagnostics:
     """Nonmatching values of the searched key from the final poll only."""
@@ -1306,6 +1313,15 @@ class Client(ABC):
     @abstractmethod
     async def photos_clear(self) -> None:
         pass
+
+    async def lock_state(self) -> LockState:
+        raise NotImplementedError("Lock screen state not implemented")
+
+    async def lock(self) -> LockState:
+        raise NotImplementedError("Lock screen not implemented")
+
+    async def unlock(self) -> LockState:
+        raise NotImplementedError("Unlock screen not implemented")
 
     @abstractmethod
     async def describe(self, fetch_diagnostics: bool = False) -> TargetDescription:
