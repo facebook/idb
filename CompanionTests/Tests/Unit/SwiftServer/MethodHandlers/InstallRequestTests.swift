@@ -90,12 +90,61 @@ struct InstallRequestTests {
   @Test
   func aUrlIsParsed() async throws {
     let request = try await InstallRequest.read(Self.frames([Self.destination, Self.payload { $0.url = "https://example.com/a.ipa" }]))
-    guard case let .url(url) = request.payload else {
+    guard case let .url(url, connectionOverride) = request.payload else {
       Issue.record("Expected a url payload, got \(request.payload)")
       return
     }
     #expect(url == URL(string: "https://example.com/a.ipa"))
+    #expect(connectionOverride == nil)
     #expect(request.payload.kind == .url)
+  }
+
+  @Test
+  func aUrlCarriesWhereToConnect() async throws {
+    let connectTo = Idb_InstallRequest.with {
+      $0.connectTo = .with {
+        $0.host = "2001:db8::1"
+        $0.port = 443
+      }
+    }
+    let request = try await InstallRequest.read(Self.frames([Self.destination, connectTo, Self.payload { $0.url = "https://example.com/a.ipa" }]))
+    guard case let .url(url, connectionOverride?) = request.payload else {
+      Issue.record("Expected a url payload with a connection override, got \(request.payload)")
+      return
+    }
+    #expect(url == URL(string: "https://example.com/a.ipa"))
+    #expect(connectionOverride.host == "2001:db8::1")
+    #expect(connectionOverride.port == 443)
+  }
+
+  @Test(arguments: [UInt32(0), UInt32(65536)])
+  func aPortOutsideTheRangeIsRejected(port: UInt32) async throws {
+    let connectTo = Idb_InstallRequest.with {
+      $0.connectTo = .with {
+        $0.host = "example.net"
+        $0.port = port
+      }
+    }
+    await #expect {
+      _ = try await InstallRequest.read(Self.frames([Self.destination, connectTo, Self.payload { $0.url = "https://example.com/a.ipa" }]))
+    } throws: { error in
+      (error as? RPCError)?.code == .invalidArgument && (error as? RPCError)?.message == "connect_to needs a host and a port from 1 to 65535"
+    }
+  }
+
+  @Test
+  func whereToConnectIsRejectedForAnythingButAUrl() async throws {
+    let connectTo = Idb_InstallRequest.with {
+      $0.connectTo = .with {
+        $0.host = "example.net"
+        $0.port = 443
+      }
+    }
+    await #expect {
+      _ = try await InstallRequest.read(Self.frames([Self.destination, connectTo, Self.payload { $0.filePath = "/tmp/a.app" }]))
+    } throws: { error in
+      (error as? RPCError)?.code == .invalidArgument && (error as? RPCError)?.message == "connect_to applies only to a url payload"
+    }
   }
 
   @Test

@@ -149,8 +149,8 @@ struct InstallMethodHandler {
       } catch is ChunkSource.ReaderClosed {}
       return artifact
 
-    case let .url(url):
-      return try await install(from: .remoteURL(url))
+    case let .url(url, connectionOverride):
+      return try await install(from: .remoteURL(url, connectingTo: connectionOverride))
 
     case let .filePath(filePath):
       return try await install(from: .localPath(filePath))

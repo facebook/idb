@@ -34,10 +34,12 @@ extension Idb_Payload.Compression {
 }
 
 extension Idb_CompanionInfo {
-  /// Every stream is decompressed in-process, so every compression is supported wherever the companion runs.
+  /// Every stream is decompressed in-process, so every compression is supported wherever the companion runs. A URL
+  /// install can connect to an override.
   mutating func setStreamCapabilities() {
     supportedCompressions = [.gzip, .zstd]
     zstdZipStreams = true
     zipStreamDestinations = [.app, .xctest, .dsym, .framework]
+    installConnectTo = true
   }
 }

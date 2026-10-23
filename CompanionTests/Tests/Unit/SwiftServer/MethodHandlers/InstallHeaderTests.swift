@@ -21,6 +21,12 @@ struct InstallHeaderTests {
   private static let overrideModificationTime = request { $0.overrideModificationTime = true }
   private static let skipSigningBundles = request { $0.skipSigningBundles = true }
   private static let link = request { $0.linkDsymToBundle = .with { $0.bundleID = "com.example.app" } }
+  private static let connectTo = request {
+    $0.connectTo = .with {
+      $0.host = "192.0.2.1"
+      $0.port = 8443
+    }
+  }
   private static let zstd = request { $0.payload = .with { $0.compression = .zstd } }
   private static let data = request { $0.payload = .with { $0.data = Data([1, 2, 3]) } }
 
@@ -98,6 +104,19 @@ struct InstallHeaderTests {
   @Test
   func aRepeatedOption() async {
     await assertRejected([Self.destination, Self.nameHint, Self.nameHint, Self.data], .invalidArgument, "Repeated name_hint in install request stream")
+  }
+
+  @Test
+  func whereToConnectBeforeTheCompression() async throws {
+    let header = try await read([Self.destination, Self.link, Self.connectTo, Self.zstd, Self.data])
+    #expect(header.connectTo?.host == "192.0.2.1")
+    #expect(header.connectTo?.port == 8443)
+    #expect(header.compression == .ZSTD)
+  }
+
+  @Test
+  func aRepeatedConnectTo() async {
+    await assertRejected([Self.destination, Self.connectTo, Self.connectTo, Self.data], .invalidArgument, "Repeated connect_to in install request stream")
   }
 
   @Test

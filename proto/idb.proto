@@ -192,6 +192,9 @@ message CompanionInfo {
   // its first bytes. Companions that predate this field leave it empty, and
   // read only an app stream as a zip.
   repeated InstallRequest.Destination zip_stream_destinations = 9;
+  // Whether the companion accepts InstallRequest.connect_to with a url
+  // payload. Companions without it reject an install stream that carries one.
+  bool install_connect_to = 10;
 }
 
 enum Setting {
@@ -290,6 +293,15 @@ message InstallRequest {
     BundleType bundle_type = 1;
     string bundle_id = 2;
   }
+  // Where to open a url payload's connection instead of the address its host
+  // resolves to, as curl's --connect-to does. The url's host is still the name
+  // TLS verifies the server against and the HTTP Host it asks for.
+  message ConnectTo {
+    // A host name, or an IPv4 or IPv6 address without brackets.
+    string host = 1;
+    // 1 to 65535.
+    uint32 port = 2;
+  }
   // 5 was `bundle_id`, the form link_dsym_to_bundle replaced.
   reserved 5;
   reserved "bundle_id";
@@ -300,7 +312,11 @@ message InstallRequest {
   // Current companions accept the options in any order and reject a repeated
   // one. Older companions accept only this order: name_hint, make_debuggable,
   // override_modification_time, skip_signing_bundles, link_dsym_to_bundle,
-  // compression. Clients send that order so they work with either.
+  // compression. Clients send that order so they work with either, with
+  // connect_to just before compression.
+  //
+  // connect_to is accepted only with a url payload. A companion that predates
+  // it rejects the stream instead of ignoring the option.
   oneof value {
     Destination destination = 1;
     Payload payload = 2;
@@ -309,6 +325,7 @@ message InstallRequest {
     LinkDsymToBundle link_dsym_to_bundle = 6;
     bool override_modification_time = 7;
     bool skip_signing_bundles = 8;
+    ConnectTo connect_to = 9;
   }
 }
 

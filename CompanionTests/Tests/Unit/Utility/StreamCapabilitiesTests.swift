@@ -28,4 +28,12 @@ struct StreamCapabilitiesTests {
 
     #expect(info.zipStreamDestinations == [.app, .xctest, .dsym, .framework])
   }
+
+  @Test
+  func aURLInstallCanConnectToAnOverride() {
+    var info = Idb_CompanionInfo()
+    info.setStreamCapabilities()
+
+    #expect(info.installConnectTo)
+  }
 }
