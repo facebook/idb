@@ -56,7 +56,11 @@ struct LaunchMethodHandler: @unchecked Sendable {
       }
       launchMode = .relaunchIfRunning
     }
-    environment = await commandExecutor.audioInjectionAppLaunchEnvironment(environment)
+    let call = CallTelemetry.current
+    let unprepared = environment
+    environment = await LaunchStage.audioInjection.measure(into: call) {
+      await commandExecutor.audioInjectionAppLaunchEnvironment(unprepared)
+    }
     environment = commandExecutor.videoInjectionAppLaunchEnvironment(environment)
     let config = ApplicationLaunchConfiguration(
       bundleID: start.bundleID,
@@ -67,7 +71,7 @@ struct LaunchMethodHandler: @unchecked Sendable {
       stdOut: stdOut,
       stdErr: stdErr,
       launchMode: launchMode)
-    let launchedApp = try await launch(config)
+    let launchedApp = try await launch(config, telemetry: call)
     let response = Idb_LaunchResponse.with {
       $0.debugger.pid = UInt64(launchedApp.processIdentifier)
     }
@@ -143,11 +147,13 @@ struct LaunchMethodHandler: @unchecked Sendable {
   }
 
   /// Launches with the storage and target path placeholders in the environment replaced by their values.
-  private func launch(_ configuration: ApplicationLaunchConfiguration) async throws -> LaunchedApplication {
-    var replacements: [String: String] = [:]
-    replacements.merge(commandExecutor.storageManager.replacementMapping) { _, new in new }
-    replacements.merge(target.replacementMapping()) { _, new in new }
-    let environment = applyEnvironmentReplacements(configuration.environment, replacements: replacements)
+  private func launch(_ configuration: ApplicationLaunchConfiguration, telemetry call: CallTelemetry?) async throws -> LaunchedApplication {
+    let environment = await LaunchStage.environmentReplacement.measure(into: call) {
+      var replacements: [String: String] = [:]
+      replacements.merge(commandExecutor.storageManager.replacementMapping) { _, new in new }
+      replacements.merge(target.replacementMapping()) { _, new in new }
+      return applyEnvironmentReplacements(configuration.environment, replacements: replacements)
+    }
 
     let derived = ApplicationLaunchConfiguration(
       bundleID: configuration.bundleID,
@@ -159,7 +165,9 @@ struct LaunchMethodHandler: @unchecked Sendable {
       stdErr: configuration.stdErr,
       launchMode: configuration.launchMode
     )
-    return try await target.application.launch(derived)
+    return try await LaunchStage.launch.measure(into: call) {
+      try await target.application.launch(derived)
+    }
   }
 
   private func applyEnvironmentReplacements(_ environment: [String: String], replacements: [String: String]) -> [String: String] {
