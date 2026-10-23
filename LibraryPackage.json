@@ -11,6 +11,7 @@
         "Cocoa.framework",
         "CoreGraphics.framework",
         "Foundation.framework",
+        "Network.framework",
         "Security.framework",
         "ServiceManagement.framework",
         "UniformTypeIdentifiers.framework"

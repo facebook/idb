@@ -8,7 +8,7 @@ The target frameworks only install what is already a bundle: `ApplicationCommand
 
 - **Installing from a source.** `ApplicationCommands.install(from:)` downloads, extracts and installs an application from an `InstallSource` in one call, reporting what happens as `InstallEvent`s: each stage's progress, how an archive was unpacked, and how a download went.
 - **Staging.** `Staging.install` stages a source of any kind (application, test bundle, framework, dylib or dSYM), identifies the `Artifact` in it and hands that to the caller's install, removing whatever it unpacked afterwards.
-- **Downloads.** URL sources are fetched with `URLSession` and extracted as they arrive (a zip is spooled to disk first, since its index is at the end), with progress and a `DownloadReport` of the transfer.
+- **Downloads.** URL sources are fetched with `URLSession` and extracted as they arrive (a zip is spooled to disk first, since its index is at the end), with progress and a `DownloadReport` of the transfer. A `ConnectionOverride` sends the connection to a given address instead of the one the URL's host resolves to, keeping the URL's host for TLS and HTTP.
 - **Archive extraction.** Tar (plain, gzip or zstd) and zip archives are extracted by sniffing the format from the first bytes rather than trusting what the client declared. Zip archives keep their file modes and symlinks, including when they arrive as a stream. Each format goes to whichever extractor is fastest for it (see [Routes](#routes)).
 - **Extracting a payload.** `Staging.extract` extracts a stream of files that is not an artifact, such as a push, through the same extractors, errors and events as an install.
 - **Archive creation.** `TarSource`, `GzippingSource` and `ArchiveOperations` write the archives the companion sends back to clients, such as pulled files and test results.
@@ -18,7 +18,7 @@ The target frameworks only install what is already a bundle: `ApplicationCommand
 Three layers, each depending only on the ones below it.
 
 - **`Staging/`** is the entry point. `Staging.install` takes an `InstallSource` and an `ArtifactKind`, gets the source onto disk, identifies the `Artifact` in it, and calls the caller's install with it. Everything it unpacks lives in a temporary directory that is removed when the install returns, however it ends. It reports what happens as one ordered stream of `InstallEvent`s and fails with an `InstallError`.
-- **`Downloads/`** fetches a `.remoteURL` with `URLSession` and hands the bytes to extraction as they arrive, so the download and extract stages overlap.
+- **`Downloads/`** fetches a `.remoteURL` and hands the bytes to extraction as they arrive, so the download and extract stages overlap. `DataDownloadInput` fetches it with `URLSession`. With a `ConnectionOverride`, `NetworkDownloadInput` fetches it instead: `URLSession` only connects to the address a host resolves to, so it opens a Network framework connection to the override's address, verifies TLS against the URL's host, and reads the HTTP/1.1 response itself (`HTTPResponseReader`). It asks for an identity encoding, accepts only a `200`, and does not follow redirects, since following one would leave the override behind. Both report the same events, errors and `DownloadReport`.
 - **`Archives/`** holds the byte sources, the extractors and the archive writers. Its extractors know nothing about installs: they read a `ByteSource` or a file and write a tree.
 
 ### Byte sources

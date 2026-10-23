@@ -16,8 +16,9 @@ public enum InstallSource {
   /// containing it.
   case localPath(String)
 
-  /// An artifact or an archive containing it, to fetch over HTTP.
-  case remoteURL(URL)
+  /// An artifact or an archive containing it, to fetch over HTTP. With a `ConnectionOverride`, the connection goes
+  /// to its address instead of the one the URL's host resolves to.
+  case remoteURL(URL, connectingTo: ConnectionOverride? = nil)
 
   /// An artifact or an archive containing it, which the caller's source reads as
   /// it arrives: a zip or a tar, either of them compressed or not, told apart by
@@ -285,12 +286,12 @@ public enum Staging {
             options: options, logger: logger, onReport: onReport)
         }
       }
-    case .remoteURL(let url):
+    case .remoteURL(let url, let connectionOverride):
       return try await temporaryDirectory.withTemporaryDirectory { spoolDirectory in
         let staged = OSAllocatedUnfairLock<StagedTree?>(initialState: nil)
         try await download(
-          url, extractingTo: extractPath, totalStart: totalStart, configuration: downloadConfiguration,
-          logger: logger, onProgress: onProgress, onReport: onReport
+          url, connectingTo: connectionOverride, extractingTo: extractPath, totalStart: totalStart,
+          configuration: downloadConfiguration, logger: logger, onProgress: onProgress, onReport: onReport
         ) { spool in
           let tree = try await spool.reading { source in
             try await stagePayload(
@@ -367,8 +368,11 @@ public enum Staging {
   /// `extract` reads the transfer as it arrives rather than waiting for a
   /// complete file, so the download and extract stages overlap and each times
   /// against its own start.
+  ///
+  /// A download connecting to an override still takes its idle timeout from `configuration`.
   private static func download(
     _ url: URL,
+    connectingTo connectionOverride: ConnectionOverride?,
     extractingTo extractPath: String,
     totalStart: Date,
     configuration: URLSessionConfiguration,
@@ -380,12 +384,12 @@ public enum Staging {
     let downloadStart = Date()
     onProgress(.downloadStarted(timing: .measure(stageStart: downloadStart, totalStart: totalStart), url: url))
 
-    // SAFETY: written only from the download's delegate queue, which is serial,
+    // SAFETY: written only from the download's callback queue, which is serial,
     // and read once after awaiting the transfer, which that same queue resolves
     // after delivering its last chunk.
     // patternlint-disable-next-line swift-nonisolated-unsafe
     nonisolated(unsafe) var progress = DownloadProgressState(startedAt: downloadStart)
-    let download = DataDownloadInput(url: url, configuration: configuration, logger: logger) { event in
+    let onEvent: @Sendable (DataDownloadEvent) -> Void = { event in
       switch event {
       case .response(let expectedContentLength):
         progress.observe(expectedContentLength: expectedContentLength)
@@ -400,6 +404,14 @@ public enum Staging {
             totalBytes: update.totalBytes))
       }
     }
+    let download: any DownloadInput =
+      if let connectionOverride {
+        NetworkDownloadInput(
+          url: url, connectingTo: connectionOverride, idleTimeout: configuration.timeoutIntervalForRequest, logger: logger,
+          onEvent: onEvent)
+      } else {
+        DataDownloadInput(url: url, configuration: configuration, logger: logger, onEvent: onEvent)
+      }
 
     let extractionFailure = OSAllocatedUnfairLock<(any Error)?>(initialState: nil)
     // An extraction that has failed has no use for the rest of the transfer.

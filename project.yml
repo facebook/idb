@@ -531,6 +531,7 @@ targets:
       - target: ZstdDecompress
         embed: false
       - sdk: Foundation.framework
+      - sdk: Network.framework
       - sdk: Security.framework
   FBArtifactStagingTests:
     type: bundle.unit-test
