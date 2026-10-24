@@ -704,12 +704,15 @@ function strip_embedded_frameworks() {
 # Build Functions
 # =============================================================================
 
+# Any arguments after the configuration are build settings for the scheme.
 function build_target() {
   local name=$1
   local configuration=${2:-Debug}
+  local settings=("${@:3}")
 
   invoke_xcodebuild \
     ONLY_ACTIVE_ARCH=NO \
+    ${settings[@]+"${settings[@]}"} \
     -project FBSimulatorControl.xcodeproj \
     -scheme "$name" \
     -sdk macosx \
@@ -816,13 +819,15 @@ function build_repl_host() {
 # Release archives, listed by the generated Companion/project-deps.yml. Build
 # each one from that list so the two cannot disagree.
 function build_companion_archives() {
+  local tool=$1
+  shift
   local product name
   while IFS= read -r product; do
     name="${product%.framework}"
     name="${name#lib}"
     name="${name%.a}"
-    build_target "$name" Release
-  done < <(awk -v target="$1" '
+    build_target "$name" Release "$@"
+  done < <(awk -v target="$tool" '
     /^  [^ ]/ { selected = ($0 == "  " target ":") }
     selected && $1 == "-" && $2 == "framework:" {
       sub(/^.*\//, "", $3)
@@ -832,13 +837,15 @@ function build_companion_archives() {
 }
 
 # The companion's test bundles link the same archives as the companion itself,
-# from the companion's own project.
+# from the companion's own project. Those are built with testability here, so a
+# test can reach a library's internals with `@testable import`, as it can from
+# the generated project's test schemes, which build the libraries in Debug.
 function build_companion_tests() {
   check_protobuf
   build_idb_deps
   generate_proto
   generate_companion_project
-  build_companion_archives idb_companion
+  build_companion_archives idb_companion ENABLE_TESTABILITY=YES
 }
 
 function build_idb_companion() {

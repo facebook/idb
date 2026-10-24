@@ -716,11 +716,38 @@ output="$(in_package "$dir" '
     build_idb_deps() { :; }
     generate_proto() { :; }
     generate_companion_project() { :; }
-    build_target() { echo "built $1 $2"; }
+    build_target() { echo "built $*"; }
     build_companion_tests
 ')"
-assert_equal "building for the companion's tests builds the companion's archives" 'built FBControlCore Release
+assert_equal "building for the companion's tests builds the companion's archives, testable" 'built FBControlCore Release ENABLE_TESTABILITY=YES
+built FBSimulatorControl Release ENABLE_TESTABILITY=YES' "$output"
+
+# The companion itself links the archives as they ship.
+output="$(in_package "$dir" '
+    set +u
+    check_protobuf() { :; }
+    build_idb_deps() { :; }
+    generate_proto() { :; }
+    generate_companion_project() { :; }
+    build_target() { echo "built $*"; }
+    invoke_xcodebuild() { :; }
+    strip_embedded_frameworks() { :; }
+    build_idb_companion
+')"
+assert_equal "building the companion builds its archives as they ship" 'built FBControlCore Release
 built FBSimulatorControl Release' "$output"
+
+# Build settings after the configuration reach xcodebuild; without any, it gets none.
+# shellcheck disable=SC2016
+build_target_settings='
+    set +u
+    invoke_xcodebuild() { printf "%s\n" "$@"; }
+    build_target FBControlCore Release "$@" | grep -c "^ENABLE_TESTABILITY=YES$"
+'
+output="$(in_package "$dir" "set -- ENABLE_TESTABILITY=YES; $build_target_settings")"
+assert_equal "a build setting given to build_target reaches xcodebuild" 1 "$output"
+output="$(in_package "$dir" "set --; $build_target_settings")"
+assert_equal "build_target adds no build settings of its own" 0 "$output"
 
 # Every build from the companion's project turns Swift's explicit modules off,
 # and testing the companion's schemes is a build from that project too. The
