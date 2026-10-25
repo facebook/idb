@@ -199,4 +199,42 @@ struct BridgeProtocolTests {
       #expect(throws: BridgeProtocolError.mismatchedResponse) { try BridgeResponse.decode(Data(text.utf8), for: request) }
     }
   }
+
+  /// The single-pass frame decoder yields what `Decodable` yields, for every value shape an accessibility
+  /// response carries, and rejects the frames `Decodable` rejected.
+  @Test
+  func frameDecoderMatchesCodableForEveryValueShape() throws {
+    let tree: BridgeJSONValue = .object([
+      "role": .string("AXButton"), "label": .string("Allow “warden-example” → ✓"), "enabled": .bool(true),
+      "frame": .object(["x": .number(12.5), "y": .integer(-3), "width": .number(1e3), "height": .integer(0)]),
+      "pid": .integer(9_007_199_254_740_993), "big": .unsignedInteger(UInt64.max), "none": .null,
+      "children": .array((0..<50).map { .object(["index": .integer(Int64($0)), "child": .array([.bool(false), .number(0.0125)])]) }),
+    ])
+    let plist = try PropertyListSerialization.data(fromPropertyList: ["key": "value"], format: .binary, options: 0)
+    let results = [
+      BridgeResult(exitCode: 0, values: [tree]),
+      BridgeResult(exitCode: 1, values: [.object(["partial": .bool(true)]), .null, .integer(42)], error: "boom"),
+      BridgeResult(exitCode: 0, propertyList: plist),
+      BridgeResult(exitCode: -2),
+    ]
+    for result in results {
+      for id in ["frame-1", nil] {
+        let frame = try BridgeResponse(id: id, result: result).encoded()
+        let viaCodable = try JSONDecoder().decode(BridgeResponse.self, from: frame)
+        let viaFrame = try BridgeResponse(frame: frame)
+        #expect(viaFrame == viaCodable)
+        #expect(try viaFrame.encoded() == frame)
+      }
+    }
+    let literal = Data(#"{"version":2,"id":null,"result":{"exitCode":3,"values":[1e3,1.25e-2,-0.0,9007199254740993],"error":null}}"#.utf8)
+    #expect(try BridgeResponse(frame: literal) == JSONDecoder().decode(BridgeResponse.self, from: literal))
+    for text in [
+      #"[]"#, #"{"version":"2","id":"x","result":{"exitCode":0,"values":[]}}"#, #"{"version":2,"id":"x","result":[]}"#,
+      #"{"version":2,"id":"x","result":{"exitCode":4294967296,"values":[]}}"#,
+      #"{"version":2,"id":"x","result":{"exitCode":0,"values":[],"propertyList":"not base64!"}}"#, #"{"version":2,"#,
+    ] {
+      #expect(throws: (any Error).self, "\(text)") { try BridgeResponse(frame: Data(text.utf8)) }
+      #expect(throws: (any Error).self, "\(text)") { try JSONDecoder().decode(BridgeResponse.self, from: Data(text.utf8)) }
+    }
+  }
 }

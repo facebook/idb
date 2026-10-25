@@ -77,6 +77,13 @@ public struct BridgeRequest: Codable, Equatable, Sendable {
 }
 
 public struct BridgeResult: Codable, Equatable, Sendable {
+  @frozen public enum CodingKeys: String, CodingKey {
+    case exitCode
+    case values
+    case error
+    case propertyList
+  }
+
   public let exitCode: Int32
   public let values: [BridgeJSONValue]
   public let error: String?
@@ -100,7 +107,11 @@ public struct BridgeResponse: Codable, Equatable, Sendable {
   }
 
   public init(id: String?, result: BridgeResult) {
-    version = BridgeRequest.currentVersion
+    self.init(version: BridgeRequest.currentVersion, id: id, result: result)
+  }
+
+  private init(version: Int, id: String?, result: BridgeResult) {
+    self.version = version
     self.id = id
     self.result = result
   }
@@ -112,9 +123,48 @@ public struct BridgeResponse: Codable, Equatable, Sendable {
   }
 
   public static func decode(_ data: Data, for request: BridgeRequest) throws -> Self {
-    let response = try JSONDecoder().decode(Self.self, from: data)
+    let response = try Self(frame: data)
     guard response.version == BridgeRequest.currentVersion else { throw BridgeProtocolError.unsupportedVersion(response.version) }
     guard response.id == request.id else { throw BridgeProtocolError.mismatchedResponse }
     return response
+  }
+
+  /// Decodes a frame in one `JSONSerialization` pass instead of through `Codable`. `JSONDecoder` reaches every
+  /// node of `result.values` through `BridgeJSONValue.init(from:)`, which tries each case in turn and builds a
+  /// `DecodingError` for every miss; on an accessibility tree of a few thousand nodes that dominated the
+  /// client's CPU. The result is the same value `Decodable` produced, so `encoded()` round-trips unchanged.
+  public init(frame data: Data) throws {
+    let object = try Self.object(try JSONSerialization.jsonObject(with: data), "a response frame")
+    guard let version = object[CodingKeys.version.stringValue] as? Int else {
+      throw Self.corrupted("a response frame carries an integer version")
+    }
+    let id = object[CodingKeys.id.stringValue] as? String
+    let result = try Self.object(object[CodingKeys.result.stringValue], "result")
+    guard let exitCode = (result[BridgeResult.CodingKeys.exitCode.stringValue] as? Int).flatMap(Int32.init(exactly:)) else {
+      throw Self.corrupted("result.exitCode is a 32-bit integer")
+    }
+    let values = try (result[BridgeResult.CodingKeys.values.stringValue] as? [Any] ?? []).map(BridgeJSONValue.init(foundationValue:))
+    let propertyList: Data?
+    switch result[BridgeResult.CodingKeys.propertyList.stringValue] {
+    case nil, is NSNull: propertyList = nil
+    case let base64 as String:
+      guard let bytes = Data(base64Encoded: base64) else { throw Self.corrupted("result.propertyList is base64") }
+      propertyList = bytes
+    default: throw Self.corrupted("result.propertyList is a base64 string")
+    }
+    self.init(
+      version: version, id: id,
+      result: BridgeResult(
+        exitCode: exitCode, values: values, error: result[BridgeResult.CodingKeys.error.stringValue] as? String,
+        propertyList: propertyList))
+  }
+
+  private static func object(_ value: Any?, _ what: String) throws -> [String: Any] {
+    guard let object = value as? [String: Any] else { throw corrupted("\(what) is a JSON object") }
+    return object
+  }
+
+  private static func corrupted(_ expectation: String) -> DecodingError {
+    .dataCorrupted(DecodingError.Context(codingPath: [], debugDescription: "expected \(expectation)"))
   }
 }
