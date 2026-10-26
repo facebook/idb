@@ -83,7 +83,7 @@ public struct IDBPortsConfiguration {
   /// If nil, the TCP port listens unencrypted.
   let tlsCertPath: String?
 
-  /// Forwarding is disabled unless an explicit device port list is supplied.
+  /// Forwarding is disabled unless an explicit device port policy is supplied.
   let allowedForwardPorts: String?
 
   public var swiftServerTarget: GRPCConnectionTarget {

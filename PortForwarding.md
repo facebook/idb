@@ -41,8 +41,9 @@ through socket cleanup.
 
 ## Restricting ports
 
-Forwarding is disabled by default. Start the companion with
-`--allowed-forward-ports 8099,8100` to permit those device ports. Omitting the
-option or supplying an empty string disables forwarding. Malformed policy values
-fail server construction. Requests for disallowed ports fail before connecting
-to the device.
+Start the companion with `--allowed-forward-ports 8099,8000-8100` to permit
+individual device TCP ports and inclusive ranges within `1...65535`. Use
+`1-65535` to permit every port.
+Omitting the option or supplying an empty string disables forwarding. Invalid
+values fail server construction, and disallowed ports are rejected before
+connecting to the device.
