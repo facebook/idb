@@ -1276,6 +1276,7 @@ class DisplaySettingsDemos(InjectedSwiftCase):
             standard,
         )
 
+        await self.read_settings(standard, step="Read the screen in light mode")
         await self.idb("set", "appearance", "dark", step="Switch to dark mode")
         dark = "dark, large, standard contrast"
         before = await self.read_settings(dark, step="Read the screen in dark mode")
