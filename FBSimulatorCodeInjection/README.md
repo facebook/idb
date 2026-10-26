@@ -24,7 +24,7 @@ try await session.close()
 
 ## Microphone injection
 
-The library's second injection mechanism plays audio into a Simulator app's microphone input, through the same shim's audio interposer rather than its REPL. `simulator.audioInjection.appLaunchEnvironment(_:)` arms an app launch by inserting `libShimulator-iOS.dylib` into it, and `inject(from:)` then plays a 16-bit PCM WAV file into every armed app that is recording, returning when playback finishes. Failures are `AudioInjectionError`s. An app that is already running cannot be armed without a relaunch. So that the insertion keeps any libraries the Simulator's launchd would have inserted, arming reads launchd's `DYLD_INSERT_LIBRARIES` for each launch: with the runtime's `launchctl` by default, or through CoreSimulator, which starts no process in the Simulator, when the companion's environment sets `IDB_LAUNCHD_GETENV=coresimulator`.
+The library's second injection mechanism plays audio into a Simulator app's microphone input, through the same shim's audio interposer rather than its REPL. `simulator.audioInjection.appLaunchEnvironment(_:)` arms an app launch by inserting `libShimulator-iOS.dylib` into it, and `inject(from:)` then plays a 16-bit PCM WAV file into every armed app that is recording, returning when playback finishes. Failures are `AudioInjectionError`s. An app that is already running cannot be armed without a relaunch. So that the insertion keeps any libraries the Simulator's launchd would have inserted, arming reads launchd's `DYLD_INSERT_LIBRARIES` for each launch: through CoreSimulator, which starts no process in the Simulator, or with the runtime's `launchctl` when the companion's environment sets `IDB_LAUNCHD_GETENV=launchctl`.
 
 ## Camera injection
 

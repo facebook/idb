@@ -171,7 +171,7 @@ public struct SimulatorAudioInjectionCommands {
     static let environmentVariable = "IDB_LAUNCHD_GETENV"
 
     static func selected(by environment: [String: String]) -> Self {
-      environment[environmentVariable].flatMap(Self.init(rawValue:)) ?? .launchctl
+      environment[environmentVariable].flatMap(Self.init(rawValue:)) ?? .coreSimulator
     }
   }
 

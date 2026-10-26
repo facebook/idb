@@ -12,17 +12,17 @@ private typealias Reader = SimulatorAudioInjectionCommands.LaunchdEnvironmentRea
 
 @Suite struct LaunchdEnvironmentReaderTests {
 
-  @Test func launchesReadLaunchdWithLaunchctlUnlessTheCompanionOptsIn() {
-    #expect(Reader.selected(by: [:]) == .launchctl)
-    #expect(Reader.selected(by: ["IDB_LAUNCHD_GETENV": "launchctl"]) == .launchctl)
-  }
-
-  @Test func theCompanionOptsIntoCoreSimulatorByName() {
+  @Test func launchesReadLaunchdThroughCoreSimulatorUnlessTheCompanionOptsOut() {
+    #expect(Reader.selected(by: [:]) == .coreSimulator)
     #expect(Reader.selected(by: ["IDB_LAUNCHD_GETENV": "coresimulator"]) == .coreSimulator)
   }
 
-  @Test(arguments: ["", "CoreSimulator", "1", "true"])
-  func anyOtherValueKeepsLaunchctl(value: String) {
-    #expect(Reader.selected(by: ["IDB_LAUNCHD_GETENV": value]) == .launchctl)
+  @Test func theCompanionSelectsLaunchctlByName() {
+    #expect(Reader.selected(by: ["IDB_LAUNCHD_GETENV": "launchctl"]) == .launchctl)
+  }
+
+  @Test(arguments: ["", "Launchctl", "0", "false"])
+  func anyOtherValueKeepsCoreSimulator(value: String) {
+    #expect(Reader.selected(by: ["IDB_LAUNCHD_GETENV": value]) == .coreSimulator)
   }
 }
