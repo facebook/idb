@@ -192,6 +192,13 @@ final class MobileDeviceTests {
   }
 
   @Test
+  func cpuSubtypeVariantReportsItsBaseArchitecture() {
+    device.allValues[DeviceKey.cpuArchitecture.rawValue] = "arm64e.x1"
+    #expect(device.architectures == [.arm64e])
+    #expect(TargetConfiguration.baseArchsToCompatibleArch(device.architectures).contains(.arm64))
+  }
+
+  @Test
   func knownHardwareKeepsItsFriendlyName() {
     device.allValues[DeviceKey.productType.rawValue] = "iPhone8,1"
     device.allValues[DeviceKey.deviceClass.rawValue] = "iPhone"

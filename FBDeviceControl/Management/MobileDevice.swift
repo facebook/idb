@@ -122,7 +122,8 @@ public final class MobileDevice: TargetInfo, DeviceCommands, CustomStringConvert
     guard let architecture = allValues[DeviceKey.cpuArchitecture.rawValue] as? String else {
       return []
     }
-    return [Architecture(rawValue: architecture)]
+    // CPUArchitecture can name a CPU subtype variant as `<arch>.<variant>` (`arm64e.x1`), which runs `<arch>` code.
+    return [Architecture(rawValue: String(architecture.prefix { $0 != "." }))]
   }
 
   public var deviceType: DeviceType {
