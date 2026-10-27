@@ -97,7 +97,7 @@ struct InstrumentsClientExchangeTests {
     let processIdentifier = try client.launchApplication(launchConfiguration)
 
     #expect(processIdentifier == 4242)
-    #expect(service.sentBytes.range(of: archived("com.example.app")) != nil)
+    #expect(service.sentBytes.contains(archived("com.example.app")))
   }
 
   @Test
@@ -111,8 +111,8 @@ struct InstrumentsClientExchangeTests {
     let client = try makeClient(connection)
     try client.killProcess(4242)
 
-    #expect(service.sentBytes.range(of: archived("killPid:")) != nil)
-    #expect(service.sentBytes.range(of: archived(NSNumber(value: 4242))) != nil)
+    #expect(service.sentBytes.contains(archived("killPid:")))
+    #expect(service.sentBytes.contains(archived(NSNumber(value: 4242))))
   }
 
   @Test
