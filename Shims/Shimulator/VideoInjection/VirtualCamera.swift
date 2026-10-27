@@ -532,7 +532,7 @@ final class VirtualCamera: NSObject {
       let interval = 1 / max(rate, 1)
       let timer = DispatchSource.makeTimerSource(queue: queue)
       timer.schedule(deadline: .now(), repeating: interval, leeway: .nanoseconds(Int(interval * 1e8)))
-      timer.setEventHandler { [self] in deliverFrame() }
+      timer.setEventHandler { [weak self] in self?.deliverFrame() }
       (self.timer, started) = (timer, timer)
       return rate
     }
