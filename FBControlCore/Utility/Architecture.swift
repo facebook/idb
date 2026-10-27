@@ -31,4 +31,5 @@ public struct Architecture: RawRepresentable, Hashable, Codable, Sendable {
   public static let armv7s = Architecture(rawValue: "armv7s")
   public static let arm64 = Architecture(rawValue: "arm64")
   public static let arm64e = Architecture(rawValue: "arm64e")
+  public static let arm64eX1 = Architecture(rawValue: "arm64e.x1")
 }

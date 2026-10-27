@@ -51,4 +51,9 @@ struct TargetConfigurationTests {
     #expect(os.versionString == "")
     #expect(os.version.majorVersion == 0)
   }
+
+  @Test
+  func supportsDuo() {
+    #expect(TargetConfiguration.baseArchsToCompatibleArch([Architecture(rawValue: "arm64e.x1")]).contains(.arm64))
+  }
 }
