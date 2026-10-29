@@ -159,21 +159,17 @@ final class NetworkDownloadInput: Sendable {
       return
     }
     let endedCleanly = Self.endedCleanly(isComplete: isComplete, error: error)
-    let events: [HTTPResponseReader.Event]
+    let read: (events: [HTTPResponseReader.Event], cutShort: (any Error)?)
     do {
-      events = try state.withLock { state in
+      read = try state.withLock { state in
         state.lastActivity = Date()
-        var events = try data.map { try state.reader.consume($0) } ?? []
-        if endedCleanly, !state.reader.isComplete {
-          events += try state.reader.finish()
-        }
-        return events
+        return try Self.read(data, endingTheStream: endedCleanly, with: &state.reader)
       }
     } catch {
       transferFailed(error)
       return
     }
-    for event in events {
+    for event in read.events {
       guard handle(event) else {
         return
       }
@@ -182,12 +178,29 @@ final class NetworkDownloadInput: Sendable {
     // connection ending.
     if state.withLock({ $0.reader.isComplete }) {
       complete()
+    } else if let cutShort = read.cutShort {
+      transferFailed(cutShort)
     } else if let error, !endedCleanly {
       transferFailed(error)
-    } else if endedCleanly {
-      transferFailed(URLError(.networkConnectionLost))
     } else {
       receive(on: connection)
+    }
+  }
+
+  /// The events of the bytes one receive delivered, then, when the same receive ended the stream, the end of the
+  /// response or, for a response cut short, why it is incomplete. The bytes are read before the end, so a response
+  /// cut short is still reported with every byte that arrived, including those that came with the close.
+  static func read(
+    _ data: Data?, endingTheStream ended: Bool, with reader: inout HTTPResponseReader
+  ) throws -> (events: [HTTPResponseReader.Event], cutShort: (any Error)?) {
+    let events = try data.map { try reader.consume($0) } ?? []
+    guard ended, !reader.isComplete else {
+      return (events, nil)
+    }
+    do {
+      return (events + (try reader.finish()), nil)
+    } catch {
+      return (events, error)
     }
   }
 
