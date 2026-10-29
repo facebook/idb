@@ -31,6 +31,9 @@ async def forward_port(
             ForwardPortRequest(open=ForwardPortRequest.Open(port=device_port))
         )
         response = await stream.recv_message()
+        if response is None:
+            await stream.end()
+            await stream.recv_trailing_metadata()
         if response is None or response.WhichOneof("event") != "opened":
             raise IdbException("Companion did not acknowledge device port connection")
         send = asyncio.create_task(_send(stream, input_stream))
