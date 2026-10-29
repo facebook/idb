@@ -205,7 +205,7 @@ final class ReplSession {
 
       // Deployment target is floored at the runtime OS version (see `resolveTargetTriple`).
       let platform = try Platform(deviceType: deviceType)
-      compileEnvironment = ReplCompileEnvironment(
+      let environment = ReplCompileEnvironment(
         toolchain: toolchain,
         targetTriple: try resolveTargetTriple(platform: platform, runtimeOSVersion: osVersion),
         sdkPath: try resolveSDKPath(platform: platform),
@@ -213,7 +213,8 @@ final class ReplSession {
         linkerArguments: try resolveLinkerArguments(platform: platform, runtimeOSVersion: osVersion),
         interfaceSearchPaths: interfaceDirectory.map { [$0] } ?? [],
         autoImportModules: modules)
-      FileHandle.standardError.write(Data("idb-repl: compiling injected code for \(compileEnvironment.targetTriple)\n".utf8))
+      FileHandle.standardError.write(Data("idb-repl: compiling injected code for \(environment.targetTriple)\n".utf8))
+      compileEnvironment = environment
     } catch {
       let reportedError =
         resolvedCompanion.map {
@@ -289,36 +290,15 @@ final class ReplSession {
       case let .failure(compilerOutput):
         throw ReplExecutionError.compileFailed(compilerOutput)
       }
-      stage = .inject
-      try await connection.send(
-        .with {
-          $0.control = .execute(
-            .with {
-              $0.dylib = dylib
-              $0.symbol = symbol
-            })
-        })
-      stage = .execute
-      switch try await connection.nextResponse()?.event {
-      case let .result(result):
-        let artifactFilenames = await Self.transferArtifacts(result.artifacts, connection: connection, into: reportWriter)
-        reportWriter?.recordRun(index: index, code: code, output: result.output, artifactFilenames: artifactFilenames, at: Date())
-        let rawNext = Int(result.nextRunIndex)
-        nextRunIndex = rawNext >= 0 ? rawNext : 0
-        reporter.report(
-          ReplRunTelemetry.subject(
-            name: "run",
-            start: start,
-            ints: ReplRunTelemetry.codeMetrics(code),
-            failure: nil))
-        return ExecutionResult(output: result.output, nextIndex: rawNext, artifactFilenames: artifactFilenames)
-      case let .stopped(stopped):
-        throw ReplExecutionError.sessionStopped(stopped.desc)
-      case .ready:
-        throw ReplExecutionError.unexpectedReady
-      case .none:
-        throw ReplExecutionError.streamClosed
-      }
+      let result = try await inject(dylib: dylib, symbol: symbol, stage: &stage)
+      reportWriter?.recordRun(index: index, code: code, output: result.output, artifactFilenames: result.artifactFilenames, at: Date())
+      reporter.report(
+        ReplRunTelemetry.subject(
+          name: "run",
+          start: start,
+          ints: ReplRunTelemetry.codeMetrics(code),
+          failure: nil))
+      return result
     } catch {
       if config.reportFailures, case let ReplExecutionError.compileFailed(compilerOutput) = error {
         reportWriter?.recordCompileFailure(index: index, code: code, compilerOutput: compilerOutput, at: Date())
@@ -331,6 +311,64 @@ final class ReplSession {
           failure: "\(error)",
           stage: stage))
       throw error
+    }
+  }
+
+  /// Injects a dylib built elsewhere and has the target call `symbol`: a function of
+  /// no arguments returning a `malloc`'d C string, the contract idb-repl's own
+  /// submissions meet. Nothing is compiled, and the run is not written to a report,
+  /// since a report replays source.
+  func execute(dylibAt path: String, symbol: String) async throws -> ExecutionResult {
+    let start = Date()
+    runsExecuted += 1
+    var stage = ReplRunStage.readDylibFile
+    do {
+      let dylib = try Data(contentsOf: URL(fileURLWithPath: path))
+      let result = try await inject(dylib: dylib, symbol: symbol, stage: &stage)
+      reporter.report(
+        ReplRunTelemetry.subject(
+          name: "run_dylib",
+          start: start,
+          ints: ["dylib_size": dylib.count],
+          failure: nil))
+      return result
+    } catch {
+      reporter.report(
+        ReplRunTelemetry.subject(
+          name: "run_dylib",
+          start: start,
+          failure: "\(error)",
+          stage: stage))
+      throw error
+    }
+  }
+
+  /// Sends `dylib` to the companion and returns what the target's call of `symbol`
+  /// produced. `stage` moves from inject to execute as the run progresses, so a
+  /// failure records the phase it was in.
+  private func inject(dylib: Data, symbol: String, stage: inout ReplRunStage) async throws -> ExecutionResult {
+    stage = .inject
+    try await connection.send(
+      .with {
+        $0.control = .execute(
+          .with {
+            $0.dylib = dylib
+            $0.symbol = symbol
+          })
+      })
+    stage = .execute
+    switch try await connection.nextResponse()?.event {
+    case let .result(result):
+      let artifactFilenames = await Self.transferArtifacts(result.artifacts, connection: connection, into: reportWriter)
+      let rawNext = Int(result.nextRunIndex)
+      nextRunIndex = rawNext >= 0 ? rawNext : 0
+      return ExecutionResult(output: result.output, nextIndex: rawNext, artifactFilenames: artifactFilenames)
+    case let .stopped(stopped):
+      throw ReplExecutionError.sessionStopped(stopped.desc)
+    case .ready:
+      throw ReplExecutionError.unexpectedReady
+    case .none:
+      throw ReplExecutionError.streamClosed
     }
   }
 

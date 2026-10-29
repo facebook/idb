@@ -23,6 +23,7 @@ enum ReplSessionMode: String {
 enum ReplRunStage: String {
   case connect
   case compile
+  case readDylibFile
   case inject
   case execute
 }
