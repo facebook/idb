@@ -111,7 +111,10 @@ struct DylibCommand: AsyncParsableCommand {
       submissions meet, and the one a thunk dylib built from an apple_library's \
       [swift-dynamic-dylib-thunk-command-database] meets. Build the dylib for the simulator's platform, \
       and give each load a path dlopen has not seen before: a path already loaded returns the \
-      image loaded earlier.
+      image loaded earlier. With --expected-build-uuid or --expected-executable-uuid the companion \
+      loads the dylib only into an app of that build and refuses otherwise; a companion too old to \
+      check is refused before anything is sent. Exits 1 when the dylib was not loaded or its entry \
+      point failed.
       """)
 
   @OptionGroup var connection: ConnectionOptions
@@ -123,17 +126,32 @@ struct DylibCommand: AsyncParsableCommand {
   @Option(name: .long, help: "The entry point to call once the dylib is loaded.")
   var entryPoint = "swift_dynamic_thunk_entry"
 
+  @Option(
+    name: .long,
+    help: "Load only into an app whose BuildInfo.json (written by the Apple prelude's include_build_info_file) has this build_uuid.")
+  var expectedBuildUuid: String?
+
+  @Option(name: .long, help: "Load only into an app whose main executable has this Mach-O UUID.")
+  var expectedExecutableUuid: String?
+
   func run() async throws {
     var config = connection.sessionConfig()
     config.mode = .oneshot
     let session = try await ReplSession.start(
       context: .app(bundleID: app.bundleID ?? "", reuseSession: app.reuseSession), config: config)
+    var failed = false
     do {
-      let result = try await session.execute(dylibAt: dylib, symbol: entryPoint)
+      let result = try await session.execute(
+        dylibAt: dylib, symbol: entryPoint, expectedBuildUUID: expectedBuildUuid, expectedExecutableUUID: expectedExecutableUuid)
       print(result.output)
+      failed = !result.success
     } catch {
       print("Error: \(error)")
+      failed = true
     }
     await session.finish()
+    if failed {
+      throw ExitCode.failure
+    }
   }
 }

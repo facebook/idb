@@ -219,6 +219,13 @@ public final class IDBCommandExecutor {
     target.deviceType.family.stringRepresentation
   }
 
+  /// The installed app's bundle path and main executable UUID, which the REPL
+  /// compares with an `Execute`'s expected build before loading a dylib.
+  public func replInstalledApplication(bundleID: String) async throws -> (bundlePath: String, executableUUID: UUID?) {
+    let app = try await target.application.installed(bundleID: bundleID)
+    return (app.bundle.path, app.bundle.binary?.uuid)
+  }
+
   /// The OS version ("26.2") of the target this companion is connected to.
   /// Reported to the client in the REPL handshake so it can compile injected
   /// code for the runtime's deployment target.

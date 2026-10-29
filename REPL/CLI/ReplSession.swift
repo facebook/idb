@@ -51,6 +51,15 @@ struct ExecutionResult {
   var output: String
   var nextIndex: Int
   var artifactFilenames: [String]
+  /// `output` carries the reason for failures.
+  var success = true
+}
+
+/// The build an execute says the served app must be; empty strings mean no expectation.
+struct BuildExpectation {
+  var buildUUID = ""
+  var executableUUID = ""
+  var isEmpty: Bool { buildUUID.isEmpty && executableUUID.isEmpty }
 }
 
 /// A live REPL session against a companion: owns the gRPC stream and compile parameters
@@ -67,6 +76,9 @@ final class ReplSession {
   /// Whether the app was freshly launched at this session's start (app context only;
   /// false otherwise). `replay` reproduces this to start from the same state.
   let freshLaunch: Bool
+  /// Whether the companion honours an expected build UUID on an execute; an older one would load
+  /// the dylib unchecked, so a session with an expectation refuses to send to it.
+  let verifiesBuildUUID: Bool
   /// The index the next executed block will use; advanced after each completed run.
   private(set) var nextRunIndex: Int
 
@@ -91,6 +103,7 @@ final class ReplSession {
     osVersion: String,
     sessionID: String,
     freshLaunch: Bool,
+    verifiesBuildUUID: Bool,
     nextRunIndex: Int,
     compileEnvironment: ReplCompileEnvironment,
     reportWriter: ReplReportWriter?
@@ -103,6 +116,7 @@ final class ReplSession {
     self.osVersion = osVersion
     self.sessionID = sessionID
     self.freshLaunch = freshLaunch
+    self.verifiesBuildUUID = verifiesBuildUUID
     self.nextRunIndex = nextRunIndex
     self.compileEnvironment = compileEnvironment
     self.reportWriter = reportWriter
@@ -135,6 +149,7 @@ final class ReplSession {
     let osVersion: String
     let readyRunIndex: UInt32
     let sessionID: String
+    let verifiesBuildUUID: Bool
     let compileEnvironment: ReplCompileEnvironment
     var resolvedCompanion: ResolvedCompanion?
     do {
@@ -180,6 +195,7 @@ final class ReplSession {
       osVersion = ready.osVersion
       readyRunIndex = ready.nextRunIndex
       sessionID = ready.sessionID
+      verifiesBuildUUID = ready.verifiesBuildUuid
       replSessionInfo.sharedFilesystem = ready.sharedFilesystem
       var readyMetadata = ["device_type": deviceType]
       if !sessionID.isEmpty {
@@ -257,6 +273,7 @@ final class ReplSession {
       osVersion: osVersion,
       sessionID: sessionID,
       freshLaunch: freshLaunch,
+      verifiesBuildUUID: verifiesBuildUUID,
       nextRunIndex: Int(readyRunIndex),
       compileEnvironment: compileEnvironment,
       reportWriter: reportWriter)
@@ -318,13 +335,20 @@ final class ReplSession {
   /// no arguments returning a `malloc`'d C string, the contract idb-repl's own
   /// submissions meet. Nothing is compiled, and the run is not written to a report,
   /// since a report replays source.
-  func execute(dylibAt path: String, symbol: String) async throws -> ExecutionResult {
+  /// `expectedBuildUUID` and `expectedExecutableUUID`, when given, make the companion load the
+  /// dylib only into an app of that build (its `BuildInfo.json` build UUID, its main executable's
+  /// UUID); a companion that cannot check them is refused before anything is sent.
+  func execute(dylibAt path: String, symbol: String, expectedBuildUUID: String? = nil, expectedExecutableUUID: String? = nil) async throws -> ExecutionResult {
     let start = Date()
     runsExecuted += 1
     var stage = ReplRunStage.readDylibFile
     do {
+      let expectation = BuildExpectation(buildUUID: expectedBuildUUID ?? "", executableUUID: expectedExecutableUUID ?? "")
+      if !expectation.isEmpty, !verifiesBuildUUID {
+        throw ReplExecutionError.buildIdentityUnverifiable
+      }
       let dylib = try Data(contentsOf: URL(fileURLWithPath: path))
-      let result = try await inject(dylib: dylib, symbol: symbol, stage: &stage)
+      let result = try await inject(dylib: dylib, symbol: symbol, expectation: expectation, stage: &stage)
       reporter.report(
         ReplRunTelemetry.subject(
           name: "run_dylib",
@@ -346,7 +370,7 @@ final class ReplSession {
   /// Sends `dylib` to the companion and returns what the target's call of `symbol`
   /// produced. `stage` moves from inject to execute as the run progresses, so a
   /// failure records the phase it was in.
-  private func inject(dylib: Data, symbol: String, stage: inout ReplRunStage) async throws -> ExecutionResult {
+  private func inject(dylib: Data, symbol: String, expectation: BuildExpectation = BuildExpectation(), stage: inout ReplRunStage) async throws -> ExecutionResult {
     stage = .inject
     try await connection.send(
       .with {
@@ -354,15 +378,22 @@ final class ReplSession {
           .with {
             $0.dylib = dylib
             $0.symbol = symbol
+            $0.expectedBuildUuid = expectation.buildUUID
+            $0.expectedExecutableUuid = expectation.executableUUID
           })
       })
     stage = .execute
     switch try await connection.nextResponse()?.event {
+    case let .result(result) where result.rejection != .notRejected:
+      // The companion refused to load the dylib; the session is intact. Its
+      // output is already prefixed for printing as a result, not as an error.
+      let prefix = "Error: "
+      throw ReplExecutionError.rejected(result.output.hasPrefix(prefix) ? String(result.output.dropFirst(prefix.count)) : result.output)
     case let .result(result):
       let artifactFilenames = await Self.transferArtifacts(result.artifacts, connection: connection, into: reportWriter)
       let rawNext = Int(result.nextRunIndex)
       nextRunIndex = rawNext >= 0 ? rawNext : 0
-      return ExecutionResult(output: result.output, nextIndex: rawNext, artifactFilenames: artifactFilenames)
+      return ExecutionResult(output: result.output, nextIndex: rawNext, artifactFilenames: artifactFilenames, success: result.success)
     case let .stopped(stopped):
       throw ReplExecutionError.sessionStopped(stopped.desc)
     case .ready:
