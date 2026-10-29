@@ -12,77 +12,126 @@ import MobileDeviceAPI
 
 /// Backed by a `MobileDevice`, a `RestorableDevice`, or both, caching the target
 /// information of whichever it holds.
+///
+/// A `DeviceSet` preserves this object's identity across notifications. Its backing objects hold
+/// the values and native handles of the processed notification; cached target information may
+/// retain richer values across recovery transitions. Holding this object does not freeze later
+/// notifications.
 public final class Device: Target, DeviceCommands, CustomStringConvertible {
 
   // MARK: - Properties
 
   public let commandCache: TargetCommandCache
   public private(set) var logger: any ControlCoreLogger
-  public private(set) var calls: AMDCalls
-
+  private let backingLock = NSLock()
   private var amDeviceStorage: MobileDevice?
   private var restorableDeviceStorage: RestorableDevice?
+  private var cachedValues: CachedValues
+  private var callsStorage: AMDCalls
+
+  public var calls: AMDCalls { backingLock.withLock { callsStorage } }
 
   public var amDevice: MobileDevice? {
-    get {
-      amDeviceStorage
-    }
+    get { backingLock.withLock { amDeviceStorage } }
     set {
-      amDeviceStorage = newValue
-      if let newValue {
-        cacheValues(from: newValue, overwrite: true)
+      let incoming = newValue.map { CachedValues(from: $0) }
+      let replaced = backingLock.withLock {
+        let replaced = (amDeviceStorage, cachedValues)
+        amDeviceStorage = newValue
+        if let newValue, let incoming {
+          callsStorage = newValue.calls
+          cachedValues.merge(incoming, overwrite: true)
+        }
+        return replaced
       }
+      withExtendedLifetime(replaced) {}
     }
   }
 
   var restorableDevice: RestorableDevice? {
-    get {
-      restorableDeviceStorage
-    }
+    get { backingLock.withLock { restorableDeviceStorage } }
     set {
-      restorableDeviceStorage = newValue
-      if let newValue {
-        cacheValues(from: newValue, overwrite: false)
+      let incoming = newValue.map { CachedValues(from: $0) }
+      let replaced = backingLock.withLock {
+        let replaced = (restorableDeviceStorage, cachedValues)
+        restorableDeviceStorage = newValue
+        if let newValue, let incoming {
+          callsStorage = newValue.calls
+          cachedValues.merge(incoming, overwrite: false)
+        }
+        return replaced
       }
+      withExtendedLifetime(replaced) {}
     }
   }
 
   // MARK: - Cached target information
 
-  // Optional storage: the nil state is what `cacheValues(from:overwrite:)` tests to decide
-  // whether a gap can be filled. The public accessors are non-optional because the initializer
-  // always populates the cache from one of the two backing devices.
+  private struct CachedValues {
+    var state: TargetState
+    var uniqueIdentifier: String?
+    var udid: String?
+    var name: String?
+    var deviceType: DeviceType?
+    var architectures: [Architecture]?
+    var osVersion: OSVersion?
+    var extendedInformation: [String: Any]?
+    var targetType: TargetType?
+    var buildVersion: String?
+    var productVersion: String?
+    var activationState: String?
+    var allValues: [String: Any]?
 
-  private var cachedUniqueIdentifier: String?
-  private var cachedUDID: String?
-  private var cachedName: String?
-  private var cachedDeviceType: DeviceType?
-  private var cachedArchitectures: [Architecture]?
-  private var cachedOSVersion: OSVersion?
-  private var cachedExtendedInformation: [String: Any]?
-  private var cachedTargetType: TargetType?
-  private var cachedBuildVersion: String?
-  private var cachedProductVersion: String?
-  private var cachedActivationState: String?
-  private var cachedAllValues: [String: Any]?
+    init(from info: any TargetInfo & DeviceProtocol) {
+      state = info.state
+      uniqueIdentifier = info.uniqueIdentifier
+      udid = info.udid
+      name = info.name
+      deviceType = info.deviceType
+      architectures = info.architectures
+      osVersion = info.osVersion
+      extendedInformation = info.extendedInformation
+      targetType = info.targetType
+      buildVersion = info.buildVersion
+      productVersion = info.productVersion
+      activationState = info.activationState
+      allValues = info.allValues
+    }
 
-  public private(set) var state: TargetState = .unknown
+    mutating func merge(_ incoming: Self, overwrite: Bool) {
+      state = incoming.state
+      uniqueIdentifier = overwrite ? incoming.uniqueIdentifier : uniqueIdentifier ?? incoming.uniqueIdentifier
+      udid = overwrite ? incoming.udid : udid ?? incoming.udid
+      name = overwrite ? incoming.name : name ?? incoming.name
+      deviceType = overwrite ? incoming.deviceType : deviceType ?? incoming.deviceType
+      architectures = overwrite ? incoming.architectures : architectures ?? incoming.architectures
+      osVersion = overwrite ? incoming.osVersion : osVersion ?? incoming.osVersion
+      extendedInformation = overwrite ? incoming.extendedInformation : extendedInformation ?? incoming.extendedInformation
+      targetType = overwrite ? incoming.targetType : targetType ?? incoming.targetType
+      buildVersion = overwrite ? incoming.buildVersion : buildVersion ?? incoming.buildVersion
+      productVersion = overwrite ? incoming.productVersion : productVersion ?? incoming.productVersion
+      activationState = overwrite ? incoming.activationState : activationState ?? incoming.activationState
+      allValues = overwrite ? incoming.allValues : allValues ?? incoming.allValues
+    }
+  }
+
+  public var state: TargetState { backingLock.withLock { cachedValues.state } }
 
   /// The developer disk images this device can mount.
   public let developerDiskImages: any DeveloperDiskImageProviding
 
-  public var uniqueIdentifier: String { cachedUniqueIdentifier ?? "" }
-  public var udid: String { cachedUDID ?? "" }
-  public var name: String { cachedName ?? "" }
-  public var deviceType: DeviceType { cachedDeviceType ?? DeviceType.generic(withName: "unknown") }
-  public var architectures: [Architecture] { cachedArchitectures ?? [] }
-  public var osVersion: OSVersion { cachedOSVersion ?? OSVersion.generic(withName: "unknown") }
-  public var extendedInformation: [String: Any] { cachedExtendedInformation ?? [:] }
-  public var targetType: TargetType { cachedTargetType ?? .none }
-  public var buildVersion: String? { cachedBuildVersion }
-  public var productVersion: String? { cachedProductVersion }
-  public var activationState: String { cachedActivationState ?? "" }
-  public var allValues: [String: Any] { cachedAllValues ?? [:] }
+  public var uniqueIdentifier: String { backingLock.withLock { cachedValues.uniqueIdentifier } ?? "" }
+  public var udid: String { backingLock.withLock { cachedValues.udid } ?? "" }
+  public var name: String { backingLock.withLock { cachedValues.name } ?? "" }
+  public var deviceType: DeviceType { backingLock.withLock { cachedValues.deviceType } ?? DeviceType.generic(withName: "unknown") }
+  public var architectures: [Architecture] { backingLock.withLock { cachedValues.architectures } ?? [] }
+  public var osVersion: OSVersion { backingLock.withLock { cachedValues.osVersion } ?? OSVersion.generic(withName: "unknown") }
+  public var extendedInformation: [String: Any] { backingLock.withLock { cachedValues.extendedInformation } ?? [:] }
+  public var targetType: TargetType { backingLock.withLock { cachedValues.targetType } ?? .none }
+  public var buildVersion: String? { backingLock.withLock { cachedValues.buildVersion } }
+  public var productVersion: String? { backingLock.withLock { cachedValues.productVersion } }
+  public var activationState: String { backingLock.withLock { cachedValues.activationState } ?? "" }
+  public var allValues: [String: Any] { backingLock.withLock { cachedValues.allValues } ?? [:] }
 
   public init(
     amDevice: MobileDevice?,
@@ -94,19 +143,12 @@ public final class Device: Target, DeviceCommands, CustomStringConvertible {
     self.restorableDeviceStorage = restorableDevice
     self.commandCache = TargetCommandCache()
     self.developerDiskImages = developerDiskImages
-    // Without a backing device there is no call table; fail here rather than through a null
-    // function pointer later.
-    if let amDevice {
-      self.calls = amDevice.calls
-    } else if let restorableDevice {
-      self.calls = restorableDevice.calls
-    } else {
+    guard let info: any TargetInfo & DeviceProtocol = amDevice ?? restorableDevice else {
       preconditionFailure("A MobileDevice or RestorableDevice must be provided")
     }
+    self.cachedValues = CachedValues(from: info)
+    self.callsStorage = info.calls
     self.logger = logger
-    if let info: any TargetInfo & DeviceProtocol = amDevice ?? restorableDevice {
-      cacheValues(from: info, overwrite: true)
-    }
     self.logger = logger.withName(udid)
   }
 
@@ -220,51 +262,6 @@ public final class Device: Target, DeviceCommands, CustomStringConvertible {
     return try await amDevice.withHouseArrestAFCConnection(forBundleID: bundleID, afcCalls: afcCalls, body)
   }
 
-  // MARK: - Private
-
-  /// The AMDevice's richer information always overwrites; the restorable device's only fills what
-  /// is not yet known. `calls` and `state` are refreshed from either.
-  private func cacheValues(from targetInfo: any TargetInfo & DeviceProtocol, overwrite: Bool) {
-    calls = targetInfo.calls
-    state = targetInfo.state
-
-    if cachedAllValues == nil || overwrite {
-      cachedAllValues = targetInfo.allValues
-    }
-    if cachedArchitectures == nil || overwrite {
-      cachedArchitectures = targetInfo.architectures
-    }
-    if cachedBuildVersion == nil || overwrite {
-      cachedBuildVersion = targetInfo.buildVersion
-    }
-    if cachedDeviceType == nil || overwrite {
-      cachedDeviceType = targetInfo.deviceType
-    }
-    if cachedExtendedInformation == nil || overwrite {
-      cachedExtendedInformation = targetInfo.extendedInformation
-    }
-    if cachedName == nil || overwrite {
-      cachedName = targetInfo.name
-    }
-    if cachedOSVersion == nil || overwrite {
-      cachedOSVersion = targetInfo.osVersion
-    }
-    if cachedProductVersion == nil || overwrite {
-      cachedProductVersion = targetInfo.productVersion
-    }
-    if cachedTargetType == nil || overwrite {
-      cachedTargetType = targetInfo.targetType
-    }
-    if cachedUDID == nil || overwrite {
-      cachedUDID = targetInfo.udid
-    }
-    if cachedUniqueIdentifier == nil || overwrite {
-      cachedUniqueIdentifier = targetInfo.uniqueIdentifier
-    }
-    if cachedActivationState == nil || overwrite {
-      cachedActivationState = targetInfo.activationState
-    }
-  }
 }
 
 // Commands that own something outliving a single call — a notifier, an in-flight video, a set of

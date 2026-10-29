@@ -43,6 +43,12 @@ final class MobileDeviceTests {
 
   private let device: MobileDevice
 
+  enum ConnectionOwnerChange: CaseIterable {
+    case released
+    case nativeReferenceReplaced
+    case valuesReplaced
+  }
+
   init() {
     device = Self.makeDevice(connectionReuseTimeout: nil, serviceReuseTimeout: nil)
   }
@@ -113,7 +119,7 @@ final class MobileDeviceTests {
 
     calls.CreateHouseArrestService = { _, _, _, connectionOut in
       sAMDeviceEvents.append("create_house_arrest_service")
-      connectionOut?.pointee = Unmanaged<AnyObject>.passRetained("A HOUSE ARREST" as CFString)
+      connectionOut?.pointee = Unmanaged<AnyObject>.passRetained(NSObject())
       return 0
     }
 
@@ -131,8 +137,9 @@ final class MobileDeviceTests {
 
     calls.ConnectionIsValid = { _ in 1 }
 
-    calls.ConnectionClose = { _ in
+    calls.ConnectionClose = { ref in
       sAMDeviceEvents.append("connection_close")
+      if let ref { Unmanaged.passUnretained(ref).release() }
       return 0
     }
 
@@ -313,11 +320,7 @@ final class MobileDeviceTests {
   /// than the consumers take, so only the last release starts either teardown.
   @Test
   func concurrentHouseArrest() async throws {
-    var afcCalls = AFCCalls()
-    afcCalls.ConnectionClose = { _ in
-      sAMDeviceEvents.append("connection_close")
-      return 0
-    }
+    let afcCalls = Self.stubbedAFCCalls
 
     let device = Self.makeDevice(connectionReuseTimeout: 0.5, serviceReuseTimeout: 0.3)
     await withTaskGroup(of: Void.self) { group in
@@ -356,11 +359,7 @@ final class MobileDeviceTests {
   /// connection, and that connection is closed only once the window elapses with no consumer.
   @Test
   func houseArrestConnectionIsSharedAcrossSequentialScopes() async throws {
-    var afcCalls = AFCCalls()
-    afcCalls.ConnectionClose = { _ in
-      sAMDeviceEvents.append("connection_close")
-      return 0
-    }
+    let afcCalls = Self.stubbedAFCCalls
 
     let device = Self.makeDevice(connectionReuseTimeout: nil, serviceReuseTimeout: 2)
     for _ in 0..<2 {
@@ -377,6 +376,74 @@ final class MobileDeviceTests {
     expected += ["connection_close"]
     await waitForDeviceEvents(expected, timeout: 10)
     #expect((expected) == (sAMDeviceEvents))
+  }
+
+  @Test(arguments: ConnectionOwnerChange.allCases, [false, true])
+  func houseArrestClosesWhenConnectionOwnerChanges(change: ConnectionOwnerChange, inUse: Bool) async throws {
+    let logger = ControlCoreGlobalConfiguration.defaultLogger
+    let ordinaryManager = AMDeviceManager(calls: Self.stubbedCalls, work: .main, asyncQueue: .main, ecidFilter: nil, logger: logger)
+    let restorableManager = AMRestorableDeviceManager(calls: Self.stubbedCalls, work: .main, asyncQueue: .main, ecidFilter: nil, logger: logger)
+    var wrapper: MobileDevice? = Self.makeDevice(connectionReuseTimeout: nil, serviceReuseTimeout: 600)
+    var set: DeviceSet? = DeviceSet(
+      amDeviceManager: ordinaryManager, restorableDeviceManager: restorableManager, logger: logger, delegate: nil)
+    set?.targetAdded(try #require(wrapper), in: ordinaryManager)
+    weak var previousView = try #require(set?.allDevices.first?.amDevice)
+    weak var nativeAFC: NSObject?
+    let entered = AsyncEvent<Void>()
+    let finish = AsyncEvent<Void>()
+    var operation: Task<Void, Error>?
+    if inUse {
+      let view = try #require(previousView)
+      operation = Task { @MainActor in
+        try await view.withHouseArrestAFCConnection(forBundleID: "com.foo.bar", afcCalls: Self.stubbedAFCCalls) { connection in
+          nativeAFC = connection.connection as? NSObject
+          entered.happen()
+          try await finish.wait(timeout: 5, waitingFor: "connection owner replacement")
+        }
+      }
+      try await entered.wait(timeout: 5, waitingFor: "active house arrest operation")
+    } else {
+      try await previousView?.withHouseArrestAFCConnection(forBundleID: "com.foo.bar", afcCalls: Self.stubbedAFCCalls) { connection in
+        nativeAFC = connection.connection as? NSObject
+      }
+    }
+    #expect(nativeAFC != nil)
+    #expect(sAMDeviceEvents.filter { $0 == "connection_close" }.isEmpty)
+
+    switch change {
+    case .released:
+      set = nil
+      wrapper = nil
+    case .nativeReferenceReplaced:
+      wrapper?.amDeviceRef = "A REPLACEMENT DEVICE" as CFString
+      set?.targetAdded(try #require(wrapper), in: ordinaryManager)
+    case .valuesReplaced:
+      wrapper?.allValues[DeviceKey.deviceName.rawValue] = "Updated Device"
+      set?.targetUpdated(try #require(wrapper), in: ordinaryManager)
+    }
+    if inUse {
+      #expect(previousView != nil)
+      #expect(nativeAFC != nil)
+      #expect(sAMDeviceEvents.filter { $0 == "connection_close" }.isEmpty)
+      finish.happen()
+      try await operation?.value
+      operation = nil
+    }
+    #expect(previousView == nil)
+    #expect(nativeAFC == nil)
+    #expect(sAMDeviceEvents.filter { $0 == "connection_close" }.count == 1)
+
+    if let current = set?.allDevices.first?.amDevice {
+      for _ in 0..<2 {
+        try await current.withHouseArrestAFCConnection(forBundleID: "com.foo.bar", afcCalls: Self.stubbedAFCCalls) { _ in }
+      }
+      #expect(sAMDeviceEvents.filter { $0 == "create_house_arrest_service" }.count == 2)
+      #expect(sAMDeviceEvents.filter { $0 == "connection_close" }.count == 1)
+      #expect(set?.allDevices.count == 1)
+    }
+    set = nil
+    wrapper = nil
+    #expect(sAMDeviceEvents.filter { $0 == "connection_close" }.count == (change == .released ? 1 : 2))
   }
 
   /// Cancelling a consumer that is queued behind another's use of house arrest abandons its place

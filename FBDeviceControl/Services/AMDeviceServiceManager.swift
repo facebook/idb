@@ -69,6 +69,11 @@ final class HouseArrestService: @unchecked Sendable {
     self.logger = device.logger.withName("house_arrest_\(bundleID)")
   }
 
+  deinit {
+    idleTeardown?.cancel()
+    close(connection)
+  }
+
   // MARK: - Public Methods
 
   /// Waits for exclusive use of the connection, opening it if it is not already established.

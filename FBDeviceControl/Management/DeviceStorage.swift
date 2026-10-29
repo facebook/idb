@@ -14,21 +14,24 @@ import Foundation
 public final class DeviceStorage<T: AnyObject> {
 
   public var attached: [String: T] {
-    attachedDevices
+    lock.withLock { attachedDevices }
   }
 
   public var referenced: [String: T] {
-    var result: [String: T] = [:]
-    let enumerator = referencedDevices.keyEnumerator()
-    while let key = enumerator.nextObject() as? NSString {
-      if let value = referencedDevices.object(forKey: key) as? T {
-        result[key as String] = value
+    lock.withLock {
+      var result: [String: T] = [:]
+      let enumerator = referencedDevices.keyEnumerator()
+      while let key = enumerator.nextObject() as? NSString {
+        if let value = referencedDevices.object(forKey: key) as? T {
+          result[key as String] = value
+        }
       }
+      return result
     }
-    return result
   }
 
   private let logger: any ControlCoreLogger
+  private let lock = NSLock()
   private var attachedDevices: [String: T]
   private var referencedDevices: NSMapTable<NSString, AnyObject>
 
@@ -39,8 +42,13 @@ public final class DeviceStorage<T: AnyObject> {
   }
 
   func deviceAttached(_ device: T, forKey key: String) {
-    let attached = attachedDevices[key]
-    let referenced = referencedDevices.object(forKey: key as NSString)
+    let (attached, referenced) = lock.withLock {
+      let attached = attachedDevices[key]
+      let referenced = referencedDevices.object(forKey: key as NSString)
+      attachedDevices[key] = device
+      referencedDevices.setObject(device, forKey: key as NSString)
+      return (attached, referenced)
+    }
     if attached != nil && referenced != nil {
       logger.log("\(device) is an attached device update")
     } else if referenced != nil {
@@ -48,15 +56,17 @@ public final class DeviceStorage<T: AnyObject> {
     } else {
       logger.log("\(device) appeared for the first time")
     }
-    attachedDevices[key] = device
-    referencedDevices.setObject(device, forKey: key as NSString)
+    withExtendedLifetime((attached, referenced)) {}
   }
 
   func deviceDetached(forKey key: String) {
-    attachedDevices.removeValue(forKey: key)
+    let detached = lock.withLock { attachedDevices.removeValue(forKey: key) }
+    withExtendedLifetime(detached) {}
   }
 
   public func device(forKey key: String) -> T? {
-    attachedDevices[key] ?? referencedDevices.object(forKey: key as NSString) as? T
+    lock.withLock {
+      attachedDevices[key] ?? referencedDevices.object(forKey: key as NSString) as? T
+    }
   }
 }

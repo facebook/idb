@@ -16,6 +16,7 @@ class DeviceManager<PublicDevice: AnyObject>: TargetSet, CustomStringConvertible
 
   let logger: any ControlCoreLogger
   let storage: DeviceStorage<PublicDevice>
+  let notifications = DeviceNotificationQueue(accepting: false)
   weak var delegate: (any TargetSetDelegate)?
 
   init(logger: any ControlCoreLogger) {
@@ -61,7 +62,10 @@ class DeviceManager<PublicDevice: AnyObject>: TargetSet, CustomStringConvertible
 
   // MARK: - Called in Subclasses
 
-  func deviceConnected(_ privateDevice: CFTypeRef, identifier: String, info: [String: Any]?) {
+  func deviceConnected(
+    _ privateDevice: CFTypeRef, identifier: String, info: [String: Any]?,
+    update: ((PublicDevice) -> Void)? = nil
+  ) {
     let privateAddress = Unmanaged.passUnretained(privateDevice as AnyObject).toOpaque()
     logger.log("Device Connected \(identifier) (\(privateAddress))")
 
@@ -91,6 +95,7 @@ class DeviceManager<PublicDevice: AnyObject>: TargetSet, CustomStringConvertible
       Self.updatePublicReference(device, privateDevice: privateDevice, identifier: identifier, info: info)
     }
 
+    update?(device)
     storage.deviceAttached(device, forKey: identifier)
 
     if let info = device as? any TargetInfo {
@@ -99,9 +104,13 @@ class DeviceManager<PublicDevice: AnyObject>: TargetSet, CustomStringConvertible
   }
 
   func deviceDisconnected(_ privateDevice: CFTypeRef, identifier: String) {
+    deviceDisconnected(identifier: identifier, address: Unmanaged.passUnretained(privateDevice as AnyObject).toOpaque())
+  }
+
+  func deviceDisconnected(identifier: String, address: UnsafeMutableRawPointer) {
     // The private ref may already be dead by the time a disconnect callback fires, so log it by
     // identifier and address only; never dereference it.
-    let privateAddress = Unmanaged.passUnretained(privateDevice as AnyObject).toOpaque()
+    let privateAddress = address
     logger.log("Device Disconnected \(identifier) (\(privateAddress))")
     guard let device = storage.device(forKey: identifier) else {
       logger.log("No Device named \(identifier) from attached devices, nothing to remove")
@@ -117,11 +126,7 @@ class DeviceManager<PublicDevice: AnyObject>: TargetSet, CustomStringConvertible
   }
 
   var currentDeviceList: [PublicDevice] {
-    Array(storage.attached.values).sorted { lhs, rhs in
-      let lhsID = (lhs as? any TargetInfo)?.uniqueIdentifier ?? ""
-      let rhsID = (rhs as? any TargetInfo)?.uniqueIdentifier ?? ""
-      return lhsID < rhsID
-    }
+    storage.attached.sorted { $0.key < $1.key }.map(\.value)
   }
 
   // MARK: - TargetSet

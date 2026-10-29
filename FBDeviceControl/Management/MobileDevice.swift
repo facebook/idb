@@ -23,7 +23,12 @@ public final class MobileDevice: TargetInfo, DeviceCommands, CustomStringConvert
   // MARK: - Properties
 
   public let calls: AMDCalls
-  public var allValues: [String: Any]
+  public var allValues: [String: Any] {
+    didSet { notificationViewStorage = nil }
+  }
+  private let connectionReuseTimeout: TimeInterval?
+  private let serviceReuseTimeout: TimeInterval?
+  private var notificationViewStorage: MobileDevice?
   public let workQueue: DispatchQueue
   public let asyncQueue: DispatchQueue
   public let logger: any ControlCoreLogger
@@ -57,6 +62,7 @@ public final class MobileDevice: TargetInfo, DeviceCommands, CustomStringConvert
       amDeviceReference
     }
     set {
+      notificationViewStorage = nil
       let old = amDeviceReference
       amDeviceReference = newValue
       if let newValue {
@@ -83,6 +89,8 @@ public final class MobileDevice: TargetInfo, DeviceCommands, CustomStringConvert
     asyncQueue: DispatchQueue,
     logger: any ControlCoreLogger
   ) {
+    self.connectionReuseTimeout = connectionReuseTimeout
+    self.serviceReuseTimeout = serviceReuseTimeout
     self.allValues = allValues
     self.calls = calls
     self.workQueue = workQueue
@@ -94,6 +102,23 @@ public final class MobileDevice: TargetInfo, DeviceCommands, CustomStringConvert
       device: self, reuseTimeout: connectionReuseTimeout, logger: logger)
     self.serviceManagerStorage = AMDeviceServiceManager(
       device: self, serviceTimeout: serviceReuseTimeout)
+  }
+
+  deinit {
+    if let amDeviceReference { calls.Release(amDeviceReference) }
+  }
+
+  /// A connection view whose values and owned native reference remain paired.
+  /// Reuses session and service pools until the manager replaces this connection or its values.
+  func notificationView() -> MobileDevice {
+    if let notificationViewStorage { return notificationViewStorage }
+    let view = MobileDevice(
+      allValues: allValues, calls: calls,
+      connectionReuseTimeout: connectionReuseTimeout, serviceReuseTimeout: serviceReuseTimeout,
+      work: workQueue, asyncQueue: asyncQueue, logger: logger)
+    view.amDeviceRef = amDeviceRef
+    notificationViewStorage = view
+    return view
   }
 
   // MARK: - TargetInfo

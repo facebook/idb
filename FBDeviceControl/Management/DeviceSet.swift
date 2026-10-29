@@ -21,6 +21,7 @@ public final class DeviceSet: TargetSet, TargetSetDelegate, CustomStringConverti
   private let amDeviceManager: AMDeviceManager
   private let restorableDeviceManager: AMRestorableDeviceManager
   private let storage: DeviceStorage<Device>
+  private let notifications = DeviceNotificationQueue()
   public let logger: any ControlCoreLogger
   public weak var delegate: (any TargetSetDelegate)?
 
@@ -35,7 +36,7 @@ public final class DeviceSet: TargetSet, TargetSetDelegate, CustomStringConverti
     try restorableDeviceManager.startListening()
   }
 
-  private init(amDeviceManager: AMDeviceManager, restorableDeviceManager: AMRestorableDeviceManager, logger: any ControlCoreLogger, delegate: (any TargetSetDelegate)?) {
+  init(amDeviceManager: AMDeviceManager, restorableDeviceManager: AMRestorableDeviceManager, logger: any ControlCoreLogger, delegate: (any TargetSetDelegate)?) {
     self.amDeviceManager = amDeviceManager
     self.restorableDeviceManager = restorableDeviceManager
     self.logger = logger
@@ -67,7 +68,7 @@ public final class DeviceSet: TargetSet, TargetSetDelegate, CustomStringConverti
   }
 
   public var allDevices: [Device] {
-    Array(storage.attached.values).sorted { $0.uniqueIdentifier < $1.uniqueIdentifier }
+    storage.attached.sorted { $0.key < $1.key }.map(\.value)
   }
 
   private func subscribeToDeviceNotifications() {
@@ -87,53 +88,55 @@ public final class DeviceSet: TargetSet, TargetSetDelegate, CustomStringConverti
   }
 
   private func amDeviceAdded(_ amDevice: MobileDevice) {
-    if let device = storage.device(forKey: amDevice.uniqueIdentifier) {
+    let identifier = amDevice.uniqueIdentifier
+    let device: Device
+    if let existing = storage.device(forKey: identifier) {
+      device = existing
       device.amDevice = amDevice
     } else {
-      let device = Device(amDevice: amDevice, restorableDevice: nil, logger: logger)
-      storage.deviceAttached(device, forKey: amDevice.uniqueIdentifier)
+      device = Device(amDevice: amDevice, restorableDevice: nil, logger: logger)
     }
-    if let device = storage.device(forKey: amDevice.uniqueIdentifier) {
-      delegate?.targetAdded(device, in: self)
-    }
+    storage.deviceAttached(device, forKey: identifier)
+    delegate?.targetAdded(device, in: self)
   }
 
-  private func amDeviceRemoved(_ amDevice: MobileDevice) {
-    guard let device = storage.device(forKey: amDevice.uniqueIdentifier) else {
-      logger.log("\(amDevice) was removed, but there's no active device for it")
+  private func amDeviceRemoved(identifier: String) {
+    guard let device = storage.device(forKey: identifier) else {
+      logger.log("AMDevice \(identifier) was removed, but there's no active device for it")
       return
     }
     device.amDevice = nil
     if device.restorableDevice != nil {
       delegate?.targetUpdated(device, in: self)
     } else {
-      storage.deviceDetached(forKey: amDevice.uniqueIdentifier)
+      storage.deviceDetached(forKey: identifier)
       delegate?.targetRemoved(device, in: self)
     }
   }
 
   private func restorableDeviceAdded(_ restorableDevice: RestorableDevice) {
-    if let device = storage.device(forKey: restorableDevice.uniqueIdentifier) {
+    let identifier = restorableDevice.uniqueIdentifier
+    let device: Device
+    if let existing = storage.device(forKey: identifier) {
+      device = existing
       device.restorableDevice = restorableDevice
     } else {
-      let device = Device(amDevice: nil, restorableDevice: restorableDevice, logger: logger)
-      storage.deviceAttached(device, forKey: restorableDevice.uniqueIdentifier)
+      device = Device(amDevice: nil, restorableDevice: restorableDevice, logger: logger)
     }
-    if let device = storage.device(forKey: restorableDevice.uniqueIdentifier) {
-      delegate?.targetAdded(device, in: self)
-    }
+    storage.deviceAttached(device, forKey: identifier)
+    delegate?.targetAdded(device, in: self)
   }
 
-  private func restorableDeviceRemoved(_ restorableDevice: RestorableDevice) {
-    guard let device = storage.device(forKey: restorableDevice.uniqueIdentifier) else {
-      logger.log("\(restorableDevice) was removed, but there's no active device for it")
+  private func restorableDeviceRemoved(identifier: String) {
+    guard let device = storage.device(forKey: identifier) else {
+      logger.log("RestorableDevice \(identifier) was removed, but there's no active device for it")
       return
     }
     device.restorableDevice = nil
     if device.amDevice != nil {
       delegate?.targetUpdated(device, in: self)
     } else {
-      storage.deviceDetached(forKey: restorableDevice.uniqueIdentifier)
+      storage.deviceDetached(forKey: identifier)
       delegate?.targetRemoved(device, in: self)
     }
   }
@@ -142,27 +145,45 @@ public final class DeviceSet: TargetSet, TargetSetDelegate, CustomStringConverti
 
   public func targetAdded(_ targetInfo: any TargetInfo, in targetSet: any TargetSet) {
     if let amDevice = targetInfo as? MobileDevice {
-      amDeviceAdded(amDevice)
+      let view = amDevice.notificationView()
+      notifications.enqueue { [self] in amDeviceAdded(view) }
     } else if let restorableDevice = targetInfo as? RestorableDevice {
-      restorableDeviceAdded(restorableDevice)
+      let view = restorableDevice.notificationView()
+      notifications.enqueue { [self] in restorableDeviceAdded(view) }
     } else {
       logger.log("Ignoring \(targetInfo) as it is not a valid target type")
     }
   }
 
   public func targetRemoved(_ targetInfo: any TargetInfo, in targetSet: any TargetSet) {
-    if let amDevice = targetInfo as? MobileDevice {
-      amDeviceRemoved(amDevice)
-    } else if let restorableDevice = targetInfo as? RestorableDevice {
-      restorableDeviceRemoved(restorableDevice)
+    if targetInfo is MobileDevice {
+      let identifier = targetInfo.uniqueIdentifier
+      notifications.enqueue { [self] in amDeviceRemoved(identifier: identifier) }
+    } else if targetInfo is RestorableDevice {
+      let identifier = targetInfo.uniqueIdentifier
+      notifications.enqueue { [self] in restorableDeviceRemoved(identifier: identifier) }
     } else {
       logger.log("Ignoring \(targetInfo) as it is not a valid target type")
     }
   }
 
   public func targetUpdated(_ targetInfo: any TargetInfo, in targetSet: any TargetSet) {
-    guard let device = storage.device(forKey: targetInfo.uniqueIdentifier) else {
+    let view: any TargetInfo
+    if let amDevice = targetInfo as? MobileDevice {
+      view = amDevice.notificationView()
+    } else if let restorableDevice = targetInfo as? RestorableDevice {
+      view = restorableDevice.notificationView()
+    } else {
       assertionFailure("No existing device to update for \(targetInfo)")
+      return
+    }
+    notifications.enqueue { [self] in processTargetUpdated(view) }
+  }
+
+  private func processTargetUpdated(_ targetInfo: any TargetInfo) {
+    let identifier = targetInfo.uniqueIdentifier
+    guard let device = storage.device(forKey: identifier) else {
+      assertionFailure("No existing device to update for \(identifier)")
       return
     }
     if let amDevice = targetInfo as? MobileDevice {
@@ -170,7 +191,7 @@ public final class DeviceSet: TargetSet, TargetSetDelegate, CustomStringConverti
     } else if let restorableDevice = targetInfo as? RestorableDevice {
       device.restorableDevice = restorableDevice
     } else {
-      assertionFailure("No existing device to update for \(targetInfo)")
+      assertionFailure("No existing device to update for \(identifier)")
       return
     }
     delegate?.targetUpdated(device, in: self)
