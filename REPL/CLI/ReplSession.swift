@@ -29,6 +29,20 @@ struct ReplSessionConfig {
   var mode: ReplSessionMode = .interactive
 }
 
+/// What compiling a submission needs, resolved once the companion has reported the
+/// target's device type and OS version: the toolchain, the triple floored at the runtime
+/// version, the SDK, the extra compiler and linker arguments, and the interfaces the
+/// companion generated.
+struct ReplCompileEnvironment {
+  var toolchain: String
+  var targetTriple: String
+  var sdkPath: String
+  var compilerArguments: [String]
+  var linkerArguments: [String]
+  var interfaceSearchPaths: [String]
+  var autoImportModules: [String]
+}
+
 /// The outcome of executing one block of code: the output the target returned (already
 /// prefixed `Result:` or `Exception:`), the next run index the companion reported
 /// (negative once the session has ended), and the filenames of any artifacts captured
@@ -65,13 +79,7 @@ final class ReplSession {
   /// failures alike); reported on the `session_end` event.
   private var runsExecuted = 0
   private let connection: ReplConnection
-  private let toolchain: String
-  private let targetTriple: String
-  private let sdkPath: String
-  private let compilerArguments: [String]
-  private let linkerArguments: [String]
-  private let interfaceSearchPaths: [String]
-  private let autoImportModules: [String]
+  private let compileEnvironment: ReplCompileEnvironment
   private let reportWriter: ReplReportWriter?
 
   private init(
@@ -84,13 +92,7 @@ final class ReplSession {
     sessionID: String,
     freshLaunch: Bool,
     nextRunIndex: Int,
-    toolchain: String,
-    targetTriple: String,
-    sdkPath: String,
-    compilerArguments: [String],
-    linkerArguments: [String],
-    interfaceSearchPaths: [String],
-    autoImportModules: [String],
+    compileEnvironment: ReplCompileEnvironment,
     reportWriter: ReplReportWriter?
   ) {
     self.config = config
@@ -102,13 +104,7 @@ final class ReplSession {
     self.sessionID = sessionID
     self.freshLaunch = freshLaunch
     self.nextRunIndex = nextRunIndex
-    self.toolchain = toolchain
-    self.targetTriple = targetTriple
-    self.sdkPath = sdkPath
-    self.compilerArguments = compilerArguments
-    self.linkerArguments = linkerArguments
-    self.interfaceSearchPaths = interfaceSearchPaths
-    self.autoImportModules = autoImportModules
+    self.compileEnvironment = compileEnvironment
     self.reportWriter = reportWriter
   }
 
@@ -134,21 +130,15 @@ final class ReplSession {
     reporter.addMetadata(sessionMetadata)
 
     let sessionStart = Date()
-    let toolchain: String
     let connection: ReplConnection
     let deviceType: String
     let osVersion: String
     let readyRunIndex: UInt32
     let sessionID: String
-    let autoImportModules: [String]
-    let interfaceSearchPaths: [String]
-    let sdkPath: String
-    let targetTriple: String
-    let compilerArguments: [String]
-    let linkerArguments: [String]
+    let compileEnvironment: ReplCompileEnvironment
     var resolvedCompanion: ResolvedCompanion?
     do {
-      toolchain = try resolveToolchainPath(explicit: config.toolchainPath)
+      let toolchain = try resolveToolchainPath(explicit: config.toolchainPath)
 
       let companion = try await resolveCompanion(config: config)
       resolvedCompanion = companion
@@ -212,16 +202,18 @@ final class ReplSession {
           FileHandle.standardError.write(Data("  \(interface.moduleName)\n".utf8))
         }
       }
-      autoImportModules = modules
-      interfaceSearchPaths = interfaceDirectory.map { [$0] } ?? []
 
       // Deployment target is floored at the runtime OS version (see `resolveTargetTriple`).
       let platform = try Platform(deviceType: deviceType)
-      sdkPath = try resolveSDKPath(platform: platform)
-      targetTriple = try resolveTargetTriple(platform: platform, runtimeOSVersion: osVersion)
-      compilerArguments = try resolveCompilerArguments(platform: platform)
-      linkerArguments = try resolveLinkerArguments(platform: platform, runtimeOSVersion: osVersion)
-      FileHandle.standardError.write(Data("idb-repl: compiling injected code for \(targetTriple)\n".utf8))
+      compileEnvironment = ReplCompileEnvironment(
+        toolchain: toolchain,
+        targetTriple: try resolveTargetTriple(platform: platform, runtimeOSVersion: osVersion),
+        sdkPath: try resolveSDKPath(platform: platform),
+        compilerArguments: try resolveCompilerArguments(platform: platform),
+        linkerArguments: try resolveLinkerArguments(platform: platform, runtimeOSVersion: osVersion),
+        interfaceSearchPaths: interfaceDirectory.map { [$0] } ?? [],
+        autoImportModules: modules)
+      FileHandle.standardError.write(Data("idb-repl: compiling injected code for \(compileEnvironment.targetTriple)\n".utf8))
     } catch {
       let reportedError =
         resolvedCompanion.map {
@@ -265,13 +257,7 @@ final class ReplSession {
       sessionID: sessionID,
       freshLaunch: freshLaunch,
       nextRunIndex: Int(readyRunIndex),
-      toolchain: toolchain,
-      targetTriple: targetTriple,
-      sdkPath: sdkPath,
-      compilerArguments: compilerArguments,
-      linkerArguments: linkerArguments,
-      interfaceSearchPaths: interfaceSearchPaths,
-      autoImportModules: autoImportModules,
+      compileEnvironment: compileEnvironment,
       reportWriter: reportWriter)
   }
 
@@ -287,13 +273,13 @@ final class ReplSession {
     var stage = ReplRunStage.compile
     do {
       let parameters = ReplCompileParameters(
-        targetTriple: targetTriple,
-        sdkPath: sdkPath,
-        toolchainPath: toolchain,
-        compilerArguments: compilerArguments,
-        interfaceSearchPaths: interfaceSearchPaths,
-        autoImportModules: autoImportModules,
-        linkerArguments: linkerArguments)
+        targetTriple: compileEnvironment.targetTriple,
+        sdkPath: compileEnvironment.sdkPath,
+        toolchainPath: compileEnvironment.toolchain,
+        compilerArguments: compileEnvironment.compilerArguments,
+        interfaceSearchPaths: compileEnvironment.interfaceSearchPaths,
+        autoImportModules: compileEnvironment.autoImportModules,
+        linkerArguments: compileEnvironment.linkerArguments)
       let dylib: Data
       let symbol: String
       switch try ReplCompiler.compile(userCode: code, index: index, parameters: parameters, workingDirectory: sessionDirectory.path) {
