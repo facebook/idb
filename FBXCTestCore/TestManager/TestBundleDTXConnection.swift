@@ -41,6 +41,7 @@ import ObjectiveC
 
 @objc private protocol XCTestManagerDaemonConnectionMessaging {
   @objc(_IDE_initiateSessionWithIdentifier:forClient:atPath:protocolVersion:) func initiateSession(identifier: NSUUID, client: NSString, path: NSString, protocolVersion: NSNumber) -> AnyObject
+  @objc(_IDE_initiateSessionWithIdentifier:capabilities:) func initiateSession(identifier: NSUUID, capabilities: AnyObject) -> AnyObject
 }
 
 @objc private protocol DTXRemoteInvocationReceiptCompletion {
@@ -201,23 +202,37 @@ final class TestBundleDTXConnection: NSObject {
     let remoteProxy = unsafeBitCast(proxyChannel.remoteObjectProxy(), to: XCTestManagerDaemonConnectionMessaging.self)
 
     logger.log("Starting test session with ID \(context.sessionIdentifier.uuidString)")
-    let receipt = unsafeBitCast(
-      remoteProxy.initiateSession(
+    let sessionStartMethod: String
+    let request: AnyObject
+    // iOS 27 runtimes, which need Xcode 27, only start a test session requested with capabilities.
+    if XcodeConfiguration.xcodeVersion.majorVersion >= 27 {
+      let capabilities: AnyObject
+      do {
+        capabilities = try TestConfiguration.ideCapabilities()
+      } catch {
+        proxyChannel.cancel()
+        delegate.testBundleConnectionDidStartSessionWithError(error)
+        return
+      }
+      sessionStartMethod = "_IDE_initiateSessionWithIdentifier:capabilities:"
+      request = remoteProxy.initiateSession(identifier: context.sessionIdentifier as NSUUID, capabilities: capabilities)
+    } else {
+      sessionStartMethod = "_IDE_initiateSessionWithIdentifier:forClient:atPath:protocolVersion:"
+      request = remoteProxy.initiateSession(
         identifier: context.sessionIdentifier as NSUUID,
         client: Self.clientProcessUniqueIdentifier as NSString,
         path: Self.clientProcessDisplayPath as NSString,
-        protocolVersion: NSNumber(value: protocolVersion)),
-      to: DTXRemoteInvocationReceiptCompletion.self)
-
-    let sessionStartMethod = "_IDE_initiateSessionWithIdentifier:forClient:atPath:protocolVersion:"
-    receipt.handleCompletion { [self] version, error in
+        protocolVersion: NSNumber(value: protocolVersion))
+    }
+    let receipt = unsafeBitCast(request, to: DTXRemoteInvocationReceiptCompletion.self)
+    receipt.handleCompletion { [self] result, error in
       proxyChannel.cancel()
       if let error {
         logger.log("testmanagerd did \(sessionStartMethod) failed: \(error)")
         delegate.testBundleConnectionDidStartSessionWithError(error)
         return
       }
-      logger.log("testmanagerd handled session request using protocol version requested=\(protocolVersion) received=\((version as? NSNumber)?.intValue ?? 0)")
+      logger.log("testmanagerd handled \(sessionStartMethod) with \(result.map { String(describing: $0) } ?? "nil")")
       delegate.testBundleConnectionDidStartSessionWithError(nil)
     }
   }

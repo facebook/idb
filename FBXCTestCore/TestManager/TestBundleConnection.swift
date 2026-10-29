@@ -180,7 +180,7 @@ final class TestBundleConnection {
         try await events.proxyChannelOpened.wait(timeout: ideInterfaceReadyTimeout, waitingFor: "XCTestManager_IDEInterface to be ready")
       }
       group.addTask {
-        try await events.sessionStarted.wait(timeout: daemonSessionReadyTimeout, waitingFor: "_IDE_initiateSessionWithIdentifier:forClient:atPath:protocolVersion: to be resolved")
+        try await events.sessionStarted.wait(timeout: daemonSessionReadyTimeout, waitingFor: "testmanagerd to start the test session")
       }
       try await group.waitForAll()
     }
