@@ -7,6 +7,7 @@
 
 @testable import CompanionLib
 @preconcurrency import FBControlCore
+@testable import FBSimulatorCodeInjection
 import FBVideoCore
 import Foundation
 import GRPCCore
@@ -201,7 +202,7 @@ final class RecordRequestTranslationTests: XCTestCase {
         $0.avgBitrate = 1_000_000
         $0.keyFrameRate = 2
       })
-    guard case let .applied(applied) = RecordRequestTranslation.appliedResponse(options).output else {
+    guard case let .applied(applied) = RecordRequestTranslation.appliedResponse(options, audio: false).output else {
       return XCTFail("the echo must be an Applied, not a payload")
     }
     XCTAssertEqual(applied.fps, 15)
@@ -212,7 +213,7 @@ final class RecordRequestTranslationTests: XCTestCase {
 
   func testTheEchoReportsTheDefaultsThatFilledTheGaps() throws {
     let options = try XCTUnwrap(try options { $0.scaleFactor = 0.5 })
-    guard case let .applied(applied) = RecordRequestTranslation.appliedResponse(options).output else {
+    guard case let .applied(applied) = RecordRequestTranslation.appliedResponse(options, audio: false).output else {
       return XCTFail("the echo must be an Applied, not a payload")
     }
     XCTAssertEqual(applied.fps, 30)
@@ -221,7 +222,7 @@ final class RecordRequestTranslationTests: XCTestCase {
     XCTAssertEqual(applied.avgBitrate, 0)
     XCTAssertEqual(
       RecordRequestTranslation.appliedResponse(
-        VideoEncodeOptions(framesPerSecond: 15, rateControl: nil, scaleFactor: nil, keyFrameRate: nil)
+        VideoEncodeOptions(framesPerSecond: 15, rateControl: nil, scaleFactor: nil, keyFrameRate: nil), audio: false
       ).applied.scaleFactor, 1)
   }
 
@@ -230,15 +231,72 @@ final class RecordRequestTranslationTests: XCTestCase {
   /// needs to tell it apart from.
   func testEachRateControlEchoesInItsOwnField() throws {
     let bitrate = try XCTUnwrap(try options { $0.avgBitrate = 800_000 })
-    XCTAssertEqual(RecordRequestTranslation.appliedResponse(bitrate).applied.avgBitrate, 800_000)
-    XCTAssertEqual(RecordRequestTranslation.appliedResponse(bitrate).applied.compressionQuality, 0)
+    XCTAssertEqual(RecordRequestTranslation.appliedResponse(bitrate, audio: false).applied.avgBitrate, 800_000)
+    XCTAssertEqual(RecordRequestTranslation.appliedResponse(bitrate, audio: false).applied.compressionQuality, 0)
 
     let quality = try XCTUnwrap(try options { $0.compressionQuality = 0.75 })
-    XCTAssertEqual(RecordRequestTranslation.appliedResponse(quality).applied.compressionQuality, 0.75)
-    XCTAssertEqual(RecordRequestTranslation.appliedResponse(quality).applied.avgBitrate, 0)
+    XCTAssertEqual(RecordRequestTranslation.appliedResponse(quality, audio: false).applied.compressionQuality, 0.75)
+    XCTAssertEqual(RecordRequestTranslation.appliedResponse(quality, audio: false).applied.avgBitrate, 0)
 
     let automatic = try XCTUnwrap(try options { $0.fps = 15 })
-    XCTAssertEqual(RecordRequestTranslation.appliedResponse(automatic).applied.avgBitrate, 0)
-    XCTAssertEqual(RecordRequestTranslation.appliedResponse(automatic).applied.compressionQuality, 0)
+    XCTAssertEqual(RecordRequestTranslation.appliedResponse(automatic, audio: false).applied.avgBitrate, 0)
+    XCTAssertEqual(RecordRequestTranslation.appliedResponse(automatic, audio: false).applied.compressionQuality, 0)
+  }
+
+  // MARK: - Audio
+
+  func testARequestForAudioAloneIsEchoedAtTheDefaultsItRecordsAt() {
+    let applied = RecordRequestTranslation.appliedResponse(nil, audio: true).applied
+    XCTAssertTrue(applied.audio)
+    XCTAssertEqual(applied.fps, 30)
+    XCTAssertEqual(applied.scaleFactor, 1)
+    XCTAssertEqual(applied.keyFrameRate, 4)
+    XCTAssertFalse(RecordRequestTranslation.appliedResponse(nil, audio: false).applied.audio)
+  }
+
+  func testTheUncutAudioIsKeptBesideTheRecording() {
+    XCTAssertEqual(RecordRequestTranslation.audioPath(besideRecordingAt: "/tmp/run/screen.mp4"), "/tmp/run/screen.wav")
+    XCTAssertEqual(RecordRequestTranslation.audioPath(besideRecordingAt: "/tmp/run/screen"), "/tmp/run/screen.wav")
+    XCTAssertEqual(RecordRequestTranslation.audioPath(besideRecordingAt: "/tmp/run.d/screen.mov"), "/tmp/run.d/screen.wav")
+  }
+
+  func testTheAudioResponseSaysWhatWasCapturedAndWhereItSits() {
+    let captured = CapturedAudio(
+      path: "/tmp/run/screen.wav", sampleRate: 48_000, frames: 96_000, startHostTime: 7,
+      processes: [
+        AudioCaptureProcess(
+          processIdentifier: 41, name: "Player", frames: 96_000, droppedFrames: 12, unmixedFrames: 0, realignments: 1),
+        AudioCaptureProcess(
+          processIdentifier: 42, name: "Crashed", frames: 480, droppedFrames: nil, unmixedFrames: 64, realignments: 0),
+      ],
+      failures: ["Recorder: no space left"])
+
+    let kept = RecordRequestTranslation.audioResponse(
+      captured, placement: AudioTrackPlacement(offset: -0.5, frames: 72_000), keptAt: "/tmp/run/screen.wav")
+    let streamed = RecordRequestTranslation.audioResponse(captured, placement: nil, keptAt: nil)
+
+    guard case let .audio(audio) = kept.output else {
+      return XCTFail("the description must be an Audio, not a payload")
+    }
+    XCTAssertEqual(audio.offset, -0.5)
+    XCTAssertEqual(audio.frames, 72_000)
+    XCTAssertEqual(audio.sampleRate, 48_000)
+    XCTAssertEqual(audio.wavFilePath, "/tmp/run/screen.wav")
+    XCTAssertEqual(audio.failures, ["Recorder: no space left"])
+    XCTAssertEqual(audio.processes.map(\.pid), [41, 42])
+    // A process that exited before it could say how much it dropped is reported as unknown, not as none.
+    XCTAssertEqual(audio.processes.map(\.droppedFrames), [12, -1])
+    XCTAssertEqual(audio.processes.map(\.unmixedFrames), [0, 64])
+    XCTAssertEqual(audio.processes.map(\.realignments), [1, 0])
+    XCTAssertEqual(streamed.audio.wavFilePath, "")
+    XCTAssertEqual(streamed.audio.frames, 0)
+  }
+
+  func testAnAudioCaptureFailureMapsToTheCodeThatTellsTheCallerWhatToDo() {
+    XCTAssertEqual(RecordRequestTranslation.rpcError(for: .alreadyRunning(udid: "A")).code, .failedPrecondition)
+    XCTAssertEqual(RecordRequestTranslation.rpcError(for: .unsupportedPlatform(udid: "A")).code, .failedPrecondition)
+    XCTAssertEqual(
+      RecordRequestTranslation.rpcError(for: .socketUnavailable(path: "/tmp/s", reason: "denied")).code, .internalError)
+    XCTAssertEqual(RecordRequestTranslation.rpcError(for: .corruptCapture(path: "/tmp/c")).code, .dataLoss)
   }
 }

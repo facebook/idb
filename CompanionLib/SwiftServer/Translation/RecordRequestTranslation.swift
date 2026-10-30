@@ -6,6 +6,7 @@
  */
 
 import FBControlCore
+import FBSimulatorCodeInjection
 import FBVideoCore
 import Foundation
 import GRPCCore
@@ -100,12 +101,15 @@ enum RecordRequestTranslation {
     }
   }
 
-  /// Echoes the resolved options (defaults filled in). No scaling reports as 1. Rate control is reported
-  /// in the field the request chose; an automatic rate leaves both 0.
-  static func appliedResponse(_ options: VideoEncodeOptions) -> Idb_RecordResponse {
-    Idb_RecordResponse.with {
+  /// Echoes the resolved options (defaults filled in), and whether audio is being recorded. A request
+  /// that set no option records at the defaults, and is echoed as those. No scaling reports as 1. Rate
+  /// control is reported in the field the request chose; an automatic rate leaves both 0.
+  static func appliedResponse(_ options: VideoEncodeOptions?, audio: Bool) -> Idb_RecordResponse {
+    let options = options ?? VideoEncodeOptions(framesPerSecond: nil, rateControl: nil, scaleFactor: nil, keyFrameRate: nil)
+    return Idb_RecordResponse.with {
       $0.output = .applied(
         .with {
+          $0.audio = audio
           $0.fps = UInt64(options.framesPerSecond ?? defaultFramesPerSecond)
           $0.scaleFactor = options.scaleFactor ?? 1
           $0.keyFrameRate = options.keyFrameRate
@@ -119,5 +123,51 @@ enum RecordRequestTranslation {
           }
         })
     }
+  }
+
+  /// Where the uncut audio of a recording saved to `filePath` is kept: beside it, as a WAV.
+  static func audioPath(besideRecordingAt filePath: String) -> String {
+    let stem = (filePath as NSString).pathExtension.isEmpty ? filePath : (filePath as NSString).deletingPathExtension
+    return (stem as NSString).appendingPathExtension("wav") ?? (stem + ".wav")
+  }
+
+  /// Describes a recording's audio: what was captured, where it sits in the recording, and the WAV kept
+  /// beside it, if one was.
+  static func audioResponse(
+    _ captured: CapturedAudio, placement: AudioTrackPlacement?, keptAt wavPath: String?
+  ) -> Idb_RecordResponse {
+    Idb_RecordResponse.with {
+      $0.output = .audio(
+        .with {
+          $0.offset = placement?.offset ?? 0
+          $0.frames = UInt64(placement?.frames ?? 0)
+          $0.sampleRate = captured.sampleRate
+          $0.wavFilePath = wavPath ?? ""
+          $0.failures = captured.failures
+          $0.processes = captured.processes.map { process in
+            .with {
+              $0.pid = process.processIdentifier
+              $0.name = process.name
+              $0.frames = UInt64(process.frames)
+              $0.droppedFrames = process.droppedFrames.map { Int64(clamping: $0) } ?? -1
+              $0.unmixedFrames = UInt64(process.unmixedFrames)
+              $0.realignments = UInt64(process.realignments)
+            }
+          }
+        })
+    }
+  }
+
+  static func rpcError(for error: AudioCaptureError) -> RPCError {
+    let code: RPCError.Code
+    switch error {
+    case .unsupportedPlatform, .alreadyRunning, .mixTooLong:
+      code = .failedPrecondition
+    case .socketUnavailable, .mixUnwritable:
+      code = .internalError
+    case .corruptCapture:
+      code = .dataLoss
+    }
+    return RPCError(code: code, message: error.localizedDescription)
   }
 }

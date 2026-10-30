@@ -7,6 +7,8 @@
 
 import FBArtifactStaging
 import FBControlCore
+import FBSimulatorCodeInjection
+import FBSimulatorControl
 import FBVideoCore
 import Foundation
 import GRPCCore
@@ -49,16 +51,25 @@ struct RecordMethodHandler {
       : start.filePath
 
     let videoRecording = target.videoRecording
-    let recording: any VideoRecording
-    if let encodeOptions = try RecordRequestTranslation.encodeOptions(from: start) {
+    let encodeOptions = try RecordRequestTranslation.encodeOptions(from: start)
+    if encodeOptions != nil {
       try RecordRequestTranslation.requireHonoredConfiguration(videoRecording, describing: "\(target)")
+    }
+    // Started first, so the audio covers the recording's first frame.
+    let capture = start.audio ? try await startAudioCapture(for: videoRecording) : nil
+    let recording: any VideoRecording
+    if let encodeOptions {
       recording = try await videoRecording.start(
         toFile: filePath,
         configuration: RecordRequestTranslation.configuration(for: encodeOptions))
+    } else {
+      recording = try await videoRecording.start(toFile: filePath)
+    }
+    if encodeOptions != nil || start.audio {
       do {
         // Ahead of any payload, so a client reading the stream in order learns what it is about to
         // receive before it receives any of it.
-        try await responseStream.send(RecordRequestTranslation.appliedResponse(encodeOptions))
+        try await responseStream.send(RecordRequestTranslation.appliedResponse(encodeOptions, audio: start.audio))
       } catch {
         // The recording is already running and this is the last thing that will reach the client, so
         // stop it rather than leaving the encoder and its file handle held for the life of the
@@ -66,8 +77,6 @@ struct RecordMethodHandler {
         _ = try? await recording.stop()
         throw error
       }
-    } else {
-      recording = try await videoRecording.start(toFile: filePath)
     }
 
     _ = try await requestStream.requiredNext()
@@ -76,14 +85,68 @@ struct RecordMethodHandler {
       recording,
       fallbackPath: filePath,
       logger: targetLogger)
+    var audioError: (any Error)?
+    if let capture, finalizeError == nil {
+      let keepingAudio = !start.filePath.isEmpty
+      do {
+        let response = try await Self.addAudio(
+          from: capture, to: recording,
+          mixingTo: RecordRequestTranslation.audioPath(besideRecordingAt: outputURL.path), keepingMix: keepingAudio,
+          logger: targetLogger)
+        try await responseStream.send(response)
+      } catch {
+        // The video is whole without its audio, so it is still delivered.
+        targetLogger.log("Recording is delivered without its audio: \(error)")
+        audioError = error
+      }
+    }
 
     try await Self.deliverThenReport(
       outputURL: outputURL,
       streamingToClient: start.filePath.isEmpty,
       localFilePath: start.filePath,
-      finalizeError: finalizeError,
+      finalizeError: finalizeError ?? audioError,
       responseStream: responseStream,
       logger: targetLogger)
+  }
+
+  /// Starts keeping what the simulator's apps play, for a request that asked for audio.
+  private func startAudioCapture(for commands: any VideoRecordingCommands) async throws -> AudioCaptureSession {
+    guard commands.acceptsAudio else {
+      throw RPCError(code: .unimplemented, message: "\(target) records without audio")
+    }
+    do {
+      return try await target.simulator().audioCapture.start()
+    } catch let error as AudioCaptureError {
+      throw RecordRequestTranslation.rpcError(for: error)
+    } catch let error as IDBCommandError {
+      throw RPCError(code: .failedPrecondition, message: error.localizedDescription)
+    }
+  }
+
+  /// Stops `capture`, mixes it into `mixPath` and adds it to the stopped recording as a track, and
+  /// returns the response describing the audio. The mix is deleted afterwards unless `keepingMix`.
+  static func addAudio(
+    from capture: AudioCaptureSession, to recording: any VideoRecording, mixingTo mixPath: String, keepingMix: Bool,
+    logger: any ControlCoreLogger
+  ) async throws -> Idb_RecordResponse {
+    let captured = try await capture.stop(writingMixTo: mixPath)
+    defer {
+      if !keepingMix {
+        try? FileManager.default.removeItem(atPath: mixPath)
+      }
+    }
+    var placement: AudioTrackPlacement?
+    if let path = captured.path {
+      guard captured.startHostTime != 0 else {
+        throw RPCError(code: .internalError, message: "The captured audio carries no host time to place it in the recording by")
+      }
+      placement = try await recording.addAudio(fromWAV: path, startingAtHostTime: captured.startHostTime)
+    }
+    let names = captured.processes.filter { $0.frames > 0 }.map(\.name)
+    logger.log("Recorded \(placement?.frames ?? 0) frames of audio from \(names.isEmpty ? "no process" : names.joined(separator: ", "))")
+    return RecordRequestTranslation.audioResponse(
+      captured, placement: placement, keptAt: keepingMix ? captured.path : nil)
   }
 
   /// Sends the recording, and only then reports a finalize failure.

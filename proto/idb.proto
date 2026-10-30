@@ -977,6 +977,13 @@ message RecordRequest {
     double avg_bitrate = 6;
     // Maximum seconds between forced key frames. Default 4.
     double key_frame_rate = 7;
+    // Also record what the simulator's apps play, as an AAC track in the
+    // recording. Only apps launched through idb are captured: launching
+    // arms them, and they keep nothing until a recording asks. A companion
+    // that cannot record audio for the target fails the request. One older
+    // than this field ignores it: its Applied, if sent, has `audio` false,
+    // and no Audio follows the recording.
+    bool audio = 8;
   }
   message Stop {}
   oneof control {
@@ -997,14 +1004,49 @@ message RecordResponse {
     double avg_bitrate = 3;
     double key_frame_rate = 4;
     double compression_quality = 5;
+    // True when the companion is recording audio for this request.
+    bool audio = 6;
+  }
+  // One process whose sound is in a recording's audio.
+  message AudioProcess {
+    int32 pid = 1;
+    string name = 2;
+    // Frames of its output in the audio.
+    uint64 frames = 3;
+    // Frames it played but could not keep, or -1 when it exited during the
+    // recording without saying.
+    int64 dropped_frames = 4;
+    // Frames it played at a rate other than the audio's, left out.
+    uint64 unmixed_frames = 5;
+    // Times its audio was moved back onto the host clock after its device
+    // clock drifted.
+    uint64 realignments = 6;
+  }
+  // What a recording's audio holds.
+  message Audio {
+    // Seconds from the recording's start to the first captured frame,
+    // negative when the audio began first and that much was cut.
+    double offset = 1;
+    // Frames of audio in the recording's track.
+    uint64 frames = 2;
+    double sample_rate = 3;
+    // A two-channel, 32-bit float WAV of everything captured, uncut, written
+    // beside a recording saved to the request's file_path. Empty when the
+    // recording is sent back as data, or when nothing played.
+    string wav_file_path = 4;
+    repeated AudioProcess processes = 5;
+    // What a process reported when it could not capture.
+    repeated string failures = 6;
   }
   oneof output {
     bytes log_output = 1;
     Payload payload = 2;
     // Sent once, before any payload, and only when the request set at least
-    // one encode option. A client that set one and did not receive this is
-    // talking to a companion that silently dropped it.
+    // one encode option or asked for audio. A client that set one and did
+    // not receive this is talking to a companion that silently dropped it.
     Applied applied = 3;
+    // Sent once, after a recording with audio stops and before its payload.
+    Audio audio = 4;
   }
 }
 
