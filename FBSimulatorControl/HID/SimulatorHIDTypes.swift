@@ -168,6 +168,59 @@ public enum SimulatorTrackpadPhase: Sendable, Equatable, Hashable, CaseIterable 
   }
 }
 
+/// A rotation of the Apple Watch Digital Crown: a finite, non-zero, bounded signed delta in the
+/// guest's scroll units on the crown axis, not degrees or detents. Positive scrolls forward.
+public struct SimulatorCrownRotation: Sendable {
+
+  /// The largest rotation accepted in one command, in either direction.
+  public static let maximumDelta: Double = 1800.0
+
+  /// The delta each delivered sample carries, so the guest reads a turn rather than a jump.
+  static let deltaPerStep: Double = 5.0
+
+  /// The most samples one rotation is broken into, bounding its time on the wire.
+  static let maximumSteps: Int = 256
+
+  public let delta: Double
+
+  public init(delta: Double) throws {
+    guard delta.isFinite else {
+      throw SimulatorCrownRotationError.notFinite(delta)
+    }
+    guard delta != 0 else {
+      throw SimulatorCrownRotationError.zero
+    }
+    guard abs(delta) <= Self.maximumDelta else {
+      throw SimulatorCrownRotationError.outOfRange(delta, maximum: Self.maximumDelta)
+    }
+    self.delta = delta
+  }
+
+  /// The per-sample deltas this rotation is delivered as, equal shares of `delta`.
+  var steps: [Double] {
+    let count = min(Self.maximumSteps, max(1, Int((abs(delta) / Self.deltaPerStep).rounded(.up))))
+    return Array(repeating: delta / Double(count), count: count)
+  }
+}
+
+/// Why a requested crown rotation is not one that can be sent.
+public enum SimulatorCrownRotationError: Error, LocalizedError {
+  case notFinite(Double)
+  case zero
+  case outOfRange(Double, maximum: Double)
+
+  public var errorDescription: String? {
+    switch self {
+    case let .notFinite(delta):
+      return "A crown rotation must be a finite delta, not \(delta)"
+    case .zero:
+      return "A crown rotation must be non-zero"
+    case let .outOfRange(delta, maximum):
+      return "A crown rotation of \(delta) is beyond the supported range of ±\(maximum)"
+    }
+  }
+}
+
 /// Device orientation. Raw values preserve the legacy Purple event encoding.
 public enum SimulatorHIDDeviceOrientation: Int32, Sendable, CaseIterable {
   case portrait = 1

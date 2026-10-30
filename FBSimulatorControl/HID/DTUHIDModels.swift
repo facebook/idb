@@ -101,6 +101,75 @@ struct IndigoButtonEvent: Encodable {
 }
 
 /**
+ The `dtuhidd` `ScrollPoint`: the per-event scroll delta on each axis. The Digital Crown reads `y`;
+ `x` and `z` are part of the wire struct and are sent as zero.
+ */
+struct ScrollPoint: Encodable {
+  let x: Double
+  let y: Double
+  let z: Double
+
+  static func crown(_ delta: Double) -> ScrollPoint {
+    ScrollPoint(x: 0, y: delta, z: 0)
+  }
+}
+
+/**
+ The phase of a scroll gesture, as `CoreDevice.ScrollPhase`: an `OptionSet` over `UInt16` on Apple's
+ side, of which one member is sent at a time. `mayBegin` is `128`, not the `32` the ordering would
+ suggest. Rides as a `uint64`, as the other `dtuhidd` integers do.
+ */
+enum ScrollPhase: UInt64, Encodable {
+  case undefined = 0
+  case began = 1
+  case changed = 2
+  case ended = 4
+  case cancelled = 8
+  case mayBegin = 128
+}
+
+/**
+ The inertial phase of a scroll gesture, as `CoreDevice.ScrollMomentum`: an `OptionSet` over
+ `UInt8`. Crown samples are not inertial and send `undefined`.
+ */
+enum ScrollMomentum: UInt64, Encodable {
+  case undefined = 0
+  case `continue` = 1
+  case start = 2
+  case end = 4
+  case willBegin = 8
+  case interrupted = 16
+}
+
+/**
+ Which rotary control a scroll event drives, as `CoreDevice.ScrollTarget`, whose domain is `0` and
+ `1`.
+ */
+enum ScrollTarget: UInt64, Encodable {
+  case digitalCrown = 0
+  case dial = 1
+}
+
+/**
+ The `dtuhidd` `IndigoScrollEvent` payload, sent to the scroll service: a per-event `point` delta,
+ the gesture `phase`, its `momentum` and the rotary `target` it drives. The keys are those of
+ `CoreDevice.HIDScroll.send(point:phase:momentum:target:)`.
+ */
+struct IndigoScrollEvent: Encodable {
+  let point: ScrollPoint
+  let phase: ScrollPhase
+  let momentum: ScrollMomentum
+  let target: ScrollTarget
+
+  init(point: ScrollPoint, phase: ScrollPhase, momentum: ScrollMomentum = .undefined, target: ScrollTarget) {
+    self.point = point
+    self.phase = phase
+    self.momentum = momentum
+    self.target = target
+  }
+}
+
+/**
  The `dtuhidd` `IndigoVendorDefinedEvent` payload, sent to the vendor-defined service: a HID
  `usagePage` / `usage` pair identifying the control and an opaque `data` report the guest's
  virtual-machine provider decodes (the hinge slider and orientation picker controls).
