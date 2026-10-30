@@ -50,8 +50,8 @@ struct TaskSleeper: DTUHIDSleeper {
 
 /**
  One host XPC connection to a `dtuhidd` HID service, and the drain that lets events sent on it reach the
- guest before it is torn down. Knows nothing of what the events mean: the digitizer and vendor-defined
- transports each encode their own payloads and write them here.
+ guest before it is torn down. Knows nothing of what the events mean: each transport encodes its own
+ payloads and writes them here.
 
  A class rather than an actor so `write` is synchronous: a transport assigning order-dependent state
  (a contact's start/position/end) writes before it next suspends, which a hop onto another actor
@@ -64,6 +64,7 @@ final class SimulatorDTUHIDConnection: Sendable {
   private let sleeper: any DTUHIDSleeper
   // A drain claims a snapshot of the send count; later sends remain outstanding.
   private let generations = OSAllocatedUnfairLock(initialState: (sent: 0, drained: 0))
+  private let interruptionCount = OSAllocatedUnfairLock(initialState: 0)
 
   /// Connects to the simulator's DTUHID service, confirming a live `dtuhidd` answers before the
   /// connection is handed out.
@@ -147,12 +148,21 @@ final class SimulatorDTUHIDConnection: Sendable {
     self.channel = channel
     self.serviceName = serviceName
     self.sleeper = sleeper
-    channel.activate { event in
-      // XPC reconnects on the next send, so an interruption is survivable; it is logged because
-      // anything the daemon held for this connection is gone.
-      guard case .interrupted = event else { return }
-      ControlCoreGlobalConfiguration.defaultLogger.log("dtuhidd connection (\(serviceName)) was interrupted")
+    channel.activate { [weak self] event in
+      self?.observe(event)
     }
+  }
+
+  /// How many times `dtuhidd` has dropped this connection. XPC reconnects on the next send, but
+  /// anything the daemon held for the connection, such as a gesture in progress, is gone.
+  var interruptions: Int {
+    interruptionCount.withLock { $0 }
+  }
+
+  func observe(_ event: SimulatorXPCEvent) {
+    guard case .interrupted = event else { return }
+    interruptionCount.withLock { $0 += 1 }
+    ControlCoreGlobalConfiguration.defaultLogger.log("dtuhidd connection (\(serviceName)) was interrupted")
   }
 
   /// Round-trips a barrier to establish that a `dtuhidd` is behind the connection and has activated.

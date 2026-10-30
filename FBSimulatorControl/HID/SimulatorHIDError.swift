@@ -49,6 +49,8 @@ public enum SimulatorHIDError: Error, LocalizedError {
   case vendorReportUnserializable(source: String)
   /// A touchscreen touch was attempted on a tvOS target, which has no touchscreen.
   case touchUnsupportedOnAppleTV
+  /// `dtuhidd` dropped the connection while a gesture was in progress, and with it the gesture.
+  case dtuhidGestureInterrupted
 
   public var errorDescription: String? {
     switch self {
@@ -95,6 +97,8 @@ public enum SimulatorHIDError: Error, LocalizedError {
       return "Could not serialize the vendor-defined HID report for \(source)"
     case .touchUnsupportedOnAppleTV:
       return "Touch input is not supported on tvOS targets (no touchscreen)"
+    case .dtuhidGestureInterrupted:
+      return "The dtuhidd connection was interrupted during the gesture, so the guest no longer has it"
     }
   }
 

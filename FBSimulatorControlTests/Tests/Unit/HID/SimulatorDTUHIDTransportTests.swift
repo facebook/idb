@@ -81,15 +81,15 @@ final class SimulatorDTUHIDTransportTests: XCTestCase {
 
   // MARK: - Contact-state machine
 
-  func testContactTrackerMapsDownUpToStartPositionEnd() {
+  func testContactTrackerMapsDownUpToStartPositionEnd() throws {
     var tracker = DigitizerContactTracker()
-    XCTAssertEqual(tracker.eventType(for: .down), .start)
-    XCTAssertEqual(tracker.eventType(for: .down), .position)
-    XCTAssertEqual(tracker.eventType(for: .down), .position)
-    XCTAssertEqual(tracker.eventType(for: .up), .end)
+    XCTAssertEqual(try tracker.eventType(for: .down, interruptions: 0), .start)
+    XCTAssertEqual(try tracker.eventType(for: .down, interruptions: 0), .position)
+    XCTAssertEqual(try tracker.eventType(for: .down, interruptions: 0), .position)
+    XCTAssertEqual(try tracker.eventType(for: .up, interruptions: 0), .end)
     // A subsequent gesture starts fresh.
-    XCTAssertEqual(tracker.eventType(for: .down), .start)
-    XCTAssertEqual(tracker.eventType(for: .up), .end)
+    XCTAssertEqual(try tracker.eventType(for: .down, interruptions: 0), .start)
+    XCTAssertEqual(try tracker.eventType(for: .up, interruptions: 0), .end)
   }
 
   func testDigitizerEventTypeRawValues() {

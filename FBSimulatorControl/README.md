@@ -237,6 +237,8 @@ The reverse engineering of this protocol allows `FBSimulatorControl` to expose A
 
 Newer Xcode versions introduce a second event path: a `dtuhidd` daemon inside the Simulator, which receives events as XPC dictionaries rather than reverse-engineered mach structures. From Xcode 27 the Simulator drops Indigo button and keyboard events and delivers Indigo touch unreliably (the tvOS trackpad still works), on older runtimes as well as new ones, so `FBSimulatorControl` implements HID delivery behind a pluggable transport ([`SimulatorHID`](https://github.com/facebook/idb/blob/main/FBSimulatorControl/HID/SimulatorHID.swift)). The [DTUHID transport](https://github.com/facebook/idb/blob/main/FBSimulatorControl/HID/SimulatorDigitizerHIDTransport.swift) is the default from Xcode 27 and Indigo before it; if `dtuhidd` cannot be reached the error is reported rather than falling back to Indigo. A caller that does not request a transport does not need to know which one is in use.
 
+A DTUHID gesture lives in `dtuhidd` only as long as its connection. When the daemon interrupts the connection mid-gesture, XPC reconnects on the next send but the gesture is gone, so the sample that would continue it fails with `SimulatorHIDError.dtuhidGestureInterrupted` and the next gesture begins afresh.
+
 ### `SimulatorKit.framework`
 
 This is another macOS Framework that is used in iOS Simulator management. This Framework is not installed to the System, it is bundled within Xcode. Instead, this Framework is more used to implement functionality within `Simulator.app`.

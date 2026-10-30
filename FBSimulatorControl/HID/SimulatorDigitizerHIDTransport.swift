@@ -13,19 +13,28 @@ import Foundation
 /// Tracks the per-contact phase so that a stream of Indigo `.down`/`.up` events maps onto the
 /// `dtuhidd` `start` / `position` / `end` model: the first `.down` is a `start`, subsequent `.down`s
 /// (a drag/swipe) are `position`s, and `.up` is the `end`.
+///
+/// `dtuhidd` forgets a contact when its connection is interrupted, so a `.down` that would continue a
+/// contact started under an earlier `interruptions` count throws instead of moving a contact the guest
+/// no longer has. The next `.down` starts afresh.
 struct DigitizerContactTracker {
-  private var active = false
+  /// The connection's interruption count when the contact started, while one is down.
+  private var startedAt: Int?
 
-  mutating func eventType(for direction: SimulatorHIDDirection) -> DigitizerEventType {
+  mutating func eventType(for direction: SimulatorHIDDirection, interruptions: Int) throws -> DigitizerEventType {
     switch direction {
     case .down:
-      if active {
-        return .position
+      guard let startedAt else {
+        startedAt = interruptions
+        return .start
       }
-      active = true
-      return .start
+      guard startedAt == interruptions else {
+        self.startedAt = nil
+        throw SimulatorHIDError.dtuhidGestureInterrupted
+      }
+      return .position
     case .up:
-      active = false
+      startedAt = nil
       return .end
     }
   }
@@ -97,7 +106,7 @@ actor SimulatorDigitizerHIDTransport {
         from: CGPoint(x: x, y: y), screenSize: mainScreenSize, screenScale: mainScreenScale)
     let event = IndigoDigitizerEvent(
       pointOne: DigitizerPoint(x: Double(ratio.x), y: Double(ratio.y)),
-      eventType: contact.eventType(for: direction),
+      eventType: try contact.eventType(for: direction, interruptions: connection.interruptions),
       edge: UInt64((display?.geometry.unrotatedEdge(edge) ?? edge).rawValue),
       target: display?.digitizerTarget ?? 0)
     try await send(messageType: "IndigoDigitizerEvent", payload: event)
@@ -112,7 +121,7 @@ actor SimulatorDigitizerHIDTransport {
     let event = IndigoDigitizerEvent(
       pointOne: DigitizerPoint(x: Double(r1.x), y: Double(r1.y)),
       pointTwo: DigitizerPoint(x: Double(r2.x), y: Double(r2.y)),
-      eventType: twoFingerContact.eventType(for: direction),
+      eventType: try twoFingerContact.eventType(for: direction, interruptions: connection.interruptions),
       target: display?.digitizerTarget ?? 0)
     try await send(messageType: "IndigoDigitizerEvent", payload: event)
   }
