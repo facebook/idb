@@ -337,9 +337,9 @@ func virtualConnection(_ output: AVCaptureOutput) -> ShimulatorCaptureConnection
   return connection
 }
 
-/// A preview layer's connection starts in portrait, as on a device; an output's starts at the
-/// camera's native landscape angle.
-func makeConnection(_ ports: [AVCaptureInput.Port], _ session: AVCaptureSession?, rotationAngle: CGFloat = 0) -> ShimulatorCaptureConnection {
+/// A preview layer's connection starts in portrait, as on a device; an output's is left unset, so
+/// it follows the native landscape angle of whichever camera it reads.
+func makeConnection(_ ports: [AVCaptureInput.Port], _ session: AVCaptureSession?, rotationAngle: CGFloat = -1) -> ShimulatorCaptureConnection {
   let connection = ShimulatorCaptureConnection()
   connection.virtualPorts = ports
   connection.virtualSession = session
@@ -354,7 +354,7 @@ final class MovieRecording {
 
   init(_ writer: AVAssetWriter, _ adaptor: AVAssetWriterInputPixelBufferAdaptor, _ delegate: AVCaptureFileOutputRecordingDelegate, _ url: URL, _ connection: ShimulatorCaptureConnection, _ frameSize: CGSize) {
     (self.writer, self.adaptor, self.delegate, self.url) = (writer, adaptor, delegate, url)
-    (self.frameSize, rotationAngle, mirrored) = (frameSize, connection.storedRotationAngle, connection.isVideoMirrored)
+    (self.frameSize, rotationAngle, mirrored) = (frameSize, connection.frameRotationAngle, connection.isVideoMirrored)
   }
 
   deinit {
@@ -434,7 +434,7 @@ final class VirtualCamera: NSObject {
   private func frameSize(_ connection: ShimulatorCaptureConnection) -> CGSize {
     let preset = sessionState(connection.virtualSession).map { state in synchronized(state) { state.preset } }
     let size = preset.flatMap { presetSizes[$0] } ?? nativeSize
-    let angle = connection.storedRotationAngle
+    let angle = connection.rotationAngle
     return angle == 90 || angle == 270 ? CGSize(width: size.height, height: size.width) : size
   }
 
@@ -638,7 +638,7 @@ final class VirtualCamera: NSObject {
     guard let delegate = output.sampleBufferDelegate, let queue = output.sampleBufferCallbackQueue,
       delegate.responds(to: #selector(AVCaptureVideoDataOutputSampleBufferDelegate.captureOutput(_:didOutput:from:))),
       !discardsLate || (associated(output, &Key.pending) as NSObject?) == nil,
-      let converted = shaped(frame, source, format, frameSize(connection), connection.storedRotationAngle, connection.isVideoMirrored),
+      let converted = shaped(frame, source, format, frameSize(connection), connection.frameRotationAngle, connection.isVideoMirrored),
       let description = try? CMVideoFormatDescription(imageBuffer: converted),
       let sample = try? CMSampleBuffer(
         imageBuffer: converted, formatDescription: description,
@@ -683,7 +683,7 @@ final class VirtualCamera: NSObject {
       // Only this queue sets the pending flag, as for the video data output.
       guard let connection = layer.connection as? ShimulatorCaptureConnection, Self.isActive(connection),
         (associated(layer, &Key.previewPending) as NSObject?) == nil, let (image, source) = frame(connection),
-        let shaped = shaped(image, source, kCVPixelFormatType_32BGRA, frameSize(connection), connection.storedRotationAngle, connection.isVideoMirrored)
+        let shaped = shaped(image, source, kCVPixelFormatType_32BGRA, frameSize(connection), connection.frameRotationAngle, connection.isVideoMirrored)
       else { continue }
       let ciImage = CIImage(cvPixelBuffer: shaped)
       guard let image = context.createCGImage(ciImage, from: ciImage.extent) else { continue }
@@ -822,7 +822,7 @@ final class VirtualCamera: NSObject {
           delegate.photoOutput?(output, willCapturePhotoFor: resolved)
         }
         let frame = source.held ?? source.nextFrame()
-        if let frame, let shaped = render(frame, source, kCVPixelFormatType_32BGRA, size, connection.storedRotationAngle, connection.isVideoMirrored),
+        if let frame, let shaped = render(frame, source, kCVPixelFormatType_32BGRA, size, connection.frameRotationAngle, connection.isVideoMirrored),
           let colorSpace = CGColorSpace(name: CGColorSpace.sRGB),
           let jpeg = context.jpegRepresentation(of: CIImage(cvPixelBuffer: shaped), colorSpace: colorSpace, options: [:])
         {

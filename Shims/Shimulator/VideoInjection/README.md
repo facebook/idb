@@ -119,15 +119,19 @@ The file is upright in portrait, as a phone is held, after its
 `preferredTransform`. The connection's `videoRotationAngle` (clockwise;
 `videoOrientation` is the same angle) turns every output, as a video data output
 "does output physically rotated video buffers", and a 90 or 270 angle swaps the
-frame's width and height. A preview layer's connection starts at 90; an output's
-starts at 0, the camera's native landscape frame:
+frame's width and height. A front camera is mounted the other way up, so its
+landscape angles are swapped: as on a device, an app gets the same native frame
+from the front camera at `LandscapeLeft` as from the back one at `LandscapeRight`.
+A preview layer's connection starts at 90. An output's starts at the native angle
+of the camera it reads, 0 for a back camera and 180 for a front one, and follows
+the camera until the app sets an angle:
 
-| angle | `videoOrientation` | file's top edge becomes |
-|---|---|---|
-| 0 (outputs) | `LandscapeRight` | left |
-| 90 (preview) | `Portrait` | top |
-| 180 | `LandscapeLeft` | right |
-| 270 | `PortraitUpsideDown` | bottom |
+| angle | `videoOrientation` | file's top edge becomes (back) | (front) |
+|---|---|---|---|
+| 0 (back outputs) | `LandscapeRight` | left | right |
+| 90 (preview) | `Portrait` | top | top |
+| 180 (front outputs) | `LandscapeLeft` | right | left |
+| 270 | `PortraitUpsideDown` | bottom | bottom |
 
 ## Validating by hand
 

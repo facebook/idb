@@ -303,6 +303,7 @@ static const CGFloat OrientationAngles[] = {0, 90, 270, 0, 180};
   AdoptAVFoundationInternals(self, [AVCaptureConnection class]);
   _storedEnabled = YES;
   _storedAutomaticallyAdjustsMirroring = YES;
+  _storedRotationAngle = -1;
   return self;
 }
 
@@ -315,6 +316,19 @@ static const CGFloat OrientationAngles[] = {0, 90, 270, 0, 180};
     }
   }
   return NO;
+}
+
+- (CGFloat)rotationAngle
+{
+  if (self.storedRotationAngle >= 0) {
+    return self.storedRotationAngle;
+  }
+  return self.isFrontCamera ? 180 : 0;
+}
+
+- (CGFloat)frameRotationAngle
+{
+  return self.isFrontCamera ? fmod(540 - self.rotationAngle, 360) : self.rotationAngle;
 }
 
 - (NSArray<AVCaptureInputPort *> *)inputPorts { return self.virtualPorts ?: @[]; }
@@ -335,7 +349,7 @@ static const CGFloat OrientationAngles[] = {0, 90, 270, 0, 180};
 {
   for (AVCaptureVideoOrientation orientation = AVCaptureVideoOrientationPortrait;
        orientation <= AVCaptureVideoOrientationLandscapeLeft; orientation++) {
-    if (OrientationAngles[orientation] == self.storedRotationAngle) {
+    if (OrientationAngles[orientation] == self.rotationAngle) {
       return orientation;
     }
   }
@@ -384,7 +398,7 @@ static const CGFloat OrientationAngles[] = {0, 90, 270, 0, 180};
 
 - (BOOL)isVideoRotationAngleSupported:(CGFloat)angle { return fmod(angle, 90) == 0; }
 
-- (CGFloat)videoRotationAngle { return self.storedRotationAngle; }
+- (CGFloat)videoRotationAngle { return self.rotationAngle; }
 
 - (void)setVideoRotationAngle:(CGFloat)angle
 {

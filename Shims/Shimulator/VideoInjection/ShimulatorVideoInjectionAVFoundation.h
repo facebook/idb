@@ -47,8 +47,18 @@ NS_ASSUME_NONNULL_BEGIN
 @property (atomic, strong) NSArray<AVCaptureInputPort *> *virtualPorts;
 @property (nullable, nonatomic, weak) AVCaptureOutput *virtualOutput;
 @property (nullable, nonatomic, weak) AVCaptureSession *virtualSession;
-/** Clockwise, and always one of 0, 90, 180 or 270. */
+/** Clockwise, and one of 0, 90, 180 or 270 once set; negative until then. */
 @property (nonatomic) CGFloat storedRotationAngle;
+/**
+ The angle set, or until then the native landscape angle of the camera the connection reads: 0 for a back camera and
+ 180 (`LandscapeLeft`) for a front one, which is mounted the other way up.
+ */
+@property (nonatomic, readonly) CGFloat rotationAngle;
+/**
+ The angle the frames are turned by. A front camera's landscape angles are swapped, so an app gets the same native
+ frame from the front camera at `LandscapeLeft` as from the back one at `LandscapeRight`, as on a device.
+ */
+@property (nonatomic, readonly) CGFloat frameRotationAngle;
 @property (nonatomic) BOOL storedEnabled;
 @property (nonatomic) BOOL storedMirrored;
 /** YES by default: a front camera's preview is then mirrored and its outputs are not, as on a device. */
