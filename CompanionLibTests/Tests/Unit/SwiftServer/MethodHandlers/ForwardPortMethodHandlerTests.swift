@@ -52,7 +52,11 @@ struct ForwardPortMethodHandlerTests {
     #expect(try ForwardPortMethodHandler.parseAllowedPorts(nil) == [])
     #expect(try ForwardPortMethodHandler.parseAllowedPorts("") == [])
     #expect(try ForwardPortMethodHandler.parseAllowedPorts("8099, 8100") == [8099, 8100])
-    for value in ["0", "65536", "8099,", "no"] {
+    for value in [
+      "0", "65536", "8099,", "no", "*", " \t* \t", "*,8099", "8099,*", "*,",
+      "0-65535", "1-65536", "8100-8000", "1--2", "1-2-3", "-1", "1-",
+      "8000-8100,", "8099,1-65536", "1-2,no", "*,1-65535", "1-65535,*",
+    ] {
       #expect(throws: RPCError.self) { try ForwardPortMethodHandler.parseAllowedPorts(value) }
     }
     for port in [UInt32(0), UInt32(65536), UInt32.max] {
@@ -73,8 +77,63 @@ struct ForwardPortMethodHandlerTests {
   }
 
   @Test
+  func fullRangePolicyAllowsEveryValidPort() throws {
+    for policy in ["1-65535", " 1 - 65535 "] {
+      let allowedPorts = try ForwardPortMethodHandler.parseAllowedPorts(policy)
+      #expect(allowedPorts.count == Int(UInt16.max))
+      #expect(!allowedPorts.contains(0))
+      #expect((UInt16(1)...UInt16.max).allSatisfy { allowedPorts.contains($0) })
+    }
+  }
+
+  @Test
+  func rangePolicyCombinesInclusiveRangesAndIndividualPorts() throws {
+    for policy in [
+      "8000-8002,8002-8004,8001,9000-9000,65534-65535,8000-8002",
+      "65534-65535,9000-9000,8002-8004,8000-8002,8001",
+      " 8000 - 8002, 8002 - 8004, 8001, 9000 - 9000, 65534 - 65535 ",
+    ] {
+      #expect(try ForwardPortMethodHandler.parseAllowedPorts(policy) == [8000, 8001, 8002, 8003, 8004, 9000, 65534, 65535])
+    }
+  }
+
+  @Test
+  func fullRangePolicyValidatesOpeningBeforeConnecting() async throws {
+    let allowedPorts = try ForwardPortMethodHandler.parseAllowedPorts("1-65535")
+    for requestedPort in [UInt32(1), 8099, 65535] {
+      var connectionAttempts = 0
+      let port = try await ForwardPortMethodHandler.withAllowedPort(
+        from: Self.openingRequest(port: requestedPort), allowedPorts: allowedPorts
+      ) { port in
+        connectionAttempts += 1
+        return port
+      }
+      #expect(UInt32(port) == requestedPort)
+      #expect(connectionAttempts == 1)
+    }
+    for requestedPort in [UInt32(0), 65536, UInt32.max] {
+      var connectionAttempts = 0
+      let error = await #expect(throws: RPCError.self) {
+        try await ForwardPortMethodHandler.withAllowedPort(
+          from: Self.openingRequest(port: requestedPort), allowedPorts: allowedPorts
+        ) { _ in
+          connectionAttempts += 1
+        }
+      }
+      #expect(error?.code == .invalidArgument)
+      #expect(connectionAttempts == 0)
+    }
+    for request in [Idb_ForwardPortRequest(), .with { $0.data = Data([1]) }] {
+      let error = #expect(throws: RPCError.self) {
+        try ForwardPortMethodHandler.openingPort(request, allowedPorts: allowedPorts)
+      }
+      #expect(error?.code == .invalidArgument)
+    }
+  }
+
+  @Test
   func deniedPoliciesNeverAttemptADeviceConnection() async throws {
-    for policy: String? in [nil, "", "8100"] {
+    for policy: String? in [nil, "", "8100", "8090-8098,8100-8102"] {
       let allowedPorts = try ForwardPortMethodHandler.parseAllowedPorts(policy)
       var connectionAttempts = 0
       let error = await #expect(throws: RPCError.self) {
@@ -91,16 +150,20 @@ struct ForwardPortMethodHandlerTests {
 
   @Test
   func explicitPolicyPassesTheRequestedPortToTheConnection() async throws {
-    let allowedPorts = try ForwardPortMethodHandler.parseAllowedPorts("8099,8100")
-    var connectionAttempts = 0
-    let port = try await ForwardPortMethodHandler.withAllowedPort(
-      from: Self.openingRequest(port: 8099), allowedPorts: allowedPorts
-    ) { port in
-      connectionAttempts += 1
-      return port
+    for policy in ["8099,8100", "8099-8100"] {
+      let allowedPorts = try ForwardPortMethodHandler.parseAllowedPorts(policy)
+      for requestedPort in [UInt32(8099), 8100] {
+        var connectionAttempts = 0
+        let port = try await ForwardPortMethodHandler.withAllowedPort(
+          from: Self.openingRequest(port: requestedPort), allowedPorts: allowedPorts
+        ) { port in
+          connectionAttempts += 1
+          return port
+        }
+        #expect(UInt32(port) == requestedPort)
+        #expect(connectionAttempts == 1)
+      }
     }
-    #expect(port == 8099)
-    #expect(connectionAttempts == 1)
   }
 
   private static func openingRequest(port: UInt32) -> RequestStreamReader<Idb_ForwardPortRequest> {

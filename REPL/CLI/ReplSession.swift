@@ -29,6 +29,20 @@ struct ReplSessionConfig {
   var mode: ReplSessionMode = .interactive
 }
 
+/// What compiling a submission needs, resolved once the companion has reported the
+/// target's device type and OS version: the toolchain, the triple floored at the runtime
+/// version, the SDK, the extra compiler and linker arguments, and the interfaces the
+/// companion generated.
+struct ReplCompileEnvironment {
+  var toolchain: String
+  var targetTriple: String
+  var sdkPath: String
+  var compilerArguments: [String]
+  var linkerArguments: [String]
+  var interfaceSearchPaths: [String]
+  var autoImportModules: [String]
+}
+
 /// The outcome of executing one block of code: the output the target returned (already
 /// prefixed `Result:` or `Exception:`), the next run index the companion reported
 /// (negative once the session has ended), and the filenames of any artifacts captured
@@ -37,6 +51,15 @@ struct ExecutionResult {
   var output: String
   var nextIndex: Int
   var artifactFilenames: [String]
+  /// `output` carries the reason for failures.
+  var success = true
+}
+
+/// The build an execute says the served app must be; empty strings mean no expectation.
+struct BuildExpectation {
+  var buildUUID = ""
+  var executableUUID = ""
+  var isEmpty: Bool { buildUUID.isEmpty && executableUUID.isEmpty }
 }
 
 /// A live REPL session against a companion: owns the gRPC stream and compile parameters
@@ -53,6 +76,9 @@ final class ReplSession {
   /// Whether the app was freshly launched at this session's start (app context only;
   /// false otherwise). `replay` reproduces this to start from the same state.
   let freshLaunch: Bool
+  /// Whether the companion honours an expected build UUID on an execute; an older one would load
+  /// the dylib unchecked, so a session with an expectation refuses to send to it.
+  let verifiesBuildUUID: Bool
   /// The index the next executed block will use; advanced after each completed run.
   private(set) var nextRunIndex: Int
 
@@ -65,13 +91,7 @@ final class ReplSession {
   /// failures alike); reported on the `session_end` event.
   private var runsExecuted = 0
   private let connection: ReplConnection
-  private let toolchain: String
-  private let targetTriple: String
-  private let sdkPath: String
-  private let compilerArguments: [String]
-  private let linkerArguments: [String]
-  private let interfaceSearchPaths: [String]
-  private let autoImportModules: [String]
+  private let compileEnvironment: ReplCompileEnvironment
   private let reportWriter: ReplReportWriter?
 
   private init(
@@ -83,14 +103,9 @@ final class ReplSession {
     osVersion: String,
     sessionID: String,
     freshLaunch: Bool,
+    verifiesBuildUUID: Bool,
     nextRunIndex: Int,
-    toolchain: String,
-    targetTriple: String,
-    sdkPath: String,
-    compilerArguments: [String],
-    linkerArguments: [String],
-    interfaceSearchPaths: [String],
-    autoImportModules: [String],
+    compileEnvironment: ReplCompileEnvironment,
     reportWriter: ReplReportWriter?
   ) {
     self.config = config
@@ -101,14 +116,9 @@ final class ReplSession {
     self.osVersion = osVersion
     self.sessionID = sessionID
     self.freshLaunch = freshLaunch
+    self.verifiesBuildUUID = verifiesBuildUUID
     self.nextRunIndex = nextRunIndex
-    self.toolchain = toolchain
-    self.targetTriple = targetTriple
-    self.sdkPath = sdkPath
-    self.compilerArguments = compilerArguments
-    self.linkerArguments = linkerArguments
-    self.interfaceSearchPaths = interfaceSearchPaths
-    self.autoImportModules = autoImportModules
+    self.compileEnvironment = compileEnvironment
     self.reportWriter = reportWriter
   }
 
@@ -134,21 +144,16 @@ final class ReplSession {
     reporter.addMetadata(sessionMetadata)
 
     let sessionStart = Date()
-    let toolchain: String
     let connection: ReplConnection
     let deviceType: String
     let osVersion: String
     let readyRunIndex: UInt32
     let sessionID: String
-    let autoImportModules: [String]
-    let interfaceSearchPaths: [String]
-    let sdkPath: String
-    let targetTriple: String
-    let compilerArguments: [String]
-    let linkerArguments: [String]
+    let verifiesBuildUUID: Bool
+    let compileEnvironment: ReplCompileEnvironment
     var resolvedCompanion: ResolvedCompanion?
     do {
-      toolchain = try resolveToolchainPath(explicit: config.toolchainPath)
+      let toolchain = try resolveToolchainPath(explicit: config.toolchainPath)
 
       let companion = try await resolveCompanion(config: config)
       resolvedCompanion = companion
@@ -190,6 +195,7 @@ final class ReplSession {
       osVersion = ready.osVersion
       readyRunIndex = ready.nextRunIndex
       sessionID = ready.sessionID
+      verifiesBuildUUID = ready.verifiesBuildUuid
       replSessionInfo.sharedFilesystem = ready.sharedFilesystem
       var readyMetadata = ["device_type": deviceType]
       if !sessionID.isEmpty {
@@ -212,16 +218,19 @@ final class ReplSession {
           FileHandle.standardError.write(Data("  \(interface.moduleName)\n".utf8))
         }
       }
-      autoImportModules = modules
-      interfaceSearchPaths = interfaceDirectory.map { [$0] } ?? []
 
       // Deployment target is floored at the runtime OS version (see `resolveTargetTriple`).
       let platform = try Platform(deviceType: deviceType)
-      sdkPath = try resolveSDKPath(platform: platform)
-      targetTriple = try resolveTargetTriple(platform: platform, runtimeOSVersion: osVersion)
-      compilerArguments = try resolveCompilerArguments(platform: platform)
-      linkerArguments = try resolveLinkerArguments(platform: platform, runtimeOSVersion: osVersion)
-      FileHandle.standardError.write(Data("idb-repl: compiling injected code for \(targetTriple)\n".utf8))
+      let environment = ReplCompileEnvironment(
+        toolchain: toolchain,
+        targetTriple: try resolveTargetTriple(platform: platform, runtimeOSVersion: osVersion),
+        sdkPath: try resolveSDKPath(platform: platform),
+        compilerArguments: try resolveCompilerArguments(platform: platform),
+        linkerArguments: try resolveLinkerArguments(platform: platform, runtimeOSVersion: osVersion),
+        interfaceSearchPaths: interfaceDirectory.map { [$0] } ?? [],
+        autoImportModules: modules)
+      FileHandle.standardError.write(Data("idb-repl: compiling injected code for \(environment.targetTriple)\n".utf8))
+      compileEnvironment = environment
     } catch {
       let reportedError =
         resolvedCompanion.map {
@@ -264,14 +273,9 @@ final class ReplSession {
       osVersion: osVersion,
       sessionID: sessionID,
       freshLaunch: freshLaunch,
+      verifiesBuildUUID: verifiesBuildUUID,
       nextRunIndex: Int(readyRunIndex),
-      toolchain: toolchain,
-      targetTriple: targetTriple,
-      sdkPath: sdkPath,
-      compilerArguments: compilerArguments,
-      linkerArguments: linkerArguments,
-      interfaceSearchPaths: interfaceSearchPaths,
-      autoImportModules: autoImportModules,
+      compileEnvironment: compileEnvironment,
       reportWriter: reportWriter)
   }
 
@@ -287,13 +291,13 @@ final class ReplSession {
     var stage = ReplRunStage.compile
     do {
       let parameters = ReplCompileParameters(
-        targetTriple: targetTriple,
-        sdkPath: sdkPath,
-        toolchainPath: toolchain,
-        compilerArguments: compilerArguments,
-        interfaceSearchPaths: interfaceSearchPaths,
-        autoImportModules: autoImportModules,
-        linkerArguments: linkerArguments)
+        targetTriple: compileEnvironment.targetTriple,
+        sdkPath: compileEnvironment.sdkPath,
+        toolchainPath: compileEnvironment.toolchain,
+        compilerArguments: compileEnvironment.compilerArguments,
+        interfaceSearchPaths: compileEnvironment.interfaceSearchPaths,
+        autoImportModules: compileEnvironment.autoImportModules,
+        linkerArguments: compileEnvironment.linkerArguments)
       let dylib: Data
       let symbol: String
       switch try ReplCompiler.compile(userCode: code, index: index, parameters: parameters, workingDirectory: sessionDirectory.path) {
@@ -303,36 +307,15 @@ final class ReplSession {
       case let .failure(compilerOutput):
         throw ReplExecutionError.compileFailed(compilerOutput)
       }
-      stage = .inject
-      try await connection.send(
-        .with {
-          $0.control = .execute(
-            .with {
-              $0.dylib = dylib
-              $0.symbol = symbol
-            })
-        })
-      stage = .execute
-      switch try await connection.nextResponse()?.event {
-      case let .result(result):
-        let artifactFilenames = await Self.transferArtifacts(result.artifacts, connection: connection, into: reportWriter)
-        reportWriter?.recordRun(index: index, code: code, output: result.output, artifactFilenames: artifactFilenames, at: Date())
-        let rawNext = Int(result.nextRunIndex)
-        nextRunIndex = rawNext >= 0 ? rawNext : 0
-        reporter.report(
-          ReplRunTelemetry.subject(
-            name: "run",
-            start: start,
-            ints: ReplRunTelemetry.codeMetrics(code),
-            failure: nil))
-        return ExecutionResult(output: result.output, nextIndex: rawNext, artifactFilenames: artifactFilenames)
-      case let .stopped(stopped):
-        throw ReplExecutionError.sessionStopped(stopped.desc)
-      case .ready:
-        throw ReplExecutionError.unexpectedReady
-      case .none:
-        throw ReplExecutionError.streamClosed
-      }
+      let result = try await inject(dylib: dylib, symbol: symbol, stage: &stage)
+      reportWriter?.recordRun(index: index, code: code, output: result.output, artifactFilenames: result.artifactFilenames, at: Date())
+      reporter.report(
+        ReplRunTelemetry.subject(
+          name: "run",
+          start: start,
+          ints: ReplRunTelemetry.codeMetrics(code),
+          failure: nil))
+      return result
     } catch {
       if config.reportFailures, case let ReplExecutionError.compileFailed(compilerOutput) = error {
         reportWriter?.recordCompileFailure(index: index, code: code, compilerOutput: compilerOutput, at: Date())
@@ -345,6 +328,78 @@ final class ReplSession {
           failure: "\(error)",
           stage: stage))
       throw error
+    }
+  }
+
+  /// Injects a dylib built elsewhere and has the target call `symbol`: a function of
+  /// no arguments returning a `malloc`'d C string, the contract idb-repl's own
+  /// submissions meet. Nothing is compiled, and the run is not written to a report,
+  /// since a report replays source.
+  /// `expectedBuildUUID` and `expectedExecutableUUID`, when given, make the companion load the
+  /// dylib only into an app of that build (its `BuildInfo.json` build UUID, its main executable's
+  /// UUID); a companion that cannot check them is refused before anything is sent.
+  func execute(dylibAt path: String, symbol: String, expectedBuildUUID: String? = nil, expectedExecutableUUID: String? = nil) async throws -> ExecutionResult {
+    let start = Date()
+    runsExecuted += 1
+    var stage = ReplRunStage.readDylibFile
+    do {
+      let expectation = BuildExpectation(buildUUID: expectedBuildUUID ?? "", executableUUID: expectedExecutableUUID ?? "")
+      if !expectation.isEmpty, !verifiesBuildUUID {
+        throw ReplExecutionError.buildIdentityUnverifiable
+      }
+      let dylib = try Data(contentsOf: URL(fileURLWithPath: path))
+      let result = try await inject(dylib: dylib, symbol: symbol, expectation: expectation, stage: &stage)
+      reporter.report(
+        ReplRunTelemetry.subject(
+          name: "run_dylib",
+          start: start,
+          ints: ["dylib_size": dylib.count],
+          failure: nil))
+      return result
+    } catch {
+      reporter.report(
+        ReplRunTelemetry.subject(
+          name: "run_dylib",
+          start: start,
+          failure: "\(error)",
+          stage: stage))
+      throw error
+    }
+  }
+
+  /// Sends `dylib` to the companion and returns what the target's call of `symbol`
+  /// produced. `stage` moves from inject to execute as the run progresses, so a
+  /// failure records the phase it was in.
+  private func inject(dylib: Data, symbol: String, expectation: BuildExpectation = BuildExpectation(), stage: inout ReplRunStage) async throws -> ExecutionResult {
+    stage = .inject
+    try await connection.send(
+      .with {
+        $0.control = .execute(
+          .with {
+            $0.dylib = dylib
+            $0.symbol = symbol
+            $0.expectedBuildUuid = expectation.buildUUID
+            $0.expectedExecutableUuid = expectation.executableUUID
+          })
+      })
+    stage = .execute
+    switch try await connection.nextResponse()?.event {
+    case let .result(result) where result.rejection != .notRejected:
+      // The companion refused to load the dylib; the session is intact. Its
+      // output is already prefixed for printing as a result, not as an error.
+      let prefix = "Error: "
+      throw ReplExecutionError.rejected(result.output.hasPrefix(prefix) ? String(result.output.dropFirst(prefix.count)) : result.output)
+    case let .result(result):
+      let artifactFilenames = await Self.transferArtifacts(result.artifacts, connection: connection, into: reportWriter)
+      let rawNext = Int(result.nextRunIndex)
+      nextRunIndex = rawNext >= 0 ? rawNext : 0
+      return ExecutionResult(output: result.output, nextIndex: rawNext, artifactFilenames: artifactFilenames, success: result.success)
+    case let .stopped(stopped):
+      throw ReplExecutionError.sessionStopped(stopped.desc)
+    case .ready:
+      throw ReplExecutionError.unexpectedReady
+    case .none:
+      throw ReplExecutionError.streamClosed
     }
   }
 

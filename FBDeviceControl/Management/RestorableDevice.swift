@@ -11,11 +11,17 @@ import MobileDeviceAPI
 
 private let UnknownValue = "unknown"
 
+struct RestorableDeviceNotificationState {
+  let state: TargetState
+  let recoveryDevice: AMRecoveryModeDevice?
+}
+
 /// An Object Wrapper around AMRestorableDevice.
 public final class RestorableDevice: TargetInfo, DeviceProtocol {
 
   public let calls: AMDCalls
   public var allValues: [String: Any]
+  var notificationState: RestorableDeviceNotificationState?
   public let workQueue: DispatchQueue
   public let asyncQueue: DispatchQueue
   public let logger: any ControlCoreLogger
@@ -54,6 +60,18 @@ public final class RestorableDevice: TargetInfo, DeviceProtocol {
     restorableDeviceRef.release()
   }
 
+  /// An owned reference with the values, state and recovery handle captured for this notification.
+  func notificationView() -> RestorableDevice {
+    let view = RestorableDevice(
+      calls: calls, restorableDevice: restorableDevice, allValues: allValues,
+      work: workQueue, asyncQueue: asyncQueue, logger: logger)
+    view.notificationState =
+      notificationState
+      ?? RestorableDeviceNotificationState(
+        state: state, recoveryDevice: recoveryModeDeviceRef)
+    return view
+  }
+
   // MARK: - TargetInfo
 
   // Restore info dictionaries are populated by MobileDevice and may omit keys or carry
@@ -80,7 +98,7 @@ public final class RestorableDevice: TargetInfo, DeviceProtocol {
   }
 
   public var state: TargetState {
-    Self.targetState(for: AMRestorableDeviceState(rawValue: calls.RestorableDeviceGetState(restorableDevice)) ?? .unknown)
+    notificationState?.state ?? Self.targetState(forRawValue: calls.RestorableDeviceGetState(restorableDevice))
   }
 
   public var deviceType: DeviceType {
@@ -119,7 +137,8 @@ public final class RestorableDevice: TargetInfo, DeviceProtocol {
   }
 
   public var recoveryModeDeviceRef: AMRecoveryModeDevice? {
-    calls.RestorableDeviceGetRecoveryModeDevice(restorableDevice)?.takeUnretainedValue()
+    if let notificationState { return notificationState.recoveryDevice }
+    return calls.RestorableDeviceGetRecoveryModeDevice(restorableDevice)?.takeUnretainedValue()
   }
 
   public var activationState: String {
@@ -128,18 +147,20 @@ public final class RestorableDevice: TargetInfo, DeviceProtocol {
 
   /// `AMRestorableGetStringForState` is private, and the mapping is simple enough to restate.
   public static func targetState(for state: AMRestorableDeviceState) -> TargetState {
-    switch state {
-    case .DFU:
+    targetState(forRawValue: state.rawValue)
+  }
+
+  static func targetState(forRawValue rawValue: Int32) -> TargetState {
+    switch rawValue {
+    case AMRestorableDeviceState.DFU.rawValue:
       return .DFU
-    case .recovery:
+    case AMRestorableDeviceState.recovery.rawValue:
       return .recovery
-    case .restoreOS:
+    case AMRestorableDeviceState.restoreOS.rawValue:
       return .restoreOS
-    case .bootedOS:
+    case AMRestorableDeviceState.bootedOS.rawValue:
       return .booted
-    case .unknown:
-      return .unknown
-    @unknown default:
+    default:
       return .unknown
     }
   }

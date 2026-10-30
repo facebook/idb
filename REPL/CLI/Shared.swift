@@ -56,17 +56,17 @@ struct ConnectionOptions: ParsableArguments {
       visibility: .hidden))
   var plaintext = false
 
-  /// Assembles the session config from these connection options, the report options,
-  /// and the global `--reason`.
-  func sessionConfig(report: ReportOptions) -> ReplSessionConfig {
+  /// Assembles the session config from these connection options, the report options
+  /// (none for a command that writes no report), and the global `--reason`.
+  func sessionConfig(report: ReportOptions? = nil) -> ReplSessionConfig {
     ReplSessionConfig(
       udid: udid,
       toolchainPath: toolchainPath,
       idbCompanionBinary: idbCompanionBinary,
       companion: companion,
       plaintext: plaintext,
-      reportPath: report.reportPath,
-      reportFailures: report.reportFailures,
+      reportPath: report?.reportPath,
+      reportFailures: report?.reportFailures ?? false,
       reason: GlobalOptions.shared.reason)
   }
 }

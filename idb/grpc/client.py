@@ -430,6 +430,7 @@ class Client(ClientBase):
                 f"Companion at {address} {'is' if response.companion.is_local else 'is not'} local"
             )
             companion = companion_to_py(companion=response.companion, address=address)
+            plugin.on_companion_connected(logger=logger, companion=companion)
             if exchange_metadata:
                 metadata_from_companion = {
                     key: value

@@ -166,6 +166,7 @@ public enum TargetConfiguration {
 
   public static func baseArchsToCompatibleArch(_ architectures: [Architecture]) -> Set<Architecture> {
     let mapping: [Architecture: Set<Architecture>] = [
+      .arm64eX1: [.arm64eX1, .arm64e, .arm64, .armv7s, .armv7],
       .arm64e: [.arm64e, .arm64, .armv7s, .armv7],
       .arm64: [.arm64, .armv7s, .armv7],
       .armv7s: [.armv7s, .armv7],

@@ -31,7 +31,7 @@ public struct BridgeAXNode: Codable, Equatable, Sendable {
   public var centerPoint: BridgeAXPoint?
   public var userInteractionEnabled: Bool?
   /// What a display-wide hit-test at this unreachable element's centre found.
-  @BridgeAXIndirect public var explainedBy: BridgeAXNode? = nil
+  @BridgeAXIndirect public var explainedBy: BridgeAXNode?
   public var isEnabled: Bool?
   public var translatorRole: Int?
   public var translatorSubrole: Int?

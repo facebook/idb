@@ -9,6 +9,45 @@
 import Foundation
 import MobileDeviceAPI
 
+private final class RestorableDeviceNotificationPayload {
+  private let reference: Unmanaged<AnyObject>
+  let status: AMRestorableDeviceNotificationType
+  let identifier: String
+  let state: RestorableDeviceNotificationState
+  let values: [String: Any]
+
+  var device: AMRestorableDevice {
+    reference.takeUnretainedValue()
+  }
+
+  init(device: AMRestorableDevice, status: AMRestorableDeviceNotificationType, calls: AMDCalls) {
+    self.reference = Unmanaged.passRetained(device as AnyObject)
+    self.status = status
+    let ecid = calls.RestorableDeviceGetECID(device)
+    self.identifier = String(ecid)
+    self.state = RestorableDeviceNotificationState(
+      state: RestorableDevice.targetState(forRawValue: calls.RestorableDeviceGetState(device)),
+      recoveryDevice: calls.RestorableDeviceGetRecoveryModeDevice(device)?.takeUnretainedValue())
+    if status == .connected {
+      self.values = [
+        DeviceKey.chipID.rawValue: Int(calls.RestorableDeviceGetChipID(device)),
+        DeviceKey.deviceClass.rawValue: Int(calls.RestorableDeviceGetDeviceClass(device)),
+        DeviceKey.locationID.rawValue: Int(calls.RestorableDeviceGetLocationID(device)),
+        DeviceKey.serialNumber.rawValue: calls.RestorableDeviceCopySerialNumber(device)?.takeRetainedValue() as String? ?? NSNull(),
+        DeviceKey.deviceName.rawValue: calls.RestorableDeviceCopyUserFriendlyName(device)?.takeRetainedValue() as String? ?? NSNull(),
+        DeviceKey.productType.rawValue: calls.RestorableDeviceCopyProductString(device)?.takeRetainedValue() as String? ?? NSNull(),
+        DeviceKey.uniqueChipID.rawValue: NSNumber(value: ecid),
+      ]
+    } else {
+      self.values = [:]
+    }
+  }
+
+  deinit {
+    reference.release()
+  }
+}
+
 private func notificationTypeDescription(_ status: AMRestorableDeviceNotificationType) -> String {
   switch status {
   case .connected:
@@ -34,7 +73,10 @@ private func restorableDeviceListenerCallback(
     return
   }
   let manager = Unmanaged<AMRestorableDeviceManager>.fromOpaque(context).takeUnretainedValue()
-  manager.handleNotification(device: device, status: status)
+  let payload = manager.captureNotification(device: device, status: status)
+  manager.notifications.enqueue {
+    manager.handleNotification(payload)
+  }
 }
 
 /// Obtains `RestorableDevice` instances.
@@ -63,44 +105,55 @@ final class AMRestorableDeviceManager: DeviceManager<RestorableDevice> {
 
   // MARK: - Notifications
 
-  fileprivate func handleNotification(device: AMRestorableDevice, status: AMRestorableDeviceNotificationType) {
-    // Unrecognised raw values map to `.unknown`; a zero default would be `.DFU`, a real state.
-    let deviceState = AMRestorableDeviceState(rawValue: calls.RestorableDeviceGetState(device)) ?? .unknown
-    let targetState = RestorableDevice.targetState(for: deviceState)
-    let identifier = String(calls.RestorableDeviceGetECID(device))
+  fileprivate func captureNotification(
+    device: AMRestorableDevice, status: AMRestorableDeviceNotificationType
+  ) -> RestorableDeviceNotificationPayload {
+    RestorableDeviceNotificationPayload(device: device, status: status, calls: calls)
+  }
+
+  fileprivate func handleNotification(_ payload: RestorableDeviceNotificationPayload) {
+    let device = payload.device
+    let identifier = payload.identifier
     logger.log(
-      "\(device) \(notificationTypeDescription(status)) in state \(targetState.stateString.rawValue)")
+      "\(device) \(notificationTypeDescription(payload.status)) in state \(payload.state.state.stateString.rawValue)")
 
     if let ecidFilter, identifier != ecidFilter {
       logger.log("Ignoring \(device) as it does not match filter of \(ecidFilter)")
       return
     }
 
-    switch status {
+    switch payload.status {
     case .connected:
-      let info = Dictionary(uniqueKeysWithValues: info(forRestorableDevice: device).map { ($0.key.rawValue, $0.value) })
-      logger.log("Caching restorable device values \(info)")
-      deviceConnected(device, identifier: identifier, info: info)
+      logger.log("Caching restorable device values \(payload.values)")
+      deviceConnected(device, identifier: identifier, info: payload.values) { restorableDevice in
+        restorableDevice.allValues = payload.values
+        restorableDevice.notificationState = payload.state
+      }
     case .disconnected:
       deviceDisconnected(device, identifier: identifier)
     @unknown default:
-      logger.log("Unknown Restorable Notification \(status.rawValue)")
+      logger.log("Unknown Restorable Notification \(payload.status.rawValue)")
     }
   }
 
   // MARK: - Abstract Implementation
 
   override func startListening() throws {
+    guard registrationID == 0 else {
+      throw AMRestorableDeviceManagerError.alreadyRegistered
+    }
     // Retained for as long as the registration lasts: the callback bridges this back unretained, so
     // the manager must not be deallocated while MobileDevice can still deliver a notification.
     // Balanced in `stopListening`, and below if the registration itself fails.
     let context = Unmanaged.passRetained(self).toOpaque()
+    notifications.resume()
     let registrationID = calls.RestorableDeviceRegisterForNotifications(
       restorableDeviceListenerCallback,
       context,
       0,
       0)
     guard registrationID >= 1 else {
+      notifications.pause()
       Unmanaged<AMRestorableDeviceManager>.fromOpaque(context).release()
       throw AMRestorableDeviceManagerError.registrationFailed(status: registrationID)
     }
@@ -109,6 +162,7 @@ final class AMRestorableDeviceManager: DeviceManager<RestorableDevice> {
   }
 
   override func stopListening() throws {
+    notifications.pause()
     let registrationID = self.registrationID
     self.registrationID = 0
     guard registrationID >= 1 else {
@@ -153,25 +207,17 @@ final class AMRestorableDeviceManager: DeviceManager<RestorableDevice> {
     Unmanaged.passUnretained(publicDevice.restorableDevice)
   }
 
-  private func info(forRestorableDevice device: AMRestorableDevice) -> [DeviceKey: Any] {
-    [
-      DeviceKey.chipID: Int(calls.RestorableDeviceGetChipID(device)),
-      DeviceKey.deviceClass: Int(calls.RestorableDeviceGetDeviceClass(device)),
-      DeviceKey.locationID: Int(calls.RestorableDeviceGetLocationID(device)),
-      DeviceKey.serialNumber: calls.RestorableDeviceCopySerialNumber(device)?.takeRetainedValue() as String? ?? NSNull(),
-      DeviceKey.deviceName: calls.RestorableDeviceCopyUserFriendlyName(device)?.takeRetainedValue() as String? ?? NSNull(),
-      DeviceKey.productType: calls.RestorableDeviceCopyProductString(device)?.takeRetainedValue() as String? ?? NSNull(),
-      DeviceKey.uniqueChipID: NSNumber(value: calls.RestorableDeviceGetECID(device)),
-    ]
-  }
 }
 
 public enum AMRestorableDeviceManagerError: Error, LocalizedError {
+  case alreadyRegistered
   case registrationFailed(status: Int32)
   case notRegistered
 
   public var errorDescription: String? {
     switch self {
+    case .alreadyRegistered:
+      return "Already registered for restorable device notifications"
     case let .registrationFailed(status):
       return "AMRestorableDeviceRegisterForNotifications failed with \(status)"
     case .notRegistered:

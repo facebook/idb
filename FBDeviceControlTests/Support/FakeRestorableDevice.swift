@@ -62,6 +62,7 @@ final class FakeRestorableDevice: NSObject {
     calls.RestorableDeviceGetState = { _ in
       AMRestorableDeviceState.bootedOS.rawValue
     }
+    calls.RestorableDeviceGetRecoveryModeDevice = { _ in nil }
     calls.RestorableDeviceGetChipID = { _ in 0 }
     calls.RestorableDeviceGetDeviceClass = { _ in 0 }
     calls.RestorableDeviceGetLocationID = { _ in 0 }

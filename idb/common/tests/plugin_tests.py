@@ -12,7 +12,7 @@ from unittest import mock
 
 from idb.common import plugin
 from idb.common.command import Command
-from idb.common.types import IdbException, LoggingMetadata
+from idb.common.types import CompanionInfo, IdbException, LoggingMetadata, TCPAddress
 from idb.utils.testing import TestCase
 
 
@@ -199,3 +199,62 @@ class OnInvocationResultTest(TestCase):
             )
         self.assertEqual(updates, {"col": "value"})
         log_exception.assert_called_once()
+
+
+class _CompanionObservingPlugin(ModuleType):
+    def __init__(self) -> None:
+        super().__init__("companion_observing")
+        self.companions: list[CompanionInfo] = []
+
+    def on_companion_connected(
+        self, logger: logging.Logger, companion: CompanionInfo
+    ) -> None:
+        self.companions.append(companion)
+
+
+class _FailingCompanionPlugin(ModuleType):
+    def on_companion_connected(
+        self, logger: logging.Logger, companion: CompanionInfo
+    ) -> None:
+        raise RuntimeError("boom")
+
+
+class _FailingCompanionInstance:
+    def on_companion_connected(
+        self, logger: logging.Logger, companion: CompanionInfo
+    ) -> None:
+        raise RuntimeError("boom")
+
+
+class OnCompanionConnectedTest(TestCase):
+    def test_connected_companion_is_forwarded_past_failing_plugins(self) -> None:
+        companion = CompanionInfo(
+            udid="target-1",
+            is_local=True,
+            pid=None,
+            address=TCPAddress(host="localhost", port=10882),
+        )
+        test_logger = logging.getLogger("test")
+        for failing in (
+            _FailingCompanionPlugin("failing"),
+            _FailingCompanionInstance(),
+        ):
+            with self.subTest(plugin_type=type(failing).__name__):
+                observing = _CompanionObservingPlugin()
+                with (
+                    mock.patch.object(
+                        plugin,
+                        "PLUGINS",
+                        [failing, ModuleType("silent"), observing],
+                    ),
+                    mock.patch.object(test_logger, "exception") as log_exception,
+                ):
+                    plugin.on_companion_connected(
+                        logger=test_logger, companion=companion
+                    )
+
+                self.assertEqual([companion], observing.companions)
+                self.assertIs(companion, observing.companions[0])
+                log_exception.assert_called_once_with(
+                    "on_companion_connected plugin failed, swallowing exception"
+                )

@@ -12,6 +12,31 @@ import MobileDeviceAPI
 private let mobileBackupDomain = "com.apple.mobile.backup"
 private let serviceReuseTimeout: TimeInterval = 6.0
 
+private final class AMDeviceNotificationPayload {
+  let reference: Unmanaged<AnyObject>
+  let status: AMDeviceNotificationType
+  private let calls: AMDCalls
+
+  var ownsReference: Bool {
+    status == .connected || status == .paired
+  }
+
+  init(reference: Unmanaged<AnyObject>, status: AMDeviceNotificationType, calls: AMDCalls) {
+    self.reference = reference
+    self.status = status
+    self.calls = calls
+    if ownsReference {
+      calls.Retain(reference.takeUnretainedValue())
+    }
+  }
+
+  deinit {
+    if ownsReference {
+      calls.Release(reference.takeUnretainedValue())
+    }
+  }
+}
+
 /// Brings a newly-seen device far enough up to read its values, then registers it.
 ///
 /// Pairing is allowed to fail: an unpaired device still yields the default domain, so it is
@@ -83,23 +108,32 @@ private func amDeviceListenerCallback(
     return
   }
   let manager = Unmanaged<AMDeviceManager>.fromOpaque(context).takeUnretainedValue()
-  let logger = manager.logger
-  // The struct field is an unaudited CF pointer, so it arrives unmanaged.
-  let device = notification.pointee.amDevice.takeUnretainedValue()
+  let payload = AMDeviceNotificationPayload(
+    reference: notification.pointee.amDevice,
+    status: notification.pointee.status,
+    calls: manager.calls)
+  manager.notifications.enqueue {
+    handleAMDeviceNotification(payload, manager: manager)
+  }
+}
 
-  switch notification.pointee.status {
+private func handleAMDeviceNotification(_ payload: AMDeviceNotificationPayload, manager: AMDeviceManager) {
+  let logger = manager.logger
+
+  switch payload.status {
   case .connected, .paired:
-    amDeviceConnected(device, manager: manager)
+    amDeviceConnected(payload.reference.takeUnretainedValue(), manager: manager)
   case .disconnected:
-    guard let identifier = manager.identifier(forDevice: device) else {
-      logger.log("Cannot obtain identifier for device \(device)")
+    let address = payload.reference.toOpaque()
+    guard let identifier = manager.identifier(forDeviceAddress: address) else {
+      logger.log("Cannot obtain identifier for device at \(address)")
       return
     }
-    manager.deviceDisconnected(device, identifier: identifier)
+    manager.deviceDisconnected(identifier: identifier, address: address)
   case .unsubscribed:
     logger.log("Unsubscribed from AMDeviceNotificationSubscribe")
   default:
-    logger.log("Got Unknown status \(notification.pointee.status.rawValue) from AMDeviceNotificationSubscribe")
+    logger.log("Got Unknown status \(payload.status.rawValue) from AMDeviceNotificationSubscribe")
   }
 }
 
@@ -138,6 +172,7 @@ final class AMDeviceManager: DeviceManager<MobileDevice> {
     // Retained for as long as the subscription lasts, so the callback's context stays valid.
     // Tidied up when unsubscribing.
     let context = Unmanaged.passRetained(self).toOpaque()
+    notifications.resume()
     var subscription: AMDNotificationSubscription?
     let result = calls.NotificationSubscribe(
       amDeviceListenerCallback,
@@ -146,6 +181,7 @@ final class AMDeviceManager: DeviceManager<MobileDevice> {
       context,
       &subscription)
     guard result == 0 else {
+      notifications.pause()
       Unmanaged<AMDeviceManager>.fromOpaque(context).release()
       throw AMDeviceManagerError.subscribeFailed(status: result)
     }
@@ -163,6 +199,7 @@ final class AMDeviceManager: DeviceManager<MobileDevice> {
       throw AMDeviceManagerError.unsubscribeFailed(status: result)
     }
 
+    notifications.pause()
     // Balances the retain taken in startListening.
     Unmanaged.passUnretained(self).release()
     self.subscription = nil
@@ -202,9 +239,8 @@ final class AMDeviceManager: DeviceManager<MobileDevice> {
 
   // MARK: - Private
 
-  fileprivate func identifier(forDevice amDevice: AMDevice) -> String? {
+  fileprivate func identifier(forDeviceAddress address: UnsafeMutableRawPointer) -> String? {
     // Compared by address: equality on the bridged opaque reference is not reliable.
-    let address = Unmanaged.passUnretained(amDevice as AnyObject).toOpaque()
     for device in storage.referenced.values {
       if let reference = device.amDeviceRef, Unmanaged.passUnretained(reference as AnyObject).toOpaque() == address {
         return device.uniqueIdentifier

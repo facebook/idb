@@ -490,8 +490,8 @@ extension AVCaptureVideoPreviewLayer {
     }
   }
 
-  /// Maps the normalised native frame onto the layer as the preview shows it: turned by the
-  /// connection's rotation, mirrored when the connection is, and placed by `videoGravity`.
+  /// Maps the normalised native frame onto the layer as the preview shows it: turned by the angle
+  /// the frames are turned by, mirrored when the connection is, and placed by `videoGravity`.
   private var virtualFrameTransform: CGAffineTransform? {
     guard let connection = connection as? ShimulatorCaptureConnection else { return nil }
     let size = frameSize(connection)
@@ -511,7 +511,7 @@ extension AVCaptureVideoPreviewLayer {
       270: CGAffineTransform(a: 0, b: -1, c: 1, d: 0, tx: 0, ty: 0),
     ]
     return CGAffineTransform(translationX: -0.5, y: -0.5)
-      .concatenating(rotations[connection.storedRotationAngle] ?? .identity)
+      .concatenating(rotations[connection.frameRotationAngle] ?? .identity)
       .concatenating(CGAffineTransform(a: connection.isVideoMirrored ? -1 : 1, b: 0, c: 0, d: 1, tx: 0.5, ty: 0.5))
       .concatenating(CGAffineTransform(a: video.width, b: 0, c: 0, d: video.height, tx: video.minX, ty: video.minY))
   }

@@ -1362,6 +1362,17 @@ message ReplRequest {
   message Execute {
     bytes dylib = 1;
     string symbol = 2;
+    // Optional. When set, the companion loads the dylib only if the app it
+    // serves carries this build UUID: the `build_uuid` in the `BuildInfo.json`
+    // the Apple prelude writes into a bundle built with
+    // `include_build_info_file` (at the bundle root on iOS, under
+    // Contents/Resources on macOS). Compared case-insensitively. An app without
+    // the file, or a context that is not APP, is a rejection, not a pass; see
+    // Result.rejection.
+    string expected_build_uuid = 3;
+    // Optional. As above, against the Mach-O UUID (LC_UUID) of the app's main
+    // executable, which is what a dynamic-replacement dylib's symbols bind to.
+    string expected_executable_uuid = 4;
   }
   // Sent to end the session (also implied by closing the stream).
   message Stop {}
@@ -1400,6 +1411,11 @@ message ReplResponse {
     // regenerated on relaunch, so the driver can append to the same session
     // report while a reset (a new session) starts a fresh one.
     string session_id = 7;
+    // Whether this companion honours Execute.expected_build_uuid and
+    // Execute.expected_executable_uuid. A driver that sets either must refuse
+    // to send to a companion that reports false (an older companion), since
+    // that companion would load the dylib unchecked.
+    bool verifies_build_uuid = 8;
   }
   // The result of executing one Execute message.
   message Result {
@@ -1422,6 +1438,24 @@ message ReplResponse {
       string container_path = 2;
     }
     repeated Artifact artifacts = 4;
+    // Why the companion refused to load the dylib, when `success` is false
+    // because an Execute.expected_*_uuid was not met. NOT_REJECTED for every
+    // other result, including a dylib that loaded and then failed.
+    enum Rejection {
+      NOT_REJECTED = 0;
+      // The app's BuildInfo.json names another build UUID.
+      BUILD_UUID_MISMATCH = 1;
+      // The app has no readable BuildInfo.json, so its build UUID is unknown.
+      BUILD_UUID_UNAVAILABLE = 2;
+      // The app's main executable has another LC_UUID.
+      EXECUTABLE_UUID_MISMATCH = 3;
+      // The app's main executable UUID could not be read.
+      EXECUTABLE_UUID_UNAVAILABLE = 4;
+      // The session serves no app (the SIMULATOR or TEST context), so there
+      // is nothing to compare against.
+      UNSUPPORTED_CONTEXT = 5;
+    }
+    Rejection rejection = 5;
   }
   // The session has ended.
   message Stopped {

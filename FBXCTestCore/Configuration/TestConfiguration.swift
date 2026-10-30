@@ -88,13 +88,7 @@ public enum TestConfigurationError: Error, LocalizedError {
     configuration.setValue(false, forKey: "testsDrivenByIDE")
     configuration.setValue(testApplicationDependencies, forKey: "testApplicationDependencies")
 
-    guard let capabilitiesBuilderInstance = RuntimeClassAllocation.new("XCTCapabilitiesBuilder") else {
-      throw TestConfigurationError.classUnavailable(className: "XCTCapabilitiesBuilder")
-    }
-    let capabilitiesBuilder = unsafeBitCast(capabilitiesBuilderInstance, to: XCTCapabilitiesBuilderMessaging.self)
-    capabilitiesBuilder.registerCapability("XCTIssue capability")
-    capabilitiesBuilder.registerCapability("ubiquitous test identifiers")
-    configuration.setValue(capabilitiesBuilder.capabilities(), forKey: "IDECapabilities")
+    configuration.setValue(try Self.ideCapabilities(), forKey: "IDECapabilities")
 
     let data: Data
     do {
@@ -122,6 +116,17 @@ public enum TestConfigurationError: Error, LocalizedError {
     self.shouldInitializeForUITesting = uiTesting
     self.xcTestConfiguration = xcTestConfiguration
     super.init()
+  }
+
+  /// The `XCTCapabilities` idb declares as the IDE, to the test runner and to testmanagerd.
+  static func ideCapabilities() throws -> AnyObject {
+    guard let capabilitiesBuilderInstance = RuntimeClassAllocation.new("XCTCapabilitiesBuilder") else {
+      throw TestConfigurationError.classUnavailable(className: "XCTCapabilitiesBuilder")
+    }
+    let capabilitiesBuilder = unsafeBitCast(capabilitiesBuilderInstance, to: XCTCapabilitiesBuilderMessaging.self)
+    capabilitiesBuilder.registerCapability("XCTIssue capability")
+    capabilitiesBuilder.registerCapability("ubiquitous test identifiers")
+    return capabilitiesBuilder.capabilities()
   }
 
   private static func testIdentifierSet(_ tests: Set<String>?) throws -> AnyObject? {

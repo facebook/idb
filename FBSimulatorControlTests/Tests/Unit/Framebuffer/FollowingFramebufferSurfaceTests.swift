@@ -67,6 +67,64 @@ final class FollowingFramebufferSurfaceTests: XCTestCase {
     XCTAssertTrue(following.immediatelyAvailableSurface() === inner.immediateSurface)
   }
 
+  func testIdentifyingTheScreenAlreadyFollowedKeepsItsFramesFlowing() async throws {
+    let main = KeyedFramebufferSurface()
+    let (configurations, continuation) = AsyncStream.makeStream(of: SimulatorDisplayConfiguration.self)
+    let following = FollowingFramebufferSurface(
+      displayUniqueID: nil, surface: main, movement: .followsActiveDisplay,
+      configurations: { configurations }, locate: { _ in main }, logger: CapturingLogger())
+    let frames = LockedCount()
+    let moves = LockedCount()
+    try following.registerCallbacks(token: UUID(), ioSurfaceChanged: { _ in moves.increment() }, frameRendered: { frames.increment() }, configurationChanged: { _ in })
+
+    continuation.yield(configuration(active: "main"))
+    try await waitUntil { moves.value == 1 }
+    main.renderFrame()
+
+    XCTAssertEqual(frames.value, 1)
+  }
+
+  func testAMoveThatCannotRegisterKeepsTheCurrentScreenDelivering() async throws {
+    let cover = FakeFramebufferSurface()
+    cover.immediateSurface = makeTestIOSurface()
+    let inner = FakeFramebufferSurface()
+    inner.registerError = LocateFailure()
+    let logger = CapturingLogger()
+    let (configurations, continuation) = AsyncStream.makeStream(of: SimulatorDisplayConfiguration.self)
+    let following = FollowingFramebufferSurface(
+      displayUniqueID: "cover", surface: cover, movement: .followsActiveDisplay,
+      configurations: { configurations }, locate: { _ in inner }, logger: logger)
+    let frames = LockedCount()
+    try following.registerCallbacks(token: UUID(), ioSurfaceChanged: { _ in }, frameRendered: { frames.increment() }, configurationChanged: { _ in })
+
+    continuation.yield(configuration(active: "inner"))
+    try await waitUntil { ((logger.messages.copy() as? [String]) ?? []).contains { $0.hasPrefix("Framebuffer: staying on display cover") } }
+    cover.frameRendered?()
+
+    XCTAssertEqual(frames.value, 1)
+    XCTAssertTrue(following.immediatelyAvailableSurface() === cover.immediateSurface)
+  }
+
+  func testAMoveThatCannotRestoreTheCurrentScreenReportsItLost() async throws {
+    let cover = FakeFramebufferSurface()
+    let inner = FakeFramebufferSurface()
+    inner.registerError = LocateFailure()
+    let logger = CapturingLogger()
+    let (configurations, continuation) = AsyncStream.makeStream(of: SimulatorDisplayConfiguration.self)
+    let following = FollowingFramebufferSurface(
+      displayUniqueID: "cover", surface: cover, movement: .followsActiveDisplay,
+      configurations: { configurations }, locate: { _ in inner }, logger: logger)
+    try following.registerCallbacks(token: UUID(), ioSurfaceChanged: { _ in }, frameRendered: {}, configurationChanged: { _ in })
+    cover.registerError = LocateFailure()
+    let messages = { (logger.messages.copy() as? [String]) ?? [] }
+
+    continuation.yield(configuration(active: "inner"))
+    try await waitUntil { !messages().isEmpty }
+
+    XCTAssertEqual(messages().count, 1)
+    XCTAssertTrue(messages()[0].hasPrefix("Framebuffer: lost display cover"), messages()[0])
+  }
+
   func testAConsumerCanUseTheSurfaceWhenToldOfAMove() async throws {
     let cover = FakeFramebufferSurface()
     let inner = FakeFramebufferSurface()
@@ -271,6 +329,33 @@ final class FollowingFramebufferSurfaceTests: XCTestCase {
     following.unregisterCallbacks(token: second)
     try await waitUntil { stopped.value == 1 }
     XCTAssertEqual(cover.unregisteredTokens, [first, second])
+  }
+}
+
+/// A display surface that keeps one callback per token, as CoreSimulator's screens do: unregistering a token
+/// removes whatever is registered under it.
+private final class KeyedFramebufferSurface: FramebufferSurface, @unchecked Sendable {
+  private let lock = NSLock()
+  private var frameCallbacks: [UUID: () -> Void] = [:]
+  func immediatelyAvailableSurface() -> IOSurface? { nil }
+
+  func registerCallbacks(
+    token: UUID,
+    ioSurfaceChanged: @escaping (IOSurface?) -> Void,
+    frameRendered: @escaping () -> Void,
+    configurationChanged: @escaping (SimulatorDisplayConfiguration) -> Void
+  ) throws {
+    lock.withLock {
+      frameCallbacks[token] = frameRendered
+    }
+  }
+
+  func unregisterCallbacks(token: UUID) {
+    lock.withLock { frameCallbacks[token] = nil }
+  }
+
+  func renderFrame() {
+    lock.withLock { Array(frameCallbacks.values) }.forEach { $0() }
   }
 }
 

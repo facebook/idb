@@ -59,6 +59,9 @@ enum ReplExecutionError: Error, CustomStringConvertible {
   case unexpectedReady
   case streamClosed
   case notReady
+  case compilerRestricted
+  case buildIdentityUnverifiable
+  case rejected(String)
 
   var description: String {
     switch self {
@@ -72,13 +75,19 @@ enum ReplExecutionError: Error, CustomStringConvertible {
       return "idb_companion closed the REPL stream without returning a result"
     case .notReady:
       return "idb_companion did not report the REPL as ready"
+    case .compilerRestricted:
+      return "compiling code is restricted in this session"
+    case .buildIdentityUnverifiable:
+      return "this idb_companion cannot verify an expected build UUID; update it, or drop the expectation"
+    case let .rejected(message):
+      return message
     }
   }
 
   /// Whether the REPL session can no longer continue after this error.
   var terminatesSession: Bool {
     switch self {
-    case .compileFailed, .unexpectedReady:
+    case .compileFailed, .unexpectedReady, .compilerRestricted, .buildIdentityUnverifiable, .rejected:
       return false
     case .sessionStopped, .streamClosed, .notReady:
       return true

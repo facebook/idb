@@ -127,12 +127,14 @@ ACCESSIBILITY_PROBE_ARGS = ("ui", "describe-all", "--json")
 
 # idb's answers when the accessibility tree was momentarily out of step with a
 # command, rather than wrong about it.
-# Older companions print the first wording.
+# Older companions print the first wording. The last is the simulator's
+# accessibility service, rather than the application, running out of time.
 UNANSWERED = re.compile(
     r"requested accessibility from the application (?:with pid \d+|at that point), "
     r"which did not answer in time"
     r"|The application (?:with pid \d+|at that point) did not respond to an "
     r"accessibility request before it timed out"
+    r"|The simulator's accessibility service did not answer "
 )
 # Older companions print the first marker.
 NOTHING_WRITTEN_MARKERS = (

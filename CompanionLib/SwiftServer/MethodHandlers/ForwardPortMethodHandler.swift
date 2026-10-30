@@ -23,13 +23,24 @@ struct ForwardPortMethodHandler {
 
   static func parseAllowedPorts(_ value: String?) throws -> Set<UInt16> {
     guard let value, !value.isEmpty else { return [] }
-    let ports = try value.split(separator: ",", omittingEmptySubsequences: false).map { part in
-      guard let port = UInt16(part.trimmingCharacters(in: .whitespaces)), port > 0 else {
-        throw RPCError(code: .invalidArgument, message: "Invalid allowed device port: \(part)")
+    let ranges = try value.split(separator: ",", omittingEmptySubsequences: false).map { part in
+      let bounds = part.split(separator: "-", omittingEmptySubsequences: false)
+      guard (1...2).contains(bounds.count),
+        let lower = UInt16(bounds[0].trimmingCharacters(in: .whitespaces)), lower > 0,
+        let upper = UInt16(bounds[bounds.count - 1].trimmingCharacters(in: .whitespaces)), lower <= upper
+      else {
+        throw RPCError(
+          code: .invalidArgument,
+          message: "Invalid allowed device port or range: \(part); expected PORT or START-END in 1...65535 with START <= END"
+        )
       }
-      return port
+      return lower...upper
     }
-    return Set(ports)
+    var ports = Set<UInt16>()
+    for range in Set(ranges) {
+      ports.formUnion(range)
+    }
+    return ports
   }
 
   static func openingPort(_ request: Idb_ForwardPortRequest, allowedPorts: Set<UInt16>) throws -> UInt16 {

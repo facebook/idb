@@ -1526,6 +1526,17 @@ NOT_READY_ANSWERS = tuple(
     )
 )
 NOT_READY_NO_FRONTMOST = NOT_READY_ANSWERS[1]
+# The simulator's accessibility service, not the application, ran out of time:
+# the whole query, and one request.
+SERVICE_UNANSWERED_ANSWERS = tuple(
+    Completed(1, b"", message)
+    for message in (
+        b"The simulator's accessibility service did not answer within the query's "
+        b"10.0s timeout, 10.0s into the read; retry the read.\n",
+        b"The simulator's accessibility service did not answer a frontmost request "
+        b"within 5.0s, 5.0s into the read; retry the read.\n",
+    )
+)
 
 
 def with_verdict(completed: Completed, line: bytes) -> Completed:
@@ -1684,6 +1695,25 @@ class TransientAccessibilityAnswerTests(unittest.IsolatedAsyncioTestCase):
 
     async def test_a_tap_in_current_wordings_is_not_repeated(self) -> None:
         for answer in NOT_READY_ANSWERS:
+            with self.subTest(answer=answer.stderr):
+                outcome, run, _ = await self.attempt(TAP, [answer, SUCCEEDED])
+
+                self.assertIsInstance(outcome, Failed)
+                self.assertEqual(run.await_count, 1)
+
+    async def test_a_read_the_accessibility_service_did_not_answer(self) -> None:
+        for answer in SERVICE_UNANSWERED_ANSWERS:
+            with self.subTest(answer=answer.stderr):
+                outcome, run, _ = await self.attempt(DESCRIBE_ALL, [answer, SUCCEEDED])
+
+                self.assertEqual(outcome, SUCCEEDED)
+                self.assertEqual(run.await_count, 2)
+
+    async def test_a_tap_the_accessibility_service_did_not_answer_is_not_repeated(
+        self,
+    ) -> None:
+        # Without idb's verdict, whether the tap landed is unknown.
+        for answer in SERVICE_UNANSWERED_ANSWERS:
             with self.subTest(answer=answer.stderr):
                 outcome, run, _ = await self.attempt(TAP, [answer, SUCCEEDED])
 

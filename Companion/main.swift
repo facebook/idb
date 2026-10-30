@@ -81,7 +81,7 @@ private let kUsageHelpMessage = """
 
     Options:
       --grpc-port PORT           Port to start the grpc companion server on (default: 10882).
-      --allowed-forward-ports PORT[,PORT]  Device ports permitted for gRPC forwarding. Omitted or empty disables forwarding.
+      --allowed-forward-ports PORT_OR_RANGE[,PORT_OR_RANGE]  Device TCP ports permitted for gRPC forwarding, e.g. 8099,8000-8100. Use 1-65535 to permit every port. Omitted or empty disables forwarding.
       --tls-cert-path PATH       If specified exposed GRPC server will be listening on a TLS enabled socket.
       --grpc-domain-sock PATH    Unix Domain Socket path to start the companion server on, will supersede TCP binding via --grpc-port.
       --debug-port PORT          Port to connect debugger on (default: 10881).

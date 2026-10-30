@@ -16,9 +16,11 @@ import subprocess
 import tempfile
 import unittest
 import zipfile
+from collections.abc import AsyncIterator
 from unittest.mock import patch
 
 from idb.common.types import Compression, FileContainerType, IdbException, TCPAddress
+from idb.grpc import client as client_module
 from idb.grpc.idb_pb2 import InstallRequest, InstallResponse, Payload
 from idb.grpc.install import (
     generate_binary_chunks,
@@ -47,7 +49,11 @@ def _zip_bytes(
     with zipfile.ZipFile(buffer, "w", compression=compression) as archive:
         archive.writestr(zipfile.ZipInfo("Payload/"), b"")
         archive.writestr(zipfile.ZipInfo("Payload/App.app/"), b"")
-        archive.writestr("Payload/App.app/App", b"binary " * 1000)
+        archive.writestr(
+            zipfile.ZipInfo("Payload/App.app/App"),
+            b"binary " * 1000,
+            compress_type=compression,
+        )
     return buffer.getvalue()
 
 
@@ -167,6 +173,26 @@ class InstallZipStreamTests(TestCase):
     async def test_a_zip_is_sent_as_is_to_a_companion_that_does_not(self) -> None:
         sent = await self._install_zip_from_io(zstd_zip_streams=False)
         self.assertEqual(sent, _zip_bytes())
+        for compression in (zipfile.ZIP_STORED, zipfile.ZIP_DEFLATED):
+            with self.subTest(compression=compression):
+                with patch(
+                    "zipfile.time.localtime",
+                    return_value=(2026, 1, 2, 3, 4, 6, 4, 2, -1),
+                ):
+                    first = _zip_bytes(compression)
+                with patch(
+                    "zipfile.time.localtime",
+                    return_value=(2027, 7, 8, 9, 10, 12, 3, 189, -1),
+                ):
+                    second = _zip_bytes(compression)
+                self.assertEqual(first, second)
+                with zipfile.ZipFile(io.BytesIO(first)) as archive:
+                    entries = archive.infolist()
+                self.assertEqual(
+                    [(1980, 1, 1, 0, 0, 0)] * 3,
+                    [entry.date_time for entry in entries],
+                )
+                self.assertEqual(compression, entries[-1].compress_type)
 
 
 def _frame(message: InstallRequest) -> str:
@@ -202,10 +228,27 @@ class InstallFrameOrderTests(TestCase):
             async for _ in getattr(client, install)(**kwargs):
                 pass
         frames = []
+        payload = None
         for message, _ in stream.sent:
-            frame = _frame(message)
-            if not frames or frame != frames[-1] or not frame.startswith("data"):
-                frames.append(frame)
+            if not isinstance(message, InstallRequest):
+                self.fail("Expected an InstallRequest frame")
+            # Payload chunk boundaries do not affect the option-frame order.
+            if (
+                message.WhichOneof("value") == "payload"
+                and message.payload.WhichOneof("source") == "data"
+            ):
+                if payload is None:
+                    payload = bytearray()
+                payload.extend(message.payload.data)
+                continue
+            if payload is not None:
+                frames.append(
+                    _frame(InstallRequest(payload=Payload(data=bytes(payload))))
+                )
+                payload = None
+            frames.append(_frame(message))
+        if payload is not None:
+            frames.append(_frame(InstallRequest(payload=Payload(data=bytes(payload)))))
         return frames
 
     async def test_a_remote_dylib(self) -> None:
@@ -217,7 +260,30 @@ class InstallFrameOrderTests(TestCase):
         self.assertEqual(frames, ["destination", "name_hint", "data:gzip"])
 
     async def test_a_remote_xctest(self) -> None:
-        with tempfile.TemporaryDirectory() as directory:
+        generate_tar = client_module.generate_tar
+
+        async def fragmented_tar(
+            paths: list[str],
+            compression: Compression = Compression.GZIP,
+            additional_tar_args: list[str] | None = None,
+            place_in_subfolders: bool = False,
+            verbose: bool = False,
+        ) -> AsyncIterator[bytes]:
+            async for chunk in generate_tar(
+                paths,
+                compression=compression,
+                additional_tar_args=additional_tar_args,
+                place_in_subfolders=place_in_subfolders,
+                verbose=verbose,
+            ):
+                for part in (chunk[:1], chunk[1:]):
+                    if part:
+                        yield part
+
+        with (
+            tempfile.TemporaryDirectory() as directory,
+            patch.object(client_module, "generate_tar", side_effect=fragmented_tar),
+        ):
             xctest = os.path.join(directory, "Example.xctest")
             os.mkdir(xctest)
             frames = await self._frames("install_xctest", is_local=False, xctest=xctest)

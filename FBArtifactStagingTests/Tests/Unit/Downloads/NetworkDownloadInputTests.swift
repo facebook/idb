@@ -152,6 +152,29 @@ struct NetworkDownloadInputTests {
   }
 
   @Test
+  func aReceiveThatCutsTheBodyShortStillReadsTheBytesThatCameWithTheClose() throws {
+    let head = "HTTP/1.1 200 OK\r\nContent-Length: \(body.count)\r\n\r\n"
+    var reader = HTTPResponseReader()
+
+    let read = try NetworkDownloadInput.read(Data(head.utf8) + body.prefix(1000), endingTheStream: true, with: &reader)
+
+    #expect(read.events == [.head(statusCode: 200, contentLength: Int64(body.count)), .body(body.prefix(1000))])
+    #expect((read.cutShort as? URLError)?.code == .networkConnectionLost)
+  }
+
+  @Test
+  func aReceiveThatEndsABodyDelimitedByTheCloseCompletesIt() throws {
+    var reader = HTTPResponseReader()
+
+    let read = try NetworkDownloadInput.read(
+      Data("HTTP/1.1 200 OK\r\n\r\n".utf8) + body.prefix(1000), endingTheStream: true, with: &reader)
+
+    #expect(read.events == [.head(statusCode: 200, contentLength: nil), .body(body.prefix(1000)), .end])
+    #expect(read.cutShort == nil)
+    #expect(reader.isComplete)
+  }
+
+  @Test
   func nothingListeningAtTheOverrideFailsTheTransfer() async throws {
     let server = try await ScriptedHTTPServer.serving(body: body)
     let port = server.port

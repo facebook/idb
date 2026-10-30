@@ -12,7 +12,7 @@ import socket
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 from typing import cast
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, patch
 
 from grpclib.const import Cardinality, Handler, Status
 from grpclib.exceptions import GRPCError
@@ -88,6 +88,55 @@ async def socket_streams() -> AsyncIterator[
 
 
 class PortForwardTest(TestCase):
+    async def test_completion_before_acknowledgment_preserves_remote_status(
+        self,
+    ) -> None:
+        message = "Forwarding device port 8100 is not allowed"
+
+        class Finished(EchoService):
+            def __init__(self, status: Status) -> None:
+                self.status = status
+
+            async def forward_port(
+                self, stream: Stream[ForwardPortRequest, ForwardPortResponse]
+            ) -> None:
+                await stream.recv_message()
+                await stream.send_initial_metadata()
+                # Match a companion that finishes while the request remains open.
+                with patch.object(stream._stream, "reset_nowait"):
+                    await stream.send_trailing_metadata(
+                        status=self.status, status_message=message
+                    )
+                while await stream.recv_message() is not None:
+                    pass
+
+        for status in [Status.PERMISSION_DENIED, Status.OK]:
+            with self.subTest(status=status):
+                async with (
+                    ChannelFor([Finished(status)]) as channel,
+                    socket_streams() as streams,
+                    asyncio.timeout(5),
+                ):
+                    reader, writer, _, _ = streams
+                    client = Client(
+                        stub=CompanionServiceStub(channel),
+                        companion=MagicMock(),
+                        logger=logging.getLogger(__name__),
+                    )
+                    with self.assertRaises(IdbException) as raised:
+                        await client.forward_port(8100, reader, writer)
+                    if status == Status.PERMISSION_DENIED:
+                        error = raised.exception.__cause__
+                        self.assertIsInstance(error, GRPCError)
+                        self.assertEqual(cast(GRPCError, error).status, status)
+                        self.assertIn(message, str(raised.exception))
+                    else:
+                        self.assertIn(
+                            "Companion did not acknowledge device port connection",
+                            str(raised.exception),
+                        )
+                    self.assertFalse(writer.is_closing())
+
     async def test_invalid_ports_fail_before_starting_an_rpc(self) -> None:
         service = EchoService()
         async with ChannelFor([service]) as channel, socket_streams() as streams:

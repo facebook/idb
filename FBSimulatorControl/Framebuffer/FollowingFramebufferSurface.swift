@@ -28,6 +28,13 @@ final class FollowingFramebufferSurface: FramebufferSurface, @unchecked Sendable
     case fixed
   }
 
+  /// A move failed and the current screen could not be registered again either, so consumers receive nothing
+  /// until a later configuration moves them.
+  private struct RestoreFailure: Error {
+    let move: Error
+    let restore: Error
+  }
+
   private struct Registration {
     let ioSurfaceChanged: (IOSurface?) -> Void
     let frameRendered: () -> Void
@@ -138,6 +145,9 @@ final class FollowingFramebufferSurface: FramebufferSurface, @unchecked Sendable
         logger.log("Framebuffer: following display \(display.uniqueID), previously \(current ?? "unidentified")")
       } catch is CancellationError {
         return
+      } catch let failure as RestoreFailure {
+        logger.log(
+          "Framebuffer: lost display \(current ?? "unidentified") after display \(display.uniqueID) could not be captured (\(failure.move)) and the current display could not be registered again: \(failure.restore)")
       } catch {
         logger.log("Framebuffer: staying on display \(current ?? "unidentified"), as display \(display.uniqueID) could not be captured: \(error)")
       }
@@ -156,8 +166,15 @@ final class FollowingFramebufferSurface: FramebufferSurface, @unchecked Sendable
   }
 
   /// Consumers learn of the new surface once the lock is released, so one may re-enter this surface.
+  ///
+  /// The current screen is left before the next one is registered: the next can be the same screen under a
+  /// new identity, such as a main screen captured before its display was identified, and a screen keeps one
+  /// callback per token, so leaving it afterwards would remove the registrations just made. A failed move
+  /// restores the current screen.
   private func move(to next: Screen) throws {
     let (surface, consumers) = try lock.withLock {
+      screen.gate.withLock { $0 = false }
+      registrations.keys.forEach { screen.surface.unregisterCallbacks(token: $0) }
       var registered: [UUID] = []
       do {
         for (token, registration) in registrations {
@@ -166,10 +183,21 @@ final class FollowingFramebufferSurface: FramebufferSurface, @unchecked Sendable
         }
       } catch {
         registered.forEach { next.surface.unregisterCallbacks(token: $0) }
+        let current = Screen(uniqueID: screen.uniqueID, surface: screen.surface)
+        var restoreError: Error?
+        for (token, registration) in registrations {
+          do {
+            try Self.register(registration, token: token, on: current)
+          } catch {
+            restoreError = error
+          }
+        }
+        screen = current
+        if let restoreError {
+          throw RestoreFailure(move: error, restore: restoreError)
+        }
         throw error
       }
-      screen.gate.withLock { $0 = false }
-      registrations.keys.forEach { screen.surface.unregisterCallbacks(token: $0) }
       screen = next
       return (next.surface.immediatelyAvailableSurface(), Array(registrations.values))
     }

@@ -27,6 +27,22 @@ struct RestorableDeviceTests {
   }
 
   @Test
+  func nativeStateValuesAreValidated() {
+    let cases: [(Int32, TargetState)] = [
+      (0, .DFU), (1, .recovery), (2, .restoreOS), (4, .booted), (5, .unknown),
+      (3, .unknown), (-1, .unknown), (6, .unknown), (.min, .unknown), (.max, .unknown),
+    ]
+    var calls = CreateZeroedAMDCalls()
+    calls.RestorableDeviceGetState = { ref in (ref as? NSNumber)?.int32Value ?? 5 }
+    for (rawValue, expected) in cases {
+      let device = RestorableDevice(
+        calls: calls, restorableDevice: NSNumber(value: rawValue), allValues: [:],
+        work: .main, asyncQueue: .main, logger: ControlCoreGlobalConfiguration.defaultLogger)
+      #expect(device.state == expected, "Native state \(rawValue)")
+    }
+  }
+
+  @Test
   func stringProductTypeFlowsIntoDeviceType() {
     #expect(device(allValues: [DeviceKey.productType.rawValue: "iPhone14,2"]).deviceType.model.rawValue == "iPhone14,2")
   }

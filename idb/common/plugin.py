@@ -22,7 +22,7 @@ from types import ModuleType
 from typing import cast, List, overload, ParamSpec, TypeVar
 
 from idb.common.command import Command
-from idb.common.types import IdbException, LoggingMetadata
+from idb.common.types import CompanionInfo, IdbException, LoggingMetadata
 
 
 def package_exists(package_name: str) -> bool:
@@ -278,6 +278,20 @@ def append_companion_metadata(
         metadata = method(logger=logger, metadata=metadata)
     # pyrefly: ignore [bad-return]
     return metadata
+
+
+def on_companion_connected(logger: Logger, companion: CompanionInfo) -> None:
+    # Observation only: a plugin failure must not break the connection.
+    for plugin in PLUGINS:
+        method = getattr(plugin, "on_companion_connected", None)
+        if not method:
+            continue
+        try:
+            method(logger=logger, companion=companion)
+        except Exception:
+            logger.exception(
+                "on_companion_connected plugin failed, swallowing exception"
+            )
 
 
 def get_commands() -> list[Command]:

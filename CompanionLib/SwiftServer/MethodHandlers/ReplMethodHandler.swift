@@ -113,6 +113,7 @@ struct ReplMethodHandler {
             $0.nextRunIndex = session.nextRunIndex
             $0.sharedFilesystem = sharedFilesystem
             $0.sessionID = session.sessionID
+            $0.verifiesBuildUuid = true
           })
       })
 
@@ -127,6 +128,26 @@ struct ReplMethodHandler {
         throw RPCError(code: .failedPrecondition, message: "repl session already started")
 
       case let .execute(execute):
+        // A driver that names the build it built the dylib for gets a load only
+        // if the served app is that build; nothing is written otherwise.
+        let expectation = ReplBuildExpectation(execute)
+        if !expectation.isEmpty,
+          case let .rejected(rejection, message) = ReplBuildIdentityCheck.verify(expectation, against: await appIdentity(bundleID: appBundleID), bundleID: appBundleID)
+        {
+          targetLogger.info().log("REPL execute refused: \(message)")
+          try await responseStream.send(
+            .with {
+              $0.event = .result(
+                .with {
+                  $0.success = false
+                  $0.output = "Error: \(message)"
+                  $0.rejection = rejection
+                  $0.nextRunIndex = Int32(clamping: session.nextRunIndex)
+                })
+            })
+          continue bridge
+        }
+
         let dylibPath = (scratchDirectory as NSString).appendingPathComponent("run-\(runIndex).dylib")
         runIndex += 1
         try execute.dylib.write(to: URL(fileURLWithPath: dylibPath))
@@ -189,6 +210,21 @@ struct ReplMethodHandler {
       try await session.close()
     }
     try await responseStream.send(.with { $0.event = .stopped(.with { $0.desc = "REPL session ended" }) })
+  }
+
+  /// The identity of the app the session serves, nil for the contexts that serve none. An app
+  /// that cannot be found reads as an app whose identity is unknown, which the check rejects.
+  private func appIdentity(bundleID: String?) async -> ReplAppIdentity? {
+    guard let bundleID else {
+      return nil
+    }
+    do {
+      let app = try await commandExecutor.replInstalledApplication(bundleID: bundleID)
+      return ReplAppIdentity(bundlePath: app.bundlePath, executableUUID: app.executableUUID)
+    } catch {
+      targetLogger.error().log("REPL could not read the installed app \(bundleID) to check its build: \(error)")
+      return ReplAppIdentity(buildUUID: nil, executableUUID: nil)
+    }
   }
 
   /// Extracts the REPL run index the driver encoded in an execute's entry-point
