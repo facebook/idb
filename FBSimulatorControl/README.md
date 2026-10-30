@@ -239,6 +239,8 @@ Newer Xcode versions introduce a second event path: a `dtuhidd` daemon inside th
 
 A DTUHID gesture lives in `dtuhidd` only as long as its connection. When the daemon interrupts the connection mid-gesture, XPC reconnects on the next send but the gesture is gone, so the sample that would continue it fails with `SimulatorHIDError.dtuhidGestureInterrupted` and the next gesture begins afresh.
 
+An operation that fails or is cancelled releases what it still holds. If that release or the drain after it fails too, the operation throws `SimulatorHIDError.cleanupFailed` with both the error that ended it and the cleanup failures; otherwise it rethrows the error that ended it.
+
 ### `SimulatorKit.framework`
 
 This is another macOS Framework that is used in iOS Simulator management. This Framework is not installed to the System, it is bundled within Xcode. Instead, this Framework is more used to implement functionality within `Simulator.app`.

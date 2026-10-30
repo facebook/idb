@@ -119,9 +119,13 @@ public final class SimulatorHID: CustomStringConvertible, Sendable {
         }
         try await operation.finish(flushing: flushing)
       } catch {
-        for failure in await operation.cleanup() { logger.log("HID cleanup failed: \(failure)") }
+        let failures = await operation.cleanup()
+        for failure in failures { logger.log("HID cleanup failed: \(failure)") }
         // Settles what the failed operation sent, so that its delivery failures are not reported by the next.
         try? await transport.acknowledged()
+        guard failures.isEmpty else {
+          throw SimulatorHIDError.cleanupFailed(cause: error, failures: failures)
+        }
         throw error
       }
       try await transport.acknowledged()

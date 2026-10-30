@@ -51,6 +51,49 @@ struct SimulatorHIDGestureLifecycleTests {
     #expect(received.map { xpc_dictionary_get_uint64(xpc_dictionary_get_dictionary($0, "payload")!, "eventType") } == [0, 0])
     digitizer.connection.disconnect()
   }
+
+  // MARK: - Cleanup after a failed operation
+
+  @Test
+  func aSuccessfulCleanupRethrowsTheErrorThatEndedTheOperation() async throws {
+    let digitizer = Service(SimulatorDigitizerHIDTransport.serviceName)
+    let hid = SimulatorHID(transport: .dtuhid(digitizer.transport()))
+
+    await #expect(throws: StreamFailure.self) {
+      try await hid.send(events: ThenFail(.touch(direction: .down, x: 10, y: 20)), logger: Self.logger)
+    }
+    digitizer.connection.disconnect()
+  }
+
+  @Test
+  func aContactThatCannotBeReleasedIsReportedWithTheErrorThatEndedTheOperation() async throws {
+    let digitizer = Service(SimulatorDigitizerHIDTransport.serviceName)
+    let hid = SimulatorHID(transport: .dtuhid(digitizer.transport()))
+    let connection = digitizer.connection
+
+    await #expect {
+      try await hid.send(
+        events: ThenFail(.touch(direction: .down, x: 10, y: 20)) { connection.disconnect() }, logger: Self.logger)
+    } throws: { error in
+      Self.isCleanupFailure(error, failure: { ($0 as? SimulatorHIDError).map(Self.isInvalidated) ?? false })
+    }
+  }
+
+  @Test
+  func aDrainThatFailsDuringCleanupIsReportedWithTheErrorThatEndedTheOperation() async throws {
+    let digitizer = Service(SimulatorDigitizerHIDTransport.serviceName, sleeper: FailingSleeper())
+    let hid = SimulatorHID(transport: .dtuhid(digitizer.transport()))
+
+    await #expect {
+      try await hid.send(events: ThenFail(.touch(direction: .down, x: 10, y: 20)), logger: Self.logger)
+    } throws: { error in
+      Self.isCleanupFailure(error, failure: { $0 is DrainFailure })
+    }
+    let received = await digitizer.peer.received(atLeast: 2)
+    #expect(received.map { xpc_dictionary_get_uint64(xpc_dictionary_get_dictionary($0, "payload")!, "eventType") } == [0, 2])
+    digitizer.connection.disconnect()
+  }
+
   // MARK: - Delays
 
   @Test(arguments: [-0.1, Double.nan, .infinity, -.infinity, 1e20])
@@ -93,6 +136,19 @@ struct SimulatorHIDGestureLifecycleTests {
 
   private static let logger = ControlCoreGlobalConfiguration.defaultLogger
 
+  private static func isCleanupFailure(_ error: Error, failure matches: (Error) -> Bool) -> Bool {
+    guard case let .cleanupFailed(cause, failures) = error as? SimulatorHIDError else { return false }
+    return cause is StreamFailure && failures.count == 1 && failures.allSatisfy(matches)
+  }
+
+  private static func isInvalidated(_ error: SimulatorHIDError) -> Bool {
+    guard case .dtuhidConnectionInvalidated = error else { return false }
+    return true
+  }
+
+  private enum StreamFailure: Error { case injected }
+  private enum DrainFailure: Error { case injected }
+
   /// A synthetic `dtuhidd` service and an unprobed connection to it.
   private struct Service {
     let peer: SyntheticXPCPeer
@@ -111,6 +167,44 @@ struct SimulatorHIDGestureLifecycleTests {
 
   private struct NoSleep: DTUHIDSleeper {
     func sleep(for duration: Duration) async throws {}
+  }
+
+  private struct FailingSleeper: DTUHIDSleeper {
+    func sleep(for duration: Duration) async throws {
+      throw DrainFailure.injected
+    }
+  }
+
+  /// Yields `event`, then runs `before` and fails. `SimulatorHID` asks for the next event only once it
+  /// has delivered the previous one, so `before` runs after `event` has been sent.
+  private struct ThenFail: AsyncSequence {
+    typealias Element = SimulatorHIDEvent
+
+    let event: SimulatorHIDEvent
+    let before: @Sendable () -> Void
+
+    init(_ event: SimulatorHIDEvent, before: @escaping @Sendable () -> Void = {}) {
+      self.event = event
+      self.before = before
+    }
+
+    struct AsyncIterator: AsyncIteratorProtocol {
+      var event: SimulatorHIDEvent?
+      let before: @Sendable () -> Void
+
+      mutating func next() async throws -> SimulatorHIDEvent? {
+        if let event {
+          self.event = nil
+          return event
+        }
+        before()
+        throw StreamFailure.injected
+      }
+    }
+
+    func makeAsyncIterator() -> AsyncIterator {
+      AsyncIterator(event: event, before: before)
+    }
   }
 
 }

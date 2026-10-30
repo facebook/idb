@@ -9,8 +9,7 @@ import Darwin
 @preconcurrency import FBControlCore
 import Foundation
 
-/// The failure cases of the HID layer. They are surfaced only as messages — no consumer inspects
-/// domain or code.
+/// The failure cases of the HID layer.
 public enum SimulatorHIDError: Error, LocalizedError {
   /// The runtime-only `SimDeviceLegacyHIDClient` class could not be looked up by name.
   case clientClassUnavailable(className: String)
@@ -53,6 +52,8 @@ public enum SimulatorHIDError: Error, LocalizedError {
   case dtuhidGestureInterrupted
   /// A delay was negative, not finite, or too long to sleep for.
   case invalidDelay(TimeInterval)
+  /// An operation ended with `cause`, and releasing or draining what it had sent then failed too.
+  case cleanupFailed(cause: Error, failures: [Error])
 
   public var errorDescription: String? {
     switch self {
@@ -103,6 +104,8 @@ public enum SimulatorHIDError: Error, LocalizedError {
       return "The dtuhidd connection was interrupted during the gesture, so the guest no longer has it"
     case let .invalidDelay(seconds):
       return "A HID delay must be finite, non-negative and representable in nanoseconds, not \(seconds)s"
+    case let .cleanupFailed(cause, failures):
+      return "\(cause.localizedDescription); releasing the gesture then failed: \(failures.map(\.localizedDescription).joined(separator: "; "))"
     }
   }
 
