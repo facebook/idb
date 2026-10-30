@@ -9,6 +9,7 @@ import Darwin
 import Foundation
 import SimulatorIPC
 import Testing
+import os
 
 @Suite(.serialized)
 final class IPCSocketTests {
@@ -71,6 +72,50 @@ final class IPCSocketTests {
     withExtendedLifetime(first) {
       #expect(FileManager.default.fileExists(atPath: path))
     }
+  }
+
+  @Test
+  func aClientThatSeesTheSocketAppearIsNeverRefused() throws {
+    let refusals = OSAllocatedUnfairLock(initialState: 0)
+    for attempt in 0..<200 {
+      let path = "\(directory)/r\(attempt).sock"
+      let finished = DispatchSemaphore(value: 0)
+      Thread.detachNewThread {
+        defer { finished.signal() }
+        // A client woken by the directory changing connects as soon as the socket's name exists.
+        let deadline = Date().addingTimeInterval(5)
+        while access(path, F_OK) != 0 {
+          guard Date() < deadline else { return }
+        }
+        if Self.rawConnect(path) == ECONNREFUSED {
+          refusals.withLock { $0 += 1 }
+        }
+      }
+      let listener = try #require(try IPCListener.bind(path: path, backlog: 1))
+      finished.wait()
+      withExtendedLifetime(listener) {}
+    }
+
+    #expect(refusals.withLock { $0 } == 0)
+  }
+
+  /// The errno of a connect to `path`, or 0 when it connects.
+  private static func rawConnect(_ path: String) -> Int32 {
+    let descriptor = socket(AF_UNIX, SOCK_STREAM, 0)
+    defer { close(descriptor) }
+    var address = sockaddr_un()
+    address.sun_family = sa_family_t(AF_UNIX)
+    withUnsafeMutableBytes(of: &address.sun_path) { buffer in
+      let bytes = Array(path.utf8.prefix(buffer.count - 1))
+      buffer.copyBytes(from: bytes)
+      buffer[bytes.count] = 0
+    }
+    let result = withUnsafePointer(to: &address) {
+      $0.withMemoryRebound(to: sockaddr.self, capacity: 1) {
+        connect(descriptor, $0, socklen_t(MemoryLayout<sockaddr_un>.size))
+      }
+    }
+    return result == 0 ? 0 : errno
   }
 
   @Test

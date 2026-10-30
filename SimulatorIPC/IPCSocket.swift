@@ -129,7 +129,13 @@ public final class IPCListener {
   private let path: String
 
   public static func bind(path: String, backlog: Int32) throws -> IPCListener? {
-    var address = try IPCSocket.address(path: path)
+    // Bound and listening under a sibling name, then renamed into place: a client woken by the
+    // socket's appearance would otherwise connect between bind and listen, be refused, and wait for
+    // its next recheck. The sibling's name is as long as the socket's, so it fits wherever that does.
+    let name = (path as NSString).lastPathComponent
+    let bindingPath = ((path as NSString).deletingLastPathComponent as NSString).appendingPathComponent(
+      "." + name.dropLast())
+    var address = try IPCSocket.address(path: bindingPath)
     let fileDescriptor = socket(AF_UNIX, SOCK_STREAM, 0)
     guard fileDescriptor >= 0 else { throw IPCError.failed(operation: "socket", errno: errno) }
     // Keep the inode stable: unlinking a lock file lets another starter lock a different inode.
@@ -147,15 +153,25 @@ public final class IPCListener {
       if contended { return nil }
       throw error
     }
-    unlink(path)
+    unlink(bindingPath)
     let bound = withUnsafePointer(to: &address) {
       $0.withMemoryRebound(to: sockaddr.self, capacity: 1) {
         Darwin.bind(fileDescriptor, $0, socklen_t(MemoryLayout<sockaddr_un>.size))
       }
     }
-    guard bound == 0, listen(fileDescriptor, backlog) == 0 else {
-      let error = IPCError.failed(operation: bound == 0 ? "listen" : "bind", errno: errno)
-      if bound == 0 { unlink(path) }
+    let failedOperation: String? =
+      if bound != 0 {
+        "bind"
+      } else if listen(fileDescriptor, backlog) != 0 {
+        "listen"
+      } else if rename(bindingPath, path) != 0 {
+        "rename"
+      } else {
+        nil
+      }
+    if let failedOperation {
+      let error = IPCError.failed(operation: failedOperation, errno: errno)
+      if bound == 0 { unlink(bindingPath) }
       close(lockFileDescriptor)
       close(fileDescriptor)
       throw error
