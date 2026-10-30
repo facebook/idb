@@ -67,6 +67,7 @@ def _human_format_trace_value(value: dict[str, object]) -> str:
 
 
 def human_format_resource_sample(sample: dict[str, object]) -> str:
+    # pyrefly: ignore[invalid-argument]
     cpu = f"{sample['cpuPct']:.1f}%" if "cpuPct" in sample else "-"
     return (
         f"{sample['elapsedMs']}ms {sample['processName']}({sample['pid']}) cpu={cpu} "
