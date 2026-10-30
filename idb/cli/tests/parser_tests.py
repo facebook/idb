@@ -1312,6 +1312,7 @@ class TestParser(TestCase):
             namespace.scale_factor = None
             namespace.bitrate = None
             namespace.key_frame_rate = None
+            namespace.audio = False
             mock.assert_called_once_with(namespace)
 
     async def test_video_record_encode_options(self) -> None:

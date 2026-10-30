@@ -101,6 +101,7 @@ from idb.common.types import (
     QuiescenceTargetChanged,
     QuiescenceTargetExited,
     QuiescenceTouchesCompleted,
+    RecordedAudio,
     RetryVerdict,
     Screenshot,
     ScreenshotOptions,
@@ -208,7 +209,7 @@ from idb.grpc.stream import (
     stop_wrapper,
 )
 from idb.grpc.target import companion_to_py, target_to_py
-from idb.grpc.video import generate_video_bytes
+from idb.grpc.video import generate_video_bytes, recorded_audio_from_grpc
 from idb.grpc.xctest import (
     make_request,
     make_results,
@@ -1587,10 +1588,12 @@ class Client(ClientBase):
         scale_factor: float | None = None,
         bitrate: float | None = None,
         key_frame_rate: float | None = None,
-    ) -> None:
+        audio: bool = False,
+    ) -> RecordedAudio | None:
         self.logger.info("Starting connection to backend")
         requested_encode_options = any([fps, scale_factor, bitrate, key_frame_rate])
         applied: list[RecordResponse.Applied] = []
+        recorded_audio: list[RecordResponse.Audio] = []
         async with self.stub.record.open() as stream:
             if self.is_local:
                 self.logger.info(
@@ -1610,6 +1613,7 @@ class Client(ClientBase):
                         scale_factor=scale_factor or 0,
                         avg_bitrate=bitrate or 0,
                         key_frame_rate=key_frame_rate or 0,
+                        audio=audio,
                     )
                 )
             )
@@ -1619,16 +1623,22 @@ class Client(ClientBase):
             await stream.end()
             if self.is_local:
                 self.logger.info("Video saved at output path")
-                # The echo of the encode options, when there is one, precedes the file path.
+                # The echo of the encode options and the description of the audio, when there are
+                # any, precede the file path.
                 while True:
                     response = await stream.recv_message()
-                    if response is None or response.WhichOneof("output") != "applied":
+                    output = response.WhichOneof("output") if response else None
+                    if output == "applied":
+                        applied.append(response.applied)
+                    elif output == "audio":
+                        recorded_audio.append(response.audio)
+                    else:
                         break
-                    applied.append(response.applied)
             else:
                 self.logger.info(f"Decompressing gzip to {output_file}")
                 await drain_gzip_decompress(
-                    generate_video_bytes(stream, applied), output_path=output_file
+                    generate_video_bytes(stream, applied, recorded_audio),
+                    output_path=output_file,
                 )
                 self.logger.info(f"Finished decompression to {output_file}")
         if requested_encode_options and not applied:
@@ -1636,6 +1646,14 @@ class Client(ClientBase):
                 "The companion did not report which encode options it applied, so it predates them "
                 "and recorded at its own defaults"
             )
+        if not audio:
+            return None
+        if not any(echo.audio for echo in applied) or not recorded_audio:
+            raise IdbException(
+                f"The companion recorded no audio: it predates audio recording, so {output_file} "
+                "holds video alone"
+            )
+        return recorded_audio_from_grpc(recorded_audio[0])
 
     @log_and_handle_exceptions("video_stream")
     async def stream_video(

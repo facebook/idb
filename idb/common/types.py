@@ -172,6 +172,41 @@ class VideoFormat(Enum):
 
 
 @dataclass(frozen=True)
+class RecordedAudioProcess:
+    """One process whose sound is in a recording's audio."""
+
+    pid: int
+    name: str
+    # Frames of its output in the audio.
+    frames: int
+    # Frames it played but could not keep, or None when it exited during the recording without
+    # saying.
+    dropped_frames: int | None
+    # Frames it played at a rate other than the audio's, which were left out.
+    unmixed_frames: int
+    # Times its audio was moved back onto the host clock after its device clock drifted.
+    realignments: int
+
+
+@dataclass(frozen=True)
+class RecordedAudio:
+    """What a recording's audio track holds."""
+
+    # Seconds from the recording's start to the first captured frame, negative when the audio
+    # began first and that much was cut.
+    offset: float
+    # Frames of audio in the recording's track.
+    frames: int
+    sample_rate: float
+    # Everything captured, uncut, as a two-channel 32-bit float WAV beside a recording the
+    # companion saved to a local path; None otherwise.
+    wav_file_path: str | None
+    processes: list[RecordedAudioProcess]
+    # What a process reported when it could not capture.
+    failures: list[str]
+
+
+@dataclass(frozen=True)
 class TCPAddress:
     host: str
     port: int
@@ -1216,7 +1251,8 @@ class Client(ABC):
         scale_factor: float | None = None,
         bitrate: float | None = None,
         key_frame_rate: float | None = None,
-    ) -> None:
+        audio: bool = False,
+    ) -> RecordedAudio | None:
         pass
 
     @abstractmethod

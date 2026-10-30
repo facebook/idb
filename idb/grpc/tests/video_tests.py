@@ -9,7 +9,14 @@ import asyncio
 from collections.abc import AsyncIterator
 from unittest.mock import MagicMock, patch
 
-from idb.common.types import CompanionInfo, DomainSocketAddress, VideoFormat
+from idb.common.types import (
+    CompanionInfo,
+    DomainSocketAddress,
+    IdbException,
+    RecordedAudio,
+    RecordedAudioProcess,
+    VideoFormat,
+)
 from idb.grpc.client import Client
 from idb.grpc.idb_pb2 import (
     Payload,
@@ -35,6 +42,58 @@ def _payload(data: bytes) -> RecordResponse:
 def _echo(**kwargs: float) -> RecordResponse:
     # pyre-ignore[6]: the proto constructor is not typed per-field here.
     return RecordResponse(applied=RecordResponse.Applied(**kwargs))
+
+
+def _audio() -> RecordResponse:
+    return RecordResponse(
+        audio=RecordResponse.Audio(
+            offset=-0.25,
+            frames=96_000,
+            sample_rate=48_000,
+            wav_file_path="out.wav",
+            processes=[
+                RecordResponse.AudioProcess(
+                    pid=41, name="Player", frames=96_000, realignments=2
+                ),
+                RecordResponse.AudioProcess(
+                    pid=42,
+                    name="Crashed",
+                    frames=480,
+                    dropped_frames=-1,
+                    unmixed_frames=64,
+                ),
+            ],
+            failures=["Recorder: no space left"],
+        )
+    )
+
+
+_DESCRIBED_AUDIO = RecordedAudio(
+    offset=-0.25,
+    frames=96_000,
+    sample_rate=48_000,
+    wav_file_path="out.wav",
+    processes=[
+        RecordedAudioProcess(
+            pid=41,
+            name="Player",
+            frames=96_000,
+            dropped_frames=0,
+            unmixed_frames=0,
+            realignments=2,
+        ),
+        # The companion's -1 is a process that exited before saying what it dropped.
+        RecordedAudioProcess(
+            pid=42,
+            name="Crashed",
+            frames=480,
+            dropped_frames=None,
+            unmixed_frames=64,
+            realignments=0,
+        ),
+    ],
+    failures=["Recorder: no space left"],
+)
 
 
 class _FakeStream:
@@ -73,9 +132,7 @@ class RecordVideoTests(TestCase):
         # and the responses that came back, not about the duration.
         self.stop.set()
 
-    async def _record(
-        self, stream: _FakeStream, **options: float
-    ) -> RecordRequest.Start:
+    def _client(self, stream: _FakeStream) -> Client:
         client = Client.__new__(Client)
         client.stub = MagicMock(record=MagicMock(open=MagicMock(return_value=stream)))
         client.companion = CompanionInfo(
@@ -85,9 +142,43 @@ class RecordVideoTests(TestCase):
             address=DomainSocketAddress(path="/tmp/idb.sock"),
         )
         client.logger = self.logger
+        return client
+
+    async def _record(
+        self, stream: _FakeStream, **options: float
+    ) -> RecordRequest.Start:
+        client = self._client(stream)
         # pyre-ignore[6]: the options are the encode options, each int | float | None.
         await client.record_video(stop=self.stop, output_file="out.mp4", **options)
         return stream.sent[0].start
+
+    async def test_audio_is_asked_for_and_described(self) -> None:
+        stream = _FakeStream(_echo(fps=30, audio=True), _audio(), _payload(b"out.mp4"))
+
+        audio = await self._client(stream).record_video(
+            stop=self.stop, output_file="out.mp4", audio=True
+        )
+
+        self.assertEqual(
+            stream.sent[0].start, RecordRequest.Start(file_path="out.mp4", audio=True)
+        )
+        self.assertEqual(audio, _DESCRIBED_AUDIO)
+
+    async def test_a_recording_without_audio_describes_none(self) -> None:
+        audio = await self._client(_FakeStream()).record_video(
+            stop=self.stop, output_file="out.mp4"
+        )
+        self.assertIsNone(audio)
+
+    async def test_a_companion_that_records_no_audio_is_refused(self) -> None:
+        # An old companion ignores the field and records video alone: it either echoes nothing or
+        # echoes the encode options without audio, and describes no audio afterwards.
+        for responses in ((), (_echo(fps=30),)):
+            with self.subTest(responses=responses):
+                with self.assertRaisesRegex(IdbException, "recorded no audio"):
+                    await self._client(_FakeStream(*responses)).record_video(
+                        stop=self.stop, output_file="out.mp4", audio=True
+                    )
 
     async def test_a_request_without_options_is_what_idb_always_sent(self) -> None:
         # This is what the zero default buys: a caller who asks for nothing produces a request
@@ -323,3 +414,16 @@ class VideoTests(TestCase):
             )
         ]
         self.assertEqual(chunks, [b"first"])
+
+    async def test_the_audio_description_is_not_video(self) -> None:
+        # A remote recording's audio is described before its bytes, which it would otherwise corrupt.
+        applied: list[RecordResponse.Applied] = []
+        audio: list[RecordResponse.Audio] = []
+        chunks = [
+            chunk
+            async for chunk in generate_video_bytes(
+                _stream(_echo(audio=True), _audio(), _payload(b"first")), applied, audio
+            )
+        ]
+        self.assertEqual(chunks, [b"first"])
+        self.assertEqual([description.frames for description in audio], [96_000])
