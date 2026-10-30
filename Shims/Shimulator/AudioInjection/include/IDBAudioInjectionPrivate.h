@@ -100,9 +100,13 @@ extern OSStatus AudioComponentInstanceNew(void *component, void **outInstance);
 extern void AudioComponentInstantiate(void *component, UInt32 options, void (^completionHandler)(void *instance, OSStatus status));
 extern OSStatus AudioComponentInstanceDispose(void *instance);
 
-/// Whether this process's simulator was armed for injection when the shim loaded. Unarmed, every
-/// replacement below only calls the original.
+/// Whether this process's simulator was armed for injection when the shim loaded. Armed for neither
+/// injection nor capture, every replacement below only calls the original.
 bool IDBAudioInjectionIsArmed(void);
+
+/// Whether this process was launched armed for output capture. Armed, its IO procs are wrapped so
+/// that what they render can be kept while a capture runs.
+bool IDBAudioCaptureIsArmed(void);
 
 /// The replacements dyld is pointed at, implemented in `AudioInjectionBootstrap.swift`.
 OSStatus IDBAudioDeviceCreateIOProcID(

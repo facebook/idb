@@ -11,17 +11,26 @@
 #include "IDBAudioInjectionPrivate.h"
 
 static bool IDBAudioInjectionArmed;
+static bool IDBAudioCaptureArmed;
 
-// Read once at load, before any app code runs. Matches `ShimulatorAudioInjection.armedEnvironmentVariable`.
+// Read once at load, before any app code runs. Match `ShimulatorAudioInjection.armedEnvironmentVariable`
+// and `ShimulatorAudioCapture.armedEnvironmentVariable`.
 __attribute__((constructor)) static void IDBAudioInjectionReadArming(void)
 {
-  const char *value = getenv("IDB_AUDIO_INJECTION");
-  IDBAudioInjectionArmed = value != NULL && strcmp(value, "1") == 0;
+  const char *injection = getenv("IDB_AUDIO_INJECTION");
+  IDBAudioInjectionArmed = injection != NULL && strcmp(injection, "1") == 0;
+  const char *capture = getenv("IDB_AUDIO_CAPTURE");
+  IDBAudioCaptureArmed = capture != NULL && strcmp(capture, "1") == 0;
 }
 
 bool IDBAudioInjectionIsArmed(void)
 {
   return IDBAudioInjectionArmed;
+}
+
+bool IDBAudioCaptureIsArmed(void)
+{
+  return IDBAudioCaptureArmed;
 }
 
 #define IDB_INTERPOSE(replacement, replacee)                                                \

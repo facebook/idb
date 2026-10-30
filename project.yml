@@ -356,6 +356,8 @@ targets:
     deploymentTarget: "15.0"
     scheme: {}
     sources:
+      - path: Shims/Shimulator/AudioInjection/AudioCaptureController.swift
+      - path: Shims/Shimulator/AudioInjection/AudioCaptureFile.swift
       - path: Shims/Shimulator/AudioInjection/AudioInjectionController.swift
     settings:
       base:

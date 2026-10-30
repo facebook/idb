@@ -7,6 +7,7 @@
 
 import CoreAudio
 import Foundation
+@_implementationOnly import ShimulatorAudioInjectionCore
 @_implementationOnly import ShimulatorAudioInjectionHAL
 @_implementationOnly import ShimulatorAudioInjectionPrivate
 import Synchronization
@@ -25,6 +26,7 @@ private struct Recorded {
   var originalCallbacks = 0
   var destroyCount = 0
   var controllerStarts = 0
+  var captureStarts = 0
   var propertyRate: Double = 44_100
   var inputStreamBytes: UInt32 = 0
   var defaultInputDevice: IDBAudioObjectID = 0
@@ -100,11 +102,34 @@ private let hal = AudioHAL(
     withFake { $0.calls.append("listenBlock") }
     return 32
   },
-  startController: { withFake { $0.controllerStarts += 1 } })
+  startController: { withFake { $0.controllerStarts += 1 } },
+  startCapture: { withFake { $0.captureStarts += 1 } })
 
 private let originalProc: IDBAudioDeviceIOProc = { _, _, _, _, _, _, _ in
   withFake { $0.originalCallbacks += 1 }
   return 17
+}
+
+/// Renders a ramp into every output buffer, as an app writing its audio would.
+private let renderingProc: IDBAudioDeviceIOProc = { _, _, _, _, output, _, _ in
+  withFake { $0.originalCallbacks += 1 }
+  guard let output else {
+    return 17
+  }
+  for buffer in UnsafeMutableAudioBufferListPointer(output) {
+    guard let data = buffer.mData else {
+      continue
+    }
+    let samples = data.assumingMemoryBound(to: Float.self)
+    for index in 0..<Int(buffer.mDataByteSize) / MemoryLayout<Float>.size {
+      samples[index] = rendered(index)
+    }
+  }
+  return 17
+}
+
+private func rendered(_ index: Int) -> Float {
+  Float(index + 1) / 1_000
 }
 
 private let capturingProc: IDBAudioDeviceIOProc = { _, _, input, _, _, _, _ in
@@ -643,6 +668,167 @@ struct AudioInjectionHALTests {
     #expect(offersSyntheticInput())
     #expect(disposeUnit(remoteIO) == noErr)
     #expect(offersSyntheticInput())
+  }
+
+  // Output capture.
+
+  private let capture = HALAudioCaptureEngine()
+
+  private var captureOnly: AudioHAL {
+    var captureOnly = hal
+    captureOnly.armed = false
+    captureOnly.captureArmed = true
+    return captureOnly
+  }
+
+  private func createCapturing(_ device: IDBAudioObjectID, using shim: AudioHAL? = nil) -> UnsafeMutableRawPointer? {
+    var handle: UnsafeMutableRawPointer?
+    _ = AudioInjectionHAL.createIOProcID(
+      shim ?? captureOnly, device: device, proc: renderingProc, clientData: nil, outIOProcID: &handle)
+    return handle
+  }
+
+  private func render(
+    _ device: IDBAudioObjectID, frames: Int, channels: UInt32 = 2, hostTime: UInt64 = 0, sampleTime: Double = 0
+  ) -> OSStatus {
+    var output = [Float](repeating: 0, count: frames * Int(channels))
+    var time = AudioTimeStamp()
+    time.mHostTime = hostTime
+    time.mSampleTime = sampleTime
+    time.mFlags = [.hostTimeValid, .sampleTimeValid]
+    let (proc, clientData) = withFake { ($0.proc, $0.clientData) }
+    return output.withUnsafeMutableBytes { bytes in
+      var list = AudioBufferList(
+        mNumberBuffers: 1,
+        mBuffers: AudioBuffer(mNumberChannels: channels, mDataByteSize: UInt32(bytes.count), mData: bytes.baseAddress))
+      return proc?(device, nil, nil, nil, &list, &time, UnsafeMutableRawPointer(bitPattern: clientData)) ?? -1
+    }
+  }
+
+  private func drainCapture() -> (chunks: [AudioCaptureChunk], dropped: UInt64) {
+    var chunks: [AudioCaptureChunk] = []
+    let dropped = capture.drain { chunks.append($0) }
+    return (chunks, dropped)
+  }
+
+  @Test
+  func captureKeepsWhatTheAppRendersWithItsTiming() {
+    let handle = createCapturing(8)
+    capture.begin()
+
+    #expect(render(8, frames: 4, hostTime: 1_000, sampleTime: 512) == 17)
+    #expect(render(8, frames: 4, hostTime: 2_000, sampleTime: 516) == 17)
+    let (chunks, dropped) = drainCapture()
+    capture.end()
+
+    #expect(chunks.count == 2)
+    #expect(chunks.first?.samples == (0..<8).map(rendered))
+    #expect(chunks.map(\.hostTime) == [1_000, 2_000])
+    #expect(chunks.map(\.sampleTime) == [512, 516])
+    #expect(chunks.allSatisfy { $0.channels == 2 && $0.frames == 4 && !$0.discontinuity && $0.device == 8 })
+    #expect(chunks.allSatisfy { $0.sampleRate == 44_100 && $0.stream == chunks[0].stream })
+    #expect(dropped == 0)
+    #expect(withFake { $0.captureStarts } == 1)
+    #expect(destroy(8, handle) == noErr)
+  }
+
+  @Test
+  func nothingIsKeptOutsideACapture() {
+    let handle = createCapturing(8)
+    #expect(render(8, frames: 4) == 17)
+    capture.begin()
+    #expect(drainCapture().chunks.isEmpty)
+
+    capture.end()
+    #expect(render(8, frames: 4) == 17)
+
+    #expect(drainCapture().chunks.isEmpty)
+    #expect(withFake { $0.originalCallbacks } == 2)
+    #expect(destroy(8, handle) == noErr)
+  }
+
+  @Test
+  func captureAloneLeavesTheMicrophoneAlone() {
+    let handle = createCapturing(8)
+    capture.begin()
+    engine.replace(samples: [.max, .min], sampleRate: 48_000, generation: 1)
+    var input: [Float] = [0.25, 0.25]
+
+    #expect(callback(8, input: &input) == 17)
+    capture.end()
+
+    #expect(input == [0.25, 0.25])
+    #expect(withFake { $0.controllerStarts } == 0)
+    #expect(withFake { $0.calls } == ["create"])
+    #expect(destroy(8, handle) == noErr)
+  }
+
+  @Test
+  func outputThatDoesNotFitIsDroppedAndTheGapMarked() {
+    let handle = createCapturing(8)
+    capture.begin()
+    // Each cycle is 8192 samples, so the 1 << 17 sample ring holds sixteen of them.
+    for cycle in 0..<17 {
+      #expect(render(8, frames: 4_096, hostTime: UInt64(cycle)) == 17)
+    }
+    let full = drainCapture()
+    #expect(render(8, frames: 4_096, hostTime: 17) == 17)
+    let next = drainCapture()
+    capture.end()
+
+    #expect(full.chunks.count == 16)
+    #expect(full.dropped == 4_096)
+    #expect(next.chunks.map(\.hostTime) == [17])
+    #expect(next.chunks.first?.discontinuity == true)
+    #expect(destroy(8, handle) == noErr)
+  }
+
+  @Test
+  func aDestroyedIOProcsOutputIsStillHandedOver() {
+    let handle = createCapturing(8)
+    capture.begin()
+    #expect(render(8, frames: 4, hostTime: 5) == 17)
+
+    #expect(destroy(8, handle) == noErr)
+    let afterDestroy = drainCapture()
+    let later = drainCapture()
+    capture.end()
+
+    #expect(afterDestroy.chunks.map(\.hostTime) == [5])
+    #expect(later.chunks.isEmpty)
+  }
+
+  @Test
+  func injectionAndCaptureTogetherBothRun() {
+    var both = hal
+    both.captureArmed = true
+    let handle = createCapturing(8, using: both)
+    capture.begin()
+    engine.replace(samples: [.max, .min], sampleRate: 48_000, generation: 1)
+    _ = engine.pollProgress()
+    var input: [Float] = [0, 0]
+
+    let status = input.withUnsafeMutableBytes { inputBytes in
+      var output = [Float](repeating: 0, count: 2)
+      return output.withUnsafeMutableBytes { outputBytes in
+        var inputList = AudioBufferList(
+          mNumberBuffers: 1,
+          mBuffers: AudioBuffer(mNumberChannels: 1, mDataByteSize: UInt32(inputBytes.count), mData: inputBytes.baseAddress))
+        var outputList = AudioBufferList(
+          mNumberBuffers: 1,
+          mBuffers: AudioBuffer(mNumberChannels: 1, mDataByteSize: UInt32(outputBytes.count), mData: outputBytes.baseAddress))
+        let (proc, clientData) = withFake { ($0.proc, $0.clientData) }
+        return proc?(8, nil, &inputList, nil, &outputList, nil, UnsafeMutableRawPointer(bitPattern: clientData)) ?? -1
+      }
+    }
+    let (chunks, _) = drainCapture()
+    capture.end()
+
+    #expect(status == 17)
+    #expect(abs(input[0] - 1) <= 0.0001)
+    #expect(chunks.first?.samples == [rendered(0), rendered(1)])
+    #expect(chunks.first?.hostTime == 0)
+    #expect(destroy(8, handle) == noErr)
   }
 
   // The shim is loaded into every iOS test process idb runs, armed or not.

@@ -1,9 +1,10 @@
-# Microphone injection
+# Microphone injection and output capture
 
 `idb audio inject <file>` plays an audio file into the microphone input of the
 apps running in a booted simulator, so an app under test hears a recording
 wherever it would hear the microphone. One command is the whole interface: it
-arms the simulator itself.
+arms the simulator itself. The same shim can also capture what those apps play;
+see [Output capture](#output-capture).
 
 ## The pieces
 
@@ -73,12 +74,14 @@ idb's ordinary iOS test processes already load `libShimulator-iOS` for XCTest
 support. App launches prepare microphone injection in that app's environment;
 idb does not set the audio flag or shim in the guest `launchd` environment.
 
-- **Do nothing unless armed.** The shim reads `IDB_AUDIO_INJECTION` once, at
-  load, and arms only when its value is exactly `1`. Ordinary test launches
-  default it to `0`, preserving an explicit per-process opt-in. Without arming,
-  every interposed function calls the original with the same arguments and returns
-  its result: no thread, no extra HAL call, no synthetic input. Each entry point in
-  `AudioInjectionHAL.swift` starts with that check, and the unit tests hold it.
+- **Do nothing unless armed.** The shim reads `IDB_AUDIO_INJECTION` and
+  `IDB_AUDIO_CAPTURE` once, at load, and arms each only when its value is exactly
+  `1`. Ordinary test launches default injection to `0`, preserving an explicit
+  per-process opt-in. Armed for neither, every interposed function calls the
+  original with the same arguments and returns its result: no thread, no extra
+  HAL call, no synthetic input. Armed only for capture, the shim wraps IO procs
+  and touches nothing else. Each entry point in `AudioInjectionHAL.swift` starts
+  with that check, and the unit tests hold it.
 - **Nothing blocks on the audio thread.** It reads no HAL property or file, only
   try-locks around copying samples, and never allocates or frees under that lock.
   Decoding, the socket and freeing finished audio stay on the client thread.
@@ -115,6 +118,42 @@ Ordinary logic, hosted and UI test launches default their audio flag to `0`,
 including on a simulator previously armed by an older companion. Explicit
 per-process test opt-ins remain possible. These defaults protect new processes;
 they cannot disarm a process that already cached the flag at startup.
+
+## Output capture
+
+The same interposition keeps what an app plays. A process launched with
+`IDB_AUDIO_CAPTURE=1` has every IO proc wrapped: after the app's own proc has
+rendered a cycle, the shim copies the output buffers, with the cycle's host time
+and sample time, into a ring that belongs to that IO proc. Nothing is copied
+unless a capture is running.
+
+| Piece | Where |
+|---|---|
+| The ring and the copy on the audio thread | `AudioInjectionHAL.swift` (`keep`, `AudioCaptureHAL`) |
+| The client that writes the file | `AudioCaptureController.swift`, over the `audio-capture` capability |
+| The file format, shared with the companion | `AudioCaptureFile.swift` |
+
+A capture starts when the companion serves the `audio-capture` socket with a
+private directory. Each armed process that connects writes one file there,
+named for its process identifier, and keeps writing while the companion stays
+connected; the client drains the rings every poll. When the companion
+disconnects, the process takes what is left, writes a summary of the frames it
+dropped, and renames the file into place, so a reader never sees a file that is
+still growing.
+
+The capture is what the app wrote to the device, before the simulator's volume
+and the host's output. Each chunk carries the device's host time for its first
+frame, the clock the companion and the simulator's video share, so a reader can
+place every process's audio on one timeline.
+
+- **The audio thread never waits.** It writes only into free space in its own
+  ring and drops a cycle that does not fit, counting the frames and marking the
+  next chunk as following a gap.
+- **Rings are freed only where no callback can reach them**: a destroyed IO
+  proc's ring once the client has taken what is left in it, under the lock IO
+  proc creation holds.
+- **Only processes the shim was loaded into are captured.** An app idb did not
+  launch, system sounds, and media WebKit plays in its own processes are not.
 
 ## Two device-level routes that look right and are not
 

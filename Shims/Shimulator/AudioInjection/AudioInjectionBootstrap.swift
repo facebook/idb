@@ -23,8 +23,19 @@ private let controllerStart: DispatchSourceUserDataOr = {
   return source
 }()
 
+private let captureStart: DispatchSourceUserDataOr = {
+  let source = DispatchSource.makeUserDataOrSource(queue: .global(qos: .utility))
+  source.setEventHandler {
+    captureStart.cancel()
+    startCaptureClient()
+  }
+  source.activate()
+  return source
+}()
+
 private let realHAL = AudioHAL(
   armed: IDBAudioInjectionIsArmed(),
+  captureArmed: IDBAudioCaptureIsArmed(),
   createIOProcID: AudioDeviceCreateIOProcID,
   destroyIOProcID: AudioDeviceDestroyIOProcID,
   getPropertyData: AudioObjectGetPropertyData,
@@ -32,7 +43,8 @@ private let realHAL = AudioHAL(
   hasProperty: { object, address in AudioObjectHasProperty(object, address) },
   addPropertyListener: AudioObjectAddPropertyListener,
   addPropertyListenerBlock: AudioObjectAddPropertyListenerBlock,
-  startController: { controllerStart.or(data: 1) })
+  startController: { controllerStart.or(data: 1) },
+  startCapture: { captureStart.or(data: 1) })
 
 private func startClient() {
   let logger = Logger(subsystem: "com.facebook.idb", category: "audio-injection")
@@ -45,6 +57,22 @@ private func startClient() {
     ShimulatorClient(
       socketPath: path,
       handler: AudioInjectionController(engine: HALAudioInjectionEngine()),
+      log: { message in logger.log("\(message, privacy: .public)") }
+    ).run()
+  }
+}
+
+private func startCaptureClient() {
+  let logger = Logger(subsystem: "com.facebook.idb", category: "audio-capture")
+  guard let udid = ProcessInfo.processInfo.environment["SIMULATOR_UDID"], !udid.isEmpty else {
+    logger.error("No simulator UDID is available to find the audio capture socket")
+    return
+  }
+  let path = ShimulatorWireProtocol.socketPath(capability: ShimulatorAudioCapture.capability, simulatorUDID: udid)
+  Thread.detachNewThread {
+    ShimulatorClient(
+      socketPath: path,
+      handler: AudioCaptureController(engine: HALAudioCaptureEngine()),
       log: { message in logger.log("\(message, privacy: .public)") }
     ).run()
   }
@@ -63,6 +91,9 @@ func IDBAudioDeviceCreateIOProcID(
 ) -> OSStatus {
   if realHAL.armed {
     _ = controllerStart
+  }
+  if realHAL.captureArmed {
+    _ = captureStart
   }
   return AudioInjectionHAL.createIOProcID(
     realHAL, device: device, proc: proc, clientData: clientData, outIOProcID: outIOProcID)

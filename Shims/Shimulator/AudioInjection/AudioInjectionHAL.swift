@@ -35,6 +35,9 @@ public struct AudioHAL: Sendable {
   /// False unless the process was launched by an armed simulator. Every entry point then calls
   /// straight through to the HAL, and nothing else in this file runs.
   public var armed: Bool
+  /// False unless the process was launched armed for output capture. Without it, or `armed`, IO
+  /// procs are registered unwrapped.
+  public var captureArmed: Bool
   public var createIOProcID: CreateIOProcID
   public var destroyIOProcID: DestroyIOProcID
   public var getPropertyData: GetPropertyData
@@ -44,9 +47,12 @@ public struct AudioHAL: Sendable {
   public var addPropertyListenerBlock: AddPropertyListener
   /// Called on the audio thread, so it may only signal work prepared off it.
   public var startController: @convention(c) () -> Void
+  /// Called on the audio thread the first time a capture-armed IO proc renders output.
+  public var startCapture: @convention(c) () -> Void
 
   public init(
     armed: Bool,
+    captureArmed: Bool = false,
     createIOProcID: CreateIOProcID,
     destroyIOProcID: DestroyIOProcID,
     getPropertyData: GetPropertyData,
@@ -54,9 +60,11 @@ public struct AudioHAL: Sendable {
     hasProperty: HasProperty,
     addPropertyListener: AddPropertyListener,
     addPropertyListenerBlock: AddPropertyListener,
-    startController: @convention(c) () -> Void
+    startController: @convention(c) () -> Void,
+    startCapture: @convention(c) () -> Void = {}
   ) {
     self.armed = armed
+    self.captureArmed = captureArmed
     self.createIOProcID = createIOProcID
     self.destroyIOProcID = destroyIOProcID
     self.getPropertyData = getPropertyData
@@ -65,6 +73,7 @@ public struct AudioHAL: Sendable {
     self.addPropertyListener = addPropertyListener
     self.addPropertyListenerBlock = addPropertyListenerBlock
     self.startController = startController
+    self.startCapture = startCapture
   }
 }
 
@@ -101,6 +110,9 @@ private let parameterError: OSStatus = -50
 private let unknownPropertyError: OSStatus = 0x7768_6F3F // 'who?'
 private let defaultSampleRate: Double = 48_000
 private let int16ToFloat = 1 / Float(Int16.max)
+/// About 1.4 seconds of stereo at 48 kHz, many times the capture client's drain interval.
+private let captureSampleCapacity = 1 << 17
+private let captureChunkCapacity = 1 << 10
 
 private struct IOProcContext {
   let proc: IDBAudioDeviceIOProc
@@ -123,7 +135,58 @@ private struct IOProcContext {
   let syntheticFrames: UInt32
   let syntheticSamples: UnsafeMutablePointer<Float>
   let syntheticList: UnsafeMutablePointer<AudioBufferList>
+  /// Whether injection was armed when the IO proc was created.
+  let injecting: Bool
+  let startCapture: @convention(c) () -> Void
+  /// The output this IO proc renders, while a capture runs. Set at creation, freed only once the
+  /// context is retired and no callback can reach it, always under `ioProcLock`.
+  var capture: UnsafeMutablePointer<CaptureRing>?
+  var captureStarted: UInt64 = 0
+  /// The device's nominal rate as a bit pattern, or 0 until the capture client has read it.
+  var captureSampleRateBits: UInt64 = 0
   var next: UnsafeMutablePointer<IOProcContext>?
+}
+
+private struct CaptureChunkHeader {
+  var hostTime: UInt64 = 0
+  var sampleTime: Double = 0
+  var frames: UInt32 = 0
+  var channels: UInt32 = 0
+  var discontinuity = false
+}
+
+/// One IO proc's rendered output: the audio thread writes and the capture client's thread reads.
+/// Each side advances only its own counters, so neither waits for the other; the writer drops a
+/// cycle that does not fit rather than overwrite what the reader has not taken.
+private struct CaptureRing {
+  let samples: UnsafeMutablePointer<Float>
+  let chunks: UnsafeMutablePointer<CaptureChunkHeader>
+  var writtenSamples: UInt64 = 0
+  var writtenChunks: UInt64 = 0
+  var readSamples: UInt64 = 0
+  var readChunks: UInt64 = 0
+  /// Set when a cycle is dropped, and carried by the next chunk written.
+  var discontinuity: UInt64 = 0
+
+  static func make() -> UnsafeMutablePointer<CaptureRing> {
+    let chunks = UnsafeMutablePointer<CaptureChunkHeader>.allocate(capacity: captureChunkCapacity)
+    chunks.initialize(repeating: CaptureChunkHeader(), count: captureChunkCapacity)
+    let ring = UnsafeMutablePointer<CaptureRing>.allocate(capacity: 1)
+    ring.initialize(to: CaptureRing(samples: .allocate(capacity: captureSampleCapacity), chunks: chunks))
+    return ring
+  }
+
+  static func release(_ ring: UnsafeMutablePointer<CaptureRing>) {
+    ring.pointee.samples.deallocate()
+    ring.pointee.chunks.deinitialize(count: captureChunkCapacity)
+    ring.pointee.chunks.deallocate()
+    ring.deinitialize(count: 1)
+    ring.deallocate()
+  }
+
+  static func isEmpty(_ ring: UnsafeMutablePointer<CaptureRing>) -> Bool {
+    IDBAtomicLoad(&ring.pointee.readChunks) == IDBAtomicLoad(&ring.pointee.writtenChunks)
+  }
 }
 
 private struct State {
@@ -154,6 +217,10 @@ private struct State {
   var componentLock = pthread_mutex_t()
   /// The created units `voiceProcessingUnits` counts, so only their disposal releases a count.
   var voiceProcessingInstances: [UInt] = []
+  /// Whether a capture is running. Atomic; the audio thread only keeps output while it is set.
+  var captureActive: UInt64 = 0
+  /// Frames the audio thread could not keep during this capture. Atomic.
+  var captureDroppedFrames: UInt64 = 0
 }
 
 private let listeningSlots = 64
@@ -243,7 +310,7 @@ public enum AudioInjectionHAL {
     clientData: UnsafeMutableRawPointer?,
     outIOProcID: UnsafeMutablePointer<UnsafeMutableRawPointer?>?
   ) -> OSStatus {
-    guard hal.armed else {
+    guard hal.armed || hal.captureArmed else {
       return hal.createIOProcID(device, proc, clientData, outIOProcID)
     }
     guard let proc, let outIOProcID else {
@@ -253,7 +320,7 @@ public enum AudioInjectionHAL {
     // while an IO proc is being created disturbs the device.
     pthread_mutex_lock(&state.pointee.ioProcLock)
     defer { pthread_mutex_unlock(&state.pointee.ioProcLock) }
-    let synthetic = needsSyntheticInput(hal, device)
+    let synthetic = hal.armed && needsSyntheticInput(hal, device)
     var frames: UInt32 = 0
     if synthetic, !read(hal.getPropertyData, device, Property.bufferFrameSize, into: &frames) {
       frames = 0
@@ -266,7 +333,8 @@ public enum AudioInjectionHAL {
         startController: hal.startController, syntheticInput: synthetic,
         syntheticListening: synthetic && claimListening(device),
         syntheticFrames: frames > 0 ? min(frames, syntheticCapacityFrames) : defaultSyntheticFrames,
-        syntheticSamples: samples, syntheticList: .allocate(capacity: 1)))
+        syntheticSamples: samples, syntheticList: .allocate(capacity: 1), injecting: hal.armed,
+        startCapture: hal.startCapture, capture: hal.captureArmed ? CaptureRing.make() : nil))
     var status = hal.createIOProcID(device, trampoline, context, outIOProcID)
     if status == noErr, outIOProcID.pointee == nil {
       status = parameterError
@@ -284,7 +352,7 @@ public enum AudioInjectionHAL {
   public static func destroyIOProcID(
     _ hal: AudioHAL, device: IDBAudioObjectID, ioProcID: UnsafeMutableRawPointer?
   ) -> OSStatus {
-    guard hal.armed else {
+    guard hal.armed || hal.captureArmed else {
       return hal.destroyIOProcID(device, ioProcID)
     }
     // Held across the HAL's own destroy, so a concurrent creation cannot be handed the same opaque
@@ -320,6 +388,11 @@ public enum AudioInjectionHAL {
     found.pointee.syntheticSamples.deallocate()
     found.pointee.syntheticList.deallocate()
     pthread_mutex_lock(&state.pointee.ioProcLock)
+    // Output the capture client has not taken yet waits for its next drain, which frees the ring.
+    if let ring = found.pointee.capture, CaptureRing.isEmpty(ring) {
+      CaptureRing.release(ring)
+      found.pointee.capture = nil
+    }
     found.pointee.next = state.pointee.retired
     state.pointee.retired = found
     pthread_mutex_unlock(&state.pointee.ioProcLock)
@@ -464,6 +537,7 @@ public enum AudioInjectionHAL {
   private static func release(_ context: UnsafeMutablePointer<IOProcContext>) {
     context.pointee.syntheticSamples.deallocate()
     context.pointee.syntheticList.deallocate()
+    context.pointee.capture.map(CaptureRing.release)
     context.deinitialize(count: 1)
     context.deallocate()
   }
@@ -600,7 +674,7 @@ private func trampoline(
   }
 
   var input = UnsafeMutablePointer(mutating: inputData)
-  var listening = true
+  var listening = context.pointee.injecting
   if context.pointee.syntheticInput, (input?.pointee.mNumberBuffers ?? 0) == 0 {
     if !context.pointee.syntheticListening {
       context.pointee.syntheticListening = claimListening(device)
@@ -624,7 +698,198 @@ private func trampoline(
     let rate = Double(bitPattern: IDBAtomicLoad(&context.pointee.sampleRateBits))
     fill(input, deviceRate: rate, context)
   }
-  return context.pointee.proc(device, now, input, inputTime, outputData, outputTime, context.pointee.clientData)
+  let status = context.pointee.proc(device, now, input, inputTime, outputData, outputTime, context.pointee.clientData)
+  if let ring = context.pointee.capture {
+    keep(outputData, at: outputTime, in: ring, context)
+  }
+  return status
+}
+
+/// Copies what the app rendered into the ring, on the audio thread: no lock, no allocation.
+private func keep(
+  _ output: UnsafeMutablePointer<AudioBufferList>?, at time: UnsafePointer<AudioTimeStamp>?,
+  in ring: UnsafeMutablePointer<CaptureRing>, _ context: UnsafeMutablePointer<IOProcContext>
+) {
+  guard let output, output.pointee.mNumberBuffers > 0 else {
+    return
+  }
+  if IDBAtomicExchange(&context.pointee.captureStarted, 1) == 0 {
+    context.pointee.startCapture()
+  }
+  guard IDBAtomicLoad(&state.pointee.captureActive) != 0 else {
+    return
+  }
+  let buffers = UnsafeMutableAudioBufferListPointer(output)
+  var frames = UInt32.max
+  var channels: UInt32 = 0
+  for buffer in buffers where frameCapacity(buffer) > 0 {
+    frames = min(frames, frameCapacity(buffer))
+    channels += max(buffer.mNumberChannels, 1)
+  }
+  guard frames != .max, Int(channels) <= AudioCaptureFile.maximumChannels, Int(frames) <= AudioCaptureFile.maximumFrames
+  else {
+    return
+  }
+  let count = UInt64(frames) * UInt64(channels)
+  let written = IDBAtomicLoad(&ring.pointee.writtenSamples)
+  let chunk = IDBAtomicLoad(&ring.pointee.writtenChunks)
+  guard written - IDBAtomicLoad(&ring.pointee.readSamples) + count <= UInt64(captureSampleCapacity),
+    chunk - IDBAtomicLoad(&ring.pointee.readChunks) < UInt64(captureChunkCapacity)
+  else {
+    _ = IDBAtomicAdd(&state.pointee.captureDroppedFrames, Int64(frames))
+    _ = IDBAtomicExchange(&ring.pointee.discontinuity, 1)
+    return
+  }
+  let mask = UInt64(captureSampleCapacity - 1)
+  var index = written
+  for frame in 0..<Int(frames) {
+    for buffer in buffers where frameCapacity(buffer) > 0 {
+      guard let data = buffer.mData?.assumingMemoryBound(to: Float.self) else {
+        continue
+      }
+      let bufferChannels = Int(max(buffer.mNumberChannels, 1))
+      for channel in 0..<bufferChannels {
+        ring.pointee.samples[Int(index & mask)] = data[frame * bufferChannels + channel]
+        index += 1
+      }
+    }
+  }
+  let flags = time?.pointee.mFlags ?? []
+  ring.pointee.chunks[Int(chunk & UInt64(captureChunkCapacity - 1))] = CaptureChunkHeader(
+    hostTime: flags.contains(.hostTimeValid) ? time?.pointee.mHostTime ?? 0 : 0,
+    sampleTime: flags.contains(.sampleTimeValid) ? time?.pointee.mSampleTime ?? 0 : 0,
+    frames: frames, channels: channels,
+    discontinuity: IDBAtomicExchange(&ring.pointee.discontinuity, 0) != 0)
+  // Published after the samples and header, which the reader only touches once it sees the count.
+  _ = IDBAtomicExchange(&ring.pointee.writtenSamples, index)
+  _ = IDBAtomicExchange(&ring.pointee.writtenChunks, chunk + 1)
+}
+
+/// What a capture-armed process renders, kept from `begin` to `end` and handed to the capture
+/// client's thread. Every function here runs on that thread.
+enum AudioCaptureHAL {
+  static func begin() {
+    pthread_mutex_lock(&state.pointee.ioProcLock)
+    defer { pthread_mutex_unlock(&state.pointee.ioProcLock) }
+    // Nothing is written while no capture runs, so moving each reader up to its writer discards
+    // what an earlier capture left without racing the audio thread.
+    var context = state.pointee.contexts
+    while let current = context {
+      if let ring = current.pointee.capture {
+        _ = IDBAtomicExchange(&ring.pointee.readSamples, IDBAtomicLoad(&ring.pointee.writtenSamples))
+        _ = IDBAtomicExchange(&ring.pointee.readChunks, IDBAtomicLoad(&ring.pointee.writtenChunks))
+        _ = IDBAtomicExchange(&ring.pointee.discontinuity, 0)
+      }
+      context = current.pointee.next
+    }
+    releaseRetiredRings()
+    _ = IDBAtomicExchange(&state.pointee.captureDroppedFrames, 0)
+    _ = IDBAtomicExchange(&state.pointee.captureActive, 1)
+  }
+
+  static func drain(_ body: (AudioCaptureChunk) -> Void) -> UInt64 {
+    var drained: [AudioCaptureChunk] = []
+    pthread_mutex_lock(&state.pointee.ioProcLock)
+    var context = state.pointee.contexts
+    while let current = context {
+      if let ring = current.pointee.capture {
+        // Under `ioProcLock`, as every HAL read the shim makes is: never beside an IO proc's creation.
+        if IDBAtomicLoad(&current.pointee.captureSampleRateBits) == 0 {
+          var rate: Double = 0
+          var address = IDBAudioObjectPropertyAddress(
+            selector: Property.nominalSampleRate, scope: Property.globalScope, element: 0)
+          var size = UInt32(MemoryLayout<Double>.size)
+          if current.pointee.getPropertyData(current.pointee.device, &address, 0, nil, &size, &rate) == noErr, rate > 0 {
+            _ = IDBAtomicExchange(&current.pointee.captureSampleRateBits, rate.bitPattern)
+          }
+        }
+        take(from: ring, of: current, into: &drained)
+      }
+      context = current.pointee.next
+    }
+    var retired = state.pointee.retired
+    while let current = retired {
+      if let ring = current.pointee.capture {
+        take(from: ring, of: current, into: &drained)
+        CaptureRing.release(ring)
+        current.pointee.capture = nil
+      }
+      retired = current.pointee.next
+    }
+    pthread_mutex_unlock(&state.pointee.ioProcLock)
+    drained.forEach(body)
+    return IDBAtomicLoad(&state.pointee.captureDroppedFrames)
+  }
+
+  static func end() {
+    _ = IDBAtomicExchange(&state.pointee.captureActive, 0)
+    pthread_mutex_lock(&state.pointee.ioProcLock)
+    defer { pthread_mutex_unlock(&state.pointee.ioProcLock) }
+    // A callback counts itself in before it reads `captureActive`, so once each IO proc has been
+    // seen idle, no callback that saw the capture running is still writing.
+    var context = state.pointee.contexts
+    while let current = context {
+      while IDBAtomicLoad(&current.pointee.activeCallbacks) > 0 {
+        sched_yield()
+      }
+      context = current.pointee.next
+    }
+  }
+
+  private static func take(
+    from ring: UnsafeMutablePointer<CaptureRing>, of context: UnsafeMutablePointer<IOProcContext>,
+    into drained: inout [AudioCaptureChunk]
+  ) {
+    let writtenChunks = IDBAtomicLoad(&ring.pointee.writtenChunks)
+    var readChunks = IDBAtomicLoad(&ring.pointee.readChunks)
+    var readSamples = IDBAtomicLoad(&ring.pointee.readSamples)
+    let mask = UInt64(captureSampleCapacity - 1)
+    let rate = Double(bitPattern: IDBAtomicLoad(&context.pointee.captureSampleRateBits))
+    while readChunks < writtenChunks {
+      let header = ring.pointee.chunks[Int(readChunks & UInt64(captureChunkCapacity - 1))]
+      let count = Int(header.frames) * Int(header.channels)
+      var samples = [Float](repeating: 0, count: count)
+      for index in 0..<count {
+        samples[index] = ring.pointee.samples[Int((readSamples + UInt64(index)) & mask)]
+      }
+      drained.append(
+        AudioCaptureChunk(
+          stream: UInt64(UInt(bitPattern: context)), device: context.pointee.device, sampleRate: rate,
+          hostTime: header.hostTime, sampleTime: header.sampleTime, channels: Int(header.channels),
+          discontinuity: header.discontinuity, samples: samples))
+      readSamples += UInt64(count)
+      readChunks += 1
+    }
+    _ = IDBAtomicExchange(&ring.pointee.readSamples, readSamples)
+    _ = IDBAtomicExchange(&ring.pointee.readChunks, readChunks)
+  }
+
+  private static func releaseRetiredRings() {
+    var retired = state.pointee.retired
+    while let current = retired {
+      if let ring = current.pointee.capture {
+        CaptureRing.release(ring)
+        current.pointee.capture = nil
+      }
+      retired = current.pointee.next
+    }
+  }
+}
+
+public struct HALAudioCaptureEngine: AudioCaptureEngine {
+  public init() {}
+
+  public func begin() {
+    AudioCaptureHAL.begin()
+  }
+
+  public func drain(_ body: (AudioCaptureChunk) -> Void) -> UInt64 {
+    AudioCaptureHAL.drain(body)
+  }
+
+  public func end() {
+    AudioCaptureHAL.end()
+  }
 }
 
 public struct HALAudioInjectionEngine: AudioInjectionEngine {

@@ -38,6 +38,8 @@ targets:
     platform: iOS
     deploymentTarget: "17.0"
     sources:
+      - path: AudioInjection/AudioCaptureController.swift
+      - path: AudioInjection/AudioCaptureFile.swift
       - path: AudioInjection/AudioInjectionController.swift
     settings:
       base:
