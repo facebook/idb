@@ -1530,12 +1530,16 @@ targets:
       - target: FBSimulatorCodeInjection
       - target: FBSimulatorControl
       - target: FBSimulatorServices
+      - target: FBSimulatorVideo
       - target: FBSimulatorXCTest
+      - target: FBVideoCore
       - target: FBXCTestCore
       - target: ShimulatorAudioInjectionCore
       - target: ShimulatorProtocol
       - target: ShimulatorVideoInjectionCore
       - target: SimulatorIPC
+      - sdk: AVFoundation.framework
+      - sdk: CoreMedia.framework
       - sdk: XCTest.framework
   FBSimulatorControlUnitTests:
     type: bundle.unit-test
