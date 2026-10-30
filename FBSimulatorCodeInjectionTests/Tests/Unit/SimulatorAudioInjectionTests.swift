@@ -42,6 +42,7 @@ final class SimulatorAudioInjectionTests: XCTestCase {
     let original = ["MAGIC": "unchanged"]
     let prepared = appEnvironment(original, inherited: "/tmp/libProfiler.dylib")
     XCTAssertEqual(prepared["IDB_AUDIO_INJECTION"], "1")
+    XCTAssertEqual(prepared["IDB_AUDIO_CAPTURE"], "1")
     XCTAssertEqual(prepared["DYLD_INSERT_LIBRARIES"], "/tmp/libProfiler.dylib:/tmp/current/libShimulator-iOS.dylib")
     XCTAssertEqual(prepared["MAGIC"], "unchanged")
     XCTAssertEqual(original, ["MAGIC": "unchanged"])
@@ -68,6 +69,7 @@ final class SimulatorAudioInjectionTests: XCTestCase {
   func testExplicitAppArmingValuesArePreserved() {
     for value in ["1", "0", "", "custom"] {
       XCTAssertEqual(appEnvironment(["IDB_AUDIO_INJECTION": value])["IDB_AUDIO_INJECTION"], value)
+      XCTAssertEqual(appEnvironment(["IDB_AUDIO_CAPTURE": value])["IDB_AUDIO_CAPTURE"], value)
     }
   }
 

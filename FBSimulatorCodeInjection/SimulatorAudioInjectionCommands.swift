@@ -105,7 +105,8 @@ public struct SimulatorAudioInjectionCommands {
     ShimulatorWireProtocol.socketPath(capability: ShimulatorAudioInjection.capability, simulatorUDID: simulator.udid)
   }
 
-  /// Prepares only the launched app to accept microphone playback, without changing guest launchd.
+  /// Prepares only the launched app to accept microphone playback and to have what it plays captured,
+  /// without changing guest launchd.
   ///
   /// A launch that cannot be prepared still goes ahead, unarmed; `inject` then names the reason.
   public func appLaunchEnvironment(_ environment: [String: String]) async -> [String: String] {
@@ -206,6 +207,8 @@ public struct SimulatorAudioInjectionCommands {
     prepared[Self.insertLibrariesVariable] = (others + [shimPath]).joined(separator: ":")
     prepared[ShimulatorAudioInjection.armedEnvironmentVariable] =
       environment[ShimulatorAudioInjection.armedEnvironmentVariable] ?? "1"
+    prepared[ShimulatorAudioCapture.armedEnvironmentVariable] =
+      environment[ShimulatorAudioCapture.armedEnvironmentVariable] ?? "1"
     return prepared
   }
 
