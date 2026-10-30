@@ -26,6 +26,8 @@ public final class SimulatorHID: CustomStringConvertible, Sendable {
 
   /// The transport for the touch / button / keyboard primitives.
   private let transport: SimulatorHIDTransport
+  /// The Digital Crown, which `dtuhidd` serves on a service of its own.
+  private let crown: SimulatorCrownHIDTransport
   private let operationLease: SimulatorHIDOperationLease
   private let displays: (any DisplayCommands)?
   private let logging: SimulatorHIDEventLogging
@@ -39,6 +41,7 @@ public final class SimulatorHID: CustomStringConvertible, Sendable {
   ) async throws {
     self.init(
       transport: try await SimulatorHIDTransport.negotiate(for: simulator, requested: transportType),
+      crown: SimulatorCrownHIDTransport(simulator: simulator),
       operationLease: simulator.commandCache.resolve { SimulatorHIDOperationLease() },
       displays: simulator.displays,
       logging: simulator.hidEventLogging)
@@ -47,11 +50,13 @@ public final class SimulatorHID: CustomStringConvertible, Sendable {
   /// Instances sharing `operationLease` never interleave operations.
   init(
     transport: SimulatorHIDTransport,
+    crown: SimulatorCrownHIDTransport = SimulatorCrownHIDTransport(simulator: nil),
     operationLease: SimulatorHIDOperationLease = SimulatorHIDOperationLease(),
     displays: (any DisplayCommands)? = nil,
     logging: SimulatorHIDEventLogging = .redacted
   ) {
     self.transport = transport
+    self.crown = crown
     self.operationLease = operationLease
     self.displays = displays
     self.logging = logging
@@ -64,6 +69,7 @@ public final class SimulatorHID: CustomStringConvertible, Sendable {
       try? await operationLease.withLease {
         try? await flush()
         transport.disconnect()
+        await crown.disconnect()
       }
     }
     await close.value
@@ -74,6 +80,7 @@ public final class SimulatorHID: CustomStringConvertible, Sendable {
   /// Drains the transport so `dtuhidd` consumes a gesture before the connection is torn down.
   func flush() async throws {
     try await transport.flush()
+    try await crown.flush()
   }
 
   // MARK: - Dispatch
@@ -147,6 +154,11 @@ public final class SimulatorHID: CustomStringConvertible, Sendable {
       try await transport.primitives.sendTwoFingerTouch(direction: direction, finger1: finger1, finger2: finger2, display: display)
     case let .trackpad(phase, point):
       try await transport.sendTrackpad(point: point, phase: phase)
+    case let .crown(direction, delta):
+      guard transport.dtuhid != nil else {
+        throw SimulatorHIDError.crownUnsupportedOnIndigoTransport
+      }
+      try await crown.sendCrown(direction: direction, delta: delta)
     case let .delay(duration):
       try await Task.sleep(nanoseconds: SimulatorHIDEvent.delayNanoseconds(duration))
     case let .composite(events):

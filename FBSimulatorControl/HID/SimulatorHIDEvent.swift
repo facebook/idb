@@ -26,6 +26,9 @@ public indirect enum SimulatorHIDEvent: Equatable, Hashable, Sendable {
   case keyboard(direction: SimulatorHIDDirection, keyCode: UInt32)
   case twoFingerTouch(direction: SimulatorHIDDirection, finger1: CGPoint, finger2: CGPoint)
   case trackpad(phase: SimulatorTrackpadPhase, point: SimulatorTrackpadPoint)
+  /// One sample of a Digital Crown rotation. `.down` carries a delta and begins or continues the
+  /// turn; `.up` ends it, and its delta is ignored.
+  case crown(direction: SimulatorHIDDirection, delta: Double)
   case delay(TimeInterval)
   case composite([SimulatorHIDEvent])
 
@@ -121,6 +124,28 @@ public extension SimulatorHIDEvent {
       .remoteButton(direction: .down, button: button),
       .remoteButton(direction: .up, button: button),
     ])
+  }
+
+  /// How long a crown rotation's samples are spread over, in seconds. The guest reads a turn from
+  /// the rate the samples arrive at.
+  static let defaultCrownDuration: Double = 0.15
+
+  /// A complete Digital Crown rotation: its samples paced across `duration`, then the release that
+  /// ends the gesture. Throws `SimulatorHIDError.invalidDelay` for a `duration` that
+  /// `validateDelay(_:)` rejects.
+  static func crownRotation(
+    _ rotation: SimulatorCrownRotation, duration: Double = defaultCrownDuration
+  ) throws -> SimulatorHIDEvent {
+    try validateDelay(duration)
+    let steps = rotation.steps
+    let stepDelay = duration / Double(steps.count + 1)
+    var events: [SimulatorHIDEvent] = []
+    for step in steps {
+      events.append(.crown(direction: .down, delta: step))
+      events.append(.delay(stepDelay))
+    }
+    events.append(.crown(direction: .up, delta: 0))
+    return .composite(events)
   }
 
   /// A swipe from `(xStart,yStart)` to `(xEnd,yEnd)`, interpolated at `delta` points per sample.
@@ -339,6 +364,10 @@ extension SimulatorHIDEvent: CustomStringConvertible {
     case let .trackpad(phase, point):
       guard detailed else { return "Trackpad <hidden>" }
       return "Trackpad \(phase.name) at (\(point.x),\(point.y))"
+    case let .crown(direction, delta):
+      guard detailed else { return "Crown <hidden>" }
+      guard direction == .down else { return "Crown release" }
+      return "Crown rotate \(delta)"
     case let .delay(duration):
       return "Delay for \(duration)"
     case let .composite(events):

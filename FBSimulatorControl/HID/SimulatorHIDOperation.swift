@@ -131,6 +131,9 @@ struct SimulatorHIDOperation {
   private var generation: UInt64?
   private var singleRelease: SimulatorHIDEvent?
   private var twoFingerRelease: SimulatorHIDEvent?
+  /// The release that ends a rotation the operation began, so a cancelled gesture does not leave
+  /// the guest mid-turn.
+  private var crownRelease: SimulatorHIDEvent?
   private var needsFlush = false
 
   init(
@@ -166,6 +169,8 @@ struct SimulatorHIDOperation {
       let second = try clamp(second)
       delivered = .twoFingerTouch(direction: direction, finger1: first, finger2: second)
       if direction == .down { twoFingerRelease = .twoFingerTouch(direction: .up, finger1: first, finger2: second) }
+    case let .crown(direction, _):
+      if direction == .down { crownRelease = .crown(direction: .up, delta: 0) }
     case .button, .remoteButton, .keyboard, .trackpad, .delay, .composite:
       break
     }
@@ -176,7 +181,8 @@ struct SimulatorHIDOperation {
     switch delivered {
     case .touch(.up, _, _, _): singleRelease = nil
     case .twoFingerTouch(.up, _, _): twoFingerRelease = nil
-    case .touch, .twoFingerTouch, .button, .remoteButton, .keyboard, .trackpad, .delay, .composite:
+    case .crown(.up, _): crownRelease = nil
+    case .touch, .twoFingerTouch, .button, .remoteButton, .keyboard, .trackpad, .crown, .delay, .composite:
       break
     }
     guard delivered != event, let display else { return [.unchanged(delivered)] }
@@ -259,7 +265,7 @@ struct SimulatorHIDOperation {
   /// Returns the failures from releasing contacts and draining; each step runs regardless.
   func cleanup() async -> [Error] {
     await stopObserving()
-    let releases = [singleRelease, twoFingerRelease].compactMap { $0 }
+    let releases = [singleRelease, twoFingerRelease, crownRelease].compactMap { $0 }
     let display = display
     let sink = sink
     let shouldFlush = needsFlush || !releases.isEmpty

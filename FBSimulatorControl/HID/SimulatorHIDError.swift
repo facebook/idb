@@ -54,6 +54,10 @@ public enum SimulatorHIDError: Error, LocalizedError {
   case invalidDelay(TimeInterval)
   /// An operation ended with `cause`, and releasing or draining what it had sent then failed too.
   case cleanupFailed(cause: Error, failures: [Error])
+  /// A Digital Crown rotation was attempted on a target that has no crown.
+  case crownUnsupportedOnProductFamily(ProductFamily)
+  /// A Digital Crown rotation was attempted over the legacy Indigo transport.
+  case crownUnsupportedOnIndigoTransport
 
   public var errorDescription: String? {
     switch self {
@@ -106,6 +110,10 @@ public enum SimulatorHIDError: Error, LocalizedError {
       return "A HID delay must be finite, non-negative and representable in nanoseconds, not \(seconds)s"
     case let .cleanupFailed(cause, failures):
       return "\(cause.localizedDescription); releasing the gesture then failed: \(failures.map(\.localizedDescription).joined(separator: "; "))"
+    case let .crownUnsupportedOnProductFamily(family):
+      return "Digital Crown rotation is only supported on Apple Watch targets, not \(family)"
+    case .crownUnsupportedOnIndigoTransport:
+      return "Digital Crown rotation requires the DTUHID transport"
     }
   }
 

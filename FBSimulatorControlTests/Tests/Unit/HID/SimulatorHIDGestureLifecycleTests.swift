@@ -80,6 +80,26 @@ struct SimulatorHIDGestureLifecycleTests {
   }
 
   @Test
+  func aCrownTurnThatCannotBeEndedIsReportedWithTheErrorThatEndedTheOperation() async throws {
+    let digitizer = Service(SimulatorDigitizerHIDTransport.serviceName)
+    let scroll = Service(SimulatorCrownHIDTransport.serviceName)
+    let crownConnection = scroll.connection
+    let hid = SimulatorHID(
+      transport: .dtuhid(digitizer.transport()),
+      crown: SimulatorCrownHIDTransport(productFamily: .appleWatch) { crownConnection })
+
+    await #expect {
+      try await hid.send(
+        events: ThenFail(.crown(direction: .down, delta: 25)) { crownConnection.disconnect() }, logger: Self.logger)
+    } throws: { error in
+      Self.isCleanupFailure(error, failure: { ($0 as? SimulatorHIDError).map(Self.isInvalidated) ?? false })
+    }
+    let received = await scroll.peer.received(atLeast: 1)
+    #expect(received.map { xpc_dictionary_get_uint64(xpc_dictionary_get_dictionary($0, "payload")!, "phase") } == [1])
+    digitizer.connection.disconnect()
+  }
+
+  @Test
   func aDrainThatFailsDuringCleanupIsReportedWithTheErrorThatEndedTheOperation() async throws {
     let digitizer = Service(SimulatorDigitizerHIDTransport.serviceName, sleeper: FailingSleeper())
     let hid = SimulatorHID(transport: .dtuhid(digitizer.transport()))
@@ -92,6 +112,17 @@ struct SimulatorHIDGestureLifecycleTests {
     let received = await digitizer.peer.received(atLeast: 2)
     #expect(received.map { xpc_dictionary_get_uint64(xpc_dictionary_get_dictionary($0, "payload")!, "eventType") } == [0, 2])
     digitizer.connection.disconnect()
+  }
+
+  @Test
+  func cleanupEndsACrownTurnWhoseSampleFailedAfterDelivery() async throws {
+    let sink = RecordingSink(failing: .crown(direction: .down, delta: 25))
+    var operation = SimulatorHIDOperation(displays: nil, sink: sink)
+    await #expect(throws: DeliveryFailure.self) {
+      _ = try await operation.send(.crown(direction: .down, delta: 25))
+    }
+    #expect(await operation.cleanup().isEmpty)
+    #expect(await sink.events == [.crown(direction: .down, delta: 25), .crown(direction: .up, delta: 0)])
   }
 
   // MARK: - Delays
@@ -148,6 +179,7 @@ struct SimulatorHIDGestureLifecycleTests {
 
   private enum StreamFailure: Error { case injected }
   private enum DrainFailure: Error { case injected }
+  private enum DeliveryFailure: Error { case injected }
 
   /// A synthetic `dtuhidd` service and an unprobed connection to it.
   private struct Service {
@@ -207,4 +239,20 @@ struct SimulatorHIDGestureLifecycleTests {
     }
   }
 
+  /// Records every event delivered to it, failing the delivery of `failing` after recording it.
+  private actor RecordingSink: SimulatorHIDOperationSink {
+    private let failing: SimulatorHIDEvent?
+    var events: [SimulatorHIDEvent] = []
+
+    init(failing: SimulatorHIDEvent? = nil) {
+      self.failing = failing
+    }
+
+    func deliver(_ event: SimulatorHIDEvent, display: SimulatorHIDDisplay?) throws {
+      events.append(event)
+      if event == failing { throw DeliveryFailure.injected }
+    }
+
+    func flush() {}
+  }
 }

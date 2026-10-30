@@ -241,6 +241,14 @@ A DTUHID gesture lives in `dtuhidd` only as long as its connection. When the dae
 
 An operation that fails or is cancelled releases what it still holds. If that release or the drain after it fails too, the operation throws `SimulatorHIDError.cleanupFailed` with both the error that ended it and the cleanup failures; otherwise it rethrows the error that ended it.
 
+### Apple Watch controls
+
+Digital Crown rotation is DTUHID-only, and is refused on other product families.
+
+- **Digital Crown rotation** rides a scroll service of its own, `com.apple.coredevice.feature.remote.hid.scroll`, as an `IndigoScrollEvent` whose `target` is the crown. A rotation is one gesture — began, then a changed event per sample, then ended — carried on `point.y`. The delta is in the guest's scroll units, not degrees or detents, and `SimulatorCrownRotation` keeps it finite, non-zero and bounded. The connection is held for the life of the `SimulatorHID`, because the guest's crown service belongs to the connection and tearing it down before the guest has consumed a turn cancels the turn.
+
+It has no known legacy Indigo encoding, so it is refused on the Indigo transport.
+
 ### `SimulatorKit.framework`
 
 This is another macOS Framework that is used in iOS Simulator management. This Framework is not installed to the System, it is bundled within Xcode. Instead, this Framework is more used to implement functionality within `Simulator.app`.
