@@ -129,12 +129,16 @@ private func bitmapStreamPixelBufferAttributes(from pixelBuffer: CVPixelBuffer) 
 protocol VideoStreamClock: Sendable {
   var uptime: TimeInterval { get }
   var wallClock: TimeInterval { get }
+  /// `mach_absolute_time`, which other media of the same moment, such as the simulator's audio,
+  /// are stamped with.
+  var hostTime: UInt64 { get }
 }
 
 /// The machine's clocks.
 struct SystemVideoStreamClock: VideoStreamClock {
   var uptime: TimeInterval { ProcessInfo.processInfo.systemUptime }
   var wallClock: TimeInterval { Date().timeIntervalSince1970 }
+  var hostTime: UInt64 { mach_absolute_time() }
 }
 
 public actor SimulatorVideoStream: VideoStreamOperation {
@@ -229,6 +233,7 @@ public actor SimulatorVideoStream: VideoStreamOperation {
   }
   var timeAtFirstFrame: TimeInterval = 0
   var wallClockAtFirstFrame: TimeInterval = 0
+  var hostTimeAtFirstFrame: UInt64 = 0
   var timeAtLastPush: TimeInterval = 0
   var frameNumber: UInt = 0
   var pixelBufferAttributes: [String: Any]?
@@ -682,6 +687,7 @@ public actor SimulatorVideoStream: VideoStreamOperation {
       // Read here, beside the monotonic one, because this is the only moment at which the wall
       // clock says when this frame was captured. A reading taken later has had time to be set.
       wallClockAtFirstFrame = clock.wallClock
+      hostTimeAtFirstFrame = clock.hostTime
     }
     let timeAtFirstFrame = self.timeAtFirstFrame
     let frameDuration = timeAtLastPush > 0 ? (now - timeAtLastPush) : 0
@@ -924,6 +930,16 @@ public actor SimulatorVideoStream: VideoStreamOperation {
       return nil
     }
     return MediaOrigin(wallClockAtFirstFrame: wallClockAtFirstFrame).startedAt(anchor: anchor)
+  }
+
+  /// Media time zero on the host clock, in `mach_absolute_time` ticks, for a file anchored `anchor`
+  /// seconds after the first pushed frame, or nil before a frame was pushed.
+  func mediaOriginHostTime(anchor: TimeInterval) -> UInt64? {
+    guard timeAtFirstFrame > 0 else {
+      return nil
+    }
+    return MediaOrigin(wallClockAtFirstFrame: wallClockAtFirstFrame, hostTimeAtFirstFrame: hostTimeAtFirstFrame)
+      .startHostTime(anchor: anchor)
   }
 
   /// Wall-clock time when the first framebuffer callback was received, or 0 if not yet started.

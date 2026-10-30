@@ -52,6 +52,9 @@ public final class SimulatorVideoRecordingCommands: VideoRecordingCommands {
   /// handed rather than imposing a fixed one.
   public var honorsRecordingConfiguration: Bool { true }
 
+  /// These commands record into an MP4, which `SimulatorVideo` can add an audio track to.
+  public var acceptsAudio: Bool { true }
+
   public func start(toFile filePath: String) async throws -> any VideoRecording {
     try await start(toFile: filePath, configuration: Self.recordingConfiguration)
   }
@@ -67,7 +70,7 @@ public final class SimulatorVideoRecordingCommands: VideoRecordingCommands {
     let video = SimulatorVideo(framebuffer: framebuffer, configuration: configuration, filePath: filePath, logger: simulator.logger)
     try await video.startRecording()
     self.video = video
-    return SimulatorVideoRecording(commands: self, simulator: simulator)
+    return SimulatorVideoRecording(commands: self, simulator: simulator, video: video)
   }
 
   public func stop() async throws -> URL {
@@ -87,8 +90,14 @@ private struct SimulatorVideoRecording: VideoRecording {
   // recording can be stopped, so a later lookup reaches these commands rather than fresh ones
   // that know nothing of the recording.
   let simulator: Simulator
+  /// Kept past `stop()`, which lets go of it on `commands`, so the stopped file can take audio.
+  let video: SimulatorVideo
 
   func stop() async throws -> URL {
     try await commands.stop()
+  }
+
+  func addAudio(fromWAV path: String, startingAtHostTime hostTime: UInt64) async throws -> AudioTrackPlacement {
+    try await video.addAudio(fromWAV: path, startingAtHostTime: hostTime)
   }
 }

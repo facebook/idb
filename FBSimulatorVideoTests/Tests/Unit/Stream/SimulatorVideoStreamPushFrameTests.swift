@@ -149,6 +149,19 @@ final class SimulatorVideoStreamPushFrameTests: XCTestCase {
     XCTAssertEqual(origin, 1_000_000)
   }
 
+  func testMediaOriginOnTheHostClockIsTheHostTimeAtTheFirstFramePlusTheFileSAnchor() async throws {
+    let clock = SettableClock(uptime: 100, wallClock: 1_000_000, hostTime: 5_000_000_000)
+    let started = try await startStream(clock: clock)
+    defer { Task { try? await started.stream.stopStreaming() } }
+
+    await started.stream.pushFrame(forceKeyFrame: false)
+    clock.advance(by: 60)
+
+    let origin = await started.stream.mediaOriginHostTime(anchor: 2)
+
+    XCTAssertEqual(origin, 5_000_000_000 + SettableClock.ticks(seconds: 2))
+  }
+
   func testSurfaceWrittenDuringPushIsCountedAsTorn() async throws {
     let started = try await startStream()
     defer { Task { try? await started.stream.stopStreaming() } }
@@ -262,17 +275,29 @@ extension SimulatorVideoStream {
   }
 }
 
-/// A pair of clocks a test moves by hand, in place of the machine's.
-// SAFETY: both readings are guarded by `lock`.
+/// The clocks a test moves by hand, in place of the machine's.
+// SAFETY: every reading is guarded by `lock`.
 // patternlint-disable-next-line unchecked-sendable
 private final class SettableClock: VideoStreamClock, @unchecked Sendable {
   private let lock = NSLock()
   private var uptimeReading: TimeInterval
   private var wallClockReading: TimeInterval
+  private var hostTimeReading: UInt64
 
-  init(uptime: TimeInterval, wallClock: TimeInterval) {
+  init(uptime: TimeInterval, wallClock: TimeInterval, hostTime: UInt64 = 1) {
     uptimeReading = uptime
     wallClockReading = wallClock
+    hostTimeReading = hostTime
+  }
+
+  static func ticks(seconds: TimeInterval) -> UInt64 {
+    var timebase = mach_timebase_info_data_t()
+    mach_timebase_info(&timebase)
+    return UInt64((seconds * 1e9 * Double(timebase.denom) / Double(timebase.numer)).rounded())
+  }
+
+  var hostTime: UInt64 {
+    lock.withLock { hostTimeReading }
   }
 
   var uptime: TimeInterval {
@@ -285,11 +310,12 @@ private final class SettableClock: VideoStreamClock, @unchecked Sendable {
     set { lock.withLock { wallClockReading = newValue } }
   }
 
-  /// Time passing, as it does on both clocks at once.
+  /// Time passing, as it does on every clock at once.
   func advance(by seconds: TimeInterval) {
     lock.withLock {
       uptimeReading += seconds
       wallClockReading += seconds
+      hostTimeReading += Self.ticks(seconds: seconds)
     }
   }
 }

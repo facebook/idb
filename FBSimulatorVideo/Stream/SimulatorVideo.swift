@@ -39,11 +39,20 @@ public enum SimulatorVideoContainer: Sendable {
 
 enum SimulatorVideoError: Error, LocalizedError {
   case webMRequiresCompressedVideo
+  case audioBeforeStop
+  case audioRequiresMP4OrMOV
+  case audioWithoutFrames
 
   var errorDescription: String? {
     switch self {
     case .webMRequiresCompressedVideo:
       return "A WebM recording must be encoded as H.264 or HEVC"
+    case .audioBeforeStop:
+      return "Audio can be added to a recording only once it has stopped"
+    case .audioRequiresMP4OrMOV:
+      return "Audio can be added to an MP4 or MOV recording, not a WebM"
+    case .audioWithoutFrames:
+      return "The recording holds no frames, so there is no timeline to place audio on"
     }
   }
 }
@@ -65,6 +74,7 @@ public actor SimulatorVideo {
   /// recording. `nonisolated`: a constant of Sendable (actor) type, readable without a hop.
   public nonisolated let stream: SimulatorVideoStream
   private let fileWriter: any RecordingFileWriter
+  private let logger: any ControlCoreLogger
   private var hasStopped = false
   private var keyFrames: Task<Void, Never>?
 
@@ -94,6 +104,7 @@ public actor SimulatorVideo {
       fileWriter = SimulatorVideoWebMWriter(filePath: filePath, chaptersEnabled: chaptersEnabled, logger: logger)
     }
     self.fileWriter = fileWriter
+    self.logger = logger
     self.stream = SimulatorVideoStream(framebuffer: framebuffer, configuration: configuration, edgeInsets: edgeInsets, fileWriter: fileWriter, logger: logger)
   }
 
@@ -132,6 +143,39 @@ public actor SimulatorVideo {
       return nil
     }
     return await stream.mediaOrigin(anchor: anchor.seconds)
+  }
+
+  /// The recording's media time zero on the host clock, in `mach_absolute_time` ticks, or nil before
+  /// a frame was muxed. Read, like `startedAt()`, as the first frame was pushed.
+  public func startedAtHostTime() async -> UInt64? {
+    guard let anchor = fileWriter.startPresentationTime else {
+      return nil
+    }
+    return await stream.mediaOriginHostTime(anchor: anchor.seconds)
+  }
+
+  /// Adds the audio in a WAV file to the stopped recording, as an AAC track. `hostTime` is when the
+  /// WAV's first frame played, in `mach_absolute_time` ticks, and places it against the frames, which
+  /// are timed on the same clock. Audio from before the first frame is cut.
+  public func addAudio(fromWAV path: String, startingAtHostTime hostTime: UInt64) async throws -> AudioTrackPlacement {
+    guard hasStopped else {
+      throw SimulatorVideoError.audioBeforeStop
+    }
+    let fileType: AVFileType
+    switch container {
+    case .mp4:
+      fileType = .mp4
+    case .mov:
+      fileType = .mov
+    case .webm:
+      throw SimulatorVideoError.audioRequiresMP4OrMOV
+    }
+    guard let origin = await startedAtHostTime() else {
+      throw SimulatorVideoError.audioWithoutFrames
+    }
+    return try await AudioTrackMuxer.addAudio(
+      fromWAV: URL(fileURLWithPath: path), offset: MediaOrigin.seconds(fromHostTime: origin, to: hostTime),
+      to: outputURL, fileType: fileType, logger: logger)
   }
 
   public func stop() async throws -> URL {
