@@ -51,6 +51,48 @@ struct SimulatorHIDGestureLifecycleTests {
     #expect(received.map { xpc_dictionary_get_uint64(xpc_dictionary_get_dictionary($0, "payload")!, "eventType") } == [0, 0])
     digitizer.connection.disconnect()
   }
+  // MARK: - Delays
+
+  @Test(arguments: [-0.1, Double.nan, .infinity, -.infinity, 1e20])
+  func aDelayThatCannotBeSleptForIsRejectedUpFront(_ seconds: Double) {
+    #expect(throws: SimulatorHIDError.self) {
+      try SimulatorHIDEvent.validateDelay(seconds)
+    }
+  }
+
+  @Test(arguments: [0.0, 0.15, 1e9])
+  func aDelayThatCanBeSleptForIsAccepted(_ seconds: Double) {
+    #expect(throws: Never.self) {
+      try SimulatorHIDEvent.validateDelay(seconds)
+    }
+  }
+
+  @Test(arguments: [Double.nan, .infinity, 1e20])
+  func deliveringADelayThatCannotBeSleptForThrowsRatherThanTrapping(_ seconds: Double) async throws {
+    let digitizer = Service(SimulatorDigitizerHIDTransport.serviceName)
+    let hid = SimulatorHID(transport: .dtuhid(digitizer.transport()))
+    await #expect {
+      try await hid.send(event: .delay(seconds), logger: Self.logger)
+    } throws: { error in
+      guard case .invalidDelay = error as? SimulatorHIDError else { return false }
+      return true
+    }
+    digitizer.connection.disconnect()
+  }
+
+  @Test
+  func aNegativeDelayIsNoWait() async throws {
+    #expect(try SimulatorHIDEvent.delayNanoseconds(-1) == 0)
+    let digitizer = Service(SimulatorDigitizerHIDTransport.serviceName)
+    let hid = SimulatorHID(transport: .dtuhid(digitizer.transport()))
+    try await hid.send(event: .delay(-1), logger: Self.logger)
+    digitizer.connection.disconnect()
+  }
+
+  // MARK: - Support
+
+  private static let logger = ControlCoreGlobalConfiguration.defaultLogger
+
   /// A synthetic `dtuhidd` service and an unprobed connection to it.
   private struct Service {
     let peer: SyntheticXPCPeer

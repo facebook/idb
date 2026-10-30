@@ -144,7 +144,7 @@ public final class SimulatorHID: CustomStringConvertible, Sendable {
     case let .trackpad(phase, point):
       try await transport.sendTrackpad(point: point, phase: phase)
     case let .delay(duration):
-      try await Task.sleep(nanoseconds: UInt64(max(0, duration) * 1_000_000_000))
+      try await Task.sleep(nanoseconds: SimulatorHIDEvent.delayNanoseconds(duration))
     case let .composite(events):
       for event in events {
         try await deliver(event, display: display)

@@ -39,6 +39,33 @@ public indirect enum SimulatorHIDEvent: Equatable, Hashable, Sendable {
 
 }
 
+// MARK: - Delays
+
+public extension SimulatorHIDEvent {
+
+  /// Throws `SimulatorHIDError.invalidDelay` unless `seconds` is finite, non-negative and short
+  /// enough for `.delay` to sleep for.
+  static func validateDelay(_ seconds: TimeInterval) throws {
+    guard seconds >= 0 else {
+      throw SimulatorHIDError.invalidDelay(seconds)
+    }
+    _ = try delayNanoseconds(seconds)
+  }
+}
+
+extension SimulatorHIDEvent {
+
+  /// The nanoseconds `.delay(seconds)` sleeps for. A negative delay is no wait.
+  static func delayNanoseconds(_ seconds: TimeInterval) throws -> UInt64 {
+    let nanoseconds = max(0, seconds) * 1_000_000_000
+    // `Double(UInt64.max)` rounds up to 2^64, so only a strictly smaller value converts.
+    guard seconds.isFinite, nanoseconds < Double(UInt64.max) else {
+      throw SimulatorHIDError.invalidDelay(seconds)
+    }
+    return UInt64(nanoseconds)
+  }
+}
+
 // MARK: - Factories
 
 public extension SimulatorHIDEvent {

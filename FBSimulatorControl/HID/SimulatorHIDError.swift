@@ -51,6 +51,8 @@ public enum SimulatorHIDError: Error, LocalizedError {
   case touchUnsupportedOnAppleTV
   /// `dtuhidd` dropped the connection while a gesture was in progress, and with it the gesture.
   case dtuhidGestureInterrupted
+  /// A delay was negative, not finite, or too long to sleep for.
+  case invalidDelay(TimeInterval)
 
   public var errorDescription: String? {
     switch self {
@@ -99,6 +101,8 @@ public enum SimulatorHIDError: Error, LocalizedError {
       return "Touch input is not supported on tvOS targets (no touchscreen)"
     case .dtuhidGestureInterrupted:
       return "The dtuhidd connection was interrupted during the gesture, so the guest no longer has it"
+    case let .invalidDelay(seconds):
+      return "A HID delay must be finite, non-negative and representable in nanoseconds, not \(seconds)s"
     }
   }
 
