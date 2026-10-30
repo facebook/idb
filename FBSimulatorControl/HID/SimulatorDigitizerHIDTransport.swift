@@ -137,6 +137,18 @@ actor SimulatorDigitizerHIDTransport {
       payload: IndigoButtonEvent(usagePage: UInt64(usage.page), usageCode: UInt64(usage.code), state: state))
   }
 
+  /// Sends a button only an Apple Watch has; every other family is refused.
+  func sendWatchButton(direction: SimulatorHIDDirection, button: SimulatorWatchButton) async throws {
+    guard productFamily == .appleWatch else {
+      throw SimulatorHIDError.watchButtonUnsupportedOnProductFamily(button: button.name, family: productFamily)
+    }
+    let usage = button.consumerUsage
+    let state: HIDButtonState = direction == .down ? .down : .up
+    try await send(
+      messageType: "IndigoButtonEvent",
+      payload: IndigoButtonEvent(usagePage: UInt64(usage.page), usageCode: UInt64(usage.code), state: state))
+  }
+
   func sendKeyboard(direction: SimulatorHIDDirection, keyCode: UInt32) async throws {
     let state: HIDButtonState = direction == .down ? .down : .up
     try await send(

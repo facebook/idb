@@ -125,6 +125,33 @@ struct SimulatorHIDGestureLifecycleTests {
     #expect(await sink.events == [.crown(direction: .down, delta: 25), .crown(direction: .up, delta: 0)])
   }
 
+  @Test
+  func cleanupReleasesAWatchButtonWhosePressFailedAfterDelivery() async throws {
+    let sink = RecordingSink(failing: .watchButton(direction: .down, button: .side))
+    var operation = SimulatorHIDOperation(displays: nil, sink: sink)
+    await #expect(throws: DeliveryFailure.self) {
+      _ = try await operation.send(.watchButton(direction: .down, button: .side))
+    }
+    #expect(await operation.cleanup().isEmpty)
+    #expect(
+      await sink.events == [.watchButton(direction: .down, button: .side), .watchButton(direction: .up, button: .side)])
+  }
+
+  @Test
+  func cleanupLeavesFinishedCrownTurnsAndWatchButtonPressesAlone() async throws {
+    let sink = RecordingSink()
+    var operation = SimulatorHIDOperation(displays: nil, sink: sink)
+    let events: [SimulatorHIDEvent] = [
+      .crown(direction: .down, delta: 25), .crown(direction: .up, delta: 0),
+      .watchButton(direction: .down, button: .side), .watchButton(direction: .up, button: .side),
+    ]
+    for event in events {
+      _ = try await operation.send(event)
+    }
+    #expect(await operation.cleanup().isEmpty)
+    #expect(await sink.events == events)
+  }
+
   // MARK: - Delays
 
   @Test(arguments: [-0.1, Double.nan, .infinity, -.infinity, 1e20])

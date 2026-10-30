@@ -12,8 +12,9 @@ import Foundation
 
 /**
  Input for a Simulator: `SimulatorHIDEvent`s (touch, two-finger touch, button, remote button, keyboard,
- trackpad, delays and composites of them), delivered through a pluggable `SimulatorHIDTransport`
- (`dtuhidd` or the legacy Indigo client, whichever the toolchain supports).
+ trackpad, Apple Watch button and Digital Crown, delays and composites of them), delivered through a
+ pluggable `SimulatorHIDTransport` (`dtuhidd` or the legacy Indigo client, whichever the toolchain
+ supports).
 
  Device actions — rotation, the hinge, lock, shake, the in-call status bar — are not input and are
  commands on the `Simulator` (`orientation`, `hinge`, `hardware`, `statusBar`).
@@ -154,6 +155,11 @@ public final class SimulatorHID: CustomStringConvertible, Sendable {
       try await transport.primitives.sendTwoFingerTouch(direction: direction, finger1: finger1, finger2: finger2, display: display)
     case let .trackpad(phase, point):
       try await transport.sendTrackpad(point: point, phase: phase)
+    case let .watchButton(direction, button):
+      guard let dtuhid = transport.dtuhid else {
+        throw SimulatorHIDError.watchButtonUnsupportedOnIndigoTransport(button: button.name)
+      }
+      try await dtuhid.sendWatchButton(direction: direction, button: button)
     case let .crown(direction, delta):
       guard transport.dtuhid != nil else {
         throw SimulatorHIDError.crownUnsupportedOnIndigoTransport

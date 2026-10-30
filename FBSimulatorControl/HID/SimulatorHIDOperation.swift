@@ -131,9 +131,9 @@ struct SimulatorHIDOperation {
   private var generation: UInt64?
   private var singleRelease: SimulatorHIDEvent?
   private var twoFingerRelease: SimulatorHIDEvent?
-  /// The release that ends a rotation the operation began, so a cancelled gesture does not leave
-  /// the guest mid-turn.
+  /// The releases that end a crown turn or a Watch button press the operation began.
   private var crownRelease: SimulatorHIDEvent?
+  private var watchButtonRelease: SimulatorHIDEvent?
   private var needsFlush = false
 
   init(
@@ -171,6 +171,8 @@ struct SimulatorHIDOperation {
       if direction == .down { twoFingerRelease = .twoFingerTouch(direction: .up, finger1: first, finger2: second) }
     case let .crown(direction, _):
       if direction == .down { crownRelease = .crown(direction: .up, delta: 0) }
+    case let .watchButton(direction, button):
+      if direction == .down { watchButtonRelease = .watchButton(direction: .up, button: button) }
     case .button, .remoteButton, .keyboard, .trackpad, .delay, .composite:
       break
     }
@@ -182,7 +184,8 @@ struct SimulatorHIDOperation {
     case .touch(.up, _, _, _): singleRelease = nil
     case .twoFingerTouch(.up, _, _): twoFingerRelease = nil
     case .crown(.up, _): crownRelease = nil
-    case .touch, .twoFingerTouch, .button, .remoteButton, .keyboard, .trackpad, .crown, .delay, .composite:
+    case .watchButton(.up, _): watchButtonRelease = nil
+    case .touch, .twoFingerTouch, .button, .remoteButton, .keyboard, .trackpad, .crown, .watchButton, .delay, .composite:
       break
     }
     guard delivered != event, let display else { return [.unchanged(delivered)] }
@@ -265,7 +268,7 @@ struct SimulatorHIDOperation {
   /// Returns the failures from releasing contacts and draining; each step runs regardless.
   func cleanup() async -> [Error] {
     await stopObserving()
-    let releases = [singleRelease, twoFingerRelease, crownRelease].compactMap { $0 }
+    let releases = [singleRelease, twoFingerRelease, crownRelease, watchButtonRelease].compactMap { $0 }
     let display = display
     let sink = sink
     let shouldFlush = needsFlush || !releases.isEmpty

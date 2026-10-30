@@ -221,6 +221,27 @@ public enum SimulatorCrownRotationError: Error, LocalizedError {
   }
 }
 
+/// A button that only an Apple Watch has. Kept apart from `SimulatorHIDButton`, whose `sideButton`
+/// is the Consumer Power usage, so neither vocabulary can be sent as the other.
+public enum SimulatorWatchButton: Sendable, CaseIterable {
+  /// The side button beneath the Digital Crown.
+  case side
+
+  /// The canonical lower-snake-case name for this button.
+  public var name: String {
+    switch self {
+    case .side: return "side"
+    }
+  }
+
+  /// The HID Consumer-page usage the watchOS guest reads as this button.
+  var consumerUsage: (page: UInt16, code: UInt16) {
+    switch self {
+    case .side: return (0x0C, 0x95)
+    }
+  }
+}
+
 /// Device orientation. Raw values preserve the legacy Purple event encoding.
 public enum SimulatorHIDDeviceOrientation: Int32, Sendable, CaseIterable {
   case portrait = 1

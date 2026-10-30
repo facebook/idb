@@ -243,11 +243,12 @@ An operation that fails or is cancelled releases what it still holds. If that re
 
 ### Apple Watch controls
 
-Digital Crown rotation is DTUHID-only, and is refused on other product families.
+Two Apple Watch controls are DTUHID-only, and both are refused on any other product family.
 
 - **Digital Crown rotation** rides a scroll service of its own, `com.apple.coredevice.feature.remote.hid.scroll`, as an `IndigoScrollEvent` whose `target` is the crown. A rotation is one gesture — began, then a changed event per sample, then ended — carried on `point.y`. The delta is in the guest's scroll units, not degrees or detents, and `SimulatorCrownRotation` keeps it finite, non-zero and bounded. The connection is held for the life of the `SimulatorHID`, because the guest's crown service belongs to the connection and tearing it down before the guest has consumed a turn cancels the turn.
+- **The side button** is a Consumer-page usage on the button path. `SimulatorWatchButton` keeps it apart from `SimulatorHIDButton.sideButton`, the Consumer Power usage, and a press is a down followed by an up.
 
-It has no known legacy Indigo encoding, so it is refused on the Indigo transport.
+Neither has a known legacy Indigo encoding, so both are refused on the Indigo transport.
 
 ### `SimulatorKit.framework`
 

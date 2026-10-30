@@ -58,6 +58,10 @@ public enum SimulatorHIDError: Error, LocalizedError {
   case crownUnsupportedOnProductFamily(ProductFamily)
   /// A Digital Crown rotation was attempted over the legacy Indigo transport.
   case crownUnsupportedOnIndigoTransport
+  /// An Apple Watch button was attempted on a target that does not have it.
+  case watchButtonUnsupportedOnProductFamily(button: String, family: ProductFamily)
+  /// An Apple Watch button was attempted over the legacy Indigo transport.
+  case watchButtonUnsupportedOnIndigoTransport(button: String)
 
   public var errorDescription: String? {
     switch self {
@@ -114,6 +118,10 @@ public enum SimulatorHIDError: Error, LocalizedError {
       return "Digital Crown rotation is only supported on Apple Watch targets, not \(family)"
     case .crownUnsupportedOnIndigoTransport:
       return "Digital Crown rotation requires the DTUHID transport"
+    case let .watchButtonUnsupportedOnProductFamily(button, family):
+      return "The Apple Watch \(button) button is only supported on Apple Watch targets, not \(family)"
+    case let .watchButtonUnsupportedOnIndigoTransport(button):
+      return "The Apple Watch \(button) button requires the DTUHID transport"
     }
   }
 

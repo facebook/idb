@@ -12,9 +12,9 @@ import Foundation
 // MARK: - SimulatorHIDEvent
 
 /// An input event that can be sent to a Simulator. A discriminated union of the primitive
-/// payloads (touch, button, remote button, keyboard, two-finger touch, trackpad, delay) plus a
-/// `composite` of ordered events. Device actions such as rotation, lock or shake are commands on the
-/// `Simulator`.
+/// payloads (touch, button, remote button, keyboard, two-finger touch, trackpad, Apple Watch button,
+/// Digital Crown, delay) plus a `composite` of ordered events. Device actions such as rotation, lock
+/// or shake are commands on the `Simulator`.
 public indirect enum SimulatorHIDEvent: Equatable, Hashable, Sendable {
 
   /// The per-sample step, in points, a swipe is broken into when the caller does not choose one.
@@ -26,6 +26,9 @@ public indirect enum SimulatorHIDEvent: Equatable, Hashable, Sendable {
   case keyboard(direction: SimulatorHIDDirection, keyCode: UInt32)
   case twoFingerTouch(direction: SimulatorHIDDirection, finger1: CGPoint, finger2: CGPoint)
   case trackpad(phase: SimulatorTrackpadPhase, point: SimulatorTrackpadPoint)
+  /// A press of a button only an Apple Watch has. Distinct from `.button`, whose `sideButton` is the
+  /// Consumer Power usage.
+  case watchButton(direction: SimulatorHIDDirection, button: SimulatorWatchButton)
   /// One sample of a Digital Crown rotation. `.down` carries a delta and begins or continues the
   /// turn; `.up` ends it, and its delta is ignored.
   case crown(direction: SimulatorHIDDirection, delta: Double)
@@ -99,6 +102,15 @@ public extension SimulatorHIDEvent {
     .composite([
       .button(direction: .down, button: button),
       .button(direction: .up, button: button),
+    ])
+  }
+
+  /// A short press of a button only an Apple Watch has: down then up, which is what the guest
+  /// reads as a click rather than a hold.
+  static func shortWatchButtonPress(_ button: SimulatorWatchButton) -> SimulatorHIDEvent {
+    .composite([
+      .watchButton(direction: .down, button: button),
+      .watchButton(direction: .up, button: button),
     ])
   }
 
@@ -364,6 +376,9 @@ extension SimulatorHIDEvent: CustomStringConvertible {
     case let .trackpad(phase, point):
       guard detailed else { return "Trackpad <hidden>" }
       return "Trackpad \(phase.name) at (\(point.x),\(point.y))"
+    case let .watchButton(direction, button):
+      guard detailed else { return "WatchButton <hidden>" }
+      return "WatchButton \(button.name) \(direction.name)"
     case let .crown(direction, delta):
       guard detailed else { return "Crown <hidden>" }
       guard direction == .down else { return "Crown release" }
