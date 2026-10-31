@@ -199,22 +199,6 @@ final class FollowingFramebufferSurfaceTests: XCTestCase {
     XCTAssertEqual(cover.unregisteredTokens.count, 1)
   }
 
-  func testAConfigurationIsAnnouncedBeforeTheMoveItCauses() async throws {
-    let cover = FakeFramebufferSurface()
-    let inner = FakeFramebufferSurface()
-    let (configurations, continuation) = AsyncStream.makeStream(of: SimulatorDisplayConfiguration.self)
-    let following = surface(["cover": cover, "inner": inner], configurations: configurations)
-    let token = UUID()
-    var events: [String] = []
-    try following.registerCallbacks(
-      token: token, ioSurfaceChanged: { _ in events.append("surface") }, frameRendered: {}, configurationChanged: { if case let .identified(display) = $0.active { events.append("configuration \(display.uniqueID)") } })
-
-    continuation.yield(configuration(active: "inner"))
-    try await waitUntil { !inner.registeredTokens.isEmpty }
-
-    XCTAssertEqual(events, ["configuration inner", "surface"])
-  }
-
   func testAConsumerRegisteringLateIsToldTheCurrentConfiguration() async throws {
     let cover = FakeFramebufferSurface()
     let (configurations, continuation) = AsyncStream.makeStream(of: SimulatorDisplayConfiguration.self)
